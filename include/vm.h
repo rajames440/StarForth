@@ -1,60 +1,76 @@
+/* vm.h */
 #ifndef VM_H
 #define VM_H
 
 #include <stdint.h>
-#include "log.h"   /* for logging */
 
-#define STACK_SIZE 2048
+typedef int cell_t;
 
-typedef enum {
-    VM_MODE_INTERPRET = 0,
-    VM_MODE_COMPILE
-} vm_mode_t;
+/* Forward declaration */
+typedef struct VM VM;
 
-typedef uint32_t cell_t;
+/* Function pointer type for runtime words */
+typedef void (*word_func_t)(VM *vm);
 
-struct VM;
+/* Function pointer type for VM opcodes */
+typedef void (*opcode_func_t)(VM *vm);
 
-typedef void (*word_func_t)(struct VM *vm);
-
-typedef word_func_t XT;
-
-typedef struct VM {
+/* VM structure */
+struct VM {
     /* Data stack */
-    cell_t data_stack[STACK_SIZE];
+    cell_t data_stack[1024];
     int data_sp;
 
     /* Return stack */
-    cell_t return_stack[STACK_SIZE];
+    cell_t return_stack[1024];
     int return_sp;
 
-    /* Thread execution */
-    XT *ip;
-    XT *thread;
+    /* Instruction pointer */
+    cell_t *ip;       /* Points into instruction stream */
+    cell_t *thread;   /* Current running thread/instruction array */
 
-    vm_mode_t mode;
+    int mode;         /* Interpret or compile mode */
+    int error;        /* Error flag */
+    int halted;       /* Halt flag */
 
-    int error;
-    int halted;
-} VM;
+    /* Dictionary of user/runtime words */
+    struct {
+        char *name;
+        word_func_t func;
+    } dictionary[512];
+    int dictionary_count;
 
-/* VM core functions */
+    /* Opcode dispatch table for special VM opcodes */
+    opcode_func_t opcode_table[256]; /* 256 possible opcodes */
+
+    /* For io.c compatibility, add blocks here */
+    unsigned char *blocks; /* Pointer to memory blocks */
+};
+
+/* VM modes */
+#define VM_MODE_INTERPRET 0
+#define VM_MODE_COMPILE   1
+
+/* VM API */
 void vm_init(VM *vm);
 void vm_push(VM *vm, cell_t value);
 cell_t vm_pop(VM *vm);
 void vm_rpush(VM *vm, cell_t value);
 cell_t vm_rpop(VM *vm);
 
-/* Stack helpers */
-int vm_peek(VM *vm, int depth, cell_t *out);
-int vm_poke(VM *vm, int depth, cell_t value);
-int vm_drop_n(VM *vm, int n);
+void vm_execute(VM *vm, cell_t *thread);
 
-/* Threaded interpreter */
-void vm_execute(VM *vm, XT *thread);
+/* Word registration */
+void vm_register_word(VM *vm, const char *name, word_func_t func);
+word_func_t vm_lookup_word(VM *vm, const char *name);
+
+/* Opcode registration */
+void vm_register_opcode(VM *vm, uint8_t opcode, opcode_func_t func);
+
+/* Helper to lookup opcode function */
+opcode_func_t vm_lookup_opcode(VM *vm, uint8_t opcode);
+
+/* REPL */
 void vm_repl(VM *vm);
-
-/* Debugging snapshot */
-void vm_snapshot(VM *vm);
 
 #endif /* VM_H */

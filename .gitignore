@@ -1,1 +1,6 @@
-/build/
+/build/forth79_words.o
+/build/forthvm
+/build/io.o
+/build/log.o
+/build/main.o
+/build/vm.o
