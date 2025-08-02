@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "vm.h"
-#include "forth79_words.h"
+#include "word_registry.h"
 
 int main(void) {
     VM vm;
