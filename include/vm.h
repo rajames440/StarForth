@@ -24,7 +24,7 @@ typedef void (*word_func_t)(struct VM *vm);
 
 #define STACK_SIZE 1024
 #define DICTIONARY_SIZE 1024
-#define VM_MEMORY_SIZE 32768  /* Renamed to avoid conflict with io.h */
+#define VM_MEMORY_SIZE (1024 * 1024)  /* 1 MB - UPDATE THIS TOO */
 #define INPUT_BUFFER_SIZE 256
 #define WORD_NAME_MAX 31
 #define COMPILE_BUFFER_SIZE 1024
@@ -58,7 +58,7 @@ typedef struct VM {
     int rsp;  /* Return stack pointer */
     
     /* Dictionary */
-    uint8_t memory[VM_MEMORY_SIZE];
+    uint8_t *memory;            /* CHANGE: pointer instead of array */
     size_t here;                /* Next free memory location */
     DictEntry *latest;          /* Most recent word */
     
@@ -128,5 +128,8 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len);
 
 /* Testing functions */
 void vm_run_smoke_tests(VM *vm);
+
+/* Add cleanup function declaration */
+void vm_cleanup(VM *vm);
 
 #endif /* VM_H */

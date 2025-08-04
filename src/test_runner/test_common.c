@@ -1,0 +1,165 @@
+/*
+ * Copyright (c) 2025 Robert A. James - StarshipOS Forth Project.
+ *
+ * This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+ * To the extent possible under law, the author(s) have dedicated all copyright and related
+ * and neighboring rights to this software to the public domain worldwide.
+ * This software is distributed without any warranty.
+ *
+ * See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+ */
+
+#include "include/test_common.h"
+#include "include/test_runner.h"
+#include "../include/log.h"
+#include <stdio.h>
+
+/* Run a single test case */
+TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test) {
+    if (!test->implemented) {
+        log_test_result(word_name, TEST_SKIP);
+        return TEST_SKIP;
+    }
+    
+    /* Save VM state */
+    int saved_dsp, saved_rsp, saved_error;
+    vm_mode_t saved_mode;
+    save_vm_state(vm, &saved_dsp, &saved_rsp, &saved_error, &saved_mode);
+    
+    /* Clear error state */
+    vm->error = 0;
+    
+    log_message(LOG_DEBUG, "  Running %s.%s: %s", word_name, test->name, test->input);
+    
+    /* Execute the test */
+    vm_interpret(vm, test->input);
+    
+    /* Check results */
+    TestResult result = TEST_FAIL;
+    
+    if (test->should_error) {
+        /* This test should have caused an error */
+        if (vm->error != 0) {
+            result = TEST_PASS;
+            log_message(LOG_DEBUG, "    Expected error occurred");
+        } else {
+            result = TEST_FAIL;
+            log_message(LOG_ERROR, "    Expected error but none occurred");
+        }
+    } else {
+        /* This test should not have caused an error */
+        if (vm->error != 0) {
+            result = TEST_FAIL;
+            log_message(LOG_ERROR, "    Unexpected VM error: %d", vm->error);
+        } else {
+            result = TEST_PASS;
+            log_message(LOG_DEBUG, "    Test passed");
+        }
+    }
+    
+    /* Log the result */
+    log_test_result(word_name, result);
+    if (result == TEST_PASS) {
+        log_message(LOG_DEBUG, "    Expected: %s", test->expected);
+    }
+    
+    /* Restore VM state */
+    restore_vm_state(vm, saved_dsp, saved_rsp, saved_error, saved_mode);
+    
+    return result;
+}
+
+/* Run a complete test suite for one word */
+void run_test_suite(VM *vm, const WordTestSuite *suite) {
+    log_message(LOG_INFO, "\nTesting word: %s", suite->word_name);
+    log_message(LOG_INFO, "------------------------");
+    
+    int suite_pass = 0;
+    int suite_fail = 0;
+    int suite_skip = 0;
+    int suite_error = 0;
+    
+    for (int j = 0; j < suite->test_count && suite->tests[j].name != NULL; j++) {
+        const TestCase *test = &suite->tests[j];
+        
+        if (!test->implemented) {
+            suite_skip++;
+            continue;
+        }
+        
+        TestResult result = run_single_test(vm, suite->word_name, test);
+        
+        switch (result) {
+            case TEST_PASS: suite_pass++; break;
+            case TEST_FAIL: suite_fail++; break;
+            case TEST_SKIP: suite_skip++; break;
+            case TEST_ERROR: suite_error++; break;
+        }
+    }
+    
+    /* Update global statistics */
+    global_test_stats.total_tests += suite->test_count;
+    global_test_stats.total_pass += suite_pass;
+    global_test_stats.total_fail += suite_fail;
+    global_test_stats.total_skip += suite_skip;
+    global_test_stats.total_error += suite_error;
+    
+    log_message(LOG_INFO, "  %s: %d passed, %d failed, %d skipped, %d errors",
+               suite->word_name, suite_pass, suite_fail, suite_skip, suite_error);
+}
+
+/* Print module summary */
+void print_module_summary(const char *module_name, int pass, int fail, int skip, int error) {
+    log_message(LOG_INFO, "=== %s Summary: %d passed, %d failed, %d skipped, %d errors ===", 
+               module_name, pass, fail, skip, error);
+}
+
+/* VM state management */
+void save_vm_state(VM *vm, int *dsp, int *rsp, int *error, vm_mode_t *mode) {
+    *dsp = vm->dsp;
+    *rsp = vm->rsp;
+    *error = vm->error;
+    *mode = vm->mode;
+}
+
+void restore_vm_state(VM *vm, int dsp, int rsp, int error, vm_mode_t mode) {
+    vm->dsp = dsp;
+    vm->rsp = rsp;
+    vm->error = error;
+    vm->mode = mode;
+}
+
+/* Assert functions */
+int assert_stack_depth(VM *vm, int expected_depth) {
+    if (vm->dsp == expected_depth) {
+        return 1;
+    }
+    log_message(LOG_ERROR, "Stack depth mismatch: expected %d, got %d", expected_depth, vm->dsp);
+    return 0;
+}
+
+int assert_stack_top(VM *vm, int expected_value) {
+    if (vm->dsp < 1) {
+        log_message(LOG_ERROR, "Stack underflow when checking top value");
+        return 0;
+    }
+    if (vm->data_stack[vm->dsp - 1] == expected_value) {
+        return 1;
+    }
+    log_message(LOG_ERROR, "Stack top mismatch: expected %d, got %d", 
+               expected_value, vm->data_stack[vm->dsp - 1]);
+    return 0;
+}
+
+int assert_vm_error(VM *vm, int should_have_error) {
+    int has_error = (vm->error != 0);
+    if (has_error == should_have_error) {
+        return 1;
+    }
+    if (should_have_error) {
+        log_message(LOG_ERROR, "Expected VM error but none occurred");
+    } else {
+        log_message(LOG_ERROR, "Unexpected VM error: %d", vm->error);
+    }
+    return 0;
+}

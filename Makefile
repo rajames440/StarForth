@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -std=c99 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test/include
-SRC = $(wildcard src/*.c src/word_source/*.c src/test/*.c)
+CFLAGS = -std=c99 -g -O0 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include
+SRC = $(wildcard src/*.c src/word_source/*.c src/test_runner/*.c src/test_runner/modules/*.c)
 OBJ = $(patsubst src/%.c,build/%.o,$(SRC))
 TARGET = build/forthvm
 
@@ -15,13 +15,17 @@ build/%.o: src/%.c | build
 build/word_source/%.o: src/word_source/%.c | build/word_source
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/test/%.o: src/test/%.c | build/test
+build/test_runner/%.o: src/test_runner/%.c | build/test_runner
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/test_runner/modules/%.o: src/test_runner/modules/%.c | build/test_runner/modules
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build:
 	mkdir -p build
 	mkdir -p build/word_source
-	mkdir -p build/test
+	mkdir -p build/test_runner
+	mkdir -p build/test_runner/modules
 
 clean:
 	rm -rf build/*

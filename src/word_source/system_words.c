@@ -79,9 +79,8 @@ void word_warm(VM *vm) {
 /* BYE ( -- )  Exit FORTH system */
 void word_bye(VM *vm) {
     printf("Goodbye!\n");
-    system_running = 0;
-    /* In a real implementation, this might call exit() or set a flag */
-    /* For testing purposes, we'll just set a flag */
+    vm_cleanup(vm);  /* Clean up memory before exit */
+    exit(0);
 }
 
 /* SAVE-SYSTEM ( -- )  Save system image */

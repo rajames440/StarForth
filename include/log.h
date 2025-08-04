@@ -28,7 +28,8 @@ typedef enum {
 typedef enum {
     TEST_PASS = 0,
     TEST_FAIL,
-    TEST_SKIP
+    TEST_SKIP,
+    TEST_ERROR
 } TestResult;
 
 /* Set the global logging level (default LOG_INFO) */

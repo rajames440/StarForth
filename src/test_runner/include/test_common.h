@@ -9,32 +9,25 @@
  * See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
  */
 
-#ifndef TEST_H
-#define TEST_H
+#ifndef TEST_COMMON_H
+#define TEST_COMMON_H
 
 #include "../../include/vm.h"
-#include "../../include/log.h"  /* This already defines TestResult */
+#include "../../include/log.h"
 
 /* Test configuration */
 #define MAX_TEST_OUTPUT 1024
 #define MAX_TEST_INPUT 256
+#define MAX_TESTS_PER_WORD 20
 
-/* Test types - only define TestType, not TestResult */
+/* Test types */
 typedef enum {
     TEST_NORMAL = 0,
     TEST_EDGE_CASE = 1,
     TEST_ERROR_CASE = 2
 } TestType;
 
-/* Note: TestResult is already defined in log.h as:
- * typedef enum {
- *     TEST_PASS = 0,
- *     TEST_FAIL,
- *     TEST_SKIP
- * } TestResult;
- */
-
-/* Test case structure - matches your test.c structure */
+/* Test case structure */
 typedef struct {
     const char *name;
     const char *input;
@@ -44,26 +37,25 @@ typedef struct {
     int implemented;
 } TestCase;
 
-/* Test suite structure - matches your test.c array structure */
+/* Test suite structure for a single word */
 typedef struct {
     const char *word_name;
-    TestCase tests[20];  /* Max tests per word */
+    TestCase tests[MAX_TESTS_PER_WORD];
     int test_count;
 } WordTestSuite;
 
-/* Test execution functions */
-void run_word_tests(VM *vm);
-void run_all_tests(VM *vm);
-void run_test_suite(VM *vm, const WordTestSuite *suite);
+/* Core test execution functions */
 TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test);
+void run_test_suite(VM *vm, const WordTestSuite *suite);
+void print_module_summary(const char *module_name, int pass, int fail, int skip, int error);
 
-/* Individual word test functions */
-void test_word(VM *vm, const char *word_name);
-
-/* Test utility functions */
-/* log_test_result is declared in log.h */
+/* Test assertion functions */
 int assert_stack_depth(VM *vm, int expected_depth);
 int assert_stack_top(VM *vm, int expected_value);
 int assert_vm_error(VM *vm, int should_have_error);
 
-#endif /* TEST_H */
+/* VM state management for tests */
+void save_vm_state(VM *vm, int *dsp, int *rsp, int *error, vm_mode_t *mode);
+void restore_vm_state(VM *vm, int dsp, int rsp, int error, vm_mode_t mode);
+
+#endif /* TEST_COMMON_H */

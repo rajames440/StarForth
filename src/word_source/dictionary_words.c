@@ -18,7 +18,7 @@
 
 /* HERE ( -- addr )  Address of next free dictionary space */
 void word_here(VM *vm) {
-    vm_push(vm, (cell_t)(uintptr_t)&vm->memory[vm->here]);
+    vm_push(vm, vm->here);  /* VM memory offset */
 }
 
 /* ALLOT ( n -- )  Allocate n bytes in dictionary */
@@ -32,14 +32,15 @@ void word_allot(VM *vm) {
     
     n = vm_pop(vm);
     
-    /* Check for valid allocation size */
-    if (n < 0 || vm->here + n >= VM_MEMORY_SIZE) {
-        vm->error = 1;  /* Invalid allocation or out of memory */
+    /* Allow negative allocation (standard Forth) */
+    ptrdiff_t new_here = (ptrdiff_t)vm->here + n;
+    if (new_here < 0 || new_here >= VM_MEMORY_SIZE) {
+        vm->error = 1;
         return;
     }
     
-    vm->here += (size_t)n;
-    vm_align(vm);  /* Align to cell boundary */
+    vm->here = (size_t)new_here;
+    vm_align(vm);
 }
 
 /* , ( n -- )  Compile n into dictionary */
@@ -122,19 +123,13 @@ void word_2_comma(VM *vm) {
 
 /* PAD ( -- addr )  Address of temporary text buffer */
 void word_pad(VM *vm) {
-    size_t pad_offset;
-    
-    /* PAD is typically located after the dictionary space */
-    /* We'll place it at a fixed offset from the end of memory */
-    pad_offset = VM_MEMORY_SIZE - 512;  /* 512 bytes for PAD */
-    vm_push(vm, (cell_t)(uintptr_t)&vm->memory[pad_offset]);
+    size_t pad_offset = VM_MEMORY_SIZE - 512;
+    vm_push(vm, pad_offset);  /* VM memory offset */
 }
 
 /* SP! ( addr -- )  Set data stack pointer */
 void word_sp_store(VM *vm) {
     cell_t addr;
-    cell_t *stack_addr;
-    cell_t *stack_base;
     
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -143,39 +138,36 @@ void word_sp_store(VM *vm) {
     
     addr = vm_pop(vm);
     
-    /* Calculate new stack pointer from address */
-    /* This is a bit tricky - we need to convert address to stack index */
-    stack_addr = (cell_t*)(uintptr_t)addr;
-    stack_base = vm->data_stack;
+    /* Stack addresses are raw pointers to data_stack[] */
+    cell_t *stack_addr = (cell_t*)(uintptr_t)addr;
+    cell_t *stack_base = vm->data_stack;
     
-    /* Check if address is within stack bounds */
     if (stack_addr < stack_base || stack_addr > stack_base + STACK_SIZE) {
-        vm->error = 1;  /* Invalid stack address */
+        vm->error = 1;
         return;
     }
     
     vm->dsp = (int)(stack_addr - stack_base) - 1;
     
-    /* Ensure stack pointer is valid */
     if (vm->dsp < -1 || vm->dsp >= STACK_SIZE) {
         vm->error = 1;
-        vm->dsp = -1;  /* Reset to empty */
+        vm->dsp = -1;
     }
 }
 
 /* SP@ ( -- addr )  Get data stack pointer */
 void word_sp_fetch(VM *vm) {
-    /* Return address of current top of stack */
+    /* Stack addresses are raw pointers */
     if (vm->dsp >= 0) {
         vm_push(vm, (cell_t)(uintptr_t)&vm->data_stack[vm->dsp + 1]);
     } else {
-        /* Empty stack - return address of stack base */
         vm_push(vm, (cell_t)(uintptr_t)&vm->data_stack[0]);
     }
 }
 
 /* LATEST ( -- addr )  Address of most recent definition */
 void word_latest(VM *vm) {
+    /* Raw pointer to VM variable (not in VM memory) */
     vm_push(vm, (cell_t)(uintptr_t)&vm->latest);
 }
 

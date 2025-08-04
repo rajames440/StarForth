@@ -37,12 +37,20 @@ void vm_init(VM *vm) {
     /* Clear all memory */
     memset(vm, 0, sizeof(VM));
     
+    /* Allocate dynamic memory - ADD THIS */
+    vm->memory = malloc(VM_MEMORY_SIZE);
+    if (vm->memory == NULL) {
+        log_message(LOG_ERROR, "Failed to allocate VM memory");
+        vm->error = 1;
+        return;
+    }
+    
     /* Initialize stack pointers */
     vm->dsp = -1;   /* Data stack empty */
     vm->rsp = -1;   /* Return stack empty */
     
     /* Initialize other fields */
-    vm->here = 0;
+    vm->here = 0;   /* Start at beginning of allocated memory */
     vm->latest = NULL;
     vm->mode = MODE_INTERPRET;
     vm->compiling_word = NULL;
@@ -63,6 +71,15 @@ void vm_init(VM *vm) {
     register_forth79_words(vm);
 }
 
+/* Add cleanup function - ADD THIS NEW FUNCTION */
+void vm_cleanup(VM *vm) {
+    if (vm->memory != NULL) {
+        free(vm->memory);
+        vm->memory = NULL;
+    }
+    vm->here = 0;
+}
+
 /* Clean stack operations - no changes needed */
 void vm_push(VM *vm, cell_t value) {
     if (vm->dsp >= STACK_SIZE - 1) {
@@ -71,7 +88,7 @@ void vm_push(VM *vm, cell_t value) {
         return;
     }
     vm->data_stack[++vm->dsp] = value;
-    log_message(LOG_DEBUG, "PUSH: %d (dsp=%d)", (int)value, vm->dsp);
+    log_message(LOG_DEBUG, "PUSH: %d (dsp=%d)", (int)value, vm->dsp);  // FIX: Added missing format and closing quote
 }
 
 cell_t vm_pop(VM *vm) {
@@ -81,7 +98,7 @@ cell_t vm_pop(VM *vm) {
         return 0;
     }
     cell_t value = vm->data_stack[vm->dsp--];
-    log_message(LOG_DEBUG, "POP: %d (dsp=%d)", (int)value, vm->dsp);
+    log_message(LOG_DEBUG, "POP: %d (dsp=%d)", (int)value, vm->dsp);   // FIX: Added missing format and closing quote
     return value;
 }
 
@@ -369,7 +386,6 @@ static void execute_compiled_word(VM *vm, DictEntry *entry) {
     }
 }
 
-/* FIXED word interpretation - execute compiled words properly */
 void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
     /* Try to find word in dictionary */
     DictEntry *entry = vm_find_word(vm, word_str, len);
@@ -379,23 +395,26 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
             /* Compiled word: execute bytecode */
             if (vm->mode == MODE_COMPILE && !(entry->flags & WORD_IMMEDIATE)) {
                 /* Compile a call to this compiled word */
-                word_func_t *func_ptr = (word_func_t*)(entry->name + entry->name_len);
-                vm_compile_call(vm, *func_ptr);
+                vm_compile_call(vm, entry->func);  // Use entry->func directly
             } else {
                 /* Execute the compiled word immediately */
                 execute_compiled_word(vm, entry);
             }
         } else {
-            /* Built-in word: get function pointer and call/compile */
-            word_func_t *func_ptr = (word_func_t*)(entry->name + entry->name_len);
-            word_func_t func = *func_ptr;
+            /* Built-in word: use function pointer directly from entry */
+            word_func_t func = entry->func;  // FIX: Use entry->func directly!
             
             if (vm->mode == MODE_COMPILE && !(entry->flags & WORD_IMMEDIATE)) {
                 /* Compile the word */
                 vm_compile_call(vm, func);
             } else {
                 /* Execute immediately */
-                func(vm);
+                if (func != NULL) {  // Safety check
+                    func(vm);
+                } else {
+                    log_message(LOG_ERROR, "NULL function pointer for word: %.*s", (int)len, word_str);
+                    vm->error = 1;
+                }
             }
         }
     } else {
