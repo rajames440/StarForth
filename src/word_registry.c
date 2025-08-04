@@ -64,8 +64,8 @@ void register_forth79_words(VM *vm) {
     register_system_words(vm);                   /* Module 18: System & Environment */
     register_dictionary_manipulation_words(vm);  /* Module 14: Dictionary Manipulation */
     register_vocabulary_words(vm);               /* Module 15: Vocabulary System */
-/* TODO yet*/
     register_block_words(vm);                    /* Module 16: Block & Mass Storage */
+/* TODO yet*/
     register_editor_words(vm);                   /* Module 17: Line Editor */
     register_defining_words(vm);                 /* Module 13: Defining Words */
     register_control_words(vm);                  /* Module 12: Control Flow */
