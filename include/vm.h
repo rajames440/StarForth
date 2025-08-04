@@ -24,7 +24,7 @@ typedef void (*word_func_t)(struct VM *vm);
 
 #define STACK_SIZE 1024
 #define DICTIONARY_SIZE 1024
-#define VM_MEMORY_SIZE (1024 * 1024)  /* 1 MB - UPDATE THIS TOO */
+#define VM_MEMORY_SIZE (1024 * 1024)  /* 1 MB */
 #define INPUT_BUFFER_SIZE 256
 #define WORD_NAME_MAX 31
 #define COMPILE_BUFFER_SIZE 1024
@@ -35,13 +35,13 @@ typedef void (*word_func_t)(struct VM *vm);
 #define WORD_SMUDGED    0x20    /* Word is smudged (being defined) - FORTH-79 */
 #define WORD_COMPILED   0x10    /* Word is user-compiled (not built-in) */
 
-/* Dictionary entry - enhanced for FORTH-79 compatibility */
+/* Dictionary entry - C99 compliant with fixed-size name */
 typedef struct DictEntry {
-    struct DictEntry *link;     /* Previous word (linked list) */
-    word_func_t func;           /* Function pointer for execution */
-    uint8_t flags;              /* Word flags */
-    uint8_t name_len;           /* Length of name */
-    char name[];                /* Variable-length name + optional code */
+    struct DictEntry *link;          /* Previous word (linked list) */
+    word_func_t func;                /* Function pointer for execution */
+    uint8_t flags;                   /* Word flags */
+    uint8_t name_len;                /* Length of name */
+    char name[WORD_NAME_MAX + 1];    /* Fixed-size name buffer */
 } DictEntry;
 
 /* VM modes */
@@ -56,37 +56,37 @@ typedef struct VM {
     cell_t return_stack[STACK_SIZE];
     int dsp;  /* Data stack pointer */
     int rsp;  /* Return stack pointer */
-    
+
     /* Dictionary */
-    uint8_t *memory;            /* CHANGE: pointer instead of array */
+    uint8_t *memory;            /* Dynamically allocated memory */
     size_t here;                /* Next free memory location */
     DictEntry *latest;          /* Most recent word */
-    
+
     /* Input system */
     char input_buffer[INPUT_BUFFER_SIZE];
     size_t input_length;
     size_t input_pos;
-    
+
     /* Compiler state */
     vm_mode_t mode;
     DictEntry *compiling_word;  /* Word being compiled */
 
     /* Compilation system */
     char current_word_name[WORD_NAME_MAX + 1];  /* Name of word being compiled */
-    cell_t *compile_buffer;                     /* Compilation buffer pointer */
+    cell_t compile_buffer[COMPILE_BUFFER_SIZE]; /* Fixed-size compilation buffer */
     size_t compile_pos;                         /* Current position in compile buffer */
     size_t compile_size;                        /* Size of compile buffer */
-    
+
     /* FORTH-79 Dictionary manipulation support */
     cell_t state_var;           /* STATE variable for compilation state */
-    
+
     /* VM state */
     int error;
     int halted;
-    
+
     /* Block storage pointer (from io.c) */
     unsigned char *blocks;
-    
+
 } VM;
 
 /* Core VM functions */
@@ -131,5 +131,8 @@ void vm_run_smoke_tests(VM *vm);
 
 /* Add cleanup function declaration */
 void vm_cleanup(VM *vm);
+
+/* Forward declaration for defining words */
+void execute_defining_word(VM *vm, DictEntry *entry);
 
 #endif /* VM_H */
