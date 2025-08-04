@@ -1,0 +1,37 @@
+/*
+
+  * Copyright (c) 2025 Robert A. James - StarshipOS Forth Project.
+  *
+  * This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  * To the extent possible under law, the author(s) have dedicated all copyright and related
+  * and neighboring rights to this software to the public domain worldwide.
+  * This software is distributed without any warranty.
+  *
+  * See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+ */
+
+#ifndef LOGICAL_WORDS_H
+#define LOGICAL_WORDS_H
+
+#include "../../../include/vm.h"
+
+/* FORTH-79 Logical & Comparison Words:
+ * AND       ( n1 n2 -- n3 )             Bitwise AND
+ * OR        ( n1 n2 -- n3 )             Bitwise OR
+ * XOR       ( n1 n2 -- n3 )             Bitwise XOR
+ * NOT       ( n1 -- n2 )                Bitwise NOT
+ * 0=        ( n -- flag )               True if n is zero
+ * 0<        ( n -- flag )               True if n is negative
+ * 0>        ( n -- flag )               True if n is positive
+ * =         ( n1 n2 -- flag )           True if n1 equals n2
+ * <         ( n1 n2 -- flag )           True if n1 < n2
+ * >         ( n1 n2 -- flag )           True if n1 > n2
+ * U<        ( u1 u2 -- flag )           True if u1 < u2 (unsigned)
+ * U>        ( u1 u2 -- flag )           True if u1 > u2 (unsigned)
+ * WITHIN    ( n low high -- flag )      True if low <= n < high
+ */
+
+void register_logical_words(VM *vm);
+
+#endif /* LOGICAL_WORDS_H */

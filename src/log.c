@@ -1,0 +1,107 @@
+/*
+
+  * Copyright (c) 2025 Robert A. James - StarshipOS Forth Project.
+  *
+  * This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  * To the extent possible under law, the author(s) have dedicated all copyright and related
+  * and neighboring rights to this software to the public domain worldwide.
+  * This software is distributed without any warranty.
+  *
+  * See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+ */
+
+#include "log.h"
+#include <stdarg.h>
+#include <time.h>
+
+static LogLevel current_level = LOG_INFO;
+
+/* Level name strings */
+static const char *level_names[] = {
+    "ERROR",
+    "WARN",
+    "INFO",
+    "DEBUG"
+};
+
+/* ANSI color codes */
+static const char *level_colors[] = {
+    "\x1b[31m", /* ERROR - Red */
+    "\x1b[33m", /* WARN  - Yellow */
+    "\x1b[32m", /* INFO  - Green */
+    "\x1b[34m"  /* DEBUG - Blue */
+};
+
+/* Test result colors */
+static const char *test_pass_color = "\x1b[32m";    /* Green */
+static const char *test_fail_color = "\x1b[31m";    /* Red */
+static const char *test_skip_color = "\x1b[33m";    /* Yellow/Orange */
+
+static const char *color_reset = "\x1b[0m";
+
+void log_set_level(LogLevel level) {
+    current_level = level;
+}
+
+static void get_timestamp(char *buffer, size_t size) {
+    time_t now = time(NULL);
+    struct tm *tm_info = localtime(&now);
+    strftime(buffer, size, "%H:%M:%S", tm_info);
+}
+
+void log_message(LogLevel level, const char *fmt, ...) {
+    if (level > current_level)
+        return;
+
+    char timestamp[16];
+    get_timestamp(timestamp, sizeof(timestamp));
+
+    fprintf(stderr, "%s[%s] %s: %s", level_colors[level], timestamp, level_names[level], color_reset);
+
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+
+    fprintf(stderr, "\n");
+}
+
+void log_test_result(const char *word_name, TestResult result) {
+    if (LOG_DEBUG > current_level)
+        return;
+
+    char timestamp[16];
+    get_timestamp(timestamp, sizeof(timestamp));
+
+    const char *color;
+    const char *status;
+    
+    switch (result) {
+        case TEST_PASS:
+            color = test_pass_color;
+            status = "PASS";
+            break;
+        case TEST_FAIL:
+            color = test_fail_color;
+            status = "FAIL";
+            break;
+        case TEST_SKIP:
+            color = test_skip_color;
+            status = "SKIP";
+            break;
+        default:
+            color = color_reset;
+            status = "????";
+            break;
+    }
+
+    fprintf(stderr, "\x1b[34m[%s] DEBUG: %sTesting %-12s ... %s%s%s\n", 
+            timestamp, color_reset, word_name, color, status, color_reset);
+}
+
+
+/* Add this function to your existing log.c */
+LogLevel log_get_level(void) {
+    return current_level;
+}
