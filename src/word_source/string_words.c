@@ -65,29 +65,35 @@ static int convert_string_to_number(const char *str, size_t len, cell_t *result)
 
 /* COUNT ( addr1 -- addr2 u )  Get string length and address */
 void word_count(VM *vm) {
-    cell_t addr1;
-    uint8_t *ptr;
-    uint8_t count;
-    
     if (vm->dsp < 0) {
+        log_message(LOG_ERROR, "COUNT: Data stack underflow");
         vm->error = 1;
         return;
     }
-    
-    addr1 = vm_pop(vm);
-    ptr = (uint8_t*)(uintptr_t)addr1;
-    
-    if (ptr == NULL) {
+
+    cell_t addr1 = vm_pop(vm);
+
+    // Add bounds checking
+    if (addr1 < 0 || addr1 >= VM_MEMORY_SIZE) {
+        log_message(LOG_ERROR, "COUNT: Address %ld out of bounds", (long)addr1);
         vm->error = 1;
         return;
     }
-    
-    /* First byte is the count */
-    count = *ptr;
-    
-    /* Push address of string data and count */
+
+    // Get count from first byte
+    uint8_t count = vm->memory[addr1];
+
+    // Check if count would exceed memory bounds
+    if (addr1 + 1 + count > VM_MEMORY_SIZE) {
+        log_message(LOG_ERROR, "COUNT: String extends beyond memory bounds");
+        vm->error = 1;
+        return;
+    }
+
     vm_push(vm, addr1 + 1);          /* addr2 - skip count byte */
     vm_push(vm, (cell_t)count);      /* u - length */
+
+    log_message(LOG_DEBUG, "COUNT: addr=%ld length=%d", (long)addr1, (int)count);
 }
 
 /* EXPECT ( addr u -- )  Accept input line */

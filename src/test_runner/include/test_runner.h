@@ -40,6 +40,20 @@ void run_stack_words_tests(VM *vm);
 void run_return_stack_words_tests(VM *vm);
 void run_memory_words_tests(VM *vm);
 void run_arithmetic_words_tests(VM *vm);
+void run_logical_words_tests(VM *vm);
+void run_mixed_arithmetic_words_tests(VM *vm);
+void run_double_words_tests(VM *vm);
+void run_dictionary_words_tests(VM *vm);
+void run_io_words_tests(VM *vm);
+void run_format_words_tests(VM *vm);
+void run_string_words_tests(VM *vm);
+void run_dictionary_manipulation_words_tests(VM *vm);
+void run_vocabulary_words_tests(VM *vm);
+void run_block_words_tests(VM *vm);
+void run_editor_words_tests(VM *vm);
+void run_system_words_tests(VM *vm);
+void run_defining_words_tests(VM *vm);
+void run_control_words_tests(VM *vm);
 
 /* Add benchmark mode support */
 void enable_benchmark_mode(int iterations);

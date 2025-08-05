@@ -9,10 +9,13 @@
  * See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
  */
 
+#include "../../include/vm.h"
 #include "include/test_common.h"
-#include "include/test_runner.h"
-#include "../include/log.h"
+#include "../../include/log.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+#include "test_runner.h"
 
 /* Run a single test case */
 TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test) {
@@ -65,7 +68,12 @@ TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test) 
     
     /* Restore VM state */
     restore_vm_state(vm, saved_dsp, saved_rsp, saved_error, saved_mode);
-    
+    if (result == TEST_FAIL) {
+        log_message(LOG_ERROR, "\nTest failed: %s.%s", word_name, test->name);
+        log_message(LOG_ERROR, "Input: %s", test->input);
+        log_message(LOG_ERROR, "Expected: %s", test->expected);
+        exit(1);  // Immediate exit on first failure
+    }
     return result;
 }
 

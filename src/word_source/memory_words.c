@@ -13,30 +13,61 @@
 #define MEMORY_TEST_SIZE  4096    /* Use 4KB for our memory testing playground */
 
 /* ! ( n addr -- ) Store n at addr */
+/* ! ( n addr -- ) Store n at addr */
 static void forth_store(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "!: Data stack underflow");
+        vm->error = 1;
         return;
     }
-    
+
     cell_t addr = vm_pop(vm);
     cell_t value = vm_pop(vm);
-    
-    /* Store directly in VM memory at safe offset */
-    *(cell_t*)(vm->memory + addr) = value;
+
+    if (addr < 0 || addr >= (VM_MEMORY_SIZE - sizeof(cell_t))) {
+        log_message(LOG_ERROR, "!: Address %ld out of bounds", (long)addr);
+        vm->error = 1;
+        return;
+    }
+
+    if (addr % sizeof(cell_t) != 0) {
+        log_message(LOG_ERROR, "!: Misaligned address %ld (sizeof(cell_t)=%zu, addr %% %zu = %ld)",
+                    (long)addr, sizeof(cell_t), sizeof(cell_t), (long)(addr % sizeof(cell_t)));
+        vm->error = 1;
+        return;
+    }
+
+    *(cell_t*)(&vm->memory[addr]) = value;
     log_message(LOG_DEBUG, "!: Stored %ld at address %ld", (long)value, (long)addr);
 }
+
 
 /* @ ( addr -- n ) Fetch n from addr */
 static void forth_fetch(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "@: Data stack underflow");
+        vm->error = 1;
         return;
     }
-    
+
     cell_t addr = vm_pop(vm);
-    
-    cell_t value = *(cell_t*)(vm->memory + addr);
+
+    // Add bounds checking
+    if (addr < 0 || addr >= (VM_MEMORY_SIZE - sizeof(cell_t))) {
+        log_message(LOG_ERROR, "@: Address %ld out of bounds", (long)addr);
+        vm->error = 1;
+        return;
+    }
+
+    // Enhanced alignment check with debugging
+    if (addr % sizeof(cell_t) != 0) {
+        log_message(LOG_ERROR, "@: Misaligned address %ld (sizeof(cell_t)=%zu, addr %% %zu = %ld)",
+                    (long)addr, sizeof(cell_t), sizeof(cell_t), (long)(addr % sizeof(cell_t)));
+        vm->error = 1;
+        return;
+    }
+
+    cell_t value = *(cell_t*)(&vm->memory[addr]);
     vm_push(vm, value);
     log_message(LOG_DEBUG, "@: Fetched %ld from address %ld", (long)value, (long)addr);
 }
@@ -45,12 +76,20 @@ static void forth_fetch(VM *vm) {
 static void forth_c_store(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "C!: Data stack underflow");
+        vm->error = 1;
         return;
     }
-    
+
     cell_t addr = vm_pop(vm);
     cell_t ch = vm_pop(vm);
-    
+
+    // Add bounds checking
+    if (addr < 0 || addr >= VM_MEMORY_SIZE) {
+        log_message(LOG_ERROR, "C!: Address %ld out of bounds", (long)addr);
+        vm->error = 1;
+        return;
+    }
+
     vm->memory[addr] = (unsigned char)(ch & 0xFF);
     log_message(LOG_DEBUG, "C!: Stored char %d at address %ld", (int)(ch & 0xFF), (long)addr);
 }
@@ -59,11 +98,19 @@ static void forth_c_store(VM *vm) {
 static void forth_c_fetch(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "C@: Data stack underflow");
+        vm->error = 1;
         return;
     }
-    
+
     cell_t addr = vm_pop(vm);
-    
+
+    // Add bounds checking
+    if (addr < 0 || addr >= VM_MEMORY_SIZE) {
+        log_message(LOG_ERROR, "C@: Address %ld out of bounds", (long)addr);
+        vm->error = 1;
+        return;
+    }
+
     cell_t ch = vm->memory[addr];
     vm_push(vm, ch);
     log_message(LOG_DEBUG, "C@: Fetched char %ld from address %ld", (long)ch, (long)addr);
@@ -73,16 +120,31 @@ static void forth_c_fetch(VM *vm) {
 static void forth_plus_store(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "+!: Data stack underflow");
+        vm->error = 1;
         return;
     }
-    
+
     cell_t addr = vm_pop(vm);
     cell_t n = vm_pop(vm);
-    
-    cell_t *ptr = (cell_t*)(vm->memory + addr);
+
+    // Add bounds checking
+    if (addr < 0 || addr >= (VM_MEMORY_SIZE - sizeof(cell_t))) {
+        log_message(LOG_ERROR, "+!: Address %ld out of bounds", (long)addr);
+        vm->error = 1;
+        return;
+    }
+
+    // Alignment check for cell_t access
+    if (addr % sizeof(cell_t) != 0) {
+        log_message(LOG_ERROR, "+!: Misaligned address %ld", (long)addr);
+        vm->error = 1;
+        return;
+    }
+
+    cell_t *ptr = (cell_t*)(&vm->memory[addr]);
     cell_t old_val = *ptr;
     *ptr += n;
-    log_message(LOG_DEBUG, "+!: Added %ld to addr %ld (%ld -> %ld)", 
+    log_message(LOG_DEBUG, "+!: Added %ld to addr %ld (%ld -> %ld)",
                 (long)n, (long)addr, (long)old_val, (long)*ptr);
 }
 
@@ -90,20 +152,23 @@ static void forth_plus_store(VM *vm) {
 static void forth_fill(VM *vm) {
     if (vm->dsp < 2) {
         log_message(LOG_ERROR, "FILL: Data stack underflow");
+        vm->error = 1;
         return;
     }
-    
+
     cell_t ch = vm_pop(vm);
     cell_t count = vm_pop(vm);
     cell_t addr = vm_pop(vm);
-    
-    if (count < 0) {
-        log_message(LOG_ERROR, "FILL: Invalid count %ld", (long)count);
+
+    // Add bounds checking
+    if (addr < 0 || count < 0 || (addr + count) > VM_MEMORY_SIZE) {
+        log_message(LOG_ERROR, "FILL: Invalid range [%ld, %ld)", (long)addr, (long)(addr + count));
+        vm->error = 1;
         return;
     }
-    
-    memset(vm->memory + addr, ch & 0xFF, count);
-    log_message(LOG_DEBUG, "FILL: Filled %ld bytes at %ld with %d", 
+
+    memset(&vm->memory[addr], ch & 0xFF, count);
+    log_message(LOG_DEBUG, "FILL: Filled %ld bytes at %ld with %d",
                 (long)count, (long)addr, (int)(ch & 0xFF));
 }
 
@@ -111,24 +176,27 @@ static void forth_fill(VM *vm) {
 static void forth_erase(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "ERASE: Data stack underflow");
+        vm->error = 1;
         return;
     }
-    
+
     cell_t count = vm_pop(vm);
     cell_t addr = vm_pop(vm);
-    
-    if (count < 0) {
-        log_message(LOG_ERROR, "ERASE: Invalid count %ld", (long)count);
+
+    // Add bounds checking
+    if (addr < 0 || count < 0 || (addr + count) > VM_MEMORY_SIZE) {
+        log_message(LOG_ERROR, "ERASE: Invalid range [%ld, %ld)", (long)addr, (long)(addr + count));
+        vm->error = 1;
         return;
     }
-    
-    memset(vm->memory + addr, 0, count);
+
+    memset(&vm->memory[addr], 0, count);
     log_message(LOG_DEBUG, "ERASE: Erased %ld bytes at %ld", (long)count, (long)addr);
 }
 
 void register_memory_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 memory words...");
-    
+
     /* Register basic memory words */
     register_word(vm, "!", forth_store);
     register_word(vm, "@", forth_fetch);

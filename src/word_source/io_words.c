@@ -59,20 +59,28 @@ static void word_question_terminal(VM *vm) {
 /* TYPE ( addr u -- ) - Output u characters from addr */
 static void word_type(VM *vm) {
     if (vm->dsp < 1) {
+        log_message(LOG_ERROR, "TYPE: Data stack underflow");
         vm->error = 1;
         return;
     }
-    
-    cell_t count = vm->data_stack[vm->dsp--];
-    cell_t addr = vm->data_stack[vm->dsp--];
-    
-    if (count < 0) return;
-    
-    const char *str = (const char *)(uintptr_t)addr;
+
+    cell_t count = vm_pop(vm);
+    cell_t addr = vm_pop(vm);
+
+    // Add bounds checking
+    if (addr < 0 || count < 0 || (addr + count) > VM_MEMORY_SIZE) {
+        log_message(LOG_ERROR, "TYPE: Invalid range [%ld, %ld)", (long)addr, (long)(addr + count));
+        vm->error = 1;
+        return;
+    }
+
+    // Output characters from VM memory
     for (cell_t i = 0; i < count; i++) {
-        putchar(str[i]);
+        putchar(vm->memory[addr + i]);
     }
     fflush(stdout);
+
+    log_message(LOG_DEBUG, "TYPE: Output %ld characters from address %ld", (long)count, (long)addr);
 }
 
 /* SPACE ( -- ) - Output one space */

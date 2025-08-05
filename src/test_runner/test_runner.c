@@ -46,25 +46,24 @@ static uint64_t get_time_ns(void) {
 
 /* Test modules in dependency order - matches your word registration order */
 static TestModule test_modules[] = {
-    {"Stack Words", NULL, 0, run_stack_words_tests},                      /* Module 1: Foundation */
+    {"Stack Words", NULL, 0, run_stack_words_tests},                      /* Module 1 */
     {"Return Stack Words", NULL, 0, run_return_stack_words_tests},        /* Module 2 */
     {"Memory Words", NULL, 0, run_memory_words_tests},                    /* Module 3 */
-    /* TODO: Implement these test modules */
-    /* {"Dictionary Words", NULL, 0, run_dictionary_words_tests}, */            /* Module 4 */
+    {"Dictionary Words", NULL, 0, run_dictionary_words_tests},            /* Module 4 */
     {"Arithmetic Words", NULL, 0, run_arithmetic_words_tests},            /* Module 5 */
-    /* {"Double Words", NULL, 0, run_double_words_tests}, */                    /* Module 6 */
-    /* {"Mixed Arithmetic Words", NULL, 0, run_mixed_arithmetic_words_tests}, */ /* Module 7 */
-    /* {"Logical Words", NULL, 0, run_logical_words_tests}, */                  /* Module 8 */
-    /* {"I/O Words", NULL, 0, run_io_words_tests}, */                          /* Module 9 */
-    /* {"Format Words", NULL, 0, run_format_words_tests}, */                   /* Module 10 */
-    /* {"String Words", NULL, 0, run_string_words_tests}, */                   /* Module 11 */
-    /* {"Control Words", NULL, 0, run_control_words_tests}, */                 /* Module 12 */
-    /* {"Defining Words", NULL, 0, run_defining_words_tests}, */               /* Module 13 */
-    /* {"Dictionary Manipulation Words", NULL, 0, run_dictionary_manipulation_words_tests}, */ /* Module 14 - MISSING */
-    /* {"Vocabulary Words", NULL, 0, run_vocabulary_words_tests}, */           /* Module 15 - MISSING */
-    /* {"Block Words", NULL, 0, run_block_words_tests}, */                     /* Module 16 - MISSING */
-    /* {"Editor Words", NULL, 0, run_editor_words_tests}, */                   /* Module 17 - MISSING */
-    /* {"System Words", NULL, 0, run_system_words_tests}, */                   /* Module 18 - MISSING */
+    {"Double Words", NULL, 0, run_double_words_tests},                    /* Module 6 */
+    {"Mixed Arithmetic Words", NULL, 0, run_mixed_arithmetic_words_tests},/* Module 7 */
+    {"Logical Words", NULL, 0, run_logical_words_tests},                  /* Module 8 */
+    {"I/O Words", NULL, 0, run_io_words_tests},                           /* Module 9 */
+    {"Format Words", NULL, 0, run_format_words_tests},                   /* Module 10 */
+    {"String Words", NULL, 0, run_string_words_tests},                   /* Module 11 */
+    {"Dictionary Manipulation Words", NULL, 0, run_dictionary_manipulation_words_tests}, /* Module 14 - MISSING */
+    {"Vocabulary Words", NULL, 0, run_vocabulary_words_tests},           /* Module 15 - MISSING */
+    {"Block Words", NULL, 0, run_block_words_tests},                     /* Module 16 - MISSING */
+    {"Editor Words", NULL, 0, run_editor_words_tests},                   /* Module 17 - MISSING */
+    {"System Words", NULL, 0, run_system_words_tests},                   /* Module 18 - MISSING */
+    {"Defining Words", NULL, 0, run_defining_words_tests},               /* Module 13 */
+    {"Control Words", NULL, 0, run_control_words_tests},                 /* Module 12 */
     {NULL, NULL, 0, NULL}  /* End marker */
 };
 

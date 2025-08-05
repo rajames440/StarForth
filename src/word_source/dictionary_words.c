@@ -18,6 +18,8 @@
 
 /* HERE ( -- addr )  Address of next free dictionary space */
 void word_here(VM *vm) {
+    /* Ensure dictionary is aligned before returning the address */
+    vm_align(vm);
     vm_push(vm, vm->here);  /* VM memory offset */
 }
 
@@ -47,25 +49,29 @@ void word_allot(VM *vm) {
 void word_comma(VM *vm) {
     cell_t n;
     cell_t *target;
-    
+
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
     }
-    
+
     n = vm_pop(vm);
-    
+
+    /* Ensure alignment before storing */
+    vm_align(vm);
+
     /* Check if we have space for a cell */
     if (vm->here + sizeof(cell_t) >= VM_MEMORY_SIZE) {
         vm->error = 1;  /* Out of memory */
         return;
     }
-    
+
     /* Store the cell value */
     target = (cell_t*)&vm->memory[vm->here];
     *target = n;
     vm->here += sizeof(cell_t);
-    vm_align(vm);
+
+    /* Alignment is already guaranteed since we aligned before and advanced by sizeof(cell_t) */
 }
 
 /* C, ( c -- )  Compile character into dictionary */

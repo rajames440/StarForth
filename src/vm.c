@@ -37,8 +37,18 @@ void vm_init(VM *vm) {
     vm->dsp = -1;   /* Data stack empty */
     vm->rsp = -1;   /* Return stack empty */
 
-    /* Initialize other fields */
+    /* Initialize other fields - ensure here starts aligned */
     vm->here = 0;   /* Start at beginning of allocated memory */
+
+    /* Ensure the memory buffer itself is aligned for our cell size */
+    /* If the malloc'd memory isn't aligned, adjust our starting position */
+    uintptr_t mem_addr = (uintptr_t)vm->memory;
+    size_t alignment_offset = (sizeof(cell_t) - (mem_addr % sizeof(cell_t))) % sizeof(cell_t);
+    vm->here = alignment_offset;
+
+    /* Now align the here pointer */
+    vm_align(vm);   /* Ensure initial alignment */
+
     vm->latest = NULL;
     vm->mode = MODE_INTERPRET;
     vm->compiling_word = NULL;
@@ -56,7 +66,8 @@ void vm_init(VM *vm) {
     /* Initialize current executing entry */
     vm->current_executing_entry = NULL;
 
-    log_message(LOG_DEBUG, "VM initialized - memory=%p", (void*)vm->memory);
+    log_message(LOG_DEBUG, "VM initialized - memory=%p, here=%zu (aligned), cell_size=%zu",
+                (void*)vm->memory, vm->here, sizeof(cell_t));
 
     /* Register all FORTH-79 standard words at the end of initialization */
     register_forth79_words(vm);
