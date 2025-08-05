@@ -110,7 +110,7 @@ Each file registers its own words via the `word_registry.c` mechanism at startup
 
 ## 🛡️ License
 
-Apache License 2.0 — see `LICENSE` file for details.
+Creative Commons 1.0 — see `LICENSE` file for details.
 
 ---
 
