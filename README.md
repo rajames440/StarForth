@@ -22,29 +22,86 @@
 ## 🗂️ Project Structure
 
 ```text
-StarForth/
-├── Makefile                  # Build script
-├── build/                    # Output artifacts
-├── include/                 # Header files for all subsystems
-│   ├── io.h
-│   ├── log.h
-│   ├── vm.h
-│   └── word_registry.h
-└── src/                     # C source files
-    ├── main.c               # Entry point (REPL)
-    ├── vm.c / io.c / log.c
-    ├── word_registry.c      # Central registry of Forth words
-    ├── test/                # Testing logic
-    └── word_source/         # Modular Forth word implementations
-        ├── arithmetic_words.c
-        ├── block_words.c
-        ├── dictionary_words.c
-        ├── editor_words.c
-        ├── io_words.c
-        ├── logical_words.c
-        ├── memory_words.c
-        ├── return_stack_words.c
-        └── ...many more
+.
+├── build
+├── include
+│   ├── io.h
+│   ├── log.h
+│   ├── vm.h
+│   └── word_registry.h
+├── LICENSE
+├── Makefile
+├── README.md
+├── src
+│   ├── io.c
+│   ├── log.c
+│   ├── main.c
+│   ├── test_runner
+│   │   ├── include
+│   │   │   ├── test_common.h
+│   │   │   └── test_runner.h
+│   │   ├── modules
+│   │   │   ├── arithmetic_words_test.c
+│   │   │   ├── block_words_test.c
+│   │   │   ├── control_words_test.c
+│   │   │   ├── defining_words_tests.c
+│   │   │   ├── dictionary_manipulation_words_test.c
+│   │   │   ├── dictionary_words_test.c
+│   │   │   ├── double_words_test.c
+│   │   │   ├── editor_words_test.c
+│   │   │   ├── format_words_test.c
+│   │   │   ├── io_words_test.c
+│   │   │   ├── logical_words_test.c
+│   │   │   ├── memory_words_test.c
+│   │   │   ├── mixed_arithmetic_words_test.c
+│   │   │   ├── return_stack_words_test.c
+│   │   │   ├── stack_words_test.c
+│   │   │   ├── string_words_test.c
+│   │   │   ├── system_words_test.c
+│   │   │   └── vocabulary_words.c
+│   │   ├── test_common.c
+│   │   └── test_runner.c
+│   ├── vm.c
+│   ├── word_registry.c
+│   └── word_source
+│       ├── arithmetic_words.c
+│       ├── block_words.c
+│       ├── control_words.c
+│       ├── defining_words.c
+│       ├── dictionary_manipulation_words.c
+│       ├── dictionary_words.c
+│       ├── double_words.c
+│       ├── editor_words.c
+│       ├── format_words.c
+│       ├── include
+│       │   ├── arithmetic_words.h
+│       │   ├── block_words.h
+│       │   ├── control_words.h
+│       │   ├── defining_words.h
+│       │   ├── dictionary_manipulation_words.h
+│       │   ├── dictionary_words.h
+│       │   ├── double_words.h
+│       │   ├── editor_words.h
+│       │   ├── format_words.h
+│       │   ├── io_words.h
+│       │   ├── logical_words.h
+│       │   ├── memory_words.h
+│       │   ├── mixed_arithmetic_words.h
+│       │   ├── return_stack_words.h
+│       │   ├── stack_words.h
+│       │   ├── string_words.h
+│       │   ├── system_words.h
+│       │   └── vocabulary_words.h
+│       ├── io_words.c
+│       ├── logical_words.c
+│       ├── memory_words.c
+│       ├── mixed_arithmetic_words.c
+│       ├── return_stack_words.c
+│       ├── stack_words.c
+│       ├── string_words.c
+│       ├── system_words.c
+│       └── vocabulary_words.c
+└── TESTING.md
 ```
 
 ---
