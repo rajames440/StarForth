@@ -25,13 +25,13 @@ static int forth_79_standard = 1;       /* FORTH-79 standard compliance */
 static void print_word_name(const DictEntry *entry) {
     size_t i;
     size_t name_len;
-    
+
     if (entry == NULL) {
         return;
     }
-    
+
     name_len = entry->name_len;
-    
+
     for (i = 0; i < name_len; i++) {
         printf("%c", entry->name[i]);
     }
@@ -42,13 +42,13 @@ static void reset_vm_state(VM *vm, int cold_start) {
     /* Reset stacks */
     vm->dsp = -1;
     vm->rsp = -1;
-    
+
     /* Clear error state */
     vm->error = 0;
-    
+
     /* Set interpretation mode */
     vm->mode = MODE_INTERPRET;
-    
+
     if (cold_start) {
         /* Cold start - reset dictionary to initial state */
         /* In a full implementation, this would restore the base dictionary */
@@ -57,9 +57,44 @@ static void reset_vm_state(VM *vm, int cold_start) {
             vm->here = 1024;
         }
     }
-    
+
     /* Reset system running flag */
     system_running = 1;
+}
+
+/* EXIT ( -- ) Exit from colon definition */
+static void forth_exit(VM *vm) {
+    /* EXIT is handled by the threaded code interpreter */
+    /* This should never actually execute in normal operation */
+    /* It's just a marker for the threaded code system */
+    log_message(LOG_DEBUG, "EXIT executed");
+    (void)vm;  /* Suppress unused parameter warning */
+}
+
+/* ( ( -- ) Begin comment - skip to closing ) */
+static void forth_paren(VM *vm) {
+    char word[64];
+    int paren_depth = 1;
+
+    log_message(LOG_DEBUG, "( Starting comment");
+
+    /* Parse words until we find the closing ) */
+    while (paren_depth > 0 && vm_parse_word(vm, word, sizeof(word))) {
+        if (strcmp(word, "(") == 0) {
+            paren_depth++;
+            log_message(LOG_DEBUG, "( Nested comment start, depth=%d", paren_depth);
+        } else if (strcmp(word, ")") == 0) {
+            paren_depth--;
+            log_message(LOG_DEBUG, "( Comment end, depth=%d", paren_depth);
+        }
+        /* All other words are ignored (commented out) */
+    }
+
+    if (paren_depth > 0) {
+        log_message(LOG_WARN, "( Unterminated comment");
+    }
+
+    log_message(LOG_DEBUG, "( Comment completed");
 }
 
 /* COLD ( -- )  Cold start system */
@@ -87,9 +122,9 @@ void word_bye(VM *vm) {
 void word_save_system(VM *vm) {
     FILE *save_file;
     size_t bytes_written;
-    
+
     printf("Saving system image...\n");
-    
+
     /* Attempt to save basic VM state to a file */
     save_file = fopen("forth_system.img", "wb");
     if (save_file == NULL) {
@@ -97,7 +132,7 @@ void word_save_system(VM *vm) {
         vm->error = 1;
         return;
     }
-    
+
     /* Save basic VM state */
     bytes_written = fwrite(&vm->here, sizeof(vm->here), 1, save_file);
     if (bytes_written != 1) {
@@ -106,7 +141,7 @@ void word_save_system(VM *vm) {
         vm->error = 1;
         return;
     }
-    
+
     /* Save memory (simplified - in real implementation would save dictionary) */
     bytes_written = fwrite(vm->memory, 1, vm->here, save_file);
     if (bytes_written != vm->here) {
@@ -115,7 +150,7 @@ void word_save_system(VM *vm) {
         vm->error = 1;
         return;
     }
-    
+
     fclose(save_file);
     printf("System image saved successfully\n");
 }
@@ -125,33 +160,33 @@ void word_words(VM *vm) {
     DictEntry *entry;
     int word_count;
     int words_per_line;
-    
+
     printf("Words in current vocabulary:\n");
-    
+
     entry = vm->latest;
     word_count = 0;
     words_per_line = 0;
-    
+
     while (entry != NULL) {
         print_word_name(entry);
         printf(" ");
-        
+
         word_count++;
         words_per_line++;
-        
+
         /* Print 8 words per line for readability */
         if (words_per_line >= 8) {
             printf("\n");
             words_per_line = 0;
         }
-        
+
         entry = entry->link;
     }
-    
+
     if (words_per_line > 0) {
         printf("\n");
     }
-    
+
     printf("Total: %d words\n", word_count);
 }
 
@@ -159,18 +194,18 @@ void word_words(VM *vm) {
 void word_vlist(VM *vm) {
     DictEntry *entry;
     int word_count;
-    
+
     printf("Complete vocabulary listing:\n");
     printf("Name                 Address    Flags\n");
     printf("-------------------- ---------- -----\n");
-    
+
     entry = vm->latest;
     word_count = 0;
-    
+
     while (entry != NULL) {
         /* Print name (padded to 20 characters) */
         print_word_name(entry);
-        
+
         /* Pad name to 20 characters */
         if (entry->name_len < 20) {
             size_t padding;
@@ -180,14 +215,14 @@ void word_vlist(VM *vm) {
                 padding--;
             }
         }
-        
+
         /* Print address and flags */
         printf(" %p %02X\n", (void*)entry, entry->flags);
-        
+
         word_count++;
         entry = entry->link;
     }
-    
+
     printf("Total: %d words\n", word_count);
 }
 
@@ -195,20 +230,20 @@ void word_vlist(VM *vm) {
 void word_question_stack(VM *vm) {
     printf("Data stack depth: %d\n", vm->dsp + 1);
     printf("Return stack depth: %d\n", vm->rsp + 1);
-    
+
     /* Check for stack underflow/overflow */
     if (vm->dsp < -1) {
         printf("WARNING: Data stack underflow!\n");
     } else if (vm->dsp >= STACK_SIZE - 1) {
         printf("WARNING: Data stack overflow!\n");
     }
-    
+
     if (vm->rsp < -1) {
         printf("WARNING: Return stack underflow!\n");
     } else if (vm->rsp >= STACK_SIZE - 1) {
         printf("WARNING: Return stack overflow!\n");
     }
-    
+
     /* Print stack contents if not empty */
     if (vm->dsp >= 0) {
         int i;
@@ -242,7 +277,7 @@ void word_79_standard(VM *vm) {
         printf("FORTH-79 Standard compliance: INACTIVE\n");
         printf("System may have extensions or modifications\n");
     }
-    
+
     /* Push compliance flag onto stack */
     vm_push(vm, forth_79_standard ? -1 : 0);
 }
@@ -260,7 +295,14 @@ void set_forth_79_compliance(int enabled) {
 /* FORTH-79 System Word Registration and Testing */
 void register_system_words(VM *vm) {
     log_message(LOG_INFO, "Registering system & environment words...");
-    
+
+    /* Register EXIT first - needed by colon definitions */
+    register_word(vm, "EXIT", forth_exit);
+
+    /* Register comment support */
+    register_word(vm, "(", forth_paren);
+    vm_make_immediate(vm);  /* Make ( immediate so it works in compile mode */
+
     /* Register all system & environment words */
     register_word(vm, "COLD", word_cold);
     register_word(vm, "WARM", word_warm);
@@ -273,5 +315,5 @@ void register_system_words(VM *vm) {
     register_word(vm, "NOP", word_nop);
     register_word(vm, "79-STANDARD", word_79_standard);
 
-    log_message(LOG_INFO, "Note: WORDS, VLIST, PAGE, and SAVE-SYSTEM require manual verification");
+    log_message(LOG_INFO, "System words registered successfully (including EXIT and comments)");
 }

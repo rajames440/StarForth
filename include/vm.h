@@ -56,17 +56,17 @@ typedef struct VM {
     cell_t return_stack[STACK_SIZE];
     int dsp;  /* Data stack pointer */
     int rsp;  /* Return stack pointer */
-    
+
     /* Dictionary */
     uint8_t *memory;            /* CHANGE: pointer instead of array */
     size_t here;                /* Next free memory location */
     DictEntry *latest;          /* Most recent word */
-    
+
     /* Input system */
     char input_buffer[INPUT_BUFFER_SIZE];
     size_t input_length;
     size_t input_pos;
-    
+
     /* Compiler state */
     vm_mode_t mode;
     DictEntry *compiling_word;  /* Word being compiled */
@@ -76,17 +76,20 @@ typedef struct VM {
     cell_t *compile_buffer;                     /* Compilation buffer pointer */
     size_t compile_pos;                         /* Current position in compile buffer */
     size_t compile_size;                        /* Size of compile buffer */
-    
+
     /* FORTH-79 Dictionary manipulation support */
     cell_t state_var;           /* STATE variable for compilation state */
-    
+
+    /* ADD THIS LINE: */
+    DictEntry *current_executing_entry;         /* Current executing entry */
+
     /* VM state */
     int error;
     int halted;
-    
+
     /* Block storage pointer (from io.c) */
     unsigned char *blocks;
-    
+
 } VM;
 
 /* Core VM functions */
@@ -106,6 +109,11 @@ DictEntry* vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
 void vm_make_immediate(VM *vm);
 void vm_hide_word(VM *vm);
 void vm_smudge_word(VM *vm);        /* Added for FORTH-79 SMUDGE */
+
+/* Enhanced dictionary search functions */
+DictEntry* vm_dictionary_find_by_func(VM *vm, word_func_t func);
+DictEntry* vm_dictionary_find_latest_by_func(VM *vm, word_func_t func);
+cell_t* vm_dictionary_get_data_field(DictEntry *entry);
 
 /* Memory management */
 void* vm_allot(VM *vm, size_t bytes);
