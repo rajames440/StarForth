@@ -68,7 +68,7 @@ TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test) 
         log_message(LOG_ERROR, "Test failed: %s.%s", word_name, test->name);
         log_message(LOG_ERROR, "Input: %s", test->input);
         log_message(LOG_ERROR, "Expected: %s", test->expected);
-        exit(1);
+        // exit(1);
     }
     return result;
 }

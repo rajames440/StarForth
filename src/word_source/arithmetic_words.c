@@ -110,7 +110,7 @@ static void word_divide(VM *vm) {
 }
 
 /* MOD ( n1 n2 -- n3 ) n1 modulo n2 */
-static void word_mod(VM *vm) {
+static void mixed_math_word_mod(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "MOD: Stack underflow");
         vm->error = 1;
@@ -358,7 +358,7 @@ void register_arithmetic_words(VM *vm) {
     register_word(vm, "-", arithmetic_word_minus);
     register_word(vm, "*", arithmetic_word_multiply);
     register_word(vm, "/", word_divide);
-    register_word(vm, "MOD", word_mod);
+    register_word(vm, "MOD", mixed_math_word_mod);
     register_word(vm, "/MOD", word_divmod);
     
     /* Advanced arithmetic */

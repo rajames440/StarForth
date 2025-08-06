@@ -16,7 +16,7 @@
 #include <string.h>
 
 /* >R - Move item from data to return stack ( n -- ) ( R: -- n ) */
-static void word_to_r(VM *vm) {
+static void return_stack_word_to_r(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, ">R: Data stack underflow");
         vm->error = 1;
@@ -30,7 +30,7 @@ static void word_to_r(VM *vm) {
 }
 
 /* R> - Move item from return to data stack ( -- n ) ( R: n -- ) */
-static void word_r_from(VM *vm) {
+static void return_stack_word_r_from(VM *vm) {
     if (vm->rsp < 0) {
         log_message(LOG_ERROR, "R>: Return stack underflow");
         vm->error = 1;
@@ -44,7 +44,7 @@ static void word_r_from(VM *vm) {
 }
 
 /* R@ - Copy top of return stack to data stack ( -- n ) ( R: n -- n ) */
-static void word_r_fetch(VM *vm) {
+static void return_stack_word_r_fetch(VM *vm) {
     if (vm->rsp < 0) {
         log_message(LOG_ERROR, "R@: Return stack underflow");
         vm->error = 1;
@@ -58,7 +58,7 @@ static void word_r_fetch(VM *vm) {
 }
 
 /* RP! - Set return stack pointer ( addr -- ) */
-static void word_rp_store(VM *vm) {
+static void return_stack_word_rp_store(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "RP!: Data stack underflow");
         vm->error = 1;
@@ -80,7 +80,7 @@ static void word_rp_store(VM *vm) {
 }
 
 /* RP@ - Get return stack pointer ( -- addr ) */
-static void word_rp_fetch(VM *vm) {
+static void return_stack_word_rp_fetch(VM *vm) {
     vm_push(vm, (cell_t)vm->rsp);
     
     log_message(LOG_DEBUG, "RP@: Return stack pointer %d", vm->rsp);
@@ -89,37 +89,13 @@ static void word_rp_fetch(VM *vm) {
 /* Register all return stack operation words */
 void register_return_stack_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 return stack words...");
-    
-    /* Register words - vm_create_word returns DictEntry* or NULL */
-    if (!vm_create_word(vm, ">R", 2, word_to_r)) {
-        log_message(LOG_ERROR, "Failed to register >R");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: >R");
-    
-    if (!vm_create_word(vm, "R>", 2, word_r_from)) {
-        log_message(LOG_ERROR, "Failed to register R>");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: R>");
-    
-    if (!vm_create_word(vm, "R@", 2, word_r_fetch)) {
-        log_message(LOG_ERROR, "Failed to register R@");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: R@");
-    
-    if (!vm_create_word(vm, "RP!", 3, word_rp_store)) {
-        log_message(LOG_ERROR, "Failed to register RP!");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: RP!");
-    
-    if (!vm_create_word(vm, "RP@", 3, word_rp_fetch)) {
-        log_message(LOG_ERROR, "Failed to register RP@");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: RP@");
-    
+
+    register_word(vm, ">R", return_stack_word_to_r);
+    register_word(vm, "R>", return_stack_word_r_from);
+    register_word(vm, "R@", return_stack_word_r_fetch);
+    register_word(vm, "RP!", return_stack_word_rp_store);
+    register_word(vm, "RP@", return_stack_word_rp_fetch);
+
     log_message(LOG_INFO, "Return stack words registered successfully");
 }
+

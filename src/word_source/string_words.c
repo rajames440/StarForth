@@ -64,7 +64,7 @@ static int convert_string_to_number(const char *str, size_t len, cell_t *result)
 }
 
 /* COUNT ( addr1 -- addr2 u )  Get string length and address */
-void word_count(VM *vm) {
+void string_word_count(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "COUNT: Data stack underflow");
         vm->error = 1;
@@ -97,7 +97,7 @@ void word_count(VM *vm) {
 }
 
 /* EXPECT ( addr u -- )  Accept input line */
-void word_expect(VM *vm) {
+void string_word_expect(VM *vm) {
     cell_t u, addr;
     char *buffer;
     char *input;
@@ -140,12 +140,12 @@ void word_expect(VM *vm) {
 }
 
 /* SPAN ( -- addr )  Variable: number of characters input */
-void word_span(VM *vm) {
+void string_word_span(VM *vm) {
     vm_push(vm, (cell_t)(uintptr_t)&span_count);
 }
 
 /* QUERY ( -- )  Accept input into TIB */
-void word_query(VM *vm) {
+void string_word_query(VM *vm) {
     char *input;
     size_t len;
     
@@ -172,12 +172,12 @@ void word_query(VM *vm) {
 }
 
 /* TIB ( -- addr )  Terminal input buffer address */
-void word_tib(VM *vm) {
+void string_word_tib(VM *vm) {
     vm_push(vm, (cell_t)(uintptr_t)terminal_input_buffer);
 }
 
 /* WORD ( c -- addr )  Parse next word, delimited by c */
-void word_word(VM *vm) {
+void string_word_word(VM *vm) {
     cell_t c;
     char delimiter;
     size_t tib_len;
@@ -224,23 +224,23 @@ void word_word(VM *vm) {
 }
 
 /* >IN ( -- addr )  Input stream pointer */
-void word_to_in(VM *vm) {
+void string_word_to_in(VM *vm) {
     vm_push(vm, (cell_t)(uintptr_t)&input_pointer);
 }
 
 /* SOURCE ( -- addr u )  Input source specification */
-void word_source(VM *vm) {
+void string_word_source(VM *vm) {
     vm_push(vm, (cell_t)(uintptr_t)terminal_input_buffer);
     vm_push(vm, (cell_t)strlen(terminal_input_buffer));
 }
 
 /* BL ( -- c )  ASCII space character (32) */
-void word_bl(VM *vm) {
+void string_word_bl(VM *vm) {
     vm_push(vm, 32);  /* ASCII space */
 }
 
 /* FIND ( addr -- addr flag )  Find word in dictionary */
-void word_find(VM *vm) {
+void string_word_find(VM *vm) {
     cell_t addr;
     uint8_t *counted_str;
     uint8_t name_len;
@@ -276,10 +276,10 @@ void word_find(VM *vm) {
 }
 
 /* ' ( -- xt )  Get execution token of next word */
-void word_tick(VM *vm) {
+void string_word_tick(VM *vm) {
     vm_push(vm, 32);        /* BL - space delimiter */
-    word_word(vm);          /* Parse next word */
-    word_find(vm);          /* Find in dictionary */
+    string_word_word(vm);          /* Parse next word */
+    string_word_find(vm);          /* Find in dictionary */
     
     if (vm->error) return;
     
@@ -293,8 +293,8 @@ void word_tick(VM *vm) {
 }
 
 /* ['] ( -- xt )  Compile execution token (immediate) */
-void word_bracket_tick(VM *vm) {
-    word_tick(vm);  /* Get execution token */
+void string_word_bracket_tick(VM *vm) {
+    string_word_tick(vm);  /* Get execution token */
     if (vm->error) return;
     
     /* In a full implementation, this would compile LIT followed by the xt */
@@ -302,19 +302,19 @@ void word_bracket_tick(VM *vm) {
 }
 
 /* LITERAL ( n -- )  Compile literal number */
-void word_literal(VM *vm) {
+void string_word_literal(VM *vm) {
     /* In a full implementation, this would compile LIT followed by the number */
     /* For now, just leave the number on the stack */
     /* This is a compile-time word that should be used in definitions */
 }
 
 /* [LITERAL] ( n -- )  Compile literal at compile time (immediate) */
-void word_bracket_literal(VM *vm) {
-    word_literal(vm);
+void string_word_bracket_literal(VM *vm) {
+    string_word_literal(vm);
 }
 
 /* CONVERT ( d1 addr1 -- d2 addr2 )  Convert string to number */
-void word_convert(VM *vm) {
+void string_word_convert(VM *vm) {
     cell_t addr1, dlow, dhigh;
     char *str_ptr;
     char *end_ptr;
@@ -375,7 +375,7 @@ void word_convert(VM *vm) {
 }
 
 /* NUMBER ( addr -- n flag )  Convert string to single number */
-void word_number(VM *vm) {
+void string_word_number(VM *vm) {
     cell_t addr;
     uint8_t *counted_str;
     uint8_t str_len;
@@ -409,7 +409,7 @@ void word_number(VM *vm) {
 }
 
 /* ENCLOSE ( addr c -- addr1 n1 n2 n3 )  Parse for delimiter */
-void word_enclose(VM *vm) {
+void string_word_enclose(VM *vm) {
     cell_t c, addr;
     char delimiter;
     char *str;
@@ -465,23 +465,23 @@ void register_string_words(VM *vm) {
     log_message(LOG_INFO, "Registering string & text processing words...");
     
     /* Register all string & text processing words */
-    register_word(vm, "COUNT", word_count);
-    register_word(vm, "EXPECT", word_expect);
-    register_word(vm, "SPAN", word_span);
-    register_word(vm, "QUERY", word_query);
-    register_word(vm, "TIB", word_tib);
-    register_word(vm, "WORD", word_word);
-    register_word(vm, ">IN", word_to_in);
-    register_word(vm, "SOURCE", word_source);
-    register_word(vm, "BL", word_bl);
-    register_word(vm, "FIND", word_find);
-    register_word(vm, "'", word_tick);
-    register_word(vm, "[']", word_bracket_tick);
-    register_word(vm, "LITERAL", word_literal);
-    register_word(vm, "[LITERAL]", word_bracket_literal);
-    register_word(vm, "CONVERT", word_convert);
-    register_word(vm, "NUMBER", word_number);
-    register_word(vm, "ENCLOSE", word_enclose);
+    register_word(vm, "COUNT", string_word_count);
+    register_word(vm, "EXPECT", string_word_expect);
+    register_word(vm, "SPAN", string_word_span);
+    register_word(vm, "QUERY", string_word_query);
+    register_word(vm, "TIB", string_word_tib);
+    register_word(vm, "WORD", string_word_word);
+    register_word(vm, ">IN", string_word_to_in);
+    register_word(vm, "SOURCE", string_word_source);
+    register_word(vm, "BL", string_word_bl);
+    register_word(vm, "FIND", string_word_find);
+    register_word(vm, "'", string_word_tick);
+    register_word(vm, "[']", string_word_bracket_tick);
+    register_word(vm, "LITERAL", string_word_literal);
+    register_word(vm, "[LITERAL]", string_word_bracket_literal);
+    register_word(vm, "CONVERT", string_word_convert);
+    register_word(vm, "NUMBER", string_word_number);
+    register_word(vm, "ENCLOSE", string_word_enclose);
 
     log_message(LOG_INFO, "Note: Interactive words (EXPECT, QUERY, WORD) require manual testing");
 }

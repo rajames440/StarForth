@@ -14,7 +14,7 @@
 
 /* ! ( n addr -- ) Store n at addr */
 /* ! ( n addr -- ) Store n at addr */
-static void forth_store(VM *vm) {
+static void memory_store(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "!: Data stack underflow");
         vm->error = 1;
@@ -43,7 +43,7 @@ static void forth_store(VM *vm) {
 
 
 /* @ ( addr -- n ) Fetch n from addr */
-static void forth_fetch(VM *vm) {
+static void memory_fetch(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "@: Data stack underflow");
         vm->error = 1;
@@ -73,7 +73,7 @@ static void forth_fetch(VM *vm) {
 }
 
 /* C! ( c addr -- ) Store character at addr */
-static void forth_c_store(VM *vm) {
+static void memory_c_store(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "C!: Data stack underflow");
         vm->error = 1;
@@ -95,7 +95,7 @@ static void forth_c_store(VM *vm) {
 }
 
 /* C@ ( addr -- c ) Fetch character from addr */
-static void forth_c_fetch(VM *vm) {
+static void memory_c_fetch(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "C@: Data stack underflow");
         vm->error = 1;
@@ -117,7 +117,7 @@ static void forth_c_fetch(VM *vm) {
 }
 
 /* +! ( n addr -- ) Add n to value at addr */
-static void forth_plus_store(VM *vm) {
+static void memory_plus_store(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "+!: Data stack underflow");
         vm->error = 1;
@@ -149,7 +149,7 @@ static void forth_plus_store(VM *vm) {
 }
 
 /* FILL ( addr u c -- ) Fill u bytes at addr with c */
-static void forth_fill(VM *vm) {
+static void memory_fill(VM *vm) {
     if (vm->dsp < 2) {
         log_message(LOG_ERROR, "FILL: Data stack underflow");
         vm->error = 1;
@@ -173,7 +173,7 @@ static void forth_fill(VM *vm) {
 }
 
 /* ERASE ( addr u -- ) Fill u bytes at addr with zeros */
-static void forth_erase(VM *vm) {
+static void memory_erase(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "ERASE: Data stack underflow");
         vm->error = 1;
@@ -198,13 +198,13 @@ void register_memory_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 memory words...");
 
     /* Register basic memory words */
-    register_word(vm, "!", forth_store);
-    register_word(vm, "@", forth_fetch);
-    register_word(vm, "C!", forth_c_store);
-    register_word(vm, "C@", forth_c_fetch);
-    register_word(vm, "+!", forth_plus_store);
-    register_word(vm, "FILL", forth_fill);
-    register_word(vm, "ERASE", forth_erase);
+    register_word(vm, "!", memory_store);
+    register_word(vm, "@", memory_fetch);
+    register_word(vm, "C!", memory_c_store);
+    register_word(vm, "C@", memory_c_fetch);
+    register_word(vm, "+!", memory_plus_store);
+    register_word(vm, "FILL", memory_fill);
+    register_word(vm, "ERASE", memory_erase);
 
     log_message(LOG_INFO, "Memory words registered successfully");
 }

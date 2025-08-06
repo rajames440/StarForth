@@ -114,7 +114,7 @@ static void shift_lines_down(VM *vm, int screen, int start_line) {
 }
 
 /* L ( -- ) List current screen */
-void word_l(VM *vm) {
+void editor_word_l(VM *vm) {
     printf("Screen %d:\n", current_screen);
     printf("================\n");
 
@@ -129,7 +129,7 @@ void word_l(VM *vm) {
 }
 
 /* T ( n -- ) Type line n of current screen */
-void word_t(VM *vm) {
+void editor_word_t(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -146,7 +146,7 @@ void word_t(VM *vm) {
 }
 
 /* E ( n -- ) Edit line n of current screen */
-void word_e(VM *vm) {
+void editor_word_e(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -177,7 +177,7 @@ void word_e(VM *vm) {
 }
 
 /* S ( n addr -- ) Replace line n with string at addr */
-void word_s(VM *vm) {
+void editor_word_s(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -211,7 +211,7 @@ void word_s(VM *vm) {
 }
 
 /* I ( n -- ) Insert before line n */
-void word_i(VM *vm) {
+void editor_word_i(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -242,7 +242,7 @@ void word_i(VM *vm) {
 }
 
 /* R ( n -- ) Replace line n */
-void word_r(VM *vm) {
+void editor_word_r(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -269,7 +269,7 @@ void word_r(VM *vm) {
 }
 
 /* D ( n -- ) Delete line n */
-void word_d(VM *vm) {
+void editor_word_d(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -289,7 +289,7 @@ void word_d(VM *vm) {
 }
 
 /* P ( n -- ) Position to line n */
-void word_p(VM *vm) {
+void editor_word_p(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -307,7 +307,7 @@ void word_p(VM *vm) {
 }
 
 /* COPY ( n1 n2 -- ) Copy line n1 to line n2 */
-void word_copy(VM *vm) {
+void editor_word_copy(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -333,7 +333,7 @@ void word_copy(VM *vm) {
 }
 
 /* M ( n1 n2 -- ) Move line n1 to line n2 */
-void word_m(VM *vm) {
+void editor_word_m(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -381,7 +381,7 @@ void word_m(VM *vm) {
 }
 
 /* TILL ( c -- ) Search for character c */
-void word_till(VM *vm) {
+void editor_word_till(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -409,7 +409,7 @@ void word_till(VM *vm) {
 }
 
 /* N ( -- ) Search for next occurrence */
-void word_n(VM *vm) {
+void editor_word_n(VM *vm) {
     if (search_char == 0) {
         printf("No search character set - use TILL first\n");
         return;
@@ -447,24 +447,24 @@ void word_n(VM *vm) {
 }
 
 /* WHERE ( -- ) Show current position */
-void word_where(VM *vm) {
+void editor_word_where(VM *vm) {
     printf("Screen %d, Line %d\n", current_screen, current_line);
 }
 
 /* TOP ( -- ) Go to top of screen */
-void word_top(VM *vm) {
+void editor_word_top(VM *vm) {
     current_line = 0;
     printf("At top of screen\n");
 }
 
 /* BOTTOM ( -- ) Go to bottom of screen */
-void word_bottom(VM *vm) {
+void editor_word_bottom(VM *vm) {
     current_line = 15;
     printf("At bottom of screen\n");
 }
 
 /* CLEAR ( -- ) Clear current screen */
-void word_clear(VM *vm) {
+void editor_word_clear(VM *vm) {
     unsigned char *block_data = get_block_buffer(vm, current_screen);
     if (block_data == NULL) return;
 
@@ -478,22 +478,22 @@ void register_editor_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 editor words...");
 
     /* Complete editor implementation */
-    register_word(vm, "L", word_l);
-    register_word(vm, "T", word_t);
-    register_word(vm, "E", word_e);
-    register_word(vm, "S", word_s);
-    register_word(vm, "I", word_i);
-    register_word(vm, "R", word_r);
-    register_word(vm, "D", word_d);
-    register_word(vm, "P", word_p);
-    register_word(vm, "COPY", word_copy);
-    register_word(vm, "M", word_m);
-    register_word(vm, "TILL", word_till);
-    register_word(vm, "N", word_n);
-    register_word(vm, "WHERE", word_where);
-    register_word(vm, "TOP", word_top);
-    register_word(vm, "BOTTOM", word_bottom);
-    register_word(vm, "CLEAR", word_clear);
+    register_word(vm, "L", editor_word_l);
+    register_word(vm, "T", editor_word_t);
+    register_word(vm, "E", editor_word_e);
+    register_word(vm, "S", editor_word_s);
+    register_word(vm, "I", editor_word_i);
+    register_word(vm, "R", editor_word_r);
+    register_word(vm, "D", editor_word_d);
+    register_word(vm, "P", editor_word_p);
+    register_word(vm, "COPY", editor_word_copy);
+    register_word(vm, "M", editor_word_m);
+    register_word(vm, "TILL", editor_word_till);
+    register_word(vm, "N", editor_word_n);
+    register_word(vm, "WHERE", editor_word_where);
+    register_word(vm, "TOP", editor_word_top);
+    register_word(vm, "BOTTOM", editor_word_bottom);
+    register_word(vm, "CLEAR", editor_word_clear);
 
     log_message(LOG_INFO, "Complete FORTH-79 editor registered - 16 words");
 }

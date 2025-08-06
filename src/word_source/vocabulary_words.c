@@ -72,7 +72,7 @@ static void vocabulary_select_runtime(VM *vm) {
 }
 
 /* VOCABULARY ( -- )  Create new vocabulary */
-void word_vocabulary(VM *vm) {
+void vocabulary_word_vocabulary(VM *vm) {
     char vocab_name[64];
 
     /* Parse vocabulary name from input stream */
@@ -100,7 +100,7 @@ void word_vocabulary(VM *vm) {
 }
 
 /* DEFINITIONS ( -- )  Set current vocabulary for new definitions */
-void word_definitions(VM *vm) {
+void vocabulary_word_definitions(VM *vm) {
     init_vocabulary_system(vm);
 
     /* Set current vocabulary to the top of search order */
@@ -112,19 +112,19 @@ void word_definitions(VM *vm) {
 }
 
 /* CONTEXT ( -- addr )  Variable: search vocabulary pointer */
-void word_context(VM *vm) {
+void vocabulary_word_context(VM *vm) {
     init_vocabulary_system(vm);
     vm_push(vm, (cell_t)(uintptr_t)&context_vocabs[0]);
 }
 
 /* CURRENT ( -- addr )  Variable: definition vocabulary pointer */
-void word_current(VM *vm) {
+void vocabulary_word_current(VM *vm) {
     init_vocabulary_system(vm);
     vm_push(vm, (cell_t)(uintptr_t)&current_vocab);
 }
 
 /* FORTH ( -- )  Select FORTH vocabulary */
-void word_forth(VM *vm) {
+void vocabulary_word_forth(VM *vm) {
     init_vocabulary_system(vm);
 
     /* Set FORTH as single vocabulary in search order */
@@ -135,7 +135,7 @@ void word_forth(VM *vm) {
 }
 
 /* ONLY ( -- )  Set minimal search order (FORTH only) */
-void word_only(VM *vm) {
+void vocabulary_word_only(VM *vm) {
     init_vocabulary_system(vm);
 
     /* Reset to minimal search order - just FORTH */
@@ -146,7 +146,7 @@ void word_only(VM *vm) {
 }
 
 /* ALSO ( -- )  Duplicate top of search order */
-void word_also(VM *vm) {
+void vocabulary_word_also(VM *vm) {
     init_vocabulary_system(vm);
 
     if (search_order_depth >= MAX_VOCAB_SEARCH_ORDER) {
@@ -163,7 +163,7 @@ void word_also(VM *vm) {
 }
 
 /* ORDER ( -- )  Display search order */
-void word_order(VM *vm) {
+void vocabulary_word_order(VM *vm) {
     init_vocabulary_system(vm);
 
     printf("Search order: ");
@@ -176,7 +176,7 @@ void word_order(VM *vm) {
 }
 
 /* PREVIOUS ( -- )  Remove top of search order */
-void word_previous(VM *vm) {
+void vocabulary_word_previous(VM *vm) {
     init_vocabulary_system(vm);
 
     if (search_order_depth <= 1) {
@@ -192,7 +192,7 @@ void word_previous(VM *vm) {
 }
 
 /* (FIND) ( addr -- addr flag )  Find word in dictionary (primitive) */
-void word_paren_find(VM *vm) {
+void vocabulary_word_paren_find(VM *vm) {
     cell_t addr;
     uint8_t *counted_str;
     uint8_t name_len;
@@ -238,16 +238,16 @@ void register_vocabulary_words(VM *vm) {
     log_message(LOG_INFO, "Registering vocabulary system words...");
 
     /* Register all vocabulary system words */
-    register_word(vm, "VOCABULARY", word_vocabulary);
-    register_word(vm, "DEFINITIONS", word_definitions);
-    register_word(vm, "CONTEXT", word_context);
-    register_word(vm, "CURRENT", word_current);
-    register_word(vm, "FORTH", word_forth);
-    register_word(vm, "ONLY", word_only);
-    register_word(vm, "ALSO", word_also);
-    register_word(vm, "ORDER", word_order);
-    register_word(vm, "PREVIOUS", word_previous);
-    register_word(vm, "(FIND)", word_paren_find);
+    register_word(vm, "VOCABULARY", vocabulary_word_vocabulary);
+    register_word(vm, "DEFINITIONS", vocabulary_word_definitions);
+    register_word(vm, "CONTEXT", vocabulary_word_context);
+    register_word(vm, "CURRENT", vocabulary_word_current);
+    register_word(vm, "FORTH", vocabulary_word_forth);
+    register_word(vm, "ONLY", vocabulary_word_only);
+    register_word(vm, "ALSO", vocabulary_word_also);
+    register_word(vm, "ORDER", vocabulary_word_order);
+    register_word(vm, "PREVIOUS", vocabulary_word_previous);
+    register_word(vm, "(FIND)", vocabulary_word_paren_find);
 
     /* Initialize vocabulary system */
     init_vocabulary_system(vm);

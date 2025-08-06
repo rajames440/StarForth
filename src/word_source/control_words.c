@@ -15,9 +15,9 @@
 #include "../../include/log.h"
 
 /* Forward declarations for runtime functions */
-static void forth_runtime_do(VM *vm);
-static void forth_runtime_loop(VM *vm);
-static void forth_runtime_plus_loop(VM *vm);
+static void control_forth_runtime_do(VM *vm);
+static void control_forth_runtime_loop(VM *vm);
+static void control_forth_runtime_plus_loop(VM *vm);
 
 /* Loop parameter stack for DO/LOOP constructs - FORTH-79 spec allows this */
 #define LOOP_STACK_SIZE 16
@@ -50,7 +50,7 @@ static void loop_pop(void) {
 }
 
 /* BRANCH ( -- ) Unconditional branch - runtime primitive */
-static void forth_branch(VM *vm) {
+static void control_forth_branch(VM *vm) {
     cell_t *ip;
     cell_t offset;
 
@@ -74,7 +74,7 @@ static void forth_branch(VM *vm) {
 }
 
 /* 0BRANCH ( flag -- ) Branch if flag is zero */
-static void forth_0branch(VM *vm) {
+static void control_forth_0branch(VM *vm) {
     cell_t *ip;
     cell_t flag, offset;
 
@@ -108,7 +108,7 @@ static void forth_0branch(VM *vm) {
 }
 
 /* (LIT) ( -- n ) Push inline literal - runtime primitive */
-static void forth_lit(VM *vm) {
+static void control_forth_lit(VM *vm) {
     cell_t *ip;
     cell_t literal_value;
 
@@ -135,7 +135,7 @@ static void forth_lit(VM *vm) {
 }
 
 /* IF ( flag -- ) Conditional execution - compile-time */
-static void forth_if(VM *vm) {
+static void control_forth_if(VM *vm) {
     if (vm->mode != MODE_COMPILE) {
         log_message(LOG_ERROR, "IF: Only valid in compile mode");
         vm->error = 1;
@@ -143,7 +143,7 @@ static void forth_if(VM *vm) {
     }
 
     /* Compile 0BRANCH with placeholder address */
-    vm_compile_call(vm, forth_0branch);
+    vm_compile_call(vm, control_forth_0branch);
 
     /* Reserve space for branch offset and push address on return stack for THEN */
     size_t placeholder_addr = vm->here;
@@ -161,7 +161,7 @@ static void forth_if(VM *vm) {
 }
 
 /* THEN ( -- ) End of IF - compile-time */
-static void forth_then(VM *vm) {
+static void control_forth_then(VM *vm) {
     cell_t placeholder_addr;
     cell_t target_addr, branch_offset;
 
@@ -192,7 +192,7 @@ static void forth_then(VM *vm) {
 }
 
 /* ELSE ( -- ) Alternative execution - compile-time */
-static void forth_else(VM *vm) {
+static void control_forth_else(VM *vm) {
     cell_t if_placeholder, else_target, if_offset;
     size_t else_branch_addr;
 
@@ -209,7 +209,7 @@ static void forth_else(VM *vm) {
     }
 
     /* Compile unconditional branch to skip ELSE part */
-    vm_compile_call(vm, forth_branch);
+    vm_compile_call(vm, control_forth_branch);
     else_branch_addr = vm->here;
     vm_compile_literal(vm, 0);  /* Placeholder for THEN target */
 
@@ -227,7 +227,7 @@ static void forth_else(VM *vm) {
 }
 
 /* BEGIN ( -- ) Start indefinite loop - compile-time */
-static void forth_begin(VM *vm) {
+static void control_forth_begin(VM *vm) {
     if (vm->mode != MODE_COMPILE) {
         log_message(LOG_ERROR, "BEGIN: Only valid in compile mode");
         vm->error = 1;
@@ -246,7 +246,7 @@ static void forth_begin(VM *vm) {
 }
 
 /* UNTIL ( flag -- ) End loop if flag true - compile-time */
-static void forth_until(VM *vm) {
+static void control_forth_until(VM *vm) {
     cell_t begin_addr, branch_offset;
 
     if (vm->mode != MODE_COMPILE) {
@@ -262,7 +262,7 @@ static void forth_until(VM *vm) {
     }
 
     /* Compile 0BRANCH back to BEGIN */
-    vm_compile_call(vm, forth_0branch);
+    vm_compile_call(vm, control_forth_0branch);
 
     begin_addr = vm->return_stack[vm->rsp--];
     branch_offset = begin_addr - vm->here - sizeof(cell_t);
@@ -273,7 +273,7 @@ static void forth_until(VM *vm) {
 }
 
 /* AGAIN ( -- ) End infinite loop - compile-time */
-static void forth_again(VM *vm) {
+static void control_forth_again(VM *vm) {
     cell_t begin_addr, branch_offset;
 
     if (vm->mode != MODE_COMPILE) {
@@ -289,7 +289,7 @@ static void forth_again(VM *vm) {
     }
 
     /* Compile unconditional branch back to BEGIN */
-    vm_compile_call(vm, forth_branch);
+    vm_compile_call(vm, control_forth_branch);
 
     begin_addr = vm->return_stack[vm->rsp--];
     branch_offset = begin_addr - vm->here - sizeof(cell_t);
@@ -299,7 +299,7 @@ static void forth_again(VM *vm) {
 }
 
 /* DO ( limit start -- ) Start definite loop - compile-time only! */
-static void forth_do(VM *vm) {
+static void control_forth_do(VM *vm) {
     if (vm->mode != MODE_COMPILE) {
         log_message(LOG_ERROR, "DO: Only valid in compile mode");
         vm->error = 1;
@@ -307,7 +307,7 @@ static void forth_do(VM *vm) {
     }
 
     /* Compile runtime DO which will handle limit/start */
-    vm_compile_call(vm, forth_runtime_do);
+    vm_compile_call(vm, control_forth_runtime_do);
 
     /* Push current position for LOOP to branch back to */
     if (vm->rsp >= STACK_SIZE - 1) {
@@ -321,7 +321,7 @@ static void forth_do(VM *vm) {
 }
 
 /* Runtime DO ( limit start -- ) */
-static void forth_runtime_do(VM *vm) {
+static void control_forth_runtime_do(VM *vm) {
     cell_t start, limit;
     void *loop_start_ip;
 
@@ -350,7 +350,7 @@ static void forth_runtime_do(VM *vm) {
 }
 
 /* LOOP ( -- ) End DO loop, increment by 1 - compile-time */
-static void forth_loop(VM *vm) {
+static void control_forth_loop(VM *vm) {
     cell_t do_addr;
 
     if (vm->mode != MODE_COMPILE) {
@@ -366,7 +366,7 @@ static void forth_loop(VM *vm) {
     }
 
     /* Compile runtime LOOP */
-    vm_compile_call(vm, forth_runtime_loop);
+    vm_compile_call(vm, control_forth_runtime_loop);
 
     /* Pop the DO address from compile-time return stack */
     do_addr = vm->return_stack[vm->rsp--];
@@ -375,7 +375,7 @@ static void forth_loop(VM *vm) {
 }
 
 /* Runtime LOOP ( -- ) */
-static void forth_runtime_loop(VM *vm) {
+static void control_forth_runtime_loop(VM *vm) {
     if (loop_sp < 0) {
         log_message(LOG_ERROR, "Runtime LOOP: No matching DO");
         vm->error = 1;
@@ -404,7 +404,7 @@ static void forth_runtime_loop(VM *vm) {
 }
 
 /* +LOOP ( n -- ) End DO loop, increment by n - compile-time */
-static void forth_plus_loop(VM *vm) {
+static void control_forth_plus_loop(VM *vm) {
     cell_t do_addr;
 
     if (vm->mode != MODE_COMPILE) {
@@ -420,7 +420,7 @@ static void forth_plus_loop(VM *vm) {
     }
 
     /* Compile runtime +LOOP */
-    vm_compile_call(vm, forth_runtime_plus_loop);
+    vm_compile_call(vm, control_forth_runtime_plus_loop);
 
     /* Pop the DO address from compile-time return stack */
     do_addr = vm->return_stack[vm->rsp--];
@@ -429,7 +429,7 @@ static void forth_plus_loop(VM *vm) {
 }
 
 /* Runtime +LOOP ( n -- ) */
-static void forth_runtime_plus_loop(VM *vm) {
+static void control_forth_runtime_plus_loop(VM *vm) {
     cell_t increment;
     int should_continue;
 
@@ -476,7 +476,7 @@ static void forth_runtime_plus_loop(VM *vm) {
 }
 
 /* I ( -- n ) Current loop index */
-static void forth_i(VM *vm) {
+static void control_forth_i(VM *vm) {
     if (loop_sp < 0) {
         log_message(LOG_ERROR, "I: No active loop");
         vm->error = 1;
@@ -488,7 +488,7 @@ static void forth_i(VM *vm) {
 }
 
 /* J ( -- n ) Outer loop index */
-static void forth_j(VM *vm) {
+static void control_forth_j(VM *vm) {
     if (loop_sp < 1) {
         log_message(LOG_ERROR, "J: No outer loop");
         vm->error = 1;
@@ -525,7 +525,7 @@ static void forth_unloop(VM *vm) {
 }
 
 /* EXECUTE ( xt -- ) Execute word at address */
-static void forth_execute(VM *vm) {
+static void control_forth_execute(VM *vm) {
     cell_t xt;
     word_func_t func;
 
@@ -548,7 +548,7 @@ static void forth_execute(VM *vm) {
 }
 
 /* ABORT ( -- ) Abort execution */
-static void forth_abort(VM *vm) {
+static void control_forth_abort(VM *vm) {
     /* Clear stacks and reset state */
     vm->dsp = -1;
     vm->rsp = -1;
@@ -561,7 +561,7 @@ static void forth_abort(VM *vm) {
 }
 
 /* QUIT ( -- ) Return to interpreter */
-static void forth_quit(VM *vm) {
+static void control_forth_quit(VM *vm) {
     /* Clear return stack but preserve data stack */
     vm->rsp = -1;
     loop_sp = -1;
@@ -575,38 +575,38 @@ void register_control_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 control flow words...");
 
     /* Runtime primitives */
-    register_word(vm, "BRANCH", forth_branch);
-    register_word(vm, "0BRANCH", forth_0branch);
-    register_word(vm, "(LIT)", forth_lit);
-    register_word(vm, "LIT", forth_lit);
+    register_word(vm, "BRANCH", control_forth_branch);
+    register_word(vm, "0BRANCH", control_forth_0branch);
+    register_word(vm, "(LIT)", control_forth_lit);
+    register_word(vm, "LIT", control_forth_lit);
 
     /* Conditional execution */
-    register_word(vm, "IF", forth_if);
-    register_word(vm, "THEN", forth_then);
-    register_word(vm, "ELSE", forth_else);
+    register_word(vm, "IF", control_forth_if);
+    register_word(vm, "THEN", control_forth_then);
+    register_word(vm, "ELSE", control_forth_else);
 
     /* Indefinite loops */
-    register_word(vm, "BEGIN", forth_begin);
-    register_word(vm, "UNTIL", forth_until);
-    register_word(vm, "AGAIN", forth_again);
+    register_word(vm, "BEGIN", control_forth_begin);
+    register_word(vm, "UNTIL", control_forth_until);
+    register_word(vm, "AGAIN", control_forth_again);
 
     /* Definite loops - compile-time + runtime pairs */
-    register_word(vm, "DO", forth_do);
-    register_word(vm, "(DO)", forth_runtime_do);
-    register_word(vm, "LOOP", forth_loop);
-    register_word(vm, "(LOOP)", forth_runtime_loop);
-    register_word(vm, "+LOOP", forth_plus_loop);
-    register_word(vm, "(+LOOP)", forth_runtime_plus_loop);
+    register_word(vm, "DO", control_forth_do);
+    register_word(vm, "(DO)", control_forth_runtime_do);
+    register_word(vm, "LOOP", control_forth_loop);
+    register_word(vm, "(LOOP)", control_forth_runtime_loop);
+    register_word(vm, "+LOOP", control_forth_plus_loop);
+    register_word(vm, "(+LOOP)", control_forth_runtime_plus_loop);
 
-    register_word(vm, "I", forth_i);
-    register_word(vm, "J", forth_j);
+    register_word(vm, "I", control_forth_i);
+    register_word(vm, "J", control_forth_j);
     register_word(vm, "LEAVE", forth_leave);
     register_word(vm, "UNLOOP", forth_unloop);
 
     /* Execution control */
-    register_word(vm, "EXECUTE", forth_execute);
-    register_word(vm, "ABORT", forth_abort);
-    register_word(vm, "QUIT", forth_quit);
+    register_word(vm, "EXECUTE", control_forth_execute);
+    register_word(vm, "ABORT", control_forth_abort);
+    register_word(vm, "QUIT", control_forth_quit);
 
     /* Mark compile-only words as immediate so they execute during compilation */
     DictEntry *if_word = vm_find_word(vm, "IF", 2);

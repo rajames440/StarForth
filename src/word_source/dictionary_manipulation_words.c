@@ -84,24 +84,24 @@ static char* traverse_name_field(char *name_addr, int direction) {
 }
 
 /* [ ( -- )  Enter interpretation mode */
-void word_left_bracket(VM *vm) {
+void dictionary_m_word_left_bracket(VM *vm) {
     vm->mode = MODE_INTERPRET;
     state_variable = 0;
 }
 
 /* ] ( -- )  Enter compilation mode */
-void word_right_bracket(VM *vm) {
+void dictionary_m_word_right_bracket(VM *vm) {
     vm->mode = MODE_COMPILE;
     state_variable = -1;  /* FORTH-79 uses -1 for true */
 }
 
 /* STATE ( -- addr )  Variable: compilation state */
-void word_state(VM *vm) {
+void dictionary_m_word_state(VM *vm) {
     vm_push(vm, (cell_t)(uintptr_t)&state_variable);
 }
 
 /* SMUDGE ( -- )  Toggle smudge bit of latest word */
-void word_smudge(VM *vm) {
+void dictionary_m_word_smudge(VM *vm) {
     if (vm->latest == NULL) {
         vm->error = 1;
         return;
@@ -112,7 +112,7 @@ void word_smudge(VM *vm) {
 }
 
 /* >BODY ( xt -- addr )  Convert execution token to body */
-void word_to_body(VM *vm) {
+void dictionary_m_word_to_body(VM *vm) {
     cell_t xt;
     DictEntry *entry;
     void *body_addr;
@@ -135,7 +135,7 @@ void word_to_body(VM *vm) {
 }
 
 /* >NAME ( xt -- addr )  Convert execution token to name */
-void word_to_name(VM *vm) {
+void dictionary_m_word_to_name(VM *vm) {
     cell_t xt;
     DictEntry *entry;
     char *name_field;
@@ -158,7 +158,7 @@ void word_to_name(VM *vm) {
 }
 
 /* NAME> ( addr -- xt )  Convert name to execution token */
-void word_name_to(VM *vm) {
+void dictionary_m_word_name_to(VM *vm) {
     cell_t addr;
     char *name_field;
     DictEntry *entry;
@@ -181,7 +181,7 @@ void word_name_to(VM *vm) {
 }
 
 /* >LINK ( addr -- addr )  Get link field address */
-void word_to_link(VM *vm) {
+void dictionary_m_word_to_link(VM *vm) {
     cell_t addr;
     DictEntry *entry;
     
@@ -203,7 +203,7 @@ void word_to_link(VM *vm) {
 }
 
 /* LINK> ( addr -- addr )  Get next word from link */
-void word_link_from(VM *vm) {
+void dictionary_m_word_link_from(VM *vm) {
     cell_t addr;
     DictEntry **link_field;
     DictEntry *next_entry;
@@ -226,7 +226,7 @@ void word_link_from(VM *vm) {
 }
 
 /* CFA ( addr -- xt )  Get code field address */
-void word_cfa(VM *vm) {
+void dictionary_m_word_cfa(VM *vm) {
     cell_t addr;
     DictEntry *entry;
     
@@ -248,12 +248,12 @@ void word_cfa(VM *vm) {
 }
 
 /* LFA ( addr -- addr )  Get link field address */
-void word_lfa(VM *vm) {
-    word_to_link(vm);  /* Same as >LINK */
+void dictionary_m_word_lfa(VM *vm) {
+    dictionary_m_word_to_link(vm);  /* Same as >LINK */
 }
 
 /* NFA ( addr -- addr )  Get name field address */
-void word_nfa(VM *vm) {
+void dictionary_m_word_nfa(VM *vm) {
     cell_t addr;
     DictEntry *entry;
     char *name_field;
@@ -276,7 +276,7 @@ void word_nfa(VM *vm) {
 }
 
 /* PFA ( addr -- addr )  Get parameter field address */
-void word_pfa(VM *vm) {
+void dictionary_m_word_pfa(VM *vm) {
     cell_t addr;
     DictEntry *entry;
     void *body_addr;
@@ -299,7 +299,7 @@ void word_pfa(VM *vm) {
 }
 
 /* TRAVERSE ( addr n -- addr )  Move through name field */
-void word_traverse(VM *vm) {
+void dictionary_m_word_traverse(VM *vm) {
     cell_t n, addr;
     char *name_addr;
     char *result_addr;
@@ -324,7 +324,7 @@ void word_traverse(VM *vm) {
 }
 
 /* INTERPRET ( -- )  Text interpreter */
-void word_interpret(VM *vm) {
+void dictionary_m_word_interpret(VM *vm) {
     /* Simply call the VM's built-in interpreter - it handles everything */
     /* The VM already has proper input management, word parsing, and execution */
     
@@ -345,21 +345,21 @@ void register_dictionary_manipulation_words(VM *vm) {
     log_message(LOG_INFO, "Registering dictionary manipulation words...");
     
     /* Register all dictionary manipulation words */
-    register_word(vm, "[", word_left_bracket);
-    register_word(vm, "]", word_right_bracket);
-    register_word(vm, "STATE", word_state);
-    register_word(vm, "SMUDGE", word_smudge);
-    register_word(vm, ">BODY", word_to_body);
-    register_word(vm, ">NAME", word_to_name);
-    register_word(vm, "NAME>", word_name_to);
-    register_word(vm, ">LINK", word_to_link);
-    register_word(vm, "LINK>", word_link_from);
-    register_word(vm, "CFA", word_cfa);
-    register_word(vm, "LFA", word_lfa);
-    register_word(vm, "NFA", word_nfa);
-    register_word(vm, "PFA", word_pfa);
-    register_word(vm, "TRAVERSE", word_traverse);
-    register_word(vm, "INTERPRET", word_interpret);
+    register_word(vm, "[", dictionary_m_word_left_bracket);
+    register_word(vm, "]", dictionary_m_word_right_bracket);
+    register_word(vm, "STATE", dictionary_m_word_state);
+    register_word(vm, "SMUDGE", dictionary_m_word_smudge);
+    register_word(vm, ">BODY", dictionary_m_word_to_body);
+    register_word(vm, ">NAME", dictionary_m_word_to_name);
+    register_word(vm, "NAME>", dictionary_m_word_name_to);
+    register_word(vm, ">LINK", dictionary_m_word_to_link);
+    register_word(vm, "LINK>", dictionary_m_word_link_from);
+    register_word(vm, "CFA", dictionary_m_word_cfa);
+    register_word(vm, "LFA", dictionary_m_word_lfa);
+    register_word(vm, "NFA", dictionary_m_word_nfa);
+    register_word(vm, "PFA", dictionary_m_word_pfa);
+    register_word(vm, "TRAVERSE", dictionary_m_word_traverse);
+    register_word(vm, "INTERPRET", dictionary_m_word_interpret);
 
     log_message(LOG_INFO, "Note: These are low-level words for dictionary introspection");
 }

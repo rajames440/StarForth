@@ -98,28 +98,28 @@ static void forth_paren(VM *vm) {
 }
 
 /* COLD ( -- )  Cold start system */
-void word_cold(VM *vm) {
+void system_word_cold(VM *vm) {
     printf("FORTH-79 Cold Start\n");
     reset_vm_state(vm, 1);  /* Cold start */
     printf("System initialized.\n");
 }
 
 /* WARM ( -- )  Warm start system */
-void word_warm(VM *vm) {
+void system_word_warm(VM *vm) {
     printf("FORTH-79 Warm Start\n");
     reset_vm_state(vm, 0);  /* Warm start */
     printf("System restarted.\n");
 }
 
 /* BYE ( -- )  Exit FORTH system */
-void word_bye(VM *vm) {
+void system_word_bye(VM *vm) {
     printf("Goodbye!\n");
     vm_cleanup(vm);  /* Clean up memory before exit */
     exit(0);
 }
 
 /* SAVE-SYSTEM ( -- )  Save system image */
-void word_save_system(VM *vm) {
+void system_word_save_system(VM *vm) {
     FILE *save_file;
     size_t bytes_written;
 
@@ -156,7 +156,7 @@ void word_save_system(VM *vm) {
 }
 
 /* WORDS ( -- )  List words in current vocabulary */
-void word_words(VM *vm) {
+void system_word_words(VM *vm) {
     DictEntry *entry;
     int word_count;
     int words_per_line;
@@ -191,7 +191,7 @@ void word_words(VM *vm) {
 }
 
 /* VLIST ( -- )  List all words in vocabulary */
-void word_vlist(VM *vm) {
+void system_word_vlist(VM *vm) {
     DictEntry *entry;
     int word_count;
 
@@ -256,20 +256,20 @@ void word_question_stack(VM *vm) {
 }
 
 /* PAGE ( -- )  Clear screen/page */
-void word_page(VM *vm) {
+void system_word_page(VM *vm) {
     /* Clear screen using ANSI escape sequences */
     printf("\033[2J\033[H");
     fflush(stdout);
 }
 
 /* NOP ( -- )  No operation */
-void word_nop(VM *vm) {
+void system_word_nop(VM *vm) {
     /* Do nothing - this is intentional */
     (void)vm;  /* Suppress unused parameter warning */
 }
 
 /* 79-STANDARD ( -- )  Ensure FORTH-79 compliance */
-void word_79_standard(VM *vm) {
+void system_word_79_standard(VM *vm) {
     if (forth_79_standard) {
         printf("FORTH-79 Standard compliance: ACTIVE\n");
         printf("System conforms to FORTH-79 specification\n");
@@ -304,16 +304,16 @@ void register_system_words(VM *vm) {
     vm_make_immediate(vm);  /* Make ( immediate so it works in compile mode */
 
     /* Register all system & environment words */
-    register_word(vm, "COLD", word_cold);
-    register_word(vm, "WARM", word_warm);
-    register_word(vm, "BYE", word_bye);
-    register_word(vm, "SAVE-SYSTEM", word_save_system);
-    register_word(vm, "WORDS", word_words);
-    register_word(vm, "VLIST", word_vlist);
+    register_word(vm, "COLD", system_word_cold);
+    register_word(vm, "WARM", system_word_warm);
+    register_word(vm, "BYE", system_word_bye);
+    register_word(vm, "SAVE-SYSTEM", system_word_save_system);
+    register_word(vm, "WORDS", system_word_words);
+    register_word(vm, "VLIST", system_word_vlist);
     register_word(vm, "?STACK", word_question_stack);
-    register_word(vm, "PAGE", word_page);
-    register_word(vm, "NOP", word_nop);
-    register_word(vm, "79-STANDARD", word_79_standard);
+    register_word(vm, "PAGE", system_word_page);
+    register_word(vm, "NOP", system_word_nop);
+    register_word(vm, "79-STANDARD", system_word_79_standard);
 
     log_message(LOG_INFO, "System words registered successfully (including EXIT and comments)");
 }

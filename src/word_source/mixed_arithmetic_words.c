@@ -17,7 +17,7 @@
 /* Implementation of FORTH-79 Mixed Arithmetic Words */
 
 /* M+ ( d n -- d )  Add single to double */
-void word_m_plus(VM *vm) {
+void mixed_math_word_m_plus(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
         return;
@@ -43,7 +43,7 @@ void word_m_plus(VM *vm) {
 }
 
 /* M- ( d n -- d )  Subtract single from double */
-void word_m_minus(VM *vm) {
+void mixed_math_word_m_minus(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
         return;
@@ -69,7 +69,7 @@ void word_m_minus(VM *vm) {
 }
 
 /* M* ( n1 n2 -- d )  Multiply singles, produce double */
-void word_m_star(VM *vm) {
+void mixed_math_word_m_star(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -96,7 +96,7 @@ void word_m_star(VM *vm) {
 }
 
 /* M/MOD ( d n -- r q )  Divide double by single */
-void word_m_slash_mod(VM *vm) {
+void mixed_math_word_m_slash_mod(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
         return;
@@ -134,7 +134,7 @@ void word_m_slash_mod(VM *vm) {
 }
 
 /* MOD ( n1 n2 -- r )  Remainder of n1/n2 */
-void word_mod(VM *vm) {
+void mixed_math_word_mod(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -152,7 +152,7 @@ void word_mod(VM *vm) {
 }
 
 /* /MOD ( n1 n2 -- r q )  Divide with remainder */
-void word_slash_mod(VM *vm) {
+void mixed_math_word_slash_mod(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -171,7 +171,7 @@ void word_slash_mod(VM *vm) {
 }
 
 /* STAR-SLASH ( n1 n2 n3 -- q )  Multiply then divide */
-void word_star_slash(VM *vm) {
+void mixed_math_word_star_slash(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
         return;
@@ -200,7 +200,7 @@ void word_star_slash(VM *vm) {
 }
 
 /* STAR-SLASH-MOD ( n1 n2 n3 -- r q )  Multiply then divide with remainder */
-void word_star_slash_mod(VM *vm) {
+void mixed_math_word_star_slash_mod(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
         return;
@@ -238,14 +238,14 @@ void register_mixed_arithmetic_words(VM *vm) {
     log_message(LOG_INFO, "Registering mixed arithmetic words...");
     
     /* Register all mixed arithmetic words */
-    register_word(vm, "M+", word_m_plus);
-    register_word(vm, "M-", word_m_minus);
-    register_word(vm, "M*", word_m_star);
-    register_word(vm, "M/MOD", word_m_slash_mod);
-    register_word(vm, "MOD", word_mod);
-    register_word(vm, "/MOD", word_slash_mod);
-    register_word(vm, "*/", word_star_slash);
-    register_word(vm, "*/MOD", word_star_slash_mod);
+    register_word(vm, "M+", mixed_math_word_m_plus);
+    register_word(vm, "M-", mixed_math_word_m_minus);
+    register_word(vm, "M*", mixed_math_word_m_star);
+    register_word(vm, "M/MOD", mixed_math_word_m_slash_mod);
+    register_word(vm, "MOD", mixed_math_word_mod);
+    register_word(vm, "/MOD", mixed_math_word_slash_mod);
+    register_word(vm, "*/", mixed_math_word_star_slash);
+    register_word(vm, "*/MOD", mixed_math_word_star_slash_mod);
     
     log_message(LOG_INFO, "Mixed arithmetic words registered and tested");
 }

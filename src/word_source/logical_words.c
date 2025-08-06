@@ -22,7 +22,7 @@
 #define FORTH_FALSE ((cell_t)0)
 
 /* AND - Bitwise AND ( n1 n2 -- n3 ) */
-static void word_and(VM *vm) {
+static void logical_word_and(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "AND: Stack underflow");
         vm->error = 1;
@@ -39,7 +39,7 @@ static void word_and(VM *vm) {
 }
 
 /* OR - Bitwise OR ( n1 n2 -- n3 ) */
-static void word_or(VM *vm) {
+static void logical_word_or(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "OR: Stack underflow");
         vm->error = 1;
@@ -56,7 +56,7 @@ static void word_or(VM *vm) {
 }
 
 /* XOR - Bitwise XOR ( n1 n2 -- n3 ) */
-static void word_xor(VM *vm) {
+static void logical_word_xor(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "XOR: Stack underflow");
         vm->error = 1;
@@ -73,7 +73,7 @@ static void word_xor(VM *vm) {
 }
 
 /* NOT - Bitwise NOT ( n1 -- n2 ) */
-static void word_not(VM *vm) {
+static void logical_word_not(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "NOT: Stack underflow");
         vm->error = 1;
@@ -89,7 +89,7 @@ static void word_not(VM *vm) {
 }
 
 /* 0= - Test for zero ( n -- flag ) */
-static void word_zero_equals(VM *vm) {
+static void logical_word_zero_equals(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "0=: Stack underflow");
         vm->error = 1;
@@ -105,7 +105,7 @@ static void word_zero_equals(VM *vm) {
 }
 
 /* 0< - Test for negative ( n -- flag ) */
-static void word_zero_less(VM *vm) {
+static void logical_word_zero_less(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "0<: Stack underflow");
         vm->error = 1;
@@ -121,7 +121,7 @@ static void word_zero_less(VM *vm) {
 }
 
 /* 0> - Test for positive ( n -- flag ) */
-static void word_zero_greater(VM *vm) {
+static void logical_word_zero_greater(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "0>: Stack underflow");
         vm->error = 1;
@@ -137,7 +137,7 @@ static void word_zero_greater(VM *vm) {
 }
 
 /* = - Test for equality ( n1 n2 -- flag ) */
-static void word_equals(VM *vm) {
+static void logical_word_equals(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "=: Stack underflow");
         vm->error = 1;
@@ -154,7 +154,7 @@ static void word_equals(VM *vm) {
 }
 
 /* <> - Test for inequality ( n1 n2 -- flag ) */
-static void word_not_equals(VM *vm) {
+static void logical_word_not_equals(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "<>: Stack underflow");
         vm->error = 1;
@@ -171,7 +171,7 @@ static void word_not_equals(VM *vm) {
 }
 
 /* < - Test for less than ( n1 n2 -- flag ) */
-static void word_less_than(VM *vm) {
+static void logical_word_less_than(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "<: Stack underflow");
         vm->error = 1;
@@ -188,7 +188,7 @@ static void word_less_than(VM *vm) {
 }
 
 /* > - Test for greater than ( n1 n2 -- flag ) */
-static void word_greater_than(VM *vm) {
+static void logical_word_greater_than(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, ">: Stack underflow");
         vm->error = 1;
@@ -205,7 +205,7 @@ static void word_greater_than(VM *vm) {
 }
 
 /* U< - Unsigned less than ( u1 u2 -- flag ) */
-static void word_u_less_than(VM *vm) {
+static void logical_word_u_less_than(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "U<: Stack underflow");
         vm->error = 1;
@@ -222,7 +222,7 @@ static void word_u_less_than(VM *vm) {
 }
 
 /* U> - Unsigned greater than ( u1 u2 -- flag ) */
-static void word_u_greater_than(VM *vm) {
+static void logical_word_u_greater_than(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "U>: Stack underflow");
         vm->error = 1;
@@ -239,7 +239,7 @@ static void word_u_greater_than(VM *vm) {
 }
 
 /* WITHIN - Test if n is within bounds ( n low high -- flag ) */
-static void word_within(VM *vm) {
+static void logical_word_within(VM *vm) {
     if (vm->dsp < 2) {
         log_message(LOG_ERROR, "WITHIN: Stack underflow");
         vm->error = 1;
@@ -257,13 +257,13 @@ static void word_within(VM *vm) {
 }
 
 /* TRUE constant */
-static void word_true(VM *vm) {
+static void logical_word_true(VM *vm) {
     vm_push(vm, FORTH_TRUE);
     log_message(LOG_DEBUG, "TRUE: Pushed -1");
 }
 
 /* FALSE constant */
-static void word_false(VM *vm) {
+static void logical_word_false(VM *vm) {
     vm_push(vm, FORTH_FALSE);
     log_message(LOG_DEBUG, "FALSE: Pushed 0");
 }
@@ -271,108 +271,34 @@ static void word_false(VM *vm) {
 /* Register all logical and comparison words */
 void register_logical_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 logical and comparison words...");
-    
+
     /* Bitwise operations */
-    if (!vm_create_word(vm, "AND", 3, word_and)) {
-        log_message(LOG_ERROR, "Failed to register AND");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: AND");
-    
-    if (!vm_create_word(vm, "OR", 2, word_or)) {
-        log_message(LOG_ERROR, "Failed to register OR");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: OR");
-    
-    if (!vm_create_word(vm, "XOR", 3, word_xor)) {
-        log_message(LOG_ERROR, "Failed to register XOR");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: XOR");
-    
-    if (!vm_create_word(vm, "NOT", 3, word_not)) {
-        log_message(LOG_ERROR, "Failed to register NOT");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: NOT");
-    
+    register_word(vm, "AND", logical_word_and);
+    register_word(vm, "OR", logical_word_or);
+    register_word(vm, "XOR", logical_word_xor);
+    register_word(vm, "NOT", logical_word_not);
+
     /* Zero comparisons */
-    if (!vm_create_word(vm, "0=", 2, word_zero_equals)) {
-        log_message(LOG_ERROR, "Failed to register 0=");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: 0=");
-    
-    if (!vm_create_word(vm, "0<", 2, word_zero_less)) {
-        log_message(LOG_ERROR, "Failed to register 0<");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: 0<");
-    
-    if (!vm_create_word(vm, "0>", 2, word_zero_greater)) {
-        log_message(LOG_ERROR, "Failed to register 0>");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: 0>");
-    
+    register_word(vm, "0=", logical_word_zero_equals);
+    register_word(vm, "0<", logical_word_zero_less);
+    register_word(vm, "0>", logical_word_zero_greater);
+
     /* Comparisons */
-    if (!vm_create_word(vm, "=", 1, word_equals)) {
-        log_message(LOG_ERROR, "Failed to register =");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: =");
-    
-    if (!vm_create_word(vm, "<>", 2, word_not_equals)) {
-        log_message(LOG_ERROR, "Failed to register <>");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: <>");
-    
-    if (!vm_create_word(vm, "<", 1, word_less_than)) {
-        log_message(LOG_ERROR, "Failed to register <");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: <");
-    
-    if (!vm_create_word(vm, ">", 1, word_greater_than)) {
-        log_message(LOG_ERROR, "Failed to register >");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: >");
-    
+    register_word(vm, "=", logical_word_equals);
+    register_word(vm, "<>", logical_word_not_equals);
+    register_word(vm, "<", logical_word_less_than);
+    register_word(vm, ">", logical_word_greater_than);
+
     /* Unsigned comparisons */
-    if (!vm_create_word(vm, "U<", 2, word_u_less_than)) {
-        log_message(LOG_ERROR, "Failed to register U<");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: U<");
-    
-    if (!vm_create_word(vm, "U>", 2, word_u_greater_than)) {
-        log_message(LOG_ERROR, "Failed to register U>");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: U>");
-    
+    register_word(vm, "U<", logical_word_u_less_than);
+    register_word(vm, "U>", logical_word_u_greater_than);
+
     /* Range test */
-    if (!vm_create_word(vm, "WITHIN", 6, word_within)) {
-        log_message(LOG_ERROR, "Failed to register WITHIN");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: WITHIN");
-    
+    register_word(vm, "WITHIN", logical_word_within);
+
     /* Constants */
-    if (!vm_create_word(vm, "TRUE", 4, word_true)) {
-        log_message(LOG_ERROR, "Failed to register TRUE");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: TRUE");
-    
-    if (!vm_create_word(vm, "FALSE", 5, word_false)) {
-        log_message(LOG_ERROR, "Failed to register FALSE");
-        return;
-    }
-    log_message(LOG_DEBUG, "Registered word: FALSE");
-    
+    register_word(vm, "TRUE", logical_word_true);
+    register_word(vm, "FALSE", logical_word_false);
+
     log_message(LOG_INFO, "Logical and comparison words registered successfully");
 }

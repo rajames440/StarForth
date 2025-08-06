@@ -17,7 +17,7 @@
 /* Implementation of FORTH-79 Double Number Words */
 
 /* S>D ( n -- d )  Convert single to double */
-void word_s_to_d(VM *vm) {
+void double_word_s_to_d(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -33,7 +33,7 @@ void word_s_to_d(VM *vm) {
 }
 
 /* D+ ( d1 d2 -- d3 )  Add double numbers */
-void word_d_plus(VM *vm) {
+void double_word_d_plus(VM *vm) {
     if (vm->dsp < 3) {
         vm->error = 1;
         return;
@@ -66,7 +66,7 @@ void word_d_plus(VM *vm) {
 }
 
 /* D- ( d1 d2 -- d3 )  Subtract double numbers */
-void word_d_minus(VM *vm) {
+void double_word_d_minus(VM *vm) {
     if (vm->dsp < 3) {
         vm->error = 1;
         return;
@@ -99,7 +99,7 @@ void word_d_minus(VM *vm) {
 }
 
 /* DNEGATE ( d1 -- d2 )  Negate double number */
-void word_dnegate(VM *vm) {
+void double_word_dnegate(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -122,7 +122,7 @@ void word_dnegate(VM *vm) {
 }
 
 /* DABS ( d1 -- d2 )  Absolute value of double */
-void word_dabs(VM *vm) {
+void double_word_dabs(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -132,7 +132,7 @@ void word_dabs(VM *vm) {
     
     /* If negative, negate */
     if (dhigh < 0) {
-        word_dnegate(vm);
+        double_word_dnegate(vm);
     }
 }
 
@@ -153,7 +153,7 @@ static int d_compare(cell_t d1_high, cell_t d1_low, cell_t d2_high, cell_t d2_lo
 }
 
 /* DMAX ( d1 d2 -- d3 )  Maximum of two doubles */
-void word_dmax(VM *vm) {
+void double_word_dmax(VM *vm) {
     if (vm->dsp < 3) {
         vm->error = 1;
         return;
@@ -178,7 +178,7 @@ void word_dmax(VM *vm) {
 }
 
 /* DMIN ( d1 d2 -- d3 )  Minimum of two doubles */
-void word_dmin(VM *vm) {
+void double_word_dmin(VM *vm) {
     if (vm->dsp < 3) {
         vm->error = 1;
         return;
@@ -203,7 +203,7 @@ void word_dmin(VM *vm) {
 }
 
 /* D< ( d1 d2 -- flag )  Compare doubles: d1 < d2 */
-void word_d_less(VM *vm) {
+void double_word_d_less(VM *vm) {
     if (vm->dsp < 3) {
         vm->error = 1;
         return;
@@ -219,7 +219,7 @@ void word_d_less(VM *vm) {
 }
 
 /* D= ( d1 d2 -- flag )  Compare doubles: d1 = d2 */
-void word_d_equals(VM *vm) {
+void double_word_d_equals(VM *vm) {
     if (vm->dsp < 3) {
         vm->error = 1;
         return;
@@ -235,7 +235,7 @@ void word_d_equals(VM *vm) {
 }
 
 /* 2DROP ( d -- )  Drop double from stack */
-void word_2drop(VM *vm) {
+void double_word_2drop(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -246,7 +246,7 @@ void word_2drop(VM *vm) {
 }
 
 /* 2DUP ( d -- d d )  Duplicate double */
-void word_2dup(VM *vm) {
+void double_word_2dup(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -260,7 +260,7 @@ void word_2dup(VM *vm) {
 }
 
 /* 2SWAP ( d1 d2 -- d2 d1 )  Swap two doubles */
-void word_2swap(VM *vm) {
+void double_word_2swap(VM *vm) {
     if (vm->dsp < 3) {
         vm->error = 1;
         return;
@@ -278,7 +278,7 @@ void word_2swap(VM *vm) {
 }
 
 /* 2OVER ( d1 d2 -- d1 d2 d1 )  Copy second double to top */
-void word_2over(VM *vm) {
+void double_word_2over(VM *vm) {
     if (vm->dsp < 3) {
         vm->error = 1;
         return;
@@ -292,7 +292,7 @@ void word_2over(VM *vm) {
 }
 
 /* 2ROT ( d1 d2 d3 -- d2 d3 d1 )  Rotate three doubles */
-void word_2rot(VM *vm) {
+void double_word_2rot(VM *vm) {
     if (vm->dsp < 5) {
         vm->error = 1;
         return;
@@ -315,7 +315,7 @@ void word_2rot(VM *vm) {
 }
 
 /* 2>R ( d -- ) ( R: -- d )  Move double to return stack */
-void word_2to_r(VM *vm) {
+void double_word_2to_r(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -334,7 +334,7 @@ void word_2to_r(VM *vm) {
 }
 
 /* 2R> ( -- d ) ( R: d -- )  Move double from return stack */
-void word_2r_from(VM *vm) {
+void double_word_2r_from(VM *vm) {
     if (vm->rsp < 1) {
         vm->error = 1;  /* Return stack underflow */
         return;
@@ -348,7 +348,7 @@ void word_2r_from(VM *vm) {
 }
 
 /* 2R@ ( -- d ) ( R: d -- d )  Copy double from return stack */
-void word_2r_fetch(VM *vm) {
+void double_word_2r_fetch(VM *vm) {
     if (vm->rsp < 1) {
         vm->error = 1;  /* Return stack underflow */
         return;
@@ -362,7 +362,7 @@ void word_2r_fetch(VM *vm) {
 }
 
 /* D0= ( d -- flag )  Test if double is zero */
-void word_d_zero_equals(VM *vm) {
+void double_word_d_zero_equals(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -375,7 +375,7 @@ void word_d_zero_equals(VM *vm) {
 }
 
 /* D0< ( d -- flag )  Test if double is negative */
-void word_d_zero_less(VM *vm) {
+void double_word_d_zero_less(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -388,7 +388,7 @@ void word_d_zero_less(VM *vm) {
 }
 
 /* D2* ( d1 -- d2 )  Multiply double by 2 */
-void word_d_two_star(VM *vm) {
+void double_word_d_two_star(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -406,7 +406,7 @@ void word_d_two_star(VM *vm) {
 }
 
 /* D2/ ( d1 -- d2 )  Divide double by 2 */
-void word_d_two_slash(VM *vm) {
+void double_word_d_two_slash(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -428,27 +428,27 @@ void register_double_words(VM *vm) {
     log_message(LOG_INFO, "Registering double number words...");
     
     /* Register all double number words */
-    register_word(vm, "S>D", word_s_to_d);
-    register_word(vm, "D+", word_d_plus);
-    register_word(vm, "D-", word_d_minus);
-    register_word(vm, "DNEGATE", word_dnegate);
-    register_word(vm, "DABS", word_dabs);
-    register_word(vm, "DMAX", word_dmax);
-    register_word(vm, "DMIN", word_dmin);
-    register_word(vm, "D<", word_d_less);
-    register_word(vm, "D=", word_d_equals);
-    register_word(vm, "2DROP", word_2drop);
-    register_word(vm, "2DUP", word_2dup);
-    register_word(vm, "2SWAP", word_2swap);
-    register_word(vm, "2OVER", word_2over);
-    register_word(vm, "2ROT", word_2rot);
-    register_word(vm, "2>R", word_2to_r);
-    register_word(vm, "2R>", word_2r_from);
-    register_word(vm, "2R@", word_2r_fetch);
-    register_word(vm, "D0=", word_d_zero_equals);
-    register_word(vm, "D0<", word_d_zero_less);
-    register_word(vm, "D2*", word_d_two_star);
-    register_word(vm, "D2/", word_d_two_slash);
+    register_word(vm, "S>D", double_word_s_to_d);
+    register_word(vm, "D+", double_word_d_plus);
+    register_word(vm, "D-", double_word_d_minus);
+    register_word(vm, "DNEGATE", double_word_dnegate);
+    register_word(vm, "DABS", double_word_dabs);
+    register_word(vm, "DMAX", double_word_dmax);
+    register_word(vm, "DMIN", double_word_dmin);
+    register_word(vm, "D<", double_word_d_less);
+    register_word(vm, "D=", double_word_d_equals);
+    register_word(vm, "2DROP", double_word_2drop);
+    register_word(vm, "2DUP", double_word_2dup);
+    register_word(vm, "2SWAP", double_word_2swap);
+    register_word(vm, "2OVER", double_word_2over);
+    register_word(vm, "2ROT", double_word_2rot);
+    register_word(vm, "2>R", double_word_2to_r);
+    register_word(vm, "2R>", double_word_2r_from);
+    register_word(vm, "2R@", double_word_2r_fetch);
+    register_word(vm, "D0=", double_word_d_zero_equals);
+    register_word(vm, "D0<", double_word_d_zero_less);
+    register_word(vm, "D2*", double_word_d_two_star);
+    register_word(vm, "D2/", double_word_d_two_slash);
 
     log_message(LOG_INFO, "Double number words registered and tested");
 }

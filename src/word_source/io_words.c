@@ -17,7 +17,7 @@
 #include "../../include/log.h"
 
 /* EMIT ( c -- ) - Output character to terminal */
-static void word_emit(VM *vm) {
+static void io_word_emit(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -29,13 +29,13 @@ static void word_emit(VM *vm) {
 }
 
 /* CR ( -- ) - Output carriage return */
-static void word_cr(VM *vm) {
+static void io_word_cr(VM *vm) {
     putchar('\n');
     fflush(stdout);
 }
 
 /* KEY ( -- c ) - Input character from terminal */
-static void word_key(VM *vm) {
+static void io_word_key(VM *vm) {
     if (vm->dsp >= STACK_SIZE - 1) {
         vm->error = 1;
         return;
@@ -46,7 +46,7 @@ static void word_key(VM *vm) {
 }
 
 /* ?TERMINAL ( -- flag ) - Check if input available */
-static void word_question_terminal(VM *vm) {
+static void io_word_question_terminal(VM *vm) {
     if (vm->dsp >= STACK_SIZE - 1) {
         vm->error = 1;
         return;
@@ -57,7 +57,7 @@ static void word_question_terminal(VM *vm) {
 }
 
 /* TYPE ( addr u -- ) - Output u characters from addr */
-static void word_type(VM *vm) {
+static void io_word_type(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "TYPE: Data stack underflow");
         vm->error = 1;
@@ -84,13 +84,13 @@ static void word_type(VM *vm) {
 }
 
 /* SPACE ( -- ) - Output one space */
-static void word_space(VM *vm) {
+static void io_word_space(VM *vm) {
     putchar(' ');
     fflush(stdout);
 }
 
 /* SPACES ( n -- ) - Output n spaces */
-static void word_spaces(VM *vm) {
+static void io_word_spaces(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
         return;
@@ -110,13 +110,13 @@ static void word_spaces(VM *vm) {
 void register_io_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 I/O & terminal words...");
     
-    register_word(vm, "EMIT", word_emit);
-    register_word(vm, "CR", word_cr);
-    register_word(vm, "KEY", word_key);
-    register_word(vm, "?TERMINAL", word_question_terminal);
-    register_word(vm, "TYPE", word_type);
-    register_word(vm, "SPACE", word_space);
-    register_word(vm, "SPACES", word_spaces);
+    register_word(vm, "EMIT", io_word_emit);
+    register_word(vm, "CR", io_word_cr);
+    register_word(vm, "KEY", io_word_key);
+    register_word(vm, "?TERMINAL", io_word_question_terminal);
+    register_word(vm, "TYPE", io_word_type);
+    register_word(vm, "SPACE", io_word_space);
+    register_word(vm, "SPACES", io_word_spaces);
     
     log_message(LOG_INFO, "I/O & terminal words registered successfully");
 }

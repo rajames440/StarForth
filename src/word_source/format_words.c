@@ -22,33 +22,33 @@ static char conversion_buffer[64];      /* Buffer for numeric conversion */
 static int conversion_pos = 0;          /* Current position in conversion buffer */
 
 /* BASE ( -- addr )  Variable containing number base */
-void word_base(VM *vm) {
+void format_word_base(VM *vm) {
     vm_push(vm, (cell_t)(uintptr_t)&base_value);
 }
 
 /* DECIMAL ( -- )  Set base to 10 */
-void word_decimal(VM *vm) {
+void format_word_decimal(VM *vm) {
     base_value = 10;
 }
 
 /* HEX ( -- )  Set base to 16 */
-void word_hex(VM *vm) {
+void format_word_hex(VM *vm) {
     base_value = 16;
 }
 
 /* OCTAL ( -- )  Set base to 8 */
-void word_octal(VM *vm) {
+void format_word_octal(VM *vm) {
     base_value = 8;
 }
 
 /* <# ( -- )  Begin numeric conversion */
-void word_begin_conversion(VM *vm) {
+void format_word_begin_conversion(VM *vm) {
     conversion_pos = 0;
     memset(conversion_buffer, 0, sizeof(conversion_buffer));
 }
 
 /* HOLD ( c -- )  Insert character in conversion */
-void word_hold(VM *vm) {
+void format_word_hold(VM *vm) {
     cell_t c;
     
     if (vm->dsp < 0) {
@@ -70,7 +70,7 @@ void word_hold(VM *vm) {
 }
 
 /* SIGN ( n -- )  Insert sign if negative */
-void word_sign(VM *vm) {
+void format_word_sign(VM *vm) {
     cell_t n;
     
     if (vm->dsp < 0) {
@@ -82,12 +82,12 @@ void word_sign(VM *vm) {
     
     if (n < 0) {
         vm_push(vm, '-');
-        word_hold(vm);
+        format_word_hold(vm);
     }
 }
 
 /* # ( ud1 -- ud2 )  Convert one digit */
-void word_hash(VM *vm) {
+void format_word_hash(VM *vm) {
     cell_t dlow, dhigh;
     unsigned long ud;
     unsigned long remainder;
@@ -117,7 +117,7 @@ void word_hash(VM *vm) {
     
     /* Add digit to conversion buffer */
     vm_push(vm, digit);
-    word_hold(vm);
+    format_word_hold(vm);
     
     /* Push quotient back as double */
     vm_push(vm, (cell_t)(ud >> (sizeof(cell_t) * 4)));  /* dhigh */
@@ -125,7 +125,7 @@ void word_hash(VM *vm) {
 }
 
 /* #S ( ud -- 0 0 )  Convert all remaining digits */
-void word_hash_s(VM *vm) {
+void format_word_hash_s(VM *vm) {
     cell_t dlow, dhigh;
     
     if (vm->dsp < 1) {
@@ -135,7 +135,7 @@ void word_hash_s(VM *vm) {
     
     /* Keep converting digits until double is zero */
     do {
-        word_hash(vm);
+        format_word_hash(vm);
         if (vm->error) return;
         
         dlow = vm->data_stack[vm->dsp];
@@ -144,7 +144,7 @@ void word_hash_s(VM *vm) {
 }
 
 /* #> ( ud -- addr u )  End numeric conversion */
-void word_end_conversion(VM *vm) {
+void format_word_end_conversion(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
@@ -194,7 +194,7 @@ static void print_number_formatted(cell_t n, int width, int is_unsigned) {
 }
 
 /* . ( n -- )  Print signed number */
-void word_dot(VM *vm) {
+void format_word_dot(VM *vm) {
     cell_t n;
     
     if (vm->dsp < 0) {
@@ -208,7 +208,7 @@ void word_dot(VM *vm) {
 }
 
 /* .R ( n width -- )  Print signed number right-justified */
-void word_dot_r(VM *vm) {
+void format_word_dot_r(VM *vm) {
     cell_t width, n;
     
     if (vm->dsp < 1) {
@@ -224,7 +224,7 @@ void word_dot_r(VM *vm) {
 }
 
 /* U. ( u -- )  Print unsigned number */
-void word_u_dot(VM *vm) {
+void format_word_u_dot(VM *vm) {
     cell_t u;
     
     if (vm->dsp < 0) {
@@ -238,7 +238,7 @@ void word_u_dot(VM *vm) {
 }
 
 /* U.R ( u width -- )  Print unsigned number right-justified */
-void word_u_dot_r(VM *vm) {
+void format_word_u_dot_r(VM *vm) {
     cell_t width, u;
     
     if (vm->dsp < 1) {
@@ -254,7 +254,7 @@ void word_u_dot_r(VM *vm) {
 }
 
 /* D. ( d -- )  Print double number */
-void word_d_dot(VM *vm) {
+void format_word_d_dot(VM *vm) {
     cell_t dlow, dhigh;
     
     if (vm->dsp < 1) {
@@ -278,7 +278,7 @@ void word_d_dot(VM *vm) {
 }
 
 /* D.R ( d width -- )  Print double number right-justified */
-void word_d_dot_r(VM *vm) {
+void format_word_d_dot_r(VM *vm) {
     cell_t width, dlow, dhigh;
     
     if (vm->dsp < 2) {
@@ -302,7 +302,7 @@ void word_d_dot_r(VM *vm) {
 }
 
 /* .S ( -- )  Print stack contents */
-void word_dot_s(VM *vm) {
+void format_word_dot_s(VM *vm) {
     int i;
     
     printf("<");
@@ -318,7 +318,7 @@ void word_dot_s(VM *vm) {
 }
 
 /* ? ( addr -- )  Print value at address */
-void word_question(VM *vm) {
+void format_word_question(VM *vm) {
     cell_t addr;
     cell_t *ptr;
     
@@ -341,7 +341,7 @@ void word_question(VM *vm) {
 }
 
 /* DUMP ( addr u -- )  Hex dump u bytes from addr */
-void word_dump(VM *vm) {
+void format_word_dump(VM *vm) {
     cell_t u, addr;
     uint8_t *ptr;
     size_t i, j;
@@ -397,25 +397,25 @@ void register_format_words(VM *vm) {
     log_message(LOG_INFO, "Registering formatting & conversion words...");
     
     /* Register all formatting & conversion words */
-    register_word(vm, ".", word_dot);
-    register_word(vm, ".R", word_dot_r);
-    register_word(vm, "U.", word_u_dot);
-    register_word(vm, "U.R", word_u_dot_r);
-    register_word(vm, "D.", word_d_dot);
-    register_word(vm, "D.R", word_d_dot_r);
-    register_word(vm, ".S", word_dot_s);
-    register_word(vm, "?", word_question);
-    register_word(vm, "DUMP", word_dump);
-    register_word(vm, "<#", word_begin_conversion);
-    register_word(vm, "#", word_hash);
-    register_word(vm, "#>", word_end_conversion);
-    register_word(vm, "#S", word_hash_s);
-    register_word(vm, "HOLD", word_hold);
-    register_word(vm, "SIGN", word_sign);
-    register_word(vm, "BASE", word_base);
-    register_word(vm, "DECIMAL", word_decimal);
-    register_word(vm, "HEX", word_hex);
-    register_word(vm, "OCTAL", word_octal);
+    register_word(vm, ".", format_word_dot);
+    register_word(vm, ".R", format_word_dot_r);
+    register_word(vm, "U.", format_word_u_dot);
+    register_word(vm, "U.R", format_word_u_dot_r);
+    register_word(vm, "D.", format_word_d_dot);
+    register_word(vm, "D.R", format_word_d_dot_r);
+    register_word(vm, ".S", format_word_dot_s);
+    register_word(vm, "?", format_word_question);
+    register_word(vm, "DUMP", format_word_dump);
+    register_word(vm, "<#", format_word_begin_conversion);
+    register_word(vm, "#", format_word_hash);
+    register_word(vm, "#>", format_word_end_conversion);
+    register_word(vm, "#S", format_word_hash_s);
+    register_word(vm, "HOLD", format_word_hold);
+    register_word(vm, "SIGN", format_word_sign);
+    register_word(vm, "BASE", format_word_base);
+    register_word(vm, "DECIMAL", format_word_decimal);
+    register_word(vm, "HEX", format_word_hex);
+    register_word(vm, "OCTAL", format_word_octal);
 
     log_message(LOG_INFO, "Note: Output formatting words (., .R, U., etc.) require manual verification");
 }

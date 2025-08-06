@@ -29,7 +29,7 @@
 #include "../../include/log.h"
 
 /* DROP ( n -- ) Remove top stack item */
-static void word_drop(VM *vm) {
+static void stack_word_drop(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "DROP: Stack underflow");
         vm->error = 1;
@@ -40,7 +40,7 @@ static void word_drop(VM *vm) {
 }
 
 /* DUP ( n -- n n ) Duplicate top stack item */
-static void word_dup(VM *vm) {
+static void stack_word_dup(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "DUP: Stack underflow");
         vm->error = 1;
@@ -59,7 +59,7 @@ static void word_dup(VM *vm) {
 }
 
 /* ?DUP ( n -- n n | n -- 0 ) Duplicate if non-zero */
-static void word_question_dup(VM *vm) {
+static void stack_word_question_dup(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "?DUP: Stack underflow");
         vm->error = 1;
@@ -81,7 +81,7 @@ static void word_question_dup(VM *vm) {
 }
 
 /* SWAP ( n1 n2 -- n2 n1 ) Exchange top two stack items */
-static void word_swap(VM *vm) {
+static void stack_word_swap(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "SWAP: Insufficient stack items (need 2)");
         vm->error = 1;
@@ -98,7 +98,7 @@ static void word_swap(VM *vm) {
 }
 
 /* OVER ( n1 n2 -- n1 n2 n1 ) Copy second stack item to top */
-static void word_over(VM *vm) {
+static void stack_word_over(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "OVER: Insufficient stack items (need 2)");
         vm->error = 1;
@@ -118,7 +118,7 @@ static void word_over(VM *vm) {
 }
 
 /* ROT ( n1 n2 n3 -- n2 n3 n1 ) Rotate top three stack items */
-static void word_rot(VM *vm) {
+static void stack_word_rot(VM *vm) {
     if (vm->dsp < 2) {
         log_message(LOG_ERROR, "ROT: Insufficient stack items (need 3)");
         vm->error = 1;
@@ -138,7 +138,7 @@ static void word_rot(VM *vm) {
 }
 
 /* -ROT ( n1 n2 n3 -- n3 n1 n2 ) Reverse rotate top three items */
-static void word_minus_rot(VM *vm) {
+static void stack_word_minus_rot(VM *vm) {
     if (vm->dsp < 2) {
         log_message(LOG_ERROR, "-ROT: Insufficient stack items (need 3)");
         vm->error = 1;
@@ -158,7 +158,7 @@ static void word_minus_rot(VM *vm) {
 }
 
 /* DEPTH ( -- n ) Return number of stack items */
-static void word_depth(VM *vm) {
+static void stack_word_depth(VM *vm) {
     if (vm->dsp >= STACK_SIZE - 1) {
         log_message(LOG_ERROR, "DEPTH: Stack overflow");
         vm->error = 1;
@@ -172,7 +172,7 @@ static void word_depth(VM *vm) {
 }
 
 /* PICK ( n -- stack[n] ) Copy nth stack item to top */
-static void word_pick(VM *vm) {
+static void stack_word_pick(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "PICK: Stack underflow");
         vm->error = 1;
@@ -196,7 +196,7 @@ static void word_pick(VM *vm) {
 }
 
 /* ROLL ( n -- ) Move nth stack item to top */
-static void word_roll(VM *vm) {
+static void stack_word_roll(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "ROLL: Stack underflow");
         vm->error = 1;
@@ -241,16 +241,16 @@ static void word_roll(VM *vm) {
 void register_stack_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 stack operation words...");
     
-    register_word(vm, "DROP", word_drop);
-    register_word(vm, "DUP", word_dup);
-    register_word(vm, "?DUP", word_question_dup);
-    register_word(vm, "SWAP", word_swap);
-    register_word(vm, "OVER", word_over);
-    register_word(vm, "ROT", word_rot);
-    register_word(vm, "-ROT", word_minus_rot);
-    register_word(vm, "DEPTH", word_depth);
-    register_word(vm, "PICK", word_pick);
-    register_word(vm, "ROLL", word_roll);
+    register_word(vm, "DROP", stack_word_drop);
+    register_word(vm, "DUP", stack_word_dup);
+    register_word(vm, "?DUP", stack_word_question_dup);
+    register_word(vm, "SWAP", stack_word_swap);
+    register_word(vm, "OVER", stack_word_over);
+    register_word(vm, "ROT", stack_word_rot);
+    register_word(vm, "-ROT", stack_word_minus_rot);
+    register_word(vm, "DEPTH", stack_word_depth);
+    register_word(vm, "PICK", stack_word_pick);
+    register_word(vm, "ROLL", stack_word_roll);
     
     log_message(LOG_INFO, "Stack operation words registered successfully");
 }
