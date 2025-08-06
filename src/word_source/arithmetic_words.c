@@ -36,11 +36,11 @@
  */
 
 /* Forward declarations */
-static void word_star_slash(VM *vm);
-static void word_star_slash_mod(VM *vm);
+static void arithmetic_word_star_slash(VM *vm);
+static void arithmetic_word_star_slash_mod(VM *vm);
 
 /* + ( n1 n2 -- n3 ) Add n1 and n2 */
-static void word_plus(VM *vm) {
+static void arithmetic_word_plus(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "+: Stack underflow");
         vm->error = 1;
@@ -56,7 +56,7 @@ static void word_plus(VM *vm) {
 }
 
 /* - ( n1 n2 -- n3 ) Subtract n2 from n1 */
-static void word_minus(VM *vm) {
+static void arithmetic_word_minus(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "-: Stack underflow");
         vm->error = 1;
@@ -72,7 +72,7 @@ static void word_minus(VM *vm) {
 }
 
 /* MULTIPLY ( n1 n2 -- n3 ) Multiply n1 and n2 */
-static void word_multiply(VM *vm) {
+static void arithmetic_word_multiply(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "*: Stack underflow");
         vm->error = 1;
@@ -158,7 +158,7 @@ static void word_divmod(VM *vm) {
 }
 
 /* STAR-SLASH ( n1 n2 n3 -- n4 ) n1*n2/n3 with intermediate double */
-static void word_star_slash(VM *vm) {
+static void arithmetic_word_star_slash(VM *vm) {
     if (vm->dsp < 2) {
         log_message(LOG_ERROR, "*/: Stack underflow");
         vm->error = 1;
@@ -184,7 +184,7 @@ static void word_star_slash(VM *vm) {
 }
 
 /* STAR-SLASH-MOD ( n1 n2 n3 -- n4 n5 ) n1*n2/n3 remainder and quotient */
-static void word_star_slash_mod(VM *vm) {
+static void arithmetic_word_star_slash_mod(VM *vm) {
     if (vm->dsp < 2) {
         log_message(LOG_ERROR, "*/MOD: Stack underflow");
         vm->error = 1;
@@ -213,7 +213,7 @@ static void word_star_slash_mod(VM *vm) {
 }
 
 /* 1+ ( n -- n+1 ) Add 1 */
-static void word_one_plus(VM *vm) {
+static void arithmetic_word_one_plus(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "1+: Stack underflow");
         vm->error = 1;
@@ -226,7 +226,7 @@ static void word_one_plus(VM *vm) {
 }
 
 /* 1- ( n -- n-1 ) Subtract 1 */
-static void word_one_minus(VM *vm) {
+static void arithmetic_word_one_minus(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "1-: Stack underflow");
         vm->error = 1;
@@ -239,7 +239,7 @@ static void word_one_minus(VM *vm) {
 }
 
 /* 2+ ( n -- n+2 ) Add 2 */
-static void word_two_plus(VM *vm) {
+static void arithmetic_word_two_plus(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "2+: Stack underflow");
         vm->error = 1;
@@ -252,7 +252,7 @@ static void word_two_plus(VM *vm) {
 }
 
 /* 2- ( n -- n-2 ) Subtract 2 */
-static void word_two_minus(VM *vm) {
+static void arithmetic_word_two_minus(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "2-: Stack underflow");
         vm->error = 1;
@@ -265,7 +265,7 @@ static void word_two_minus(VM *vm) {
 }
 
 /* 2* ( n -- n*2 ) Multiply by 2 (left shift) */
-static void word_two_multiply(VM *vm) {
+static void arithmetic_word_two_multiply(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "2*: Stack underflow");
         vm->error = 1;
@@ -278,7 +278,7 @@ static void word_two_multiply(VM *vm) {
 }
 
 /* 2/ ( n -- n/2 ) Divide by 2 (right shift) */
-static void word_two_divide(VM *vm) {
+static void arithmetic_word_two_divide(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "2/: Stack underflow");
         vm->error = 1;
@@ -291,7 +291,7 @@ static void word_two_divide(VM *vm) {
 }
 
 /* ABS ( n -- |n| ) Absolute value */
-static void word_abs(VM *vm) {
+static void arithmetic_word_abs(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "ABS: Stack underflow");
         vm->error = 1;
@@ -305,7 +305,7 @@ static void word_abs(VM *vm) {
 }
 
 /* NEGATE ( n -- -n ) Two's complement */
-static void word_negate(VM *vm) {
+static void arithmetic_word_negate(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "NEGATE: Stack underflow");
         vm->error = 1;
@@ -318,7 +318,7 @@ static void word_negate(VM *vm) {
 }
 
 /* MIN ( n1 n2 -- n3 ) Minimum of n1 and n2 */
-static void word_min(VM *vm) {
+static void arithmetic_word_min(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "MIN: Stack underflow");
         vm->error = 1;
@@ -334,7 +334,7 @@ static void word_min(VM *vm) {
 }
 
 /* MAX ( n1 n2 -- n3 ) Maximum of n1 and n2 */
-static void word_max(VM *vm) {
+static void arithmetic_word_max(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "MAX: Stack underflow");
         vm->error = 1;
@@ -354,30 +354,30 @@ void register_arithmetic_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 arithmetic words...");
     
     /* Basic arithmetic */
-    register_word(vm, "+", word_plus);
-    register_word(vm, "-", word_minus);
-    register_word(vm, "*", word_multiply);
+    register_word(vm, "+", arithmetic_word_plus);
+    register_word(vm, "-", arithmetic_word_minus);
+    register_word(vm, "*", arithmetic_word_multiply);
     register_word(vm, "/", word_divide);
     register_word(vm, "MOD", word_mod);
     register_word(vm, "/MOD", word_divmod);
     
     /* Advanced arithmetic */
-    register_word(vm, "*/", word_star_slash);
-    register_word(vm, "*/MOD", word_star_slash_mod);
+    register_word(vm, "*/", arithmetic_word_star_slash);
+    register_word(vm, "*/MOD", arithmetic_word_star_slash_mod);
     
     /* Increment/decrement */
-    register_word(vm, "1+", word_one_plus);
-    register_word(vm, "1-", word_one_minus);
-    register_word(vm, "2+", word_two_plus);
-    register_word(vm, "2-", word_two_minus);
-    register_word(vm, "2*", word_two_multiply);
-    register_word(vm, "2/", word_two_divide);
+    register_word(vm, "1+", arithmetic_word_one_plus);
+    register_word(vm, "1-", arithmetic_word_one_minus);
+    register_word(vm, "2+", arithmetic_word_two_plus);
+    register_word(vm, "2-", arithmetic_word_two_minus);
+    register_word(vm, "2*", arithmetic_word_two_multiply);
+    register_word(vm, "2/", arithmetic_word_two_divide);
     
     /* Sign and comparison */
-    register_word(vm, "ABS", word_abs);
-    register_word(vm, "NEGATE", word_negate);
-    register_word(vm, "MIN", word_min);
-    register_word(vm, "MAX", word_max);
+    register_word(vm, "ABS", arithmetic_word_abs);
+    register_word(vm, "NEGATE", arithmetic_word_negate);
+    register_word(vm, "MIN", arithmetic_word_min);
+    register_word(vm, "MAX", arithmetic_word_max);
     
     log_message(LOG_INFO, "Arithmetic words registered successfully");
 }

@@ -29,6 +29,15 @@ typedef void (*word_func_t)(struct VM *vm);
 #define WORD_NAME_MAX 31
 #define COMPILE_BUFFER_SIZE 1024
 
+/* Block system configuration */
+#define BLOCK_SIZE 1024                                 /* 1KB per block */
+#define MAX_BLOCKS (VM_MEMORY_SIZE / BLOCK_SIZE)        /* 1024 blocks from 1MB */
+
+/* Memory layout constants */
+#define DICTIONARY_BLOCKS 64                            /* First 64 blocks (64KB) for dictionary */
+#define DICTIONARY_MEMORY_SIZE (DICTIONARY_BLOCKS * BLOCK_SIZE)
+#define USER_BLOCKS_START DICTIONARY_BLOCKS             /* User blocks start at block 64 */
+
 /* Word flags */
 #define WORD_IMMEDIATE  0x80    /* Word executes immediately even in compile mode */
 #define WORD_HIDDEN     0x40    /* Word is hidden from dictionary searches */
@@ -131,8 +140,9 @@ void vm_compile_literal(VM *vm, cell_t value);
 void vm_compile_exit(VM *vm);
 void vm_interpret_word(VM *vm, const char *word_str, size_t len);
 
-/* Built-in words registration */
-/* void vm_register_builtins(VM *vm); */
+/* Block system integration */
+void* vm_get_block_addr(VM *vm, int block_num);
+int vm_addr_to_block(VM *vm, void *addr);
 
 /* Testing functions */
 void vm_run_smoke_tests(VM *vm);

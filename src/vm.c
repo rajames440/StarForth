@@ -25,8 +25,8 @@ void vm_init(VM *vm) {
     /* Clear all memory */
     memset(vm, 0, sizeof(VM));
 
-    /* Allocate dynamic memory */
-    vm->memory = malloc(VM_MEMORY_SIZE);
+    /* Allocate unified block storage - this IS our VM memory */
+    vm->memory = malloc(VM_MEMORY_SIZE);  /* 1MB = 1024 blocks */
     if (vm->memory == NULL) {
         log_message(LOG_ERROR, "Failed to allocate VM memory");
         vm->error = 1;
@@ -37,18 +37,14 @@ void vm_init(VM *vm) {
     vm->dsp = -1;   /* Data stack empty */
     vm->rsp = -1;   /* Return stack empty */
 
-    /* Initialize other fields - ensure here starts aligned */
+    /* Initialize dictionary space (first 64 blocks) */
     vm->here = 0;   /* Start at beginning of allocated memory */
-
-    /* Ensure the memory buffer itself is aligned for our cell size */
-    /* If the malloc'd memory isn't aligned, adjust our starting position */
-    uintptr_t mem_addr = (uintptr_t)vm->memory;
-    size_t alignment_offset = (sizeof(cell_t) - (mem_addr % sizeof(cell_t))) % sizeof(cell_t);
-    vm->here = alignment_offset;
-
-    /* Now align the here pointer */
     vm_align(vm);   /* Ensure initial alignment */
 
+    /* Point blocks to the same memory - UNIFIED! */
+    vm->blocks = vm->memory;  /* Blocks and heap share same space */
+
+    /* Initialize other fields */
     vm->latest = NULL;
     vm->mode = MODE_INTERPRET;
     vm->compiling_word = NULL;
@@ -60,14 +56,11 @@ void vm_init(VM *vm) {
     vm->input_length = 0;
     vm->input_pos = 0;
 
-    /* Initialize blocks pointer */
-    vm->blocks = NULL;
-
     /* Initialize current executing entry */
     vm->current_executing_entry = NULL;
 
-    log_message(LOG_DEBUG, "VM initialized - memory=%p, here=%zu (aligned), cell_size=%zu",
-                (void*)vm->memory, vm->here, sizeof(cell_t));
+    log_message(LOG_DEBUG, "VM initialized - unified memory=%p, blocks=%p, here=%zu (dict_blocks=%d)",
+                (void*)vm->memory, (void*)vm->blocks, vm->here, DICTIONARY_BLOCKS);
 
     /* Register all FORTH-79 standard words at the end of initialization */
     register_forth79_words(vm);
@@ -192,6 +185,8 @@ DictEntry* vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     log_message(LOG_DEBUG, "vm_create_word: Successfully created '%.*s' at %p",
                 (int)len, name, (void*)entry);
 
+    vm_align(vm);  /* Align for future data field access */
+
     return entry;
 }
 
@@ -220,9 +215,10 @@ void vm_smudge_word(VM *vm) {
 
 /* Memory management */
 void* vm_allot(VM *vm, size_t bytes) {
-    if (vm->here + bytes >= VM_MEMORY_SIZE) {
-        log_message(LOG_ERROR, "Out of memory (here=%zu, bytes=%zu, limit=%d)",
-                    vm->here, bytes, VM_MEMORY_SIZE);
+    /* Ensure we don't allocate beyond dictionary space (first 64 blocks) */
+    if (vm->here + bytes >= DICTIONARY_MEMORY_SIZE) {
+        log_message(LOG_ERROR, "Dictionary space full (here=%zu, bytes=%zu, dict_limit=%d)",
+                    vm->here, bytes, DICTIONARY_MEMORY_SIZE);
         vm->error = 1;
         return NULL;
     }
@@ -230,8 +226,10 @@ void* vm_allot(VM *vm, size_t bytes) {
     void *ptr = vm->memory + vm->here;
     vm->here += bytes;
 
-    log_message(LOG_DEBUG, "ALLOT: Allocated %zu bytes at offset %zu",
-                bytes, vm->here - bytes);
+    /* Log which block we're using */
+    int current_block = vm->here / BLOCK_SIZE;
+    log_message(LOG_DEBUG, "ALLOT: Allocated %zu bytes at offset %zu (block %d)",
+                bytes, vm->here - bytes, current_block);
 
     return ptr;
 }
@@ -619,16 +617,37 @@ DictEntry* vm_dictionary_find_latest_by_func(VM *vm, word_func_t func) {
 }
 
 /* Get data field address from dictionary entry */
+
 cell_t* vm_dictionary_get_data_field(DictEntry *entry) {
     if (entry == NULL) {
         return NULL;
     }
 
     /* Data field comes right after the entry structure and name */
+    /* vm_create_word() ensures proper alignment after the name */
     uintptr_t entry_end = (uintptr_t)entry + sizeof(DictEntry) + entry->name_len;
 
-    /* Align to cell boundary */
-    entry_end = (entry_end + sizeof(cell_t) - 1) & ~(sizeof(cell_t) - 1);
-
     return (cell_t*)entry_end;
+}
+
+/* Block system integration functions */
+
+/* Get address of block N */
+void* vm_get_block_addr(VM *vm, int block_num) {
+    if (block_num < 0 || block_num >= MAX_BLOCKS) {
+        log_message(LOG_ERROR, "vm_get_block_addr: Invalid block number %d", block_num);
+        return NULL;
+    }
+    return vm->memory + (block_num * BLOCK_SIZE);
+}
+
+/* Convert address to block number */
+int vm_addr_to_block(VM *vm, void *addr) {
+    if (addr < (void*)vm->memory ||
+        addr >= (void*)(vm->memory + VM_MEMORY_SIZE)) {
+        return -1;  /* Outside VM memory */
+    }
+
+    uintptr_t offset = (uintptr_t)addr - (uintptr_t)vm->memory;
+    return (int)(offset / BLOCK_SIZE);
 }
