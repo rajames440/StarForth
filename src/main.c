@@ -13,6 +13,7 @@
 #include "log.h"
 #include "word_registry.h"
 #include "test_runner/include/test_runner.h"
+#include "test_runner/include/test_common.h"
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -55,6 +56,7 @@ void print_usage(const char *program_name) {
     printf("  --log-info        Set logging level to INFO (default)\n");
     printf("  --log-test        Set logging level to TEST (test results only)\n");
     printf("  --log-debug       Set logging level to DEBUG (all messages)\n");
+    printf("  --fail-fast       Stop test suite immediately on first failure\n");
     printf("  --help, -h        Show this help message\n\n");
     printf("Examples:\n");
     printf("  %s                        # Start REPL with INFO logging\n", program_name);
@@ -62,6 +64,7 @@ void print_usage(const char *program_name) {
     printf("  %s --benchmark            # Run benchmarks with 1000 iterations\n", program_name);
     printf("  %s --benchmark 5000       # Run benchmarks with 5000 iterations\n", program_name);
     printf("  %s --log-debug --run-tests  # Run tests with DEBUG logging\n", program_name);
+
 }
 
 int main(int argc, char *argv[]) {
@@ -119,6 +122,10 @@ int main(int argc, char *argv[]) {
             print_usage(argv[0]);
             return 0;
         }
+        else if (strcmp(argv[i], "--fail-fast") == 0) {
+            fail_fast = 1;
+        }
+
         else {
             printf("Unknown option: %s\n", argv[i]);
             print_usage(argv[0]);

@@ -20,6 +20,9 @@
 #define MAX_TEST_INPUT 256
 #define MAX_TESTS_PER_WORD 20
 
+/* fail fast */
+extern int fail_fast;
+
 /* Test types */
 typedef enum {
     TEST_NORMAL = 0,
