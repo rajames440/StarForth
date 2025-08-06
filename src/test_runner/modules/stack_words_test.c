@@ -105,6 +105,7 @@ void run_stack_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Stack Words Tests (Module 1: Foundation)...");
     
     for (int i = 0; stack_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &stack_word_suites[i]);
     }
     

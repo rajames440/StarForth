@@ -50,6 +50,7 @@ void run_editor_words_tests(VM *vm) {
     log_message(LOG_WARN, "Most editor tests marked as unimplemented due to interactive nature");
     
     for (int i = 0; editor_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &editor_word_suites[i]);
     }
     

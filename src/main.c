@@ -46,20 +46,21 @@ void print_usage(const char *program_name) {
     printf("Usage: %s [OPTIONS]\n", program_name);
     printf("StarForth - A lightweight Forth virtual machine\n\n");
     printf("Options:\n");
-    printf("  --run-tests     Run the comprehensive test suite before starting REPL\n");
-    printf("                  (automatically enables DEBUG logging for tests)\n");
-    printf("  --benchmark [N] Run performance benchmarks (default: 1000 iterations)\n");
-    printf("                  (exits after benchmarking, does not start REPL)\n");
-    printf("  --log-error     Set logging level to ERROR (only errors)\n");
-    printf("  --log-warn      Set logging level to WARN (warnings and errors)\n");
-    printf("  --log-info      Set logging level to INFO (default)\n");
-    printf("  --log-debug     Set logging level to DEBUG (all messages)\n");
-    printf("  --help, -h      Show this help message\n\n");
+    printf("  --run-tests       Run the comprehensive test suite before starting REPL\n");
+    printf("                    (automatically enables TEST logging if no log level set)\n");
+    printf("  --benchmark [N]   Run performance benchmarks (default: 1000 iterations)\n");
+    printf("                    (exits after benchmarking, does not start REPL)\n");
+    printf("  --log-error       Set logging level to ERROR (only errors)\n");
+    printf("  --log-warn        Set logging level to WARN (warnings and errors)\n");
+    printf("  --log-info        Set logging level to INFO (default)\n");
+    printf("  --log-test        Set logging level to TEST (test results only)\n");
+    printf("  --log-debug       Set logging level to DEBUG (all messages)\n");
+    printf("  --help, -h        Show this help message\n\n");
     printf("Examples:\n");
-    printf("  %s                    # Start REPL with INFO logging\n", program_name);
-    printf("  %s --run-tests        # Run tests with DEBUG logging, then start REPL\n", program_name);
-    printf("  %s --benchmark        # Run benchmarks with 1000 iterations\n", program_name);
-    printf("  %s --benchmark 5000   # Run benchmarks with 5000 iterations\n", program_name);
+    printf("  %s                        # Start REPL with INFO logging\n", program_name);
+    printf("  %s --run-tests            # Run tests with TEST logging, then start REPL\n", program_name);
+    printf("  %s --benchmark            # Run benchmarks with 1000 iterations\n", program_name);
+    printf("  %s --benchmark 5000       # Run benchmarks with 5000 iterations\n", program_name);
     printf("  %s --log-debug --run-tests  # Run tests with DEBUG logging\n", program_name);
 }
 
@@ -106,6 +107,10 @@ int main(int argc, char *argv[]) {
             log_level = LOG_INFO;
             log_level_explicitly_set = 1;
         }
+        else if (strcmp(argv[i], "--log-test") == 0) {
+            log_level = LOG_TEST;
+            log_level_explicitly_set = 1;
+        }
         else if (strcmp(argv[i], "--log-debug") == 0) {
             log_level = LOG_DEBUG;
             log_level_explicitly_set = 1;
@@ -121,10 +126,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /* If running tests and no explicit log level was set, force DEBUG */
+    /* If running tests and no explicit log level was set, default to TEST */
     if (run_tests && !log_level_explicitly_set && !run_benchmark) {
-        log_level = LOG_DEBUG;
-        log_message(LOG_INFO, "Test mode enabled - automatically setting LOG_DEBUG for detailed output");
+        log_level = LOG_TEST;
+        log_message(LOG_INFO, "Test mode enabled - using LOG_TEST level for diagnostics");
     }
 
     /* Set the logging level */

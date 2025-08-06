@@ -143,6 +143,7 @@ void run_arithmetic_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Arithmetic Words Tests (Module 5)...");
     
     for (int i = 0; arithmetic_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &arithmetic_word_suites[i]);
     }
     

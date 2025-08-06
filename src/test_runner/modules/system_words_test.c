@@ -90,7 +90,8 @@ void run_system_words_tests(VM *vm) {
     log_message(LOG_WARN, "Some system tests marked as unimplemented due to system-level effects");
 
     for (int i = 0; system_word_suites[i].word_name != NULL; i++) {
-        run_test_suite(vm, &system_word_suites[i]);
+         log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
+       run_test_suite(vm, &system_word_suites[i]);
     }
 
     print_module_summary("System Words", 0, 0, 0, 0);

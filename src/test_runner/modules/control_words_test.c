@@ -115,6 +115,7 @@ void run_control_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Control Words Tests (Module 12)...");
     
     for (int i = 0; control_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &control_word_suites[i]);
     }
     

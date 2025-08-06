@@ -96,6 +96,7 @@ void run_dictionary_manipulation_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Dictionary Manipulation Words Tests (Module 14)...");
     
     for (int i = 0; dict_manip_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &dict_manip_word_suites[i]);
     }
     

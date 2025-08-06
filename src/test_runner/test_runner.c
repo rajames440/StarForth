@@ -46,11 +46,12 @@ static uint64_t get_time_ns(void) {
 
 /* Test modules in dependency order - matches your word registration order */
 static TestModule test_modules[] = {
+    {"Arithmetic Words", NULL, 0, run_arithmetic_words_tests},            /* Module 5 */
+
     {"Stack Words", NULL, 0, run_stack_words_tests},                      /* Module 1 */
     {"Return Stack Words", NULL, 0, run_return_stack_words_tests},        /* Module 2 */
     {"Memory Words", NULL, 0, run_memory_words_tests},                    /* Module 3 */
     {"Dictionary Words", NULL, 0, run_dictionary_words_tests},            /* Module 4 */
-    {"Arithmetic Words", NULL, 0, run_arithmetic_words_tests},            /* Module 5 */
     {"Double Words", NULL, 0, run_double_words_tests},                    /* Module 6 */
     {"Mixed Arithmetic Words", NULL, 0, run_mixed_arithmetic_words_tests},/* Module 7 */
     {"Logical Words", NULL, 0, run_logical_words_tests},                  /* Module 8 */

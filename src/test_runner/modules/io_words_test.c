@@ -181,7 +181,8 @@ void run_io_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running I/O Words Tests (Module 9)...");
 
     for (int i = 0; io_word_suites[i].word_name != NULL; i++) {
-        run_test_suite(vm, &io_word_suites[i]);
+         log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
+       run_test_suite(vm, &io_word_suites[i]);
     }
 
     print_module_summary("I/O Words", 0, 0, 0, 0);

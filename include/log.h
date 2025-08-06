@@ -1,14 +1,7 @@
 /*
-
-  * Copyright (c) 2025 Robert A. James - StarshipOS Forth Project.
-  *
-  * This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
-  * To the extent possible under law, the author(s) have dedicated all copyright and related
-  * and neighboring rights to this software to the public domain worldwide.
-  * This software is distributed without any warranty.
-  *
-  * See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
-
+* Copyright (c) 2025 Robert A. James - StarshipOS Forth Project.
+ * This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+ * See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
  */
 
 #ifndef LOG_H
@@ -21,6 +14,7 @@ typedef enum {
     LOG_ERROR = 0,
     LOG_WARN,
     LOG_INFO,
+    LOG_TEST,   // 🔥 NEW
     LOG_DEBUG
 } LogLevel;
 

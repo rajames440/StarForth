@@ -138,6 +138,7 @@ void run_mixed_arithmetic_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Mixed Arithmetic Words Tests (Module 7)...");
     
     for (int i = 0; mixed_arithmetic_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &mixed_arithmetic_word_suites[i]);
     }
     

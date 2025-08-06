@@ -235,7 +235,26 @@ void* vm_allot(VM *vm, size_t bytes) {
 }
 
 void vm_align(VM *vm) {
-    vm->here = (vm->here + sizeof(cell_t) - 1) & ~(sizeof(cell_t) - 1);
+    size_t align = sizeof(cell_t);
+    size_t misalignment = vm->here % align;
+
+    if (misalignment != 0) {
+        size_t padding = align - misalignment;
+        void *pad = vm_allot(vm, padding);
+        if (pad == NULL) {
+            log_message(LOG_ERROR, "vm_align: Out of memory while aligning");
+            vm->error = 1;
+            return;
+        }
+
+        /* Optional: zero out the padding */
+        unsigned char *bytes = (unsigned char *)pad;
+        for (size_t i = 0; i < padding; ++i) {
+            bytes[i] = 0;
+        }
+
+        log_message(LOG_DEBUG, "vm_align: Added %zu byte(s) of padding", padding);
+    }
 }
 
 /* Input parsing */
@@ -502,75 +521,59 @@ static void execute_colon_word(VM *vm) {
 
 /* Main word interpreter */
 void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
-    log_message(LOG_DEBUG, "vm_interpret_word: Processing '%.*s' (mode=%s)",
-                (int)len, word_str,
+    log_message(LOG_DEBUG, "INTERPRET: '%.*s' (mode=%s)", (int)len, word_str,
                 vm->mode == MODE_COMPILE ? "COMPILE" : "INTERPRET");
 
-    /* Try to find word in dictionary */
     DictEntry *entry = vm_find_word(vm, word_str, len);
-
     if (entry) {
-        log_message(LOG_DEBUG, "vm_interpret_word: Found word '%.*s' at %p",
-                    (int)len, word_str, (void*)entry);
-
         if (vm->mode == MODE_COMPILE && !(entry->flags & WORD_IMMEDIATE)) {
-            /* Compile the word */
-            log_message(LOG_DEBUG, "vm_interpret_word: Compiling call to '%.*s'",
-                        (int)len, word_str);
+            log_message(LOG_DEBUG, "COMPILE: '%.*s'", (int)len, word_str);
             vm_compile_word(vm, entry);
         } else {
-            /* Execute immediately */
-            log_message(LOG_DEBUG, "vm_interpret_word: Executing '%.*s'",
-                        (int)len, word_str);
+            log_message(LOG_DEBUG, "EXECUTE: '%.*s'", (int)len, word_str);
             vm->current_executing_entry = entry;
-            if (entry->func != NULL) {
+            if (entry->func) {
                 entry->func(vm);
             } else {
-                log_message(LOG_ERROR, "NULL function pointer for word: %.*s", (int)len, word_str);
+                log_message(LOG_ERROR, "NULL func for '%.*s'", (int)len, word_str);
                 vm->error = 1;
             }
             vm->current_executing_entry = NULL;
         }
-    } else {
-        /* Try to parse as number */
-        cell_t value;
-        log_message(LOG_DEBUG, "vm_interpret_word: Word '%.*s' not found, trying as number",
-                    (int)len, word_str);
-
-        if (vm_parse_number(word_str, &value)) {
-            log_message(LOG_DEBUG, "vm_interpret_word: Parsed '%.*s' as number %ld",
-                        (int)len, word_str, (long)value);
-            if (vm->mode == MODE_COMPILE) {
-                vm_compile_literal(vm, value);
-            } else {
-                vm_push(vm, value);
-            }
-        } else {
-            log_message(LOG_ERROR, "Unknown word: %.*s", (int)len, word_str);
-            vm->error = 1;
-        }
+        return;
     }
 
-    log_message(LOG_DEBUG, "vm_interpret_word: Finished processing '%.*s'", (int)len, word_str);
+    /* Not found — try as number */
+    cell_t value;
+    log_message(LOG_DEBUG, "NOT FOUND: '%.*s' — try number", (int)len, word_str);
+    if (vm_parse_number(word_str, &value)) {
+        log_message(LOG_DEBUG, "NUMBER: '%.*s' = %ld", (int)len, word_str, (long)value);
+        if (vm->mode == MODE_COMPILE) {
+            vm_compile_literal(vm, value);
+        } else {
+            vm_push(vm, value);
+        }
+    } else {
+        log_message(LOG_ERROR, "UNKNOWN WORD: '%.*s'", (int)len, word_str);
+        vm->error = 1;
+    }
 }
 
 /* Main interpreter */
 void vm_interpret(VM *vm, const char *input) {
-    /* Copy input to buffer */
     size_t len = strlen(input);
-    if (len >= INPUT_BUFFER_SIZE) {
-        len = INPUT_BUFFER_SIZE - 1;
-    }
+    if (len >= INPUT_BUFFER_SIZE) len = INPUT_BUFFER_SIZE - 1;
 
     memcpy(vm->input_buffer, input, len);
     vm->input_buffer[len] = '\0';
     vm->input_length = len;
     vm->input_pos = 0;
 
-    /* Parse and interpret words */
     char word[64];
-    while (vm_parse_word(vm, word, sizeof(word)) && !vm->error) {
-        vm_interpret_word(vm, word, strlen(word));
+    size_t word_len;
+
+    while ((word_len = vm_parse_word(vm, word, sizeof(word))) > 0 && !vm->error) {
+        vm_interpret_word(vm, word, word_len);
     }
 }
 

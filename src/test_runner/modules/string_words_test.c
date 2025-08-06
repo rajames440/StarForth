@@ -108,6 +108,7 @@ void run_string_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running String Words Tests (Module 11)...");
     
     for (int i = 0; string_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &string_word_suites[i]);
     }
     

@@ -154,6 +154,7 @@ void run_logical_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Logical Words Tests (Module 8)...");
     
     for (int i = 0; logical_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &logical_word_suites[i]);
     }
     

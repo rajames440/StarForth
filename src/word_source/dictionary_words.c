@@ -17,14 +17,14 @@
 /* FORTH-79 Dictionary & Compilation Words Implementation */
 
 /* HERE ( -- addr )  Address of next free dictionary space */
-void word_here(VM *vm) {
+void dictionary_word_here(VM *vm) {
     /* Ensure dictionary is aligned before returning the address */
     vm_align(vm);
     vm_push(vm, vm->here);  /* VM memory offset */
 }
 
 /* ALLOT ( n -- )  Allocate n bytes in dictionary */
-void word_allot(VM *vm) {
+void dictionary_word_allot(VM *vm) {
     cell_t n;
     
     if (vm->dsp < 0) {
@@ -46,7 +46,7 @@ void word_allot(VM *vm) {
 }
 
 /* , ( n -- )  Compile n into dictionary */
-void word_comma(VM *vm) {
+void dictionary_word_comma(VM *vm) {
     cell_t n;
     cell_t *target;
 
@@ -75,7 +75,7 @@ void word_comma(VM *vm) {
 }
 
 /* C, ( c -- )  Compile character into dictionary */
-void word_c_comma(VM *vm) {
+void dictionary_word_c_comma(VM *vm) {
     cell_t c;
     
     if (vm->dsp < 0) {
@@ -98,7 +98,7 @@ void word_c_comma(VM *vm) {
 }
 
 /* 2, ( d -- )  Compile double into dictionary */
-void word_2_comma(VM *vm) {
+void dictionary_word_2_comma(VM *vm) {
     cell_t dlow, dhigh;
     cell_t *target;
     
@@ -128,13 +128,13 @@ void word_2_comma(VM *vm) {
 }
 
 /* PAD ( -- addr )  Address of temporary text buffer */
-void word_pad(VM *vm) {
+void dictionary_word_pad(VM *vm) {
     size_t pad_offset = VM_MEMORY_SIZE - 512;
     vm_push(vm, pad_offset);  /* VM memory offset */
 }
 
 /* SP! ( addr -- )  Set data stack pointer */
-void word_sp_store(VM *vm) {
+void dictionary_word_sp_store(VM *vm) {
     cell_t addr;
     
     if (vm->dsp < 0) {
@@ -162,7 +162,7 @@ void word_sp_store(VM *vm) {
 }
 
 /* SP@ ( -- addr )  Get data stack pointer */
-void word_sp_fetch(VM *vm) {
+void dictionary_word_sp_fetch(VM *vm) {
     /* Stack addresses are raw pointers */
     if (vm->dsp >= 0) {
         vm_push(vm, (cell_t)(uintptr_t)&vm->data_stack[vm->dsp + 1]);
@@ -172,7 +172,7 @@ void word_sp_fetch(VM *vm) {
 }
 
 /* LATEST ( -- addr )  Address of most recent definition */
-void word_latest(VM *vm) {
+void dictionary_word_latest(VM *vm) {
     /* Raw pointer to VM variable (not in VM memory) */
     vm_push(vm, (cell_t)(uintptr_t)&vm->latest);
 }
@@ -183,15 +183,15 @@ void register_dictionary_words(VM *vm) {
     log_message(LOG_INFO, "Registering dictionary & compilation words...");
     
     /* Register all dictionary & compilation words */
-    register_word(vm, "HERE", word_here);
-    register_word(vm, "ALLOT", word_allot);
-    register_word(vm, ",", word_comma);
-    register_word(vm, "C,", word_c_comma);
-    register_word(vm, "2,", word_2_comma);
-    register_word(vm, "PAD", word_pad);
-    register_word(vm, "SP!", word_sp_store);
-    register_word(vm, "SP@", word_sp_fetch);
-    register_word(vm, "LATEST", word_latest);
+    register_word(vm, "HERE", dictionary_word_here);
+    register_word(vm, "ALLOT", dictionary_word_allot);
+    register_word(vm, ",", dictionary_word_comma);
+    register_word(vm, "C,", dictionary_word_c_comma);
+    register_word(vm, "2,", dictionary_word_2_comma);
+    register_word(vm, "PAD", dictionary_word_pad);
+    register_word(vm, "SP!", dictionary_word_sp_store);
+    register_word(vm, "SP@", dictionary_word_sp_fetch);
+    register_word(vm, "LATEST", dictionary_word_latest);
 
     log_message(LOG_INFO, "Dictionary & compilation words registered and tested");
 }

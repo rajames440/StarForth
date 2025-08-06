@@ -95,6 +95,7 @@ void run_defining_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Defining Words Tests (Module 13)...");
     
     for (int i = 0; defining_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &defining_word_suites[i]);
     }
     

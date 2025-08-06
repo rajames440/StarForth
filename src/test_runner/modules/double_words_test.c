@@ -236,6 +236,7 @@ void run_double_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Double Number Words Tests (Module 6)...");
     
     for (int i = 0; double_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &double_word_suites[i]);
     }
     

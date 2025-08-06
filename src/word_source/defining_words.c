@@ -417,12 +417,26 @@ void register_defining_words(VM *vm) {
     register_word(vm, "FORGET", defining_word_forget);
     register_word(vm, "DOES>", defining_word_does);
 
-    /* Make ; and [ immediate words */
     DictEntry *semicolon = vm_find_word(vm, ";", 1);
     if (semicolon) semicolon->flags |= WORD_IMMEDIATE;
 
     DictEntry *left_bracket = vm_find_word(vm, "[", 1);
     if (left_bracket) left_bracket->flags |= WORD_IMMEDIATE;
+
+    DictEntry *immediate = vm_find_word(vm, "IMMEDIATE", 9);
+    if (immediate) immediate->flags |= WORD_IMMEDIATE;
+
+    DictEntry *compile = vm_find_word(vm, "COMPILE", 7);
+    if (compile) compile->flags |= WORD_IMMEDIATE;
+
+    DictEntry *bracket_compile = vm_find_word(vm, "[COMPILE]", 9);
+    if (bracket_compile) bracket_compile->flags |= WORD_IMMEDIATE;
+
+    DictEntry *literal = vm_find_word(vm, "LITERAL", 7);
+    if (literal) literal->flags |= WORD_IMMEDIATE;
+
+    DictEntry *does = vm_find_word(vm, "DOES>", 5);
+    if (does) does->flags |= WORD_IMMEDIATE;
 
     log_message(LOG_INFO, "Defining words registered successfully");
 }

@@ -111,6 +111,7 @@ void run_memory_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Memory Words Tests (Module 3)...");
     
     for (int i = 0; memory_word_suites[i].word_name != NULL; i++) {
+        log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &memory_word_suites[i]);
     }
     
