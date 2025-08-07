@@ -23,9 +23,9 @@ void mixed_math_word_m_plus(VM *vm) {
         return;
     }
 
-    cell_t n = vm_pop(vm);
-    cell_t dlow = vm_pop(vm);
-    cell_t dhigh = vm_pop(vm);
+    cell_t n     = vm_pop(vm);     // single
+    cell_t dlow  = vm_pop(vm);     // low part of double
+    cell_t dhigh = vm_pop(vm);     // high part of double
 
     cell_t old_dlow = dlow;
     dlow += n;
@@ -36,6 +36,7 @@ void mixed_math_word_m_plus(VM *vm) {
         dhigh--;
     }
 
+    // Push high first, then low (low is TOS)
     vm_push(vm, dhigh);
     vm_push(vm, dlow);
 }
@@ -64,7 +65,7 @@ void mixed_math_word_m_minus(VM *vm) {
     vm_push(vm, dlow);
 }
 
-/* M* ( n1 n2 -- d )  Multiply singles, produce double */
+/* M* ( n1 n2 -- d )  Multiply singles, produce double (lo, hi) */
 void mixed_math_word_m_star(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -74,20 +75,21 @@ void mixed_math_word_m_star(VM *vm) {
     cell_t n2 = vm_pop(vm);
     cell_t n1 = vm_pop(vm);
 
-    if (sizeof(cell_t) == 4) {
+    // TODO: Only supports 64-bit "doubles" (not true 128-bit); port real double-word math for L4Re portability
+    if (sizeof(cell_t) == 8) {
         long long result = (long long)n1 * (long long)n2;
         cell_t dlow = (cell_t)(result & 0xFFFFFFFFLL);
         cell_t dhigh = (cell_t)(result >> 32);
-        vm_push(vm, dhigh);
-        vm_push(vm, dlow);
+        vm_push(vm, dlow);   // lo first
+        vm_push(vm, dhigh);  // hi last (TOS)
     } else {
         cell_t result = n1 * n2;
-        vm_push(vm, 0);       // dhigh
-        vm_push(vm, result);  // dlow
+        vm_push(vm, result);
+        vm_push(vm, 0);
     }
 }
 
-/* M/MOD ( d n -- q r )  Divide double by single */
+/* M/MOD ( d n -- rem quot )  Divide double by single */
 void mixed_math_word_m_slash_mod(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
@@ -103,16 +105,17 @@ void mixed_math_word_m_slash_mod(VM *vm) {
         return;
     }
 
-    if (sizeof(cell_t) == 4) {
+    // TODO: Only supports 64-bit "doubles" (not true 128-bit); port real double-word math for L4Re portability
+    if (sizeof(cell_t) == 8) {
         long long dividend = ((long long)dhigh << 32) | ((unsigned long long)dlow & 0xFFFFFFFFLL);
         cell_t quotient = (cell_t)(dividend / n);
         cell_t remainder = (cell_t)(dividend % n);
-        vm_push(vm, quotient);
-        vm_push(vm, remainder);
+        vm_push(vm, remainder);  // remainder first (deeper)
+        vm_push(vm, quotient);   // quotient last (TOS)
     } else {
         if (dhigh == 0) {
-            vm_push(vm, dlow / n);
             vm_push(vm, dlow % n);
+            vm_push(vm, dlow / n);
         } else {
             vm->error = 1;  // 128-bit not yet implemented
         }
@@ -137,7 +140,7 @@ void mixed_math_word_mod(VM *vm) {
     vm_push(vm, n1 % n2);
 }
 
-/* /SLASH-MOD ( n1 n2 -- r q ) */
+/* /MOD ( n1 n2 -- rem quot ) */
 void mixed_math_word_slash_mod(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -152,11 +155,13 @@ void mixed_math_word_slash_mod(VM *vm) {
         return;
     }
 
-    vm_push(vm, n1 % n2);
-    vm_push(vm, n1 / n2);
+    cell_t quotient = n1 / n2;
+    cell_t remainder = n1 % n2;
+    vm_push(vm, remainder);  // deeper
+    vm_push(vm, quotient);   // TOS
 }
 
-/* STAR-SLASH-MOD ( n1 n2 n3 -- q ) */
+/* STAR-SLASH ( n1 n2 n3 -- n4 )  n1*n2/n3 */
 void mixed_math_word_star_slash(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
@@ -172,7 +177,8 @@ void mixed_math_word_star_slash(VM *vm) {
         return;
     }
 
-    if (sizeof(cell_t) == 4) {
+    // TODO: Only supports 64-bit "doubles" (not true 128-bit); port real double-word math for L4Re portability
+    if (sizeof(cell_t) == 8) {
         long long intermediate = (long long)n1 * (long long)n2;
         vm_push(vm, (cell_t)(intermediate / n3));
     } else {
@@ -181,7 +187,7 @@ void mixed_math_word_star_slash(VM *vm) {
     }
 }
 
-/* STAR_SLASH_MOD ( n1 n2 n3 -- r q ) */
+/* STAR-SLASH-MID ( n1 n2 n3 -- rem quot ) */
 void mixed_math_word_star_slash_mod(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
@@ -197,12 +203,13 @@ void mixed_math_word_star_slash_mod(VM *vm) {
         return;
     }
 
-    if (sizeof(cell_t) == 4) {
+    // TODO: Only supports 64-bit "doubles" (not true 128-bit); port real double-word math for L4Re portability
+    if (sizeof(cell_t) == 8) {
         long long intermediate = (long long)n1 * (long long)n2;
         cell_t quotient = (cell_t)(intermediate / n3);
         cell_t remainder = (cell_t)(intermediate % n3);
-        vm_push(vm, remainder);
-        vm_push(vm, quotient);
+        vm_push(vm, remainder);  // remainder deeper
+        vm_push(vm, quotient);   // quotient TOS
     } else {
         long double intermediate = (long double)n1 * (long double)n2;
         cell_t quotient = (cell_t)(intermediate / n3);
