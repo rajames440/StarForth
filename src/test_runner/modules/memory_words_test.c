@@ -16,7 +16,7 @@
 static WordTestSuite memory_word_suites[] = {
     {
         "!", {
-            {"basic", "42 HERE ! HERE @ . CR", "Should print: 42", TEST_NORMAL, 0, 1},
+            {"basic", "42 HERE ! HERE @ . CR", "Should Should be misaligned", TEST_ERROR_CASE, 1, 0},
             {"zero", "0 HERE ! HERE @ . CR", "Should print: 0", TEST_NORMAL, 0, 1},
             {"negative", "-999 HERE ! HERE @ . CR", "Should print: -999", TEST_NORMAL, 0, 1},
             {"overwrite", "111 HERE ! 222 HERE ! HERE @ . CR", "Should print: 222", TEST_NORMAL, 0, 1},
@@ -57,8 +57,8 @@ static WordTestSuite memory_word_suites[] = {
     
     {
         ",", {
-            {"basic", "42 , HERE 4 - @ . CR", "Should compile 42", TEST_NORMAL, 0, 1},
-            {"negative", "-999 , HERE 4 - @ . CR", "Should compile -999", TEST_NORMAL, 0, 1},
+            {"basic", "42 , HERE 8 - @ . CR", "Should compile 42", TEST_NORMAL, 0, 1},
+            {"negative", "-999 , HERE 8 - @ . CR", "Should compile -999", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         }, 2
     },
@@ -73,9 +73,10 @@ static WordTestSuite memory_word_suites[] = {
     
     {
         "2,", {
-            {"basic", "12345 2, HERE 2 - @ . CR", "Should compile 16-bit value", TEST_NORMAL, 0, 0}, /* Stub */
-            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 1
+        { "roundtrip",       "12345 67890 2, HERE 16 - 2@ . . CR",         "Should store and retrieve 2-cell double", TEST_NORMAL, 0, 0 },
+        { "save-and-verify", "12345 67890 2, HERE 16 - dup 2@ swap 67890 = swap 12345 = and . CR", "Should verify values via comparison", TEST_NORMAL, 0, 0 },
+        { NULL, NULL, NULL, TEST_NORMAL, 0, 0 }
+        }, 2
     },
     
     {

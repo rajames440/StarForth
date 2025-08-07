@@ -98,34 +98,24 @@ void dictionary_word_c_comma(VM *vm) {
 }
 
 /* 2, ( d -- )  Compile double into dictionary */
-void dictionary_word_2_comma(VM *vm) {
-    cell_t dlow, dhigh;
-    cell_t *target;
-    
+void dictionary_word_2comma(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
     }
-    
-    dlow = vm_pop(vm);
-    dhigh = vm_pop(vm);
-    
-    /* Check if we have space for two cells */
-    if (vm->here + 2 * sizeof(cell_t) >= VM_MEMORY_SIZE) {
-        vm->error = 1;  /* Out of memory */
+
+    cell_t high = vm_pop(vm);
+    cell_t low  = vm_pop(vm);
+
+    if (vm->here + 1 >= VM_MEMORY_SIZE) {
+        vm->error = 1;
         return;
     }
-    
-    /* Store the double value (high part first) */
-    target = (cell_t*)&vm->memory[vm->here];
-    *target = dhigh;
-    vm->here += sizeof(cell_t);
-    
-    target = (cell_t*)&vm->memory[vm->here];
-    *target = dlow;
-    vm->here += sizeof(cell_t);
-    vm_align(vm);
+
+    vm->memory[vm->here++] = low;
+    vm->memory[vm->here++] = high;
 }
+
 
 /* PAD ( -- addr )  Address of temporary text buffer */
 void dictionary_word_pad(VM *vm) {
@@ -173,8 +163,7 @@ void dictionary_word_sp_fetch(VM *vm) {
 
 /* LATEST ( -- addr )  Address of most recent definition */
 void dictionary_word_latest(VM *vm) {
-    /* Raw pointer to VM variable (not in VM memory) */
-    vm_push(vm, (cell_t)(uintptr_t)&vm->latest);
+    vm_push(vm, (cell_t)(uintptr_t)(vm->latest));
 }
 
 /* FORTH-79 Dictionary Word Registration and Testing */
@@ -187,7 +176,7 @@ void register_dictionary_words(VM *vm) {
     register_word(vm, "ALLOT", dictionary_word_allot);
     register_word(vm, ",", dictionary_word_comma);
     register_word(vm, "C,", dictionary_word_c_comma);
-    register_word(vm, "2,", dictionary_word_2_comma);
+    register_word(vm, "2,", dictionary_word_2comma);
     register_word(vm, "PAD", dictionary_word_pad);
     register_word(vm, "SP!", dictionary_word_sp_store);
     register_word(vm, "SP@", dictionary_word_sp_fetch);

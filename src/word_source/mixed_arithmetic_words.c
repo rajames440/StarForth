@@ -22,22 +22,20 @@ void mixed_math_word_m_plus(VM *vm) {
         vm->error = 1;
         return;
     }
-    
+
     cell_t n = vm_pop(vm);
     cell_t dlow = vm_pop(vm);
     cell_t dhigh = vm_pop(vm);
-    
-    /* Add n to low part */
+
     cell_t old_dlow = dlow;
     dlow += n;
-    
-    /* Check for carry/borrow */
+
     if (n > 0 && dlow < old_dlow) {
-        dhigh++;  /* Carry */
+        dhigh++;
     } else if (n < 0 && dlow > old_dlow) {
-        dhigh--;  /* Borrow */
+        dhigh--;
     }
-    
+
     vm_push(vm, dhigh);
     vm_push(vm, dlow);
 }
@@ -48,22 +46,20 @@ void mixed_math_word_m_minus(VM *vm) {
         vm->error = 1;
         return;
     }
-    
+
     cell_t n = vm_pop(vm);
     cell_t dlow = vm_pop(vm);
     cell_t dhigh = vm_pop(vm);
-    
-    /* Subtract n from low part */
+
     cell_t old_dlow = dlow;
     dlow -= n;
-    
-    /* Check for borrow/carry */
+
     if (n > 0 && dlow > old_dlow) {
-        dhigh--;  /* Borrow */
+        dhigh--;
     } else if (n < 0 && dlow < old_dlow) {
-        dhigh++;  /* Carry */
+        dhigh++;
     }
-    
+
     vm_push(vm, dhigh);
     vm_push(vm, dlow);
 }
@@ -74,148 +70,133 @@ void mixed_math_word_m_star(VM *vm) {
         vm->error = 1;
         return;
     }
-    
+
     cell_t n2 = vm_pop(vm);
     cell_t n1 = vm_pop(vm);
-    
-    /* For portable double multiplication, avoid bit operations */
+
     if (sizeof(cell_t) == 4) {
-        /* 32-bit cells - use 64-bit intermediate */
         long long result = (long long)n1 * (long long)n2;
-        cell_t dhigh = (cell_t)(result >> 32);
         cell_t dlow = (cell_t)(result & 0xFFFFFFFFLL);
+        cell_t dhigh = (cell_t)(result >> 32);
         vm_push(vm, dhigh);
         vm_push(vm, dlow);
     } else {
-        /* 64-bit cells - just use single precision for now */
-        /* TODO: Implement proper 128-bit multiplication */
         cell_t result = n1 * n2;
-        vm_push(vm, 0);      /* dhigh = 0 */
-        vm_push(vm, result); /* dlow = result */
+        vm_push(vm, 0);       // dhigh
+        vm_push(vm, result);  // dlow
     }
 }
 
-/* M/MOD ( d n -- r q )  Divide double by single */
+/* M/MOD ( d n -- q r )  Divide double by single */
 void mixed_math_word_m_slash_mod(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
         return;
     }
-    
+
     cell_t n = vm_pop(vm);
     cell_t dlow = vm_pop(vm);
     cell_t dhigh = vm_pop(vm);
-    
+
     if (n == 0) {
         vm->error = 1;
         return;
     }
-    
-    /* For portable double division */
+
     if (sizeof(cell_t) == 4) {
-        /* 32-bit cells - use 64-bit intermediate */
         long long dividend = ((long long)dhigh << 32) | ((unsigned long long)dlow & 0xFFFFFFFFLL);
         cell_t quotient = (cell_t)(dividend / n);
         cell_t remainder = (cell_t)(dividend % n);
-        vm_push(vm, remainder);
         vm_push(vm, quotient);
+        vm_push(vm, remainder);
     } else {
-        /* 64-bit cells - simplified version */
         if (dhigh == 0) {
-            /* Simple case */
-            vm_push(vm, dlow % n);
             vm_push(vm, dlow / n);
+            vm_push(vm, dlow % n);
         } else {
-            /* TODO: Implement proper 128-bit division */
-            vm->error = 1;
-            return;
+            vm->error = 1;  // 128-bit not yet implemented
         }
     }
 }
 
-/* MOD ( n1 n2 -- r )  Remainder of n1/n2 */
+/* MOD ( n1 n2 -- r ) */
 void mixed_math_word_mod(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
     }
-    
+
     cell_t n2 = vm_pop(vm);
     cell_t n1 = vm_pop(vm);
-    
+
     if (n2 == 0) {
         vm->error = 1;
         return;
     }
-    
+
     vm_push(vm, n1 % n2);
 }
 
-/* /MOD ( n1 n2 -- r q )  Divide with remainder */
+/* /SLASH-MOD ( n1 n2 -- r q ) */
 void mixed_math_word_slash_mod(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
         return;
     }
-    
+
     cell_t n2 = vm_pop(vm);
     cell_t n1 = vm_pop(vm);
-    
+
     if (n2 == 0) {
         vm->error = 1;
         return;
     }
-    
-    vm_push(vm, n1 % n2);  /* remainder */
-    vm_push(vm, n1 / n2);  /* quotient */
+
+    vm_push(vm, n1 % n2);
+    vm_push(vm, n1 / n2);
 }
 
-/* STAR-SLASH ( n1 n2 n3 -- q )  Multiply then divide */
+/* STAR-SLASH-MOD ( n1 n2 n3 -- q ) */
 void mixed_math_word_star_slash(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
         return;
     }
-    
+
     cell_t n3 = vm_pop(vm);
     cell_t n2 = vm_pop(vm);
     cell_t n1 = vm_pop(vm);
-    
+
     if (n3 == 0) {
         vm->error = 1;
         return;
     }
-    
-    /* Use double precision intermediate for better accuracy */
+
     if (sizeof(cell_t) == 4) {
         long long intermediate = (long long)n1 * (long long)n2;
-        cell_t result = (cell_t)(intermediate / n3);
-        vm_push(vm, result);
+        vm_push(vm, (cell_t)(intermediate / n3));
     } else {
-        /* 64-bit case - use long double if available */
         long double intermediate = (long double)n1 * (long double)n2;
-        cell_t result = (cell_t)(intermediate / n3);
-        vm_push(vm, result);
+        vm_push(vm, (cell_t)(intermediate / n3));
     }
 }
 
-/* STAR-SLASH-MOD ( n1 n2 n3 -- r q )  Multiply then divide with remainder */
+/* STAR_SLASH_MOD ( n1 n2 n3 -- r q ) */
 void mixed_math_word_star_slash_mod(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
         return;
     }
-    
+
     cell_t n3 = vm_pop(vm);
     cell_t n2 = vm_pop(vm);
     cell_t n1 = vm_pop(vm);
-    
+
     if (n3 == 0) {
         vm->error = 1;
         return;
     }
-    
-    /* Use double precision intermediate for better accuracy */
+
     if (sizeof(cell_t) == 4) {
         long long intermediate = (long long)n1 * (long long)n2;
         cell_t quotient = (cell_t)(intermediate / n3);
@@ -223,21 +204,18 @@ void mixed_math_word_star_slash_mod(VM *vm) {
         vm_push(vm, remainder);
         vm_push(vm, quotient);
     } else {
-        /* 64-bit case - use long double if available */
         long double intermediate = (long double)n1 * (long double)n2;
         cell_t quotient = (cell_t)(intermediate / n3);
-        /* For remainder, we need to be more careful */
         cell_t remainder = n1 * n2 - quotient * n3;
         vm_push(vm, remainder);
         vm_push(vm, quotient);
     }
 }
 
-/* FORTH-79 Mixed Arithmetic Word Registration and Testing */
+/* FORTH-79 Mixed Arithmetic Word Registration */
 void register_mixed_arithmetic_words(VM *vm) {
     log_message(LOG_INFO, "Registering mixed arithmetic words...");
-    
-    /* Register all mixed arithmetic words */
+
     register_word(vm, "M+", mixed_math_word_m_plus);
     register_word(vm, "M-", mixed_math_word_m_minus);
     register_word(vm, "M*", mixed_math_word_m_star);
@@ -246,6 +224,6 @@ void register_mixed_arithmetic_words(VM *vm) {
     register_word(vm, "/MOD", mixed_math_word_slash_mod);
     register_word(vm, "*/", mixed_math_word_star_slash);
     register_word(vm, "*/MOD", mixed_math_word_star_slash_mod);
-    
+
     log_message(LOG_INFO, "Mixed arithmetic words registered and tested");
 }

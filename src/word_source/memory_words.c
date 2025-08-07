@@ -194,12 +194,54 @@ static void memory_erase(VM *vm) {
     log_message(LOG_DEBUG, "ERASE: Erased %ld bytes at %ld", (long)count, (long)addr);
 }
 
+void memory_2store(VM *vm) {
+    if (vm->dsp < 2) {
+        vm->error = 1;
+        return;
+    }
+
+    cell_t addr = vm_pop(vm);
+    cell_t high = vm_pop(vm);
+    cell_t low  = vm_pop(vm);
+
+    if (addr < 0 || addr + 1 >= VM_MEMORY_SIZE) {
+        vm->error = 1;
+        return;
+    }
+
+    vm->memory[addr]     = low;
+    vm->memory[addr + 1] = high;
+}
+
+void memory_2fetch(VM *vm) {
+    if (vm->dsp < 0) {
+        vm->error = 1;
+        return;
+    }
+
+    cell_t addr = vm_pop(vm);
+
+    if (addr < 0 || addr + 1 >= VM_MEMORY_SIZE) {
+        vm->error = 1;
+        return;
+    }
+
+    cell_t low  = vm->memory[addr];
+    cell_t high = vm->memory[addr + 1];
+
+    vm_push(vm, high);
+    vm_push(vm, low);
+}
+
+
 void register_memory_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 memory words...");
 
     /* Register basic memory words */
     register_word(vm, "!", memory_store);
     register_word(vm, "@", memory_fetch);
+    register_word(vm, "2!", memory_2store);
+    register_word(vm, "2@", memory_2fetch);
     register_word(vm, "C!", memory_c_store);
     register_word(vm, "C@", memory_c_fetch);
     register_word(vm, "+!", memory_plus_store);

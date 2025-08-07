@@ -338,19 +338,19 @@ void vm_compile_word(VM *vm, DictEntry *entry) {
         return;
     }
 
-    /* Allocate space for a cell to hold the word's execution token */
     vm_align(vm);
     addr = (cell_t*)vm_allot(vm, sizeof(cell_t));
     if (addr == NULL) {
         return;
     }
 
-    /* Store pointer to the word entry */
-    *addr = (cell_t)(uintptr_t)entry;
+    // 🔥 CORRECT: Store the word’s function pointer
+    *addr = (cell_t)(uintptr_t)(entry->func);
 
-    log_message(LOG_DEBUG, "vm_compile_word: Compiled reference to '%.*s'",
+    log_message(LOG_DEBUG, "vm_compile_word: Compiled function pointer for '%.*s'",
                 (int)entry->name_len, entry->name);
 }
+
 
 /* Compile a literal value into the dictionary */
 void vm_compile_literal(VM *vm, cell_t value) {

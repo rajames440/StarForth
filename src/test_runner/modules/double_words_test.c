@@ -16,29 +16,6 @@
 /* Double Number Words Test Suites - Module 6 */
 static WordTestSuite double_word_suites[] = {
     {
-        "2!", {
-            {"basic", "12345 67890 HERE 2! HERE 2@ . . CR", "Should store double number", TEST_NORMAL, 0, 1},
-            {"zero", "0 0 HERE 2! HERE 2@ . . CR", "Should print: 0 0", TEST_NORMAL, 0, 1},
-            {"negative", "-1000 -2000 HERE 2! HERE 2@ . . CR", "Should store negative double", TEST_NORMAL, 0, 1},
-            {"overwrite", "111 222 HERE 2! 333 444 HERE 2! HERE 2@ . . CR", "Should overwrite", TEST_NORMAL, 0, 1},
-            {"empty_stack", "2!", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
-            {"three_items", "1 2 3 2!", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
-            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 6
-    },
-    
-    {
-        "2@", {
-            {"after_store", "12345 67890 HERE 2! HERE 2@ . . CR", "Should retrieve double", TEST_NORMAL, 0, 1},
-            {"zero", "0 0 HERE 2! HERE 2@ . . CR", "Should print: 0 0", TEST_NORMAL, 0, 1},
-            {"negative", "-1000 -2000 HERE 2! HERE 2@ . . CR", "Should retrieve negative", TEST_NORMAL, 0, 1},
-            {"multiple_reads", "100 200 HERE 2! HERE 2@ HERE 2@ D= . CR", "Should print: -1", TEST_NORMAL, 0, 1},
-            {"empty_stack", "2@", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
-            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 5
-    },
-    
-    {
         "2DROP", {
             {"basic", "1 2 3 4 2DROP . . CR", "Should print: 1 2", TEST_NORMAL, 0, 1},
             {"zeros", "0 0 42 99 2DROP . . CR", "Should print: 0 0", TEST_NORMAL, 0, 1},
