@@ -577,30 +577,6 @@ void vm_interpret(VM *vm, const char *input) {
     }
 }
 
-/* REPL */
-void vm_repl(VM *vm) {
-    log_message(LOG_INFO, "Starting Forth REPL");
-
-    char input[256];
-    while (!vm->halted && !vm->error) {
-        printf("ok> ");
-        fflush(stdout);
-
-        if (!fgets(input, sizeof(input), stdin)) {
-            break;
-        }
-
-        vm_interpret(vm, input);
-
-        if (!vm->error) {
-            printf(" ok\n");
-        } else {
-            printf(" ERROR\n");
-            vm->error = 0; /* Reset error for next input */
-        }
-    }
-}
-
 /* Dictionary search functions */
 DictEntry* vm_dictionary_find_by_func(VM *vm, word_func_t func) {
     DictEntry *entry = vm->latest;
