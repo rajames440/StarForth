@@ -1,13 +1,17 @@
 /*
 
-  * Copyright (c) 2025 Robert A. James - StarshipOS Forth Project.
-  *
-  * This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
-  * To the extent possible under law, the author(s) have dedicated all copyright and related
-  * and neighboring rights to this software to the public domain worldwide.
-  * This software is distributed without any warranty.
-  *
-  * See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+                                 ***   StarForth ***
+  word_registry.c - FORTH-79 Standard and ANSI C99 ONLY
+ Last modified - 8/9/25, 1:07 PM
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+ This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
 
  */
 
@@ -53,22 +57,21 @@ void register_forth79_words(VM *vm) {
     register_stack_words(vm);                    /* Module 1: Stack Operations - FOUNDATION */
     register_return_stack_words(vm);             /* Module 2: Return Stack Operations */
     register_memory_words(vm);                   /* Module 3: Memory Operations */
-    register_arithmetic_words(vm);               /* Module 5: Arithmetic Operations */
-    register_logical_words(vm);                  /* Module 8: Logical & Comparison */
-    register_mixed_arithmetic_words(vm);         /* Module 7: Mixed Arithmetic - needs arithmetic + stack */
-    register_double_words(vm);                   /* Module 6: Double Number Arithmetic */
-    register_dictionary_words(vm);               /* Module 4: Dictionary & Compilation */
-    register_format_words(vm);                   /* Module 10: Formatting & Conversion */
-    register_string_words(vm);                   /* Module 11: String & Text Processing */
-    register_io_words(vm);                       /* Module 9: I/O & Terminal */
-    register_system_words(vm);                   /* Module 18: System & Environment */
-    register_dictionary_manipulation_words(vm);  /* Module 14: Dictionary Manipulation */
-    register_vocabulary_words(vm);               /* Module 15: Vocabulary System */
-    register_block_words(vm);                    /* Module 16: Block & Mass Storage */
-    register_editor_words(vm);                   /* Module 17: Line Editor */
-/* TODO yet*/
-    register_defining_words(vm);                 /* Module 13: Defining Words */
+    register_arithmetic_words(vm);               /* Module 4: Arithmetic Operations */
+    register_logical_words(vm);                  /* Module 5: Logical & Comparison */
+    register_mixed_arithmetic_words(vm);         /* Module 6: Mixed Arithmetic - needs arithmetic + stack */
+    register_double_words(vm);                   /* Module 7: Double Number Arithmetic */
+    register_format_words(vm);                   /* Module 8: Formatting & Conversion */
+    register_string_words(vm);                   /* Module 9: String & Text Processing */
+    register_io_words(vm);                       /* Module 10: I/O & Terminal */
+    register_block_words(vm);                    /* Module 11: Block & Mass Storage */
+    register_dictionary_words(vm);               /* Module 12: Dictionary & Compilation */
+    register_dictionary_manipulation_words(vm);  /* Module 13: Dictionary Manipulation */
+    register_vocabulary_words(vm);               /* Module 14: Vocabulary System */
+    register_system_words(vm);                   /* Module 15: System & Environment */
+    register_editor_words(vm);                   /* Module 16: Line Editor */
+    register_defining_words(vm);                 /* Module 17: Defining Words */
+    register_control_words(vm);                  /* Module 18: Control Flow */
 
-    register_control_words(vm);                  /* Module 12: Control Flow */
     log_message(LOG_INFO, "FORTH-79 Standard word set registration complete");
 }
