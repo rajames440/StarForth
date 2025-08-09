@@ -9,7 +9,15 @@
  * See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
  */
 
-/* vm.c - FORTH-79 compliant VM implementation with direct threading */
+/**
+ * @file vm.c
+ * @brief Implementation of the StarForth virtual machine
+ *
+ * This file contains the implementation of the core virtual machine functionality
+ * for the StarForth Forth interpreter, including memory management, word compilation,
+ * and execution of Forth words.
+ */
+
 #include "../include/vm.h"
 #include "../include/log.h"
 #include "../include/io.h"
@@ -17,10 +25,16 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* Forward declarations */
 static void execute_colon_word(VM *vm);
 
-/* Core VM functions */
+/**
+ * @brief Initialize a new Forth virtual machine instance
+ *
+ * Allocates memory for the VM, initializes stacks, dictionary space and registers
+ * the standard Forth-79 word set.
+ *
+ * @param vm Pointer to VM structure to initialize
+ */
 void vm_init(VM *vm) {
     /* Clear all memory */
     memset(vm, 0, sizeof(VM));
@@ -66,7 +80,13 @@ void vm_init(VM *vm) {
     register_forth79_words(vm);
 }
 
-/* Cleanup function */
+/**
+ * @brief Clean up VM resources
+ *
+ * Frees all allocated memory associated with the VM.
+ *
+ * @param vm Pointer to VM structure to clean up
+ */
 void vm_cleanup(VM *vm) {
     if (vm->memory != NULL) {
         free(vm->memory);
@@ -75,189 +95,16 @@ void vm_cleanup(VM *vm) {
     vm->here = 0;
 }
 
-/* Stack operations */
-void vm_push(VM *vm, cell_t value) {
-    if (vm->dsp >= STACK_SIZE - 1) {
-        log_message(LOG_ERROR, "Stack overflow");
-        vm->error = 1;
-        return;
-    }
-    vm->data_stack[++vm->dsp] = value;
-    log_message(LOG_DEBUG, "PUSH: %d (dsp=%d)", (int)value, vm->dsp);
-}
-
-cell_t vm_pop(VM *vm) {
-    if (vm->dsp < 0) {
-        log_message(LOG_ERROR, "Stack underflow (dsp=%d)", vm->dsp);
-        vm->error = 1;
-        return 0;
-    }
-    cell_t value = vm->data_stack[vm->dsp--];
-    log_message(LOG_DEBUG, "POP: %d (dsp=%d)", (int)value, vm->dsp);
-    return value;
-}
-
-/* Return stack operations */
-void vm_rpush(VM *vm, cell_t value) {
-    if (vm->rsp >= STACK_SIZE - 1) {
-        vm->error = 1;  /* Return stack overflow */
-        return;
-    }
-    vm->return_stack[++vm->rsp] = value;
-}
-
-cell_t vm_rpop(VM *vm) {
-    if (vm->rsp < 0) {
-        vm->error = 1;  /* Return stack underflow */
-        return 0;
-    }
-    cell_t value = vm->return_stack[vm->rsp--];
-    return value;
-}
-
-/* Dictionary operations */
-DictEntry* vm_find_word(VM *vm, const char *name, size_t len) {
-    DictEntry *entry = vm->latest;
-
-    while (entry) {
-        if (!(entry->flags & WORD_HIDDEN) &&
-            !(entry->flags & WORD_SMUDGED) &&
-            entry->name_len == len &&
-            memcmp(entry->name, name, len) == 0) {
-            return entry;
-        }
-        entry = entry->link;
-    }
-
-    return NULL;
-}
-
-/* Create word in dictionary */
-DictEntry* vm_create_word(VM *vm, const char *name, size_t len, word_func_t func) {
-    size_t total_size;
-    DictEntry *entry;
-
-    if (vm == NULL || name == NULL) {
-        log_message(LOG_ERROR, "vm_create_word: NULL parameters");
-        if (vm) vm->error = 1;
-        return NULL;
-    }
-
-    if (len > WORD_NAME_MAX) {
-        len = WORD_NAME_MAX;
-    }
-
-    /* Calculate total size: header + name */
-    total_size = sizeof(DictEntry) + len;
-
-    log_message(LOG_DEBUG, "vm_create_word: Creating '%.*s' (len=%zu, total_size=%zu)",
-                (int)len, name, len, total_size);
-
-    /* Align to cell boundary */
-    vm_align(vm);
-
-    /* Allocate space */
-    entry = (DictEntry*)vm_allot(vm, total_size);
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "vm_create_word: Failed to allocate dictionary entry");
-        vm->error = 1;
-        return NULL;
-    }
-
-    log_message(LOG_DEBUG, "vm_create_word: Allocated entry at %p", (void*)entry);
-
-    /* Initialize entry */
-    entry->link = vm->latest;
-    entry->func = func;           /* Store function pointer */
-    entry->flags = 0;
-    entry->name_len = (uint8_t)len;
-
-    /* Copy name safely */
-    if (len > 0) {
-        log_message(LOG_DEBUG, "vm_create_word: Copying name '%.*s'", (int)len, name);
-        memcpy((void*)entry->name, name, len);
-        log_message(LOG_DEBUG, "vm_create_word: Name copied successfully");
-    }
-
-    /* Update latest */
-    vm->latest = entry;
-
-    log_message(LOG_DEBUG, "vm_create_word: Successfully created '%.*s' at %p",
-                (int)len, name, (void*)entry);
-
-    vm_align(vm);  /* Align for future data field access */
-
-    return entry;
-}
-
-void vm_make_immediate(VM *vm) {
-    if (vm->latest) {
-        vm->latest->flags |= WORD_IMMEDIATE;
-    }
-}
-
-void vm_hide_word(VM *vm) {
-    if (vm->latest) {
-        vm->latest->flags |= WORD_HIDDEN;
-    }
-}
-
-/* FORTH-79 SMUDGE word support */
-void vm_smudge_word(VM *vm) {
-    if (vm->latest == NULL) {
-        vm->error = 1;
-        return;
-    }
-
-    /* Toggle the smudge bit */
-    vm->latest->flags ^= WORD_SMUDGED;
-}
-
-/* Memory management */
-void* vm_allot(VM *vm, size_t bytes) {
-    /* Ensure we don't allocate beyond dictionary space (first 64 blocks) */
-    if (vm->here + bytes >= DICTIONARY_MEMORY_SIZE) {
-        log_message(LOG_ERROR, "Dictionary space full (here=%zu, bytes=%zu, dict_limit=%d)",
-                    vm->here, bytes, DICTIONARY_MEMORY_SIZE);
-        vm->error = 1;
-        return NULL;
-    }
-
-    void *ptr = vm->memory + vm->here;
-    vm->here += bytes;
-
-    /* Log which block we're using */
-    int current_block = vm->here / BLOCK_SIZE;
-    log_message(LOG_DEBUG, "ALLOT: Allocated %zu bytes at offset %zu (block %d)",
-                bytes, vm->here - bytes, current_block);
-
-    return ptr;
-}
-
-void vm_align(VM *vm) {
-    size_t align = sizeof(cell_t);
-    size_t misalignment = vm->here % align;
-
-    if (misalignment != 0) {
-        size_t padding = align - misalignment;
-        void *pad = vm_allot(vm, padding);
-        if (pad == NULL) {
-            log_message(LOG_ERROR, "vm_align: Out of memory while aligning");
-            vm->error = 1;
-            return;
-        }
-
-        /* Optional: zero out the padding */
-        unsigned char *bytes = (unsigned char *)pad;
-        for (size_t i = 0; i < padding; ++i) {
-            bytes[i] = 0;
-        }
-
-        log_message(LOG_DEBUG, "vm_align: Added %zu byte(s) of padding", padding);
-    }
-}
-
-/* Input parsing */
+/**
+ * @brief Parse next word from input buffer
+ *
+ * Extracts the next space-delimited word from the VM's input buffer.
+ *
+ * @param vm Pointer to VM structure
+ * @param word Buffer to store parsed word
+ * @param max_len Maximum length of word buffer
+ * @return Length of parsed word, or 0 if no word found
+ */
 int vm_parse_word(VM *vm, char *word, size_t max_len) {
     size_t len = 0;
     char ch;
@@ -296,6 +143,15 @@ int vm_parse_word(VM *vm, char *word, size_t max_len) {
     return (int)len;
 }
 
+/**
+ * @brief Parse string as number
+ *
+ * Attempts to parse a string as a decimal number.
+ *
+ * @param str String to parse
+ * @param value Pointer to store parsed value
+ * @return 1 if successful, 0 if parsing failed
+ */
 int vm_parse_number(const char *str, cell_t *value) {
     char *endptr;
     long val = strtol(str, &endptr, 10);
@@ -308,7 +164,15 @@ int vm_parse_number(const char *str, cell_t *value) {
     return 0;
 }
 
-/* Compilation functions - FORTH-79 style */
+/**
+ * @brief Enter compilation mode for a new word
+ *
+ * Sets up the VM for compiling a new colon definition.
+ *
+ * @param vm Pointer to VM structure
+ * @param name Name of word being defined
+ * @param len Length of word name
+ */
 void vm_enter_compile_mode(VM *vm, const char *name, size_t len) {
     /* Set compile mode */
     vm->mode = MODE_COMPILE;
@@ -330,7 +194,14 @@ void vm_enter_compile_mode(VM *vm, const char *name, size_t len) {
     log_message(LOG_DEBUG, ": Started definition of '%s'", vm->current_word_name);
 }
 
-/* Compile a word reference into the dictionary */
+/**
+ * @brief Compile a word reference
+ *
+ * Compiles a reference to an existing word into the current definition.
+ *
+ * @param vm Pointer to VM structure
+ * @param entry Dictionary entry of word to compile
+ */
 void vm_compile_word(VM *vm, DictEntry *entry) {
     cell_t *addr;
 
@@ -351,8 +222,14 @@ void vm_compile_word(VM *vm, DictEntry *entry) {
                 (int)entry->name_len, entry->name);
 }
 
-
-/* Compile a literal value into the dictionary */
+/**
+ * @brief Compile a literal value
+ *
+ * Compiles a literal number into the current definition.
+ *
+ * @param vm Pointer to VM structure
+ * @param value Value to compile as literal
+ */
 void vm_compile_literal(VM *vm, cell_t value) {
     cell_t *addr;
     DictEntry *lit_entry;
@@ -384,7 +261,14 @@ void vm_compile_literal(VM *vm, cell_t value) {
     log_message(LOG_DEBUG, "vm_compile_literal: Compiled literal %ld", (long)value);
 }
 
-/* Compile a function call - for backward compatibility */
+/**
+ * @brief Compile a function call
+ *
+ * Compiles a reference to a C function into the current definition.
+ *
+ * @param vm Pointer to VM structure
+ * @param func Function pointer to compile
+ */
 void vm_compile_call(VM *vm, word_func_t func) {
     DictEntry *entry;
 
@@ -406,7 +290,13 @@ void vm_compile_call(VM *vm, word_func_t func) {
     vm_compile_word(vm, entry);
 }
 
-/* Compile EXIT word - for backward compatibility */
+/**
+ * @brief Compile EXIT word
+ *
+ * Compiles an EXIT instruction into the current definition.
+ *
+ * @param vm Pointer to VM structure
+ */
 void vm_compile_exit(VM *vm) {
     DictEntry *exit_entry;
 
@@ -426,6 +316,13 @@ void vm_compile_exit(VM *vm) {
     vm_compile_word(vm, exit_entry);
 }
 
+/**
+ * @brief Exit compilation mode
+ *
+ * Finalizes the current word definition and returns to interpretation mode.
+ *
+ * @param vm Pointer to VM structure
+ */
 void vm_exit_compile_mode(VM *vm) {
     DictEntry *exit_entry;
 
@@ -457,7 +354,13 @@ void vm_exit_compile_mode(VM *vm) {
     vm->compiling_word = NULL;
 }
 
-/* Execute a colon definition (threaded code) */
+/**
+ * @brief Execute a colon definition
+ *
+ * Executes a compiled Forth word (colon definition).
+ *
+ * @param vm Pointer to VM structure
+ */
 static void execute_colon_word(VM *vm) {
     DictEntry *entry = vm->current_executing_entry;
     cell_t *body, *ip, *old_ip;
@@ -519,7 +422,16 @@ static void execute_colon_word(VM *vm) {
     }
 }
 
-/* Main word interpreter */
+/**
+ * @brief Interpret or compile a word
+ *
+ * Processes a single word either by executing it immediately or compiling it
+ * into the current definition.
+ *
+ * @param vm Pointer to VM structure
+ * @param word_str Word to interpret
+ * @param len Length of word string
+ */
 void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
     log_message(LOG_DEBUG, "INTERPRET: '%.*s' (mode=%s)", (int)len, word_str,
                 vm->mode == MODE_COMPILE ? "COMPILE" : "INTERPRET");
@@ -559,7 +471,15 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
     }
 }
 
-/* Main interpreter */
+/**
+ * @brief Interpret a string of Forth code
+ *
+ * Processes a string containing Forth words, executing or compiling them
+ * as appropriate.
+ *
+ * @param vm Pointer to VM structure
+ * @param input String containing Forth code to interpret
+ */
 void vm_interpret(VM *vm, const char *input) {
     size_t len = strlen(input);
     if (len >= INPUT_BUFFER_SIZE) len = INPUT_BUFFER_SIZE - 1;
@@ -575,58 +495,4 @@ void vm_interpret(VM *vm, const char *input) {
     while ((word_len = vm_parse_word(vm, word, sizeof(word))) > 0 && !vm->error) {
         vm_interpret_word(vm, word, word_len);
     }
-}
-
-/* Dictionary search functions */
-DictEntry* vm_dictionary_find_by_func(VM *vm, word_func_t func) {
-    DictEntry *entry = vm->latest;
-
-    while (entry != NULL) {
-        if (entry->func == func) {
-            return entry;
-        }
-        entry = entry->link;
-    }
-    return NULL;
-}
-
-DictEntry* vm_dictionary_find_latest_by_func(VM *vm, word_func_t func) {
-    /* Since dictionary is ordered newest-first, first match is latest */
-    return vm_dictionary_find_by_func(vm, func);
-}
-
-/* Get data field address from dictionary entry */
-
-cell_t* vm_dictionary_get_data_field(DictEntry *entry) {
-    if (entry == NULL) {
-        return NULL;
-    }
-
-    /* Data field comes right after the entry structure and name */
-    /* vm_create_word() ensures proper alignment after the name */
-    uintptr_t entry_end = (uintptr_t)entry + sizeof(DictEntry) + entry->name_len;
-
-    return (cell_t*)entry_end;
-}
-
-/* Block system integration functions */
-
-/* Get address of block N */
-void* vm_get_block_addr(VM *vm, int block_num) {
-    if (block_num < 0 || block_num >= MAX_BLOCKS) {
-        log_message(LOG_ERROR, "vm_get_block_addr: Invalid block number %d", block_num);
-        return NULL;
-    }
-    return vm->memory + (block_num * BLOCK_SIZE);
-}
-
-/* Convert address to block number */
-int vm_addr_to_block(VM *vm, void *addr) {
-    if (addr < (void*)vm->memory ||
-        addr >= (void*)(vm->memory + VM_MEMORY_SIZE)) {
-        return -1;  /* Outside VM memory */
-    }
-
-    uintptr_t offset = (uintptr_t)addr - (uintptr_t)vm->memory;
-    return (int)(offset / BLOCK_SIZE);
 }
