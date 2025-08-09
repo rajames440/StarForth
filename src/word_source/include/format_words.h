@@ -1,6 +1,6 @@
 /*
 
-                                 ***   StarForth ***
+                                 ***   StarForth   ***
   format_words.h - FORTH-79 Standard and ANSI C99 ONLY
  Last modified - 8/9/25, 1:07 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
