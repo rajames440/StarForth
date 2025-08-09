@@ -37,41 +37,41 @@ typedef struct {
     int active;
 } ModuleBenchmark;
 
-static ModuleBenchmark module_benchmarks[32];  /* Max 32 modules */
+static ModuleBenchmark module_benchmarks[32]; /* Max 32 modules */
 static int benchmark_count = 0;
 
 /* Simple portable timer using ANSI C clock() */
 static uint64_t get_time_ns(void) {
     clock_t t = clock();
-    if (t == (clock_t)(-1)) {
-        return 0;  /* Error case */
+    if (t == (clock_t) (-1)) {
+        return 0; /* Error case */
     }
     /* Convert to nanoseconds: (clock_ticks / CLOCKS_PER_SEC) * 1,000,000,000 */
-    return (uint64_t)((double)t / CLOCKS_PER_SEC * 1000000000.0);
+    return (uint64_t) ((double) t / CLOCKS_PER_SEC * 1000000000.0);
 }
 
 /* Test modules in dependency order - matches your word registration order */
 static TestModule test_modules[] = {
-    {"Arithmetic Words", NULL, 0, run_arithmetic_words_tests},            /* Module 5 */
-
-    {"Stack Words", NULL, 0, run_stack_words_tests},                      /* Module 1 */
-    {"Return Stack Words", NULL, 0, run_return_stack_words_tests},        /* Module 2 */
-    {"Memory Words", NULL, 0, run_memory_words_tests},                    /* Module 3 */
-    {"Dictionary Words", NULL, 0, run_dictionary_words_tests},            /* Module 4 */
-    {"Double Words", NULL, 0, run_double_words_tests},                    /* Module 6 */
-    {"Mixed Arithmetic Words", NULL, 0, run_mixed_arithmetic_words_tests},/* Module 7 */
-    {"Logical Words", NULL, 0, run_logical_words_tests},                  /* Module 8 */
-    {"I/O Words", NULL, 0, run_io_words_tests},                           /* Module 9 */
-    {"Format Words", NULL, 0, run_format_words_tests},                   /* Module 10 */
-    {"String Words", NULL, 0, run_string_words_tests},                   /* Module 11 */
-    {"Dictionary Manipulation Words", NULL, 0, run_dictionary_manipulation_words_tests}, /* Module 14 - MISSING */
-    {"Vocabulary Words", NULL, 0, run_vocabulary_words_tests},           /* Module 15 - MISSING */
-    {"Block Words", NULL, 0, run_block_words_tests},                     /* Module 16 - MISSING */
-    {"Editor Words", NULL, 0, run_editor_words_tests},                   /* Module 17 - MISSING */
-    {"System Words", NULL, 0, run_system_words_tests},                   /* Module 18 - MISSING */
-    {"Defining Words", NULL, 0, run_defining_words_tests},               /* Module 13 */
-    {"Control Words", NULL, 0, run_control_words_tests},                 /* Module 12 */
-    {NULL, NULL, 0, NULL}  /* End marker */
+    {"Stack Words", NULL, 0, run_stack_words_tests}, /* Module 1 */
+    {"Return Stack Words", NULL, 0, run_return_stack_words_tests}, /* Module 2 */
+    {"Memory Words", NULL, 0, run_memory_words_tests}, /* Module 3 */
+    {"Arithmetic Words", NULL, 0, run_arithmetic_words_tests}, /* Module 4 */
+    {"Logical Words", NULL, 0, run_logical_words_tests}, /* Module 5 */
+    {"Mixed Arithmetic Words", NULL, 0, run_mixed_arithmetic_words_tests}, /* Module 6 */
+    {"Double Words", NULL, 0, run_double_words_tests}, /* Module 7 */
+    /* todo -----------------------------------FENCE----------------------------------- */
+    {"Format Words", NULL, 0, run_format_words_tests}, /* Module 8 */
+    {"String Words", NULL, 0, run_string_words_tests}, /* Module 9 */
+    {"I/O Words", NULL, 0, run_io_words_tests}, /* Module 10 */
+    {"Block Words", NULL, 0, run_block_words_tests}, /* Module 11 */
+    {"Dictionary Words", NULL, 0, run_dictionary_words_tests}, /* Module 12 */
+    {"Dictionary Manipulation Words", NULL, 0, run_dictionary_manipulation_words_tests}, /* Module 13 */
+    {"Vocabulary Words", NULL, 0, run_vocabulary_words_tests}, /* Module 14 */
+    {"System Words", NULL, 0, run_system_words_tests}, /* Module 15 */
+    {"Editor Words", NULL, 0, run_editor_words_tests}, /* Module 16 */
+    {"Defining Words", NULL, 0, run_defining_words_tests}, /* Module 17 */
+    {"Control Words", NULL, 0, run_control_words_tests}, /* Module 18 */
+    {NULL, NULL, 0, NULL} /* End marker */
 };
 
 /* Enable benchmark mode */
@@ -122,8 +122,8 @@ void run_all_tests(VM *vm) {
 
                 uint64_t total_time = end_time - start_time;
                 total_benchmark_time += total_time;
-                double avg_time_per_run = (double)total_time / benchmark_iterations;
-                double runs_per_second = (double)benchmark_iterations * 1000000000.0 / total_time;
+                double avg_time_per_run = (double) total_time / benchmark_iterations;
+                double runs_per_second = (double) benchmark_iterations * 1000000000.0 / total_time;
 
                 /* Store benchmark data for detailed report */
                 if (benchmark_count < 32) {
@@ -136,9 +136,9 @@ void run_all_tests(VM *vm) {
 
                 log_message(LOG_INFO, "  %s Performance:", module->module_name);
                 log_message(LOG_INFO, "    %.0f runs/sec | avg: %.1f μs/run | total: %.2f ms",
-                           runs_per_second,
-                           avg_time_per_run / 1000.0,
-                           (double)total_time / 1000000.0);
+                            runs_per_second,
+                            avg_time_per_run / 1000.0,
+                            (double) total_time / 1000000.0);
             } else {
                 log_message(LOG_WARN, "Module %s: No tests implemented yet", module->module_name);
             }
@@ -157,7 +157,7 @@ void run_all_tests(VM *vm) {
     /* Print comprehensive benchmark summary */
     log_message(LOG_INFO, "\n==============================================");
     if (benchmark_mode) {
-        double total_time_sec = (double)total_benchmark_time / 1000000000.0;
+        double total_time_sec = (double) total_benchmark_time / 1000000000.0;
         int active_modules = benchmark_count;
         uint64_t fastest_module_time = UINT64_MAX;
         uint64_t slowest_module_time = 0;
@@ -176,7 +176,7 @@ void run_all_tests(VM *vm) {
             }
         }
 
-        double total_operations = (double)(benchmark_iterations * active_modules);
+        double total_operations = (double) (benchmark_iterations * active_modules);
         double ops_per_second = total_operations / total_time_sec;
         double avg_latency_us = (total_time_sec * 1000000.0) / total_operations;
         double throughput_mops = ops_per_second / 1000000.0;
@@ -201,12 +201,12 @@ void run_all_tests(VM *vm) {
         log_message(LOG_INFO, "");
         log_message(LOG_INFO, "Module Performance Analysis:");
         log_message(LOG_INFO, "  Fastest module: %s (%.2f ms)", fastest_module_name,
-                   (double)fastest_module_time / 1000000.0);
+                    (double) fastest_module_time / 1000000.0);
         log_message(LOG_INFO, "  Slowest module: %s (%.2f ms)", slowest_module_name,
-                   (double)slowest_module_time / 1000000.0);
+                    (double) slowest_module_time / 1000000.0);
         if (slowest_module_time > 0) {
             log_message(LOG_INFO, "  Performance variance: %.1fx",
-                       (double)slowest_module_time / (double)fastest_module_time);
+                        (double) slowest_module_time / (double) fastest_module_time);
         }
         log_message(LOG_INFO, "");
         log_message(LOG_INFO, "System Information:");
@@ -254,7 +254,6 @@ void run_all_tests(VM *vm) {
             log_message(LOG_INFO, "  • Performance is excellent for this architecture");
             log_message(LOG_INFO, "  • Focus on feature completeness and stability");
         }
-
     } else {
         /* Normal test summary unchanged */
         log_message(LOG_INFO, "FINAL TEST SUMMARY:");
@@ -268,7 +267,7 @@ void run_all_tests(VM *vm) {
             log_message(LOG_INFO, "ALL IMPLEMENTED TESTS PASSED!");
         } else {
             log_message(LOG_ERROR, "%d tests FAILED or had ERRORS!",
-                       global_test_stats.total_fail + global_test_stats.total_error);
+                        global_test_stats.total_fail + global_test_stats.total_error);
         }
     }
     log_message(LOG_INFO, "==============================================");
@@ -292,11 +291,11 @@ void run_module_tests(VM *vm, const char *module_name) {
                     uint64_t end_time = get_time_ns();
 
                     uint64_t total_time = end_time - start_time;
-                    double runs_per_second = (double)benchmark_iterations * 1000000000.0 / total_time;
+                    double runs_per_second = (double) benchmark_iterations * 1000000000.0 / total_time;
 
                     log_message(LOG_INFO, "  %.0f runs/sec | %.1f μs/run",
-                               runs_per_second,
-                               (double)total_time / benchmark_iterations / 1000.0);
+                                runs_per_second,
+                                (double) total_time / benchmark_iterations / 1000.0);
                 } else {
                     log_message(LOG_WARN, "No tests implemented for module: %s", module_name);
                 }

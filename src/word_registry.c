@@ -61,6 +61,7 @@ void register_forth79_words(VM *vm) {
     register_logical_words(vm);                  /* Module 5: Logical & Comparison */
     register_mixed_arithmetic_words(vm);         /* Module 6: Mixed Arithmetic - needs arithmetic + stack */
     register_double_words(vm);                   /* Module 7: Double Number Arithmetic */
+    /* todo -----------------------------------FENCE----------------------------------- */
     register_format_words(vm);                   /* Module 8: Formatting & Conversion */
     register_string_words(vm);                   /* Module 9: String & Text Processing */
     register_io_words(vm);                       /* Module 10: I/O & Terminal */
