@@ -1,21 +1,26 @@
 #ifndef VM_API_H
 #define VM_API_H
 
-#include "vm.h"
 #include <stddef.h>
 #include <stdint.h>
 
-/* Offset <-> pointer helpers */
-cell_t   vm_off(VM *vm, const void *p);        /* ptr -> offset (or -1 on error) */
-uint8_t* vm_addr(VM *vm, cell_t off);          /* offset -> ptr (or NULL on error) */
+/* Opaque VM type to API consumers */
+struct VM;
+typedef struct VM VM;
 
-/* Safe memory ops in offset space */
-int vm_api_store_cell(VM *vm, cell_t addr, cell_t x);
-int vm_api_fetch_cell(VM *vm, cell_t addr, cell_t *out);
-int vm_api_add_cell  (VM *vm, cell_t addr, cell_t delta);
-int vm_api_store_byte(VM *vm, cell_t addr, uint8_t b);
-int vm_api_fetch_byte(VM *vm, cell_t addr, uint8_t *out);
-int vm_api_fill      (VM *vm, cell_t addr, size_t n, uint8_t b);
-int vm_api_erase     (VM *vm, cell_t addr, size_t n);
+/* Stack ops */
+void vm_api_push(VM *vm, intptr_t v);
+intptr_t vm_api_pop(VM *vm);
+void vm_api_rpush(VM *vm, intptr_t v);
+intptr_t vm_api_rpop(VM *vm);
+
+/* Dictionary ops needed by word registration */
+typedef void (*word_func_t)(VM *vm);  /* mirror vm.h, but no struct exposure */
+
+void*      vm_api_create_word(VM *vm, const char *name, size_t len, word_func_t fn);
+void*      vm_api_find_word  (VM *vm, const char *name, size_t len);
+void       vm_api_make_immediate(VM *vm);
+void       vm_api_hide_word     (VM *vm);
+void       vm_api_smudge_word   (VM *vm);
 
 #endif /* VM_API_H */
