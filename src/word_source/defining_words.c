@@ -296,6 +296,11 @@ void defining_word_variable(VM *vm) {
 
 /* IMMEDIATE ( -- ) Mark last word as immediate */
 void defining_word_immediate(VM *vm) {
+    if (!vm || !vm->latest) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "IMMEDIATE: no latest definition to mark");
+        return;
+    }
     vm_make_immediate(vm);
     log_message(LOG_DEBUG, "IMMEDIATE: Marked last word as immediate");
 }

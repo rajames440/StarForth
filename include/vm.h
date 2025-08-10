@@ -124,6 +124,7 @@ typedef struct VM {
 
     /* Execution bookkeeping */
     DictEntry *current_executing_entry;
+    cell_t *ip;  /* direct-threaded instruction pointer (points into memory in CELLS) */
 
     /* VM state */
     int error;
