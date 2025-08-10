@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   test_runner.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/10/25, 7:07 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -59,9 +59,9 @@ static TestModule test_modules[] = {
     {"Logical Words", NULL, 0, run_logical_words_tests}, /* Module 5 */
     {"Mixed Arithmetic Words", NULL, 0, run_mixed_arithmetic_words_tests}, /* Module 6 */
     {"Double Words", NULL, 0, run_double_words_tests}, /* Module 7 */
-    /* todo -----------------------------------FENCE----------------------------------- */
     {"Format Words", NULL, 0, run_format_words_tests}, /* Module 8 */
     {"String Words", NULL, 0, run_string_words_tests}, /* Module 9 */
+    /* todo -----------------------------------FENCE----------------------------------- */
     {"I/O Words", NULL, 0, run_io_words_tests}, /* Module 10 */
     {"Block Words", NULL, 0, run_block_words_tests}, /* Module 11 */
     {"Dictionary Words", NULL, 0, run_dictionary_words_tests}, /* Module 12 */
