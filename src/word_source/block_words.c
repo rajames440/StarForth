@@ -228,45 +228,51 @@ void empty_all_buffers(VM *vm) {
 /* FORTH-79 Block Words Implementation */
 
 /* BLOCK ( u -- addr )  Get block buffer address */
+/* BLOCK ( u -- addr )
+ * Return the VM address (byte offset) of block u.
+ * Semantics: addr = u * BLOCK_SIZE; no host pointers, no caching here.
+ */
 void block_word_block(VM *vm) {
-    cell_t block_num;
-    unsigned char *addr;
+    if (vm->dsp < 0) { vm->error = 1; return; }
 
-    if (vm->dsp < 0) {
+    cell_t u = vm_pop(vm);
+    if (u < 0 || (uint64_t)u >= (uint64_t)MAX_BLOCKS) {
         vm->error = 1;
         return;
     }
 
-    init_block_system(vm);
-
-    block_num = vm_pop(vm);
-    if (!validate_block_num(vm, block_num)) return;
-
-    addr = get_block_buffer(vm, (int)block_num);
-
-    if (addr != NULL) {
-        vm_push(vm, (cell_t)(uintptr_t)addr);
+    vaddr_t off = (vaddr_t)((uint64_t)u * (uint64_t)BLOCK_SIZE);
+    if (!vm_addr_ok(vm, off, BLOCK_SIZE)) {   /* belt & suspenders */
+        vm->error = 1;
+        return;
     }
+
+    /* Push the VM offset (byte address) as a cell */
+    vm_push(vm, CELL(off));
 }
 
 /* BUFFER ( u -- addr )  Get empty buffer for block */
+/* BUFFER ( u -- addr )
+ * Return the VM address (byte offset) of block u's buffer.
+ * In our unified-memory model, this is identical to BLOCK: u * BLOCK_SIZE.
+ * (No implicit I/O here; UPDATE/FLUSH will handle dirtying later.)
+ */
 void block_word_buffer(VM *vm) {
-    cell_t block_num;
-    unsigned char *addr;
+    if (vm->dsp < 0) { vm->error = 1; return; }
 
-    if (vm->dsp < 0) {
+    cell_t u = vm_pop(vm);
+    if (u < 0 || (uint64_t)u >= (uint64_t)MAX_BLOCKS) {
         vm->error = 1;
         return;
     }
 
-    init_block_system(vm);
-
-    block_num = vm_pop(vm);
-    addr = get_empty_buffer(vm, (int)block_num);
-
-    if (addr != NULL) {
-        vm_push(vm, (cell_t)(uintptr_t)addr);
+    vaddr_t off = (vaddr_t)((uint64_t)u * (uint64_t)BLOCK_SIZE);
+    if (!vm_addr_ok(vm, off, BLOCK_SIZE)) {
+        vm->error = 1;
+        return;
     }
+
+    vm_push(vm, CELL(off));
 }
 
 /* UPDATE ( -- )  Mark current block as modified */
@@ -295,67 +301,116 @@ void block_word_flush(VM *vm) {
 }
 
 /* LIST ( u -- )  List block contents */
+/* LIST ( u -- )
+ * Print block u (16 lines × 64 chars) without using host pointers.
+ * Side effect: SCR := u (matches LOAD behavior).
+ */
 void block_word_list(VM *vm) {
-    cell_t block_num;
-    unsigned char *addr;
+    /* Need a block number on the stack */
+    if (vm->dsp < 0) { vm->error = 1; return; }
 
-    if (vm->dsp < 0) {
+    cell_t u = vm_pop(vm);
+    if (u < 0 || (uint64_t)u >= (uint64_t)MAX_BLOCKS) {
         vm->error = 1;
         return;
     }
 
-    init_block_system(vm);
+    /* SCR := u */
+    vm_store_cell(vm, vm->scr_addr, u);
 
-    block_num = vm_pop(vm);
-    scr_var = block_num;  /* Update SCR variable */
+    /* Start of block as VM byte offset */
+    vaddr_t off = (vaddr_t)((uint64_t)u * (uint64_t)BLOCK_SIZE);
+    if (!vm_addr_ok(vm, off, BLOCK_SIZE)) { vm->error = 1; return; }
 
-    addr = get_block_buffer(vm, (int)block_num);
-    if (addr == NULL) return;
+    /* Header */
+    printf("\n-- BLOCK %lld --\n", (long long)u);
 
-    printf("BLOCK %ld:\n", (long)block_num);
-    printf("================\n");
+    /* Print 16 lines, right-trim spaces/NULs/CR/LF */
+    for (int i = 0; i < 16; i++) {
+        vaddr_t line_off = off + (vaddr_t)(i * 64);
+        if (!vm_addr_ok(vm, line_off, 64)) { vm->error = 1; return; }
 
-    /* Display block content as 16 lines of 64 characters */
-    for (int line = 0; line < 16; line++) {
-        printf("%2d: ", line);
-        for (int col = 0; col < 64 && (line * 64 + col) < BLOCK_SIZE; col++) {
-            int pos = line * 64 + col;
-            char c = (char)addr[pos];
-            if (c >= 32 && c <= 126) {
-                printf("%c", c);
-            } else if (c == 0) {
-                printf(" ");
-            } else {
-                printf(".");
-            }
+        char line[64 + 1];
+        for (int j = 0; j < 64; j++) {
+            line[j] = (char)vm_load_u8(vm, line_off + (vaddr_t)j);
         }
-        printf("\n");
+        line[64] = '\0';
+
+        /* trim */
+        int len = 64;
+        while (len > 0) {
+            char c = line[len - 1];
+            if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\0') len--;
+            else break;
+        }
+        line[len] = '\0';
+
+        /* Render control chars as spaces (defensive) */
+        for (int j = 0; j < len; j++) {
+            unsigned char ch = (unsigned char)line[j];
+            if (ch < 32) line[j] = ' ';
+        }
+
+        printf("%02d: %.*s\n", i, len, line);
     }
+    fflush(stdout);
 }
 
 /* LOAD ( u -- )  Load and interpret block */
+/* LOAD ( u -- )
+ * Set SCR to u, then interpret the 16×64-byte lines from block u.
+ * Uses VM offsets only (no host pointers).
+ */
 void block_word_load(VM *vm) {
-    cell_t block_num;
-    unsigned char *addr;
+    /* Need a block number on the stack */
+    if (vm->dsp < 0) { vm->error = 1; return; }
 
-    if (vm->dsp < 0) {
+    cell_t u = vm_pop(vm);
+    if (u < 0 || (uint64_t)u >= (uint64_t)MAX_BLOCKS) {
         vm->error = 1;
         return;
     }
 
-    init_block_system(vm);
+    /* SCR := u */
+    vm_store_cell(vm, vm->scr_addr, u);
 
-    block_num = vm_pop(vm);
-    addr = get_block_buffer(vm, (int)block_num);
-    if (addr == NULL) return;
+    /* Start of block as VM byte offset */
+    vaddr_t off = (vaddr_t)((uint64_t)u * (uint64_t)BLOCK_SIZE);
+    if (!vm_addr_ok(vm, off, BLOCK_SIZE)) { vm->error = 1; return; }
 
-    /* Interpret block content as Forth source */
-    char temp_str[BLOCK_SIZE + 1];
-    memcpy(temp_str, addr, BLOCK_SIZE);
-    temp_str[BLOCK_SIZE] = '\0';
+    /* Forth-79 blocks are 16 lines × 64 chars, no guaranteed newlines.
+       We read each 64-char field, trim right spaces/NULs, and interpret. */
+    for (int i = 0; i < 16; i++) {
+        vaddr_t line_off = off + (vaddr_t)(i * 64);
+        if (!vm_addr_ok(vm, line_off, 64)) { vm->error = 1; return; }
 
-    log_message(LOG_DEBUG, "LOAD: Interpreting block %ld", (long)block_num);
-    vm_interpret(vm, temp_str);
+        /* Copy 64 bytes to a local buffer (avoid new includes) */
+        char line[64 + 1];
+        for (int j = 0; j < 64; j++) {
+            line[j] = (char)vm_load_u8(vm, line_off + (vaddr_t)j);
+        }
+        line[64] = '\0';
+
+        /* Trim trailing spaces/NULs/CR/LF */
+        int len = 64;
+        while (len > 0) {
+            char c = line[len - 1];
+            if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\0') {
+                len--;
+            } else {
+                break;
+            }
+        }
+        line[len] = '\0';
+
+        /* Skip blank lines and line-comments starting with '\' */
+        if (len == 0) continue;
+        if (line[0] == '\\') continue;
+
+        /* Interpret this line */
+        vm_interpret(vm, line);
+        if (vm->halted || vm->error) break;
+    }
 }
 
 /* SCR ( -- addr )  Variable: screen/block being listed */
@@ -364,35 +419,46 @@ void block_word_scr(VM *vm) {
 }
 
 /* THRU ( u1 u2 -- )  Load blocks from u1 to u2 */
+/* THRU ( u1 u2 -- )
+ * LOAD each block from u1 through u2 inclusive (order-agnostic).
+ * Uses VM offsets only; relies on block_word_load to do the work.
+ */
 void block_word_thru(VM *vm) {
-    cell_t u2, u1;
+    if (vm->dsp < 1) { vm->error = 1; return; }
 
-    if (vm->dsp < 1) {
+    cell_t u2 = vm_pop(vm);
+    cell_t u1 = vm_pop(vm);
+
+    /* normalize order */
+    if (u1 > u2) { cell_t t = u1; u1 = u2; u2 = t; }
+
+    if (u1 < 0 || (uint64_t)u2 >= (uint64_t)MAX_BLOCKS) {
         vm->error = 1;
         return;
     }
 
-    u2 = vm_pop(vm);
-    u1 = vm_pop(vm);
-
-    if (u1 > u2) {
-        log_message(LOG_ERROR, "THRU: Invalid range %ld to %ld", (long)u1, (long)u2);
-        vm->error = 1;
-        return;
-    }
-
-    /* Load each block in range */
-    for (cell_t block = u1; block <= u2 && !vm->error; block++) {
-        vm_push(vm, block);
+    for (cell_t u = u1; u <= u2; ++u) {
+        /* push and LOAD */
+        vm_push(vm, u);
         block_word_load(vm);
+        if (vm->halted || vm->error) break;
     }
 }
 
 /* --> ( -- )  Continue to next block (arrow) */
+/* --> ( -- )   Advance to next screen and load it.
+ * Uses the VM-backed SCR variable (vm->scr_addr).
+ */
 void block_word_arrow(VM *vm) {
-    /* Continue to next block - increment SCR and load */
-    scr_var++;
-    vm_push(vm, scr_var);
+    /* SCR := SCR + 1 */
+    cell_t cur = vm_load_cell(vm, vm->scr_addr);
+    cur += 1;
+    vm_store_cell(vm, vm->scr_addr, cur);
+
+    /* Leave the new block number on the stack (common practice) */
+    vm_push(vm, cur);
+
+    /* Load/list the new block if your implementation expects it */
     block_word_load(vm);
 }
 
