@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/9/25, 1:07 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -15,178 +15,99 @@
 
  */
 
-/* dictionary_words.c - FORTH-79 Dictionary & Compilation Words */
 #include "include/dictionary_words.h"
 #include "../../include/word_registry.h"
+#include "vm.h"
 #include "../../include/log.h"
 
-/* FORTH-79 Dictionary & Compilation Words Implementation */
+/* === SAFE DICTIONARY WORDS IMPLEMENTATION (addresses are VM offsets) === */
 
-/* HERE ( -- addr )  Address of next free dictionary space */
 void dictionary_word_here(VM *vm) {
-    /* Ensure dictionary is aligned before returning the address */
     vm_align(vm);
-    vm_push(vm, vm->here);  /* VM memory offset */
+    vm_push(vm, vm->here);
 }
 
-/* ALLOT ( n -- )  Allocate n bytes in dictionary */
+/* ALLOT ( n -- )  Allocate n bytes in dictionary (can be negative) */
 void dictionary_word_allot(VM *vm) {
-    cell_t n;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    n = vm_pop(vm);
-    
-    /* Allow negative allocation (standard Forth) */
-    ptrdiff_t new_here = (ptrdiff_t)vm->here + n;
-    if (new_here < 0 || new_here >= VM_MEMORY_SIZE) {
-        vm->error = 1;
-        return;
-    }
-    
-    vm->here = (size_t)new_here;
-    vm_align(vm);
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t n = vm_pop(vm);
+    cell_t new_here = vm->here + n;
+    if (new_here < 0 || new_here > (cell_t)VM_MEMORY_SIZE) { vm->error = 1; return; }
+    vm->here = new_here;
 }
 
-/* , ( n -- )  Compile n into dictionary */
+/* , ( n -- )  Compile cell into dictionary */
 void dictionary_word_comma(VM *vm) {
-    cell_t n;
-    cell_t *target;
-
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-
-    n = vm_pop(vm);
-
-    /* Ensure alignment before storing */
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t n = vm_pop(vm);
     vm_align(vm);
-
-    /* Check if we have space for a cell */
-    if (vm->here + sizeof(cell_t) >= VM_MEMORY_SIZE) {
-        vm->error = 1;  /* Out of memory */
-        return;
-    }
-
-    /* Store the cell value */
-    target = (cell_t*)&vm->memory[vm->here];
-    *target = n;
+    if (vm->here + (cell_t)sizeof(cell_t) > VM_MEMORY_SIZE) { vm->error = 1; return; }
+    vaddr_t addr = VM_ADDR(vm->here);
+    if (!vm_addr_ok(vm, addr, sizeof(cell_t))) { vm->error = 1; return; }
+    vm_store_cell(vm, addr, n);
     vm->here += sizeof(cell_t);
-
-    /* Alignment is already guaranteed since we aligned before and advanced by sizeof(cell_t) */
 }
 
-/* C, ( c -- )  Compile character into dictionary */
+/* C, ( c -- )  Compile byte into dictionary */
 void dictionary_word_c_comma(VM *vm) {
-    cell_t c;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    c = vm_pop(vm);
-    
-    /* Check if we have space for a byte */
-    if (vm->here >= VM_MEMORY_SIZE) {
-        vm->error = 1;  /* Out of memory */
-        return;
-    }
-    
-    /* Store the byte value */
-    vm->memory[vm->here] = (uint8_t)(c & 0xFF);
-    vm->here++;
-    /* Note: Don't align after C, - bytes are packed */
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t c = vm_pop(vm);
+    if (vm->here + 1 > VM_MEMORY_SIZE) { vm->error = 1; return; }
+    vaddr_t a = VM_ADDR(vm->here);
+    if (!vm_addr_ok(vm, a, 1)) { vm->error = 1; return; }
+    vm_store_u8(vm, a, (uint8_t)(c & 0xFF));
+    vm->here += 1;
 }
 
-/* 2, ( d -- )  Compile double into dictionary */
+/* 2, ( d -- )  Compile double-cell into dictionary: low then high */
 void dictionary_word_2comma(VM *vm) {
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-
+    if (vm->dsp < 1) { vm->error = 1; return; }
     cell_t high = vm_pop(vm);
     cell_t low  = vm_pop(vm);
-
-    if (vm->here + 1 >= VM_MEMORY_SIZE) {
-        vm->error = 1;
-        return;
-    }
-
-    vm->memory[vm->here++] = low;
-    vm->memory[vm->here++] = high;
+    vm_align(vm);
+    if (vm->here + (cell_t)(2*sizeof(cell_t)) > VM_MEMORY_SIZE) { vm->error = 1; return; }
+    vaddr_t a = VM_ADDR(vm->here);
+    if (!vm_addr_ok(vm, a, 2*sizeof(cell_t))) { vm->error = 1; return; }
+    vm_store_cell(vm, a, low);
+    vm_store_cell(vm, a + sizeof(cell_t), high);
+    vm->here += 2*sizeof(cell_t);
 }
 
-
-/* PAD ( -- addr )  Address of temporary text buffer */
+/* PAD ( -- addr )  VM address of 512-byte temporary text buffer at top of memory */
 void dictionary_word_pad(VM *vm) {
     size_t pad_offset = VM_MEMORY_SIZE - 512;
-    vm_push(vm, pad_offset);  /* VM memory offset */
+    vm_push(vm, (cell_t)pad_offset);
 }
 
-/* SP! ( addr -- )  Set data stack pointer */
+/* SP! ( n -- )  Set data stack pointer index (VM numeric, -1 .. STACK_SIZE-1) */
 void dictionary_word_sp_store(VM *vm) {
-    cell_t addr;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    addr = vm_pop(vm);
-    
-    /* Stack addresses are raw pointers to data_stack[] */
-    cell_t *stack_addr = (cell_t*)(uintptr_t)addr;
-    cell_t *stack_base = vm->data_stack;
-    
-    if (stack_addr < stack_base || stack_addr > stack_base + STACK_SIZE) {
-        vm->error = 1;
-        return;
-    }
-    
-    vm->dsp = (int)(stack_addr - stack_base) - 1;
-    
-    if (vm->dsp < -1 || vm->dsp >= STACK_SIZE) {
-        vm->error = 1;
-        vm->dsp = -1;
-    }
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t n = vm_pop(vm);
+    if (n < -1 || n >= STACK_SIZE) { vm->error = 1; return; }
+    vm->dsp = (int)n;
 }
 
-/* SP@ ( -- addr )  Get data stack pointer */
+/* SP@ ( -- n )  Get current data stack pointer index (VM numeric) */
 void dictionary_word_sp_fetch(VM *vm) {
-    /* Stack addresses are raw pointers */
-    if (vm->dsp >= 0) {
-        vm_push(vm, (cell_t)(uintptr_t)&vm->data_stack[vm->dsp + 1]);
-    } else {
-        vm_push(vm, (cell_t)(uintptr_t)&vm->data_stack[0]);
-    }
+    vm_push(vm, (cell_t)vm->dsp);
 }
 
-/* LATEST ( -- addr )  Address of most recent definition */
+/* LATEST ( -- addr )  Return VM address near most recent compiled definition (end of dictionary) */
 void dictionary_word_latest(VM *vm) {
-    vm_push(vm, (cell_t)(uintptr_t)(vm->latest));
+    vm_push(vm, vm->here);
 }
 
-/* FORTH-79 Dictionary Word Registration and Testing */
+/* Registration */
 void register_dictionary_words(VM *vm) {
-
     log_message(LOG_INFO, "Registering dictionary & compilation words...");
-    
-    /* Register all dictionary & compilation words */
-    register_word(vm, "HERE", dictionary_word_here);
-    register_word(vm, "ALLOT", dictionary_word_allot);
-    register_word(vm, ",", dictionary_word_comma);
-    register_word(vm, "C,", dictionary_word_c_comma);
-    register_word(vm, "2,", dictionary_word_2comma);
-    register_word(vm, "PAD", dictionary_word_pad);
-    register_word(vm, "SP!", dictionary_word_sp_store);
-    register_word(vm, "SP@", dictionary_word_sp_fetch);
+    register_word(vm, "HERE",   dictionary_word_here);
+    register_word(vm, "ALLOT",  dictionary_word_allot);
+    register_word(vm, ",",      dictionary_word_comma);
+    register_word(vm, "C,",     dictionary_word_c_comma);
+    register_word(vm, "2,",     dictionary_word_2comma);
+    register_word(vm, "PAD",    dictionary_word_pad);
+    register_word(vm, "SP!",    dictionary_word_sp_store);
+    register_word(vm, "SP@",    dictionary_word_sp_fetch);
     register_word(vm, "LATEST", dictionary_word_latest);
-
     log_message(LOG_INFO, "Dictionary & compilation words registered and tested");
 }
