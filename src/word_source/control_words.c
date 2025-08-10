@@ -19,6 +19,9 @@
 #include "include/control_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+#ifndef RETURN_STACK_SIZE
+#define RETURN_STACK_SIZE STACK_SIZE
+#endif
 
 /* --- SAFETY WRAPPERS: return stack --- */
 static inline int rs_push(VM *vm, cell_t v) {
@@ -187,8 +190,9 @@ static void control_forth_if(VM *vm) {
 }
 
 /* ELSE ( -- ) Alternate execution - compile-time */
+/* ELSE ( -- ) Alternate execution - compile-time */
 static void control_forth_else(VM *vm) {
-    cell_t placeholder_addr;
+    cell_t old_lit;  /* byte offset to the prior 0BRANCH literal */
 
     if (vm->mode != MODE_COMPILE) {
         log_message(LOG_ERROR, "ELSE: Only valid in compile mode");
@@ -196,29 +200,38 @@ static void control_forth_else(VM *vm) {
         return;
     }
 
-    /* Compile BRANCH to skip the ELSE part */
+    /* Emit BRANCH to skip the ELSE-part */
     vm_compile_call(vm, control_forth_branch);
 
-    /* Reserve space for branch offset */
-    size_t new_placeholder = vm->here;
+    /* Reserve literal cell for that BRANCH and remember it for THEN */
+    size_t new_lit = vm->here;
     vm_compile_literal(vm, 0);
 
-    /* Patch previous 0BRANCH */
-    if (!rs_pop(vm, &placeholder_addr)) { return; }
+    /* Pop the 0BRANCH literal address we pushed at IF */
+    if (!rs_pop(vm, &old_lit)) {
+        return;
+    }
 
-    cell_t branch_offset = (cell_t)(vm->here - (placeholder_addr + sizeof(cell_t)));
-    vm_patch_literal(vm, (size_t)placeholder_addr, branch_offset);
+    /* Patch the old 0BRANCH to jump to *here* (after the BRANCH+literal) */
+    size_t old_lit_addr = (size_t)old_lit;           /* byte offset into vm->memory */
+    cell_t off_bytes = (cell_t)((size_t)vm->here - old_lit_addr);
+    *(cell_t *)(vm->memory + old_lit_addr) = off_bytes;
 
-    /* Push new placeholder for THEN */
-    if (!rs_push(vm, (cell_t)(new_placeholder))) { return; }
+    /* Push the new BRANCH literal for THEN to patch */
+    if (!rs_push(vm, (cell_t)new_lit)) {
+        return;
+    }
 
-    log_message(LOG_DEBUG, "ELSE: Patched 0BRANCH at %ld, new placeholder at %zu",
-                (long)placeholder_addr, new_placeholder);
+    log_message(LOG_DEBUG,
+        "ELSE: patched 0BRANCH @ %zu -> %ld bytes; new BRANCH literal @ %zu",
+        old_lit_addr, (long)off_bytes, new_lit);
 }
 
+
+/* THEN ( -- ) End conditional - compile-time */
 /* THEN ( -- ) End conditional - compile-time */
 static void control_forth_then(VM *vm) {
-    cell_t placeholder_addr;
+    cell_t lit;  /* byte offset of the BRANCH/0BRANCH literal to patch */
 
     if (vm->mode != MODE_COMPILE) {
         log_message(LOG_ERROR, "THEN: Only valid in compile mode");
@@ -226,15 +239,19 @@ static void control_forth_then(VM *vm) {
         return;
     }
 
-    /* Patch previous branch to here */
-    if (!rs_pop(vm, &placeholder_addr)) { return; }
+    if (!rs_pop(vm, &lit)) {
+        return;
+    }
 
-    cell_t branch_offset = (cell_t)(vm->here - (placeholder_addr + sizeof(cell_t)));
-    vm_patch_literal(vm, (size_t)placeholder_addr, branch_offset);
+    size_t lit_addr = (size_t)lit;                           /* byte offset into vm->memory */
+    cell_t off_bytes = (cell_t)((size_t)vm->here - lit_addr); /* target - literal */
+    *(cell_t *)(vm->memory + lit_addr) = off_bytes;
 
-    log_message(LOG_DEBUG, "THEN: Patched branch at %ld to here %zu",
-                (long)placeholder_addr, vm->here);
+    log_message(LOG_DEBUG,
+        "THEN: patched literal @ %zu -> %ld bytes to here %zu",
+        lit_addr, (long)off_bytes, (size_t)vm->here);
 }
+
 
 /* BEGIN ( -- ) Start loop - compile-time */
 static void control_forth_begin(VM *vm) {
