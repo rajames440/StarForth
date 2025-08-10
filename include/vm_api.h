@@ -1,43 +1,23 @@
-/*
-
-                                 ***   StarForth   ***
-  vm_api.h - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
-  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
-
- This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
-  To the extent possible under law, the author(s) have dedicated all copyright and related
-  and neighboring rights to this software to the public domain worldwide.
-  This software is distributed without any warranty.
-
-  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
-
-
- */
-
 #ifndef VM_API_H
 #define VM_API_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include "vm.h"
 
-/* Opaque VM type to API consumers */
-struct VM;
-typedef struct VM VM;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* Stack ops */
-void vm_api_push(VM *vm, intptr_t v);
-intptr_t vm_api_pop(VM *vm);
-void vm_api_rpush(VM *vm, intptr_t v);
-intptr_t vm_api_rpop(VM *vm);
+ /* ===== VM input API (TIB, >IN, SPAN) ===== */
+ int            vm_input_ensure(VM *vm);                       /* alloc/init once */
+ unsigned char* vm_input_tib(VM *vm);                          /* VM addr of TIB buffer */
+ cell_t*        vm_input_in(VM *vm);                            /* VM addr of >IN cell */
+ cell_t*        vm_input_span(VM *vm);                          /* VM addr of SPAN cell */
+ void           vm_input_load_line(VM *vm, const char *src, size_t n);  /* copy into TIB, set SPAN, reset >IN */
+ void           vm_input_source(VM *vm, cell_t *out_addr, cell_t *out_len); /* SOURCE pair (addr,u) */
+ cell_t vm_addr_from_ptr(VM *vm, void *p);   /* convert host ptr -> Forth address (offset into vm->memory) */
 
-/* Dictionary ops needed by word registration */
-typedef void (*word_func_t)(VM *vm);  /* mirror vm.h, but no struct exposure */
-
-void*      vm_api_create_word(VM *vm, const char *name, size_t len, word_func_t fn);
-void*      vm_api_find_word  (VM *vm, const char *name, size_t len);
-void       vm_api_make_immediate(VM *vm);
-void       vm_api_hide_word     (VM *vm);
-void       vm_api_smudge_word   (VM *vm);
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* VM_API_H */

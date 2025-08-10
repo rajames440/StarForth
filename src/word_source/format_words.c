@@ -1,427 +1,343 @@
 /*
-
                                  ***   StarForth   ***
   format_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
-  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+  Last modified - 2025-08-09
+  (c) 2025 Robert A. James - StarshipOS Forth Project. CC0-1.0
+*/
 
- This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
-  To the extent possible under law, the author(s) have dedicated all copyright and related
-  and neighboring rights to this software to the public domain worldwide.
-  This software is distributed without any warranty.
-
-  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
-
-
- */
-
-/* format_words.c - FORTH-79 Formatting & Conversion Words */
 #include "include/format_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+#include "../../include/vm.h"
+#include "../../include/vm_api.h"
+
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
+#include <limits.h>
 
-/* Global formatting state */
-static cell_t base_value = 10;          /* Number base (10, 16, 8, etc.) */
-static char conversion_buffer[64];      /* Buffer for numeric conversion */
-static int conversion_pos = 0;          /* Current position in conversion buffer */
+/* Conversion buffer for <# ... #> */
+static unsigned char *pn_buf = NULL;
+static size_t         pn_cap = 0;
+static int            conversion_pos = 0;
 
-/* BASE ( -- addr )  Variable containing number base */
+static void ensure_pn(VM *vm) {
+    if (!pn_buf) {
+        pn_buf = (unsigned char*)vm_allot(vm, 64);  /* same size as before */
+        if (!pn_buf) { vm->error = 1; return; }
+        pn_cap = 64;
+        memset(pn_buf, 0, pn_cap);
+    }
+}
+
+#define CELL_BITS   ((int)(sizeof(cell_t) * CHAR_BIT))
+#define CHUNK_BITS  16
+#define CHUNK_MASK  ((unsigned long)((1UL << CHUNK_BITS) - 1))
+
+static unsigned current_base(VM *vm) {
+    unsigned b = (unsigned)vm->base;
+    return (b < 2 || b > 36) ? 10u : b;
+}
+
+static char digit_for(unsigned v) {
+    return (v < 10) ? (char)('0' + v) : (char)('A' + (v - 10));
+}
+
+/* Divide unsigned double-cell (dhigh:dlow) by base (2..36), portable C99 */
+static void div_ud_by_base(cell_t dhigh_in, cell_t dlow_in, unsigned base,
+                           cell_t *qhigh_out, cell_t *qlow_out, unsigned *rem_out)
+{
+    unsigned long base_ul = (unsigned long)base;
+    unsigned long r = 0UL;
+    unsigned long qh = 0UL, ql = 0UL;
+
+    /* High word */
+    {
+        unsigned long hi = (unsigned long)dhigh_in;
+        int parts = CELL_BITS / CHUNK_BITS;
+        for (int i = parts - 1; i >= 0; --i) {
+            unsigned long chunk = (hi >> (i * CHUNK_BITS)) & CHUNK_MASK;
+            unsigned long val = (r << CHUNK_BITS) + chunk;
+            unsigned long qchunk = val / base_ul;
+            r = val % base_ul;
+            qh = (qh << CHUNK_BITS) | (qchunk & CHUNK_MASK);
+        }
+    }
+    /* Low word */
+    {
+        unsigned long lo = (unsigned long)dlow_in;
+        int parts = CELL_BITS / CHUNK_BITS;
+        for (int i = parts - 1; i >= 0; --i) {
+            unsigned long chunk = (lo >> (i * CHUNK_BITS)) & CHUNK_MASK;
+            unsigned long val = (r << CHUNK_BITS) + chunk;
+            unsigned long qchunk = val / base_ul;
+            r = val % base_ul;
+            ql = (ql << CHUNK_BITS) | (qchunk & CHUNK_MASK);
+        }
+    }
+
+    *qhigh_out = (cell_t)qh;
+    *qlow_out  = (cell_t)ql;
+    *rem_out   = (unsigned)r;
+}
+
+/* Render one cell in current base (no printf %x/%o so input==output base) */
+static void print_number_formatted(VM *vm, cell_t n, int width, int is_unsigned) {
+    char buf[80];
+    int i = 0;
+    unsigned base = current_base(vm);
+
+    if (!is_unsigned && n == 0) {
+        buf[i++] = '0';
+    } else if (is_unsigned) {
+        unsigned long u = (unsigned long)n;
+        if (u == 0UL) buf[i++] = '0';
+        while (u != 0UL) { unsigned long rem = u % (unsigned long)base; u /= (unsigned long)base; buf[i++] = digit_for((unsigned)rem); }
+    } else {
+        int neg = (n < 0);
+        unsigned long u = (unsigned long)n;
+        if (neg) u = (unsigned long)0 - u;
+        if (u == 0UL) buf[i++] = '0';
+        while (u != 0UL) { unsigned long rem = u % (unsigned long)base; u /= (unsigned long)base; buf[i++] = digit_for((unsigned)rem); }
+        if (neg) buf[i++] = '-';
+    }
+
+    int len = i;
+    if (width > 0 && len < width) for (int s = 0; s < width - len; ++s) putchar(' ');
+    while (i--) putchar(buf[i]);
+}
+
+/* ===== Words ===== */
+
+/* BASE ( -- addr ) -> &vm->base */
 void format_word_base(VM *vm) {
-    vm_push(vm, (cell_t)(uintptr_t)&base_value);
+    if (!vm->base) { vm->error = 1; return; }
+    vm_push(vm, (cell_t)(uintptr_t)vm->base);
 }
 
-/* DECIMAL ( -- )  Set base to 10 */
 void format_word_decimal(VM *vm) {
-    base_value = 10;
+    if (!vm->base) { vm->error = 1; return; }
+    vm->base = 10;
 }
 
-/* HEX ( -- )  Set base to 16 */
 void format_word_hex(VM *vm) {
-    base_value = 16;
+    if (!vm->base) { vm->error = 1; return; }
+    vm->base = 16;
 }
 
-/* OCTAL ( -- )  Set base to 8 */
 void format_word_octal(VM *vm) {
-    base_value = 8;
+    if (!vm->base) { vm->error = 1; return; }
+    vm->base = 8;
 }
 
-/* <# ( -- )  Begin numeric conversion */
+/* <# ( -- ) */
 void format_word_begin_conversion(VM *vm) {
+    ensure_pn(vm);
+    if (vm->error) return;
     conversion_pos = 0;
-    memset(conversion_buffer, 0, sizeof(conversion_buffer));
+    memset(pn_buf, 0, pn_cap);
 }
 
-/* HOLD ( c -- )  Insert character in conversion */
+/* HOLD ( c -- ) */
 void format_word_hold(VM *vm) {
-    cell_t c;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    c = vm_pop(vm);
-    
-    if (conversion_pos >= (int)sizeof(conversion_buffer) - 1) {
-        vm->error = 1;  /* Buffer overflow */
-        return;
-    }
-    
-    /* Insert character at beginning (FORTH builds strings backwards) */
-    memmove(&conversion_buffer[1], &conversion_buffer[0], (size_t)conversion_pos);
-    conversion_buffer[0] = (char)(c & 0xFF);
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t c = vm_pop(vm);
+
+    ensure_pn(vm);
+    if (vm->error) return;
+
+    if ((size_t)conversion_pos >= pn_cap - 1) { vm->error = 1; return; }
+    memmove(&pn_buf[1], &pn_buf[0], (size_t)conversion_pos);
+    pn_buf[0] = (char)(c & 0xFF);
     conversion_pos++;
 }
 
-/* SIGN ( n -- )  Insert sign if negative */
+
+/* SIGN ( n -- ) */
 void format_word_sign(VM *vm) {
-    cell_t n;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    n = vm_pop(vm);
-    
-    if (n < 0) {
-        vm_push(vm, '-');
-        format_word_hold(vm);
-    }
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t n = vm_pop(vm);
+    if (n < 0) { vm_push(vm, '-'); format_word_hold(vm); }
 }
 
-/* # ( ud1 -- ud2 )  Convert one digit */
+/* # ( ud1 -- ud2 ) */
 void format_word_hash(VM *vm) {
-    cell_t dlow, dhigh;
-    unsigned long ud;
-    unsigned long remainder;
-    char digit;
-    
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-    
-    dlow = vm_pop(vm);
-    dhigh = vm_pop(vm);
-    
-    /* Convert double to unsigned for division */
-    ud = ((unsigned long)dhigh << (sizeof(cell_t) * 4)) | (unsigned long)dlow;
-    
-    /* Get remainder and quotient */
-    remainder = ud % (unsigned long)base_value;
-    ud = ud / (unsigned long)base_value;
-    
-    /* Convert remainder to digit */
-    if (remainder < 10) {
-        digit = '0' + (char)remainder;
-    } else {
-        digit = 'A' + (char)(remainder - 10);
-    }
-    
-    /* Add digit to conversion buffer */
-    vm_push(vm, digit);
-    format_word_hold(vm);
-    
-    /* Push quotient back as double */
-    vm_push(vm, (cell_t)(ud >> (sizeof(cell_t) * 4)));  /* dhigh */
-    vm_push(vm, (cell_t)(ud & 0xFFFFFFFF));             /* dlow */
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    cell_t dlow  = vm_pop(vm);
+    cell_t dhigh = vm_pop(vm);
+
+    unsigned base = current_base(vm);
+    cell_t qh, ql; unsigned rem;
+    div_ud_by_base(dhigh, dlow, base, &qh, &ql, &rem);
+
+    vm_push(vm, (cell_t)digit_for(rem));
+    format_word_hold(vm); if (vm->error) return;
+
+    vm_push(vm, qh);
+    vm_push(vm, ql);
 }
 
-/* #S ( ud -- 0 0 )  Convert all remaining digits */
+/* #S ( ud -- 0 0 ) */
 void format_word_hash_s(VM *vm) {
-    cell_t dlow, dhigh;
-    
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-    
-    /* Keep converting digits until double is zero */
-    do {
+    /* FORTH-79: requires an unsigned double on the stack (dlow dhigh). */
+    if (vm->dsp < 1) { vm->error = 1; return; }
+
+    for (;;) {
+        /* Always convert at least once so 0 0 produces "0". */
         format_word_hash(vm);
         if (vm->error) return;
-        
-        dlow = vm->data_stack[vm->dsp];
-        dhigh = vm->data_stack[vm->dsp - 1];
-    } while (dhigh != 0 || dlow != 0);
+
+        /* Peek the quotient (dhigh dlow) that '#' just pushed back */
+        cell_t dlow  = vm->data_stack[vm->dsp];
+        cell_t dhigh = vm->data_stack[vm->dsp - 1];
+        if (dhigh == 0 && dlow == 0) break;
+    }
 }
 
-/* #> ( ud -- addr u )  End numeric conversion */
+/* #> ( ud -- addr u ) */
 void format_word_end_conversion(VM *vm) {
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-    
-    /* Drop the double from stack */
-    vm_pop(vm);  /* dlow */
-    vm_pop(vm);  /* dhigh */
-    
-    /* Push address and length of conversion buffer */
-    vm_push(vm, (cell_t)(uintptr_t)conversion_buffer);
-    vm_push(vm, conversion_pos);
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    (void)vm_pop(vm); /* dlow */
+    (void)vm_pop(vm); /* dhigh */
+
+    ensure_pn(vm);
+    if (vm->error) return;
+
+    vm_push(vm, (cell_t)(uintptr_t)pn_buf);   /* VM address */
+    vm_push(vm, (cell_t)conversion_pos);
 }
 
-/* Helper function to print a number with specific formatting */
-static void print_number_formatted(cell_t n, int width, int is_unsigned) {
-    char temp_buffer[32];
-    int len;
-    int i;
-    
-    if (is_unsigned) {
-        if (base_value == 16) {
-            len = snprintf(temp_buffer, sizeof(temp_buffer), "%lX", (unsigned long)n);
-        } else if (base_value == 8) {
-            len = snprintf(temp_buffer, sizeof(temp_buffer), "%lo", (unsigned long)n);
-        } else {
-            len = snprintf(temp_buffer, sizeof(temp_buffer), "%lu", (unsigned long)n);
-        }
-    } else {
-        if (base_value == 16) {
-            len = snprintf(temp_buffer, sizeof(temp_buffer), "%lX", (long)n);
-        } else if (base_value == 8) {
-            len = snprintf(temp_buffer, sizeof(temp_buffer), "%lo", (long)n);
-        } else {
-            len = snprintf(temp_buffer, sizeof(temp_buffer), "%ld", (long)n);
-        }
-    }
-    
-    /* Print with right justification if width specified */
-    if (width > 0 && len < width) {
-        for (i = 0; i < width - len; i++) {
-            printf(" ");
-        }
-    }
-    
-    printf("%s", temp_buffer);
-}
-
-/* . ( n -- )  Print signed number */
+/* . ( n -- ) */
 void format_word_dot(VM *vm) {
-    cell_t n;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    n = vm_pop(vm);
-    print_number_formatted(n, 0, 0);
-    printf(" ");
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t n = vm_pop(vm);
+    print_number_formatted(vm, n, 0, 0);
+    putchar(' ');
 }
 
-/* .R ( n width -- )  Print signed number right-justified */
+/* .R ( n width -- ) */
 void format_word_dot_r(VM *vm) {
-    cell_t width, n;
-    
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-    
-    width = vm_pop(vm);
-    n = vm_pop(vm);
-    
-    print_number_formatted(n, (int)width, 0);
-    printf(" ");
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    cell_t width = vm_pop(vm);
+    cell_t n     = vm_pop(vm);
+    print_number_formatted(vm, n, (int)width, 0);
+    putchar(' ');
 }
 
-/* U. ( u -- )  Print unsigned number */
+/* U. ( u -- ) */
 void format_word_u_dot(VM *vm) {
-    cell_t u;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    u = vm_pop(vm);
-    print_number_formatted(u, 0, 1);
-    printf(" ");
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t u = vm_pop(vm);
+    print_number_formatted(vm, u, 0, 1);
+    putchar(' ');
 }
 
-/* U.R ( u width -- )  Print unsigned number right-justified */
+/* U.R ( u width -- ) */
 void format_word_u_dot_r(VM *vm) {
-    cell_t width, u;
-    
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-    
-    width = vm_pop(vm);
-    u = vm_pop(vm);
-    
-    print_number_formatted(u, (int)width, 1);
-    printf(" ");
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    cell_t width = vm_pop(vm);
+    cell_t u     = vm_pop(vm);
+    print_number_formatted(vm, u, (int)width, 1);
+    putchar(' ');
 }
 
-/* D. ( d -- )  Print double number */
+/* D. ( d -- ) */
 void format_word_d_dot(VM *vm) {
-    cell_t dlow, dhigh;
-    
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-    
-    dlow = vm_pop(vm);
-    dhigh = vm_pop(vm);
-    
-    /* For simplicity, convert to single and print */
-    /* In a full implementation, this would handle full double precision */
-    if (dhigh == 0) {
-        print_number_formatted(dlow, 0, 0);
-    } else if (dhigh == -1 && dlow < 0) {
-        print_number_formatted(dlow, 0, 0);
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    cell_t dlow  = vm_pop(vm);
+    cell_t dhigh = vm_pop(vm);
+    if ((dhigh == 0) || (dhigh == -1 && dlow < 0)) {
+        print_number_formatted(vm, dlow, 0, 0);
     } else {
-        printf("DOUBLE-OVERFLOW");
+        fputs("DOUBLE-OVERFLOW", stdout);
     }
-    printf(" ");
+    putchar(' ');
 }
 
-/* D.R ( d width -- )  Print double number right-justified */
+/* D.R ( d width -- ) */
 void format_word_d_dot_r(VM *vm) {
-    cell_t width, dlow, dhigh;
-    
-    if (vm->dsp < 2) {
-        vm->error = 1;
-        return;
-    }
-    
-    width = vm_pop(vm);
-    dlow = vm_pop(vm);
-    dhigh = vm_pop(vm);
-    
-    /* For simplicity, convert to single and print */
-    if (dhigh == 0) {
-        print_number_formatted(dlow, (int)width, 0);
-    } else if (dhigh == -1 && dlow < 0) {
-        print_number_formatted(dlow, (int)width, 0);
+    if (vm->dsp < 2) { vm->error = 1; return; }
+    cell_t width = vm_pop(vm);
+    cell_t dlow  = vm_pop(vm);
+    cell_t dhigh = vm_pop(vm);
+    if ((dhigh == 0) || (dhigh == -1 && dlow < 0)) {
+        print_number_formatted(vm, dlow, (int)width, 0);
     } else {
-        printf("DOUBLE-OVERFLOW");
+        int len = (int)strlen("DOUBLE-OVERFLOW");
+        for (int i = 0; i < ((int)width > len ? (int)width - len : 0); ++i) putchar(' ');
+        fputs("DOUBLE-OVERFLOW", stdout);
     }
-    printf(" ");
+    putchar(' ');
 }
 
-/* .S ( -- )  Print stack contents */
+/* .S ( -- ) */
 void format_word_dot_s(VM *vm) {
-    int i;
-    
-    printf("<");
-    printf("%d", vm->dsp + 1);
-    printf("> ");
-    
-    for (i = 0; i <= vm->dsp; i++) {
-        print_number_formatted(vm->data_stack[i], 0, 0);
-        printf(" ");
-    }
-    
-    printf("\n");
+    printf("<%d> ", vm->dsp + 1);
+    for (int i = 0; i <= vm->dsp; i++) { print_number_formatted(vm, vm->data_stack[i], 0, 0); putchar(' '); }
+    putchar('\n');
 }
 
-/* ? ( addr -- )  Print value at address */
+/* ? ( addr -- ) */
 void format_word_question(VM *vm) {
-    cell_t addr;
-    cell_t *ptr;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    addr = vm_pop(vm);
-    ptr = (cell_t*)(uintptr_t)addr;
-    
-    /* Basic address validation */
-    if (ptr == NULL) {
-        vm->error = 1;
-        return;
-    }
-    
-    print_number_formatted(*ptr, 0, 0);
-    printf(" ");
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t addr = vm_pop(vm);
+    cell_t *ptr = (cell_t*)(uintptr_t)addr;
+    if (!ptr) { vm->error = 1; return; }
+    print_number_formatted(vm, *ptr, 0, 0);
+    putchar(' ');
 }
 
-/* DUMP ( addr u -- )  Hex dump u bytes from addr */
+/* DUMP ( addr u -- ) */
 void format_word_dump(VM *vm) {
-    cell_t u, addr;
-    uint8_t *ptr;
-    size_t i, j;
-    size_t bytes_to_dump;
-    
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-    
-    u = vm_pop(vm);
-    addr = vm_pop(vm);
-    
-    ptr = (uint8_t*)(uintptr_t)addr;
-    bytes_to_dump = (size_t)u;
-    
-    if (ptr == NULL || u < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    /* Print hex dump in 16-byte lines */
-    for (i = 0; i < bytes_to_dump; i += 16) {
-        /* Print address */
-        printf("%08lX: ", (unsigned long)(addr + (cell_t)i));
-        
-        /* Print hex bytes */
-        for (j = 0; j < 16 && i + j < bytes_to_dump; j++) {
-            printf("%02X ", ptr[i + j]);
-        }
-        
-        /* Pad with spaces if less than 16 bytes */
-        for (; j < 16; j++) {
-            printf("   ");
-        }
-        
-        /* Print ASCII representation */
-        printf(" |");
-        for (j = 0; j < 16 && i + j < bytes_to_dump; j++) {
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    cell_t u    = vm_pop(vm);
+    cell_t addr = vm_pop(vm);
+    if (u < 0) { vm->error = 1; return; }
+    uint8_t *ptr = (uint8_t*)(uintptr_t)addr;
+    if (!ptr) { vm->error = 1; return; }
+    size_t n = (size_t)u;
+    int addr_width = (int)(sizeof(uintptr_t) * 2);
+
+    for (size_t i = 0; i < n; i += 16) {
+        unsigned long long a = (unsigned long long)((uintptr_t)addr + (uintptr_t)i);
+        printf("%0*llX: ", addr_width, a);
+        size_t j = 0;
+        for (; j < 16 && i + j < n; j++) printf("%02X ", ptr[i + j]);
+        for (; j < 16; j++) printf("   ");
+        fputs(" |", stdout);
+        for (j = 0; j < 16 && i + j < n; j++) {
             char c = (char)ptr[i + j];
-            if (c >= 32 && c <= 126) {
-                printf("%c", c);
-            } else {
-                printf(".");
-            }
+            putchar((c >= 32 && c <= 126) ? c : '.');
         }
-        printf("|\n");
+        fputs("|\n", stdout);
     }
 }
 
-/* FORTH-79 Formatting Word Registration and Testing */
+/* Registration */
 void register_format_words(VM *vm) {
     log_message(LOG_INFO, "Registering formatting & conversion words...");
-    
-    /* Register all formatting & conversion words */
-    register_word(vm, ".", format_word_dot);
-    register_word(vm, ".R", format_word_dot_r);
-    register_word(vm, "U.", format_word_u_dot);
-    register_word(vm, "U.R", format_word_u_dot_r);
-    register_word(vm, "D.", format_word_d_dot);
-    register_word(vm, "D.R", format_word_d_dot_r);
-    register_word(vm, ".S", format_word_dot_s);
-    register_word(vm, "?", format_word_question);
-    register_word(vm, "DUMP", format_word_dump);
-    register_word(vm, "<#", format_word_begin_conversion);
-    register_word(vm, "#", format_word_hash);
-    register_word(vm, "#>", format_word_end_conversion);
-    register_word(vm, "#S", format_word_hash_s);
-    register_word(vm, "HOLD", format_word_hold);
-    register_word(vm, "SIGN", format_word_sign);
-    register_word(vm, "BASE", format_word_base);
-    register_word(vm, "DECIMAL", format_word_decimal);
-    register_word(vm, "HEX", format_word_hex);
-    register_word(vm, "OCTAL", format_word_octal);
 
-    log_message(LOG_INFO, "Note: Output formatting words (., .R, U., etc.) require manual verification");
+    register_word(vm, ".",   format_word_dot);
+    register_word(vm, ".R",  format_word_dot_r);
+    register_word(vm, "U.",  format_word_u_dot);
+    register_word(vm, "U.R", format_word_u_dot_r);
+    register_word(vm, "D.",  format_word_d_dot);
+    register_word(vm, "D.R", format_word_d_dot_r);
+    register_word(vm, ".S",  format_word_dot_s);
+    register_word(vm, "?",   format_word_question);
+    register_word(vm, "DUMP",format_word_dump);
+
+    register_word(vm, "<#",  format_word_begin_conversion);
+    register_word(vm, "#",   format_word_hash);
+    register_word(vm, "#S",  format_word_hash_s);
+    register_word(vm, "#>",  format_word_end_conversion);
+    register_word(vm, "HOLD",format_word_hold);
+    register_word(vm, "SIGN",format_word_sign);
+
+    register_word(vm, "BASE",   format_word_base);
+    register_word(vm, "DECIMAL",format_word_decimal);
+    register_word(vm, "HEX",    format_word_hex);
+    register_word(vm, "OCTAL",  format_word_octal);
+
+    log_message(LOG_INFO, "Formatting & conversion words registered");
 }

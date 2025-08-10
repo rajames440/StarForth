@@ -26,7 +26,34 @@
 struct VM;
 
 typedef intptr_t cell_t;
+
+
 typedef void (*word_func_t)(struct VM *vm);
+
+/* ===== VM address model (Phase 1 scaffolding) ============================
+ * StarForth rule: addresses on the data stack are VM OFFSETS, not C pointers.
+ * vaddr_t is a byte offset into the VM's virtual address space.
+ * Implementations come in a later change; these are declarations only.
+ */
+typedef uint64_t vaddr_t;
+
+/* Bounds check: nonzero if [addr, addr+len) is a valid VM range */
+int      vm_addr_ok(struct VM *vm, vaddr_t addr, size_t len);
+
+/* Internal pointer materialization for subsystems (NOT for word sources) */
+uint8_t *vm_ptr(struct VM *vm, vaddr_t addr);
+
+/* Canonical memory accessors; all word code will funnel through these */
+uint8_t  vm_load_u8 (struct VM *vm, vaddr_t addr);
+void     vm_store_u8(struct VM *vm, vaddr_t addr, uint8_t v);
+
+cell_t   vm_load_cell (struct VM *vm, vaddr_t addr);    /* requires alignment */
+void     vm_store_cell(struct VM *vm, vaddr_t addr, cell_t v);
+
+/* Explicit stack<->offset conversions (keep intent obvious) */
+static inline vaddr_t VM_ADDR(cell_t c) { return (vaddr_t)(uint64_t)c; }
+static inline cell_t  CELL(vaddr_t a)   { return (cell_t)(int64_t)a; }
+/* ======================================================================== */
 
 #define STACK_SIZE 1024
 #define DICTIONARY_SIZE 1024
@@ -72,38 +99,47 @@ typedef struct VM {
     int dsp;  /* Data stack pointer */
     int rsp;  /* Return stack pointer */
 
-    /* Dictionary */
-    uint8_t *memory;            /* CHANGE: pointer instead of array */
-    size_t here;                /* Next free memory location */
+    /* Dictionary / heap */
+    uint8_t *memory;            /* Unified VM memory buffer */
+    size_t here;                /* Next free memory location (byte offset) */
     DictEntry *latest;          /* Most recent word */
 
     /* Input system */
-    char input_buffer[INPUT_BUFFER_SIZE];
+    char   input_buffer[INPUT_BUFFER_SIZE];
     size_t input_length;
     size_t input_pos;
 
     /* Compiler state */
-    vm_mode_t mode;
+    vm_mode_t  mode;
     DictEntry *compiling_word;  /* Word being compiled */
 
-    /* Compilation system */
-    char current_word_name[WORD_NAME_MAX + 1];  /* Name of word being compiled */
-    cell_t *compile_buffer;                     /* Compilation buffer pointer */
-    size_t compile_pos;                         /* Current position in compile buffer */
-    size_t compile_size;                        /* Size of compile buffer */
+    /* Compilation support */
+    char   current_word_name[WORD_NAME_MAX + 1];
+    cell_t *compile_buffer;
+    size_t  compile_pos;
+    size_t  compile_size;
 
     /* FORTH-79 Dictionary manipulation support */
-    cell_t state_var;           /* STATE variable for compilation state */
+    cell_t state_var;           /* STATE variable (0 interpret, -1 compile) */
 
-    /* ADD THIS LINE: */
-    DictEntry *current_executing_entry;         /* Current executing entry */
+    /* Execution bookkeeping */
+    DictEntry *current_executing_entry;
 
     /* VM state */
     int error;
     int halted;
 
-    /* Block storage pointer (from io.c) */
-    unsigned char *blocks;
+    /* Numeric base (Forth BASE). Default 10. */
+    cell_t base;
+
+    /* TIB stuff */
+    unsigned char *tib_buf;     /* pointer to TIB buffer (host alloc for now) */
+    size_t         tib_cap;     /* capacity in bytes */
+    cell_t        *in_var;      /* >IN (legacy; will migrate to VM addr) */
+    cell_t        *span_var;    /* SPAN (legacy; will migrate to VM addr) */
+
+    /* Block system (VM-backed variables / addresses) */
+    vaddr_t scr_addr;
 
 } VM;
 
@@ -136,7 +172,7 @@ void vm_align(VM *vm);
 
 /* Input parsing */
 int vm_parse_word(VM *vm, char *word, size_t max_len);
-int vm_parse_number(const char *str, cell_t *value);
+int vm_parse_number(VM *vm, const char *str, cell_t *value);
 
 /* Compilation */
 void vm_enter_compile_mode(VM *vm, const char *name, size_t len);

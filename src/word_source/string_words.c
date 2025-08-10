@@ -19,6 +19,8 @@
 #include "include/string_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+#include "../../include/vm.h"
+#include  "../../include/vm_api.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -466,6 +468,36 @@ void string_word_enclose(VM *vm) {
     vm_push(vm, n3);    /* Next position */
 }
 
+/* TIB ( -- addr ) */
+static void string_word_TIB(VM *vm) {
+    unsigned char *p = vm_input_tib(vm);
+    if (!p) { vm->error = 1; return; }
+    vm_push(vm, (cell_t)(uintptr_t)p);
+}
+
+/* >IN ( -- addr ) */
+static void string_word_toIN(VM *vm) {
+    cell_t *p = vm_input_in(vm);
+    if (!p) { vm->error = 1; return; }
+    vm_push(vm, (cell_t)(uintptr_t)p);
+}
+
+/* SPAN ( -- addr ) */
+static void string_word_SPAN(VM *vm) {
+    cell_t *p = vm_input_span(vm);
+    if (!p) { vm->error = 1; return; }
+    vm_push(vm, (cell_t)(uintptr_t)p);
+}
+
+/* SOURCE ( -- addr u )  — only if your string_words.c owns SOURCE */
+static void string_word_SOURCE(VM *vm) {
+    cell_t addr=0, len=0;
+    vm_input_source(vm, &addr, &len);
+    if (vm->error) return;
+    vm_push(vm, addr);
+    vm_push(vm, len);
+}
+
 /* FORTH-79 String Word Registration and Testing */
 void register_string_words(VM *vm) {
     log_message(LOG_INFO, "Registering string & text processing words...");
@@ -488,6 +520,10 @@ void register_string_words(VM *vm) {
     register_word(vm, "CONVERT", string_word_convert);
     register_word(vm, "NUMBER", string_word_number);
     register_word(vm, "ENCLOSE", string_word_enclose);
+    register_word(vm, "TIB",  string_word_TIB);
+    register_word(vm, ">IN",  string_word_toIN);
+    register_word(vm, "SPAN", string_word_SPAN);
+    register_word(vm, "SOURCE", string_word_SOURCE);
 
     log_message(LOG_INFO, "Note: Interactive words (EXPECT, QUERY, WORD) require manual testing");
 }

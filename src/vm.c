@@ -42,49 +42,75 @@ static void execute_colon_word(VM *vm);
  * @param vm Pointer to VM structure to initialize
  */
 void vm_init(VM *vm) {
-    /* Clear all memory */
+    /* Clear all fields */
     memset(vm, 0, sizeof(VM));
 
-    /* Allocate unified block storage - this IS our VM memory */
-    vm->memory = malloc(VM_MEMORY_SIZE);  /* 1MB = 1024 blocks */
+    /* Allocate unified VM memory buffer */
+    vm->memory = malloc(VM_MEMORY_SIZE);
     if (vm->memory == NULL) {
         log_message(LOG_ERROR, "Failed to allocate VM memory");
         vm->error = 1;
         return;
     }
 
-    /* Initialize stack pointers */
-    vm->dsp = -1;   /* Data stack empty */
-    vm->rsp = -1;   /* Return stack empty */
+    /* Stacks empty */
+    vm->dsp = -1;   /* Data stack pointer */
+    vm->rsp = -1;   /* Return stack pointer */
 
-    /* Initialize dictionary space (first 64 blocks) */
-    vm->here = 0;   /* Start at beginning of allocated memory */
-    vm_align(vm);   /* Ensure initial alignment */
+    /* Dictionary starts at offset 0 */
+    vm->here = 0;
 
-    /* Point blocks to the same memory - UNIFIED! */
-    vm->blocks = vm->memory;  /* Blocks and heap share same space */
+    /* Keep any alignment guarantees for dictionary/code fields */
+    vm_align(vm);
 
-    /* Initialize other fields */
-    vm->latest = NULL;
-    vm->mode = MODE_INTERPRET;
-    vm->compiling_word = NULL;
-    vm->state_var = 0;  /* Interpret mode */
-    vm->error = 0;
+    /* -------- VM variables (backed by VM memory) --------
+       Allocate a cell for SCR (screen/block number).
+       We store its **VM offset** in vm->scr_addr.
+    */
+    {
+        void *scr_ptr = vm_allot(vm, sizeof(cell_t));
+        if (!scr_ptr) {
+            log_message(LOG_ERROR, "vm_init: failed to allot SCR cell");
+            vm->error = 1;
+            return;
+        }
+        vm->scr_addr = (vaddr_t)((uint8_t *)scr_ptr - vm->memory);
+        /* SCR := 0 */
+        *(cell_t *)(&vm->memory[vm->scr_addr]) = 0;
+    }
+    /* ---------------------------------------------------- */
+
+    /* Core VM state */
+    vm->latest          = NULL;
+    vm->mode            = MODE_INTERPRET;
+    vm->compiling_word  = NULL;
+
+    /* FORTH-79 STATE variable: 0 = interpret */
+    vm->state_var = 0;
+
+    /* Error/halt */
+    vm->error  = 0;
     vm->halted = 0;
 
-    /* Initialize input system */
-    vm->input_length = 0;
-    vm->input_pos = 0;
+    /* Numeric base default */
+    vm->base = 10;
 
-    /* Initialize current executing entry */
+    /* Input system */
+    vm->input_length = 0;
+    vm->input_pos    = 0;
+
+    /* Execution bookkeeping */
     vm->current_executing_entry = NULL;
 
-    log_message(LOG_DEBUG, "VM initialized - unified memory=%p, blocks=%p, here=%zu (dict_blocks=%d)",
-                (void*)vm->memory, (void*)vm->blocks, vm->here, DICTIONARY_BLOCKS);
+    log_message(LOG_DEBUG,
+        "VM initialized - memory=%p, here=%zu (dict_blocks=%d)",
+        (void*)vm->memory, vm->here, DICTIONARY_BLOCKS);
 
-    /* Register all FORTH-79 standard words at the end of initialization */
+    /* Register all FORTH-79 standard words */
     register_forth79_words(vm);
 }
+
+
 
 /**
  * @brief Clean up VM resources
@@ -158,16 +184,41 @@ int vm_parse_word(VM *vm, char *word, size_t max_len) {
  * @param value Pointer to store parsed value
  * @return 1 if successful, 0 if parsing failed
  */
-int vm_parse_number(const char *str, cell_t *value) {
-    char *endptr;
-    long val = strtol(str, &endptr, 10);
+int vm_parse_number(VM *vm, const char *str, cell_t *value) {
+    if (!str || !*str) return 0;
 
-    if (*endptr == '\0') {
-        *value = (cell_t)val;
-        return 1;
+    unsigned base = (unsigned)vm->base;
+    if (base < 2 || base > 36) base = 10;
+
+    int neg = 0;
+    const char *p = str;
+
+    if (*p == '+' || *p == '-') { neg = (*p == '-'); p++; }
+    if (!*p) return 0; /* sign only */
+
+    unsigned long acc = 0UL;
+    int any = 0;
+
+    while (*p) {
+        unsigned char ch = (unsigned char)*p++;
+        unsigned d;
+        if (ch >= '0' && ch <= '9')        d = (unsigned)(ch - '0');
+        else if (ch >= 'A' && ch <= 'Z')   d = 10u + (unsigned)(ch - 'A');
+        else if (ch >= 'a' && ch <= 'z')   d = 10u + (unsigned)(ch - 'a');
+        else return 0;
+
+        if (d >= base) return 0;
+        acc = acc * (unsigned long)base + (unsigned long)d;
+        any = 1;
     }
+    if (!any) return 0;
 
-    return 0;
+    cell_t val = (cell_t)acc;
+    if (neg) val = (cell_t)(0 - (unsigned long)val);
+
+    *value = val;
+    log_message(LOG_DEBUG, "NUMBER: '%s' = %ld (base %u)", str, (long)val, base);
+    return 1;
 }
 
 /**
@@ -464,7 +515,7 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
     /* Not found — try as number */
     cell_t value;
     log_message(LOG_DEBUG, "NOT FOUND: '%.*s' — try number", (int)len, word_str);
-    if (vm_parse_number(word_str, &value)) {
+    if (vm_parse_number(vm, word_str, &value)) {
         log_message(LOG_DEBUG, "NUMBER: '%.*s' = %ld", (int)len, word_str, (long)value);
         if (vm->mode == MODE_COMPILE) {
             vm_compile_literal(vm, value);
@@ -501,4 +552,82 @@ void vm_interpret(VM *vm, const char *input) {
     while ((word_len = vm_parse_word(vm, word, sizeof(word))) > 0 && !vm->error) {
         vm_interpret_word(vm, word, word_len);
     }
+}
+
+/* ===== VM address helpers ================================================= */
+
+int vm_addr_ok(struct VM *vm, vaddr_t addr, size_t len) {
+    (void)vm;
+    /* Valid if range [addr, addr+len) fits inside VM memory */
+    if (len > (size_t)VM_MEMORY_SIZE) return 0;
+    return addr <= (vaddr_t)((vaddr_t)VM_MEMORY_SIZE - (vaddr_t)len);
+}
+
+uint8_t *vm_ptr(struct VM *vm, vaddr_t addr) {
+    /* Caller should vm_addr_ok() first; we still guard for safety */
+    if (!vm || !vm->memory) return NULL;
+    if (!vm_addr_ok(vm, addr, 1)) return NULL;
+    return vm->memory + (size_t)addr;
+}
+
+/* ===== Canonical byte/cell accessors ===================================== */
+/**
+ * @brief Load an 8-bit unsigned value from VM memory
+ *
+ * @param vm Pointer to VM structure
+ * @param addr Virtual address to load from
+ * @return Loaded byte value, or 0 if error
+ */
+uint8_t vm_load_u8(struct VM *vm, vaddr_t addr) {
+    uint8_t *p = vm_ptr(vm, addr);
+    if (!p) { vm->error = 1; return 0; }
+    return *p;
+}
+
+/**
+ * @brief Store an 8-bit unsigned value to VM memory
+ *
+ * @param vm Pointer to VM structure
+ * @param addr Virtual address to store to
+ * @param v Value to store
+ */
+void vm_store_u8(struct VM *vm, vaddr_t addr, uint8_t v) {
+    uint8_t *p = vm_ptr(vm, addr);
+    if (!p) { vm->error = 1; return; }
+    *p = v;
+}
+
+/**
+ * @brief Load a cell value from VM memory
+ *
+ * Loads a naturally-aligned cell from VM memory using memcpy to avoid
+ * undefined behavior. Sets error flag if address is invalid or misaligned.
+ *
+ * @param vm Pointer to VM structure
+ * @param addr Virtual address to load from (must be cell-aligned)
+ * @return Loaded cell value, or 0 if error
+ */
+cell_t vm_load_cell(struct VM *vm, vaddr_t addr) {
+    /* Cells must be naturally aligned; use memcpy to avoid UB */
+    if (!vm_addr_ok(vm, addr, sizeof(cell_t))) { vm->error = 1; return 0; }
+    if ((addr % (vaddr_t)sizeof(cell_t)) != 0) { vm->error = 1; return 0; }
+    cell_t out = 0;
+    memcpy(&out, vm->memory + (size_t)addr, sizeof(cell_t));
+    return out;
+}
+
+/**
+ * @brief Store a cell value to VM memory
+ *
+ * Stores a cell to naturally-aligned VM memory using memcpy to avoid
+ * undefined behavior. Sets error flag if address is invalid or misaligned.
+ *
+ * @param vm Pointer to VM structure
+ * @param addr Virtual address to store to (must be cell-aligned)
+ * @param v Value to store
+ */
+void vm_store_cell(struct VM *vm, vaddr_t addr, cell_t v) {
+    if (!vm_addr_ok(vm, addr, sizeof(cell_t))) { vm->error = 1; return; }
+    if ((addr % (vaddr_t)sizeof(cell_t)) != 0) { vm->error = 1; return; }
+    memcpy(vm->memory + (size_t)addr, &v, sizeof(cell_t));
 }

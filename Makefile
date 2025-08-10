@@ -1,6 +1,6 @@
 STRICT_PTR ?= 1
 CC = gcc
-CFLAGS = -DVM_STRICT_PTR=$(STRICT_PTR) -std=c99 -g -O0 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include
+CFLAGS = -std=c99 -g -O0 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include
 SRC = $(wildcard src/*.c src/word_source/*.c src/test_runner/*.c src/test_runner/modules/*.c)
 OBJ = $(patsubst src/%.c,build/%.o,$(SRC))
 TARGET = build/forthvm

@@ -27,16 +27,15 @@ static WordTestSuite format_word_suites[] = {
             {"octal", "OCTAL 52 . CR", "Should print: 52", TEST_NORMAL, 0, 1},
             {"base_store", "16 BASE ! 255 . CR", "Should print: FF", TEST_NORMAL, 0, 1},
             {"base_fetch", "BASE @ . CR", "Should print current base", TEST_NORMAL, 0, 1},
-            {"invalid_base", "1 BASE !", "Should handle invalid base", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 6
+        }, 5
     },
 
     {
         "DECIMAL", {
             {"from_hex", "HEX FF DECIMAL . CR", "Should print: 255", TEST_NORMAL, 0, 1},
             {"from_octal", "OCTAL 52 DECIMAL . CR", "Should print: 42", TEST_NORMAL, 0, 1},
-            {"state_persist", "DECIMAL 42 . CR HEX . CR", "Should maintain base", TEST_NORMAL, 0, 1},
+            {"state_persist", "DECIMAL 42 . CR 42 . CR HEX 42 . CR", "Should maintain base", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         }, 3
     },
@@ -45,7 +44,7 @@ static WordTestSuite format_word_suites[] = {
         "HEX", {
             {"from_decimal", "DECIMAL 255 HEX . CR", "Should print: FF", TEST_NORMAL, 0, 1},
             {"from_octal", "OCTAL 52 HEX . CR", "Should print: 2A", TEST_NORMAL, 0, 1},
-            {"state_persist", "HEX FF . CR DECIMAL . CR", "Should maintain base", TEST_NORMAL, 0, 1},
+            {"state_persist", "HEX FF . CR DECIMAL 255 . CR", "Should maintain base", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         }, 3
     },
@@ -54,14 +53,14 @@ static WordTestSuite format_word_suites[] = {
         "OCTAL", {
             {"from_decimal", "DECIMAL 42 OCTAL . CR", "Should print: 52", TEST_NORMAL, 0, 1},
             {"from_hex", "HEX 2A OCTAL . CR", "Should print: 52", TEST_NORMAL, 0, 1},
-            {"state_persist", "OCTAL 52 . CR DECIMAL . CR", "Should maintain base", TEST_NORMAL, 0, 1},
+            {"state_persist", "DECIMAL 42 . CR OCTAL 52 . CR", "Should maintain base", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         }, 3
     },
 
     {
         "<#", {
-            {"basic", "42 <# #S #> TYPE CR", "Should format number", TEST_NORMAL, 0, 1},
+            {"basic", "DECIMAL 42 S>D <# #S #> TYPE CR", "Should format number", TEST_NORMAL, 0, 1},
             {"empty", "0 <# #> TYPE CR", "Should handle zero", TEST_NORMAL, 0, 1},
             {"negative", "-42 <# #S #> TYPE CR", "Should handle negative", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}

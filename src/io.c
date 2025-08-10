@@ -17,16 +17,14 @@
 
 #include "io.h"
 #include "log.h"
+#include <string.h>   /* memset, memcpy */
 
-/* Custom memset/memcpy - no string.h dependency */
-static void io_memset(void *ptr, int value, size_t num) {
-    unsigned char *p = (unsigned char*)ptr;
-    size_t i;
-    for (i = 0; i < num; i++) {
-        p[i] = (unsigned char)value;
-    }
-}
-
+/**
+ * @brief Custom implementation of memcpy without string.h dependency
+ * @param dest Destination memory address
+ * @param src Source memory address
+ * @param num Number of bytes to copy
+ */
 static void io_memcpy(void *dest, const void *src, size_t num) {
     unsigned char *d = (unsigned char*)dest;
     const unsigned char *s = (const unsigned char*)src;
@@ -36,33 +34,46 @@ static void io_memcpy(void *dest, const void *src, size_t num) {
     }
 }
 
-/* Private static block buffer */
-static unsigned char blocks[MEMORY_SIZE];
-
+/**
+ * @brief Initialize the IO subsystem
+ * @param vm Pointer to VM instance
+ *
+ * Initializes the block device view over the unified VM memory.
+ * Zeros out the entire VM memory space.
+ */
 void io_init(VM *vm) {
-    vm->blocks = blocks;  /* Connect VM to our static buffer */
-    io_memset(blocks, 0, MEMORY_SIZE);
-    log_message(LOG_INFO, "IO subsystem initialized with %d blocks of %d bytes", BLOCK_COUNT, BLOCK_SIZE);
-}
+    if (!vm || !vm->memory) {
+        log_message(LOG_ERROR, "io_init: VM or VM memory not initialized");
+        return;
+    }
 
-int io_read_block(VM *vm, int block_num, unsigned char *buffer) {
-    (void)vm;
-    if (block_num < 0 || block_num >= BLOCK_COUNT) {
-        log_message(LOG_ERROR, "io_read_block: invalid block number %d", block_num);
+    /* Zero the entire VM address space so blocks start clean. */
+    memset(vm->memory, 0, VM_MEMORY_SIZE);
+
+    log_message(LOG_INFO,
+                "IO subsystem initialized with %d blocks of %d bytes",
+                (int)MAX_BLOCKS, (int)BLOCK_SIZE);
+}
+/**
+ * @brief Write a block to VM memory
+ * @param vm Pointer to VM instance
+ * @param block_num Block number to write (0 to MAX_BLOCKS-1)
+ * @param buffer Source buffer containing block data
+ * @return 0 on success, -1 on error
+ */
+int io_write_block(VM *vm, int block_num, const unsigned char *buffer) {
+    if (!vm || !vm->memory || !buffer) {
+        log_message(LOG_ERROR, "io_write_block: bad args");
         return -1;
     }
-    io_memcpy(buffer, &blocks[block_num * BLOCK_SIZE], BLOCK_SIZE);
-    log_message(LOG_DEBUG, "io_read_block: read block %d", block_num);
-    return 0;
-}
-
-int io_write_block(VM *vm, int block_num, const unsigned char *buffer) {
-    (void)vm;
-    if (block_num < 0 || block_num >= BLOCK_COUNT) {
+    if (block_num < 0 || block_num >= (int)MAX_BLOCKS) {
         log_message(LOG_ERROR, "io_write_block: invalid block number %d", block_num);
         return -1;
     }
-    io_memcpy(&blocks[block_num * BLOCK_SIZE], buffer, BLOCK_SIZE);
+    size_t off = (size_t)block_num * (size_t)BLOCK_SIZE;
+    io_memcpy(&vm->memory[off], buffer, BLOCK_SIZE);
     log_message(LOG_DEBUG, "io_write_block: wrote block %d", block_num);
     return 0;
 }
+
+
