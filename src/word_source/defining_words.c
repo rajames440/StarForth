@@ -302,19 +302,26 @@ void defining_word_immediate(VM *vm) {
 
 /* [ ( -- ) Enter interpret mode (immediate) */
 void defining_word_left_bracket(VM *vm) {
+    /* Exit compile mode: STATE := 0, host mode -> interpret */
+    vm_store_cell(vm, vm->state_addr, 0);
     vm->mode = MODE_INTERPRET;
     log_message(LOG_DEBUG, "[: Entered interpret mode");
 }
 
-/* ] ( -- ) Enter compile mode */
+/* [ ( -- ) Exit interpret mode (immediate) */
 void defining_word_right_bracket(VM *vm) {
+    /* Enter compile mode: STATE := -1 (VM cell) and host mode -> compile */
+    vm_store_cell(vm, vm->state_addr, (cell_t)-1);
     vm->mode = MODE_COMPILE;
-    log_message(LOG_DEBUG, "]: Entered compile mode");
+    log_message(LOG_DEBUG, "]: Entered compile mode (STATE=-1)");
 }
 
-/* STATE ( -- addr ) Variable containing compile/interpret state */
+
+/* STATE ( -- addr )  Forth-79 variable: compile/interpret state
+ * Returns the VM address (byte offset) of the STATE cell (0=interpret, -1=compile).
+ */
 void defining_word_state(VM *vm) {
-    vm_push(vm, (cell_t)(uintptr_t)&vm->mode);
+    vm_push(vm, (cell_t)vm->state_addr);
 }
 
 /* COMPILE ( -- ) Compile next word (obsolete) */
@@ -407,42 +414,28 @@ void defining_word_does(VM *vm) {
 void register_defining_words(VM *vm) {
     log_message(LOG_INFO, "Registering defining words...");
 
-    /* Register defining words */
+    /* Core defining words */
     register_word(vm, ":", defining_word_colon);
     register_word(vm, ";", defining_word_semicolon);
+    vm_make_immediate(vm);
     register_word(vm, "CREATE", defining_word_create);
     register_word(vm, "CONSTANT", defining_word_constant);
     register_word(vm, "VARIABLE", defining_word_variable);
-    register_word(vm, "IMMEDIATE", defining_word_immediate);
-    register_word(vm, "[", defining_word_left_bracket);
-    register_word(vm, "]", defining_word_right_bracket);
     register_word(vm, "STATE", defining_word_state);
+    register_word(vm, "[", defining_word_left_bracket);
+    vm_make_immediate(vm);
+    register_word(vm, "]", defining_word_right_bracket);
+    vm_make_immediate(vm);
+    register_word(vm, "IMMEDIATE", defining_word_immediate);
+    vm_make_immediate(vm);
     register_word(vm, "COMPILE", defining_word_compile);
+    vm_make_immediate(vm);
     register_word(vm, "[COMPILE]", defining_word_bracket_compile);
+    vm_make_immediate(vm);
     register_word(vm, "LITERAL", defining_word_literal);
-    register_word(vm, "FORGET", defining_word_forget);
+    vm_make_immediate(vm);
     register_word(vm, "DOES>", defining_word_does);
+    vm_make_immediate(vm);
 
-    DictEntry *semicolon = vm_find_word(vm, ";", 1);
-    if (semicolon) semicolon->flags |= WORD_IMMEDIATE;
-
-    DictEntry *left_bracket = vm_find_word(vm, "[", 1);
-    if (left_bracket) left_bracket->flags |= WORD_IMMEDIATE;
-
-    DictEntry *immediate = vm_find_word(vm, "IMMEDIATE", 9);
-    if (immediate) immediate->flags |= WORD_IMMEDIATE;
-
-    DictEntry *compile = vm_find_word(vm, "COMPILE", 7);
-    if (compile) compile->flags |= WORD_IMMEDIATE;
-
-    DictEntry *bracket_compile = vm_find_word(vm, "[COMPILE]", 9);
-    if (bracket_compile) bracket_compile->flags |= WORD_IMMEDIATE;
-
-    DictEntry *literal = vm_find_word(vm, "LITERAL", 7);
-    if (literal) literal->flags |= WORD_IMMEDIATE;
-
-    DictEntry *does = vm_find_word(vm, "DOES>", 5);
-    if (does) does->flags |= WORD_IMMEDIATE;
-
-    log_message(LOG_INFO, "Defining words registered successfully");
+    log_message(LOG_INFO, "Defining words registered.");
 }

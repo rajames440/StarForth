@@ -140,6 +140,8 @@ typedef struct VM {
 
     /* Block system (VM-backed variables / addresses) */
     vaddr_t scr_addr;
+    vaddr_t state_addr;    /* VM cell holding STATE (0=interp, -1=compile) */
+    vaddr_t base_addr;     /* VM cell: numeric base (2..36), default 10 */
 
 } VM;
 

@@ -167,7 +167,8 @@ static void control_forth_if(VM *vm) {
 }
 
 /* THEN ( -- ) End of IF - compile-time */
-static void control_forth_then(VM *vm) {
+/* THEN ( -- )  Compile-time: patch IF/0BRANCH placeholder to jump here */
+void control_forth_then(VM *vm) {
     cell_t placeholder_addr;
     cell_t target_addr, branch_offset;
 
@@ -176,22 +177,21 @@ static void control_forth_then(VM *vm) {
         vm->error = 1;
         return;
     }
-
     if (vm->rsp < 0) {
         log_message(LOG_ERROR, "THEN: No matching IF");
         vm->error = 1;
         return;
     }
 
-    /* Get the placeholder address from return stack */
+    /* Pop placeholder VM offset left by IF */
     placeholder_addr = vm->return_stack[vm->rsp--];
 
-    /* Calculate branch offset */
-    target_addr = vm->here;
-    branch_offset = target_addr - placeholder_addr - sizeof(cell_t);
+    /* Offset = target - (addr of next cell after placeholder) */
+    target_addr   = (cell_t)vm->here;
+    branch_offset = target_addr - placeholder_addr - (cell_t)sizeof(cell_t);
 
-    /* Patch the placeholder */
-    *(cell_t*)(vm->memory + placeholder_addr) = branch_offset;
+    /* Patch via VM helper (no raw vm->memory) */
+    vm_store_cell(vm, (vaddr_t)placeholder_addr, branch_offset);
 
     log_message(LOG_DEBUG, "THEN: Patched branch offset %ld at %ld",
                 (long)branch_offset, (long)placeholder_addr);
@@ -214,19 +214,23 @@ static void control_forth_else(VM *vm) {
         return;
     }
 
-    /* Compile unconditional branch to skip ELSE part */
+    /* Compile an unconditional BRANCH over the ELSE part */
     vm_compile_call(vm, control_forth_branch);
+
+    /* Reserve space for the THEN target offset and remember its address */
     else_branch_addr = vm->here;
     vm_compile_literal(vm, 0);  /* Placeholder for THEN target */
 
     /* Patch the IF's 0BRANCH to jump here */
     if_placeholder = vm->return_stack[vm->rsp];
-    else_target = vm->here;
-    if_offset = else_target - if_placeholder - sizeof(cell_t);
-    *(cell_t*)(vm->memory + if_placeholder) = if_offset;
+    else_target    = (cell_t)vm->here;
+    if_offset      = else_target - if_placeholder - (cell_t)sizeof(cell_t);
+
+    /* WRITE VIA VM HELPER (no raw vm->memory!) */
+    vm_store_cell(vm, (vaddr_t)if_placeholder, if_offset);
 
     /* Replace IF's placeholder with ELSE's placeholder on return stack */
-    vm->return_stack[vm->rsp] = else_branch_addr;
+    vm->return_stack[vm->rsp] = (cell_t)else_branch_addr;
 
     log_message(LOG_DEBUG, "ELSE: Patched IF offset %ld, new placeholder at %zu",
                 (long)if_offset, else_branch_addr);

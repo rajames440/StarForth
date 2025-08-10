@@ -54,63 +54,62 @@ void vm_init(VM *vm) {
     }
 
     /* Stacks empty */
-    vm->dsp = -1;   /* Data stack pointer */
-    vm->rsp = -1;   /* Return stack pointer */
+    vm->dsp = -1;
+    vm->rsp = -1;
 
     /* Dictionary starts at offset 0 */
     vm->here = 0;
-
-    /* Keep any alignment guarantees for dictionary/code fields */
     vm_align(vm);
 
-    /* -------- VM variables (backed by VM memory) --------
-       Allocate a cell for SCR (screen/block number).
-       We store its **VM offset** in vm->scr_addr.
-    */
+    /* -------- VM variables (backed by VM memory) -------- */
+
+    /* SCR (screen/block number) */
     {
-        void *scr_ptr = vm_allot(vm, sizeof(cell_t));
-        if (!scr_ptr) {
-            log_message(LOG_ERROR, "vm_init: failed to allot SCR cell");
-            vm->error = 1;
-            return;
-        }
-        vm->scr_addr = (vaddr_t)((uint8_t *)scr_ptr - vm->memory);
-        /* SCR := 0 */
-        *(cell_t *)(&vm->memory[vm->scr_addr]) = 0;
+        void *p = vm_allot(vm, sizeof(cell_t));
+        if (!p) { log_message(LOG_ERROR, "vm_init: failed to allot SCR cell"); vm->error = 1; return; }
+        vm->scr_addr = (vaddr_t)((uint8_t*)p - vm->memory);
+        *(cell_t*)(&vm->memory[vm->scr_addr]) = 0;
     }
+
+    /* STATE (0=interpret, -1=compile) */
+    {
+        void *p = vm_allot(vm, sizeof(cell_t));
+        if (!p) { log_message(LOG_ERROR, "vm_init: failed to allot STATE cell"); vm->error = 1; return; }
+        vm->state_addr = (vaddr_t)((uint8_t*)p - vm->memory);
+        *(cell_t*)(&vm->memory[vm->state_addr]) = 0;
+    }
+
+    /* BASE (numeric radix, default 10) */
+    {
+        void *p = vm_allot(vm, sizeof(cell_t));
+        if (!p) { log_message(LOG_ERROR, "vm_init: failed to allot BASE cell"); vm->error = 1; return; }
+        vm->base_addr = (vaddr_t)((uint8_t*)p - vm->memory);
+        *(cell_t*)(&vm->memory[vm->base_addr]) = 10;
+    }
+
     /* ---------------------------------------------------- */
 
-    /* Core VM state */
-    vm->latest          = NULL;
-    vm->mode            = MODE_INTERPRET;
-    vm->compiling_word  = NULL;
+    /* Core VM state (host bookkeeping) */
+    vm->latest         = NULL;
+    vm->mode           = MODE_INTERPRET;
+    vm->compiling_word = NULL;
 
-    /* FORTH-79 STATE variable: 0 = interpret */
-    vm->state_var = 0;
+    vm->state_var = 0;   /* legacy host field; not exposed */
+    vm->error     = 0;
+    vm->halted    = 0;
+    vm->base      = 10;  /* legacy host field; parser will use VM cell */
 
-    /* Error/halt */
-    vm->error  = 0;
-    vm->halted = 0;
-
-    /* Numeric base default */
-    vm->base = 10;
-
-    /* Input system */
+    /* Input */
     vm->input_length = 0;
     vm->input_pos    = 0;
 
-    /* Execution bookkeeping */
     vm->current_executing_entry = NULL;
 
-    log_message(LOG_DEBUG,
-        "VM initialized - memory=%p, here=%zu (dict_blocks=%d)",
-        (void*)vm->memory, vm->here, DICTIONARY_BLOCKS);
+    log_message(LOG_DEBUG, "VM initialized - memory=%p, here=%zu (dict_blocks=%d)",
+                (void*)vm->memory, vm->here, DICTIONARY_BLOCKS);
 
-    /* Register all FORTH-79 standard words */
     register_forth79_words(vm);
 }
-
-
 
 /**
  * @brief Clean up VM resources
@@ -184,40 +183,42 @@ int vm_parse_word(VM *vm, char *word, size_t max_len) {
  * @param value Pointer to store parsed value
  * @return 1 if successful, 0 if parsing failed
  */
-int vm_parse_number(VM *vm, const char *str, cell_t *value) {
+int vm_parse_number(VM *vm, const char *str, cell_t *out) {
     if (!str || !*str) return 0;
 
-    unsigned base = (unsigned)vm->base;
+    /* Read BASE from VM cell; default to 10 on garbage */
+    unsigned base = (unsigned)vm_load_cell(vm, vm->base_addr);
     if (base < 2 || base > 36) base = 10;
 
+    /* Optional sign */
     int neg = 0;
+    if (*str == '+') { str++; }
+    else if (*str == '-') { neg = 1; str++; }
+    if (!*str) return 0;
+
+    /* Parse digits according to BASE (A..Z = 10..35) */
+    unsigned long long acc = 0;
     const char *p = str;
-
-    if (*p == '+' || *p == '-') { neg = (*p == '-'); p++; }
-    if (!*p) return 0; /* sign only */
-
-    unsigned long acc = 0UL;
     int any = 0;
-
     while (*p) {
-        unsigned char ch = (unsigned char)*p++;
         unsigned d;
-        if (ch >= '0' && ch <= '9')        d = (unsigned)(ch - '0');
-        else if (ch >= 'A' && ch <= 'Z')   d = 10u + (unsigned)(ch - 'A');
-        else if (ch >= 'a' && ch <= 'z')   d = 10u + (unsigned)(ch - 'a');
-        else return 0;
-
-        if (d >= base) return 0;
-        acc = acc * (unsigned long)base + (unsigned long)d;
+        unsigned char c = (unsigned char)*p;
+        if (c >= '0' && c <= '9') d = (unsigned)(c - '0');
+        else if (c >= 'A' && c <= 'Z') d = 10u + (unsigned)(c - 'A');
+        else if (c >= 'a' && c <= 'z') d = 10u + (unsigned)(c - 'a');
+        else break;
+        if (d >= base) break;
+        acc = acc * base + d;
         any = 1;
+        p++;
     }
-    if (!any) return 0;
 
-    cell_t val = (cell_t)acc;
-    if (neg) val = (cell_t)(0 - (unsigned long)val);
+    if (!any || *p != '\0') return 0;
 
-    *value = val;
-    log_message(LOG_DEBUG, "NUMBER: '%s' = %ld (base %u)", str, (long)val, base);
+    /* Cast to cell_t (implementation-defined width) */
+    cell_t v = (cell_t)acc;
+    if (neg) v = -v;
+    *out = v;
     return 1;
 }
 
