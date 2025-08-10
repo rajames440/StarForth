@@ -7,7 +7,8 @@
  */
 
 #include "include/memory_words.h"
-#include "word_registry.h"
+#include "../../include/word_registry.h"
+#include "vm.h"
 #include <string.h>   /* memset, memmove */
 
 /* @ ( addr -- n )  Fetch cell from VM memory */
