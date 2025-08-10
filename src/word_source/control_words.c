@@ -2,28 +2,22 @@
 
                                  ***   StarForth   ***
   control_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
-  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+  Last modified - 8/10/25, 4:50 PM
+  Public Domain / CC0
 
- This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
-  To the extent possible under law, the author(s) have dedicated all copyright and related
-  and neighboring rights to this software to the public domain worldwide.
-  This software is distributed without any warranty.
+*/
 
-  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
-
-
- */
-
-/* control_words.c - FORTH-79 Control Flow Words */
 #include "include/control_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+#include <stddef.h>
+#include <stdint.h>
+
 #ifndef RETURN_STACK_SIZE
 #define RETURN_STACK_SIZE STACK_SIZE
 #endif
 
-/* --- SAFETY WRAPPERS: return stack --- */
+/* --- SAFETY WRAPPERS: return stack (runtime use only) --- */
 static inline int rs_push(VM *vm, cell_t v) {
     if (vm->rsp + 1 >= RETURN_STACK_SIZE) {
         vm->error = 1;
@@ -43,22 +37,44 @@ static inline int rs_pop(VM *vm, cell_t *out) {
     return 1;
 }
 
+/* ---------- Compile-time control-flow stack (CF stack) ---------- */
+/* We never use the runtime return stack during compile. */
+#define CF_STACK_MAX 64
+static size_t cf_stack[CF_STACK_MAX];  /* BYTE offsets into vm->memory */
+static int cf_sp = -1;
+
+static inline int cf_push(size_t v) {
+    if (cf_sp + 1 >= CF_STACK_MAX) {
+        log_message(LOG_ERROR, "CF: overflow");
+        return 0;
+    }
+    cf_stack[++cf_sp] = v;
+    return 1;
+}
+static inline int cf_pop(size_t *out) {
+    if (cf_sp < 0) {
+        log_message(LOG_ERROR, "CF: underflow");
+        return 0;
+    }
+    *out = cf_stack[cf_sp--];
+    return 1;
+}
+
 /* Forward declarations for runtime functions */
 static void control_forth_runtime_do(VM *vm);
 static void control_forth_runtime_loop(VM *vm);
 static void control_forth_runtime_plus_loop(VM *vm);
 
-/* Loop parameter stack for DO/LOOP constructs - FORTH-79 spec allows this */
+/* Loop parameter stack for DO/LOOP constructs (runtime) */
 #define LOOP_STACK_SIZE 16
 typedef struct {
     cell_t limit;
     cell_t index;
-    void *loop_start_ip;  /* Store the loop start address */
+    void *loop_start_ip;  /* address where loop body starts (C pointer into code stream) */
 } loop_params_t;
 static loop_params_t loop_stack[LOOP_STACK_SIZE];
 static int loop_sp = -1;
 
-/* Loop stack operations */
 static void loop_push(cell_t limit, cell_t index, void *ip) {
     if (loop_sp >= LOOP_STACK_SIZE - 1) {
         log_message(LOG_ERROR, "Loop stack overflow");
@@ -77,437 +93,255 @@ static void loop_pop(void) {
     loop_sp--;
 }
 
-/* BRANCH ( -- ) Unconditional branch - runtime primitive */
+/* ===================== Runtime primitives ===================== */
+/* Runtime expects BRANCH/0BRANCH offsets in BYTES:
+   ip = (cell_t*)((char*)ip + offset); */
+
+/* BRANCH ( -- ) */
 static void control_forth_branch(VM *vm) {
-    cell_t *ip;
-    cell_t offset;
-
-    if (vm->rsp < 0) {
-        log_message(LOG_ERROR, "BRANCH: Return stack underflow");
-        vm->error = 1;
-        return;
-    }
-
-    /* Get current instruction pointer from return stack */
-    ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
-
-    /* Read branch offset */
-    offset = *ip;
-
-    /* Update IP with new address */
+    if (vm->rsp < 0) { vm->error = 1; log_message(LOG_ERROR, "BRANCH: RSP underflow"); return; }
+    cell_t *ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
+    cell_t offset = *ip; /* BYTES */
     ip = (cell_t*)((char*)ip + offset);
     vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
-
-    log_message(LOG_DEBUG, "BRANCH: Branched by %ld", (long)offset);
+    log_message(LOG_DEBUG, "BRANCH: +%ld bytes", (long)offset);
 }
 
-/* 0BRANCH ( flag -- ) Conditional branch - runtime primitive */
+/* 0BRANCH ( flag -- ) */
 static void control_forth_0branch(VM *vm) {
-    cell_t *ip;
-    cell_t offset, flag;
+    if (vm->rsp < 0) { vm->error = 1; log_message(LOG_ERROR, "0BRANCH: RSP underflow"); return; }
+    cell_t *ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
 
-    if (vm->rsp < 0) {
-        log_message(LOG_ERROR, "0BRANCH: Return stack underflow");
-        vm->error = 1;
-        return;
-    }
-
-    /* Get current instruction pointer */
-    ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
-
-    /* Read flag from data stack */
-    if (vm->dsp < 0) {
-        log_message(LOG_ERROR, "0BRANCH: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
-    flag = vm_pop(vm);
+    if (vm->dsp < 0) { vm->error = 1; log_message(LOG_ERROR, "0BRANCH: DSP underflow"); return; }
+    cell_t flag = vm_pop(vm);
 
     if (flag == 0) {
-        /* Read branch offset and update IP */
-        offset = *ip;
+        cell_t offset = *ip; /* BYTES */
         ip = (cell_t*)((char*)ip + offset);
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
-        log_message(LOG_DEBUG, "0BRANCH: Condition true, branched by %ld", (long)offset);
+        log_message(LOG_DEBUG, "0BRANCH: taken +%ld bytes", (long)offset);
     } else {
-        /* Skip over the offset */
-        ip++;
+        ip++; /* skip literal */
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
-        log_message(LOG_DEBUG, "0BRANCH: Condition false, no branch");
+        log_message(LOG_DEBUG, "0BRANCH: not taken");
     }
 }
 
-/* (LIT) ( -- n ) Push literal - runtime primitive */
+/* (LIT) ( -- n ) */
 static void control_forth_lit(VM *vm) {
-    cell_t *ip;
-    cell_t literal_value;
-
-    if (vm->rsp < 0) {
-        log_message(LOG_ERROR, "(LIT): Return stack underflow");
-        vm->error = 1;
-        return;
-    }
-
-    ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
-
-    /* Read the literal value */
-    literal_value = *ip;
-
-    /* Advance IP past the literal */
-    ip++;
+    if (vm->rsp < 0) { vm->error = 1; log_message(LOG_ERROR, "(LIT): RSP underflow"); return; }
+    cell_t *ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
+    cell_t v = *ip++;
     vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
-
-    /* Push the literal onto data stack */
-    vm_push(vm, literal_value);
-
-    log_message(LOG_DEBUG, "(LIT): Pushed literal %ld", (long)literal_value);
+    vm_push(vm, v);
+    log_message(LOG_DEBUG, "(LIT): %ld", (long)v);
 }
 
-/* IF ( flag -- ) Conditional execution - compile-time */
+/* ===================== Compile-time words (CF stack) ===================== */
+
+/* IF ( flag -- ) compiles: 0BRANCH <placeholder> */
 static void control_forth_if(VM *vm) {
-    if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "IF: Only valid in compile mode");
-        vm->error = 1;
-        return;
-    }
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "IF: compile-only"); return; }
 
-    /* Compile 0BRANCH with placeholder address */
     vm_compile_call(vm, control_forth_0branch);
-
-    /* Reserve space for branch offset and push address on return stack for THEN */
-    size_t placeholder_addr = vm->here;
-    vm_compile_literal(vm, 0);  /* Placeholder for branch target */
-
-    /* Push placeholder address on return stack - FORTH-79 way */
-    if (vm->rsp >= STACK_SIZE - 1) {
-        log_message(LOG_ERROR, "IF: Return stack overflow");
-        vm->error = 1;
-        return;
-    }
-    if (!rs_push(vm, (cell_t)(placeholder_addr))) { return; }
-
-    log_message(LOG_DEBUG, "IF: Compiled 0BRANCH with placeholder at %zu", placeholder_addr);
-}
-
-/* ELSE ( -- ) Alternate execution - compile-time */
-/* ELSE ( -- ) Alternate execution - compile-time */
-static void control_forth_else(VM *vm) {
-    cell_t old_lit;  /* byte offset to the prior 0BRANCH literal */
-
-    if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "ELSE: Only valid in compile mode");
-        vm->error = 1;
-        return;
-    }
-
-    /* Emit BRANCH to skip the ELSE-part */
-    vm_compile_call(vm, control_forth_branch);
-
-    /* Reserve literal cell for that BRANCH and remember it for THEN */
-    size_t new_lit = vm->here;
+    size_t lit = vm->here;       /* BYTE offset of the literal cell */
     vm_compile_literal(vm, 0);
 
-    /* Pop the 0BRANCH literal address we pushed at IF */
-    if (!rs_pop(vm, &old_lit)) {
-        return;
-    }
-
-    /* Patch the old 0BRANCH to jump to *here* (after the BRANCH+literal) */
-    size_t old_lit_addr = (size_t)old_lit;           /* byte offset into vm->memory */
-    cell_t off_bytes = (cell_t)((size_t)vm->here - old_lit_addr);
-    *(cell_t *)(vm->memory + old_lit_addr) = off_bytes;
-
-    /* Push the new BRANCH literal for THEN to patch */
-    if (!rs_push(vm, (cell_t)new_lit)) {
-        return;
-    }
-
-    log_message(LOG_DEBUG,
-        "ELSE: patched 0BRANCH @ %zu -> %ld bytes; new BRANCH literal @ %zu",
-        old_lit_addr, (long)off_bytes, new_lit);
+    if (!cf_push(lit)) { vm->error = 1; log_message(LOG_ERROR, "IF: CF overflow"); return; }
+    log_message(LOG_DEBUG, "IF: placeholder @ %zu", lit);
 }
 
+/* ELSE compiles: BRANCH <placeholder>; patches prior 0BRANCH */
+static void control_forth_else(VM *vm) {
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "ELSE: compile-only"); return; }
 
-/* THEN ( -- ) End conditional - compile-time */
-/* THEN ( -- ) End conditional - compile-time */
-static void control_forth_then(VM *vm) {
-    cell_t lit;  /* byte offset of the BRANCH/0BRANCH literal to patch */
-
-    if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "THEN: Only valid in compile mode");
-        vm->error = 1;
-        return;
-    }
-
-    if (!rs_pop(vm, &lit)) {
-        return;
-    }
-
-    size_t lit_addr = (size_t)lit;                           /* byte offset into vm->memory */
-    cell_t off_bytes = (cell_t)((size_t)vm->here - lit_addr); /* target - literal */
-    *(cell_t *)(vm->memory + lit_addr) = off_bytes;
-
-    log_message(LOG_DEBUG,
-        "THEN: patched literal @ %zu -> %ld bytes to here %zu",
-        lit_addr, (long)off_bytes, (size_t)vm->here);
-}
-
-
-/* BEGIN ( -- ) Start loop - compile-time */
-static void control_forth_begin(VM *vm) {
-    if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "BEGIN: Only valid in compile mode");
-        vm->error = 1;
-        return;
-    }
-
-    /* Push current position on return stack as loop target */
-    if (vm->rsp >= STACK_SIZE - 1) {
-        log_message(LOG_ERROR, "BEGIN: Return stack overflow");
-        vm->error = 1;
-        return;
-    }
-    if (!rs_push(vm, (cell_t)(vm->here))) { return; }
-
-    log_message(LOG_DEBUG, "BEGIN: Loop target at %zu", vm->here);
-}
-
-/* UNTIL ( flag -- ) End loop if flag true - compile-time */
-static void control_forth_until(VM *vm) {
-    cell_t begin_addr,  branch_offset;
-
-    if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "UNTIL: Only valid in compile mode");
-        vm->error = 1;
-        return;
-    }
-
-    if (!rs_pop(vm, &begin_addr)) { return; }
-
-    /* Compile 0BRANCH back to BEGIN */
-    vm_compile_call(vm, control_forth_0branch);
-
-    branch_offset = begin_addr - vm->here - sizeof(cell_t);
-
-    vm_compile_literal(vm, branch_offset);
-    log_message(LOG_DEBUG, "UNTIL: Patched to branch back to %ld with offset %ld",
-                (long)begin_addr, (long)branch_offset);
-}
-
-/* AGAIN ( -- ) Infinite loop - compile-time */
-static void control_forth_again(VM *vm) {
-    cell_t begin_addr,  branch_offset;
-
-    if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "AGAIN: Only valid in compile mode");
-        vm->error = 1;
-        return;
-    }
-
-    if (!rs_pop(vm, &begin_addr)) { return; }
-
-    /* Compile BRANCH back to BEGIN */
     vm_compile_call(vm, control_forth_branch);
+    size_t new_lit = vm->here;   /* BYTE offset for new BRANCH literal */
+    vm_compile_literal(vm, 0);
 
-    branch_offset = begin_addr - vm->here - sizeof(cell_t);
+    size_t old_lit;
+    if (!cf_pop(&old_lit)) { vm->error = 1; log_message(LOG_ERROR, "ELSE: CF underflow"); return; }
 
-    vm_compile_literal(vm, branch_offset);
-    log_message(LOG_DEBUG, "AGAIN: Patched to branch back to %ld with offset %ld",
-                (long)begin_addr, (long)branch_offset);
+    cell_t off_bytes = (cell_t)((size_t)vm->here - old_lit); /* target - literal */
+    *(cell_t *)(vm->memory + old_lit) = off_bytes;
+
+    if (!cf_push(new_lit)) { vm->error = 1; log_message(LOG_ERROR, "ELSE: CF overflow (new)"); return; }
+
+    log_message(LOG_DEBUG, "ELSE: patched 0BRANCH @ %zu -> +%ld bytes; new lit @ %zu",
+                old_lit, (long)off_bytes, new_lit);
 }
 
-/* DO ( limit index -- ) Start counted loop - compile-time */
+/* THEN patches the outstanding forward jump */
+static void control_forth_then(VM *vm) {
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "THEN: compile-only"); return; }
+
+    size_t lit;
+    if (!cf_pop(&lit)) { vm->error = 1; log_message(LOG_ERROR, "THEN: CF underflow"); return; }
+
+    cell_t off_bytes = (cell_t)((size_t)vm->here - lit); /* target - literal */
+    *(cell_t *)(vm->memory + lit) = off_bytes;
+
+    log_message(LOG_DEBUG, "THEN: patched literal @ %zu -> +%ld bytes", lit, (long)off_bytes);
+}
+
+/* BEGIN marks a back-branch target */
+static void control_forth_begin(VM *vm) {
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "BEGIN: compile-only"); return; }
+    if (!cf_push(vm->here)) { vm->error = 1; log_message(LOG_ERROR, "BEGIN: CF overflow"); return; }
+    log_message(LOG_DEBUG, "BEGIN: mark @ %zu", vm->here);
+}
+
+/* UNTIL ( flag -- ) compiles: 0BRANCH <back-offset> */
+static void control_forth_until(VM *vm) {
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "UNTIL: compile-only"); return; }
+
+    size_t begin_addr;
+    if (!cf_pop(&begin_addr)) { vm->error = 1; log_message(LOG_ERROR, "UNTIL: CF underflow"); return; }
+
+    vm_compile_call(vm, control_forth_0branch);
+    cell_t off_bytes = (cell_t)((cell_t)begin_addr - (cell_t)vm->here);
+    vm_compile_literal(vm, off_bytes);
+
+    log_message(LOG_DEBUG, "UNTIL: back -> %zu (%ld bytes)", begin_addr, (long)off_bytes);
+}
+
+/* AGAIN compiles: BRANCH <back-offset> */
+static void control_forth_again(VM *vm) {
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "AGAIN: compile-only"); return; }
+
+    size_t begin_addr;
+    if (!cf_pop(&begin_addr)) { vm->error = 1; log_message(LOG_ERROR, "AGAIN: CF underflow"); return; }
+
+    vm_compile_call(vm, control_forth_branch);
+    cell_t off_bytes = (cell_t)((cell_t)begin_addr - (cell_t)vm->here);
+    vm_compile_literal(vm, off_bytes);
+
+    log_message(LOG_DEBUG, "AGAIN: back -> %zu (%ld bytes)", begin_addr, (long)off_bytes);
+}
+
+/* DO ( limit index -- ) compiles: runtime DO and marks back target for LOOP/+LOOP */
 static void control_forth_do(VM *vm) {
-    if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "DO: Only valid in compile mode");
-        vm->error = 1;
-        return;
-    }
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "DO: compile-only"); return; }
 
-    /* Compile runtime DO primitive */
     vm_compile_call(vm, control_forth_runtime_do);
+    if (!cf_push(vm->here)) { vm->error = 1; log_message(LOG_ERROR, "DO: CF overflow"); return; }
 
-    /* Push placeholder for loop start address */
-    if (!rs_push(vm, (cell_t)(vm->here))) { return; }
-
-    log_message(LOG_DEBUG, "DO: Compiled runtime DO, placeholder at %zu", vm->here);
+    log_message(LOG_DEBUG, "DO: mark @ %zu", vm->here);
 }
 
-/* LOOP ( -- ) End counted loop - compile-time */
+/* LOOP compiles: runtime LOOP <back-offset> */
 static void control_forth_loop(VM *vm) {
-    cell_t do_addr,  branch_offset;
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "LOOP: compile-only"); return; }
 
-    if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "LOOP: Only valid in compile mode");
-        vm->error = 1;
-        return;
-    }
+    size_t do_addr;
+    if (!cf_pop(&do_addr)) { vm->error = 1; log_message(LOG_ERROR, "LOOP: CF underflow"); return; }
 
-    if (!rs_pop(vm, &do_addr)) { return; }
-
-    /* Compile runtime LOOP primitive */
     vm_compile_call(vm, control_forth_runtime_loop);
+    cell_t off_bytes = (cell_t)((cell_t)do_addr - (cell_t)vm->here);
+    vm_compile_literal(vm, off_bytes);
 
-    /* Back-branch to DO */
-    branch_offset = do_addr - vm->here - sizeof(cell_t);
-
-    vm_compile_literal(vm, branch_offset);
-    log_message(LOG_DEBUG, "LOOP: Patched to branch back to %ld with offset %ld",
-                (long)do_addr, (long)branch_offset);
+    log_message(LOG_DEBUG, "LOOP: back -> %zu (%ld bytes)", do_addr, (long)off_bytes);
 }
 
-/* +LOOP ( n -- ) End counted loop with increment - compile-time */
+/* +LOOP compiles: runtime +LOOP <back-offset> */
 static void control_forth_plus_loop(VM *vm) {
-    cell_t do_addr,  branch_offset;
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "+LOOP: compile-only"); return; }
 
-    if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "+LOOP: Only valid in compile mode");
-        vm->error = 1;
-        return;
-    }
+    size_t do_addr;
+    if (!cf_pop(&do_addr)) { vm->error = 1; log_message(LOG_ERROR, "+LOOP: CF underflow"); return; }
 
-    if (!rs_pop(vm, &do_addr)) { return; }
-
-    /* Compile runtime +LOOP primitive */
     vm_compile_call(vm, control_forth_runtime_plus_loop);
+    cell_t off_bytes = (cell_t)((cell_t)do_addr - (cell_t)vm->here);
+    vm_compile_literal(vm, off_bytes);
 
-    /* Back-branch to DO */
-    branch_offset = do_addr - vm->here - sizeof(cell_t);
-
-    vm_compile_literal(vm, branch_offset);
-    log_message(LOG_DEBUG, "+LOOP: Patched to branch back to %ld with offset %ld",
-                (long)do_addr, (long)branch_offset);
+    log_message(LOG_DEBUG, "+LOOP: back -> %zu (%ld bytes)", do_addr, (long)off_bytes);
 }
 
-/* Runtime DO primitive:captures limit and index, stores loop start IP */
+/* ===================== Runtime DO/LOOP/+LOOP ===================== */
+
 static void control_forth_runtime_do(VM *vm) {
-    cell_t *ip;
-    cell_t limit, index;
+    if (vm->rsp < 0) { vm->error = 1; log_message(LOG_ERROR, "Runtime DO: RSP underflow"); return; }
 
-    if (vm->rsp < 0) {
-        log_message(LOG_ERROR, "Runtime DO: Return stack underflow");
-        vm->error = 1;
-        return;
-    }
+    cell_t *ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
 
-    ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
+    if (vm->dsp < 1) { vm->error = 1; log_message(LOG_ERROR, "Runtime DO: DSP underflow"); return; }
 
-    /* Pop limit and index from the data stack */
-    if (vm->dsp < 1) {
-        log_message(LOG_ERROR, "Runtime DO: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
+    cell_t index = vm_pop(vm);
+    cell_t limit = vm_pop(vm);
 
-    index = vm_pop(vm);
-    limit = vm_pop(vm);
-
-    /* Push loop parameters onto loop stack */
     loop_push(limit, index, ip);
-
     log_message(LOG_DEBUG, "Runtime DO: index=%ld limit=%ld", (long)index, (long)limit);
 }
 
-/* Runtime LOOP primitive: increments index, checks limit, branches back */
 static void control_forth_runtime_loop(VM *vm) {
-    cell_t *ip;
+    if (vm->rsp < 0) { vm->error = 1; log_message(LOG_ERROR, "Runtime LOOP: RSP underflow"); return; }
 
-    if (vm->rsp < 0) {
-        log_message(LOG_ERROR, "Runtime LOOP: Return stack underflow");
-        vm->error = 1;
-        return;
-    }
+    cell_t *ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
 
-    /* Get current IP */
-    ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
+    if (loop_sp < 0) { vm->error = 1; log_message(LOG_ERROR, "Runtime LOOP: loop stack underflow"); return; }
 
-    if (loop_sp < 0) {
-        log_message(LOG_ERROR, "Runtime LOOP: Loop stack underflow");
-        vm->error = 1;
-        return;
-    }
-
-    /* Increment index */
     loop_stack[loop_sp].index++;
 
-    /* Check if loop should continue */
     if (loop_stack[loop_sp].index < loop_stack[loop_sp].limit) {
-        /* Branch back to loop start */
-        ip = (cell_t*)loop_stack[loop_sp].loop_start_ip;
+        cell_t off = *ip; /* BYTES */
+        ip = (cell_t*)((char*)ip + off);
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
-        log_message(LOG_DEBUG, "Runtime LOOP: Continue, index=%ld", (long)loop_stack[loop_sp].index);
+        log_message(LOG_DEBUG, "Runtime LOOP: continue (index=%ld)", (long)loop_stack[loop_sp].index);
     } else {
-        /* Exit loop */
         loop_pop();
-        ip++; /* Skip over the runtime LOOP primitive in code stream */
+        ip++; /* skip the back-offset literal */
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
-        log_message(LOG_DEBUG, "Runtime LOOP: Exit");
+        log_message(LOG_DEBUG, "Runtime LOOP: exit");
     }
 }
 
-/* Runtime +LOOP primitive: adds N to index and checks limit, branches back */
 static void control_forth_runtime_plus_loop(VM *vm) {
-    cell_t *ip;
-    cell_t n;
+    if (vm->rsp < 0) { vm->error = 1; log_message(LOG_ERROR, "Runtime +LOOP: RSP underflow"); return; }
 
-    if (vm->rsp < 0) {
-        log_message(LOG_ERROR, "Runtime +LOOP: Return stack underflow");
-        vm->error = 1;
-        return;
-    }
+    cell_t *ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
 
-    /* Get current IP */
-    ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
+    if (vm->dsp < 0) { vm->error = 1; log_message(LOG_ERROR, "Runtime +LOOP: DSP underflow"); return; }
+    cell_t n = vm_pop(vm);
 
-    if (vm->dsp < 0) {
-        log_message(LOG_ERROR, "Runtime +LOOP: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
-    n = vm_pop(vm);
+    if (loop_sp < 0) { vm->error = 1; log_message(LOG_ERROR, "Runtime +LOOP: loop stack underflow"); return; }
 
-    if (loop_sp < 0) {
-        log_message(LOG_ERROR, "Runtime +LOOP: Loop stack underflow");
-        vm->error = 1;
-        return;
-    }
+    cell_t old = loop_stack[loop_sp].index;
+    cell_t lim = loop_stack[loop_sp].limit;
+    cell_t newv = old + n;
+    loop_stack[loop_sp].index = newv;
 
-    /* Update index */
-    loop_stack[loop_sp].index += n;
+    int cont = (n >= 0) ? (newv < lim) : (newv >= lim);
 
-    /* Check if loop should continue */
-    if ((n > 0 && loop_stack[loop_sp].index < loop_stack[loop_sp].limit) ||
-        (n < 0 && loop_stack[loop_sp].index > loop_stack[loop_sp].limit)) {
-        /* Branch back to loop start */
-        ip = (cell_t*)loop_stack[loop_sp].loop_start_ip;
+    if (cont) {
+        cell_t off = *ip; /* BYTES */
+        ip = (cell_t*)((char*)ip + off);
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
-        log_message(LOG_DEBUG, "Runtime +LOOP: Continue, index=%ld", (long)loop_stack[loop_sp].index);
+        log_message(LOG_DEBUG, "Runtime +LOOP: continue (index=%ld)", (long)newv);
     } else {
-        /* Exit loop */
         loop_pop();
-        ip++; /* Skip over the runtime +LOOP primitive */
+        ip++; /* skip literal */
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
-        log_message(LOG_DEBUG, "Runtime +LOOP: Exit");
+        log_message(LOG_DEBUG, "Runtime +LOOP: exit");
     }
 }
 
 /* Registration of control flow words */
 void register_control_words(VM *vm) {
-    register_word(vm, "BRANCH", control_forth_branch);
+    register_word(vm, "BRANCH",  control_forth_branch);
     register_word(vm, "0BRANCH", control_forth_0branch);
-    register_word(vm, "(LIT)", control_forth_lit);
+    register_word(vm, "(LIT)",   control_forth_lit);
 
-    register_word(vm, "IF", control_forth_if);          vm_make_immediate(vm);
-    register_word(vm, "ELSE", control_forth_else);      vm_make_immediate(vm);
-    register_word(vm, "THEN", control_forth_then);      vm_make_immediate(vm);
+    register_word(vm, "IF",      control_forth_if);          vm_make_immediate(vm);
+    register_word(vm, "ELSE",    control_forth_else);        vm_make_immediate(vm);
+    register_word(vm, "THEN",    control_forth_then);        vm_make_immediate(vm);
 
-    register_word(vm, "BEGIN", control_forth_begin);    vm_make_immediate(vm);
-    register_word(vm, "UNTIL", control_forth_until);    vm_make_immediate(vm);
-    register_word(vm, "AGAIN", control_forth_again);    vm_make_immediate(vm);
+    register_word(vm, "BEGIN",   control_forth_begin);       vm_make_immediate(vm);
+    register_word(vm, "UNTIL",   control_forth_until);       vm_make_immediate(vm);
+    register_word(vm, "AGAIN",   control_forth_again);       vm_make_immediate(vm);
 
-    register_word(vm, "DO", control_forth_do);          vm_make_immediate(vm);
-    register_word(vm, "LOOP", control_forth_loop);      vm_make_immediate(vm);
-    register_word(vm, "+LOOP", control_forth_plus_loop);vm_make_immediate(vm);
+    register_word(vm, "DO",      control_forth_do);          vm_make_immediate(vm);
+    register_word(vm, "LOOP",    control_forth_loop);        vm_make_immediate(vm);
+    register_word(vm, "+LOOP",   control_forth_plus_loop);   vm_make_immediate(vm);
 
     log_message(LOG_INFO, "Registering FORTH-79 control flow words...");
     log_message(LOG_INFO, "Control flow words registered successfully");

@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   string_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/10/25, 4:23 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -12,6 +12,15 @@
 
   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
+
+ */
+
+/*
+
+                                 ***   StarForth   ***
+  string_words.c - FORTH-79 Standard and ANSI C99 ONLY
+  Last modified - 8/10/25, 5:35 PM
+  Public Domain / CC0
 
  */
 
@@ -26,21 +35,29 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-/* Global string processing state */
-static char terminal_input_buffer[256];    /* TIB - Terminal Input Buffer */
-static cell_t input_pointer = 0;           /* >IN - Input stream pointer */
-static cell_t span_count = 0;              /* SPAN - Characters input */
-static char word_buffer[64];               /* Buffer for WORD parsing */
+/* === Helpers ============================================================= */
+
+/* Convert a C pointer that points into vm->memory into a VM address (offset) */
+static inline vaddr_t vaddr_from_ptr(VM *vm, const void *p) {
+    return (vaddr_t)((const uint8_t*)p - vm->memory);
+}
+
+/* Ensure we have input buffers/vars available */
+static inline int ensure_input(VM *vm) {
+    int err = vm_input_ensure(vm);
+    if (err) { vm->error = 1; }
+    return err;
+}
+
+/* Static VM-backed scratch buffer for WORD (allocated on first use) */
+#define WORD_SCRATCH_CAP 64
+static vaddr_t word_scratch_addr = 0;
 
 /* Helper function to find word in dictionary */
 static DictEntry* find_word_in_dict(VM *vm, const char *name, size_t name_len) {
-    DictEntry *entry;
-    
-    entry = vm->latest;
-    
+    DictEntry *entry = vm->latest;
     while (entry != NULL) {
-        if (entry->name_len == name_len && 
-            memcmp(entry->name, name, name_len) == 0) {
+        if (entry->name_len == name_len && memcmp(entry->name, name, name_len) == 0) {
             return entry;
         }
         entry = entry->link;
@@ -48,482 +65,307 @@ static DictEntry* find_word_in_dict(VM *vm, const char *name, size_t name_len) {
     return NULL;
 }
 
-/* Helper function to convert string to number */
+/* Helper function to convert string to number (base-10 only here) */
 static int convert_string_to_number(const char *str, size_t len, cell_t *result) {
     char temp_str[32];
     char *endptr;
     long value;
-    
-    if (len >= sizeof(temp_str)) {
-        return 0;  /* String too long */
-    }
-    
+    if (len >= sizeof(temp_str)) return 0;
     memcpy(temp_str, str, len);
     temp_str[len] = '\0';
-    
     value = strtol(temp_str, &endptr, 10);
-    
-    if (endptr != temp_str + len) {
-        return 0;  /* Invalid number */
-    }
-    
+    if (endptr != temp_str + len) return 0;
     *result = (cell_t)value;
-    return 1;  /* Success */
+    return 1;
 }
+
+/* === Words =============================================================== */
 
 /* COUNT ( addr1 -- addr2 u )  Get string length and address */
 void string_word_count(VM *vm) {
-    if (vm->dsp < 0) {
-        log_message(LOG_ERROR, "COUNT: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
-
+    if (vm->dsp < 0) { log_message(LOG_ERROR, "COUNT: Data stack underflow"); vm->error = 1; return; }
     cell_t addr1 = vm_pop(vm);
-
-    // Add bounds checking
-    if (addr1 < 0 || addr1 >= VM_MEMORY_SIZE) {
-        log_message(LOG_ERROR, "COUNT: Address %ld out of bounds", (long)addr1);
-        vm->error = 1;
-        return;
-    }
-
-    // Get count from first byte
-    uint8_t count = vm->memory[addr1];
-
-    // Check if count would exceed memory bounds
-    if (addr1 + 1 + count > VM_MEMORY_SIZE) {
-        log_message(LOG_ERROR, "COUNT: String extends beyond memory bounds");
-        vm->error = 1;
-        return;
-    }
-
-    vm_push(vm, addr1 + 1);          /* addr2 - skip count byte */
-    vm_push(vm, (cell_t)count);      /* u - length */
-
-    log_message(LOG_DEBUG, "COUNT: addr=%ld length=%d", (long)addr1, (int)count);
+    vaddr_t a = VM_ADDR(addr1);
+    if (!vm_addr_ok(vm, a, 1)) { log_message(LOG_ERROR, "COUNT: Address out of bounds"); vm->error = 1; return; }
+    uint8_t count = vm_load_u8(vm, a);
+    if (!vm_addr_ok(vm, a + 1, (size_t)count)) { log_message(LOG_ERROR, "COUNT: String extends beyond memory"); vm->error = 1; return; }
+    vm_push(vm, CELL(a + 1));         /* addr2 - skip count byte */
+    vm_push(vm, (cell_t)count);       /* u - length */
 }
 
 /* EXPECT ( addr u -- )  Accept input line */
 void string_word_expect(VM *vm) {
-    cell_t u, addr;
-    char *buffer;
-    char *input;
-    size_t max_len;
-    size_t actual_len;
-    
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    cell_t u = vm_pop(vm);
+    cell_t addr = vm_pop(vm);
+    if (u < 0) { vm->error = 1; return; }
+    vaddr_t a = VM_ADDR(addr);
+    if (!vm_addr_ok(vm, a, (size_t)u)) { vm->error = 1; log_message(LOG_ERROR, "EXPECT: invalid buffer range"); return; }
+    char *buffer = (char*)vm_ptr(vm, a);
+    if (!buffer) { vm->error = 1; return; }
+
+    char *input = fgets(buffer, (int)u, stdin);
+    cell_t actual_len = 0;
+    if (input) {
+        size_t L = strlen(buffer);
+        if (L > 0 && buffer[L-1] == '\n') { buffer[L-1] = '\0'; L--; }
+        actual_len = (cell_t)L;
     }
-    
-    u = vm_pop(vm);
-    addr = vm_pop(vm);
-    
-    buffer = (char*)(uintptr_t)addr;
-    max_len = (size_t)u;
-    
-    if (buffer == NULL || u < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    /* Read input from stdin */
-    input = fgets(buffer, (int)max_len, stdin);
-    
-    if (input == NULL) {
-        span_count = 0;
-        return;
-    }
-    
-    actual_len = strlen(buffer);
-    
-    /* Remove trailing newline if present */
-    if (actual_len > 0 && buffer[actual_len - 1] == '\n') {
-        buffer[actual_len - 1] = '\0';
-        actual_len--;
-    }
-    
-    span_count = (cell_t)actual_len;
+    /* Update SPAN */
+    if (!ensure_input(vm)) { cell_t *span = vm_input_span(vm); if (span) *span = actual_len; }
 }
 
-/* SPAN ( -- addr )  Variable: number of characters input */
+/* SPAN ( -- addr )  Variable: number of characters input (VM address) */
 void string_word_span(VM *vm) {
-    vm_push(vm, (cell_t)(uintptr_t)&span_count);
+    if (ensure_input(vm)) return;
+    cell_t *p = vm_input_span(vm);
+    if (!p) { vm->error = 1; return; }
+    vaddr_t v = vaddr_from_ptr(vm, p);
+    vm_push(vm, CELL(v));
 }
 
 /* QUERY ( -- )  Accept input into TIB */
 void string_word_query(VM *vm) {
-    char *input;
-    size_t len;
-    
-    /* Read input into terminal input buffer */
-    input = fgets(terminal_input_buffer, sizeof(terminal_input_buffer), stdin);
-    
-    if (input == NULL) {
-        terminal_input_buffer[0] = '\0';
-        span_count = 0;
-        input_pointer = 0;
+    if (ensure_input(vm)) return;
+    unsigned char *tib = vm_input_tib(vm);
+    cell_t *inp = vm_input_in(vm);
+    cell_t *span = vm_input_span(vm);
+    if (!tib || !inp || !span) { vm->error = 1; return; }
+
+    char *dst = (char*)tib;
+    char *input = fgets(dst, (int)INPUT_BUFFER_SIZE, stdin);
+    if (!input) {
+        tib[0] = 0;
+        *span = 0;
+        *inp  = 0;
         return;
     }
-    
-    len = strlen(terminal_input_buffer);
-    
-    /* Remove trailing newline if present */
-    if (len > 0 && terminal_input_buffer[len - 1] == '\n') {
-        terminal_input_buffer[len - 1] = '\0';
-        len--;
-    }
-    
-    span_count = (cell_t)len;
-    input_pointer = 0;  /* Reset input pointer */
+    size_t L = strlen(dst);
+    if (L > 0 && dst[L-1] == '\n') { dst[L-1] = '\0'; L--; }
+    *span = (cell_t)L;
+    *inp  = 0;
 }
 
-/* TIB ( -- addr )  Terminal input buffer address */
+/* TIB ( -- addr )  Terminal input buffer address (VM address) */
 void string_word_tib(VM *vm) {
-    vm_push(vm, (cell_t)(uintptr_t)terminal_input_buffer);
+    if (ensure_input(vm)) return;
+    unsigned char *p = vm_input_tib(vm);
+    if (!p) { vm->error = 1; return; }
+    vaddr_t v = vaddr_from_ptr(vm, p);
+    vm_push(vm, CELL(v));
 }
 
-/* WORD ( c -- addr )  Parse next word, delimited by c */
+/* WORD ( c -- addr )  Parse next word, delimited by c (returns VM addr of counted string) */
 void string_word_word(VM *vm) {
-    cell_t c;
-    char delimiter;
-    size_t tib_len;
-    size_t start, end;
-    size_t word_len;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    c = vm_pop(vm);
-    delimiter = (char)(c & 0xFF);
-    
-    tib_len = strlen(terminal_input_buffer);
-    
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    if (ensure_input(vm)) return;
+
+    cell_t c = vm_pop(vm);
+    char delimiter = (char)(c & 0xFF);
+
+    unsigned char *tib = vm_input_tib(vm);
+    cell_t *inp = vm_input_in(vm);
+    cell_t *span = vm_input_span(vm);
+    if (!tib || !inp || !span) { vm->error = 1; return; }
+
+    size_t tib_len = (size_t)((*span < 0) ? 0 : *span);
+    cell_t ip = (*inp < 0) ? 0 : *inp;
+
     /* Skip leading delimiters */
-    while (input_pointer < (cell_t)tib_len && 
-           terminal_input_buffer[input_pointer] == delimiter) {
-        input_pointer++;
+    while ((size_t)ip < tib_len && tib[ip] == (unsigned char)delimiter) ip++;
+
+    size_t start = (size_t)ip;
+    while ((size_t)ip < tib_len && tib[ip] != (unsigned char)delimiter) ip++;
+    size_t end = (size_t)ip;
+    size_t word_len = end - start;
+    if (word_len > WORD_SCRATCH_CAP - 2) word_len = WORD_SCRATCH_CAP - 2;
+
+    /* Allocate scratch once */
+    if (word_scratch_addr == 0) {
+        void *p = vm_allot(vm, WORD_SCRATCH_CAP);
+        if (!p) { vm->error = 1; return; }
+        word_scratch_addr = vaddr_from_ptr(vm, p);
     }
-    
-    start = (size_t)input_pointer;
-    
-    /* Find end of word */
-    while (input_pointer < (cell_t)tib_len && 
-           terminal_input_buffer[input_pointer] != delimiter) {
-        input_pointer++;
-    }
-    
-    end = (size_t)input_pointer;
-    word_len = end - start;
-    
-    /* Build counted string in word buffer */
-    if (word_len >= sizeof(word_buffer) - 1) {
-        word_len = sizeof(word_buffer) - 2;  /* Leave room for count and null */
-    }
-    
-    word_buffer[0] = (char)word_len;  /* Count byte */
-    memcpy(&word_buffer[1], &terminal_input_buffer[start], word_len);
-    word_buffer[word_len + 1] = '\0';  /* Null terminate for safety */
-    
-    vm_push(vm, (cell_t)(uintptr_t)word_buffer);
+
+    /* Build counted string at scratch */
+    uint8_t *wb = vm_ptr(vm, word_scratch_addr);
+    if (!wb) { vm->error = 1; return; }
+    wb[0] = (uint8_t)word_len;
+    if (word_len) memcpy(&wb[1], &tib[start], word_len);
+    if (word_len + 1 < WORD_SCRATCH_CAP) wb[word_len+1] = '\0'; /* safety */
+
+    /* Update >IN to char after the delimiter (if any) */
+    while ((size_t)ip < tib_len && tib[ip] == (unsigned char)delimiter) ip++;
+    *inp = ip;
+
+    vm_push(vm, CELL(word_scratch_addr));
 }
 
-/* >IN ( -- addr )  Input stream pointer */
+/* >IN ( -- addr )  Input stream pointer cell (VM address) */
 void string_word_to_in(VM *vm) {
-    vm_push(vm, (cell_t)(uintptr_t)&input_pointer);
+    if (ensure_input(vm)) return;
+    cell_t *p = vm_input_in(vm);
+    if (!p) { vm->error = 1; return; }
+    vaddr_t v = vaddr_from_ptr(vm, p);
+    vm_push(vm, CELL(v));
 }
 
-/* SOURCE ( -- addr u )  Input source specification */
+/* SOURCE ( -- addr u )  Input source specification (TIB addr, length) */
 void string_word_source(VM *vm) {
-    vm_push(vm, (cell_t)(uintptr_t)terminal_input_buffer);
-    vm_push(vm, (cell_t)strlen(terminal_input_buffer));
+    if (ensure_input(vm)) return;
+    unsigned char *tib = vm_input_tib(vm);
+    cell_t *span = vm_input_span(vm);
+    if (!tib || !span) { vm->error = 1; return; }
+    vaddr_t v = vaddr_from_ptr(vm, tib);
+    cell_t len = (*span < 0) ? 0 : *span;
+    vm_push(vm, CELL(v));
+    vm_push(vm, len);
 }
 
 /* BL ( -- c )  ASCII space character (32) */
-void string_word_bl(VM *vm) {
-    vm_push(vm, 32);  /* ASCII space */
-}
+void string_word_bl(VM *vm) { vm_push(vm, 32); }
 
-/* FIND ( addr -- addr flag )  Find word in dictionary */
+/* FIND ( addr -- addr|xt flag )  Find word in dictionary */
 void string_word_find(VM *vm) {
-    cell_t addr;
-    uint8_t *counted_str;
-    uint8_t name_len;
-    const char *name;
-    DictEntry *entry;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    addr = vm->data_stack[vm->dsp];  /* Keep addr on stack */
-    counted_str = (uint8_t*)(uintptr_t)addr;
-    
-    if (counted_str == NULL) {
-        vm_push(vm, 0);  /* Not found */
-        return;
-    }
-    
-    name_len = counted_str[0];
-    name = (const char*)&counted_str[1];
-    
-    entry = find_word_in_dict(vm, name, (size_t)name_len);
-    
-    if (entry != NULL) {
-        /* Found - replace addr with execution token and push 1 */
-        vm->data_stack[vm->dsp] = (cell_t)(uintptr_t)entry;
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t addr = vm->data_stack[vm->dsp];  /* keep on stack */
+    vaddr_t a = VM_ADDR(addr);
+    if (!vm_addr_ok(vm, a, 1)) { vm_push(vm, 0); return; }
+    uint8_t *counted = vm_ptr(vm, a);
+    if (!counted) { vm_push(vm, 0); return; }
+    uint8_t name_len = counted[0];
+    if (!vm_addr_ok(vm, a+1, name_len)) { vm_push(vm, 0); return; }
+    const char *name = (const char*)&counted[1];
+
+    DictEntry *entry = find_word_in_dict(vm, name, (size_t)name_len);
+    if (entry) {
+        vm->data_stack[vm->dsp] = (cell_t)(uintptr_t)entry; /* xt */
         vm_push(vm, 1);
     } else {
-        /* Not found - keep addr and push 0 */
         vm_push(vm, 0);
     }
 }
 
 /* ' ( -- xt )  Get execution token of next word */
 void string_word_tick(VM *vm) {
-    vm_push(vm, 32);        /* BL - space delimiter */
-    string_word_word(vm);          /* Parse next word */
-    string_word_find(vm);          /* Find in dictionary */
-    
+    vm_push(vm, 32);
+    string_word_word(vm);
     if (vm->error) return;
-    
-    if (vm->data_stack[vm->dsp] == 0) {
-        /* Word not found */
-        vm->error = 1;
-        return;
-    }
-    
-    vm_pop(vm);  /* Remove flag, leave xt */
+    string_word_find(vm);
+    if (vm->error) return;
+    if (vm->data_stack[vm->dsp] == 0) { vm->error = 1; return; }
+    (void)vm_pop(vm); /* drop flag */
 }
 
 /* ['] ( -- xt )  Compile execution token (immediate) */
-void string_word_bracket_tick(VM *vm) {
-    string_word_tick(vm);  /* Get execution token */
-    if (vm->error) return;
-    
-    /* In a full implementation, this would compile LIT followed by the xt */
-    /* For now, just leave the xt on the stack */
-}
+void string_word_bracket_tick(VM *vm) { string_word_tick(vm); }
 
-/* LITERAL ( n -- )  Compile literal number */
-void string_word_literal(VM *vm) {
-    /* In a full implementation, this would compile LIT followed by the number */
-    /* For now, just leave the number on the stack */
-    /* This is a compile-time word that should be used in definitions */
-}
+/* LITERAL / [LITERAL] are placeholders here */
+void string_word_literal(VM *vm) {}
+void string_word_bracket_literal(VM *vm) { string_word_literal(vm); }
 
-/* [LITERAL] ( n -- )  Compile literal at compile time (immediate) */
-void string_word_bracket_literal(VM *vm) {
-    string_word_literal(vm);
-}
-
-/* CONVERT ( d1 addr1 -- d2 addr2 )  Convert string to number */
+/* CONVERT ( d1 addr1 -- d2 addr2 )  Convert string to number (very simplified) */
 void string_word_convert(VM *vm) {
-    cell_t addr1, dlow, dhigh;
-    char *str_ptr;
-    char *end_ptr;
+    if (vm->dsp < 2) { vm->error = 1; return; }
+    cell_t addr1 = vm_pop(vm);
+    cell_t dlow  = vm_pop(vm);
+    cell_t dhigh = vm_pop(vm);
+
+    vaddr_t a = VM_ADDR(addr1);
+    if (!vm_addr_ok(vm, a, 1)) { vm->error = 1; return; }
+    char *str_ptr = (char*)vm_ptr(vm, a);
+    if (!str_ptr) { vm->error = 1; return; }
+
+    char *end_ptr = str_ptr;
     cell_t digit_value;
-    size_t i;
-    
-    if (vm->dsp < 2) {
-        vm->error = 1;
-        return;
-    }
-    
-    addr1 = vm_pop(vm);
-    dlow = vm_pop(vm);
-    dhigh = vm_pop(vm);
-    
-    str_ptr = (char*)(uintptr_t)addr1;
-    
-    if (str_ptr == NULL) {
-        vm->error = 1;
-        return;
-    }
-    
-    /* Convert characters to digits and accumulate */
-    end_ptr = str_ptr;
-    for (i = 0; str_ptr[i] != '\0'; i++) {
-        char c;
-        
-        c = str_ptr[i];
-        
-        if (c >= '0' && c <= '9') {
-            digit_value = c - '0';
-        } else if (c >= 'A' && c <= 'Z') {
-            digit_value = c - 'A' + 10;
-        } else if (c >= 'a' && c <= 'z') {
-            digit_value = c - 'a' + 10;
-        } else {
-            break;  /* Invalid character - stop conversion */
-        }
-        
-        if (digit_value >= 10) {  /* Assume base 10 for simplicity */
-            break;
-        }
-        
-        /* Multiply double by 10 and add digit */
-        /* This is a simplified implementation */
+    for (size_t i = 0; str_ptr[i] != '\0'; i++) {
+        char c = str_ptr[i];
+        if (c >= '0' && c <= '9') digit_value = c - '0';
+        else if (c >= 'A' && c <= 'Z') digit_value = c - 'A' + 10;
+        else if (c >= 'a' && c <= 'z') digit_value = c - 'a' + 10;
+        else break;
+        if (digit_value >= 10) break; /* base 10 only here */
         dlow = dlow * 10 + digit_value;
-        if (dlow < 0) {  /* Overflow check (simplified) */
-            dhigh++;
-        }
-        
+        if (dlow < 0) dhigh++;
         end_ptr++;
     }
-    
-    /* Push result */
-    vm_push(vm, dhigh);                           /* d2 high */
-    vm_push(vm, dlow);                           /* d2 low */
-    vm_push(vm, (cell_t)(uintptr_t)end_ptr);     /* addr2 */
+
+    vm_push(vm, dhigh);
+    vm_push(vm, dlow);
+    /* return VM addr for end_ptr */
+    vaddr_t a2 = vaddr_from_ptr(vm, end_ptr);
+    vm_push(vm, CELL(a2));
 }
 
-/* NUMBER ( addr -- n flag )  Convert string to single number */
+/* NUMBER ( addr -- n flag )  Convert counted string to number (base-10 only) */
 void string_word_number(VM *vm) {
-    cell_t addr;
-    uint8_t *counted_str;
-    uint8_t str_len;
-    const char *str_data;
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t addr = vm_pop(vm);
+    vaddr_t a = VM_ADDR(addr);
+    if (!vm_addr_ok(vm, a, 1)) { vm_push(vm, 0); vm_push(vm, 0); return; }
+    uint8_t *counted = vm_ptr(vm, a);
+    if (!counted) { vm_push(vm, 0); vm_push(vm, 0); return; }
+    uint8_t len = counted[0];
+    if (!vm_addr_ok(vm, a+1, len)) { vm_push(vm, 0); vm_push(vm, 0); return; }
+    const char *data = (const char*)&counted[1];
+
     cell_t result;
-    
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    
-    addr = vm_pop(vm);
-    counted_str = (uint8_t*)(uintptr_t)addr;
-    
-    if (counted_str == NULL) {
-        vm_push(vm, 0);  /* n (dummy) */
-        vm_push(vm, 0);  /* flag - failed */
-        return;
-    }
-    
-    str_len = counted_str[0];
-    str_data = (const char*)&counted_str[1];
-    
-    if (convert_string_to_number(str_data, (size_t)str_len, &result)) {
-        vm_push(vm, result);  /* n */
-        vm_push(vm, 1);       /* flag - success */
+    if (convert_string_to_number(data, (size_t)len, &result)) {
+        vm_push(vm, result);
+        vm_push(vm, 1);
     } else {
-        vm_push(vm, 0);       /* n (dummy) */
-        vm_push(vm, 0);       /* flag - failed */
+        vm_push(vm, 0);
+        vm_push(vm, 0);
     }
 }
 
 /* ENCLOSE ( addr c -- addr1 n1 n2 n3 )  Parse for delimiter */
 void string_word_enclose(VM *vm) {
-    cell_t c, addr;
-    char delimiter;
-    char *str;
-    size_t len;
-    size_t i;
-    cell_t n1, n2, n3;  /* Start of word, end of word, end of string */
-    
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-    
-    c = vm_pop(vm);
-    addr = vm_pop(vm);
-    
-    delimiter = (char)(c & 0xFF);
-    str = (char*)(uintptr_t)addr;
-    
-    if (str == NULL) {
-        vm->error = 1;
-        return;
-    }
-    
-    len = strlen(str);
-    
-    /* Find start of word (skip leading delimiters) */
-    for (i = 0; i < len && str[i] == delimiter; i++) {
-        /* Skip delimiters */
-    }
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    cell_t c = vm_pop(vm);
+    cell_t addr = vm_pop(vm);
+    vaddr_t a = VM_ADDR(addr);
+    if (!vm_addr_ok(vm, a, 1)) { vm->error = 1; return; }
+    char *str = (char*)vm_ptr(vm, a);
+    if (!str) { vm->error = 1; return; }
+
+    char delimiter = (char)(c & 0xFF);
+    size_t len = strlen(str);
+    size_t i = 0;
+    cell_t n1=0, n2=0, n3=0;
+
+    for (i = 0; i < len && str[i] == delimiter; i++) {}
     n1 = (cell_t)i;
-    
-    /* Find end of word */
-    for (; i < len && str[i] != delimiter; i++) {
-        /* Skip non-delimiters */
-    }
+    for (; i < len && str[i] != delimiter; i++) {}
     n2 = (cell_t)i;
-    
-    /* Find end of string or next delimiter */
-    for (; i < len && str[i] == delimiter; i++) {
-        /* Skip trailing delimiters */
-    }
+    for (; i < len && str[i] == delimiter; i++) {}
     n3 = (cell_t)i;
-    
-    /* Push results */
-    vm_push(vm, addr);  /* addr1 (same as input) */
-    vm_push(vm, n1);    /* Start of word */
-    vm_push(vm, n2);    /* End of word */
-    vm_push(vm, n3);    /* Next position */
+
+    vm_push(vm, addr); /* same addr back */
+    vm_push(vm, n1);
+    vm_push(vm, n2);
+    vm_push(vm, n3);
 }
 
-/* TIB ( -- addr ) */
-static void string_word_TIB(VM *vm) {
-    unsigned char *p = vm_input_tib(vm);
-    if (!p) { vm->error = 1; return; }
-    vm_push(vm, (cell_t)(uintptr_t)p);
-}
-
-/* >IN ( -- addr ) */
-static void string_word_toIN(VM *vm) {
-    cell_t *p = vm_input_in(vm);
-    if (!p) { vm->error = 1; return; }
-    vm_push(vm, (cell_t)(uintptr_t)p);
-}
-
-/* SPAN ( -- addr ) */
-static void string_word_SPAN(VM *vm) {
-    cell_t *p = vm_input_span(vm);
-    if (!p) { vm->error = 1; return; }
-    vm_push(vm, (cell_t)(uintptr_t)p);
-}
-
-/* SOURCE ( -- addr u )  — only if your string_words.c owns SOURCE */
-static void string_word_SOURCE(VM *vm) {
-    cell_t addr=0, len=0;
-    vm_input_source(vm, &addr, &len);
-    if (vm->error) return;
-    vm_push(vm, addr);
-    vm_push(vm, len);
-}
-
-/* FORTH-79 String Word Registration and Testing */
+/* FORTH-79 String Word Registration */
 void register_string_words(VM *vm) {
     log_message(LOG_INFO, "Registering string & text processing words...");
-    
-    /* Register all string & text processing words */
-    register_word(vm, "COUNT", string_word_count);
-    register_word(vm, "EXPECT", string_word_expect);
-    register_word(vm, "SPAN", string_word_span);
-    register_word(vm, "QUERY", string_word_query);
-    register_word(vm, "TIB", string_word_tib);
-    register_word(vm, "WORD", string_word_word);
-    register_word(vm, ">IN", string_word_to_in);
-    register_word(vm, "SOURCE", string_word_source);
-    register_word(vm, "BL", string_word_bl);
-    register_word(vm, "FIND", string_word_find);
-    register_word(vm, "'", string_word_tick);
-    register_word(vm, "[']", string_word_bracket_tick);
+
+    register_word(vm, "COUNT",   string_word_count);
+    register_word(vm, "EXPECT",  string_word_expect);
+    register_word(vm, "SPAN",    string_word_span);
+    register_word(vm, "QUERY",   string_word_query);
+    register_word(vm, "TIB",     string_word_tib);
+    register_word(vm, "WORD",    string_word_word);
+    register_word(vm, ">IN",     string_word_to_in);
+    register_word(vm, "SOURCE",  string_word_source);
+    register_word(vm, "BL",      string_word_bl);
+    register_word(vm, "FIND",    string_word_find);
+    register_word(vm, "'",       string_word_tick);
+    register_word(vm, "[']",     string_word_bracket_tick);
     register_word(vm, "LITERAL", string_word_literal);
     register_word(vm, "[LITERAL]", string_word_bracket_literal);
     register_word(vm, "CONVERT", string_word_convert);
-    register_word(vm, "NUMBER", string_word_number);
+    register_word(vm, "NUMBER",  string_word_number);
     register_word(vm, "ENCLOSE", string_word_enclose);
-    register_word(vm, "TIB",  string_word_TIB);
-    register_word(vm, ">IN",  string_word_toIN);
-    register_word(vm, "SPAN", string_word_SPAN);
-    register_word(vm, "SOURCE", string_word_SOURCE);
-
-    log_message(LOG_INFO, "Note: Interactive words (EXPECT, QUERY, WORD) require manual testing");
 }
