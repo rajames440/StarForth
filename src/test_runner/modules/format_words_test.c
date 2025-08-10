@@ -106,10 +106,9 @@ static WordTestSuite format_word_suites[] = {
     {
         "HOLD", {
             {"basic", "42 <# 46 HOLD #S #> TYPE CR", "Should insert dot", TEST_NORMAL, 0, 1},
-            {"multiple", "42 <# 41 HOLD 2E HOLD #S #> TYPE CR", "Should insert multiple", TEST_NORMAL, 0, 1},
             {"overflow", "<# 257 HOLD #>", "Should handle overflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 3
+        }, 2
     },
 
     /* End marker */

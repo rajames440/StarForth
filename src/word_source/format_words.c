@@ -141,18 +141,31 @@ void format_word_begin_conversion(VM *vm) {
     conversion_pos = 0;
     memset(pn_buf, 0, pn_cap);
 }
-
 /* HOLD ( c -- ) */
 void format_word_hold(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
+    if (vm->dsp < 0) { vm->error = 1; log_message(LOG_ERROR, "HOLD: data stack underflow"); return; }
     cell_t c = vm_pop(vm);
+
+    /* Must be a single byte 0..255 */
+    if (c < 0 || c > 255) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "HOLD: byte out of range (%ld)", (long)c);
+        return;
+    }
 
     ensure_pn(vm);
     if (vm->error) return;
 
-    if ((size_t)conversion_pos >= pn_cap - 1) { vm->error = 1; return; }
+    /* keep 1 byte of headroom (null safety), like before */
+    if ((size_t)conversion_pos >= pn_cap - 1) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "HOLD: conversion buffer full (pos=%d cap=%zu)", conversion_pos, pn_cap);
+        return;
+    }
+
+    /* Prepend the byte */
     memmove(&pn_buf[1], &pn_buf[0], (size_t)conversion_pos);
-    pn_buf[0] = (char)(c & 0xFF);
+    pn_buf[0] = (unsigned char)c;
     conversion_pos++;
 }
 
@@ -164,30 +177,57 @@ void format_word_sign(VM *vm) {
     if (n < 0) { vm_push(vm, '-'); format_word_hold(vm); }
 }
 
-/* # ( ud1 -- ud2 ) */
+/* # ( ud1 | n -- ud2 )
+   Tolerant form:
+   - If only one cell is present, treat it as a signed single and convert its magnitude.
+   - SIGN (if used) is responsible for inserting '-' afterwards. */
 void format_word_hash(VM *vm) {
-    if (vm->dsp < 1) { vm->error = 1; return; }
-    cell_t dlow  = vm_pop(vm);
-    cell_t dhigh = vm_pop(vm);
+    cell_t dlow, dhigh;
+
+    /* If we don't have a full double, but have one cell, promote it. */
+    if (vm->dsp < 1) {
+        if (vm->dsp < 0) { vm->error = 1; return; }
+        cell_t n = vm_pop(vm);
+        unsigned long u = (n < 0) ? (unsigned long)(-(cell_t)n) : (unsigned long)n;
+        dhigh = 0;
+        dlow  = (cell_t)u;
+    } else {
+        /* Normal path: consume unsigned double (dlow dhigh) */
+        dlow  = vm_pop(vm);
+        dhigh = vm_pop(vm);
+    }
 
     unsigned base = current_base(vm);
     cell_t qh, ql; unsigned rem;
     div_ud_by_base(dhigh, dlow, base, &qh, &ql, &rem);
 
+    /* Emit rightmost digit via HOLD */
     vm_push(vm, (cell_t)digit_for(rem));
-    format_word_hold(vm); if (vm->error) return;
+    format_word_hold(vm);
+    if (vm->error) return;
 
+    /* Push quotient back as (dhigh dlow) so #S can loop */
     vm_push(vm, qh);
     vm_push(vm, ql);
 }
 
-/* #S ( ud -- 0 0 ) */
+/* #S ( ud | n -- 0 0 )  — tolerant:
+   If only one cell is present, treat it as a signed single and convert its magnitude.
+   SIGN (if used) is responsible for inserting '-' later. */
 void format_word_hash_s(VM *vm) {
-    /* FORTH-79: requires an unsigned double on the stack (dlow dhigh). */
-    if (vm->dsp < 1) { vm->error = 1; return; }
+    /* If we don't have a full double, but have one cell, promote it. */
+    if (vm->dsp < 1) {
+        if (vm->dsp < 0) { vm->error = 1; return; }
+        /* Promote single to (dhigh=0, dlow=abs(n)) so # works on magnitude */
+        cell_t n = vm_pop(vm);
+        unsigned long u = (n < 0) ? (unsigned long)(-(cell_t)n) : (unsigned long)n;
+        /* Stack order for format_word_hash: top must be dlow, under it dhigh */
+        vm_push(vm, (cell_t)0);           /* dhigh */
+        vm_push(vm, (cell_t)u);           /* dlow  */
+    }
 
     for (;;) {
-        /* Always convert at least once so 0 0 produces "0". */
+        /* Always convert at least once so 0 produces "0". */
         format_word_hash(vm);
         if (vm->error) return;
 
@@ -198,16 +238,17 @@ void format_word_hash_s(VM *vm) {
     }
 }
 
-/* #> ( ud -- addr u ) */
+/* #> ( [ud] -- addr u ) — tolerant: pops ud iff present, else just returns buffer */
 void format_word_end_conversion(VM *vm) {
-    if (vm->dsp < 1) { vm->error = 1; return; }
-    (void)vm_pop(vm); /* dlow */
-    (void)vm_pop(vm); /* dhigh */
+    /* If there’s at least a double on the stack, drop it (dlow dhigh). */
+    if (vm->dsp >= 1) { (void)vm_pop(vm); (void)vm_pop(vm); }
 
     ensure_pn(vm);
     if (vm->error) return;
 
-    vm_push(vm, (cell_t)(uintptr_t)pn_buf);   /* VM address */
+    /* Push VM address (byte offset), not a host pointer */
+    vaddr_t v = (vaddr_t)((uint8_t*)pn_buf - vm->memory);
+    vm_push(vm, CELL(v));
     vm_push(vm, (cell_t)conversion_pos);
 }
 
