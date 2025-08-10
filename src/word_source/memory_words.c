@@ -1,264 +1,115 @@
 /*
-
-                                 ***   StarForth   ***
-  memory_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
-  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
-
- This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
-  To the extent possible under law, the author(s) have dedicated all copyright and related
-  and neighboring rights to this software to the public domain worldwide.
-  This software is distributed without any warranty.
-
-  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
-
-
+ * memory_words.c - FORTH-79 Memory Access and Manipulation Words
+ * Fully implemented for StarForth VM model.
+ *
+ * Copyright (c) 2025 Robert A. James
+ * Released under Creative Commons Zero v1.0 Universal.
  */
 
 #include "include/memory_words.h"
-#include "../../include/word_registry.h"
-#include "../../include/log.h"
-#include <string.h>
+#include "word_registry.h"
+#include <string.h>   /* memset, memmove */
 
-/* Safe memory boundaries - using VM's existing memory layout */
-#define MEMORY_TEST_START 8192    /* Start tests at 8KB offset - safe from stacks */
-#define MEMORY_TEST_SIZE  4096    /* Use 4KB for our memory testing playground */
-
-/* ! ( n addr -- ) Store n at addr */
-/* ! ( n addr -- ) Store n at addr */
-static void memory_store(VM *vm) {
-    if (vm->dsp < 1) {
-        log_message(LOG_ERROR, "!: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
-
-    cell_t addr = vm_pop(vm);
-    cell_t value = vm_pop(vm);
-
-    if (addr < 0 || addr >= (VM_MEMORY_SIZE - sizeof(cell_t))) {
-        log_message(LOG_ERROR, "!: Address %ld out of bounds", (long)addr);
-        vm->error = 1;
-        return;
-    }
-
-    if (addr % sizeof(cell_t) != 0) {
-        log_message(LOG_ERROR, "!: Misaligned address %ld (sizeof(cell_t)=%zu, addr %% %zu = %ld)",
-                    (long)addr, sizeof(cell_t), sizeof(cell_t), (long)(addr % sizeof(cell_t)));
-        vm->error = 1;
-        return;
-    }
-
-    *(cell_t*)(&vm->memory[addr]) = value;
-    log_message(LOG_DEBUG, "!: Stored %ld at address %ld", (long)value, (long)addr);
-}
-
-
-/* @ ( addr -- n ) Fetch n from addr */
-static void memory_fetch(VM *vm) {
-    if (vm->dsp < 0) {
-        log_message(LOG_ERROR, "@: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
-
-    cell_t addr = vm_pop(vm);
-
-    // Add bounds checking
-    if (addr < 0 || addr >= (VM_MEMORY_SIZE - sizeof(cell_t))) {
-        log_message(LOG_ERROR, "@: Address %ld out of bounds", (long)addr);
-        vm->error = 1;
-        return;
-    }
-
-    // Enhanced alignment check with debugging
-    if (addr % sizeof(cell_t) != 0) {
-        log_message(LOG_ERROR, "@: Misaligned address %ld (sizeof(cell_t)=%zu, addr %% %zu = %ld)",
-                    (long)addr, sizeof(cell_t), sizeof(cell_t), (long)(addr % sizeof(cell_t)));
-        vm->error = 1;
-        return;
-    }
-
-    cell_t value = *(cell_t*)(&vm->memory[addr]);
+/* @ ( addr -- n )  Fetch cell from VM memory */
+void memory_word_fetch(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    vaddr_t addr = VM_ADDR(vm_pop(vm));
+    if (!vm_addr_ok(vm, addr, sizeof(cell_t))) { vm->error = 1; return; }
+    cell_t value = vm_load_cell(vm, addr);
     vm_push(vm, value);
-    log_message(LOG_DEBUG, "@: Fetched %ld from address %ld", (long)value, (long)addr);
 }
 
-/* C! ( c addr -- ) Store character at addr */
-static void memory_c_store(VM *vm) {
-    if (vm->dsp < 1) {
-        log_message(LOG_ERROR, "C!: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
-
-    cell_t addr = vm_pop(vm);
-    cell_t ch = vm_pop(vm);
-
-    // Add bounds checking
-    if (addr < 0 || addr >= VM_MEMORY_SIZE) {
-        log_message(LOG_ERROR, "C!: Address %ld out of bounds", (long)addr);
-        vm->error = 1;
-        return;
-    }
-
-    vm->memory[addr] = (unsigned char)(ch & 0xFF);
-    log_message(LOG_DEBUG, "C!: Stored char %d at address %ld", (int)(ch & 0xFF), (long)addr);
+/* ! ( n addr -- )  Store cell into VM memory */
+void memory_word_store(VM *vm) {
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    vaddr_t addr = VM_ADDR(vm_pop(vm));
+    cell_t value = vm_pop(vm);
+    if (!vm_addr_ok(vm, addr, sizeof(cell_t))) { vm->error = 1; return; }
+    vm_store_cell(vm, addr, value);
 }
 
-/* C@ ( addr -- c ) Fetch character from addr */
-static void memory_c_fetch(VM *vm) {
-    if (vm->dsp < 0) {
-        log_message(LOG_ERROR, "C@: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
-
-    cell_t addr = vm_pop(vm);
-
-    // Add bounds checking
-    if (addr < 0 || addr >= VM_MEMORY_SIZE) {
-        log_message(LOG_ERROR, "C@: Address %ld out of bounds", (long)addr);
-        vm->error = 1;
-        return;
-    }
-
-    cell_t ch = vm->memory[addr];
-    vm_push(vm, ch);
-    log_message(LOG_DEBUG, "C@: Fetched char %ld from address %ld", (long)ch, (long)addr);
+/* C@ ( addr -- c )  Fetch byte from VM memory */
+void memory_word_cfetch(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    vaddr_t addr = VM_ADDR(vm_pop(vm));
+    if (!vm_addr_ok(vm, addr, 1)) { vm->error = 1; return; }
+    uint8_t value = vm_load_u8(vm, addr);
+    vm_push(vm, (cell_t)value);
 }
 
-/* +! ( n addr -- ) Add n to value at addr */
-static void memory_plus_store(VM *vm) {
-    if (vm->dsp < 1) {
-        log_message(LOG_ERROR, "+!: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
+/* C! ( c addr -- )  Store byte into VM memory */
+void memory_word_cstore(VM *vm) {
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    vaddr_t addr = VM_ADDR(vm_pop(vm));
+    cell_t value = vm_pop(vm);
+    if (!vm_addr_ok(vm, addr, 1)) { vm->error = 1; return; }
+    vm_store_u8(vm, addr, (uint8_t)(value & 0xFF));
+}
 
-    cell_t addr = vm_pop(vm);
+/* +! ( n addr -- )  Add n to contents of cell at addr */
+void memory_word_plus_store(VM *vm) {
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    vaddr_t addr = VM_ADDR(vm_pop(vm));
     cell_t n = vm_pop(vm);
-
-    // Add bounds checking
-    if (addr < 0 || addr >= (VM_MEMORY_SIZE - sizeof(cell_t))) {
-        log_message(LOG_ERROR, "+!: Address %ld out of bounds", (long)addr);
-        vm->error = 1;
-        return;
-    }
-
-    // Alignment check for cell_t access
-    if (addr % sizeof(cell_t) != 0) {
-        log_message(LOG_ERROR, "+!: Misaligned address %ld", (long)addr);
-        vm->error = 1;
-        return;
-    }
-
-    cell_t *ptr = (cell_t*)(&vm->memory[addr]);
-    cell_t old_val = *ptr;
-    *ptr += n;
-    log_message(LOG_DEBUG, "+!: Added %ld to addr %ld (%ld -> %ld)",
-                (long)n, (long)addr, (long)old_val, (long)*ptr);
+    if (!vm_addr_ok(vm, addr, sizeof(cell_t))) { vm->error = 1; return; }
+    cell_t current = vm_load_cell(vm, addr);
+    vm_store_cell(vm, addr, current + n);
 }
 
-/* FILL ( addr u c -- ) Fill u bytes at addr with c */
-static void memory_fill(VM *vm) {
-    if (vm->dsp < 2) {
-        log_message(LOG_ERROR, "FILL: Data stack underflow");
-        vm->error = 1;
-        return;
-    }
-
-    cell_t ch = vm_pop(vm);
-    cell_t count = vm_pop(vm);
-    cell_t addr = vm_pop(vm);
-
-    // Add bounds checking
-    if (addr < 0 || count < 0 || (addr + count) > VM_MEMORY_SIZE) {
-        log_message(LOG_ERROR, "FILL: Invalid range [%ld, %ld)", (long)addr, (long)(addr + count));
-        vm->error = 1;
-        return;
-    }
-
-    memset(&vm->memory[addr], ch & 0xFF, count);
-    log_message(LOG_DEBUG, "FILL: Filled %ld bytes at %ld with %d",
-                (long)count, (long)addr, (int)(ch & 0xFF));
+/* -! ( n addr -- )  Subtract n from contents of cell at addr */
+void memory_word_minus_store(VM *vm) {
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    vaddr_t addr = VM_ADDR(vm_pop(vm));
+    cell_t n = vm_pop(vm);
+    if (!vm_addr_ok(vm, addr, sizeof(cell_t))) { vm->error = 1; return; }
+    cell_t current = vm_load_cell(vm, addr);
+    vm_store_cell(vm, addr, current - n);
 }
 
-/* ERASE ( addr u -- ) Fill u bytes at addr with zeros */
-static void memory_erase(VM *vm) {
-    if (vm->dsp < 1) {
-        log_message(LOG_ERROR, "ERASE: Data stack underflow");
-        vm->error = 1;
-        return;
+/* FILL ( addr len c -- )  Fill len bytes at addr with c */
+void memory_word_fill(VM *vm) {
+    if (vm->dsp < 2) { vm->error = 1; return; }
+    cell_t c_val = vm_pop(vm);
+    size_t len = (size_t)vm_pop(vm);
+    vaddr_t addr = VM_ADDR(vm_pop(vm));
+    if (!vm_addr_ok(vm, addr, len)) { vm->error = 1; return; }
+    uint8_t *ptr = vm_ptr(vm, addr);
+    for (size_t i = 0; i < len; i++) {
+        ptr[i] = (uint8_t)(c_val & 0xFF);
     }
-
-    cell_t count = vm_pop(vm);
-    cell_t addr = vm_pop(vm);
-
-    // Add bounds checking
-    if (addr < 0 || count < 0 || (addr + count) > VM_MEMORY_SIZE) {
-        log_message(LOG_ERROR, "ERASE: Invalid range [%ld, %ld)", (long)addr, (long)(addr + count));
-        vm->error = 1;
-        return;
-    }
-
-    memset(&vm->memory[addr], 0, count);
-    log_message(LOG_DEBUG, "ERASE: Erased %ld bytes at %ld", (long)count, (long)addr);
 }
 
-void memory_2store(VM *vm) {
-    if (vm->dsp < 2) {
-        vm->error = 1;
-        return;
-    }
-
-    cell_t addr = vm_pop(vm);
-    cell_t high = vm_pop(vm);
-    cell_t low  = vm_pop(vm);
-
-    if (addr < 0 || addr + 1 >= VM_MEMORY_SIZE) {
-        vm->error = 1;
-        return;
-    }
-
-    vm->memory[addr]     = low;
-    vm->memory[addr + 1] = high;
+/* MOVE ( addr1 addr2 len -- )  Copy len bytes from addr1 to addr2 */
+void memory_word_move(VM *vm) {
+    if (vm->dsp < 2) { vm->error = 1; return; }
+    size_t len = (size_t)vm_pop(vm);
+    vaddr_t addr2 = VM_ADDR(vm_pop(vm));
+    vaddr_t addr1 = VM_ADDR(vm_pop(vm));
+    if (!vm_addr_ok(vm, addr1, len) || !vm_addr_ok(vm, addr2, len)) { vm->error = 1; return; }
+    uint8_t *src = vm_ptr(vm, addr1);
+    uint8_t *dst = vm_ptr(vm, addr2);
+    memmove(dst, src, len);
 }
 
-void memory_2fetch(VM *vm) {
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-
-    cell_t addr = vm_pop(vm);
-
-    if (addr < 0 || addr + 1 >= VM_MEMORY_SIZE) {
-        vm->error = 1;
-        return;
-    }
-
-    cell_t low  = vm->memory[addr];
-    cell_t high = vm->memory[addr + 1];
-
-    vm_push(vm, high);
-    vm_push(vm, low);
+/* ERASE ( addr len -- )  Zero len bytes starting at addr */
+void memory_word_erase(VM *vm) {
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    size_t len = (size_t)vm_pop(vm);
+    vaddr_t addr = VM_ADDR(vm_pop(vm));
+    if (!vm_addr_ok(vm, addr, len)) { vm->error = 1; return; }
+    uint8_t *ptr = vm_ptr(vm, addr);
+    memset(ptr, 0, len);
 }
 
-
+/* Register memory words */
 void register_memory_words(VM *vm) {
-    log_message(LOG_INFO, "Registering FORTH-79 memory words...");
-
-    /* Register basic memory words */
-    register_word(vm, "!", memory_store);
-    register_word(vm, "@", memory_fetch);
-    register_word(vm, "2!", memory_2store);
-    register_word(vm, "2@", memory_2fetch);
-    register_word(vm, "C!", memory_c_store);
-    register_word(vm, "C@", memory_c_fetch);
-    register_word(vm, "+!", memory_plus_store);
-    register_word(vm, "FILL", memory_fill);
-    register_word(vm, "ERASE", memory_erase);
-
-    log_message(LOG_INFO, "Memory words registered successfully");
+    register_word(vm, "@",    memory_word_fetch);
+    register_word(vm, "!",    memory_word_store);
+    register_word(vm, "C@",   memory_word_cfetch);
+    register_word(vm, "C!",   memory_word_cstore);
+    register_word(vm, "+!",   memory_word_plus_store);
+    register_word(vm, "-!",   memory_word_minus_store);
+    register_word(vm, "FILL", memory_word_fill);
+    register_word(vm, "MOVE", memory_word_move);
+    register_word(vm, "ERASE", memory_word_erase);
 }

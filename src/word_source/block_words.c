@@ -63,7 +63,6 @@ void block_word_list(VM *vm) {
     char buf[BLOCK_SIZE + 1];
     memcpy(buf, ptr, BLOCK_SIZE);
     buf[BLOCK_SIZE] = '\0';
-    log_info("BLOCK %ld contents:\n%s", (long)blk, buf);
 }
 
 /* SCR ( -- addr )  Variable: screen/block being listed */

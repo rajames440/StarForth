@@ -2,8 +2,8 @@
 
                                  ***   StarForth   ***
   editor_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
-  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+ Last modified - 8/9/25, 1:07 PM
+ Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
   To the extent possible under law, the author(s) have dedicated all copyright and related
@@ -13,493 +13,383 @@
   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
 
- */
+*/
 
-/* editor_words.c - FORTH-79 Line Editor Words */
 #include "include/editor_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
-#include "../word_source/include/block_words.h"
+#include "vm.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-/* Editor state */
-static int current_line = 0;        /* Current line position (0-15) */
-static int current_screen = 0;      /* Current screen number */
-static char search_char = 0;        /* Character being searched for */
-static int search_pos = 0;          /* Position in search */
-static char input_buffer[256];      /* Buffer for text input */
+/* ---------- Module state (must come before helpers) ---------- */
+static int current_line   = 0;   /* Current line position (0-15) */
+static int current_screen = 0;   /* Current screen number */
+static char search_char   = 0;   /* Character being searched for */
+static int  search_pos    = 0;   /* Position in search */
+static char input_buffer[256];   /* Buffer for text input */
 
-/* Helper: Get line from current screen */
+/* C99-safe bounded strlen (strnlen is not C99) */
+static size_t bounded_strlen(const char *s, size_t maxlen) {
+    size_t n = 0;
+    while (n < maxlen && s[n] != '\0') n++;
+    return n;
+}
+
+/* ---- Local block buffer helpers (self-contained; no cross-module deps) ---- */
+static unsigned char *get_block_buffer(VM *vm, int screen) {
+    if (screen < 0 || screen >= MAX_BLOCKS) { vm->error = 1; return NULL; }
+    vaddr_t addr = (vaddr_t)(screen * BLOCK_SIZE);
+    if (!vm_addr_ok(vm, addr, BLOCK_SIZE)) { vm->error = 1; return NULL; }
+    return (unsigned char *)vm_ptr(vm, addr);
+}
+
+/* Mark buffer dirty by setting a bit in the last byte of the block.
+   (Self-contained dirty marker; does not depend on other modules.) */
+static void mark_buffer_dirty(VM *vm) {
+    int blk = current_screen;
+    if (vm_addr_ok(vm, vm->scr_addr, sizeof(cell_t))) {
+        cell_t s = vm_load_cell(vm, vm->scr_addr);
+        if (s >= 0 && s < MAX_BLOCKS) blk = (int)s;
+    }
+    vaddr_t base = (vaddr_t)(blk * BLOCK_SIZE);
+    if (!vm_addr_ok(vm, base, BLOCK_SIZE)) { vm->error = 1; return; }
+    {
+        uint8_t *p = vm_ptr(vm, base);
+        p[BLOCK_SIZE - 1] |= 0x01; /* set dirty bit */
+    }
+}
+
+/* Helper: Get line pointer within a screen */
 static char* get_screen_line(VM *vm, int screen, int line) {
     unsigned char *block_data = get_block_buffer(vm, screen);
     if (block_data == NULL) return NULL;
-
     return (char*)(block_data + (line * 64));  /* 64 chars per line */
 }
 
-/* Helper: Print a single line with line number */
+/* Helper: Print a line from a screen */
 static void print_line(VM *vm, int screen, int line) {
     char *line_data = get_screen_line(vm, screen, line);
     if (line_data == NULL) return;
 
-    printf("%2d: ", line);
     for (int i = 0; i < 64; i++) {
-        char c = line_data[i];
-        if (c >= 32 && c <= 126) {
-            printf("%c", c);
-        } else if (c == 0) {
-            printf(" ");
-        } else {
-            printf(".");
-        }
+        putchar(line_data[i]);
     }
-    printf("\n");
+    putchar('\n');
 }
 
-/* Helper: Get text input from user */
-static int get_text_input(const char *prompt, char *buffer, int max_len) {
+/* Helper: Input a line with prompt */
+static int get_text_input(const char *prompt, char *buf, size_t buflen) {
     printf("%s", prompt);
     fflush(stdout);
+    if (!fgets(buf, (int)buflen, stdin)) return 0;
 
-    if (fgets(buffer, max_len, stdin) == NULL) {
-        return 0;
+    /* Strip newline */
+    {
+        size_t len = strlen(buf);
+        if (len && buf[len - 1] == '\n') buf[len - 1] = '\0';
     }
-
-    /* Remove trailing newline */
-    int len = strlen(buffer);
-    if (len > 0 && buffer[len-1] == '\n') {
-        buffer[len-1] = '\0';
-        len--;
-    }
-
-    return len;
+    return (int)strlen(buf);
 }
 
-/* Helper: Copy line data safely */
-static void copy_line_data(char *dest, const char *src, int max_len) {
-    int i;
-    for (i = 0; i < max_len && i < 64; i++) {
+/* Helper: Copy line data safely (pad with spaces to 64) */
+static void copy_line_data(char *dest, const char *src, size_t n) {
+    size_t i = 0;
+    for (; i < 64 && i < n; i++) {
         dest[i] = src[i];
     }
-    /* Pad with spaces to 64 characters */
     for (; i < 64; i++) {
         dest[i] = ' ';
     }
 }
 
-/* Helper: Shift lines up (for insert) */
-static void shift_lines_up(VM *vm, int screen, int start_line) {
-    unsigned char *block_data = get_block_buffer(vm, screen);
-    if (block_data == NULL) return;
-
-    /* Move lines 14 down to start_line+1 up by one position */
-    for (int line = 14; line >= start_line; line--) {
-        memcpy(block_data + ((line + 1) * 64),
-               block_data + (line * 64), 64);
-    }
-
-    /* Clear the inserted line */
-    memset(block_data + (start_line * 64), ' ', 64);
-}
-
-/* Helper: Shift lines down (for delete) */
-static void shift_lines_down(VM *vm, int screen, int start_line) {
-    unsigned char *block_data = get_block_buffer(vm, screen);
-    if (block_data == NULL) return;
-
-    /* Move lines start_line+1 to 15 down by one position */
-    for (int line = start_line; line < 15; line++) {
-        memcpy(block_data + (line * 64),
-               block_data + ((line + 1) * 64), 64);
-    }
-
-    /* Clear the last line */
-    memset(block_data + (15 * 64), ' ', 64);
-}
+/* ===================== EDITOR COMMANDS ===================== */
 
 /* L ( -- ) List current screen */
 void editor_word_l(VM *vm) {
     printf("Screen %d:\n", current_screen);
-    printf("================\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%2d: ", i);
+        print_line(vm, current_screen, i);
+    }
+}
 
-    for (int line = 0; line < 16; line++) {
-        if (line == current_line) {
-            printf(">");  /* Mark current line */
-        } else {
-            printf(" ");
+/* N ( -- ) Next screen */
+void editor_word_n(VM *vm) {
+    if (current_screen + 1 >= MAX_BLOCKS) {
+        log_message(LOG_WARN, "N: Already at last screen");
+        return;
+    }
+    current_screen++;
+    vm_store_cell(vm, vm->scr_addr, current_screen);
+    editor_word_l(vm);
+}
+
+/* P ( -- ) Previous screen */
+void editor_word_p(VM *vm) {
+    if (current_screen - 1 < 0) {
+        log_message(LOG_WARN, "P: Already at first screen");
+        return;
+    }
+    current_screen--;
+    vm_store_cell(vm, vm->scr_addr, current_screen);
+    editor_word_l(vm);
+}
+
+/* R ( n -- ) Replace line n by prompting input */
+void editor_word_r(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    {
+        int line = (int)vm_pop(vm);
+        if (line < 0 || line > 15) {
+            log_message(LOG_ERROR, "E: Invalid line number %d", line);
+            vm->error = 1;
+            return;
         }
+        current_line = line;
+
+        /* Show current line content */
+        printf("Line %d: ", line);
         print_line(vm, current_screen, line);
-    }
-}
 
-/* T ( n -- ) Type line n of current screen */
-void editor_word_t(VM *vm) {
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-
-    int line = (int)vm_pop(vm);
-    if (line < 0 || line > 15) {
-        log_message(LOG_ERROR, "T: Invalid line number %d", line);
-        vm->error = 1;
-        return;
-    }
-
-    print_line(vm, current_screen, line);
-}
-
-/* E ( n -- ) Edit line n of current screen */
-void editor_word_e(VM *vm) {
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-
-    int line = (int)vm_pop(vm);
-    if (line < 0 || line > 15) {
-        log_message(LOG_ERROR, "E: Invalid line number %d", line);
-        vm->error = 1;
-        return;
-    }
-
-    current_line = line;
-
-    /* Show current line content */
-    printf("Line %d: ", line);
-    print_line(vm, current_screen, line);
-
-    /* Get replacement text */
-    if (get_text_input("New text: ", input_buffer, sizeof(input_buffer))) {
-        char *line_data = get_screen_line(vm, current_screen, line);
-        if (line_data != NULL) {
-            copy_line_data(line_data, input_buffer, strlen(input_buffer));
-            mark_buffer_dirty(vm);
-            printf("Line %d updated\n", line);
+        /* Get replacement text */
+        if (get_text_input("New text: ", input_buffer, sizeof(input_buffer))) {
+            char *line_data = get_screen_line(vm, current_screen, line);
+            if (line_data != NULL) {
+                copy_line_data(line_data, input_buffer, strlen(input_buffer));
+                mark_buffer_dirty(vm);
+                printf("Line %d updated\n", line);
+            }
         }
     }
 }
 
 /* S ( n addr -- ) Replace line n with string at addr */
 void editor_word_s(VM *vm) {
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    {
+        vaddr_t addr = VM_ADDR(vm_pop(vm));
+        int line = (int)vm_pop(vm);
+        if (line < 0 || line > 15) {
+            log_message(LOG_ERROR, "S: Invalid line number %d", line);
+            vm->error = 1;
+            return;
+        }
 
-    cell_t addr = vm_pop(vm);
-    int line = (int)vm_pop(vm);
+        if (!vm_addr_ok(vm, addr, 64)) { vm->error = 1; return; }
+        {
+            char *src  = (char*)vm_ptr(vm, addr);
+            char *dest = get_screen_line(vm, current_screen, line);
+            if (dest == NULL) return;
 
-    if (line < 0 || line > 15) {
-        log_message(LOG_ERROR, "S: Invalid line number %d", line);
-        vm->error = 1;
-        return;
-    }
-
-    char *src_str = (char*)(uintptr_t)addr;
-    if (src_str == NULL) {
-        vm->error = 1;
-        return;
-    }
-
-    /* Get string length (assume counted string) */
-    int str_len = (unsigned char)src_str[0];
-    char *str_data = src_str + 1;
-
-    char *line_data = get_screen_line(vm, current_screen, line);
-    if (line_data != NULL) {
-        copy_line_data(line_data, str_data, str_len);
-        mark_buffer_dirty(vm);
-        printf("Line %d replaced\n", line);
-    }
-}
-
-/* I ( n -- ) Insert before line n */
-void editor_word_i(VM *vm) {
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-
-    int line = (int)vm_pop(vm);
-    if (line < 0 || line > 15) {
-        log_message(LOG_ERROR, "I: Invalid line number %d", line);
-        vm->error = 1;
-        return;
-    }
-
-    if (line < 15) {  /* Can't insert after last line */
-        shift_lines_up(vm, current_screen, line);
-    }
-
-    current_line = line;
-
-    /* Get text for new line */
-    if (get_text_input("Insert text: ", input_buffer, sizeof(input_buffer))) {
-        char *line_data = get_screen_line(vm, current_screen, line);
-        if (line_data != NULL) {
-            copy_line_data(line_data, input_buffer, strlen(input_buffer));
+            size_t n = bounded_strlen(src, 64);
+            copy_line_data(dest, src, n);
             mark_buffer_dirty(vm);
-            printf("Line inserted at %d\n", line);
         }
     }
 }
 
-/* R ( n -- ) Replace line n */
-void editor_word_r(VM *vm) {
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
+/* C ( n -- ) Clear line n */
+void editor_word_c(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    {
+        int line = (int)vm_pop(vm);
+        if (line < 0 || line > 15) {
+            log_message(LOG_ERROR, "C: Invalid line number %d", line);
+            vm->error = 1;
+            return;
+        }
 
-    int line = (int)vm_pop(vm);
-    if (line < 0 || line > 15) {
-        log_message(LOG_ERROR, "R: Invalid line number %d", line);
-        vm->error = 1;
-        return;
-    }
-
-    current_line = line;
-
-    /* Get replacement text */
-    if (get_text_input("Replace with: ", input_buffer, sizeof(input_buffer))) {
-        char *line_data = get_screen_line(vm, current_screen, line);
-        if (line_data != NULL) {
-            copy_line_data(line_data, input_buffer, strlen(input_buffer));
-            mark_buffer_dirty(vm);
-            printf("Line %d replaced\n", line);
+        {
+            char *line_data = get_screen_line(vm, current_screen, line);
+            if (line_data != NULL) {
+                memset(line_data, ' ', 64);
+                mark_buffer_dirty(vm);
+            }
         }
     }
 }
 
-/* D ( n -- ) Delete line n */
-void editor_word_d(VM *vm) {
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
+/* E ( n -- ) Edit line n (prompt) */
+void editor_word_e(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    {
+        int line = (int)vm_pop(vm);
+        if (line < 0 || line > 15) {
+            log_message(LOG_ERROR, "E: Invalid line number %d", line);
+            vm->error = 1;
+            return;
+        }
+
+        current_line = line;
+        printf("Line %d: ", line);
+        print_line(vm, current_screen, line);
+
+        if (get_text_input("Edit: ", input_buffer, sizeof(input_buffer))) {
+            char *line_data = get_screen_line(vm, current_screen, line);
+            if (line_data != NULL) {
+                copy_line_data(line_data, input_buffer, strlen(input_buffer));
+                mark_buffer_dirty(vm);
+            }
+        }
     }
-
-    int line = (int)vm_pop(vm);
-    if (line < 0 || line > 15) {
-        log_message(LOG_ERROR, "D: Invalid line number %d", line);
-        vm->error = 1;
-        return;
-    }
-
-    shift_lines_down(vm, current_screen, line);
-    mark_buffer_dirty(vm);
-
-    printf("Line %d deleted\n", line);
 }
 
-/* P ( n -- ) Position to line n */
-void editor_word_p(VM *vm) {
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
+/* POS ( n -- ) Position to line n */
+void editor_word_pos(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    {
+        int line = (int)vm_pop(vm);
+        if (line < 0 || line > 15) {
+            log_message(LOG_ERROR, "P: Invalid line number %d", line);
+            vm->error = 1;
+            return;
+        }
 
-    int line = (int)vm_pop(vm);
-    if (line < 0 || line > 15) {
-        log_message(LOG_ERROR, "P: Invalid line number %d", line);
-        vm->error = 1;
-        return;
+        current_line = line;
+        printf("Positioned to line %d\n", line);
     }
-
-    current_line = line;
-    printf("Positioned to line %d\n", line);
 }
 
 /* COPY ( n1 n2 -- ) Copy line n1 to line n2 */
 void editor_word_copy(VM *vm) {
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    {
+        int n2 = (int)vm_pop(vm);
+        int n1 = (int)vm_pop(vm);
 
-    int dest_line = (int)vm_pop(vm);
-    int src_line = (int)vm_pop(vm);
+        if (n1 < 0 || n1 > 15 || n2 < 0 || n2 > 15) {
+            vm->error = 1;
+            return;
+        }
 
-    if (src_line < 0 || src_line > 15 || dest_line < 0 || dest_line > 15) {
-        log_message(LOG_ERROR, "COPY: Invalid line numbers %d %d", src_line, dest_line);
-        vm->error = 1;
-        return;
-    }
-
-    char *src_data = get_screen_line(vm, current_screen, src_line);
-    char *dest_data = get_screen_line(vm, current_screen, dest_line);
-
-    if (src_data != NULL && dest_data != NULL) {
-        memcpy(dest_data, src_data, 64);
-        mark_buffer_dirty(vm);
-        printf("Line %d copied to line %d\n", src_line, dest_line);
+        {
+            char *src = get_screen_line(vm, current_screen, n1);
+            char *dst = get_screen_line(vm, current_screen, n2);
+            if (src && dst) {
+                memmove(dst, src, 64);
+                mark_buffer_dirty(vm);
+            }
+        }
     }
 }
 
-/* M ( n1 n2 -- ) Move line n1 to line n2 */
-void editor_word_m(VM *vm) {
-    if (vm->dsp < 1) {
-        vm->error = 1;
-        return;
-    }
-
-    int dest_line = (int)vm_pop(vm);
-    int src_line = (int)vm_pop(vm);
-
-    if (src_line < 0 || src_line > 15 || dest_line < 0 || dest_line > 15) {
-        log_message(LOG_ERROR, "M: Invalid line numbers %d %d", src_line, dest_line);
-        vm->error = 1;
-        return;
-    }
-
-    if (src_line == dest_line) {
-        return;  /* No-op */
-    }
-
-    /* Save source line */
-    char temp_line[64];
-    char *src_data = get_screen_line(vm, current_screen, src_line);
-    if (src_data == NULL) return;
-
-    memcpy(temp_line, src_data, 64);
-
-    /* Delete source line */
-    shift_lines_down(vm, current_screen, src_line);
-
-    /* Adjust destination if it's after the deleted line */
-    if (dest_line > src_line) {
-        dest_line--;
-    }
-
-    /* Insert at destination */
-    if (dest_line < 15) {
-        shift_lines_up(vm, current_screen, dest_line);
-    }
-
-    char *dest_data = get_screen_line(vm, current_screen, dest_line);
-    if (dest_data != NULL) {
-        memcpy(dest_data, temp_line, 64);
-        mark_buffer_dirty(vm);
-        printf("Line %d moved to line %d\n", src_line, dest_line);
-    }
-}
-
-/* TILL ( c -- ) Search for character c */
-void editor_word_till(VM *vm) {
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-
+/* FIND ( c -- ) Find character c starting from search_pos */
+void editor_word_find(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
     search_char = (char)(vm_pop(vm) & 0xFF);
-    search_pos = 0;  /* Reset search position */
+    {
+        int found = -1;
+        unsigned char *block_data = get_block_buffer(vm, current_screen);
+        if (vm->error || block_data == NULL) return;
 
-    unsigned char *block_data = get_block_buffer(vm, current_screen);
-    if (block_data == NULL) return;
+        for (int i = search_pos; i < 16 * 64; i++) {
+            if (block_data[i] == (unsigned char)search_char) {
+                found = i;
+                break;
+            }
+        }
 
-    /* Search from current position */
-    for (int line = current_line; line < 16; line++) {
-        for (int col = (line == current_line ? search_pos : 0); col < 64; col++) {
-            if (block_data[line * 64 + col] == search_char) {
-                current_line = line;
-                search_pos = col + 1;  /* Next search starts after this */
-                printf("Found '%c' at line %d, column %d\n", search_char, line, col);
+        if (found >= 0) {
+            search_pos = found + 1;
+            {
+                int line = found / 64;
+                int col  = found % 64;
+                printf("Found '%c' at line %d, col %d\n", search_char, line, col);
+            }
+        } else {
+            printf("Character '%c' not found\n", search_char);
+        }
+    }
+}
+
+/* REP ( c -- ) Replace next occurrence of char with c */
+void editor_word_rep(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    {
+        char newc = (char)(vm_pop(vm) & 0xFF);
+        unsigned char *block_data = get_block_buffer(vm, current_screen);
+        if (vm->error || block_data == NULL) return;
+
+        for (int i = search_pos; i < 16 * 64; i++) {
+            if (block_data[i] == (unsigned char)search_char) {
+                block_data[i] = (unsigned char)newc;
+                mark_buffer_dirty(vm);
+                search_pos = i + 1;
+                printf("Replaced at pos %d\n", i);
                 return;
             }
         }
+        printf("No more '%c' found\n", search_char);
     }
-
-    printf("Character '%c' not found\n", search_char);
 }
 
-/* N ( -- ) Search for next occurrence */
-void editor_word_n(VM *vm) {
-    if (search_char == 0) {
-        printf("No search character set - use TILL first\n");
-        return;
-    }
+/* INS ( n addr -- ) Insert string at line n (overwrite within line) */
+void editor_word_ins(VM *vm) {
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    {
+        vaddr_t addr = VM_ADDR(vm_pop(vm));
+        int line = (int)vm_pop(vm);
+        if (line < 0 || line > 15) { vm->error = 1; return; }
 
-    unsigned char *block_data = get_block_buffer(vm, current_screen);
-    if (block_data == NULL) return;
+        if (!vm_addr_ok(vm, addr, 64)) { vm->error = 1; return; }
+        {
+            char *src  = (char*)vm_ptr(vm, addr);
+            char *dest = get_screen_line(vm, current_screen, line);
+            if (!dest) return;
 
-    /* Continue search from current position */
-    for (int line = current_line; line < 16; line++) {
-        for (int col = (line == current_line ? search_pos : 0); col < 64; col++) {
-            if (block_data[line * 64 + col] == search_char) {
-                current_line = line;
-                search_pos = col + 1;
-                printf("Found '%c' at line %d, column %d\n", search_char, line, col);
-                return;
+            size_t n = bounded_strlen(src, 64);
+            for (size_t i = 0; i < n; i++) {
+                dest[i] = src[i];
             }
+            mark_buffer_dirty(vm);
         }
     }
-
-    /* Wrap to beginning of screen */
-    for (int line = 0; line <= current_line; line++) {
-        int max_col = (line == current_line) ? search_pos - 1 : 64;
-        for (int col = 0; col < max_col; col++) {
-            if (block_data[line * 64 + col] == search_char) {
-                current_line = line;
-                search_pos = col + 1;
-                printf("Found '%c' at line %d, column %d (wrapped)\n", search_char, line, col);
-                return;
-            }
-        }
-    }
-
-    printf("No more occurrences of '%c' found\n", search_char);
 }
 
-/* WHERE ( -- ) Show current position */
-void editor_word_where(VM *vm) {
-    printf("Screen %d, Line %d\n", current_screen, current_line);
-}
-
-/* TOP ( -- ) Go to top of screen */
-void editor_word_top(VM *vm) {
-    current_line = 0;
-    printf("At top of screen\n");
-}
-
-/* BOTTOM ( -- ) Go to bottom of screen */
-void editor_word_bottom(VM *vm) {
-    current_line = 15;
-    printf("At bottom of screen\n");
-}
-
-/* CLEAR ( -- ) Clear current screen */
-void editor_word_clear(VM *vm) {
+/* CLR ( -- ) Clear the entire screen buffer */
+void editor_word_clr(VM *vm) {
     unsigned char *block_data = get_block_buffer(vm, current_screen);
-    if (block_data == NULL) return;
+    if (vm->error || block_data == NULL) return;
 
-    memset(block_data, ' ', 1024);  /* Fill with spaces */
+    memset(block_data, ' ', 16 * 64);
     mark_buffer_dirty(vm);
-
-    printf("Screen %d cleared\n", current_screen);
 }
 
+/* SETSCR ( n -- ) Set current screen number */
+void editor_word_setscr(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    {
+        int n = (int)vm_pop(vm);
+        if (n < 0 || n >= MAX_BLOCKS) { vm->error = 1; return; }
+
+        current_screen = n;
+        vm_store_cell(vm, vm->scr_addr, current_screen);
+    }
+}
+
+/* SHOW ( -- ) Show current line and screen */
+void editor_word_show(VM *vm) {
+    printf("Screen=%d Line=%d SearchPos=%d\n",
+           current_screen, current_line, search_pos);
+}
+
+/* Register editor words */
 void register_editor_words(VM *vm) {
-    log_message(LOG_INFO, "Registering FORTH-79 editor words...");
-
-    /* Complete editor implementation */
-    register_word(vm, "L", editor_word_l);
-    register_word(vm, "T", editor_word_t);
-    register_word(vm, "E", editor_word_e);
-    register_word(vm, "S", editor_word_s);
-    register_word(vm, "I", editor_word_i);
-    register_word(vm, "R", editor_word_r);
-    register_word(vm, "D", editor_word_d);
-    register_word(vm, "P", editor_word_p);
-    register_word(vm, "COPY", editor_word_copy);
-    register_word(vm, "M", editor_word_m);
-    register_word(vm, "TILL", editor_word_till);
-    register_word(vm, "N", editor_word_n);
-    register_word(vm, "WHERE", editor_word_where);
-    register_word(vm, "TOP", editor_word_top);
-    register_word(vm, "BOTTOM", editor_word_bottom);
-    register_word(vm, "CLEAR", editor_word_clear);
-
-    log_message(LOG_INFO, "Complete FORTH-79 editor registered - 16 words");
+    register_word(vm, "L",      editor_word_l);
+    register_word(vm, "N",      editor_word_n);
+    register_word(vm, "P",      editor_word_p);
+    register_word(vm, "R",      editor_word_r);
+    register_word(vm, "S",      editor_word_s);
+    register_word(vm, "C",      editor_word_c);
+    register_word(vm, "E",      editor_word_e);
+    register_word(vm, "POS",    editor_word_pos);
+    register_word(vm, "COPY",   editor_word_copy);
+    register_word(vm, "FIND",   editor_word_find);
+    register_word(vm, "REP",    editor_word_rep);
+    register_word(vm, "INS",    editor_word_ins);
+    register_word(vm, "CLR",    editor_word_clr);
+    register_word(vm, "SETSCR", editor_word_setscr);
+    register_word(vm, "SHOW",   editor_word_show);
 }
