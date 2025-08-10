@@ -162,8 +162,8 @@ static WordTestSuite io_word_suites[] = {
             {"decimal", "10 BASE ! 255 . CR", "Should print: 255", TEST_NORMAL, 0, 1},
             {"hex", "16 BASE ! 255 . CR", "Should print: FF", TEST_NORMAL, 0, 1},
             {"octal", "8 BASE ! 64 . CR", "Should print: 100", TEST_NORMAL, 0, 1},
-            {"binary", "2 BASE ! 5 . CR", "Should print: 101", TEST_NORMAL, 0, 1},
-            {"base_restore", "BASE @ 16 BASE ! 255 . BASE ! CR", "Should restore base", TEST_NORMAL, 0, 1},
+            {"binary", "5 2 BASE ! . CR", "Should print: 101", TEST_NORMAL, 0, 1},
+            {"base_restore", "BASE @  DECIMAL  255  16 BASE !  .  BASE !  CR", "Should restore base", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         }, 5
     },

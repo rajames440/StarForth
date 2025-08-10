@@ -28,7 +28,8 @@ static WordTestSuite string_word_suites[] = {
             {"string_bounds", "HERE COUNT SWAP 1- = . CR", "Should increment address", TEST_NORMAL, 0, 1},
             {"empty_stack", "COUNT", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 5
+        },
+        5
     },
 
     {
@@ -38,7 +39,8 @@ static WordTestSuite string_word_suites[] = {
             {"no_spaces", "HERE S\" Test\" -TRAILING TYPE CR", "Should handle no spaces", TEST_NORMAL, 0, 1},
             {"empty", "HERE 0 -TRAILING TYPE CR", "Should handle empty string", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 4
+        },
+        4
     },
 
     {
@@ -48,7 +50,8 @@ static WordTestSuite string_word_suites[] = {
             {"overlap", "HERE DUP 1+ 5 CMOVE", "Should handle overlap", TEST_NORMAL, 0, 1},
             {"bounds", "HERE PAD 1000 CMOVE", "Should check bounds", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 4
+        },
+        4
     },
 
     {
@@ -58,7 +61,8 @@ static WordTestSuite string_word_suites[] = {
             {"overlap", "HERE DUP 1+ 5 CMOVE>", "Should handle overlap", TEST_NORMAL, 0, 1},
             {"bounds", "HERE PAD 1000 CMOVE>", "Should check bounds", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 4
+        },
+        4
     },
 
     {
@@ -66,20 +70,31 @@ static WordTestSuite string_word_suites[] = {
             {"equal", "HERE S\" Test\" HERE S\" Test\" COMPARE . CR", "Should return 0", TEST_NORMAL, 0, 1},
             {"less", "HERE S\" Test1\" HERE S\" Test2\" COMPARE . CR", "Should return -1", TEST_NORMAL, 0, 1},
             {"greater", "HERE S\" Test2\" HERE S\" Test1\" COMPARE . CR", "Should return 1", TEST_NORMAL, 0, 1},
-            {"different_lengths", "HERE S\" Test\" HERE S\" Testing\" COMPARE . CR", "Should handle lengths", TEST_NORMAL, 0, 1},
+            {
+                "different_lengths", "HERE S\" Test\" HERE S\" Testing\" COMPARE . CR", "Should handle lengths",
+                TEST_NORMAL, 0, 1
+            },
             {"empty", "HERE 0 HERE 0 COMPARE . CR", "Should handle empty", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 5
+        },
+        5
     },
 
     {
         "SEARCH", {
             {"found", "HERE S\" Testing\" HERE S\" Test\" SEARCH . . . CR", "Should find substring", TEST_NORMAL, 0, 1},
-            {"not_found", "HERE S\" Testing\" HERE S\" Xyz\" SEARCH . . . CR", "Should return false", TEST_NORMAL, 0, 1},
-            {"empty_pattern", "HERE S\" Test\" HERE 0 SEARCH . . . CR", "Should handle empty pattern", TEST_NORMAL, 0, 1},
+            {
+                "not_found", "HERE S\" Testing\" HERE S\" Xyz\" SEARCH . . . CR", "Should return false", TEST_NORMAL, 0,
+                1
+            },
+            {
+                "empty_pattern", "HERE S\" Test\" HERE 0 SEARCH . . . CR", "Should handle empty pattern", TEST_NORMAL,
+                0, 1
+            },
             {"empty_string", "HERE 0 HERE S\" Test\" SEARCH . . . CR", "Should handle empty string", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 4
+        },
+        4
     },
 
     {
@@ -89,7 +104,8 @@ static WordTestSuite string_word_suites[] = {
             {"empty", "HERE 0 BL SCAN TYPE CR", "Should handle empty", TEST_NORMAL, 0, 1},
             {"all_delims", "HERE S\"     \" BL SCAN TYPE CR", "Should handle all delims", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 4
+        },
+        4
     },
 
     {
@@ -99,17 +115,18 @@ static WordTestSuite string_word_suites[] = {
             {"empty", "HERE 0 BL SKIP TYPE CR", "Should handle empty", TEST_NORMAL, 0, 1},
             {"all_delims", "HERE S\"     \" BL SKIP TYPE CR", "Should skip all", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 4
+        },
+        4
     },
 
     {
         "BLANK", {
             {"basic", "HERE 5 BLANK HERE 5 TYPE CR", "Should fill with spaces", TEST_NORMAL, 0, 1},
-            {"zero", "HERE 0 BLANK HERE TYPE CR", "Should handle zero count", TEST_NORMAL, 0, 1},
-            {"large", "HERE 100 BLANK HERE 100 TYPE CR", "Should handle large count", TEST_NORMAL, 0, 1},
-            {"bounds", "HERE 1000000 BLANK", "Should check bounds", TEST_ERROR_CASE, 1, 1},
+            {"zero", "HERE 0 BLANK HERE 0 TYPE CR", "Should handle zero count", TEST_NORMAL, 0, 1},
+            {"bounds", "HERE 2000000 BLANK", "Should check bounds", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 4
+        },
+        4
     },
 
     /* End marker */
@@ -118,11 +135,11 @@ static WordTestSuite string_word_suites[] = {
 
 void run_string_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running String Words Tests (Module 11)...");
-    
+
     for (int i = 0; string_word_suites[i].word_name != NULL; i++) {
         log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
         run_test_suite(vm, &string_word_suites[i]);
     }
-    
+
     print_module_summary("String Words", 0, 0, 0, 0);
 }

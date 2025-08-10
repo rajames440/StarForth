@@ -272,6 +272,17 @@ static void logical_word_false(VM *vm) {
     log_message(LOG_DEBUG, "FALSE: Pushed 0");
 }
 
+/* 0<> ( n -- f )  push TRUE (-1) if TOS != 0 else FALSE (0) */
+void logical_word_zero_not_equal(VM *vm) {
+    if (vm->dsp < 0) {            /* underflow guard: need 1 item */
+        vm->error = 1;
+        log_message(LOG_ERROR, "0<>: stack underflow");
+        return;
+    }
+    cell_t x = vm_pop(vm);
+    vm_push(vm, x != 0 ? -1 : 0); /* Forth truth values: -1 true, 0 false */
+}
+
 /* Register all logical and comparison words */
 void register_logical_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 logical and comparison words...");
@@ -286,6 +297,7 @@ void register_logical_words(VM *vm) {
     register_word(vm, "0=", logical_word_zero_equals);
     register_word(vm, "0<", logical_word_zero_less);
     register_word(vm, "0>", logical_word_zero_greater);
+    register_word(vm, "0<>", logical_word_zero_not_equal);
 
     /* Comparisons */
     register_word(vm, "=", logical_word_equals);
