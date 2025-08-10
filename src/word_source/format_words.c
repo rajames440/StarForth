@@ -109,25 +109,29 @@ static void print_number_formatted(VM *vm, cell_t n, int width, int is_unsigned)
 
 /* ===== Words ===== */
 
-/* BASE ( -- addr ) -> &vm->base */
+/* BASE ( -- addr )  — returns VM address (offset) of the BASE variable */
 void format_word_base(VM *vm) {
-    if (!vm->base) { vm->error = 1; return; }
-    vm_push(vm, (cell_t)(uintptr_t)vm->base);
+    if (!vm) { return; }
+    /* vm->base_addr is a VM address (offset into vm->memory), not a host pointer */
+    vm_push(vm, CELL(vm->base_addr));
 }
 
+/* DECIMAL ( -- ) — set BASE=10 */
 void format_word_decimal(VM *vm) {
-    if (!vm->base) { vm->error = 1; return; }
-    vm->base = 10;
+    if (!vm) { return; }
+    vm_store_cell(vm, vm->base_addr, (cell_t)10);
 }
 
+/* HEX ( -- ) — set BASE=16 */
 void format_word_hex(VM *vm) {
-    if (!vm->base) { vm->error = 1; return; }
-    vm->base = 16;
+    if (!vm) { return; }
+    vm_store_cell(vm, vm->base_addr, (cell_t)16);
 }
 
+/* OCTAL ( -- ) — set BASE=8 */
 void format_word_octal(VM *vm) {
-    if (!vm->base) { vm->error = 1; return; }
-    vm->base = 8;
+    if (!vm) { return; }
+    vm_store_cell(vm, vm->base_addr, (cell_t)8);
 }
 
 /* <# ( -- ) */

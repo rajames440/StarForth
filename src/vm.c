@@ -84,7 +84,7 @@ void vm_init(VM *vm) {
         void *p = vm_allot(vm, sizeof(cell_t));
         if (!p) { log_message(LOG_ERROR, "vm_init: failed to allot BASE cell"); vm->error = 1; return; }
         vm->base_addr = (vaddr_t)((uint8_t*)p - vm->memory);
-        *(cell_t*)(&vm->memory[vm->base_addr]) = 10;
+        vm_store_cell(vm, vm->base_addr, (cell_t)10);
     }
 
     /* ---------------------------------------------------- */
