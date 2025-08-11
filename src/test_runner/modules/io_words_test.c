@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   io_words_test.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/11/25, 9:47 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -164,17 +164,18 @@ static WordTestSuite io_word_suites[] = {
             {"octal", "8 BASE ! 64 . CR", "Should print: 100", TEST_NORMAL, 0, 1},
             {"binary", "5 2 BASE ! . CR", "Should print: 101", TEST_NORMAL, 0, 1},
             {"base_restore", "BASE @  DECIMAL  255  16 BASE !  .  BASE !  CR", "Should restore base", TEST_NORMAL, 0, 1},
+            {"reset_decimal", "DECIMAL", "Reset base to DECIMAL for subsequent tests", TEST_NORMAL, 0, 0},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 5
+        }, 6
     },
 
     /* Output formatting combinations */
     {
         "FORMAT_COMBO", {
-            {"number_space_number", "42 . SPACE 43 . CR", "Should format: 42 43", TEST_NORMAL, 0, 1},
-            {"multi_line", "1 . CR 2 . CR 3 . CR", "Should print on separate lines", TEST_NORMAL, 0, 1},
-            {"indented", "5 SPACES 42 . CR", "Should indent number", TEST_NORMAL, 0, 1},
-            {"table_format", "1 . 3 SPACES 10 . 3 SPACES 100 . CR", "Should format table", TEST_NORMAL, 0, 1},
+            {"number_space_number", "DECIMAL 42 . SPACE 43 . CR", "Should format: 42 43", TEST_NORMAL, 0, 1},
+            {"multi_line",          "DECIMAL 1 . CR 2 . CR 3 . CR", "Should print on separate lines", TEST_NORMAL, 0, 1},
+            {"indented",            "DECIMAL 5 SPACES 42 . CR", "Should indent number", TEST_NORMAL, 0, 1},
+            {"table_format",        "DECIMAL 1 . 3 SPACES 10 . 3 SPACES 100 . CR", "Should format table", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         }, 4
     },
