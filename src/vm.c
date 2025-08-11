@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/11/25, 9:24 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -32,6 +32,50 @@
 #include <stdlib.h>
 
 static void execute_colon_word(VM *vm);
+
+unsigned vm_get_base(const VM *vm) {
+    if (!vm) return 10u;
+    size_t idx = (size_t)vm->base_addr;
+    if (idx < (size_t)VM_MEMORY_SIZE) {
+        cell_t v = vm->memory[idx];
+        if (v >= 2 && v <= 36) return (unsigned)v;
+    }
+    if (vm->base >= 2 && vm->base <= 36) return (unsigned)vm->base;
+    return 10u;
+}
+
+void vm_set_base(VM *vm, unsigned b) {
+    if (!vm) return;
+    if (b < 2 || b > 36) b = 10;
+    size_t idx = (size_t)vm->base_addr;
+    if (idx < (size_t)VM_MEMORY_SIZE) {
+        vm->memory[idx] = (cell_t)b;   /* VM-visible variable */
+    }
+    vm->base = (cell_t)b;              /* host mirror for legacy paths */
+}
+
+/* Ensure BASE variable exists in VM memory and is DECIMAL.
+   Call this once during VM init/bootstrap (after memory is allocated). */
+void vm_bootstrap_base(VM *vm) {
+    if (!vm) return;
+
+    /* If base_addr is invalid, allocate one VM cell for BASE at HERE. */
+    size_t idx = (size_t)vm->base_addr;
+    if (!(idx < (size_t)VM_MEMORY_SIZE)) {
+        /* Assume HERE is in cell units. If you have an allocator, use it. */
+        idx = (size_t)vm->here;
+        if (idx >= (size_t)VM_MEMORY_SIZE) {
+            /* Out of memory; pick a safe fallback and mark error if you want */
+            idx = 0;
+        } else {
+            vm->here++;
+        }
+        vm->base_addr = (vaddr_t)idx;
+    }
+
+    /* Initialize both memory cell and mirror to DECIMAL. */
+    vm_set_base(vm, 10u);
+}
 
 /**
  * @brief Initialize a new Forth virtual machine instance
@@ -183,41 +227,37 @@ int vm_parse_word(VM *vm, char *word, size_t max_len) {
  * @param value Pointer to store parsed value
  * @return 1 if successful, 0 if parsing failed
  */
-int vm_parse_number(VM *vm, const char *str, cell_t *out) {
-    if (!str || !*str) return 0;
+int vm_parse_number(VM *vm, const char *s, cell_t *out) {
+    if (!s || !*s || !out) return 0;
 
-    /* Read BASE from VM cell; default to 10 on garbage */
-    unsigned base = (unsigned)vm_load_cell(vm, vm->base_addr);
-    if (base < 2 || base > 36) base = 10;
+    unsigned base = vm_get_base(vm);
 
-    /* Optional sign */
     int neg = 0;
-    if (*str == '+') { str++; }
-    else if (*str == '-') { neg = 1; str++; }
-    if (!*str) return 0;
+    if (*s == '+' || *s == '-') { neg = (*s == '-'); s++; if (!*s) return 0; }
 
-    /* Parse digits according to BASE (A..Z = 10..35) */
     unsigned long long acc = 0;
-    const char *p = str;
     int any = 0;
-    while (*p) {
+
+    for (const char *p = s; *p; ++p) {
         unsigned d;
         unsigned char c = (unsigned char)*p;
-        if (c >= '0' && c <= '9') d = (unsigned)(c - '0');
-        else if (c >= 'A' && c <= 'Z') d = 10u + (unsigned)(c - 'A');
-        else if (c >= 'a' && c <= 'z') d = 10u + (unsigned)(c - 'a');
-        else break;
-        if (d >= base) break;
+
+        if (c >= '0' && c <= '9')       d = (unsigned)(c - '0');
+        else if (c >= 'A' && c <= 'Z')  d = 10u + (unsigned)(c - 'A');
+        else if (c >= 'a' && c <= 'z')  d = 10u + (unsigned)(c - 'a');
+        else                            return 0;        /* not a pure number */
+
+        if (d >= base) return 0;                         /* digit outside radix */
+
         acc = acc * base + d;
         any = 1;
-        p++;
     }
 
-    if (!any || *p != '\0') return 0;
+    if (!any) return 0;
 
-    /* Cast to cell_t (implementation-defined width) */
-    cell_t v = (cell_t)acc;
-    if (neg) v = -v;
+    cell_t v = (cell_t)acc;                              /* truncation by design */
+    if (neg) v = (cell_t)(-v);
+
     *out = v;
     return 1;
 }
