@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   word_registry.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 9:50 AM
+ Last modified - 8/11/25, 10:44 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -64,9 +64,9 @@ void register_forth79_words(VM *vm) {
     register_format_words(vm); /* Module 8: Formatting & Conversion */
     register_string_words(vm); /* Module 9: String & Text Processing */
     register_io_words(vm); /* Module 10: I/O & Terminal */
-    /* todo -----------------------------------FENCE----------------------------------- */
     register_block_words(vm); /* Module 11: Block & Mass Storage */
     register_dictionary_words(vm); /* Module 12: Dictionary & Compilation */
+    /* todo -----------------------------------FENCE----------------------------------- */
     register_dictionary_manipulation_words(vm); /* Module 13: Dictionary Manipulation */
     register_vocabulary_words(vm); /* Module 14: Vocabulary System */
     register_system_words(vm); /* Module 15: System & Environment */
