@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/11/25, 10:35 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -79,17 +79,25 @@ void dictionary_word_pad(VM *vm) {
     vm_push(vm, (cell_t)pad_offset);
 }
 
-/* SP! ( n -- )  Set data stack pointer index (VM numeric, -1 .. STACK_SIZE-1) */
-void dictionary_word_sp_store(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    cell_t n = vm_pop(vm);
-    if (n < -1 || n >= STACK_SIZE) { vm->error = 1; return; }
-    vm->dsp = (int)n;
+/* SP@ ( -- sp )  Return the current stack-pointer index (top is 0) */
+void dictionary_word_sp_fetch(VM *vm) {
+    /* No stack args required */
+    vm_push(vm, (cell_t)vm->dsp);
 }
 
-/* SP@ ( -- n )  Get current data stack pointer index (VM numeric) */
-void dictionary_word_sp_fetch(VM *vm) {
-    vm_push(vm, (cell_t)vm->dsp);
+/* SP! ( sp -- )  Restore the stack-pointer, but never grow the stack */
+void dictionary_word_sp_store(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }   /* need one arg */
+    cell_t new_sp = vm_pop(vm);
+
+    /* Valid range: -1 (empty stack) up to current dsp (can shrink, not grow) */
+    if (new_sp < -1 || new_sp > vm->dsp) {
+        vm->error = 1;
+        return;
+    }
+
+    vm->dsp = new_sp;
+    /* We don’t need to scrub values above dsp; they’re considered garbage/unused. */
 }
 
 /* LATEST ( -- addr )  Return VM address near most recent compiled definition (end of dictionary) */

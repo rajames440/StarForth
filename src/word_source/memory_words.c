@@ -1,9 +1,18 @@
 /*
- * memory_words.c - FORTH-79 Memory Access and Manipulation Words
- * Fully implemented for StarForth VM model.
- *
- * Copyright (c) 2025 Robert A. James
- * Released under Creative Commons Zero v1.0 Universal.
+
+                                 ***   StarForth   ***
+  memory_words.c - FORTH-79 Standard and ANSI C99 ONLY
+ Last modified - 8/11/25, 10:25 AM
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+ This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+
  */
 
 #include "include/memory_words.h"
@@ -102,6 +111,44 @@ void memory_word_erase(VM *vm) {
     memset(ptr, 0, len);
 }
 
+/* 2@ ( addr -- x_low x_high )  Fetch two consecutive cells (low, then high) */
+void memory_word_2fetch(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    vaddr_t addr = VM_ADDR(vm_pop(vm));
+
+    const size_t sz = sizeof(cell_t);
+    /* need room for two cells starting at addr */
+    if (!vm_addr_ok(vm, addr, sz) || !vm_addr_ok(vm, addr + (vaddr_t)sz, sz)) {
+        vm->error = 1;
+        return;
+    }
+
+    cell_t low  = vm_load_cell(vm, addr);
+    cell_t high = vm_load_cell(vm, addr + (vaddr_t)sz);
+
+    /* Push order: low first, high second (so high ends up on top) */
+    vm_push(vm, low);
+    vm_push(vm, high);
+}
+
+/* 2! ( x_low x_high addr -- )  Store two consecutive cells (low at addr, high at addr+cell) */
+void memory_word_2store(VM *vm) {
+    if (vm->dsp < 2) { vm->error = 1; return; }
+
+    vaddr_t addr = VM_ADDR(vm_pop(vm));   /* top of stack: addr */
+    cell_t  high = vm_pop(vm);            /* next: high part */
+    cell_t  low  = vm_pop(vm);            /* next: low part */
+
+    const size_t sz = sizeof(cell_t);
+    if (!vm_addr_ok(vm, addr, sz) || !vm_addr_ok(vm, addr + (vaddr_t)sz, sz)) {
+        vm->error = 1;
+        return;
+    }
+
+    vm_store_cell(vm, addr,                 low);
+    vm_store_cell(vm, addr + (vaddr_t)sz,   high);
+}
+
 /* Register memory words */
 void register_memory_words(VM *vm) {
     register_word(vm, "@",    memory_word_fetch);
@@ -110,6 +157,8 @@ void register_memory_words(VM *vm) {
     register_word(vm, "C!",   memory_word_cstore);
     register_word(vm, "+!",   memory_word_plus_store);
     register_word(vm, "-!",   memory_word_minus_store);
+    register_word(vm, "2@",   memory_word_2fetch);
+    register_word(vm, "2!",   memory_word_2store);
     register_word(vm, "FILL", memory_word_fill);
     register_word(vm, "MOVE", memory_word_move);
     register_word(vm, "ERASE", memory_word_erase);

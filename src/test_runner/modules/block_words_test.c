@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   block_words_test.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/11/25, 10:13 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -43,10 +43,10 @@ static WordTestSuite block_word_suites[] = {
 
     {
         "UPDATE", {
-            {"basic", "1 BLOCK UPDATE", "Should mark block dirty", TEST_NORMAL, 0, 1},
-            {"multiple", "1 BLOCK UPDATE UPDATE", "Should handle multiple updates", TEST_NORMAL, 0, 1},
-            {"no_block", "UPDATE", "Should handle no current block", TEST_ERROR_CASE, 1, 1},
-            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+            { "basic",     "1 BLOCK UPDATE",                "Should mark block dirty",            TEST_NORMAL, 0, 0 },
+            { "multiple",  "1 BLOCK UPDATE UPDATE",         "Should handle multiple updates",     TEST_NORMAL, 0, 0 },
+            { "no_block",  "0 SCR ! UPDATE",                "Should handle no current block",     TEST_ERROR,  0, 0 },
+            { NULL, NULL, NULL, TEST_NORMAL, 0, 0 }
         }, 3
     },
 
