@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   test_common.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/11/25, 1:57 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -16,134 +16,65 @@
  */
 
 #include "../../include/vm.h"
+#include "../../include/vm_debug.h"
 #include "include/test_common.h"
 #include "../../include/log.h"
+#include "test_runner.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "test_runner.h"
-
-/* fail fast */
+/* fail fast (set by --fail-fast) */
 int fail_fast = 0;
 
-/* Run a single test case */
-TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test) {
-    if (!test->implemented) {
-        log_test_result(word_name, TEST_SKIP);
-        return TEST_SKIP;
-    }
+/* ---------- debug helpers (dump on fatal and exit) ---------- */
 
-    /* Save VM state */
-    int saved_dsp, saved_rsp, saved_error;
-    vm_mode_t saved_mode;
-    save_vm_state(vm, &saved_dsp, &saved_rsp, &saved_error, &saved_mode);
-
-    /* Clear error state */
-    vm->error = 0;
-
-    log_message(LOG_TEST, "  Running %s.%s: %s", word_name, test->name, test->input);
-
-    /* Execute the test */
-    vm_interpret(vm, test->input);
-
-    /* Check results */
-    TestResult result = TEST_FAIL;
-
-    if (test->should_error) {
-        if (vm->error != 0) {
-            result = TEST_PASS;
-            log_message(LOG_TEST, "    Expected error occurred");
-        } else {
-            result = TEST_FAIL;
-            log_message(LOG_ERROR, "    Expected error but none occurred");
-        }
-    } else {
-        if (vm->error != 0) {
-            result = TEST_FAIL;
-            log_message(LOG_ERROR, "    Unexpected VM error: %d", vm->error);
-        } else {
-            result = TEST_PASS;
-            log_message(LOG_TEST, "    Test passed");
-        }
-    }
-
-    log_test_result(word_name, result);
-    if (result == TEST_PASS) {
-        log_message(LOG_TEST, "    Expected: %s", test->expected);
-    }
-
-    restore_vm_state(vm, saved_dsp, saved_rsp, saved_error, saved_mode);
-    if (result == TEST_FAIL) {
-        log_message(LOG_ERROR, "Test failed: %s.%s", word_name, test->name);
-        log_message(LOG_ERROR, "Input: %s", test->input);
-        log_message(LOG_ERROR, "Expected: %s", test->expected);
-        if (fail_fast != 0) {
-            exit(1);
-        }
-    }
-    return result;
+static void dump_and_die(VM *vm, const char *reason, const char *file, int line) {
+    fprintf(stderr, "\n[TEST-RUNNER] abort @ %s:%d (%s)\n",
+            file, line, reason ? reason : "no-reason");
+    vm_debug_dump_state(vm, reason ? reason : "test-failure");
+    exit(1);
 }
 
-/* Run a complete test suite for one word */
-void run_test_suite(VM *vm, const WordTestSuite *suite) {
-    log_message(LOG_TEST, "Testing word: %s", suite->word_name);
-    log_message(LOG_TEST, "------------------------");
+/* Convenience macro so call sites get file:line automatically */
+#define DIE(vm, why) dump_and_die((vm), (why), __FILE__, __LINE__)
 
-    int suite_pass = 0;
-    int suite_fail = 0;
-    int suite_skip = 0;
-    int suite_error = 0;
+/* Single gate used by fail-fast paths */
+static void fail_and_exit(VM *vm,
+                          const char *module,
+                          const char *case_name,
+                          const char *input,
+                          const char *reason)
+{
+    if (module && *module)   fprintf(stderr, "\n[TEST-RUNNER] FAIL in %s", module);
+    if (case_name && *case_name) fprintf(stderr, ".%s", case_name);
+    fputc('\n', stderr);
 
-    for (int j = 0; j < suite->test_count && suite->tests[j].name != NULL; j++) {
-        const TestCase *test = &suite->tests[j];
+    if (input && *input)   fprintf(stderr, "[TEST-RUNNER] Input: %s\n", input);
+    if (reason && *reason) fprintf(stderr, "[TEST-RUNNER] Reason: %s\n", reason);
 
-        if (!test->implemented) {
-            suite_skip++;
-            continue;
-        }
-
-        TestResult result = run_single_test(vm, suite->word_name, test);
-
-        switch (result) {
-            case TEST_PASS: suite_pass++; break;
-            case TEST_FAIL: suite_fail++; break;
-            case TEST_SKIP: suite_skip++; break;
-            case TEST_ERROR: suite_error++; break;
-        }
-    }
-
-    global_test_stats.total_tests += suite->test_count;
-    global_test_stats.total_pass += suite_pass;
-    global_test_stats.total_fail += suite_fail;
-    global_test_stats.total_skip += suite_skip;
-    global_test_stats.total_error += suite_error;
-
-    log_message(LOG_TEST, "  %s: %d passed, %d failed, %d skipped, %d errors",
-                suite->word_name, suite_pass, suite_fail, suite_skip, suite_error);
+    /* Dump VM state at point-of-failure and exit */
+    DIE(vm, reason ? reason : "assertion failed");
 }
 
-/* Print module summary */
-void print_module_summary(const char *module_name, int pass, int fail, int skip, int error) {
-    log_message(LOG_TEST, "=== %s Summary: %d passed, %d failed, %d skipped, %d errors ===",
-                module_name, pass, fail, skip, error);
-}
+/* ---------- VM state save/restore ---------- */
 
-/* VM state management */
 void save_vm_state(VM *vm, int *dsp, int *rsp, int *error, vm_mode_t *mode) {
-    *dsp = vm->dsp;
-    *rsp = vm->rsp;
+    *dsp  = vm->dsp;
+    *rsp  = vm->rsp;
     *error = vm->error;
-    *mode = vm->mode;
+    *mode  = vm->mode;
 }
 
 void restore_vm_state(VM *vm, int dsp, int rsp, int error, vm_mode_t mode) {
-    vm->dsp = dsp;
-    vm->rsp = rsp;
+    vm->dsp  = dsp;
+    vm->rsp  = rsp;
     vm->error = error;
-    vm->mode = mode;
+    vm->mode  = mode;
 }
 
-/* Assert functions */
+/* ---------- Assertions ---------- */
+
 int assert_stack_depth(VM *vm, int expected_depth) {
     if (vm->dsp == expected_depth) {
         return 1;
@@ -176,4 +107,112 @@ int assert_vm_error(VM *vm, int should_have_error) {
         log_message(LOG_ERROR, "Unexpected VM error: %d", vm->error);
     }
     return 0;
+}
+
+/* ---------- Test execution ---------- */
+
+/* Run a single test case */
+TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test) {
+    if (!test->implemented) {
+        log_test_result(word_name, TEST_SKIP);
+        return TEST_SKIP;
+    }
+
+    /* Save VM state */
+    int saved_dsp, saved_rsp, saved_error;
+    vm_mode_t saved_mode;
+    save_vm_state(vm, &saved_dsp, &saved_rsp, &saved_error, &saved_mode);
+
+    /* Clear error state */
+    vm->error = 0;
+
+    log_message(LOG_TEST, "  Running %s.%s: %s", word_name, test->name, test->input);
+
+    /* Execute the test */
+    vm_interpret(vm, test->input);
+
+    /* Check results */
+    TestResult result;
+    if (test->should_error) {
+        if (vm->error != 0) {
+            result = TEST_PASS;
+            log_message(LOG_TEST, "    Expected error occurred");
+        } else {
+            result = TEST_FAIL;
+            log_message(LOG_ERROR, "    Expected error but none occurred");
+        }
+    } else {
+        if (vm->error != 0) {
+            result = TEST_FAIL;
+            log_message(LOG_ERROR, "    Unexpected VM error: %d", vm->error);
+        } else {
+            result = TEST_PASS;
+            log_message(LOG_TEST, "    Test passed");
+        }
+    }
+
+    log_test_result(word_name, result);
+    if (result == TEST_PASS) {
+        log_message(LOG_TEST, "    Expected: %s", test->expected);
+    }
+
+    /* Restore VM baseline */
+    restore_vm_state(vm, saved_dsp, saved_rsp, saved_error, saved_mode);
+
+    if (result == TEST_FAIL) {
+        log_message(LOG_ERROR, "Test failed: %s.%s", word_name, test->name);
+        log_message(LOG_ERROR, "Input: %s", test->input);
+        log_message(LOG_ERROR, "Expected: %s", test->expected);
+
+        if (fail_fast != 0) {
+            /* Fail fast: dump and exit with real names from this scope */
+            fail_and_exit(vm, word_name, test->name, test->input, "assertion failed");
+        }
+    }
+
+    return result;
+}
+
+/* Run a complete test suite for one word */
+void run_test_suite(VM *vm, const WordTestSuite *suite) {
+    log_message(LOG_TEST, "Testing word: %s", suite->word_name);
+    log_message(LOG_TEST, "------------------------");
+
+    int suite_pass = 0;
+    int suite_fail = 0;
+    int suite_skip = 0;
+    int suite_error = 0;
+
+    for (int j = 0; j < suite->test_count && suite->tests[j].name != NULL; j++) {
+        const TestCase *test = &suite->tests[j];
+
+        if (!test->implemented) {
+            suite_skip++;
+            continue;
+        }
+
+        TestResult result = run_single_test(vm, suite->word_name, test);
+
+        switch (result) {
+            case TEST_PASS:  suite_pass++; break;
+            case TEST_FAIL:  suite_fail++; break;
+            case TEST_SKIP:  suite_skip++; break;
+            case TEST_ERROR: suite_error++; break;
+        }
+    }
+
+    global_test_stats.total_tests += suite->test_count;
+    global_test_stats.total_pass  += suite_pass;
+    global_test_stats.total_fail  += suite_fail;
+    global_test_stats.total_skip  += suite_skip;
+    global_test_stats.total_error += suite_error;
+
+    log_message(LOG_TEST, "  %s: %d passed, %d failed, %d skipped, %d errors",
+                suite->word_name, suite_pass, suite_fail, suite_skip, suite_error);
+}
+
+/* Print module summary */
+void print_module_summary(const char *module_name, int pass, int fail, int skip, int error) {
+    log_message(LOG_TEST, "=== %s Summary: %d passed, %d failed, %d skipped, %d errors ===",
+                module_name, pass, fail, skip, error);
 }

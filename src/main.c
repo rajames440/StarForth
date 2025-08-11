@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   main.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/11/25, 1:38 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -16,6 +16,7 @@
  */
 
 #include "vm.h"
+#include "vm_debug.h"
 #include "log.h"
 #include "word_registry.h"
 #include "test_runner/include/test_runner.h"
@@ -155,7 +156,9 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Failed to initialize VM\n");
         return 1;
     }
-
+    /* Install VM dump hooks (segfault/abort + manual dumps) */
+    vm_debug_set_current_vm(&vm);
+    vm_debug_install_signal_handlers();
     /* Handle benchmark mode */
     if (run_benchmark) {
         enable_benchmark_mode(benchmark_iterations);

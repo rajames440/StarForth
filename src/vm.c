@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 9:24 AM
+ Last modified - 8/11/25, 1:06 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -25,13 +25,16 @@
  */
 
 #include "../include/vm.h"
+#include "../include/vm_debug.h"
 #include "../include/log.h"
 #include "../include/io.h"
 #include "../include/word_registry.h"
 #include <string.h>
 #include <stdlib.h>
 
+/* forward decls for bootstraps defined later */
 static void execute_colon_word(VM *vm);
+static void vm_bootstrap_scr(VM *vm);
 
 unsigned vm_get_base(const VM *vm) {
     if (!vm) return 10u;
@@ -131,6 +134,7 @@ void vm_init(VM *vm) {
         vm_store_cell(vm, vm->base_addr, (cell_t)10);
     }
 
+    vm_bootstrap_scr(vm);
     /* ---------------------------------------------------- */
 
     /* Core VM state (host bookkeeping) */
@@ -148,6 +152,9 @@ void vm_init(VM *vm) {
     vm->input_pos    = 0;
 
     vm->current_executing_entry = NULL;
+
+    vm_debug_set_current_vm(vm);
+    vm_debug_install_signal_handlers();
 
     log_message(LOG_DEBUG, "VM initialized - memory=%p, here=%zu (dict_blocks=%d)",
                 (void*)vm->memory, vm->here, DICTIONARY_BLOCKS);
@@ -671,4 +678,24 @@ void vm_store_cell(struct VM *vm, vaddr_t addr, cell_t v) {
     if (!vm_addr_ok(vm, addr, sizeof(cell_t))) { vm->error = 1; return; }
     if ((addr % (vaddr_t)sizeof(cell_t)) != 0) { vm->error = 1; return; }
     memcpy(vm->memory + (size_t)addr, &v, sizeof(cell_t));
+}
+
+void vm_bootstrap_scr(VM *vm) {
+    if (!vm) return;
+
+    /* If scr_addr already looks valid, keep it. */
+    size_t idx = (size_t)vm->scr_addr;
+    if (idx >= (size_t)VM_MEMORY_SIZE) {
+        /* Allocate 1 cell at HERE for SCR */
+        idx = (size_t)vm->here;
+        if (idx >= (size_t)VM_MEMORY_SIZE) {
+            vm->error = 1; /* out of memory during bootstrap */
+            return;
+        }
+        vm->here++;
+        vm->scr_addr = (vaddr_t)idx;
+    }
+
+    /* Initialize SCR cell to 0 directly (no error side-effects). */
+    vm->memory[idx] = (cell_t)0;
 }

@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   defining_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/11/25, 12:27 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -79,34 +79,36 @@ static void defining_runtime_variable(VM *vm) {
                 (long)vm_offset, entry->name);
 }
 
-/* Runtime function for CREATE - pushes the VM memory offset */
+/* Runtime for CREATE — push this word's DFA (VM offset) stored in its header. */
 static void defining_runtime_create(VM *vm) {
-    DictEntry *entry;
-    cell_t *data_field;
-    cell_t vm_offset;
+    if (!vm) return;
 
-    /* Find the dictionary entry for this word */
-    entry = vm_dictionary_find_latest_by_func(vm, defining_runtime_create);
+    /* This is the word that's actually executing — do NOT search by func. */
+    DictEntry *entry = vm->current_executing_entry;
     if (entry == NULL) {
-        log_message(LOG_ERROR, "CREATE runtime: Cannot find dictionary entry");
+        log_message(LOG_ERROR, "CREATE runtime: No current executing entry");
         vm->error = 1;
         return;
     }
 
-    /* Get the data field containing the VM memory offset */
-    data_field = vm_dictionary_get_data_field(entry);
+    /* Your headers store a cell_t data field immediately after the name. */
+    cell_t *data_field = vm_dictionary_get_data_field(entry);
     if (data_field == NULL) {
         log_message(LOG_ERROR, "CREATE runtime: Cannot access data field");
         vm->error = 1;
         return;
     }
 
-    vm_offset = *data_field;
-    vm_push(vm, vm_offset);
+    cell_t dfa = *data_field;          /* VM byte offset (vaddr_t encoded as cell_t) */
 
-    log_message(LOG_DEBUG, "CREATE runtime: Pushed VM offset %ld for %s",
-                (long)vm_offset, entry->name);
+    /* Optional: cheap sanity if you want to be strict */
+    /* if (!vm_addr_ok(vm, (vaddr_t)dfa, sizeof(cell_t))) { vm->error = 1; return; } */
+
+    vm_push(vm, dfa);                   /* Push DFA as a VM address cell */
+    log_message(LOG_DEBUG, "CREATE runtime: Pushed DFA %ld for %s",
+                (long)dfa, entry->name);
 }
+
 
 /* : ( -- ) Start colon definition */
 void defining_word_colon(VM *vm) {
@@ -142,15 +144,16 @@ void defining_word_semicolon(VM *vm) {
     log_message(LOG_DEBUG, "; Completed definition");
 }
 
-/* CREATE ( -- ) Create a new dictionary entry */
+/* CREATE ( "name" -- ) — define header; runtime later pushes DFA (= aligned HERE). */
 void defining_word_create(VM *vm) {
-    char word_name[64];
-    int name_len;
+    char       word_name[64];
+    int        name_len;
     DictEntry *entry;
-    cell_t *data_field;
-    cell_t vm_offset;
+    cell_t    *data_field;
 
-    /* Parse the word name */
+    if (!vm) return;
+
+    /* Parse the new word's name */
     name_len = vm_parse_word(vm, word_name, sizeof(word_name));
     if (name_len <= 0) {
         log_message(LOG_ERROR, "CREATE: Missing word name");
@@ -158,19 +161,11 @@ void defining_word_create(VM *vm) {
         return;
     }
 
-    /* Allocate space in VM memory for the data field */
-    vm_offset = vm->here;
-    void *allocated = vm_allot(vm, sizeof(cell_t));
-    if (allocated == NULL) {
-        log_message(LOG_ERROR, "CREATE: Out of memory");
-        vm->error = 1;
-        return;
-    }
+    /* FORTH-79: CREATE does NOT allocate data. It captures cell-aligned HERE. */
+    vm_align(vm);                  /* ensure subsequent ',' will be cell-aligned */
+    cell_t dfa = (cell_t)vm->here; /* VM byte offset; this is the data field address */
 
-    /* Initialize the allocated space to zero */
-    *(cell_t*)allocated = 0;
-
-    /* Create dictionary entry */
+    /* Build the dictionary header with CREATE runtime */
     entry = vm_create_word(vm, word_name, (size_t)name_len, defining_runtime_create);
     if (entry == NULL) {
         log_message(LOG_ERROR, "CREATE: Failed to create dictionary entry");
@@ -178,19 +173,19 @@ void defining_word_create(VM *vm) {
         return;
     }
 
-    /* Store the VM memory offset in the data field */
+    /* Stash DFA in the header's data field (host-side cell holding VM offset) */
     data_field = vm_dictionary_get_data_field(entry);
     if (data_field == NULL) {
         log_message(LOG_ERROR, "CREATE: Cannot access data field");
         vm->error = 1;
         return;
     }
+    *data_field = dfa;
 
-    *data_field = vm_offset;
-
-    log_message(LOG_DEBUG, "CREATE: Created '%.*s' with VM offset %ld",
-                name_len, word_name, (long)vm_offset);
+    log_message(LOG_DEBUG, "CREATE: Created '%.*s' with DFA=%ld (HERE=%ld)",
+                name_len, word_name, (long)dfa, (long)vm->here);
 }
+
 
 /* CONSTANT ( n -- ) Create a constant */
 void defining_word_constant(VM *vm) {
