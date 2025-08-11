@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   defining_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 12:27 PM
+ Last modified - 8/11/25, 5:15 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -15,427 +15,468 @@
 
  */
 
-/* defining_words.c - FORTH-79 Defining Words */
+/*
+
+                                 ***   StarForth   ***
+  defining_words.c - FORTH-79 Standard and ANSI C99 ONLY
+  Last modified - 8/11/25
+  (c) 2025 Robert A. James — CC0 1.0
+
+*/
+
 #include "include/defining_words.h"
+#include "../../include/vm.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+
 #include <string.h>
+#include <stdlib.h>   /* malloc/free */
 
-/* Runtime function for CONSTANT - pushes the stored value */
+/* ───── Forward declarations so registration sees these symbols ───── */
+static void defining_runtime_create(VM *vm);
+static void defining_word_colon(VM *vm);
+static void defining_word_semicolon(VM *vm);
+
+/* ───────────────────────────── Runtimes ───────────────────────────── */
+
+/* CONSTANT runtime: ( -- n )  Push stored value from header DF cell */
 static void defining_runtime_constant(VM *vm) {
-    DictEntry *entry;
-    cell_t *data_field;
-    cell_t value;
+    if (!vm) return;
 
-    /* Find the dictionary entry for this word */
-    entry = vm_dictionary_find_latest_by_func(vm, defining_runtime_constant);
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "CONSTANT runtime: Cannot find dictionary entry");
+    DictEntry *entry = vm->current_executing_entry;
+    if (!entry) {
+        log_message(LOG_ERROR, "CONSTANT runtime: no current entry");
         vm->error = 1;
         return;
     }
 
-    /* Get the data field containing the constant value */
-    data_field = vm_dictionary_get_data_field(entry);
-    if (data_field == NULL) {
-        log_message(LOG_ERROR, "CONSTANT runtime: Cannot access data field");
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) {
+        log_message(LOG_ERROR, "CONSTANT runtime: no data field");
         vm->error = 1;
         return;
     }
 
-    value = *data_field;
-    vm_push(vm, value);
-
-    log_message(LOG_DEBUG, "CONSTANT runtime: Pushed value %ld from %s",
-                (long)value, entry->name);
+    vm_push(vm, *df);
+    log_message(LOG_DEBUG, "CONSTANT runtime: pushed %ld for %.*s",
+                (long)*df, entry->name_len, entry->name);
 }
 
-/* Runtime function for VARIABLE - pushes the VM memory offset */
+/* VARIABLE runtime: ( -- addr )  Push VM offset stored in header DF cell */
 static void defining_runtime_variable(VM *vm) {
-    DictEntry *entry;
-    cell_t *data_field;
-    cell_t vm_offset;
+    if (!vm) return;
 
-    /* Find the dictionary entry for this word */
-    entry = vm_dictionary_find_latest_by_func(vm, defining_runtime_variable);
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "VARIABLE runtime: Cannot find dictionary entry");
+    DictEntry *entry = vm->current_executing_entry;
+    if (!entry) {
+        log_message(LOG_ERROR, "VARIABLE runtime: no current entry");
         vm->error = 1;
         return;
     }
 
-    /* Get the data field containing the VM memory offset */
-    data_field = vm_dictionary_get_data_field(entry);
-    if (data_field == NULL) {
-        log_message(LOG_ERROR, "VARIABLE runtime: Cannot access data field");
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) {
+        log_message(LOG_ERROR, "VARIABLE runtime: no data field");
         vm->error = 1;
         return;
     }
 
-    vm_offset = *data_field;
-    vm_push(vm, vm_offset);
-
-    log_message(LOG_DEBUG, "VARIABLE runtime: Pushed VM offset %ld for %s",
-                (long)vm_offset, entry->name);
+    vm_push(vm, *df);
+    log_message(LOG_DEBUG, "VARIABLE runtime: pushed VM addr %ld for %.*s",
+                (long)*df, entry->name_len, entry->name);
 }
 
-/* Runtime for CREATE — push this word's DFA (VM offset) stored in its header. */
+/* CREATE runtime: ( -- addr )  Push DFA (VM byte offset) captured at CREATE */
 static void defining_runtime_create(VM *vm) {
     if (!vm) return;
 
-    /* This is the word that's actually executing — do NOT search by func. */
     DictEntry *entry = vm->current_executing_entry;
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "CREATE runtime: No current executing entry");
+    if (!entry) {
+        log_message(LOG_ERROR, "CREATE runtime: no current entry");
         vm->error = 1;
         return;
     }
 
-    /* Your headers store a cell_t data field immediately after the name. */
-    cell_t *data_field = vm_dictionary_get_data_field(entry);
-    if (data_field == NULL) {
-        log_message(LOG_ERROR, "CREATE runtime: Cannot access data field");
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) {
+        log_message(LOG_ERROR, "CREATE runtime: no data field");
         vm->error = 1;
         return;
     }
 
-    cell_t dfa = *data_field;          /* VM byte offset (vaddr_t encoded as cell_t) */
+    vaddr_t dfa = (vaddr_t)(uint64_t)(*df);
+    if (!vm_addr_ok(vm, dfa, sizeof(cell_t))) {
+        log_message(LOG_ERROR, "CREATE runtime: bad DFA=%ld for %.*s",
+                    (long)dfa, entry->name_len, entry->name);
+        vm->error = 1;
+        return;
+    }
 
-    /* Optional: cheap sanity if you want to be strict */
-    /* if (!vm_addr_ok(vm, (vaddr_t)dfa, sizeof(cell_t))) { vm->error = 1; return; } */
-
-    vm_push(vm, dfa);                   /* Push DFA as a VM address cell */
-    log_message(LOG_DEBUG, "CREATE runtime: Pushed DFA %ld for %s",
-                (long)dfa, entry->name);
+    vm_push(vm, CELL(dfa));
+    log_message(LOG_DEBUG, "CREATE runtime: pushed DFA %ld for %.*s",
+                (long)dfa, entry->name_len, entry->name);
 }
 
+/* ───────────────────────────── Defining words ─────────────────────── */
 
-/* : ( -- ) Start colon definition */
-void defining_word_colon(VM *vm) {
-    char word_name[64];
-    int name_len;
+/* CREATE ( "name" -- )  Forth-79: does NOT allocate data. Captures cell-aligned HERE as DFA. */
+void defining_word_create(VM *vm) {
+    if (!vm) return;
 
-    /* Parse the word name */
-    name_len = vm_parse_word(vm, word_name, sizeof(word_name));
-    if (name_len <= 0) {
-        log_message(LOG_ERROR, ": Missing word name");
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) {
+        log_message(LOG_ERROR, "CREATE: missing name");
         vm->error = 1;
         return;
     }
 
-    /* Enter compile mode */
-    vm_enter_compile_mode(vm, word_name, (size_t)name_len);
+    DictEntry *entry = vm_create_word(vm, namebuf, (size_t)nlen, defining_runtime_create);
+    if (!entry) {
+        log_message(LOG_ERROR, "CREATE: vm_create_word failed");
+        vm->error = 1;
+        return;
+    }
 
-    log_message(LOG_DEBUG, ": Started definition of '%.*s'", name_len, word_name);
+    /* Align HERE for cell data, then record DFA */
+    vm_align(vm);
+    vaddr_t dfa = (vaddr_t)vm->here;
+
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) {
+        log_message(LOG_ERROR, "CREATE: no data field in header");
+        vm->error = 1;
+        return;
+    }
+    *df = (cell_t)(int64_t)dfa;
+
+    log_message(LOG_DEBUG, "CREATE: Created '%.*s' with DFA=%ld (HERE=%ld)",
+                nlen, namebuf, (long)dfa, (long)vm->here);
 }
 
-/* ; ( -- ) End colon definition (immediate) */
-void defining_word_semicolon(VM *vm) {
+/* :  ( "name" -- )  begin colon definition */
+static void defining_word_colon(VM *vm) {
+    if (!vm) return;
+
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) {
+        log_message(LOG_ERROR, ": missing name");
+        vm->error = 1;
+        return;
+    }
+
+    vm_enter_compile_mode(vm, namebuf, (size_t)nlen);
+    log_message(LOG_DEBUG, ": Started definition of '%.*s'", nlen, namebuf);
+}
+
+/* ;  ( -- )  end colon definition — IMMEDIATE */
+static void defining_word_semicolon(VM *vm) {
+    if (!vm) return;
     if (vm->mode != MODE_COMPILE) {
-        log_message(LOG_ERROR, "; Not in compile mode");
+        log_message(LOG_ERROR, "; used outside compile mode");
         vm->error = 1;
         return;
     }
-
-    /* Compile EXIT and exit compile mode */
-    vm_compile_exit(vm);
+    /* vm_exit_compile_mode compiles EXIT in this codebase */
     vm_exit_compile_mode(vm);
-
     log_message(LOG_DEBUG, "; Completed definition");
 }
 
-/* CREATE ( "name" -- ) — define header; runtime later pushes DFA (= aligned HERE). */
-void defining_word_create(VM *vm) {
-    char       word_name[64];
-    int        name_len;
-    DictEntry *entry;
-    cell_t    *data_field;
-
+/* CONSTANT ( n "name" -- ) */
+void defining_word_constant(VM *vm) {
     if (!vm) return;
 
-    /* Parse the new word's name */
-    name_len = vm_parse_word(vm, word_name, sizeof(word_name));
-    if (name_len <= 0) {
-        log_message(LOG_ERROR, "CREATE: Missing word name");
-        vm->error = 1;
-        return;
-    }
-
-    /* FORTH-79: CREATE does NOT allocate data. It captures cell-aligned HERE. */
-    vm_align(vm);                  /* ensure subsequent ',' will be cell-aligned */
-    cell_t dfa = (cell_t)vm->here; /* VM byte offset; this is the data field address */
-
-    /* Build the dictionary header with CREATE runtime */
-    entry = vm_create_word(vm, word_name, (size_t)name_len, defining_runtime_create);
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "CREATE: Failed to create dictionary entry");
-        vm->error = 1;
-        return;
-    }
-
-    /* Stash DFA in the header's data field (host-side cell holding VM offset) */
-    data_field = vm_dictionary_get_data_field(entry);
-    if (data_field == NULL) {
-        log_message(LOG_ERROR, "CREATE: Cannot access data field");
-        vm->error = 1;
-        return;
-    }
-    *data_field = dfa;
-
-    log_message(LOG_DEBUG, "CREATE: Created '%.*s' with DFA=%ld (HERE=%ld)",
-                name_len, word_name, (long)dfa, (long)vm->here);
-}
-
-
-/* CONSTANT ( n -- ) Create a constant */
-void defining_word_constant(VM *vm) {
-    char word_name[64];
-    int name_len;
-    cell_t value;
-    DictEntry *entry;
-    cell_t *data_field;
-
     if (vm->dsp < 0) {
-        log_message(LOG_ERROR, "CONSTANT: Data stack underflow");
+        log_message(LOG_ERROR, "CONSTANT: stack underflow");
+        vm->error = 1;
+        return;
+    }
+    cell_t value = vm_pop(vm);
+
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) {
+        log_message(LOG_ERROR, "CONSTANT: missing name");
         vm->error = 1;
         return;
     }
 
-    /* Get the constant value */
-    value = vm_pop(vm);
+    DictEntry *entry = vm_create_word(vm, namebuf, (size_t)nlen, defining_runtime_constant);
+    if (!entry) { vm->error = 1; return; }
 
-    /* Parse the word name */
-    name_len = vm_parse_word(vm, word_name, sizeof(word_name));
-    if (name_len <= 0) {
-        log_message(LOG_ERROR, "CONSTANT: Missing word name");
-        vm->error = 1;
-        return;
-    }
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) { vm->error = 1; return; }
 
-    log_message(LOG_DEBUG, "CONSTANT: Creating '%.*s' = %ld",
-                name_len, word_name, (long)value);
-
-    /* Create dictionary entry */
-    entry = vm_create_word(vm, word_name, (size_t)name_len, defining_runtime_constant);
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "CONSTANT: Failed to create dictionary entry");
-        vm->error = 1;
-        return;
-    }
-
-    /* Store the constant value in the data field */
-    data_field = vm_dictionary_get_data_field(entry);
-    if (data_field == NULL) {
-        log_message(LOG_ERROR, "CONSTANT: Cannot access data field");
-        vm->error = 1;
-        return;
-    }
-
-    *data_field = value;
-
-    log_message(LOG_DEBUG, "CONSTANT: Created '%.*s' with value %ld at %p",
-                name_len, word_name, (long)value, (void*)data_field);
+    *df = value;
+    log_message(LOG_DEBUG, "CONSTANT: '%.*s' = %ld", nlen, namebuf, (long)value);
 }
 
-/* VARIABLE ( -- ) Create a variable */
+/* VARIABLE ( "name" -- )  allocate one cell in VM and store its addr in header DF */
 void defining_word_variable(VM *vm) {
-    char word_name[64];
-    int name_len;
-    DictEntry *entry;
-    cell_t *data_field;
-    cell_t vm_offset;
+    if (!vm) return;
 
-    /* Parse the word name */
-    name_len = vm_parse_word(vm, word_name, sizeof(word_name));
-    if (name_len <= 0) {
-        log_message(LOG_ERROR, "VARIABLE: Missing word name");
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) {
+        log_message(LOG_ERROR, "VARIABLE: missing name");
         vm->error = 1;
         return;
     }
 
-    log_message(LOG_DEBUG, "VARIABLE: Creating '%.*s'", name_len, word_name);
+    /* Allocate one VM cell for the variable and init to 0 */
+    vaddr_t addr = (vaddr_t)vm->here;
+    void *p = vm_allot(vm, sizeof(cell_t));
+    if (!p) { vm->error = 1; return; }
+    *(cell_t*)p = 0;
 
-    /* Allocate space in VM memory for the variable */
-    vm_offset = vm->here;
-    void *allocated = vm_allot(vm, sizeof(cell_t));
-    if (allocated == NULL) {
-        log_message(LOG_ERROR, "VARIABLE: Out of memory");
-        vm->error = 1;
-        return;
-    }
+    DictEntry *entry = vm_create_word(vm, namebuf, (size_t)nlen, defining_runtime_variable);
+    if (!entry) { vm->error = 1; return; }
 
-    /* Initialize the variable to zero */
-    *(cell_t*)allocated = 0;
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) { vm->error = 1; return; }
 
-    /* Create dictionary entry */
-    entry = vm_create_word(vm, word_name, (size_t)name_len, defining_runtime_variable);
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "VARIABLE: Failed to create dictionary entry");
-        vm->error = 1;
-        return;
-    }
-
-    /* Store the VM memory offset in the data field */
-    data_field = vm_dictionary_get_data_field(entry);
-    if (data_field == NULL) {
-        log_message(LOG_ERROR, "VARIABLE: Cannot access data field");
-        vm->error = 1;
-        return;
-    }
-
-    *data_field = vm_offset;
-
-    log_message(LOG_DEBUG, "VARIABLE: Created '%.*s' at VM offset %ld",
-                name_len, word_name, (long)vm_offset);
+    *df = (cell_t)(int64_t)addr;
+    log_message(LOG_DEBUG, "VARIABLE: '%.*s' at VM addr %ld", nlen, namebuf, (long)addr);
 }
 
-/* IMMEDIATE ( -- ) Mark last word as immediate */
-void defining_word_immediate(VM *vm) {
-    if (!vm || !vm->latest) {
-        vm->error = 1;
-        log_message(LOG_ERROR, "IMMEDIATE: no latest definition to mark");
-        return;
-    }
-    vm_make_immediate(vm);
-    log_message(LOG_DEBUG, "IMMEDIATE: Marked last word as immediate");
-}
-
-/* [ ( -- ) Enter interpret mode (immediate) */
+/* [  ( -- )  enter interpret state — IMMEDIATE */
 void defining_word_left_bracket(VM *vm) {
-    /* Exit compile mode: STATE := 0, host mode -> interpret */
+    if (!vm) return;
     vm_store_cell(vm, vm->state_addr, 0);
     vm->mode = MODE_INTERPRET;
-    log_message(LOG_DEBUG, "[: Entered interpret mode");
+    log_message(LOG_DEBUG, "[: interpret mode");
 }
 
-/* [ ( -- ) Exit interpret mode (immediate) */
+/* ]  ( -- )  enter compile state — IMMEDIATE */
 void defining_word_right_bracket(VM *vm) {
-    /* Enter compile mode: STATE := -1 (VM cell) and host mode -> compile */
+    if (!vm) return;
     vm_store_cell(vm, vm->state_addr, (cell_t)-1);
     vm->mode = MODE_COMPILE;
-    log_message(LOG_DEBUG, "]: Entered compile mode (STATE=-1)");
+    log_message(LOG_DEBUG, "]: compile mode");
 }
 
-
-/* STATE ( -- addr )  Forth-79 variable: compile/interpret state
- * Returns the VM address (byte offset) of the STATE cell (0=interpret, -1=compile).
- */
+/* STATE ( -- addr )  push VM addr of STATE cell */
 void defining_word_state(VM *vm) {
+    if (!vm) return;
     vm_push(vm, (cell_t)vm->state_addr);
 }
 
-/* COMPILE ( -- ) Compile next word (obsolete) */
+/* COMPILE ( "word" -- ) — IMMEDIATE (obsolete, but present) */
 void defining_word_compile(VM *vm) {
-    char word_name[64];
-    int name_len;
-    DictEntry *entry;
+    if (!vm) return;
 
-    /* Parse the next word */
-    name_len = vm_parse_word(vm, word_name, sizeof(word_name));
-    if (name_len <= 0) {
-        log_message(LOG_ERROR, "COMPILE: Missing word name");
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) {
+        log_message(LOG_ERROR, "COMPILE: missing word");
         vm->error = 1;
         return;
     }
 
-    /* Find the word */
-    entry = vm_find_word(vm, word_name, (size_t)name_len);
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "COMPILE: Word '%.*s' not found", name_len, word_name);
+    DictEntry *entry = vm_find_word(vm, namebuf, (size_t)nlen);
+    if (!entry) {
+        log_message(LOG_ERROR, "COMPILE: '%.*s' not found", nlen, namebuf);
         vm->error = 1;
         return;
     }
 
-    /* Compile a call to the word */
-    vm_compile_call(vm, entry->func);
-
-    log_message(LOG_DEBUG, "COMPILE: Compiled call to '%.*s'", name_len, word_name);
+    vm_compile_word(vm, entry);
+    log_message(LOG_DEBUG, "COMPILE: compiled '%.*s'", nlen, namebuf);
 }
 
-/* [COMPILE] ( -- ) Compile next word even if immediate */
+/* [COMPILE] ( "word" -- ) — IMMEDIATE: compile even if the word is IMMEDIATE */
 void defining_word_bracket_compile(VM *vm) {
-    defining_word_compile(vm);  /* Same implementation for now */
+    /* For now, same as COMPILE per your codebase; refine later if needed */
+    defining_word_compile(vm);
 }
 
-/* LITERAL ( n -- ) Compile literal value */
+/* LITERAL ( n -- ) — IMMEDIATE: compile a literal */
 void defining_word_literal(VM *vm) {
-    cell_t value;
-
+    if (!vm) return;
     if (vm->dsp < 0) {
-        log_message(LOG_ERROR, "LITERAL: Data stack underflow");
+        log_message(LOG_ERROR, "LITERAL: stack underflow");
         vm->error = 1;
         return;
     }
-
-    value = vm_pop(vm);
-    vm_compile_literal(vm, value);
-
-    log_message(LOG_DEBUG, "LITERAL: Compiled literal %ld", (long)value);
+    cell_t v = vm_pop(vm);
+    vm_compile_literal(vm, v);
+    log_message(LOG_DEBUG, "LITERAL: compiled %ld", (long)v);
 }
 
-/* FORGET ( -- ) Remove word and all subsequent definitions */
-void defining_word_forget(VM *vm) {
-    char word_name[64];
-    int name_len;
-    DictEntry *entry;
+/* FORGET ( "name" -- )  remove target and newer words; rewind HERE to target DFA */
+void dictionary_word_forget(VM *vm) {
+    if (!vm) return;
 
-    /* Parse the word name */
-    name_len = vm_parse_word(vm, word_name, sizeof(word_name));
-    if (name_len <= 0) {
-        log_message(LOG_ERROR, "FORGET: Missing word name");
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) {
+        log_message(LOG_ERROR, "FORGET: missing name");
         vm->error = 1;
         return;
     }
 
-    /* Find the word */
-    entry = vm_find_word(vm, word_name, (size_t)name_len);
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "FORGET: Word '%.*s' not found", name_len, word_name);
+    /* Find target and its previous entry */
+    DictEntry *prev = NULL, *e = vm->latest;
+    DictEntry *target = NULL, *target_prev = NULL;
+    while (e) {
+        if (!(e->flags & WORD_HIDDEN) &&
+            e->name_len == (uint8_t)nlen &&
+            memcmp(e->name, namebuf, (size_t)nlen) == 0) {
+            target = e;
+            target_prev = prev;
+            break;
+        }
+        prev = e;
+        e = e->link;
+    }
+    if (!target) {
+        log_message(LOG_ERROR, "FORGET: Unknown word '%.*s'", nlen, namebuf);
         vm->error = 1;
         return;
     }
 
-    /* Reset latest to the previous entry */
-    vm->latest = entry->link;
+    /* Ensure target is NEWER than the fence (don’t allow nuking core words) */
+    int allowed = 0;
+    for (e = vm->latest; e; e = e->link) {
+        if (e == target) { allowed = 1; break; }
+        if (e == vm->dict_fence_latest) break; /* hit fence before target */
+    }
+    if (!allowed) {
+        log_message(LOG_ERROR, "FORGET: '%.*s' is protected (at or below fence)", nlen, namebuf);
+        vm->error = 1;
+        return;
+    }
 
-    log_message(LOG_DEBUG, "FORGET: Removed '%.*s' and subsequent definitions",
-                name_len, word_name);
+    /* Compute new HERE from target’s DFA (bounded by fence HERE) */
+    vaddr_t new_here = (vaddr_t)vm->here;
+    cell_t *df = vm_dictionary_get_data_field(target);
+    if (df) {
+        vaddr_t dfa = (vaddr_t)(uint64_t)(*df);
+        if (vm_addr_ok(vm, dfa, 0)) {
+            /* Never move HERE below the fence */
+            vaddr_t fence_here = (vaddr_t)vm->dict_fence_here;
+            new_here = (dfa < fence_here) ? fence_here : dfa;
+        }
+    } else {
+        /* No DF — at least don’t cross the fence */
+        new_here = (vaddr_t)vm->dict_fence_here;
+    }
+
+    /* Free headers from latest down to and including target, stopping before fence */
+    e = vm->latest;
+    while (e) {
+        DictEntry *next = e->link;
+        free(e);
+        if (e == target) break;
+        if (e == vm->dict_fence_latest) break; /* paranoia */
+        e = next;
+    }
+
+    /* Relink latest; never past fence */
+    vm->latest = (target_prev ? target_prev : vm->dict_fence_latest);
+    vm->here   = (size_t)new_here;
+
+    log_message(LOG_DEBUG, "FORGET: forgot '%.*s'; HERE=%ld (fence HERE=%ld)",
+                nlen, namebuf, (long)vm->here, (long)vm->dict_fence_here);
 }
 
-/* DOES> ( -- ) Modify behavior of most recent CREATE */
+
+/* DOES> — IMMEDIATE (stub for now) */
 void defining_word_does(VM *vm) {
-    /* This is a complex word that requires runtime code generation */
-    /* For now, just log that it's not implemented */
-    log_message(LOG_WARN, "DOES>: Not yet implemented");
+    log_message(LOG_WARN, "DOES>: not implemented yet");
     vm->error = 1;
 }
 
-/* Register all defining words */
+/* IMMEDIATE ( -- ) mark latest word immediate — IMMEDIATE itself */
+void defining_word_immediate(VM *vm) {
+    if (!vm) return;
+    if (!vm->latest) {
+        log_message(LOG_ERROR, "IMMEDIATE: no latest");
+        vm->error = 1;
+        return;
+    }
+    vm->latest->flags |= WORD_IMMEDIATE;
+    log_message(LOG_DEBUG, "IMMEDIATE: marked '%.*s' immediate",
+                (int)vm->latest->name_len, vm->latest->name);
+}
+
+/* LIT runtime: ( -- n )
+   Fetch next cell from threaded code via the return IP on R-stack.
+   Our execute loop does: ip++ ; R>push(ip) ; call word ; ip := R>pop()
+   So inside LIT, we:
+     - peek the top return address (current ip),
+     - read *ip as the literal,
+     - push it to data stack,
+     - increment ip and write it back on the R-stack (so the caller resumes after the literal).
+*/
+static void defining_runtime_lit(VM *vm) {
+    if (!vm) return;
+    if (vm->rsp < 0) {
+        log_message(LOG_ERROR, "LIT: return stack underflow");
+        vm->error = 1;
+        return;
+    }
+
+    cell_t *rip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];  /* peek */
+    if (!rip) {
+        log_message(LOG_ERROR, "LIT: null IP");
+        vm->error = 1;
+        return;
+    }
+
+    cell_t value = *rip;   /* read literal cell */
+    vm_push(vm, value);
+
+    rip++;                 /* advance IP to after literal */
+    vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)rip;  /* write-back */
+    log_message(LOG_DEBUG, "LIT: pushed %ld", (long)value);
+}
+
+
+/* ───────────────────────────── Registration ───────────────────────── */
+
 void register_defining_words(VM *vm) {
     log_message(LOG_INFO, "Registering defining words...");
 
-    /* Core defining words */
+    /* Core colon pair */
     register_word(vm, ":", defining_word_colon);
     register_word(vm, ";", defining_word_semicolon);
-    vm_make_immediate(vm);
-    register_word(vm, "CREATE", defining_word_create);
-    register_word(vm, "CONSTANT", defining_word_constant);
+    vm_make_immediate(vm);                   /* ; is IMMEDIATE */
+
+    /* CREATE / VARIABLE / CONSTANT */
+    register_word(vm, "CREATE",   defining_word_create);
     register_word(vm, "VARIABLE", defining_word_variable);
-    register_word(vm, "STATE", defining_word_state);
-    register_word(vm, "[", defining_word_left_bracket);
-    vm_make_immediate(vm);
-    register_word(vm, "]", defining_word_right_bracket);
-    vm_make_immediate(vm);
+    register_word(vm, "CONSTANT", defining_word_constant);
+
+    /* IMMEDIATE (make IMMEDIATE itself immediate) */
     register_word(vm, "IMMEDIATE", defining_word_immediate);
     vm_make_immediate(vm);
-    register_word(vm, "COMPILE", defining_word_compile);
+
+    /* STATE and mode switchers */
+    register_word(vm, "STATE", defining_word_state);
+    register_word(vm, "[",     defining_word_left_bracket);
     vm_make_immediate(vm);
-    register_word(vm, "[COMPILE]", defining_word_bracket_compile);
+    register_word(vm, "]",     defining_word_right_bracket);
     vm_make_immediate(vm);
-    register_word(vm, "LITERAL", defining_word_literal);
+
+    /* Dictionary management */
+    register_word(vm, "FORGET",  dictionary_word_forget);
+
+    /* Compile helpers — immediate */
+    register_word(vm, "COMPILE",    defining_word_compile);
     vm_make_immediate(vm);
+    register_word(vm, "[COMPILE]",  defining_word_bracket_compile);
+    vm_make_immediate(vm);
+    /* LIT */
+    register_word(vm, "LIT", defining_runtime_lit);
+
+    register_word(vm, "LITERAL",    defining_word_literal);
+    vm_make_immediate(vm);
+
+    /* DOES> — immediate (stub) */
     register_word(vm, "DOES>", defining_word_does);
     vm_make_immediate(vm);
+
 
     log_message(LOG_INFO, "Defining words registered.");
 }

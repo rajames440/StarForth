@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 1:06 PM
+ Last modified - 8/11/25, 5:40 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -160,6 +160,9 @@ void vm_init(VM *vm) {
                 (void*)vm->memory, vm->here, DICTIONARY_BLOCKS);
 
     register_forth79_words(vm);
+
+    vm->dict_fence_latest = vm->latest;
+    vm->dict_fence_here   = vm->here;
 }
 
 /**
@@ -283,21 +286,30 @@ void vm_enter_compile_mode(VM *vm, const char *name, size_t len) {
     vm->mode = MODE_COMPILE;
     vm->state_var = -1;  /* FORTH-79 uses -1 for true/compile mode */
 
-    /* Store word name being compiled */
-    if (len > WORD_NAME_MAX) {
-        len = WORD_NAME_MAX;
-    }
+    if (len > WORD_NAME_MAX) len = WORD_NAME_MAX;
     memcpy(vm->current_word_name, name, len);
     vm->current_word_name[len] = '\0';
 
-    /* Create dictionary entry (initially smudged) */
+    /* Create dictionary entry (smudged) for colon word */
     vm->compiling_word = vm_create_word(vm, name, len, execute_colon_word);
     if (vm->compiling_word != NULL) {
-        vm->compiling_word->flags |= WORD_SMUDGED;  /* Mark as being compiled */
+        vm->compiling_word->flags |= WORD_SMUDGED;
     }
 
-    log_message(LOG_DEBUG, ": Started definition of '%s'", vm->current_word_name);
+    /* Align and record DFA = HERE (VM byte offset) for the threaded body */
+    vm_align(vm);
+    cell_t *df = vm_dictionary_get_data_field(vm->compiling_word);
+    if (!df) {
+        log_message(LOG_ERROR, ": failed to get DF cell");
+        vm->error = 1;
+        return;
+    }
+    *df = (cell_t)(int64_t)((vaddr_t)vm->here);
+
+    log_message(LOG_DEBUG, ": Started definition of '%s' (body at HERE=%zu)",
+                vm->current_word_name, vm->here);
 }
+
 
 /**
  * @brief Compile a word reference
@@ -308,22 +320,17 @@ void vm_enter_compile_mode(VM *vm, const char *name, size_t len) {
  * @param entry Dictionary entry of word to compile
  */
 void vm_compile_word(VM *vm, DictEntry *entry) {
-    cell_t *addr;
-
-    if (vm->mode != MODE_COMPILE) {
-        return;
-    }
+    if (vm->mode != MODE_COMPILE) return;
+    if (!entry) { vm->error = 1; return; }
 
     vm_align(vm);
-    addr = (cell_t*)vm_allot(vm, sizeof(cell_t));
-    if (addr == NULL) {
-        return;
-    }
+    cell_t *slot = (cell_t*)vm_allot(vm, sizeof(cell_t));
+    if (!slot) { vm->error = 1; return; }
 
-    // 🔥 CORRECT: Store the word’s function pointer
-    *addr = (cell_t)(uintptr_t)(entry->func);
+    /* Store the dictionary entry pointer in threaded code */
+    *slot = (cell_t)(uintptr_t)entry;
 
-    log_message(LOG_DEBUG, "vm_compile_word: Compiled function pointer for '%.*s'",
+    log_message(LOG_DEBUG, "vm_compile_word: Compiled entry ptr for '%.*s'",
                 (int)entry->name_len, entry->name);
 }
 
@@ -467,64 +474,57 @@ void vm_exit_compile_mode(VM *vm) {
  * @param vm Pointer to VM structure
  */
 static void execute_colon_word(VM *vm) {
-    DictEntry *entry = vm->current_executing_entry;
-    cell_t *body, *ip, *old_ip;
+    if (!vm) { return; }
 
-    if (entry == NULL) {
+    DictEntry *entry = vm->current_executing_entry;
+    if (!entry) {
         log_message(LOG_ERROR, "execute_colon_word: no current entry");
         vm->error = 1;
         return;
     }
 
-    /* Get body of word (after the dictionary entry) */
-    body = vm_dictionary_get_data_field(entry);
-    if (body == NULL) {
-        log_message(LOG_ERROR, "execute_colon_word: no body");
+    /* DF cell holds the VM offset of the threaded body start */
+    cell_t *df_cell = vm_dictionary_get_data_field(entry);
+    if (!df_cell) {
+        log_message(LOG_ERROR, "execute_colon_word: no data field");
+        vm->error = 1;
+        return;
+    }
+    vaddr_t body_va = (vaddr_t)(uint64_t)(*df_cell);
+    cell_t *ip = (cell_t*)vm_ptr(vm, body_va);
+    if (!ip) {
+        log_message(LOG_ERROR, "execute_colon_word: bad body VA=%ld", (long)body_va);
         vm->error = 1;
         return;
     }
 
-    log_message(LOG_DEBUG, "execute_colon_word: Executing '%.*s' body at %p",
-                (int)entry->name_len, entry->name, (void*)body);
+    log_message(LOG_DEBUG, "execute_colon_word: '%.*s' body @ VA=%ld host=%p",
+                (int)entry->name_len, entry->name, (long)body_va, (void*)ip);
 
-    /* Save current IP on return stack */
-    if (vm->rsp >= 0) {
-        old_ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
-        vm_rpush(vm, (cell_t)(uintptr_t)old_ip);
-    }
+    /* Inner interpreter: each cell is a DictEntry* compiled by vm_compile_word */
+    while (!vm->error) {
+        DictEntry *w = (DictEntry*)(uintptr_t)(*ip);
+        if (!w) break;                 /* optional 0 terminator support */
 
-    /* Set IP to start of word body */
-    ip = body;
-
-    /* Execute threaded code */
-    while (ip != NULL && !vm->error) {
-        DictEntry *word_to_execute = (DictEntry*)(uintptr_t)*ip;
-
-        if (word_to_execute == NULL) {
-            break;
-        }
-
-        log_message(LOG_DEBUG, "execute_colon_word: Executing '%.*s'",
-                    (int)word_to_execute->name_len, word_to_execute->name);
-
-        /* Save IP for next instruction */
+        /* Advance IP and save on return stack so words like LIT can peek/adjust */
         ip++;
         vm_rpush(vm, (cell_t)(uintptr_t)ip);
 
-        /* Set current executing entry and execute */
-        vm->current_executing_entry = word_to_execute;
-        if (word_to_execute->func != NULL) {
-            word_to_execute->func(vm);
+        vm->current_executing_entry = w;
+        if (w->func) {
+            log_message(LOG_DEBUG, "execute_colon_word: exec '%.*s'",
+                        (int)w->name_len, w->name);
+            w->func(vm);
+        } else {
+            log_message(LOG_ERROR, "execute_colon_word: NULL func");
+            vm->error = 1;
         }
 
-        /* Restore IP */
+        /* Resume at return IP */
         ip = (cell_t*)(uintptr_t)vm_rpop(vm);
     }
 
-    /* Restore previous IP */
-    if (vm->rsp >= 0) {
-        old_ip = (cell_t*)(uintptr_t)vm_rpop(vm);
-    }
+    /* Done */
 }
 
 /**

@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_management.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/11/25, 2:53 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -19,6 +19,9 @@
 #include "../include/io.h"
 #include "../include/log.h"
 #include <string.h> /* ISO C99: memcpy, memcmp, etc. */
+#include <stddef.h>   /* offsetof */
+#include <stdlib.h>   /* malloc, free */
+
 
 /**
  * @file dictionary_management.c
@@ -62,58 +65,44 @@ DictEntry* vm_find_word(VM *vm, const char *name, size_t len) {
  * @return DictEntry* Pointer to the created dictionary entry, or NULL on failure
  */
 DictEntry* vm_create_word(VM *vm, const char *name, size_t len, word_func_t func) {
-    size_t total_size;
-    DictEntry *entry;
-
-    if (vm == NULL || name == NULL) {
-        log_message(LOG_ERROR, "vm_create_word: NULL parameters");
+    if (!vm || !name || len == 0 || len > WORD_NAME_MAX) {
         if (vm) vm->error = 1;
         return NULL;
     }
 
-    if (len > WORD_NAME_MAX) {
-        len = WORD_NAME_MAX;
-    }
+    /* Layout: [link|func|flags|name_len|name...|NUL|pad→cell align|cell_t DFA] */
+    size_t base       = offsetof(DictEntry, name);
+    size_t name_bytes = len + 1;
 
-    /* Calculate total size: header + name */
-    total_size = sizeof(DictEntry) + len;
+    size_t align  = sizeof(cell_t);
+    size_t df_off = (base + name_bytes + (align - 1)) & ~(align - 1);
+    size_t total  = df_off + sizeof(cell_t);
 
-    log_message(LOG_DEBUG, "vm_create_word: Creating '%.*s' (len=%zu, total_size=%zu)",
-                (int)len, name, len, total_size);
+    DictEntry *entry = (DictEntry*)malloc(total);
+    if (!entry) { vm->error = 1; return NULL; }
 
-    /* Align to cell boundary */
-    vm_align(vm);
-
-    /* Allocate space */
-    entry = (DictEntry*)vm_allot(vm, total_size);
-    if (entry == NULL) {
-        log_message(LOG_ERROR, "vm_create_word: Failed to allocate dictionary entry");
-        vm->error = 1;
-        return NULL;
-    }
-
-    log_message(LOG_DEBUG, "vm_create_word: Allocated entry at %p", (void*)entry);
-
-    /* Initialize entry */
-    entry->link = vm->latest;
-    entry->func = func;           /* Store function pointer */
-    entry->flags = 0;
+    entry->link     = vm->latest;
+    entry->func     = func;
+    entry->flags    = 0;
     entry->name_len = (uint8_t)len;
 
-    /* Copy name safely */
-    if (len > 0) {
-        log_message(LOG_DEBUG, "vm_create_word: Copying name '%.*s'", (int)len, name);
-        memcpy((void*)entry->name, name, len);
-        log_message(LOG_DEBUG, "vm_create_word: Name copied successfully");
-    }
+    memcpy(entry->name, name, len);
+    entry->name[len] = '\0';
 
-    /* Update latest */
+    /* Zero padding and DFA cell */
+    if (df_off > base + name_bytes) {
+        memset(((uint8_t*)entry) + base + name_bytes, 0, df_off - (base + name_bytes));
+    }
+    cell_t *df_cell = (cell_t*)(((uint8_t*)entry) + df_off);
+    *df_cell = 0;
+
     vm->latest = entry;
 
+    log_message(LOG_DEBUG, "vm_create_word: Creating '%.*s' (len=%zu, total_size=%zu)",
+                (int)len, name, len, total);
+    log_message(LOG_DEBUG, "vm_create_word: Allocated entry at %p", (void*)entry);
     log_message(LOG_DEBUG, "vm_create_word: Successfully created '%.*s' at %p",
                 (int)len, name, (void*)entry);
-
-    vm_align(vm);  /* Align for future data field access */
 
     return entry;
 }
@@ -156,17 +145,16 @@ DictEntry* vm_dictionary_find_latest_by_func(VM *vm, word_func_t func) {
  * @return cell_t* Pointer to the entry's data field, or NULL if entry is NULL
  */
 cell_t* vm_dictionary_get_data_field(DictEntry *entry) {
-    if (entry == NULL) {
-        return NULL;
-    }
+    if (!entry) return NULL;
 
-    /* Data field comes right after the entry structure and name */
-    /* vm_create_word() ensures proper alignment after the name */
-    /* vm_create_word() ensures proper alignment after the name */
-    uintptr_t entry_end = (uintptr_t)entry + sizeof(DictEntry) + entry->name_len;
+    size_t base       = offsetof(DictEntry, name);
+    size_t name_bytes = (size_t)entry->name_len + 1;
+    size_t align      = sizeof(cell_t);
+    size_t df_off     = (base + name_bytes + (align - 1)) & ~(align - 1);
 
-    return (cell_t*)entry_end;
+    return (cell_t*)(((uint8_t*)entry) + df_off);
 }
+
 
 /**
  * @brief Marks the most recently defined word as immediate

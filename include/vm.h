@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.h - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/11/25, 5:01 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -104,6 +104,10 @@ typedef struct VM {
     size_t here;                /* Next free memory location (byte offset) */
     DictEntry *latest;          /* Most recent word */
 
+    /* Dictionary protection fence: words at/older than this are protected from FORGET */
+    DictEntry *dict_fence_latest;
+    size_t     dict_fence_here;
+
     /* Input system */
     char   input_buffer[INPUT_BUFFER_SIZE];
     size_t input_length;
@@ -168,6 +172,7 @@ void vm_smudge_word(VM *vm);        /* Added for FORTH-79 SMUDGE */
 DictEntry* vm_dictionary_find_by_func(VM *vm, word_func_t func);
 DictEntry* vm_dictionary_find_latest_by_func(VM *vm, word_func_t func);
 cell_t* vm_dictionary_get_data_field(DictEntry *entry);
+void vm_compile_word(VM *vm, DictEntry *entry);
 
 /* Memory management */
 void* vm_allot(VM *vm, size_t bytes);
