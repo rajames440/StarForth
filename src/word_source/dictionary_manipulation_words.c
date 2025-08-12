@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_manipulation_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/12/25, 3:54 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -346,6 +346,46 @@ void dictionary_m_word_interpret(VM *vm) {
     /* This word exists mainly for completeness and mode setting */
 }
 
+/* Local dictionary search (same logic you already use in string_words.c) */
+static DictEntry* find_word_in_dict(VM *vm, const char *name, size_t name_len) {
+    DictEntry *entry = vm->latest;
+    while (entry != NULL) {
+        if (entry->name_len == name_len && memcmp(entry->name, name, name_len) == 0) {
+            return entry;
+        }
+        entry = entry->link;
+    }
+    return NULL;
+}
+
+/* FIND  ( addr -- addr|xt flag )
+   Forth-79 stack form: expects counted string at addr (from WORD).
+   If found: replace addr with xt and push flag (1 for normal, -1 if IMMEDIATE).
+   If not:   push 0 (addr remains). */
+void dictionary_word_find(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t addr = vm->data_stack[vm->dsp];  /* keep on stack */
+    vaddr_t a = VM_ADDR(addr);
+    if (!vm_addr_ok(vm, a, 1)) { vm_push(vm, 0); return; }
+
+    uint8_t *counted = vm_ptr(vm, a);
+    if (!counted) { vm_push(vm, 0); return; }
+
+    uint8_t name_len = counted[0];
+    if (!vm_addr_ok(vm, a + 1, name_len)) { vm_push(vm, 0); return; }
+    const char *name = (const char*)&counted[1];
+
+    DictEntry *entry = find_word_in_dict(vm, name, (size_t)name_len);
+    if (entry) {
+        vm->data_stack[vm->dsp] = (cell_t)(uintptr_t)entry; /* xt */
+        /* Use -1 for IMMEDIATE per tradition; 1 otherwise. */
+        cell_t flag = (entry->flags & WORD_IMMEDIATE) ? (cell_t)-1 : (cell_t)1;
+        vm_push(vm, flag);
+    } else {
+        vm_push(vm, 0);
+    }
+}
+
 /* FORTH-79 Dictionary Manipulation Word Registration and Testing */
 void register_dictionary_manipulation_words(VM *vm) {
     log_message(LOG_INFO, "Registering dictionary manipulation words...");
@@ -366,6 +406,7 @@ void register_dictionary_manipulation_words(VM *vm) {
     register_word(vm, "PFA", dictionary_m_word_pfa);
     register_word(vm, "TRAVERSE", dictionary_m_word_traverse);
     register_word(vm, "INTERPRET", dictionary_m_word_interpret);
+    register_word(vm, "FIND", dictionary_word_find);
 
     log_message(LOG_INFO, "Note: These are low-level words for dictionary introspection");
 }

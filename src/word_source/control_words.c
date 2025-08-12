@@ -2,6 +2,23 @@
 
                                  ***   StarForth   ***
   control_words.c - FORTH-79 Standard and ANSI C99 ONLY
+ Last modified - 8/12/25, 2:36 PM
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+ This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+
+ */
+
+/*
+
+                                 ***   StarForth   ***
+  control_words.c - FORTH-79 Standard and ANSI C99 ONLY
   Last modified - 8/10/25, 4:50 PM
   Public Domain / CC0
 
@@ -139,13 +156,30 @@ static void control_forth_lit(VM *vm) {
 
 /* ===================== Compile-time words (CF stack) ===================== */
 
+/* emit a raw cell into the code stream (FORTH-79 equivalent of ",") */
+static size_t emit_cell(VM *vm, cell_t value) {
+    if (vm->mode != MODE_COMPILE) {
+        vm_push(vm, value);        /* interpret-mode: behave like pushing a literal */
+        return (size_t)-1;
+    }
+    vm_align(vm);
+    cell_t *addr = (cell_t*)vm_allot(vm, sizeof(cell_t));
+    if (!addr) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "emit_cell: out of space");
+        return (size_t)-1;
+    }
+    *addr = value;                 /* raw cell (no LIT) */
+    return (size_t)((uint8_t*)addr - vm->memory); /* byte address in code space */
+}
+
 /* IF ( flag -- ) compiles: 0BRANCH <placeholder> */
 static void control_forth_if(VM *vm) {
     if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "IF: compile-only"); return; }
 
     vm_compile_call(vm, control_forth_0branch);
-    size_t lit = vm->here;       /* BYTE offset of the literal cell */
-    vm_compile_literal(vm, 0);
+    /* record the actual cell location AFTER alignment */
+    size_t lit = emit_cell(vm, 0);
 
     if (!cf_push(lit)) { vm->error = 1; log_message(LOG_ERROR, "IF: CF overflow"); return; }
     log_message(LOG_DEBUG, "IF: placeholder @ %zu", lit);
@@ -156,13 +190,14 @@ static void control_forth_else(VM *vm) {
     if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "ELSE: compile-only"); return; }
 
     vm_compile_call(vm, control_forth_branch);
-    size_t new_lit = vm->here;   /* BYTE offset for new BRANCH literal */
-    vm_compile_literal(vm, 0);
+    /* create new placeholder and remember its exact byte address */
+    size_t new_lit = emit_cell(vm, 0);
 
     size_t old_lit;
     if (!cf_pop(&old_lit)) { vm->error = 1; log_message(LOG_ERROR, "ELSE: CF underflow"); return; }
 
-    cell_t off_bytes = (cell_t)((size_t)vm->here - old_lit); /* target - literal */
+    /* patch previous 0BRANCH with distance to HERE (in BYTES) */
+    cell_t off_bytes = (cell_t)((size_t)vm->here - old_lit);
     *(cell_t *)(vm->memory + old_lit) = off_bytes;
 
     if (!cf_push(new_lit)) { vm->error = 1; log_message(LOG_ERROR, "ELSE: CF overflow (new)"); return; }
@@ -200,7 +235,7 @@ static void control_forth_until(VM *vm) {
 
     vm_compile_call(vm, control_forth_0branch);
     cell_t off_bytes = (cell_t)((cell_t)begin_addr - (cell_t)vm->here);
-    vm_compile_literal(vm, off_bytes);
+    (void)emit_cell(vm, off_bytes); /* raw back-offset */
 
     log_message(LOG_DEBUG, "UNTIL: back -> %zu (%ld bytes)", begin_addr, (long)off_bytes);
 }
@@ -214,7 +249,7 @@ static void control_forth_again(VM *vm) {
 
     vm_compile_call(vm, control_forth_branch);
     cell_t off_bytes = (cell_t)((cell_t)begin_addr - (cell_t)vm->here);
-    vm_compile_literal(vm, off_bytes);
+    (void)emit_cell(vm, off_bytes); /* raw back-offset */
 
     log_message(LOG_DEBUG, "AGAIN: back -> %zu (%ld bytes)", begin_addr, (long)off_bytes);
 }
@@ -238,7 +273,7 @@ static void control_forth_loop(VM *vm) {
 
     vm_compile_call(vm, control_forth_runtime_loop);
     cell_t off_bytes = (cell_t)((cell_t)do_addr - (cell_t)vm->here);
-    vm_compile_literal(vm, off_bytes);
+    (void)emit_cell(vm, off_bytes); /* raw back-offset */
 
     log_message(LOG_DEBUG, "LOOP: back -> %zu (%ld bytes)", do_addr, (long)off_bytes);
 }
@@ -252,7 +287,7 @@ static void control_forth_plus_loop(VM *vm) {
 
     vm_compile_call(vm, control_forth_runtime_plus_loop);
     cell_t off_bytes = (cell_t)((cell_t)do_addr - (cell_t)vm->here);
-    vm_compile_literal(vm, off_bytes);
+    (void)emit_cell(vm, off_bytes); /* raw back-offset */
 
     log_message(LOG_DEBUG, "+LOOP: back -> %zu (%ld bytes)", do_addr, (long)off_bytes);
 }

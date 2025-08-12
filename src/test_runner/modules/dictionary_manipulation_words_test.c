@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_manipulation_words_test.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 5:44 PM
+ Last modified - 8/12/25, 2:51 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -24,7 +24,10 @@ static WordTestSuite dict_manip_word_suites[] = {
         "CREATE", {
             {"basic", "CREATE test1 42 , test1 @ . CR", "Should create and store", TEST_NORMAL, 0, 1},
             {"empty_name", "CREATE", "Should handle empty name", TEST_ERROR_CASE, 1, 1},
-            {"redefine_shadows", "CREATE T 1 , CREATE T 2 , T @ . CR", "Newest definition should win (prints 2)",TEST_NORMAL, 0, 1},
+            {
+                "redefine_shadows", "CREATE T 1 , CREATE T 2 , T @ . CR", "Newest definition should win (prints 2)",
+                TEST_NORMAL, 0, 1
+            },
             {"duplicate", "CREATE test2 CREATE test2", "Should allow redefinition (latest shadows)", TEST_NORMAL, 0, 1},
             {"long_name", "CREATE abcdefghijklmnopqrstuvwxyz", "Should handle long name", TEST_EDGE_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
@@ -57,10 +60,10 @@ static WordTestSuite dict_manip_word_suites[] = {
 
     {
         "FIND", {
-            {"existing", "' DUP FIND . CR", "Should find system word", TEST_NORMAL, 0, 1},
-            {"user_word", ": test5 44 ; ' test5 FIND . CR", "Should find user word", TEST_NORMAL, 0, 1},
-            {"nonexistent", "' nonexistent FIND . CR", "Should return 0", TEST_NORMAL, 0, 1},
-            {"empty", "0 FIND", "Should handle null string", TEST_ERROR_CASE, 1, 1},
+            {"existing", "FIND DUP . CR", "Should find system word", TEST_NORMAL, 0, 1},
+            {"user_word", ": test5 44 ; FIND test5 . CR", "Should find user word", TEST_NORMAL, 0, 1},
+            {"nonexistent", "FIND nonexistent . CR", "Should return 0", TEST_NORMAL, 0, 1},
+            {"empty", "FIND CR", "Should error (no token)", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         4

@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   string_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/10/25, 4:23 PM
+ Last modified - 8/12/25, 4:01 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -225,36 +225,37 @@ void string_word_source(VM *vm) {
 /* BL ( -- c )  ASCII space character (32) */
 void string_word_bl(VM *vm) { vm_push(vm, 32); }
 
-/* FIND ( addr -- addr|xt flag )  Find word in dictionary */
-void string_word_find(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    cell_t addr = vm->data_stack[vm->dsp];  /* keep on stack */
-    vaddr_t a = VM_ADDR(addr);
-    if (!vm_addr_ok(vm, a, 1)) { vm_push(vm, 0); return; }
-    uint8_t *counted = vm_ptr(vm, a);
-    if (!counted) { vm_push(vm, 0); return; }
-    uint8_t name_len = counted[0];
-    if (!vm_addr_ok(vm, a+1, name_len)) { vm_push(vm, 0); return; }
-    const char *name = (const char*)&counted[1];
-
-    DictEntry *entry = find_word_in_dict(vm, name, (size_t)name_len);
-    if (entry) {
-        vm->data_stack[vm->dsp] = (cell_t)(uintptr_t)entry; /* xt */
-        vm_push(vm, 1);
-    } else {
-        vm_push(vm, 0);
-    }
-}
-
-/* ' ( -- xt )  Get execution token of next word */
+/* ' ( -- xt )  Get execution token of next word (Forth-79) */
 void string_word_tick(VM *vm) {
-    vm_push(vm, 32);
+    /* Parse the next word using WORD with BL (32) as delimiter */
+    vm_push(vm, 32);          /* BL */
     string_word_word(vm);
     if (vm->error) return;
-    string_word_find(vm);
-    if (vm->error) return;
-    if (vm->data_stack[vm->dsp] == 0) { vm->error = 1; return; }
-    (void)vm_pop(vm); /* drop flag */
+
+    /* The counted string addr is now on TOS */
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t addr = vm->data_stack[vm->dsp];
+    vaddr_t a = VM_ADDR(addr);    if (!vm_addr_ok(vm, a, 1)) { vm->error = 1; return; }
+
+    uint8_t *counted = vm_ptr(vm, a);
+    if (!counted) { vm->error = 1; return; }
+    uint8_t name_len = counted[0];
+    if (!vm_addr_ok(vm, a + 1, name_len)) { vm->error = 1; return; }
+    const char *name = (const char*)&counted[1];
+
+    /* Local search (same criteria as FIND) */
+    DictEntry *entry = vm->latest;
+    while (entry != NULL) {
+        if (entry->name_len == name_len && memcmp(entry->name, name, name_len) == 0) {
+            /* Replace counted-string addr with xt; drop flag semantics (tick returns xt) */
+            vm->data_stack[vm->dsp] = (cell_t)(uintptr_t)entry;
+            return;
+        }
+        entry = entry->link;
+    }
+
+    /* Not found → error (79 semantics: tick must succeed) */
+    vm->error = 1;
 }
 
 /* ['] ( -- xt )  Compile execution token (immediate) */
@@ -758,7 +759,6 @@ void register_string_words(VM *vm) {
     register_word(vm, ">IN",     string_word_to_in);
     register_word(vm, "SOURCE",  string_word_source);
     register_word(vm, "BL",      string_word_bl);
-    register_word(vm, "FIND",    string_word_find);
     register_word(vm, "'",       string_word_tick);
     register_word(vm, "[']",     string_word_bracket_tick);
     register_word(vm, "LITERAL", string_word_literal);
