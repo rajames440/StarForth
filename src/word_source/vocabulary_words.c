@@ -2,15 +2,16 @@
 
                                  ***   StarForth   ***
   vocabulary_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 8/10/25, 5:05 PM
+ Last modified - 8/12/25, 5:57 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+ This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
   To the extent possible under law, the author(s) have dedicated all copyright and related
   and neighboring rights to this software to the public domain worldwide.
   This software is distributed without any warranty.
 
   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
 
  */
 
@@ -110,14 +111,26 @@ void vocabulary_word_vocabulary(VM *vm) {
         return;
     }
 
-    DictEntry *vocab_entry = vm_create_word(vm, vocab_name, strlen(vocab_name), vocabulary_select_runtime);
+    /* Create a header that executes vocabulary_select_runtime when invoked */
+    DictEntry *vocab_entry =
+        vm_create_word(vm, vocab_name, strlen(vocab_name), vocabulary_select_runtime);
     if (vocab_entry == NULL) {
         vm->error = 1;
         return;
     }
 
-    /* Mark as vocabulary word (internal flag) */
+    /* Make the new header visible immediately (your finder ignores WORD_HIDDEN entries) */
+    vocab_entry->flags &= ~WORD_HIDDEN;
+
+    /* Mark as a vocabulary (your internal marker; keep as-is) */
     vocab_entry->flags |= 0x40;
+
+    /* Critical: ensure the search order starts from the NEW latest entry.
+       Your vocab_find_word walks entry->link (backwards). If context_vocabs[top]
+       points to an older node, new words are invisible. */
+    init_vocabulary_system(vm);                              /* no-op if already inited */
+    context_vocabs[search_order_depth - 1] = vm->latest;     /* top-of-search := newest */
+    vocab_sync_vm_vars(vm);
 
     log_message(LOG_DEBUG, "VOCABULARY: Created vocabulary '%s'", vocab_name);
 }

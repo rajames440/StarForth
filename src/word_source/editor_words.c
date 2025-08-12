@@ -2,8 +2,8 @@
 
                                  ***   StarForth   ***
   editor_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
- Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+ Last modified - 8/12/25, 4:52 PM
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
   To the extent possible under law, the author(s) have dedicated all copyright and related
@@ -13,7 +13,7 @@
   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
 
-*/
+ */
 
 #include "include/editor_words.h"
 #include "../../include/word_registry.h"
@@ -275,35 +275,6 @@ void editor_word_copy(VM *vm) {
     }
 }
 
-/* FIND ( c -- ) Find character c starting from search_pos */
-void editor_word_find(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    search_char = (char)(vm_pop(vm) & 0xFF);
-    {
-        int found = -1;
-        unsigned char *block_data = get_block_buffer(vm, current_screen);
-        if (vm->error || block_data == NULL) return;
-
-        for (int i = search_pos; i < 16 * 64; i++) {
-            if (block_data[i] == (unsigned char)search_char) {
-                found = i;
-                break;
-            }
-        }
-
-        if (found >= 0) {
-            search_pos = found + 1;
-            {
-                int line = found / 64;
-                int col  = found % 64;
-                printf("Found '%c' at line %d, col %d\n", search_char, line, col);
-            }
-        } else {
-            printf("Character '%c' not found\n", search_char);
-        }
-    }
-}
-
 /* REP ( c -- ) Replace next occurrence of char with c */
 void editor_word_rep(VM *vm) {
     if (vm->dsp < 0) { vm->error = 1; return; }
@@ -386,7 +357,6 @@ void register_editor_words(VM *vm) {
     register_word(vm, "E",      editor_word_e);
     register_word(vm, "POS",    editor_word_pos);
     register_word(vm, "COPY",   editor_word_copy);
-    register_word(vm, "FIND",   editor_word_find);
     register_word(vm, "REP",    editor_word_rep);
     register_word(vm, "INS",    editor_word_ins);
     register_word(vm, "CLR",    editor_word_clr);

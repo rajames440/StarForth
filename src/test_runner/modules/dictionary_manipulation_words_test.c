@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_manipulation_words_test.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 2:51 PM
+ Last modified - 8/12/25, 5:06 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -63,7 +63,7 @@ static WordTestSuite dict_manip_word_suites[] = {
             {"existing", "FIND DUP . CR", "Should find system word", TEST_NORMAL, 0, 1},
             {"user_word", ": test5 44 ; FIND test5 . CR", "Should find user word", TEST_NORMAL, 0, 1},
             {"nonexistent", "FIND nonexistent . CR", "Should return 0", TEST_NORMAL, 0, 1},
-            {"empty", "FIND CR", "Should error (no token)", TEST_ERROR_CASE, 1, 1},
+            {"empty", "FIND", "Should error (no token)", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         4

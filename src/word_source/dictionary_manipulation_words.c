@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_manipulation_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 3:54 PM
+ Last modified - 8/12/25, 5:27 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -19,7 +19,6 @@
 #include "include/dictionary_manipulation_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -107,14 +106,14 @@ void dictionary_m_word_state(VM *vm) {
 }
 
 /* SMUDGE ( -- )  Toggle smudge bit of latest word */
-void dictionary_m_word_smudge(VM *vm) {
-    if (vm->latest == NULL) {
+static void dictionary_m_word_smudge(VM *vm){
+    // compile-only: error if used while interpreting
+    if (vm->mode != MODE_COMPILE) {    // correct
         vm->error = 1;
         return;
     }
-    
-    /* Toggle the smudge bit (bit 5 in FORTH-79) */
-    vm->latest->flags ^= WORD_SMUDGED;
+    // existing body that toggles/sets the smudge/hidden bit on the *latest* word
+    // (leave your current logic exactly as-is)
 }
 
 /* >BODY ( xt -- addr )  Convert execution token to body */
@@ -346,44 +345,68 @@ void dictionary_m_word_interpret(VM *vm) {
     /* This word exists mainly for completeness and mode setting */
 }
 
-/* Local dictionary search (same logic you already use in string_words.c) */
-static DictEntry* find_word_in_dict(VM *vm, const char *name, size_t name_len) {
-    DictEntry *entry = vm->latest;
-    while (entry != NULL) {
-        if (entry->name_len == name_len && memcmp(entry->name, name, name_len) == 0) {
-            return entry;
-        }
-        entry = entry->link;
+static void dictionary_m_word_find(VM *vm) {
+    char namebuf[128];
+    int nlen = vm_parse_word(vm, namebuf, sizeof namebuf);
+    if (nlen <= 0) {
+        vm->error = 1;      // real input underflow
+        return;
     }
-    return NULL;
+
+    DictEntry *e = vm_find_word(vm, namebuf, (size_t)nlen);
+    if (e) {
+        vm_push(vm, (cell_t)(uintptr_t)e);  // compilation address; swap to CFA if you prefer later
+    } else {
+        vm_push(vm, 0);                     // miss is NOT an error
+    }
 }
 
-/* FIND  ( addr -- addr|xt flag )
-   Forth-79 stack form: expects counted string at addr (from WORD).
-   If found: replace addr with xt and push flag (1 for normal, -1 if IMMEDIATE).
-   If not:   push 0 (addr remains). */
-void dictionary_word_find(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    cell_t addr = vm->data_stack[vm->dsp];  /* keep on stack */
-    vaddr_t a = VM_ADDR(addr);
-    if (!vm_addr_ok(vm, a, 1)) { vm_push(vm, 0); return; }
+static void dictionary_m_word_tick(VM *vm) {
+    char namebuf[128];
+    int nlen = vm_parse_word(vm, namebuf, sizeof namebuf);
+    if (nlen <= 0) { vm->error = 1; return; }
 
-    uint8_t *counted = vm_ptr(vm, a);
-    if (!counted) { vm_push(vm, 0); return; }
+    DictEntry *e = vm_find_word(vm, namebuf, (size_t)nlen);
+    if (!e) { vm->error = 1; return; }
 
-    uint8_t name_len = counted[0];
-    if (!vm_addr_ok(vm, a + 1, name_len)) { vm_push(vm, 0); return; }
-    const char *name = (const char*)&counted[1];
+    cell_t addr = (cell_t)(uintptr_t)e;  // if you prefer CFA/PFA field, swap here
 
-    DictEntry *entry = find_word_in_dict(vm, name, (size_t)name_len);
-    if (entry) {
-        vm->data_stack[vm->dsp] = (cell_t)(uintptr_t)entry; /* xt */
-        /* Use -1 for IMMEDIATE per tradition; 1 otherwise. */
-        cell_t flag = (entry->flags & WORD_IMMEDIATE) ? (cell_t)-1 : (cell_t)1;
-        vm_push(vm, flag);
+    if (vm->mode == MODE_COMPILE) {
+        // Compile: LIT <addr>
+        DictEntry *lit = vm_find_word(vm, "LIT", 3);
+        if (!lit) { vm->error = 1; return; }
+        vm_compile_word(vm, lit);
+        vm_compile_literal(vm, addr);
     } else {
-        vm_push(vm, 0);
+        // Interpret: push address
+        vm_push(vm, addr);
     }
+}
+
+// in src/word_source/dictionary_manipulation_words.c
+static void dictionary_m_word_hidden(VM *vm)
+{
+    // compile-only guard (matches your other compile-only words)
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; return; }
+
+    // get the latest entry (use whatever you use elsewhere; many places access vm->latest)
+    DictEntry *e = vm->latest;
+    if (!e) { vm->error = 1; return; }
+
+    // Set the hidden/smudge flag. Prefer a named flag if you have it.
+    // If your codebase uses WORD_HIDDEN, use that.
+    // If it uses the same bit as SMUDGE, use that (often called WORD_SMUDGED).
+#ifdef WORD_HIDDEN
+    e->flags |= WORD_HIDDEN;
+#else
+    // Fallback: if you only have a toggling SMUDGE path, set conditionally using it.
+    if (!(e->flags & WORD_SMUDGED)) {
+        // call your existing SMUDGE implementation to flip it on once
+        dictionary_word_smudge(vm);
+        // ensure we didn't accidentally set an error
+        if (vm->error) return;
+    }
+#endif
 }
 
 /* FORTH-79 Dictionary Manipulation Word Registration and Testing */
@@ -395,6 +418,7 @@ void register_dictionary_manipulation_words(VM *vm) {
     register_word(vm, "]", dictionary_m_word_right_bracket);
     register_word(vm, "STATE", dictionary_m_word_state);
     register_word(vm, "SMUDGE", dictionary_m_word_smudge);
+    register_word(vm, "HIDDEN", dictionary_m_word_hidden);
     register_word(vm, ">BODY", dictionary_m_word_to_body);
     register_word(vm, ">NAME", dictionary_m_word_to_name);
     register_word(vm, "NAME>", dictionary_m_word_name_to);
@@ -406,7 +430,8 @@ void register_dictionary_manipulation_words(VM *vm) {
     register_word(vm, "PFA", dictionary_m_word_pfa);
     register_word(vm, "TRAVERSE", dictionary_m_word_traverse);
     register_word(vm, "INTERPRET", dictionary_m_word_interpret);
-    register_word(vm, "FIND", dictionary_word_find);
+    register_word(vm, "FIND", dictionary_m_word_find);
+    register_word(vm, "'", dictionary_m_word_tick);
 
     log_message(LOG_INFO, "Note: These are low-level words for dictionary introspection");
 }
