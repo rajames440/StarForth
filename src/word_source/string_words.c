@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   string_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 4:01 PM
+ Last modified - 8/12/25, 4:03 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -52,18 +52,6 @@ static inline int ensure_input(VM *vm) {
 /* Static VM-backed scratch buffer for WORD (allocated on first use) */
 #define WORD_SCRATCH_CAP 64
 static vaddr_t word_scratch_addr = 0;
-
-/* Helper function to find word in dictionary */
-static DictEntry* find_word_in_dict(VM *vm, const char *name, size_t name_len) {
-    DictEntry *entry = vm->latest;
-    while (entry != NULL) {
-        if (entry->name_len == name_len && memcmp(entry->name, name, name_len) == 0) {
-            return entry;
-        }
-        entry = entry->link;
-    }
-    return NULL;
-}
 
 /* Helper function to convert string to number (base-10 only here) */
 static int convert_string_to_number(const char *str, size_t len, cell_t *result) {
