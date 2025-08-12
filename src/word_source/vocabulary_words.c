@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vocabulary_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 5:57 PM
+ Last modified - 8/12/25, 6:05 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -119,17 +119,20 @@ void vocabulary_word_vocabulary(VM *vm) {
         return;
     }
 
-    /* Make the new header visible immediately (your finder ignores WORD_HIDDEN entries) */
-    vocab_entry->flags &= ~WORD_HIDDEN;
+    /* --- REVEAL: make the header visible to the interpreter immediately --- */
+#ifdef WORD_SMUDGED
+    vocab_entry->flags &= ~WORD_SMUDGED;   /* clear smudge bit (what ';' would do) */
+#endif
+#ifdef WORD_HIDDEN
+    vocab_entry->flags &= ~WORD_HIDDEN;    /* clear hidden bit if you also use it */
+#endif
 
-    /* Mark as a vocabulary (your internal marker; keep as-is) */
+    /* Internal marker (keep your existing semantics) */
     vocab_entry->flags |= 0x40;
 
-    /* Critical: ensure the search order starts from the NEW latest entry.
-       Your vocab_find_word walks entry->link (backwards). If context_vocabs[top]
-       points to an older node, new words are invisible. */
-    init_vocabulary_system(vm);                              /* no-op if already inited */
-    context_vocabs[search_order_depth - 1] = vm->latest;     /* top-of-search := newest */
+    /* Ensure top-of-search sees newest entry (if using vocab-based lookup) */
+    init_vocabulary_system(vm);
+    context_vocabs[search_order_depth - 1] = vm->latest;
     vocab_sync_vm_vars(vm);
 
     log_message(LOG_DEBUG, "VOCABULARY: Created vocabulary '%s'", vocab_name);

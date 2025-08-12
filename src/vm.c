@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 5:40 PM
+ Last modified - 8/12/25, 6:11 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -538,10 +538,13 @@ static void execute_colon_word(VM *vm) {
  * @param len Length of word string
  */
 void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
+    /* Use the vocabulary-aware finder (prototype here to avoid header churn) */
+    extern DictEntry* vm_vocabulary_find_word(VM *vm, const char *name, size_t nlen);
+
     log_message(LOG_DEBUG, "INTERPRET: '%.*s' (mode=%s)", (int)len, word_str,
                 vm->mode == MODE_COMPILE ? "COMPILE" : "INTERPRET");
 
-    DictEntry *entry = vm_find_word(vm, word_str, len);
+    DictEntry *entry = vm_vocabulary_find_word(vm, word_str, len);
     if (entry) {
         if (vm->mode == MODE_COMPILE && !(entry->flags & WORD_IMMEDIATE)) {
             log_message(LOG_DEBUG, "COMPILE: '%.*s'", (int)len, word_str);
@@ -552,10 +555,9 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
             if (entry->func) {
                 entry->func(vm);
             } else {
-                log_message(LOG_ERROR, "NULL func for '%.*s'", (int)len, word_str);
-                vm->error = 1;
+                /* Colon word / code field execution */
+                execute_colon_word(vm);
             }
-            vm->current_executing_entry = NULL;
         }
         return;
     }
@@ -575,6 +577,7 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
         vm->error = 1;
     }
 }
+
 
 /**
  * @brief Interpret a string of Forth code
