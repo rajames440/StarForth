@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   system_words_test.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 11:10 PM
+ Last modified - 8/13/25, 9:10 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -77,16 +77,6 @@ static WordTestSuite system_word_suites[] = {
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         1
-    },
-
-    {
-        "?STACK", {
-            {"normal", "?STACK", "Should verify stack ok", TEST_NORMAL, 0, 1},
-            {"overflow", "1 2 3 4 5 6 7 8 9 10 ?STACK", "Should detect overflow", TEST_ERROR_CASE, 1, 1},
-            {"underflow", "DROP ?STACK", "Should detect underflow", TEST_ERROR_CASE, 1, 1},
-            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        },
-        3
     },
 
     /* End marker */

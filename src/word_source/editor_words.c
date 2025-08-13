@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   editor_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 4:52 PM
+ Last modified - 8/13/25, 11:57 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -15,351 +15,274 @@
 
  */
 
-#include "include/editor_words.h"
-#include "../../include/word_registry.h"
-#include "../../include/log.h"
-#include "vm.h"
+#include "include/editor_words.h"        /* register_editor_words prototype */
+#include "include/block_words.h"         /* mark_buffer_dirty(), MAX_BLOCKS, BLOCK_SIZE */
+#include "../../include/vm.h"            /* VM, vm_load_cell, vm_store_cell, vm_addr_ok, vm_ptr */
+#include "../../include/word_registry.h" /* register_word */
+#include "../../include/log.h"           /* log_message */
+
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
+#include <ctype.h>
 
-/* ---------- Module state (must come before helpers) ---------- */
-static int current_line   = 0;   /* Current line position (0-15) */
-static int current_screen = 0;   /* Current screen number */
-static char search_char   = 0;   /* Character being searched for */
-static int  search_pos    = 0;   /* Position in search */
-static char input_buffer[256];   /* Buffer for text input */
+/* -------- helpers -------- */
 
-/* C99-safe bounded strlen (strnlen is not C99) */
-static size_t bounded_strlen(const char *s, size_t maxlen) {
-    size_t n = 0;
-    while (n < maxlen && s[n] != '\0') n++;
-    return n;
+static inline cell_t current_scr(VM *vm) {
+    return vm_load_cell(vm, vm->scr_addr);
 }
 
-/* ---- Local block buffer helpers (self-contained; no cross-module deps) ---- */
-static unsigned char *get_block_buffer(VM *vm, int screen) {
-    if (screen < 0 || screen >= MAX_BLOCKS) { vm->error = 1; return NULL; }
-    vaddr_t addr = (vaddr_t)(screen * BLOCK_SIZE);
-    if (!vm_addr_ok(vm, addr, BLOCK_SIZE)) { vm->error = 1; return NULL; }
-    return (unsigned char *)vm_ptr(vm, addr);
+static inline void set_scr(VM *vm, cell_t blk) {
+    vm_store_cell(vm, vm->scr_addr, blk);
 }
 
-/* Mark buffer dirty by setting a bit in the last byte of the block.
-   (Self-contained dirty marker; does not depend on other modules.) */
-static void mark_buffer_dirty(VM *vm) {
-    int blk = current_screen;
-    if (vm_addr_ok(vm, vm->scr_addr, sizeof(cell_t))) {
-        cell_t s = vm_load_cell(vm, vm->scr_addr);
-        if (s >= 0 && s < MAX_BLOCKS) blk = (int)s;
-    }
-    vaddr_t base = (vaddr_t)(blk * BLOCK_SIZE);
-    if (!vm_addr_ok(vm, base, BLOCK_SIZE)) { vm->error = 1; return; }
-    {
-        uint8_t *p = vm_ptr(vm, base);
-        p[BLOCK_SIZE - 1] |= 0x01; /* set dirty bit */
-    }
+static int line_ptr(VM *vm, cell_t scr, cell_t line, unsigned char **out) {
+    if (!vm || !out) return 0;
+    if (scr < 1 || scr >= (cell_t)MAX_BLOCKS) return 0;
+    if (line < 0 || line > 15) return 0;
+
+    vaddr_t base = (vaddr_t)((uint64_t)scr * (uint64_t)BLOCK_SIZE);
+    vaddr_t addr = base + (vaddr_t)(line * 64);
+    if (!vm_addr_ok(vm, addr, 64)) return 0;
+
+    *out = (unsigned char *)vm_ptr(vm, addr);
+    return 1;
 }
 
-/* Helper: Get line pointer within a screen */
-static char* get_screen_line(VM *vm, int screen, int line) {
-    unsigned char *block_data = get_block_buffer(vm, screen);
-    if (block_data == NULL) return NULL;
-    return (char*)(block_data + (line * 64));  /* 64 chars per line */
-}
-
-/* Helper: Print a line from a screen */
-static void print_line(VM *vm, int screen, int line) {
-    char *line_data = get_screen_line(vm, screen, line);
-    if (line_data == NULL) return;
-
-    for (int i = 0; i < 64; i++) {
-        putchar(line_data[i]);
+static void print_line_64(const unsigned char *p) {
+#ifdef STARFORTH_ANSI
+    /* No cursor moves unless asked; just render content cleanly. */
+#endif
+    for (int i = 0; i < 64; ++i) {
+        unsigned char c = p[i];
+        if (c == 0) { putchar(' '); }
+        else if (c >= 32 && c <= 126) { putchar((int)c); }
+        else { putchar('.'); }
     }
     putchar('\n');
 }
 
-/* Helper: Input a line with prompt */
-static int get_text_input(const char *prompt, char *buf, size_t buflen) {
-    printf("%s", prompt);
-    fflush(stdout);
-    if (!fgets(buf, (int)buflen, stdin)) return 0;
+/* -------- words -------- */
 
-    /* Strip newline */
-    {
-        size_t len = strlen(buf);
-        if (len && buf[len - 1] == '\n') buf[len - 1] = '\0';
-    }
-    return (int)strlen(buf);
-}
+/* L ( u -- ) : print line u of current SCR (0..15). Errors on empty/range/invalid SCR. */
+static void editor_word_l(VM *vm) {
+    if (!vm) return;
 
-/* Helper: Copy line data safely (pad with spaces to 64) */
-static void copy_line_data(char *dest, const char *src, size_t n) {
-    size_t i = 0;
-    for (; i < 64 && i < n; i++) {
-        dest[i] = src[i];
-    }
-    for (; i < 64; i++) {
-        dest[i] = ' ';
-    }
-}
-
-/* ===================== EDITOR COMMANDS ===================== */
-
-/* L ( -- ) List current screen */
-void editor_word_l(VM *vm) {
-    printf("Screen %d:\n", current_screen);
-    for (int i = 0; i < 16; i++) {
-        printf("%2d: ", i);
-        print_line(vm, current_screen, i);
-    }
-}
-
-/* N ( -- ) Next screen */
-void editor_word_n(VM *vm) {
-    if (current_screen + 1 >= MAX_BLOCKS) {
-        log_message(LOG_WARN, "N: Already at last screen");
+    if (vm->dsp < 0) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "L: stack underflow (needs line# 0..15)");
         return;
     }
-    current_screen++;
-    vm_store_cell(vm, vm->scr_addr, current_screen);
-    editor_word_l(vm);
-}
+    cell_t line = vm_pop(vm);
 
-/* P ( -- ) Previous screen */
-void editor_word_p(VM *vm) {
-    if (current_screen - 1 < 0) {
-        log_message(LOG_WARN, "P: Already at first screen");
+    if (line < 0 || line > 15) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "L: line out of range (0..15)");
         return;
     }
-    current_screen--;
-    vm_store_cell(vm, vm->scr_addr, current_screen);
-    editor_word_l(vm);
-}
 
-/* R ( n -- ) Replace line n by prompting input */
-void editor_word_r(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    {
-        int line = (int)vm_pop(vm);
-        if (line < 0 || line > 15) {
-            log_message(LOG_ERROR, "E: Invalid line number %d", line);
-            vm->error = 1;
-            return;
-        }
-        current_line = line;
-
-        /* Show current line content */
-        printf("Line %d: ", line);
-        print_line(vm, current_screen, line);
-
-        /* Get replacement text */
-        if (get_text_input("New text: ", input_buffer, sizeof(input_buffer))) {
-            char *line_data = get_screen_line(vm, current_screen, line);
-            if (line_data != NULL) {
-                copy_line_data(line_data, input_buffer, strlen(input_buffer));
-                mark_buffer_dirty(vm);
-                printf("Line %d updated\n", line);
-            }
-        }
+    cell_t scr = current_scr(vm);
+    if (scr < 1 || scr >= (cell_t)MAX_BLOCKS) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "L: SCR out of range (SCR=%ld)", (long)scr);
+        return;
     }
-}
 
-/* S ( n addr -- ) Replace line n with string at addr */
-void editor_word_s(VM *vm) {
-    if (vm->dsp < 1) { vm->error = 1; return; }
-    {
-        vaddr_t addr = VM_ADDR(vm_pop(vm));
-        int line = (int)vm_pop(vm);
-        if (line < 0 || line > 15) {
-            log_message(LOG_ERROR, "S: Invalid line number %d", line);
-            vm->error = 1;
-            return;
-        }
-
-        if (!vm_addr_ok(vm, addr, 64)) { vm->error = 1; return; }
-        {
-            char *src  = (char*)vm_ptr(vm, addr);
-            char *dest = get_screen_line(vm, current_screen, line);
-            if (dest == NULL) return;
-
-            size_t n = bounded_strlen(src, 64);
-            copy_line_data(dest, src, n);
-            mark_buffer_dirty(vm);
-        }
+    unsigned char *lp = NULL;
+    if (!line_ptr(vm, scr, line, &lp)) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "L: address invalid for SCR=%ld line=%ld", (long)scr, (long)line);
+        return;
     }
+
+    print_line_64(lp);
 }
 
-/* C ( n -- ) Clear line n */
-void editor_word_c(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    {
-        int line = (int)vm_pop(vm);
-        if (line < 0 || line > 15) {
-            log_message(LOG_ERROR, "C: Invalid line number %d", line);
-            vm->error = 1;
-            return;
-        }
+/* S ( c-addr len u -- ) : set line u from buffer (pads with spaces to 64, truncates if longer). */
+static void editor_word_s(VM *vm) {
+    if (!vm) return;
 
-        {
-            char *line_data = get_screen_line(vm, current_screen, line);
-            if (line_data != NULL) {
-                memset(line_data, ' ', 64);
-                mark_buffer_dirty(vm);
-            }
-        }
+    /* Pop in the order that lets us validate line range before address checks (useful in tests). */
+    if (vm->dsp < 2) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "S: stack underflow (needs c-addr len line#)");
+        return;
     }
-}
-
-/* E ( n -- ) Edit line n (prompt) */
-void editor_word_e(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    {
-        int line = (int)vm_pop(vm);
-        if (line < 0 || line > 15) {
-            log_message(LOG_ERROR, "E: Invalid line number %d", line);
-            vm->error = 1;
-            return;
-        }
-
-        current_line = line;
-        printf("Line %d: ", line);
-        print_line(vm, current_screen, line);
-
-        if (get_text_input("Edit: ", input_buffer, sizeof(input_buffer))) {
-            char *line_data = get_screen_line(vm, current_screen, line);
-            if (line_data != NULL) {
-                copy_line_data(line_data, input_buffer, strlen(input_buffer));
-                mark_buffer_dirty(vm);
-            }
-        }
+    cell_t line = vm_pop(vm);
+    if (line < 0 || line > 15) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "S: line out of range (0..15)");
+        /* Drain remaining args to keep stack sane */
+        (void)vm_pop(vm); (void)vm_pop(vm);
+        return;
     }
-}
+    cell_t len  = vm_pop(vm);
+    cell_t addr = vm_pop(vm);
 
-/* POS ( n -- ) Position to line n */
-void editor_word_pos(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    {
-        int line = (int)vm_pop(vm);
-        if (line < 0 || line > 15) {
-            log_message(LOG_ERROR, "P: Invalid line number %d", line);
-            vm->error = 1;
-            return;
-        }
+    if (len < 0) len = 0;  /* defensive: negative length treated as 0 */
 
-        current_line = line;
-        printf("Positioned to line %d\n", line);
+    cell_t scr = current_scr(vm);
+    if (scr < 1 || scr >= (cell_t)MAX_BLOCKS) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "S: SCR out of range (SCR=%ld)", (long)scr);
+        return;
     }
-}
 
-/* COPY ( n1 n2 -- ) Copy line n1 to line n2 */
-void editor_word_copy(VM *vm) {
-    if (vm->dsp < 1) { vm->error = 1; return; }
-    {
-        int n2 = (int)vm_pop(vm);
-        int n1 = (int)vm_pop(vm);
-
-        if (n1 < 0 || n1 > 15 || n2 < 0 || n2 > 15) {
-            vm->error = 1;
-            return;
-        }
-
-        {
-            char *src = get_screen_line(vm, current_screen, n1);
-            char *dst = get_screen_line(vm, current_screen, n2);
-            if (src && dst) {
-                memmove(dst, src, 64);
-                mark_buffer_dirty(vm);
-            }
-        }
+    unsigned char *dst = NULL;
+    if (!line_ptr(vm, scr, line, &dst)) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "S: destination address invalid");
+        return;
     }
-}
 
-/* REP ( c -- ) Replace next occurrence of char with c */
-void editor_word_rep(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    {
-        char newc = (char)(vm_pop(vm) & 0xFF);
-        unsigned char *block_data = get_block_buffer(vm, current_screen);
-        if (vm->error || block_data == NULL) return;
-
-        for (int i = search_pos; i < 16 * 64; i++) {
-            if (block_data[i] == (unsigned char)search_char) {
-                block_data[i] = (unsigned char)newc;
-                mark_buffer_dirty(vm);
-                search_pos = i + 1;
-                printf("Replaced at pos %d\n", i);
-                return;
-            }
-        }
-        printf("No more '%c' found\n", search_char);
+    /* Source pointer */
+    if (!vm_addr_ok(vm, (vaddr_t)addr, (size_t)len)) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "S: source range invalid (addr=%ld len=%ld)",
+                    (long)addr, (long)len);
+        return;
     }
-}
+    const unsigned char *src = (const unsigned char *)vm_ptr(vm, (vaddr_t)addr);
 
-/* INS ( n addr -- ) Insert string at line n (overwrite within line) */
-void editor_word_ins(VM *vm) {
-    if (vm->dsp < 1) { vm->error = 1; return; }
-    {
-        vaddr_t addr = VM_ADDR(vm_pop(vm));
-        int line = (int)vm_pop(vm);
-        if (line < 0 || line > 15) { vm->error = 1; return; }
+    /* Write: pad spaces, then copy up to 64 */
+    memset(dst, ' ', 64);
+    size_t n = (len > 64) ? 64 : (size_t)len;
+    if (n > 0) memcpy(dst, src, n);
 
-        if (!vm_addr_ok(vm, addr, 64)) { vm->error = 1; return; }
-        {
-            char *src  = (char*)vm_ptr(vm, addr);
-            char *dest = get_screen_line(vm, current_screen, line);
-            if (!dest) return;
-
-            size_t n = bounded_strlen(src, 64);
-            for (size_t i = 0; i < n; i++) {
-                dest[i] = src[i];
-            }
-            mark_buffer_dirty(vm);
-        }
-    }
-}
-
-/* CLR ( -- ) Clear the entire screen buffer */
-void editor_word_clr(VM *vm) {
-    unsigned char *block_data = get_block_buffer(vm, current_screen);
-    if (vm->error || block_data == NULL) return;
-
-    memset(block_data, ' ', 16 * 64);
     mark_buffer_dirty(vm);
 }
 
-/* SETSCR ( n -- ) Set current screen number */
-void editor_word_setscr(VM *vm) {
-    if (vm->dsp < 0) { vm->error = 1; return; }
-    {
-        int n = (int)vm_pop(vm);
-        if (n < 0 || n >= MAX_BLOCKS) { vm->error = 1; return; }
+/* SHOW ( -- ) : print the whole 16x64 screen with simple line numbers. */
+static void editor_word_show(VM *vm) {
+    if (!vm) return;
 
-        current_screen = n;
-        vm_store_cell(vm, vm->scr_addr, current_screen);
+    cell_t scr = current_scr(vm);
+    if (scr < 1 || scr >= (cell_t)MAX_BLOCKS) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "SHOW: SCR out of range (SCR=%ld)", (long)scr);
+        return;
+    }
+
+#ifdef STARFORTH_ANSI
+    /* Clear + home (optional; compile-time opt-in) */
+    fputs("\x1b[2J\x1b[H", stdout);
+    printf("\x1b[1mScreen %ld\x1b[0m:\n", (long)scr);
+#else
+    printf("Screen %ld:\n", (long)scr);
+#endif
+
+    for (cell_t line = 0; line < 16; ++line) {
+        unsigned char *lp = NULL;
+        if (!line_ptr(vm, scr, line, &lp)) { vm->error = 1; return; }
+#ifdef STARFORTH_ANSI
+        printf("\x1b[90m%2ld:\x1b[0m ", (long)line);
+#else
+        printf("%2ld: ", (long)line);
+#endif
+        print_line_64(lp);
     }
 }
 
-/* SHOW ( -- ) Show current line and screen */
-void editor_word_show(VM *vm) {
-    printf("Screen=%d Line=%d SearchPos=%d\n",
-           current_screen, current_line, search_pos);
+/* EDIT ( u -- ) : tiny line-editor shell (stdin/stdout). No raw mode, no curses. */
+/* EDIT ( u -- ) : tiny line-editor shell (stdin/stdout). No raw mode, no curses. */
+static void editor_word_edit(VM *vm) {
+    if (!vm) return;
+
+    if (vm->dsp < 0) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "EDIT: stack underflow (needs block#)");
+        return;
+    }
+    cell_t blk = vm_pop(vm);
+    if (blk < 1 || blk >= (cell_t)MAX_BLOCKS) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "EDIT: block out of range");
+        return;
+    }
+    vm_store_cell(vm, vm->scr_addr, blk);
+    editor_word_show(vm);
+    if (vm->error) return;
+
+    char buf[1024];
+    for (;;) {
+        printf("SCR %ld> ", (long)vm_load_cell(vm, vm->scr_addr));
+        fflush(stdout);
+        if (!fgets(buf, sizeof buf, stdin)) break;
+
+        /* Trim trailing newline */
+        size_t L = strlen(buf);
+        if (L && buf[L-1] == '\n') buf[L-1] = '\0';
+
+        if (buf[0] == 'q' || buf[0] == 'Q') break;
+        else if (buf[0] == 'h' || buf[0] == 'H') {
+            puts("Commands: p=print, l <n>=line, s <n> <text>=set, n=next, b=prev, w=write, q=quit");
+        } else if (buf[0] == 'p' || buf[0] == 'P') {
+            editor_word_show(vm);
+        } else if (buf[0] == 'l' || buf[0] == 'L') {
+            long ln = -1;
+            if (sscanf(buf+1, "%ld", &ln) == 1) {
+                vm_push(vm, (cell_t)ln);
+                editor_word_l(vm);
+            } else {
+                puts("usage: l <0..15>");
+            }
+        } else if (buf[0] == 's' || buf[0] == 'S') {
+            long ln = -1;
+            const char *p = buf + 1;
+            while (*p && isspace((unsigned char)*p)) ++p;
+            if (sscanf(p, "%ld", &ln) == 1) {
+                /* Move past number */
+                while (*p && !isspace((unsigned char)*p)) ++p;
+                while (*p && isspace((unsigned char)*p)) ++p;
+                /* p is now the text to write */
+                size_t tlen = strlen(p);
+
+                cell_t scr = vm_load_cell(vm, vm->scr_addr);
+                unsigned char *dst = NULL;
+                if (ln < 0 || ln > 15 || scr < 1 || scr >= (cell_t)MAX_BLOCKS ||
+                    !line_ptr(vm, scr, (cell_t)ln, &dst)) {
+                    puts("error: bad SCR/line");
+                } else {
+                    memset(dst, ' ', 64);
+                    size_t n = (tlen > 64) ? 64 : tlen;
+                    if (n) memcpy(dst, p, n);
+                    /* ✅ Use helpers declared in block_words.h (no implicit decl) */
+                    mark_buffer_dirty(vm);
+                    puts("ok");
+                }
+            } else {
+                puts("usage: s <0..15> <text>");
+            }
+        } else if (buf[0] == 'n' || buf[0] == 'N') {
+            cell_t s = vm_load_cell(vm, vm->scr_addr);
+            if (s + 1 < (cell_t)MAX_BLOCKS) vm_store_cell(vm, vm->scr_addr, s + 1);
+            editor_word_show(vm);
+        } else if (buf[0] == 'b' || buf[0] == 'B') {
+            cell_t s = vm_load_cell(vm, vm->scr_addr);
+            if (s - 1 >= 1) vm_store_cell(vm, vm->scr_addr, s - 1);
+            editor_word_show(vm);
+        } else if (buf[0] == 'w' || buf[0] == 'W') {
+            /* ✅ No more implicit decls: use helpers */
+            mark_buffer_dirty(vm);
+            save_all_buffers(vm);
+            puts("saved");
+        } else {
+            puts("h for help");
+        }
+
+        if (vm->error) {
+            puts("error");
+            vm->error = 0; /* keep shell alive */
+        }
+    }
 }
 
-/* Register editor words */
+
+/* -------- registration -------- */
+
 void register_editor_words(VM *vm) {
-    register_word(vm, "L",      editor_word_l);
-    register_word(vm, "N",      editor_word_n);
-    register_word(vm, "P",      editor_word_p);
-    register_word(vm, "R",      editor_word_r);
-    register_word(vm, "S",      editor_word_s);
-    register_word(vm, "C",      editor_word_c);
-    register_word(vm, "E",      editor_word_e);
-    register_word(vm, "POS",    editor_word_pos);
-    register_word(vm, "COPY",   editor_word_copy);
-    register_word(vm, "REP",    editor_word_rep);
-    register_word(vm, "INS",    editor_word_ins);
-    register_word(vm, "CLR",    editor_word_clr);
-    register_word(vm, "SETSCR", editor_word_setscr);
-    register_word(vm, "SHOW",   editor_word_show);
+    if (!vm) return;
+    register_word(vm, "L",    editor_word_l);    /* non-79 */
+    register_word(vm, "S",    editor_word_s);    /* non-79 */
+    register_word(vm, "SHOW", editor_word_show); /* non-79 */
+    register_word(vm, "EDIT", editor_word_edit); /* non-79 */
 }

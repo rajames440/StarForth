@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   system_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 11:14 PM
+ Last modified - 8/13/25, 9:10 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -169,24 +169,6 @@ void system_word_vlist(VM *vm) {
     printf("Total: %d words\n", count);
 }
 
-/* ?STACK ( -- ) : display depths & contents (data stack only) */
-void word_question_stack(VM *vm) {
-    printf("Data stack depth: %d\n", vm->dsp + 1);
-    printf("Return stack depth: %d\n", vm->rsp + 1);
-
-    if (vm->dsp < -1) puts("WARNING: Data stack underflow!");
-    else if (vm->dsp >= STACK_SIZE - 1) puts("WARNING: Data stack overflow!");
-
-    if (vm->rsp < -1) puts("WARNING: Return stack underflow!");
-    else if (vm->rsp >= STACK_SIZE - 1) puts("WARNING: Return stack overflow!");
-
-    if (vm->dsp >= 0) {
-        fputs("Data stack: ", stdout);
-        for (int i = 0; i <= vm->dsp; i++) printf("%ld ", (long)vm->data_stack[i]);
-        putchar('\n');
-    }
-}
-
 /* PAGE ( -- ) */
 void system_word_page(VM *vm) {
     (void)vm;
@@ -315,7 +297,6 @@ void register_system_words(VM *vm) {
     register_word(vm, "SAVE-SYSTEM", system_word_save_system);
     register_word(vm, "WORDS", system_word_words);
     register_word(vm, "VLIST", system_word_vlist);
-    register_word(vm, "?STACK", word_question_stack);
     register_word(vm, "PAGE", system_word_page);
     register_word(vm, "NOP", system_word_nop);
     register_word(vm, "79-STANDARD", system_word_79_standard);

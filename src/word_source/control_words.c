@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   control_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 2:36 PM
+ Last modified - 8/13/25, 9:57 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -144,15 +144,15 @@ static void control_forth_0branch(VM *vm) {
     }
 }
 
-/* (LIT) ( -- n ) */
-static void control_forth_lit(VM *vm) {
-    if (vm->rsp < 0) { vm->error = 1; log_message(LOG_ERROR, "(LIT): RSP underflow"); return; }
-    cell_t *ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
-    cell_t v = *ip++;
-    vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
-    vm_push(vm, v);
-    log_message(LOG_DEBUG, "(LIT): %ld", (long)v);
-}
+// /* (LIT) ( -- n ) */
+// static void control_forth_lit(VM *vm) {
+//     if (vm->rsp < 0) { vm->error = 1; log_message(LOG_ERROR, "(LIT): RSP underflow"); return; }
+//     cell_t *ip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];
+//     cell_t v = *ip++;
+//     vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
+//     vm_push(vm, v);
+//     log_message(LOG_DEBUG, "(LIT): %ld", (long)v);
+// }
 
 /* ===================== Compile-time words (CF stack) ===================== */
 
@@ -360,24 +360,83 @@ static void control_forth_runtime_plus_loop(VM *vm) {
     }
 }
 
+/* ───────────── Add near other compile-time helpers ───────────── */
+
+/* WHILE ( flag -- ) compiles: 0BRANCH <fwd-placeholder>
+   Stack discipline on CF stack after BEGIN ... WHILE:
+   [ ... begin_addr, while_lit_addr ] */
+static void control_forth_while(VM *vm) {
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "WHILE: compile-only"); return; }
+
+    /* Compile a forward 0BRANCH and remember where its literal lives for patching */
+    vm_compile_call(vm, control_forth_0branch);
+    size_t lit = emit_cell(vm, 0); /* placeholder to be patched at REPEAT */
+
+    if (!cf_push(lit)) { vm->error = 1; log_message(LOG_ERROR, "WHILE: CF overflow"); return; }
+    log_message(LOG_DEBUG, "WHILE: placeholder @ %zu", lit);
+}
+
+/* REPEAT ( -- ) compiles: BRANCH <back-to-BEGIN>, then patches WHILE forward jump */
+static void control_forth_repeat(VM *vm) {
+    if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "REPEAT: compile-only"); return; }
+
+    size_t while_lit;
+    if (!cf_pop(&while_lit)) { vm->error = 1; log_message(LOG_ERROR, "REPEAT: CF underflow (WHILE placeholder)"); return; }
+
+    size_t begin_addr;
+    if (!cf_pop(&begin_addr)) { vm->error = 1; log_message(LOG_ERROR, "REPEAT: CF underflow (BEGIN addr)"); return; }
+
+    /* Back branch to BEGIN */
+    vm_compile_call(vm, control_forth_branch);
+    cell_t back = (cell_t)((cell_t)begin_addr - (cell_t)vm->here);
+    (void)emit_cell(vm, back);
+
+    /* Patch the WHILE’s 0BRANCH to land here (just after we emitted the back-branch literal) */
+    cell_t fwd = (cell_t)((size_t)vm->here - while_lit);
+    *(cell_t *)(vm->memory + while_lit) = fwd;
+
+    log_message(LOG_DEBUG, "REPEAT: patched WHILE @ %zu -> +%ld; back to %zu (%ld)",
+                while_lit, (long)fwd, begin_addr, (long)back);
+}
+
+/* I ( -- n )  current loop index */
+static void control_forth_i(VM *vm) {
+    if (loop_sp < 0) { vm->error = 1; log_message(LOG_ERROR, "I: outside DO loop"); return; }
+    vm_push(vm, loop_stack[loop_sp].index);
+}
+
+/* J ( -- n )  next-outer loop index */
+static void control_forth_j(VM *vm) {
+    if (loop_sp < 1) { vm->error = 1; log_message(LOG_ERROR, "J: needs nested DO loops"); return; }
+    vm_push(vm, loop_stack[loop_sp - 1].index);
+}
+
 /* Registration of control flow words */
 void register_control_words(VM *vm) {
-    register_word(vm, "BRANCH",  control_forth_branch);
-    register_word(vm, "0BRANCH", control_forth_0branch);
-    register_word(vm, "(LIT)",   control_forth_lit);
+    /* Internal runtimes NOT registered as words:
+       BRANCH, 0BRANCH, (LIT) — they remain internal building blocks. */
 
+    /* IF/ELSE/THEN */
     register_word(vm, "IF",      control_forth_if);          vm_make_immediate(vm);
     register_word(vm, "ELSE",    control_forth_else);        vm_make_immediate(vm);
     register_word(vm, "THEN",    control_forth_then);        vm_make_immediate(vm);
 
+    /* BEGIN-family */
     register_word(vm, "BEGIN",   control_forth_begin);       vm_make_immediate(vm);
     register_word(vm, "UNTIL",   control_forth_until);       vm_make_immediate(vm);
     register_word(vm, "AGAIN",   control_forth_again);       vm_make_immediate(vm);
+    register_word(vm, "WHILE",   control_forth_while);       vm_make_immediate(vm);
+    register_word(vm, "REPEAT",  control_forth_repeat);      vm_make_immediate(vm);
 
+    /* DO-family */
     register_word(vm, "DO",      control_forth_do);          vm_make_immediate(vm);
     register_word(vm, "LOOP",    control_forth_loop);        vm_make_immediate(vm);
     register_word(vm, "+LOOP",   control_forth_plus_loop);   vm_make_immediate(vm);
 
-    log_message(LOG_INFO, "Registering FORTH-79 control flow words...");
-    log_message(LOG_INFO, "Control flow words registered successfully");
+    /* Loop indices */
+    register_word(vm, "I",       control_forth_i);
+    register_word(vm, "J",       control_forth_j);
+
+    /* Already present elsewhere: EXIT / ABORT / QUIT handled in their modules */
+    log_message(LOG_INFO, "Registering FORTH-79 control flow words (public only)");
 }

@@ -1,0 +1,38 @@
+Nucleus Words
+
+!   *   */   */MOD   +   +!   +loop   -   /
+/MOD   0<   0=   0>   1+   1-   2+   2-   <
+=   >   >R   ?DUP   @   ABS   AND   begin   C!
+C@   colon   CMOVE   constant   create   D+
+D<   DEPTH   DNEGATE   do   does>
+DROP   DUP   else   EXECUTE   EXIT   FILL   I
+if   J   LEAVE   literal   loop   MAX   MIN
+MOD   MOVE   NEGATE   NOT   OR   OVER   PICK
+R>   R@   repeat   ROLL   ROT   semicolon
+SWAP   then   U*   U/   until   variable
+while   XOR
+
+(note  that  lower  case entries refer to just  the  run-time  code
+corresponding to a compiling word.)
+
+Interpreter Words
+
+#   #>   #S   '   (   -TRAILING   .
+79-STANDARD   <#   >IN   ?   ABORT   BASE   BLK
+CONTEXT   CONVERT   COUNT   CR   CURRENT
+DECIMAL   EMIT   EXPECT   FIND   FORTH   HERE
+HOLD   KEY   PAD   QUERY   QUIT   SIGN   SPACE
+SPACES   TYPE   U.   WORD
+
+Compiler Words
+
++LOOP   ,   ."   :   ;   ALLOT   BEGIN
+COMPILE   CONSTANT   CREATE   DEFINITIONS   DO
+DOES>   ELSE   FORGET   IF   IMMEDIATE
+LITERAL   LOOP   REPEAT   STATE   THEN   UNTIL
+VARIABLE   VOCABULARY   WHILE   [   [COMPILE]   ]
+
+Device Words
+
+BLOCK   BUFFER   EMPTY-BUFFERS   LIST
+LOAD   SAVE-BUFFERS   SCR   UPDATE
