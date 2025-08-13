@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   control_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/13/25, 9:57 AM
+ Last modified - 8/13/25, 12:09 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -413,8 +413,12 @@ static void control_forth_j(VM *vm) {
 
 /* Registration of control flow words */
 void register_control_words(VM *vm) {
-    /* Internal runtimes NOT registered as words:
-       BRANCH, 0BRANCH, (LIT) — they remain internal building blocks. */
+    if (!vm) return;
+
+    /* Internal building blocks: must be registered so vm_compile_call() can find them.
+       We give them paren-names so they aren't “public” words in practice. */
+    register_word(vm, "(BRANCH)",  control_forth_branch);
+    register_word(vm, "(0BRANCH)", control_forth_0branch);
 
     /* IF/ELSE/THEN */
     register_word(vm, "IF",      control_forth_if);          vm_make_immediate(vm);
@@ -437,6 +441,5 @@ void register_control_words(VM *vm) {
     register_word(vm, "I",       control_forth_i);
     register_word(vm, "J",       control_forth_j);
 
-    /* Already present elsewhere: EXIT / ABORT / QUIT handled in their modules */
-    log_message(LOG_INFO, "Registering FORTH-79 control flow words (public only)");
+    log_message(LOG_INFO, "Registering FORTH-79 control flow words (+internal branches)");
 }

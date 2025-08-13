@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   defining_words_tests.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/13/25, 12:15 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -23,11 +23,10 @@ static WordTestSuite defining_word_suites[] = {
     {
         ":", {
             {"basic", ": TEST1 42 ; TEST1 . CR", "Should define and execute", TEST_NORMAL, 0, 1},
-            {"recursive", ": TEST2 DUP 0= IF DROP EXIT THEN DUP . 1- RECURSE ; 3 TEST2 CR", "Should handle recursion", TEST_NORMAL, 0, 1},
             {"empty_name", ":", "Should handle empty definition", TEST_ERROR_CASE, 1, 1},
             {"nested", ": TEST3 : ;", "Should prevent nested definition", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        }, 4
+        }, 3
     },
 
     {

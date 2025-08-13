@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   memory_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 10:25 AM
+ Last modified - 8/13/25, 1:13 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -18,6 +18,7 @@
 #include "include/memory_words.h"
 #include "../../include/word_registry.h"
 #include "vm.h"
+#include "../../include/log.h"
 #include <string.h>   /* memset, memmove */
 
 /* @ ( addr -- n )  Fetch cell from VM memory */
@@ -149,6 +150,20 @@ void memory_word_2store(VM *vm) {
     vm_store_cell(vm, addr + (vaddr_t)sz,   high);
 }
 
+/* CELLS ( n -- n' )  Multiply by cell size (bytes per cell). */
+/* CELLS ( n -- n' )  Scale by cell size in bytes. */
+static void memory_word_cells(VM *vm) {
+    if (!vm) return;
+    if (vm->dsp < 0) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "CELLS: stack underflow");
+        return;
+    }
+    cell_t n = vm_pop(vm);
+    vm_push(vm, n * (cell_t)sizeof(cell_t));
+}
+
+
 /* Register memory words */
 void register_memory_words(VM *vm) {
     register_word(vm, "@",    memory_word_fetch);
@@ -162,4 +177,5 @@ void register_memory_words(VM *vm) {
     register_word(vm, "FILL", memory_word_fill);
     register_word(vm, "MOVE", memory_word_move);
     register_word(vm, "ERASE", memory_word_erase);
+    register_word(vm, "CELLS", memory_word_cells);
 }

@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   defining_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 10:42 PM
+ Last modified - 8/13/25, 1:26 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -16,12 +16,10 @@
  */
 
 /*
-
                                  ***   StarForth   ***
   defining_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 8/12/25
-  (c) 2025 Robert A. James — CC0 1.0
-
+  Last modified - 8/13/25, 01:20 PM
+  (c) 2025 Robert A. James - StarshipOS Forth Project. CC0-1.0 / No warranty.
 */
 
 #include "include/defining_words.h"
@@ -38,6 +36,9 @@ static void defining_runtime_constant(VM *vm);
 static void defining_runtime_variable(VM *vm);
 static void defining_runtime_lit(VM *vm);
 
+static void defining_runtime_dodoes(VM *vm);
+static void defining_runtime_does_rt(VM *vm);
+
 static void defining_word_colon(VM *vm);
 static void defining_word_semicolon(VM *vm);
 
@@ -53,6 +54,9 @@ static void defining_word_literal(VM *vm);
 static void defining_word_does(VM *vm);
 static void defining_word_immediate(VM *vm);
 static void dictionary_word_forget(VM *vm);
+
+/* Forth-79 helper alias */
+static void defining_word_less_builds(VM *vm); /* <BUILDS */
 
 /* ───────────────────────────── Runtimes ───────────────────────────── */
 
@@ -104,19 +108,12 @@ static void defining_runtime_create(VM *vm) {
                 (long)dfa, entry->name_len, entry->name);
 }
 
-/* LIT runtime: ( -- n )
-   Fetch next cell from threaded code via the return IP on R-stack.
-   Execute loop does: ip++ ; R-push(ip) ; call word ; ip := R-pop()
-   Inside LIT:
-     - peek top return address (current ip),
-     - read *ip as the literal,
-     - push it,
-     - increment ip and write it back on R-stack. */
+/* LIT runtime: ( -- n ) — fetch next cell from threaded code via R-stack IP */
 static void defining_runtime_lit(VM *vm) {
     if (!vm) return;
     if (vm->rsp < 0) { vm->error = 1; return; }
 
-    cell_t *rip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];  /* peek */
+    cell_t *rip = (cell_t*)(uintptr_t)vm->return_stack[vm->rsp];  /* peek IP */
     if (!rip) { vm->error = 1; return; }
 
     cell_t value = *rip;      /* read literal cell */
@@ -127,10 +124,74 @@ static void defining_runtime_lit(VM *vm) {
     log_message(LOG_DEBUG, "LIT: pushed %ld", (long)value);
 }
 
+/* DODOES runtime: when a created word runs, push PFA then execute DOES>-body */
+static void defining_runtime_dodoes(VM *vm) {
+    if (!vm) return;
+
+    DictEntry *self = vm->current_executing_entry;
+    if (!self) { vm->error = 1; log_message(LOG_ERROR, "DODOES: no current entry"); return; }
+
+    cell_t *df = vm_dictionary_get_data_field(self);
+    if (!df) { vm->error = 1; return; }
+    vaddr_t pfa = (vaddr_t)(uint64_t)(*df);
+
+    /* Push PFA per DOES> semantics */
+    vm_push(vm, (cell_t)pfa);
+
+    /* PFA[0] holds vaddr of DOES>-body */
+    if (!vm_addr_ok(vm, pfa, sizeof(cell_t))) { vm->error = 1; return; }
+    vaddr_t body_vaddr = (vaddr_t)(uint64_t)(*(cell_t *)vm_ptr(vm, pfa));
+    if (!vm_addr_ok(vm, body_vaddr, sizeof(cell_t))) { vm->error = 1; return; }
+
+    /* Execute like a colon word until EXIT pops the frame */
+    int base_rsp = vm->rsp;
+    cell_t *ip = (cell_t *)vm_ptr(vm, body_vaddr);
+
+    vm->rsp++;
+    if (vm->rsp >= STACK_SIZE) { vm->error = 1; vm->rsp = base_rsp; return; }
+    vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
+
+    while (!vm->error && vm->rsp >= base_rsp + 1) {
+        cell_t *cur_ip = (cell_t *)(uintptr_t)vm->return_stack[vm->rsp];
+        DictEntry *entry = (DictEntry *)(uintptr_t)(*cur_ip++);
+        vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)cur_ip;
+
+        if (!entry || !entry->func) { vm->error = 1; break; }
+        vm->current_executing_entry = entry;
+        entry->func(vm);
+    }
+
+    if (vm->rsp < base_rsp) vm->rsp = base_rsp;
+}
+
+/* does_rt: runs inside the defining word at DOES> time.
+   Converts the just-created child so its runtime is DODOES and
+   records the DOES>-body start address at the child's PFA[0]. */
+static void defining_runtime_does_rt(VM *vm) {
+    if (!vm) return;
+
+    DictEntry *child = vm->latest;
+    if (!child) { vm->error = 1; log_message(LOG_ERROR, "DOES>: no child to patch"); return; }
+
+    /* IP (top R-stack) points at the next entry (EXIT we compile below); body starts after that */
+    if (vm->rsp < 0) { vm->error = 1; return; }
+    cell_t *ip = (cell_t *)(uintptr_t)vm->return_stack[vm->rsp];
+    cell_t *body_ip = ip + 1; /* first entry AFTER EXIT */
+
+    vaddr_t body_vaddr = (vaddr_t)((uint8_t *)body_ip - vm->memory);
+
+    cell_t *df = vm_dictionary_get_data_field(child);
+    if (!df) { vm->error = 1; return; }
+    vaddr_t pfa = (vaddr_t)(uint64_t)(*df);
+    if (!vm_addr_ok(vm, pfa, sizeof(cell_t))) { vm->error = 1; return; }
+
+    *(cell_t *)vm_ptr(vm, pfa) = (cell_t)body_vaddr;
+    child->func = defining_runtime_dodoes;
+}
+
 /* ───────────────────────────── Defining words ─────────────────────── */
 
-/* CREATE ( "name" -- )
-   Forth-79: does NOT allocate data. Captures cell-aligned HERE as DFA. */
+/* CREATE ( "name" -- ) — 79: does NOT allocate data; captures cell-aligned HERE as DFA */
 static void defining_word_create(VM *vm) {
     if (!vm) return;
 
@@ -156,6 +217,13 @@ static void defining_word_create(VM *vm) {
 static void defining_word_colon(VM *vm) {
     if (!vm) return;
 
+    /* 79: nested colon definitions are illegal */
+    if (vm->mode == MODE_COMPILE) {
+        log_message(LOG_ERROR, "Nested ':' inside a definition is not allowed");
+        vm->error = 1;
+        return;
+    }
+
     char namebuf[WORD_NAME_MAX + 1];
     int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
     if (nlen <= 0) { vm->error = 1; return; }
@@ -164,8 +232,7 @@ static void defining_word_colon(VM *vm) {
     log_message(LOG_DEBUG, ": Started definition of '%.*s'", nlen, namebuf);
 }
 
-/* ;  ( -- )  end colon definition — IMMEDIATE
-   Compiles EXIT and returns to interpret mode. */
+/* ;  ( -- )  end colon definition — IMMEDIATE (compiles EXIT in vm_exit_compile_mode) */
 static void defining_word_semicolon(VM *vm) {
     if (!vm) return;
     if (vm->mode != MODE_COMPILE) { vm->error = 1; return; }
@@ -237,7 +304,7 @@ static void defining_word_state(VM *vm) {
     vm_push(vm, (cell_t)vm->state_addr);
 }
 
-/* COMPILE ( "word" -- ) — IMMEDIATE (obsolete, but present) */
+/* COMPILE ( "word" -- ) — IMMEDIATE (legacy) */
 static void defining_word_compile(VM *vm) {
     if (!vm) return;
 
@@ -329,10 +396,46 @@ static void dictionary_word_forget(VM *vm) {
                 nlen, namebuf, (long)vm->here, (long)vm->dict_fence_here);
 }
 
-/* DOES> — IMMEDIATE (stub for now) */
+/* DOES> — IMMEDIATE: finalize the defining word’s create-part and compile DOES>-body */
 static void defining_word_does(VM *vm) {
-    log_message(LOG_WARN, "DOES>: not implemented yet");
-    vm->error = 1;
+    if (!vm) return;
+    if (vm->mode != MODE_COMPILE) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "DOES>: compile-only");
+        return;
+    }
+
+    /* Compile helper (void fn; check vm->error after) */
+    vm_compile_call(vm, defining_runtime_does_rt);
+    if (vm->error) {
+        log_message(LOG_ERROR, "DOES>: could not compile does_rt");
+        return;
+    }
+
+    /* Compile EXIT so the defining word returns immediately after patching */
+    DictEntry *exitw = vm_find_word(vm, "EXIT", 4);
+    if (!exitw) { vm->error = 1; log_message(LOG_ERROR, "DOES>: EXIT not found"); return; }
+    vm_compile_word(vm, exitw);
+    if (vm->error) return;
+
+    /* Continue compiling: the following words form the DOES>-body executed by DODOES later. */
+}
+
+/* <BUILDS — IMMEDIATE
+   Compile-time: compile a call to CREATE.
+   Interpret-time: behave exactly like CREATE. */
+static void defining_word_less_builds(VM *vm) {
+    if (!vm) return;
+
+    DictEntry *createw = vm_find_word(vm, "CREATE", 6);
+    if (!createw) { vm->error = 1; log_message(LOG_ERROR, "<BUILDS: CREATE not found"); return; }
+
+    if (vm->mode == MODE_COMPILE) {
+        vm_compile_word(vm, createw);
+        return;
+    }
+    /* Interpret mode */
+    defining_word_create(vm);
 }
 
 /* IMMEDIATE ( -- ) mark latest word immediate — IMMEDIATE itself */
@@ -350,10 +453,8 @@ void register_defining_words(VM *vm) {
     log_message(LOG_INFO, "Registering defining words...");
 
     /* Core colon pair — both IMMEDIATE */
-    register_word(vm, ":", defining_word_colon);
-    vm_make_immediate(vm);
-    register_word(vm, ";", defining_word_semicolon);
-    vm_make_immediate(vm);
+    register_word(vm, ":", defining_word_colon);       vm_make_immediate(vm);
+    register_word(vm, ";", defining_word_semicolon);   vm_make_immediate(vm);
 
     /* CREATE / VARIABLE / CONSTANT */
     register_word(vm, "CREATE",   defining_word_create);
@@ -361,33 +462,30 @@ void register_defining_words(VM *vm) {
     register_word(vm, "CONSTANT", defining_word_constant);
 
     /* IMMEDIATE (make IMMEDIATE itself immediate) */
-    register_word(vm, "IMMEDIATE", defining_word_immediate);
-    vm_make_immediate(vm);
+    register_word(vm, "IMMEDIATE", defining_word_immediate); vm_make_immediate(vm);
 
     /* STATE and mode switchers */
     register_word(vm, "STATE", defining_word_state);
-    register_word(vm, "[",     defining_word_left_bracket);
-    vm_make_immediate(vm);
-    register_word(vm, "]",     defining_word_right_bracket);
-    vm_make_immediate(vm);
+    register_word(vm, "[",     defining_word_left_bracket);  vm_make_immediate(vm);
+    register_word(vm, "]",     defining_word_right_bracket); vm_make_immediate(vm);
 
     /* Dictionary management */
     register_word(vm, "FORGET",  dictionary_word_forget);
 
     /* Compile helpers — immediate */
-    register_word(vm, "COMPILE",    defining_word_compile);
-    vm_make_immediate(vm);
-    register_word(vm, "[COMPILE]",  defining_word_bracket_compile);
-    vm_make_immediate(vm);
+    register_word(vm, "COMPILE",    defining_word_compile);         vm_make_immediate(vm);
+    register_word(vm, "[COMPILE]",  defining_word_bracket_compile); vm_make_immediate(vm);
 
     /* LIT runtime + LITERAL (immediate) */
     register_word(vm, "LIT",     defining_runtime_lit);
-    register_word(vm, "LITERAL", defining_word_literal);
-    vm_make_immediate(vm);
+    register_word(vm, "LITERAL", defining_word_literal);            vm_make_immediate(vm);
 
-    /* DOES> — stub (immediate) */
-    register_word(vm, "DOES>", defining_word_does);
-    vm_make_immediate(vm);
+    /* <BUILDS helper for BUILDS … DOES> pattern */
+    register_word(vm, "<BUILDS", defining_word_less_builds);        vm_make_immediate(vm);
+
+    /* DOES> plumbing (lowercase internal) */
+    register_word(vm, "does_rt", defining_runtime_does_rt);         /* internal helper */
+    register_word(vm, "DOES>",   defining_word_does);               vm_make_immediate(vm);
 
     log_message(LOG_INFO, "Defining words registered.");
 }

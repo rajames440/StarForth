@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   test_runner.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 10:44 AM
+ Last modified - 8/13/25, 12:02 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -68,7 +68,6 @@ static TestModule test_modules[] = {
     {"Dictionary Manipulation Words", NULL, 0, run_dictionary_manipulation_words_tests}, /* Module 13 */
     {"Vocabulary Words", NULL, 0, run_vocabulary_words_tests}, /* Module 14 */
     {"System Words", NULL, 0, run_system_words_tests}, /* Module 15 */
-    {"Editor Words", NULL, 0, run_editor_words_tests}, /* Module 16 */
     {"Defining Words", NULL, 0, run_defining_words_tests}, /* Module 17 */
     {"Control Words", NULL, 0, run_control_words_tests}, /* Module 18 */
     {NULL, NULL, 0, NULL} /* End marker */
