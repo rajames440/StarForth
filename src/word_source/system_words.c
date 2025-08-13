@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   system_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/12/25, 11:14 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -17,299 +17,298 @@
 
 /* system_words.c - FORTH-79 System & Environment Words */
 #include "include/system_words.h"
+#include "../../include/vm.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/* Global system state */
-static int system_running = 1;          /* System running flag */
-static int forth_79_standard = 1;       /* FORTH-79 standard compliance */
+/* ───────────────────────── Global system state ───────────────────────── */
+static int system_running = 1;    /* System running flag */
+static int forth_79_standard = 1; /* FORTH-79 standard compliance */
 
-/* Helper function to print word name */
+/* ─────────────────────────── Utilities/helpers ───────────────────────── */
+
+/* Print a word’s name (no newline) */
 static void print_word_name(const DictEntry *entry) {
-    size_t i;
-    size_t name_len;
-
-    if (entry == NULL) {
-        return;
-    }
-
-    name_len = entry->name_len;
-
-    for (i = 0; i < name_len; i++) {
-        printf("%c", entry->name[i]);
+    if (!entry) return;
+    for (size_t i = 0; i < entry->name_len; i++) {
+        putchar((unsigned char)entry->name[i]);
     }
 }
 
-/* Helper function to reset VM to initial state */
+/* Reset VM to a known state. If cold_start!=0, also rewinds HERE a bit. */
 static void reset_vm_state(VM *vm, int cold_start) {
+    if (!vm) return;
+
     /* Reset stacks */
     vm->dsp = -1;
     vm->rsp = -1;
 
-    /* Clear error state */
+    /* Clear error state & enter interpret mode */
     vm->error = 0;
-
-    /* Set interpretation mode */
-    vm->mode = MODE_INTERPRET;
+    vm->mode  = MODE_INTERPRET;
 
     if (cold_start) {
-        /* Cold start - reset dictionary to initial state */
-        /* In a full implementation, this would restore the base dictionary */
-        /* For now, just reset the HERE pointer to a safe state */
-        if (vm->here > 1024) {  /* Keep some basic dictionary intact */
-            vm->here = 1024;
-        }
+        /* In a complete system, this would restore a boot image.
+           For now we keep a minimal fence by not crushing the base dictionary. */
+        if (vm->here > 1024) vm->here = 1024;
     }
 
-    /* Reset system running flag */
     system_running = 1;
 }
 
-/* EXIT ( -- ) Exit from colon definition */
+/* ───────────────────────────── Core words ───────────────────────────── */
+
+/* EXIT ( -- ) : Marker only — colon defs end via threaded interpreter. */
 static void forth_exit(VM *vm) {
-    /* EXIT is handled by the threaded code interpreter */
-    /* This should never actually execute in normal operation */
-    /* It's just a marker for the threaded code system */
-    log_message(LOG_DEBUG, "EXIT executed");
-    (void)vm;  /* Suppress unused parameter warning */
+    (void)vm;
+    log_message(LOG_DEBUG, "EXIT executed (marker)");
 }
 
-/* ( ( -- ) Begin comment - skip to closing ) */
+/* (  ( -- ) : Begin comment; skip to closing ) — IMMEDIATE */
 static void forth_paren(VM *vm) {
     char word[64];
     int paren_depth = 1;
 
-    log_message(LOG_DEBUG, "( Starting comment");
-
-    /* Parse words until we find the closing ) */
     while (paren_depth > 0 && vm_parse_word(vm, word, sizeof(word))) {
         if (strcmp(word, "(") == 0) {
             paren_depth++;
-            log_message(LOG_DEBUG, "( Nested comment start, depth=%d", paren_depth);
         } else if (strcmp(word, ")") == 0) {
             paren_depth--;
-            log_message(LOG_DEBUG, "( Comment end, depth=%d", paren_depth);
         }
-        /* All other words are ignored (commented out) */
+        /* else: ignore */
     }
 
     if (paren_depth > 0) {
         log_message(LOG_WARN, "( Unterminated comment");
     }
-
-    log_message(LOG_DEBUG, "( Comment completed");
 }
 
-/* COLD ( -- )  Cold start system */
+/* COLD ( -- ) */
 void system_word_cold(VM *vm) {
-    printf("FORTH-79 Cold Start\n");
-    reset_vm_state(vm, 1);  /* Cold start */
-    printf("System initialized.\n");
+    puts("FORTH-79 Cold Start");
+    reset_vm_state(vm, 1);
+    puts("System initialized.");
 }
 
-/* WARM ( -- )  Warm start system */
+/* WARM ( -- ) */
 void system_word_warm(VM *vm) {
-    printf("FORTH-79 Warm Start\n");
-    reset_vm_state(vm, 0);  /* Warm start */
-    printf("System restarted.\n");
+    puts("FORTH-79 Warm Start");
+    reset_vm_state(vm, 0);
+    puts("System restarted.");
 }
 
-/* BYE ( -- )  Exit FORTH system */
+/* BYE ( -- ) */
 void system_word_bye(VM *vm) {
-    printf("Goodbye!\n");
-    vm_cleanup(vm);  /* Clean up memory before exit */
+    puts("Goodbye!");
+    vm_cleanup(vm);
     exit(0);
 }
 
-/* SAVE-SYSTEM ( -- )  Save system image */
+/* SAVE-SYSTEM ( -- ) : trivial snapshot of memory prefix */
 void system_word_save_system(VM *vm) {
-    FILE *save_file;
-    size_t bytes_written;
-
-    printf("Saving system image...\n");
-
-    /* Attempt to save basic VM state to a file */
-    save_file = fopen("forth_system.img", "wb");
-    if (save_file == NULL) {
-        printf("Error: Cannot create system image file\n");
+    FILE *save_file = fopen("forth_system.img", "wb");
+    if (!save_file) {
+        puts("Error: Cannot create system image file");
         vm->error = 1;
         return;
     }
-
-    /* Save basic VM state */
-    bytes_written = fwrite(&vm->here, sizeof(vm->here), 1, save_file);
-    if (bytes_written != 1) {
-        printf("Error: Failed to save system state\n");
+    if (fwrite(&vm->here, sizeof(vm->here), 1, save_file) != 1) {
+        puts("Error: Failed to save system state");
         fclose(save_file);
         vm->error = 1;
         return;
     }
-
-    /* Save memory (simplified - in real implementation would save dictionary) */
-    bytes_written = fwrite(vm->memory, 1, vm->here, save_file);
-    if (bytes_written != vm->here) {
-        printf("Error: Failed to save memory image\n");
+    if (fwrite(vm->memory, 1, vm->here, save_file) != (size_t)vm->here) {
+        puts("Error: Failed to save memory image");
         fclose(save_file);
         vm->error = 1;
         return;
     }
-
     fclose(save_file);
-    printf("System image saved successfully\n");
+    puts("System image saved successfully");
 }
 
-/* WORDS ( -- )  List words in current vocabulary */
+/* WORDS ( -- ) : list words in current vocabulary */
 void system_word_words(VM *vm) {
-    DictEntry *entry;
-    int word_count;
-    int words_per_line;
+    DictEntry *e = vm->latest;
+    int count = 0, per_line = 0;
 
-    printf("Words in current vocabulary:\n");
-
-    entry = vm->latest;
-    word_count = 0;
-    words_per_line = 0;
-
-    while (entry != NULL) {
-        print_word_name(entry);
-        printf(" ");
-
-        word_count++;
-        words_per_line++;
-
-        /* Print 8 words per line for readability */
-        if (words_per_line >= 8) {
-            printf("\n");
-            words_per_line = 0;
-        }
-
-        entry = entry->link;
+    puts("Words in current vocabulary:");
+    while (e) {
+        print_word_name(e);
+        putchar(' ');
+        count++; per_line++;
+        if (per_line >= 8) { putchar('\n'); per_line = 0; }
+        e = e->link;
     }
-
-    if (words_per_line > 0) {
-        printf("\n");
-    }
-
-    printf("Total: %d words\n", word_count);
+    if (per_line) putchar('\n');
+    printf("Total: %d words\n", count);
 }
 
-/* VLIST ( -- )  List all words in vocabulary */
+/* VLIST ( -- ) : detailed listing */
 void system_word_vlist(VM *vm) {
-    DictEntry *entry;
-    int word_count;
+    DictEntry *e = vm->latest;
+    int count = 0;
 
-    printf("Complete vocabulary listing:\n");
-    printf("Name                 Address    Flags\n");
-    printf("-------------------- ---------- -----\n");
+    puts("Complete vocabulary listing:");
+    puts("Name                 Address    Flags");
+    puts("-------------------- ---------- -----");
 
-    entry = vm->latest;
-    word_count = 0;
-
-    while (entry != NULL) {
-        /* Print name (padded to 20 characters) */
-        print_word_name(entry);
-
-        /* Pad name to 20 characters */
-        if (entry->name_len < 20) {
-            size_t padding;
-            padding = 20 - entry->name_len;
-            while (padding > 0) {
-                printf(" ");
-                padding--;
-            }
-        }
-
-        /* Print address and flags */
-        printf(" %p %02X\n", (void*)entry, entry->flags);
-
-        word_count++;
-        entry = entry->link;
+    while (e) {
+        /* Name padded to 20 chars */
+        size_t pad = (e->name_len < 20) ? (20 - e->name_len) : 0;
+        print_word_name(e);
+        while (pad--) putchar(' ');
+        printf(" %p %02X\n", (void*)e, e->flags);
+        count++;
+        e = e->link;
     }
-
-    printf("Total: %d words\n", word_count);
+    printf("Total: %d words\n", count);
 }
 
-/* ?STACK ( -- )  Check stack depth */
+/* ?STACK ( -- ) : display depths & contents (data stack only) */
 void word_question_stack(VM *vm) {
     printf("Data stack depth: %d\n", vm->dsp + 1);
     printf("Return stack depth: %d\n", vm->rsp + 1);
 
-    /* Check for stack underflow/overflow */
-    if (vm->dsp < -1) {
-        printf("WARNING: Data stack underflow!\n");
-    } else if (vm->dsp >= STACK_SIZE - 1) {
-        printf("WARNING: Data stack overflow!\n");
-    }
+    if (vm->dsp < -1) puts("WARNING: Data stack underflow!");
+    else if (vm->dsp >= STACK_SIZE - 1) puts("WARNING: Data stack overflow!");
 
-    if (vm->rsp < -1) {
-        printf("WARNING: Return stack underflow!\n");
-    } else if (vm->rsp >= STACK_SIZE - 1) {
-        printf("WARNING: Return stack overflow!\n");
-    }
+    if (vm->rsp < -1) puts("WARNING: Return stack underflow!");
+    else if (vm->rsp >= STACK_SIZE - 1) puts("WARNING: Return stack overflow!");
 
-    /* Print stack contents if not empty */
     if (vm->dsp >= 0) {
-        int i;
-        printf("Data stack: ");
-        for (i = 0; i <= vm->dsp; i++) {
-            printf("%ld ", (long)vm->data_stack[i]);
-        }
-        printf("\n");
+        fputs("Data stack: ", stdout);
+        for (int i = 0; i <= vm->dsp; i++) printf("%ld ", (long)vm->data_stack[i]);
+        putchar('\n');
     }
 }
 
-/* PAGE ( -- )  Clear screen/page */
+/* PAGE ( -- ) */
 void system_word_page(VM *vm) {
-    /* Clear screen using ANSI escape sequences */
+    (void)vm;
     printf("\033[2J\033[H");
     fflush(stdout);
 }
 
-/* NOP ( -- )  No operation */
-void system_word_nop(VM *vm) {
-    /* Do nothing - this is intentional */
-    (void)vm;  /* Suppress unused parameter warning */
-}
+/* NOP ( -- ) */
+void system_word_nop(VM *vm) { (void)vm; }
 
-/* 79-STANDARD ( -- )  Ensure FORTH-79 compliance */
+/* 79-STANDARD ( -- flag ) : push -1 if compliance active else 0 */
 void system_word_79_standard(VM *vm) {
     if (forth_79_standard) {
-        printf("FORTH-79 Standard compliance: ACTIVE\n");
-        printf("System conforms to FORTH-79 specification\n");
+        puts("FORTH-79 Standard compliance: ACTIVE");
+        puts("System conforms to FORTH-79 specification");
     } else {
-        printf("FORTH-79 Standard compliance: INACTIVE\n");
-        printf("System may have extensions or modifications\n");
+        puts("FORTH-79 Standard compliance: INACTIVE");
+        puts("System may have extensions or modifications");
     }
-
-    /* Push compliance flag onto stack */
     vm_push(vm, forth_79_standard ? -1 : 0);
 }
 
-/* Helper function to check if system is still running */
-int system_is_running(void) {
-    return system_running;
+/* QUIT ( -- ) : FORTH-79 — clear return stack, return to interpreter. IMMEDIATE */
+static void system_word_quit(VM *vm) {
+    if (vm->mode == MODE_COMPILE) { vm->error = 1; return; }
+    vm->rsp  = -1;
+    vm->mode = MODE_INTERPRET;
+    vm->error = 0;
 }
 
-/* Helper function to set FORTH-79 standard compliance */
-void set_forth_79_compliance(int enabled) {
-    forth_79_standard = enabled;
+/* ABORT ( -- ) : Clear both stacks & return to interpreter. NOT an error. */
+static void system_word_abort(VM *vm) {
+    if (!vm) return;
+    reset_vm_state(vm, 0);
+    vm->error = 0;
 }
 
-/* FORTH-79 System Word Registration and Testing */
+/* (ABORT") runtime
+   Run-time stack:  flag addr len  --
+   If flag ≠ 0: print message and perform ABORT semantics (no error). */
+static void runtime_abortq(VM *vm) {
+    if (!vm) return;
+    if (vm->dsp < 2) { vm->error = 1; return; }
+
+    cell_t len  = vm_pop(vm);
+    cell_t addr = vm_pop(vm);
+    cell_t flag = vm_pop(vm);
+
+    if (!flag) return; /* false => no-op */
+
+    if (!vm_addr_ok(vm, (vaddr_t)addr, (size_t)len)) { vm->error = 1; return; }
+    fwrite(vm->memory + (size_t)addr, 1, (size_t)len, stdout);
+    fputc('\n', stdout);
+
+    reset_vm_state(vm, 0);   /* control transfer, not a fault */
+    vm->error = 0;
+}
+
+/* ABORT"  ( flag -- )   IMMEDIATE
+   Interpret: parse up to next " ; if flag≠0 print string and ABORT (no error).
+   Compile:   parse string; compile: LIT addr  LIT len  (ABORT") so at run-time
+              the stack is: flag addr len and runtime_abortq handles it. */
+static void system_word_abort_quote(VM *vm) {
+    if (!vm) return;
+
+    /* Parse message up to closing quote from current input position. */
+    size_t pos = vm->input_pos, n = vm->input_length;
+    while (pos < n && (vm->input_buffer[pos] == ' ' || vm->input_buffer[pos] == '\t')) pos++;
+    size_t start = pos;
+    while (pos < n && vm->input_buffer[pos] != '"') pos++;
+    if (pos >= n) { vm->error = 1; return; }  /* unmatched quote */
+    size_t end = pos;
+    vm->input_pos = pos + 1;  /* consume the closing quote */
+
+    const size_t msg_len = end - start;
+
+    if (vm->mode == MODE_INTERPRET) {
+        if (vm->dsp < 0) { vm->error = 1; return; }
+        cell_t flag = vm_pop(vm);
+        if (!flag) return;
+
+        if (msg_len) fwrite(&vm->input_buffer[start], 1, msg_len, stdout);
+        fputc('\n', stdout);
+
+        reset_vm_state(vm, 0);
+        vm->error = 0;
+        return;
+    }
+
+    /* MODE_COMPILE */
+    void *dst = NULL;
+    if (msg_len) {
+        dst = vm_allot(vm, msg_len);
+        if (!dst) { vm->error = 1; return; }
+        memcpy(dst, &vm->input_buffer[start], msg_len);
+    }
+    vaddr_t msg_addr = (vaddr_t)0;
+    if (msg_len) msg_addr = (vaddr_t)((uint8_t*)dst - vm->memory);
+
+    vm_compile_literal(vm, (cell_t)msg_addr);
+    vm_compile_literal(vm, (cell_t)msg_len);
+
+    /* Compile call to the runtime helper (must be registered) */
+    vm_compile_call(vm, (word_func_t)runtime_abortq);
+}
+
+/* ───────────────────────────── API helpers ─────────────────────────── */
+int system_is_running(void) { return system_running; }
+void set_forth_79_compliance(int enabled) { forth_79_standard = enabled; }
+
+/* ──────────────────── System Word Registration ─────────────────────── */
 void register_system_words(VM *vm) {
     log_message(LOG_INFO, "Registering system & environment words...");
 
-    /* Register EXIT first - needed by colon definitions */
+    /* EXIT first — needed by colon definitions */
     register_word(vm, "EXIT", forth_exit);
 
-    /* Register comment support */
+    /* Comments */
     register_word(vm, "(", forth_paren);
-    vm_make_immediate(vm);  /* Make ( immediate so it works in compile mode */
+    vm_make_immediate(vm);  /* '(' is IMMEDIATE */
 
-    /* Register all system & environment words */
+    /* Environment/system */
     register_word(vm, "COLD", system_word_cold);
     register_word(vm, "WARM", system_word_warm);
     register_word(vm, "BYE", system_word_bye);
@@ -321,5 +320,17 @@ void register_system_words(VM *vm) {
     register_word(vm, "NOP", system_word_nop);
     register_word(vm, "79-STANDARD", system_word_79_standard);
 
-    log_message(LOG_INFO, "System words registered successfully (including EXIT and comments)");
+    /* Control transfer */
+    register_word(vm, "QUIT",   system_word_quit);
+    vm_make_immediate(vm);  /* forbid inside defs */
+    register_word(vm, "ABORT",  system_word_abort);
+
+    /* Internal helper used by ABORT" compiled form */
+    register_word(vm, "(ABORT\")", runtime_abortq);
+
+    /* Immediate */
+    register_word(vm, "ABORT\"", system_word_abort_quote);
+    vm_make_immediate(vm);  /* ABORT" is IMMEDIATE */
+
+    log_message(LOG_INFO, "System words registered successfully (EXIT, QUIT, ABORT, ABORT\", RESUME, etc.).");
 }

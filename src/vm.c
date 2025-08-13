@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 6:35 PM
+ Last modified - 8/12/25, 11:12 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -473,6 +473,13 @@ void vm_exit_compile_mode(VM *vm) {
  *
  * @param vm Pointer to VM structure
  */
+/**
+ * @brief Execute a colon definition (threaded inner interpreter).
+ *
+ * FORTH-79 semantics:
+ * - ABORT/QUIT may clear the return stack and/or flip to INTERPRET mode.
+ * - That control transfer is NOT an error; unwind without touching R-stack.
+ */
 static void execute_colon_word(VM *vm) {
     if (!vm) { return; }
 
@@ -504,7 +511,11 @@ static void execute_colon_word(VM *vm) {
     /* Inner interpreter: each cell is a DictEntry* compiled by vm_compile_word */
     while (!vm->error) {
         DictEntry *w = (DictEntry*)(uintptr_t)(*ip);
-        if (!w) break;                 /* optional 0 terminator support */
+        if (!w) {
+            /* Optional 0 terminator: end of definition */
+            vm->current_executing_entry = NULL;
+            return;
+        }
 
         /* Advance IP and save on return stack so words like LIT can peek/adjust */
         ip++;
@@ -520,12 +531,31 @@ static void execute_colon_word(VM *vm) {
             vm->error = 1;
         }
 
+        /* ABORT/QUIT may flip to INTERPRET and/or clear return stack. Not an error. */
+        if (vm->mode == MODE_INTERPRET) {
+            vm->error = 0;
+            vm->current_executing_entry = NULL;
+            return;
+        }
+
+        /* Real error? bail before touching the return stack. */
+        if (vm->error) {
+            vm->current_executing_entry = NULL;
+            return;
+        }
+
+        /* Return stack cleared (e.g., ABORT)? Don’t pop; unwind. */
+        if (vm->rsp < 0) {
+            vm->current_executing_entry = NULL;
+            return;
+        }
+
         /* Resume at return IP */
         ip = (cell_t*)(uintptr_t)vm_rpop(vm);
     }
-
-    /* Done */
 }
+
+
 
 /**
  * @brief Interpret or compile a word
@@ -538,8 +568,7 @@ static void execute_colon_word(VM *vm) {
  * @param len Length of word string
  */
 void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
-    /* Use the vocabulary-aware finder first, then fall back to the legacy global finder.
-       This preserves FORTH-79 search-order semantics without breaking core words. */
+    /* Use the vocabulary-aware finder first, then fall back to the legacy global finder. */
     extern DictEntry* vm_vocabulary_find_word(VM *vm, const char *name, size_t nlen);
     extern DictEntry* vm_find_word(VM *vm, const char *name, size_t nlen);
 
@@ -569,7 +598,7 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
         return;
     }
 
-    /* Not found — try as number */
+    /* Not found — try number */
     cell_t value;
     log_message(LOG_DEBUG, "NOT FOUND: '%.*s' — try number", (int)len, word_str);
     if (vm_parse_number(vm, word_str, &value)) {
@@ -608,10 +637,13 @@ void vm_interpret(VM *vm, const char *input) {
     char word[64];
     size_t word_len;
 
+    /* FORTH-79 behavior: stop interpreting this line once an error occurs. */
     while ((word_len = vm_parse_word(vm, word, sizeof(word))) > 0 && !vm->error) {
         vm_interpret_word(vm, word, word_len);
     }
 }
+
+
 
 /* ===== VM address helpers ================================================= */
 
