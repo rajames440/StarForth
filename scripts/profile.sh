@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 #
 #                                 ***   StarForth   ***
 #  profile.sh - FORTH-79 Standard and ANSI C99 ONLY
-# Last modified - 8/14/25, 10:29 AM
+# Last modified - 8/14/25, 5:46 PM
 #  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 #
 # This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -16,11 +16,22 @@
 #
 #
 
-make clean
-make CFLAGS='-std=c99 -O3 -march=native -flto -DNDEBUG -g -Wall -Wextra -Iinclude -Isrc/word_source -Isrc/test_runner/include' LDFLAGS='-flto'
+# StarForth perf → REPORT.txt (symbols, no script args)
+set -euo pipefail
 
-prlimit --nofile=4096:4096 -- valgrind --tool=callgrind --callgrind-out-file=callgrind.out.sf ./build/starforth --run-tests
+EXE="./build/starforth"       # executable ONLY
+ARGS=(--benchmark 50)         # your program's args (edit or leave empty)
 
-callgrind_annotate --auto=yes --threshold=1 callgrind.out.sf | head -100 | tee profile.txt
+echo "[CLEAN]"; make clean
+echo "[BUILD w/ symbols]"
+make CFLAGS="-std=c99 -O2 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Wall -Wextra -Iinclude -Isrc/word_source -Isrc/test_runner/include" LDFLAGS=""
 
+[[ -x "$EXE" ]] || { echo "ERROR: $EXE missing/not executable"; exit 2; }
 
+echo "[RECORD] perf…"
+rm -f perf.data REPORT.txt
+perf record -F 999 -g --call-graph dwarf -e cycles:u -- "$EXE" "${ARGS[@]}"
+
+echo "[REPORT → REPORT.txt]"
+perf report --stdio --no-children --percent-limit 0 --sort overhead,symbol,dso > REPORT.txt
+echo "DONE → REPORT.txt"; head -40 REPORT.txt || true
