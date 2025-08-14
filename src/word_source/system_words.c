@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   system_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/13/25, 9:10 AM
+ Last modified - 8/13/25, 7:54 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -15,7 +15,15 @@
 
  */
 
-/* system_words.c - FORTH-79 System & Environment Words */
+/*
+
+                                 ***   StarForth   ***
+  system_words.c - FORTH-79 Standard and ANSI C99 ONLY
+  Last modified - 8/13/25, 9:10 AM
+  (c) 2025 Robert A. James (rajames) - StarshipOS Forth Project. CC0-1.0 / No warranty.
+
+*/
+
 #include "include/system_words.h"
 #include "../../include/vm.h"
 #include "../../include/word_registry.h"
@@ -61,10 +69,19 @@ static void reset_vm_state(VM *vm, int cold_start) {
 
 /* ───────────────────────────── Core words ───────────────────────────── */
 
-/* EXIT ( -- ) : Marker only — colon defs end via threaded interpreter. */
-static void forth_exit(VM *vm) {
-    (void)vm;
-    log_message(LOG_DEBUG, "EXIT executed (marker)");
+/* EXIT ( -- )  — terminate the current colon definition immediately */
+static void runtime_exit(VM *vm) {
+    if (!vm) return;
+
+    /* Discard the IP saved for the current step (if any) */
+    if (vm->rsp >= 0) {
+        (void)vm_rpop(vm);
+    }
+
+    /* Signal execute_colon_word() to unwind: empty the return stack */
+    vm->rsp = -1;
+
+    log_message(LOG_DEBUG, "EXIT: return from colon");
 }
 
 /* (  ( -- ) : Begin comment; skip to closing ) — IMMEDIATE */
@@ -284,7 +301,7 @@ void register_system_words(VM *vm) {
     log_message(LOG_INFO, "Registering system & environment words...");
 
     /* EXIT first — needed by colon definitions */
-    register_word(vm, "EXIT", forth_exit);
+    register_word(vm, "EXIT", runtime_exit);
 
     /* Comments */
     register_word(vm, "(", forth_paren);
@@ -313,5 +330,5 @@ void register_system_words(VM *vm) {
     register_word(vm, "ABORT\"", system_word_abort_quote);
     vm_make_immediate(vm);  /* ABORT" is IMMEDIATE */
 
-    log_message(LOG_INFO, "System words registered successfully (EXIT, QUIT, ABORT, ABORT\", RESUME, etc.).");
+    log_message(LOG_INFO, "System words registered.");
 }

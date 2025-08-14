@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 11:12 PM
+ Last modified - 8/13/25, 7:39 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -480,35 +480,25 @@ void vm_exit_compile_mode(VM *vm) {
  * - ABORT/QUIT may clear the return stack and/or flip to INTERPRET mode.
  * - That control transfer is NOT an error; unwind without touching R-stack.
  */
+/* Execute a colon definition (threaded inner interpreter). */
 static void execute_colon_word(VM *vm) {
-    if (!vm) { return; }
+    if (!vm) return;
 
     DictEntry *entry = vm->current_executing_entry;
-    if (!entry) {
-        log_message(LOG_ERROR, "execute_colon_word: no current entry");
-        vm->error = 1;
-        return;
-    }
+    if (!entry) { log_message(LOG_ERROR, "execute_colon_word: no current entry"); vm->error = 1; return; }
 
     /* DF cell holds the VM offset of the threaded body start */
     cell_t *df_cell = vm_dictionary_get_data_field(entry);
-    if (!df_cell) {
-        log_message(LOG_ERROR, "execute_colon_word: no data field");
-        vm->error = 1;
-        return;
-    }
+    if (!df_cell) { log_message(LOG_ERROR, "execute_colon_word: no data field"); vm->error = 1; return; }
+
     vaddr_t body_va = (vaddr_t)(uint64_t)(*df_cell);
     cell_t *ip = (cell_t*)vm_ptr(vm, body_va);
-    if (!ip) {
-        log_message(LOG_ERROR, "execute_colon_word: bad body VA=%ld", (long)body_va);
-        vm->error = 1;
-        return;
-    }
+    if (!ip) { log_message(LOG_ERROR, "execute_colon_word: bad body VA=%ld", (long)body_va); vm->error = 1; return; }
 
     log_message(LOG_DEBUG, "execute_colon_word: '%.*s' body @ VA=%ld host=%p",
                 (int)entry->name_len, entry->name, (long)body_va, (void*)ip);
 
-    /* Inner interpreter: each cell is a DictEntry* compiled by vm_compile_word */
+    /* Inner interpreter: each cell is a DictEntry* compiled by vm_compile_word. */
     while (!vm->error) {
         DictEntry *w = (DictEntry*)(uintptr_t)(*ip);
         if (!w) {
@@ -517,7 +507,7 @@ static void execute_colon_word(VM *vm) {
             return;
         }
 
-        /* Advance IP and save on return stack so words like LIT can peek/adjust */
+        /* Advance IP and save on return stack so words like LIT/branches can adjust it. */
         ip++;
         vm_rpush(vm, (cell_t)(uintptr_t)ip);
 
@@ -531,29 +521,22 @@ static void execute_colon_word(VM *vm) {
             vm->error = 1;
         }
 
-        /* ABORT/QUIT may flip to INTERPRET and/or clear return stack. Not an error. */
-        if (vm->mode == MODE_INTERPRET) {
-            vm->error = 0;
-            vm->current_executing_entry = NULL;
-            return;
-        }
-
-        /* Real error? bail before touching the return stack. */
         if (vm->error) {
             vm->current_executing_entry = NULL;
             return;
         }
 
-        /* Return stack cleared (e.g., ABORT)? Don’t pop; unwind. */
+        /* If something like ABORT cleared the return stack, unwind cleanly. */
         if (vm->rsp < 0) {
             vm->current_executing_entry = NULL;
             return;
         }
 
-        /* Resume at return IP */
+        /* Resume at return IP (possibly modified by the word we just ran). */
         ip = (cell_t*)(uintptr_t)vm_rpop(vm);
     }
 }
+
 
 
 
@@ -575,13 +558,18 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
     log_message(LOG_DEBUG, "INTERPRET: '%.*s' (mode=%s)", (int)len, word_str,
                 vm->mode == MODE_COMPILE ? "COMPILE" : "INTERPRET");
 
-    DictEntry *entry = vm_vocabulary_find_word(vm, word_str, len);
-    if (!entry) {
-        entry = vm_find_word(vm, word_str, len);
-    }
+    /* Resolve both the vocab-scoped view and the canonical entry */
+    DictEntry *entry  = vm_vocabulary_find_word(vm, word_str, len);
+    DictEntry *canon  = vm_find_word(vm, word_str, len);
+    if (!entry) entry = canon;
 
     if (entry) {
-        if (vm->mode == MODE_COMPILE && !(entry->flags & WORD_IMMEDIATE)) {
+        /* Consider the word IMMEDIATE if either view marks it so */
+        int is_immediate = 0;
+        if (entry && (entry->flags & WORD_IMMEDIATE)) is_immediate = 1;
+        if (canon && (canon->flags & WORD_IMMEDIATE)) is_immediate = 1;
+
+        if (vm->mode == MODE_COMPILE && !is_immediate) {
             log_message(LOG_DEBUG, "COMPILE: '%.*s'", (int)len, word_str);
             vm_compile_word(vm, entry);
         } else {
@@ -613,6 +601,7 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
         vm->error = 1;
     }
 }
+
 
 
 
@@ -742,3 +731,16 @@ void vm_bootstrap_scr(VM *vm) {
     /* Initialize SCR cell to 0 directly (no error side-effects). */
     vm->memory[idx] = (cell_t)0;
 }
+
+void vm_make_immediate(VM *vm) {
+    if (!vm) return;
+    if (!vm->latest) {
+        log_message(LOG_ERROR, "vm_make_immediate: no latest word to mark");
+        vm->error = 1;
+        return;
+    }
+    vm->latest->flags |= WORD_IMMEDIATE;
+    log_message(LOG_DEBUG, "vm_make_immediate: marked '%.*s' IMMEDIATE",
+                (int)vm->latest->name_len, vm->latest->name);
+}
+

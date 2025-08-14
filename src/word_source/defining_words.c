@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   defining_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/13/25, 1:26 PM
+ Last modified - 8/13/25, 5:57 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -18,7 +18,7 @@
 /*
                                  ***   StarForth   ***
   defining_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 8/13/25, 01:20 PM
+  Last modified - 2025-08-13
   (c) 2025 Robert A. James - StarshipOS Forth Project. CC0-1.0 / No warranty.
 */
 
@@ -54,9 +54,6 @@ static void defining_word_literal(VM *vm);
 static void defining_word_does(VM *vm);
 static void defining_word_immediate(VM *vm);
 static void dictionary_word_forget(VM *vm);
-
-/* Forth-79 helper alias */
-static void defining_word_less_builds(VM *vm); /* <BUILDS */
 
 /* ───────────────────────────── Runtimes ───────────────────────────── */
 
@@ -285,6 +282,7 @@ static void defining_word_variable(VM *vm) {
 /* [  ( -- )  enter interpret state — IMMEDIATE */
 static void defining_word_left_bracket(VM *vm) {
     if (!vm) return;
+    /* Forth-79 requires STATE to be 0 for interpret and non-zero (typically -1) for compile */
     vm_store_cell(vm, vm->state_addr, 0);
     vm->mode = MODE_INTERPRET;
     log_message(LOG_DEBUG, "[: interpret mode");
@@ -421,23 +419,6 @@ static void defining_word_does(VM *vm) {
     /* Continue compiling: the following words form the DOES>-body executed by DODOES later. */
 }
 
-/* <BUILDS — IMMEDIATE
-   Compile-time: compile a call to CREATE.
-   Interpret-time: behave exactly like CREATE. */
-static void defining_word_less_builds(VM *vm) {
-    if (!vm) return;
-
-    DictEntry *createw = vm_find_word(vm, "CREATE", 6);
-    if (!createw) { vm->error = 1; log_message(LOG_ERROR, "<BUILDS: CREATE not found"); return; }
-
-    if (vm->mode == MODE_COMPILE) {
-        vm_compile_word(vm, createw);
-        return;
-    }
-    /* Interpret mode */
-    defining_word_create(vm);
-}
-
 /* IMMEDIATE ( -- ) mark latest word immediate — IMMEDIATE itself */
 static void defining_word_immediate(VM *vm) {
     if (!vm) return;
@@ -453,8 +434,10 @@ void register_defining_words(VM *vm) {
     log_message(LOG_INFO, "Registering defining words...");
 
     /* Core colon pair — both IMMEDIATE */
-    register_word(vm, ":", defining_word_colon);       vm_make_immediate(vm);
-    register_word(vm, ";", defining_word_semicolon);   vm_make_immediate(vm);
+    register_word(vm, ":", defining_word_colon);
+    vm_make_immediate(vm);
+    register_word(vm, ";", defining_word_semicolon);
+    vm_make_immediate(vm);
 
     /* CREATE / VARIABLE / CONSTANT */
     register_word(vm, "CREATE",   defining_word_create);
@@ -462,30 +445,35 @@ void register_defining_words(VM *vm) {
     register_word(vm, "CONSTANT", defining_word_constant);
 
     /* IMMEDIATE (make IMMEDIATE itself immediate) */
-    register_word(vm, "IMMEDIATE", defining_word_immediate); vm_make_immediate(vm);
+    register_word(vm, "IMMEDIATE", defining_word_immediate);
+    vm_make_immediate(vm);
 
     /* STATE and mode switchers */
     register_word(vm, "STATE", defining_word_state);
-    register_word(vm, "[",     defining_word_left_bracket);  vm_make_immediate(vm);
-    register_word(vm, "]",     defining_word_right_bracket); vm_make_immediate(vm);
+    register_word(vm, "[",     defining_word_left_bracket);
+    vm_make_immediate(vm);
+    register_word(vm, "]",     defining_word_right_bracket);
+    vm_make_immediate(vm);
 
     /* Dictionary management */
     register_word(vm, "FORGET",  dictionary_word_forget);
 
     /* Compile helpers — immediate */
-    register_word(vm, "COMPILE",    defining_word_compile);         vm_make_immediate(vm);
-    register_word(vm, "[COMPILE]",  defining_word_bracket_compile); vm_make_immediate(vm);
+    register_word(vm, "COMPILE",    defining_word_compile);
+    vm_make_immediate(vm);
+    register_word(vm, "[COMPILE]",  defining_word_bracket_compile);
+    vm_make_immediate(vm);
 
     /* LIT runtime + LITERAL (immediate) */
     register_word(vm, "LIT",     defining_runtime_lit);
-    register_word(vm, "LITERAL", defining_word_literal);            vm_make_immediate(vm);
+    register_word(vm, "LITERAL", defining_word_literal);
+    vm_make_immediate(vm);
 
-    /* <BUILDS helper for BUILDS … DOES> pattern */
-    register_word(vm, "<BUILDS", defining_word_less_builds);        vm_make_immediate(vm);
-
-    /* DOES> plumbing (lowercase internal) */
+    /* DOES> plumbing (lowercase internal helper visible for tests/trace) */
     register_word(vm, "does_rt", defining_runtime_does_rt);         /* internal helper */
-    register_word(vm, "DOES>",   defining_word_does);               vm_make_immediate(vm);
+    register_word(vm, "DOES>",   defining_word_does);
+    vm_make_immediate(vm);
 
     log_message(LOG_INFO, "Defining words registered.");
 }
+

@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm_api.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/13/25, 5:44 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -72,11 +72,6 @@ void *vm_api_create_word(VM *vm, const char *n, size_t len, word_func_t fn) {
 void *vm_api_find_word(VM *vm, const char *n, size_t len) {
     return (void *) vm_find_word(vm, n, len);
 }
-
-/** @brief Mark last defined word as immediate
- * @param vm VM instance
- */
-void vm_api_make_immediate(VM *vm) { vm_make_immediate(vm); }
 
 /** @brief Hide last defined word
  * @param vm VM instance

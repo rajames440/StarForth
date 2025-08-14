@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_management.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 2:53 PM
+ Last modified - 8/13/25, 5:16 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -155,17 +155,6 @@ cell_t* vm_dictionary_get_data_field(DictEntry *entry) {
     return (cell_t*)(((uint8_t*)entry) + df_off);
 }
 
-
-/**
- * @brief Marks the most recently defined word as immediate
- *
- * @param vm Pointer to the VM instance
- */
-void vm_make_immediate(VM *vm) {
-    if (vm->latest) {
-        vm->latest->flags |= WORD_IMMEDIATE;
-    }
-}
 
 /**
  * @brief Hides the most recently defined word from dictionary searches
