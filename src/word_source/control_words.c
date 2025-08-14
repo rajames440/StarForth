@@ -2,24 +2,7 @@
 
                                  ***   StarForth   ***
   control_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/13/25, 9:19 PM
-  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
-
- This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
-  To the extent possible under law, the author(s) have dedicated all copyright and related
-  and neighboring rights to this software to the public domain worldwide.
-  This software is distributed without any warranty.
-
-  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
-
-
- */
-
-/*
-
-                                 ***   StarForth   ***
-  control_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 8/13/25, 9:22 PM
+  Last modified - 8/13/25, 9:42 PM
   (c) 2025 Robert A. James (rajames) - StarshipOS Forth Project. CC0-1.0 / No warranty.
 
 */
@@ -54,8 +37,7 @@ typedef enum {
     CF_IF,        /* byte address where IF’s 0BRANCH literal lives */
     CF_ELSE,      /* byte address where ELSE’s BRANCH literal lives */
     CF_DO,        /* byte address of DO back-target (start of loop body) */
-    CF_WHILE,     /* byte address where a forward 0BRANCH literal lives */
-    CF_LEAVE      /* byte address of a LEAVE forward-branch literal */
+    CF_WHILE      /* byte address where a forward 0BRANCH literal lives */
 } cf_tag_t;
 
 typedef struct {
@@ -100,6 +82,12 @@ static inline int cf_peek(cf_item_t *out) {
     *out = cf_stack[cf_sp];
     return 1;
 }
+
+/* ===================== Dedicated LEAVE site stacks (do not touch CF stack) ===================== */
+static size_t leave_addrs[CF_STACK_MAX];  /* linear stack of BRANCH literal addrs */
+static int leave_sp = -1;
+static int leave_mark_stack[CF_STACK_MAX]; /* one mark per DO nesting level (index into leave_addrs) */
+static int leave_mark_sp = -1;
 
 /* ===================== Runtime loop parameter stack ===================== */
 #define LOOP_STACK_SIZE 16
@@ -166,31 +154,34 @@ static void control_forth_0branch(VM *vm) {
     vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
 }
 
-/* (?DO) runtime: conditionally enter loop
-   Stack: ( limit index -- ) ; if index==limit, skip to after LOOP/+LOOP.
-   Compiled layout after ?DO at compile-time:  [ (?DO)  <fwd-placeholder>  ...body...  (LOOP) <back> ]  */
+/* (?DO) runtime: conditionally enter loop */
+/* (?DO) runtime: conditionally enter loop */
 static void control_forth_runtime_qdo(VM *vm) {
     if (vm->rsp < 0) { vm->error = 1; log_message(LOG_ERROR, "?DO: RSP underflow"); return; }
     if (vm->dsp < 1) { vm->error = 1; log_message(LOG_ERROR, "?DO: DSP underflow"); return; }
 
     cell_t *ip = (cell_t *)(uintptr_t)vm->return_stack[vm->rsp];
 
-    cell_t index = vm_pop(vm);
+    /* FIX: pop order must be (limit index --) → pop limit first, then index */
     cell_t limit = vm_pop(vm);
+    cell_t index = vm_pop(vm);
 
     cell_t rel = *ip; /* forward BYTES, relative to THIS cell */
 
     if (index == limit) {
-        ip = (cell_t *)((uint8_t*)ip + (intptr_t)rel);   /* skip whole loop */
+        /* skip whole loop body */
+        ip = (cell_t *)((uint8_t*)ip + (intptr_t)rel);
         log_message(LOG_DEBUG, "?DO: skip loop (index==limit)");
     } else {
-        ip = ip + 1;                                     /* enter loop */
+        /* enter loop: advance past the offset cell and push loop frame */
+        ip = ip + 1;
         loop_push(limit, index, ip);
         log_message(LOG_DEBUG, "?DO: enter loop (index=%ld limit=%ld)", (long)index, (long)limit);
     }
 
     vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)ip;
 }
+
 
 /* (LEAVE) runtime: pop one loop frame; branch compiled immediately after handles control flow */
 static void control_forth_runtime_leave(VM *vm) {
@@ -367,9 +358,7 @@ static void control_forth_repeat(VM *vm) {
                 while_lit.addr, (long)fwd, begin.addr, (long)back);
 }
 
-/* ?DO ( limit index -- ) compiles:
-     (?DO) <fwd-placeholder>   and marks back target for LOOP/+LOOP.
-   CF after ?DO is: [ DO(back), WHILE(fwd-placeholder) ] */
+/* ?DO ( limit index -- ) */
 static void control_forth_qdo(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "?DO: compile-only"); return; }
@@ -381,7 +370,10 @@ static void control_forth_qdo(VM *vm) {
     if (!cf_push(vm->here, CF_DO))    { vm->error = 1; log_message(LOG_ERROR, "?DO: CF overflow (DO)"); return; }
     if (!cf_push(fwd_lit, CF_WHILE))  { vm->error = 1; log_message(LOG_ERROR, "?DO: CF overflow (fwd)"); return; }
 
-    log_message(LOG_DEBUG, "?DO: fwd lit @ %zu, back mark @ %zu", fwd_lit, vm->here);
+    /* Mark LEAVE stack level for this DO */
+    leave_mark_stack[++leave_mark_sp] = leave_sp;
+
+    log_message(LOG_DEBUG, "?DO: fwd lit @ %zu, back mark @ %zu (leave_mark=%d)", fwd_lit, vm->here, leave_mark_stack[leave_mark_sp]);
 }
 
 /* DO ( limit index -- ) compiles: runtime DO and marks back target for LOOP/+LOOP */
@@ -392,12 +384,15 @@ static void control_forth_do(VM *vm) {
     vm_compile_call(vm, control_forth_runtime_do);
     if (!cf_push(vm->here, CF_DO)) { vm->error = 1; log_message(LOG_ERROR, "DO: CF overflow"); return; }
 
-    log_message(LOG_DEBUG, "DO: mark @ %zu", vm->here);
+    /* Mark LEAVE stack level for this DO */
+    leave_mark_stack[++leave_mark_sp] = leave_sp;
+
+    log_message(LOG_DEBUG, "DO: mark @ %zu (leave_mark=%d)", vm->here, leave_mark_stack[leave_mark_sp]);
 }
 
 /* LEAVE ( -- ) compile-only
    Emits: (LEAVE)  (BRANCH) <fwd-placeholder>
-   At LOOP/+LOOP we patch all CF_LEAVE placeholders for this loop to land after the back-offset. */
+   At LOOP/+LOOP we patch all placeholders pushed since this DO's mark to HERE. */
 static void control_forth_leave(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "LEAVE: compile-only"); return; }
@@ -405,106 +400,98 @@ static void control_forth_leave(VM *vm) {
     /* Must be inside a DO…LOOP frame */
     int seen_do = 0;
     for (int i = cf_sp; i >= 0; --i) { if (cf_stack[i].tag == CF_DO) { seen_do = 1; break; } }
-    if (!seen_do) { vm->error = 1; log_message(LOG_ERROR, "LEAVE: needs DO"); return; }
+    if (!seen_do || leave_mark_sp < 0) { vm->error = 1; log_message(LOG_ERROR, "LEAVE: needs DO"); return; }
 
     vm_compile_call(vm, control_forth_runtime_leave);
     vm_compile_call(vm, control_forth_branch);
     size_t lit = emit_cell(vm, 0);
-    if (!cf_push(lit, CF_LEAVE)) { vm->error = 1; log_message(LOG_ERROR, "LEAVE: CF overflow"); return; }
 
-    log_message(LOG_DEBUG, "LEAVE: placeholder @ %zu", lit);
+    if (leave_sp + 1 >= CF_STACK_MAX) { vm->error = 1; log_message(LOG_ERROR, "LEAVE: too many leaves"); return; }
+    leave_addrs[++leave_sp] = lit;
+
+    log_message(LOG_DEBUG, "LEAVE: placeholder @ %zu (leave_sp=%d)", lit, leave_sp);
 }
 
-/* Internal helper: after compiling LOOP/+LOOP body, patch any LEAVEs and optional ?DO fwd. */
-static void patch_leaves_and_qdo(VM *vm, int *patched_count) {
-    if (patched_count) *patched_count = 0;
-    /* Collect LEAVEs on top into a local list, then patch to current HERE */
-    size_t leave_addrs[CF_STACK_MAX];
-    int leave_n = 0;
-    cf_item_t t;
-
-    while (cf_peek(&t) && t.tag == CF_LEAVE) {
-        (void)cf_pop(&t);
-        if (leave_n < CF_STACK_MAX) leave_addrs[leave_n++] = t.addr;
-    }
-
-    /* Optional ?DO forward placeholder next */
-    cf_item_t qdo_fwd; int have_qdo = 0;
-    if (cf_peek(&t) && t.tag == CF_WHILE) {
-        (void)cf_pop(&qdo_fwd);
-        have_qdo = 1;
-    }
-
-    /* Now DO mark must be next (do not pop here; caller will) */
-    /* Patch targets to current HERE (after caller emits back-offset) */
-    size_t here_after = vm->here;
-    for (int i = 0; i < leave_n; ++i) {
-        cell_t fwd = (cell_t)((size_t)here_after - leave_addrs[i]);
-        *(cell_t *)(vm->memory + leave_addrs[i]) = fwd;
-        if (patched_count) (*patched_count)++;
-        log_message(LOG_DEBUG, "LEAVE: patched @ %zu -> +%ld", leave_addrs[i], (long)fwd);
-    }
-
-    if (have_qdo) {
-        cell_t fwd = (cell_t)((size_t)here_after - qdo_fwd.addr);
-        *(cell_t *)(vm->memory + qdo_fwd.addr) = fwd;
-        log_message(LOG_DEBUG, "LOOP: patched ?DO fwd @ %zu -> +%ld", qdo_fwd.addr, (long)fwd);
-    }
-}
-
-/* LOOP compiles: runtime LOOP <back-offset> + patches (?DO) and LEAVEs */
+/* LOOP compiles: runtime LOOP <back-offset> + patches (?DO) forward and LEAVEs */
 static void control_forth_loop(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "LOOP: compile-only"); return; }
 
-    /* Must have DO back mark (possibly with LEAVEs and ?DO fwd on top) */
+    /* Optional forward placeholder from ?DO */
+    cf_item_t qdo_fwd; int have_qdo = 0;
+    cf_item_t top;
+    if (cf_peek(&top) && top.tag == CF_WHILE) {
+        (void)cf_pop(&qdo_fwd);
+        have_qdo = 1;
+    }
+
+    /* Required DO back mark */
     cf_item_t do_mark;
-    /* Temporarily ensure top resolves to DO after we patch placeholders */
-    /* First emit runtime & back-offset, THEN patch placeholders with final HERE */
+    if (!cf_pop(&do_mark) || do_mark.tag != CF_DO) { vm->error = 1; log_message(LOG_ERROR, "LOOP: missing DO"); return; }
+
     vm_compile_call(vm, control_forth_runtime_loop);
-
-    /* We'll need DO address for the back-offset */
-    /* Find the nearest DO by scanning downward (LEAVEs/?DO were not popped yet) */
-    int idx = cf_sp;
-    while (idx >= 0 && cf_stack[idx].tag != CF_DO) idx--;
-    if (idx < 0) { vm->error = 1; log_message(LOG_ERROR, "LOOP: missing DO"); return; }
-    do_mark = cf_stack[idx];
-
     cell_t off_bytes = (cell_t)((cell_t)do_mark.addr - (cell_t)vm->here);
     (void)emit_cell(vm, off_bytes); /* raw back-offset */
 
-    /* After emitting back-offset, target for LEAVE/?DO is exactly HERE */
-    int patched = 0;
-    patch_leaves_and_qdo(vm, &patched);
+    /* Patch ?DO forward placeholder */
+    if (have_qdo) {
+        cell_t fwd = (cell_t)((size_t)vm->here - qdo_fwd.addr);
+        *(cell_t *)(vm->memory + qdo_fwd.addr) = fwd;
+        log_message(LOG_DEBUG, "LOOP: patched ?DO fwd @ %zu -> +%ld", qdo_fwd.addr, (long)fwd);
+    }
 
-    /* Finally pop the DO we found */
-    if (!cf_pop(&do_mark) || do_mark.tag != CF_DO) { vm->error = 1; log_message(LOG_ERROR, "LOOP: CF mismatch after patch"); return; }
+    /* Patch all LEAVEs created since this DO */
+    if (leave_mark_sp < 0) { vm->error = 1; log_message(LOG_ERROR, "LOOP: LEAVE mark stack underflow"); return; }
+    int mark = leave_mark_stack[leave_mark_sp--];
+    for (int i = leave_sp; i > mark; --i) {
+        size_t addr = leave_addrs[i];
+        cell_t fwd = (cell_t)((size_t)vm->here - addr);
+        *(cell_t *)(vm->memory + addr) = fwd;
+        log_message(LOG_DEBUG, "LEAVE: patched @ %zu -> +%ld", addr, (long)fwd);
+    }
+    leave_sp = mark;
 
-    log_message(LOG_DEBUG, "LOOP: back -> %zu (%ld bytes); patched %d LEAVEs", do_mark.addr, (long)off_bytes, patched);
+    log_message(LOG_DEBUG, "LOOP: back -> %zu (%ld bytes)", do_mark.addr, (long)off_bytes);
 }
 
-/* +LOOP compiles: runtime +LOOP <back-offset> + patches (?DO) and LEAVEs */
+/* +LOOP compiles: runtime +LOOP <back-offset> + same patching */
 static void control_forth_plus_loop(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) { vm->error = 1; log_message(LOG_ERROR, "+LOOP: compile-only"); return; }
 
+    /* Optional forward placeholder from ?DO */
+    cf_item_t qdo_fwd; int have_qdo = 0;
+    cf_item_t top;
+    if (cf_peek(&top) && top.tag == CF_WHILE) {
+        (void)cf_pop(&qdo_fwd);
+        have_qdo = 1;
+    }
+
+    /* Required DO back mark */
     cf_item_t do_mark;
+    if (!cf_pop(&do_mark) || do_mark.tag != CF_DO) { vm->error = 1; log_message(LOG_ERROR, "+LOOP: missing DO"); return; }
+
     vm_compile_call(vm, control_forth_runtime_plus_loop);
-
-    int idx = cf_sp;
-    while (idx >= 0 && cf_stack[idx].tag != CF_DO) idx--;
-    if (idx < 0) { vm->error = 1; log_message(LOG_ERROR, "+LOOP: missing DO"); return; }
-    do_mark = cf_stack[idx];
-
     cell_t off_bytes = (cell_t)((cell_t)do_mark.addr - (cell_t)vm->here);
     (void)emit_cell(vm, off_bytes); /* raw back-offset */
 
-    int patched = 0;
-    patch_leaves_and_qdo(vm, &patched);
+    if (have_qdo) {
+        cell_t fwd = (cell_t)((size_t)vm->here - qdo_fwd.addr);
+        *(cell_t *)(vm->memory + qdo_fwd.addr) = fwd;
+        log_message(LOG_DEBUG, "+LOOP: patched ?DO fwd @ %zu -> +%ld", qdo_fwd.addr, (long)fwd);
+    }
 
-    if (!cf_pop(&do_mark) || do_mark.tag != CF_DO) { vm->error = 1; log_message(LOG_ERROR, "+LOOP: CF mismatch after patch"); return; }
+    if (leave_mark_sp < 0) { vm->error = 1; log_message(LOG_ERROR, "+LOOP: LEAVE mark stack underflow"); return; }
+    int mark = leave_mark_stack[leave_mark_sp--];
+    for (int i = leave_sp; i > mark; --i) {
+        size_t addr = leave_addrs[i];
+        cell_t fwd = (cell_t)((size_t)vm->here - addr);
+        *(cell_t *)(vm->memory + addr) = fwd;
+        log_message(LOG_DEBUG, "LEAVE: patched @ %zu -> +%ld", addr, (long)fwd);
+    }
+    leave_sp = mark;
 
-    log_message(LOG_DEBUG, "+LOOP: back -> %zu (%ld bytes); patched %d LEAVEs", do_mark.addr, (long)off_bytes, patched);
+    log_message(LOG_DEBUG, "+LOOP: back -> %zu (%ld bytes)", do_mark.addr, (long)off_bytes);
 }
 
 /* ===================== Runtime DO/LOOP/+LOOP bodies ===================== */
@@ -631,5 +618,5 @@ void register_control_words(VM *vm) {
     register_word(vm, "I",       control_forth_I);
     register_word(vm, "J",       control_forth_J);
 
-    log_message(LOG_INFO, "Registering FORTH-79 control flow words (+?DO, LEAVE, internal runtimes)");
+    log_message(LOG_INFO, "Registering FORTH-79 control flow words (+?DO, LEAVE w/ side-stack, internal runtimes)");
 }
