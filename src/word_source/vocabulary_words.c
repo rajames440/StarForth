@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vocabulary_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/14/25, 10:34 AM
+ Last modified - 8/14/25, 11:04 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -28,6 +28,50 @@
 #include "../../include/vm.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+
+/* ---- first-character index for vocab chains (lazy rebuild) ---- */
+#define SF_FC_BUCKETS 256
+
+static DictEntry   **ctx_fc[SF_FC_BUCKETS];  /* arrays of entry pointers */
+static size_t        ctx_n [SF_FC_BUCKETS];
+static DictEntry    *ctx_cached_head = NULL;
+
+static DictEntry   **forth_fc[SF_FC_BUCKETS];
+static size_t        forth_n [SF_FC_BUCKETS];
+static DictEntry    *forth_cached_head = NULL;
+
+static void fc_free(DictEntry ***lists, size_t *counts) {
+    for (size_t i = 0; i < SF_FC_BUCKETS; ++i) {
+        free(lists[i]);
+        lists[i] = NULL;
+        counts[i] = 0;
+    }
+}
+
+static void fc_rebuild(DictEntry *head, DictEntry ***lists, size_t *counts, DictEntry **cached_head) {
+    fc_free(lists, counts);
+
+    /* first pass: counts */
+    for (DictEntry *e = head; e; e = e->link) {
+        unsigned c = (unsigned char)e->name[0];
+        counts[c]++;
+    }
+    /* alloc */
+    for (size_t i = 0; i < SF_FC_BUCKETS; ++i) {
+        if (counts[i]) {
+            lists[i] = (DictEntry **)malloc(counts[i] * sizeof(DictEntry*));
+        }
+    }
+    /* second pass: fill oldest→newest (we’ll search newest-first by iterating backwards) */
+    size_t filled[SF_FC_BUCKETS] = {0};
+    for (DictEntry *e = head; e; e = e->link) {
+        unsigned c = (unsigned char)e->name[0];
+        lists[c][filled[c]++] = e;
+    }
+    *cached_head = head;
+}
 
 /* ===== FORTH-79 vocabulary model =====
    - CONTEXT: vocabulary searched first
@@ -81,33 +125,40 @@ static DictEntry* vocab_find_word(VM *vm, const char *name, size_t len) {
     init_vocabulary_system(vm);
     if (!name || len == 0) return NULL;
 
+    /* rebuild per-vocab indices if heads changed */
+    if (ctx_cached_head   != context_vocab) fc_rebuild(context_vocab, ctx_fc,   ctx_n,   &ctx_cached_head);
+    if (forth_cached_head != forth_vocab)   fc_rebuild(forth_vocab,  forth_fc,  forth_n, &forth_cached_head);
+
     const unsigned char first = (unsigned char)name[0];
     const unsigned char last  = (unsigned char)name[len - 1];
 
-    /* CONTEXT chain first */
-    for (DictEntry *e = context_vocab; e; e = e->link) {
-        /* cheapest filters first */
-        if ((size_t)e->name_len != len) continue;
-        const char *en = e->name;
-        if ((unsigned char)en[0] != first) continue;
-        if ((unsigned char)en[len - 1] != last) continue;
-
-        /* slow stuff after we’ve pruned */
-#ifdef WORD_HIDDEN
-        if (e->flags & WORD_HIDDEN) continue;
-#endif
-#ifdef WORD_SMUDGED
-        if (e->flags & WORD_SMUDGED) continue;
-#endif
-        if (memcmp(en, name, len) == 0) return e;
-    }
-
-    /* then FORTH chain */
-    if (context_vocab != forth_vocab) {
-        for (DictEntry *e = forth_vocab; e; e = e->link) {
+    /* search CONTEXT bucket (newest-first) */
+    {
+        DictEntry **bucket = ctx_fc[first];
+        size_t      n      = ctx_n[first];
+        for (size_t i = n; i-- > 0;) {
+            DictEntry *e = bucket[i];
             if ((size_t)e->name_len != len) continue;
             const char *en = e->name;
-            if ((unsigned char)en[0] != first) continue;
+            if ((unsigned char)en[len - 1] != last) continue;
+#ifdef WORD_HIDDEN
+            if (e->flags & WORD_HIDDEN) continue;
+#endif
+#ifdef WORD_SMUDGED
+            if (e->flags & WORD_SMUDGED) continue;
+#endif
+            if (memcmp(en, name, len) == 0) return e;
+        }
+    }
+
+    /* then FORTH bucket (if different) */
+    if (context_vocab != forth_vocab) {
+        DictEntry **bucket = forth_fc[first];
+        size_t      n      = forth_n[first];
+        for (size_t i = n; i-- > 0;) {
+            DictEntry *e = bucket[i];
+            if ((size_t)e->name_len != len) continue;
+            const char *en = e->name;
             if ((unsigned char)en[len - 1] != last) continue;
 #ifdef WORD_HIDDEN
             if (e->flags & WORD_HIDDEN) continue;
@@ -120,6 +171,7 @@ static DictEntry* vocab_find_word(VM *vm, const char *name, size_t len) {
     }
     return NULL;
 }
+
 
 
 
