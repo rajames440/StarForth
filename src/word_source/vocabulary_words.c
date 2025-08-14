@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vocabulary_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 8:27 PM
+ Last modified - 8/14/25, 10:34 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -76,39 +76,52 @@ static void init_vocabulary_system(VM *vm) {
 }
 
 /* Finder: search CONTEXT chain first, then FORTH chain; skip hidden/smudged */
+/* src/word_source/vocabulary_words.c */
 static DictEntry* vocab_find_word(VM *vm, const char *name, size_t len) {
     init_vocabulary_system(vm);
+    if (!name || len == 0) return NULL;
 
-    /* search CONTEXT chain */
+    const unsigned char first = (unsigned char)name[0];
+    const unsigned char last  = (unsigned char)name[len - 1];
+
+    /* CONTEXT chain first */
     for (DictEntry *e = context_vocab; e; e = e->link) {
+        /* cheapest filters first */
+        if ((size_t)e->name_len != len) continue;
+        const char *en = e->name;
+        if ((unsigned char)en[0] != first) continue;
+        if ((unsigned char)en[len - 1] != last) continue;
+
+        /* slow stuff after we’ve pruned */
 #ifdef WORD_HIDDEN
         if (e->flags & WORD_HIDDEN) continue;
 #endif
 #ifdef WORD_SMUDGED
         if (e->flags & WORD_SMUDGED) continue;
 #endif
-        if (e->name_len == (int)len && memcmp(e->name, name, len) == 0) {
-            return e;
-        }
+        if (memcmp(en, name, len) == 0) return e;
     }
 
-    /* then FORTH chain (if different) */
+    /* then FORTH chain */
     if (context_vocab != forth_vocab) {
         for (DictEntry *e = forth_vocab; e; e = e->link) {
+            if ((size_t)e->name_len != len) continue;
+            const char *en = e->name;
+            if ((unsigned char)en[0] != first) continue;
+            if ((unsigned char)en[len - 1] != last) continue;
 #ifdef WORD_HIDDEN
             if (e->flags & WORD_HIDDEN) continue;
 #endif
 #ifdef WORD_SMUDGED
             if (e->flags & WORD_SMUDGED) continue;
 #endif
-            if (e->name_len == (int)len && memcmp(e->name, name, len) == 0) {
-                return e;
-            }
+            if (memcmp(en, name, len) == 0) return e;
         }
     }
-
     return NULL;
 }
+
+
 
 /* Executing a vocabulary word makes it the CONTEXT (FORTH-79) */
 static void vocabulary_select_runtime(VM *vm) {
