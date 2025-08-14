@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_management.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/13/25, 5:16 PM
+ Last modified - 8/14/25, 10:03 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -40,18 +40,58 @@
  * @return DictEntry* Pointer to the found dictionary entry, or NULL if not found
  */
 DictEntry* vm_find_word(VM *vm, const char *name, size_t len) {
-    DictEntry *entry = vm->latest;
+    if (!name || len == 0) return NULL;
 
-    while (entry) {
-        if (!(entry->flags & WORD_HIDDEN) &&
-            !(entry->flags & WORD_SMUDGED) &&
-            entry->name_len == len &&
-            memcmp(entry->name, name, len) == 0) {
-            return entry;
+    /* Fast pre-filters */
+    const unsigned char first = (unsigned char)name[0];
+    const unsigned char last  = (unsigned char)name[len - 1];
+
+    for (DictEntry *e = vm->latest; e; e = e->link) {
+#ifdef WORD_HIDDEN
+        if (e->flags & WORD_HIDDEN) continue;
+#endif
+#ifdef WORD_SMUDGED
+        if (e->flags & WORD_SMUDGED) continue;
+#endif
+        if ((size_t)e->name_len != len) continue;
+
+        const char *en = e->name;
+
+        /* First/last char reject is extremely cheap and prunes most misses */
+        if ((unsigned char)en[0] != first) continue;
+        if ((unsigned char)en[len - 1] != last) continue;
+
+        /* Tiny fast paths for short names common in Forth */
+        switch (len) {
+            case 1:
+                if (en[0] == name[0]) return e;
+                break;
+            case 2: {
+                uint16_t a, b;
+                memcpy(&a, name, 2);
+                memcpy(&b, en,   2);
+                if (a == b) return e;
+                break;
+            }
+            case 3: {
+                uint16_t a1, b1;
+                memcpy(&a1, name, 2);
+                memcpy(&b1, en,   2);
+                if (a1 == b1 && en[2] == name[2]) return e;
+                break;
+            }
+            case 4: {
+                uint32_t a, b;
+                memcpy(&a, name, 4);
+                memcpy(&b, en,   4);
+                if (a == b) return e;
+                break;
+            }
+            default:
+                if (memcmp(en, name, len) == 0) return e;
+                break;
         }
-        entry = entry->link;
     }
-
     return NULL;
 }
 

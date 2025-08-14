@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/13/25, 7:39 PM
+ Last modified - 8/14/25, 9:37 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -615,21 +615,34 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
  * @param input String containing Forth code to interpret
  */
 void vm_interpret(VM *vm, const char *input) {
-    size_t len = strlen(input);
-    if (len >= INPUT_BUFFER_SIZE) len = INPUT_BUFFER_SIZE - 1;
+    /* Single-pass copy into VM buffer with cap and null-termination.
+       Avoids strlen() + memcpy() double traversal. */
+    size_t len = 0;
+    if (INPUT_BUFFER_SIZE > 0) {
+        size_t max = INPUT_BUFFER_SIZE - 1;   /* leave room for '\0' */
+        while (len < max) {
+            char c = input[len];
+            vm->input_buffer[len] = c;
+            if (c == '\0') break;             /* hit end of input */
+            ++len;
+        }
+        /* If we filled the buffer without seeing '\0', terminate now. */
+        if (len == max) {
+            vm->input_buffer[len] = '\0';
+        }
+    }
 
-    memcpy(vm->input_buffer, input, len);
-    vm->input_buffer[len] = '\0';
-    vm->input_length = len;
-    vm->input_pos = 0;
+    vm->input_length = len;   /* length up to (but not including) '\0' */
+    vm->input_pos    = 0;
 
-    char word[64];
+    char   word[64];
     size_t word_len;
 
     /* FORTH-79 behavior: stop interpreting this line once an error occurs. */
-    while ((word_len = vm_parse_word(vm, word, sizeof(word))) > 0 && !vm->error) {
+    while (!vm->error &&
+           (word_len = vm_parse_word(vm, word, sizeof(word))) > 0) {
         vm_interpret_word(vm, word, word_len);
-    }
+           }
 }
 
 

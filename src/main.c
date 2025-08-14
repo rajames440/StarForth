@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   main.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 1:38 PM
+ Last modified - 8/14/25, 9:32 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -151,6 +151,8 @@ int main(int argc, char *argv[]) {
 
     /* Initialize the VM */
     vm_init(&vm);
+    setvbuf(stdout, NULL, _IOFBF, 1<<16);
+
     /* Check for initialization failure */
     if (vm.error) {
         fprintf(stderr, "Failed to initialize VM\n");

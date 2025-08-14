@@ -1,6 +1,7 @@
 STRICT_PTR ?= 1
 CC = gcc
-CFLAGS = -std=c99 -g -O0 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include
+CFLAGS='-std=c99 -O3 -march=native -flto -DNDEBUG -g -Wall -Wextra -Iinclude -Isrc/word_source -Isrc/test_runner/include'
+LDFLAGS='-flto'
 SRC = $(wildcard src/*.c src/word_source/*.c src/test_runner/*.c src/test_runner/modules/*.c)
 OBJ = $(patsubst src/%.c,build/%.o,$(SRC))
 TARGET = build/starforth
