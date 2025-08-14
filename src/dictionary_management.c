@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_management.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/14/25, 10:19 AM
+ Last modified - 8/14/25, 10:56 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -22,6 +22,50 @@
 #include <stddef.h>   /* offsetof */
 #include <stdlib.h>   /* malloc, free */
 
+/* ---- simple first-character index (lazy) ---- */
+#ifndef SF_FC_BUCKETS
+#define SF_FC_BUCKETS 256
+#endif
+
+static DictEntry   **sf_fc_list[SF_FC_BUCKETS];   /* arrays of entry pointers */
+static size_t        sf_fc_count[SF_FC_BUCKETS];  /* sizes for each bucket */
+static DictEntry    *sf_cached_latest = NULL;     /* detect when dict changes */
+
+static void sf_free_fc_index(void) {
+    for (size_t i = 0; i < SF_FC_BUCKETS; ++i) {
+        free(sf_fc_list[i]);
+        sf_fc_list[i] = NULL;
+        sf_fc_count[i] = 0;
+    }
+}
+
+static void sf_rebuild_fc_index(VM *vm) {
+    /* two-pass: count, alloc, then fill in oldest→newest order */
+    sf_free_fc_index();
+
+    /* count by first char */
+    for (DictEntry *e = vm->latest; e; e = e->link) {
+        unsigned fc = (unsigned char)e->name[0];
+        sf_fc_count[fc]++;
+    }
+    /* allocate arrays */
+    for (size_t i = 0; i < SF_FC_BUCKETS; ++i) {
+        if (sf_fc_count[i]) {
+            sf_fc_list[i] = (DictEntry **)malloc(sf_fc_count[i] * sizeof(DictEntry*));
+        }
+    }
+    /* fill from oldest to newest so we can search newest-first later */
+    size_t filled[SF_FC_BUCKETS] = {0};
+    /* walk to the tail to preserve order: collect into a temporary stack */
+    /* simpler: collect forward and then reverse when searching */
+    for (DictEntry *e = vm->latest; e; e = e->link) {
+        /* nothing else needed; we’ll reverse on search by iterating backwards */
+        unsigned fc = (unsigned char)e->name[0];
+        sf_fc_list[fc][filled[fc]++] = e;
+    }
+
+    sf_cached_latest = vm->latest;
+}
 
 /**
  * @file dictionary_management.c
@@ -42,30 +86,39 @@
 DictEntry* vm_find_word(VM *vm, const char *name, size_t len) {
     if (!vm || !name || len == 0) return NULL;
 
+    /* rebuild index if dictionary head changed */
+    if (sf_cached_latest != vm->latest) {
+        sf_rebuild_fc_index(vm);
+    }
+
     const unsigned char first = (unsigned char)name[0];
     const unsigned char last  = (unsigned char)name[len - 1];
 
-    for (DictEntry *e = vm->latest; e; e = e->link) {
-        /* cheapest filters first */
+    DictEntry **bucket = sf_fc_list[first];
+    size_t      n      = sf_fc_count[first];
+
+    /* newest-first: iterate backward through the bucket */
+    for (size_t i = n; i-- > 0;) {
+        DictEntry *e = bucket[i];
+
+        /* skip hidden/smudged only after cheap rejects */
         if ((size_t)e->name_len != len) continue;
 
         const char *en = e->name;
-        if ((unsigned char)en[0] != first) continue;
         if ((unsigned char)en[len - 1] != last) continue;
 
-        /* flags after fast rejects */
 #ifdef WORD_HIDDEN
         if (e->flags & WORD_HIDDEN) continue;
 #endif
 #ifdef WORD_SMUDGED
         if (e->flags & WORD_SMUDGED) continue;
 #endif
-
-        /* final equality */
         if (memcmp(en, name, len) == 0) return e;
     }
     return NULL;
 }
+
+
 
 
 /**
