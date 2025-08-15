@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   main.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/14/25, 9:32 AM
+ Last modified - 8/14/25, 8:51 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -19,11 +19,11 @@
 #include "vm_debug.h"
 #include "log.h"
 #include "word_registry.h"
+#include "platform/starforth_platform.h"
+#include "profiler.h"
 #include "test_runner/include/test_runner.h"
 #include "test_runner/include/test_common.h"
-#include <string.h>
 #include <signal.h>
-#include <stdlib.h>
 
 /* Global VM pointer for cleanup */
 static VM *global_vm = NULL;
@@ -40,10 +40,10 @@ void cleanup_and_exit(void) {
 void signal_handler(int sig) {
     switch (sig) {
         case SIGINT:
-            printf("\nInterrupted! Cleaning up...\n");
+            sf_printf("\nInterrupted! Cleaning up...\n");
             break;
         case SIGTERM:
-            printf("\nTerminating! Cleaning up...\n");
+            sf_printf("\nTerminating! Cleaning up...\n");
             break;
     }
     cleanup_and_exit();
@@ -51,27 +51,26 @@ void signal_handler(int sig) {
 }
 
 void print_usage(const char *program_name) {
-    printf("Usage: %s [OPTIONS]\n", program_name);
-    printf("StarForth - A lightweight Forth virtual machine\n\n");
-    printf("Options:\n");
-    printf("  --run-tests       Run the comprehensive test suite before starting REPL\n");
-    printf("                    (automatically enables TEST logging if no log level set)\n");
-    printf("  --benchmark [N]   Run performance benchmarks (default: 1000 iterations)\n");
-    printf("                    (exits after benchmarking, does not start REPL)\n");
-    printf("  --log-error       Set logging level to ERROR (only errors)\n");
-    printf("  --log-warn        Set logging level to WARN (warnings and errors)\n");
-    printf("  --log-info        Set logging level to INFO (default)\n");
-    printf("  --log-test        Set logging level to TEST (test results only)\n");
-    printf("  --log-debug       Set logging level to DEBUG (all messages)\n");
-    printf("  --fail-fast       Stop test suite immediately on first failure\n");
-    printf("  --help, -h        Show this help message\n\n");
-    printf("Examples:\n");
-    printf("  %s                        # Start REPL with INFO logging\n", program_name);
-    printf("  %s --run-tests            # Run tests with TEST logging, then start REPL\n", program_name);
-    printf("  %s --benchmark            # Run benchmarks with 1000 iterations\n", program_name);
-    printf("  %s --benchmark 5000       # Run benchmarks with 5000 iterations\n", program_name);
-    printf("  %s --log-debug --run-tests  # Run tests with DEBUG logging\n", program_name);
-
+    sf_printf("Usage: %s [OPTIONS]\n", program_name);
+    sf_printf("StarForth - A lightweight Forth virtual machine\n\n");
+    sf_printf("Options:\n");
+    sf_printf("  --run-tests       Run the comprehensive test suite before starting REPL\n");
+    sf_printf("                    (automatically enables TEST logging if no log level set)\n");
+    sf_printf("  --benchmark [N]   Run performance benchmarks (default: 1000 iterations)\n");
+    sf_printf("                    (exits after benchmarking, does not start REPL)\n");
+    sf_printf("  --log-error       Set logging level to ERROR (only errors)\n");
+    sf_printf("  --log-warn        Set logging level to WARN (warnings and errors)\n");
+    sf_printf("  --log-info        Set logging level to INFO (default)\n");
+    sf_printf("  --log-test        Set logging level to TEST (test results only)\n");
+    sf_printf("  --log-debug       Set logging level to DEBUG (all messages)\n");
+    sf_printf("  --fail-fast       Stop test suite immediately on first failure\n");
+    sf_printf("  --help, -h        Show this help message\n\n");
+    sf_printf("Examples:\n");
+    sf_printf("  %s                        # Start REPL with INFO logging\n", program_name);
+    sf_printf("  %s --run-tests            # Run tests with TEST logging, then start REPL\n", program_name);
+    sf_printf("  %s --benchmark            # Run benchmarks with 1000 iterations\n", program_name);
+    sf_printf("  %s --benchmark 5000       # Run benchmarks with 5000 iterations\n", program_name);
+    sf_printf("  %s --log-debug --run-tests  # Run tests with DEBUG logging\n", program_name);
 }
 
 int main(int argc, char *argv[]) {
@@ -81,6 +80,8 @@ int main(int argc, char *argv[]) {
     int benchmark_iterations = 1000;
     LogLevel log_level = LOG_INFO;  /* Default logging level */
     int log_level_explicitly_set = 0;  /* Track if user explicitly set log level */
+    ProfileLevel profile_level = PROFILE_DISABLED;
+    int profile_report = 0;
 
     /* Set global VM pointer for cleanup */
     global_vm = &vm;
@@ -131,10 +132,20 @@ int main(int argc, char *argv[]) {
         }
         else if (strcmp(argv[i], "--fail-fast") == 0) {
             fail_fast = 1;
+        } else if (sf_strcmp(argv[i], "--profile") == 0) {
+            if (i + 1 < argc && sf_isdigit(argv[i + 1][0])) {
+                profile_level = (ProfileLevel)(argv[++i][0] - '0');
+                if (profile_level > PROFILE_FULL) profile_level = PROFILE_FULL;
+            } else {
+                profile_level = PROFILE_BASIC;
+            }
+        } else if (sf_strcmp(argv[i], "--profile-report") == 0) {
+            profile_report = 1;
+            if (profile_level == PROFILE_DISABLED) profile_level = PROFILE_DETAILED;
         }
 
         else {
-            printf("Unknown option: %s\n", argv[i]);
+            sf_printf("Unknown option: %s\n", argv[i]);
             print_usage(argv[0]);
             return 1;
         }
@@ -149,13 +160,21 @@ int main(int argc, char *argv[]) {
     /* Set the logging level */
     log_set_level(log_level);
 
+    /* Initialize profiler if requested */
+    if (profile_level > PROFILE_DISABLED) {
+        if (!profiler_init(profile_level)) {
+            sf_fprintf(sf_stderr, "Failed to initialize profiler\n");
+            return 1;
+        }
+    }
+
     /* Initialize the VM */
     vm_init(&vm);
     setvbuf(stdout, NULL, _IOFBF, 1<<16);
 
     /* Check for initialization failure */
     if (vm.error) {
-        fprintf(stderr, "Failed to initialize VM\n");
+        sf_fprintf(sf_stderr, "Failed to initialize VM\n");
         return 1;
     }
     /* Install VM dump hooks (segfault/abort + manual dumps) */
@@ -165,6 +184,17 @@ int main(int argc, char *argv[]) {
     if (run_benchmark) {
         enable_benchmark_mode(benchmark_iterations);
         run_all_tests(&vm);
+
+        /* Generate profiling report if requested */
+        if (profile_report && profile_level > PROFILE_DISABLED) {
+            profiler_generate_report();
+        }
+
+        /* Shutdown profiler */
+        if (profile_level > PROFILE_DISABLED) {
+            profiler_shutdown();
+        }
+
         cleanup_and_exit();
         return 0;
     }
@@ -178,6 +208,16 @@ int main(int argc, char *argv[]) {
 
     /* Start the REPL */
     vm_repl(&vm);
+
+    /* Generate profiling report if requested */
+    if (profile_report && profile_level > PROFILE_DISABLED) {
+        profiler_generate_report();
+    }
+
+    /* Shutdown profiler */
+    if (profile_level > PROFILE_DISABLED) {
+        profiler_shutdown();
+    }
 
     /* Normal cleanup (will also be called by atexit) */
     cleanup_and_exit();

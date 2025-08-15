@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   log.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/14/25, 8:49 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -15,9 +15,9 @@
 
  */
 
-#include "log.h"
+#include "../include/log.h"
+#include "../include/platform/starforth_platform.h"
 #include <stdarg.h>
-#include <time.h>
 
 /* Current log level (default to LOG_INFO) */
 static LogLevel current_level = LOG_INFO;
@@ -60,9 +60,9 @@ LogLevel log_get_level(void) {
 
 /* Timestamp helper */
 static void get_timestamp(char *buffer, size_t size) {
-    time_t now = time(NULL);
-    struct tm *tm_info = localtime(&now);
-    strftime(buffer, size, "%H:%M:%S", tm_info);
+    sf_time_t now = sf_time(NULL);
+    struct sf_tm *tm_info = sf_localtime(&now);
+    sf_strftime(buffer, size, "%H:%M:%S", tm_info);
 }
 
 /* Generic logger */
@@ -73,14 +73,14 @@ void log_message(LogLevel level, const char *fmt, ...) {
     char timestamp[16];
     get_timestamp(timestamp, sizeof(timestamp));
 
-    fprintf(stderr, "%s[%s] %s: %s", level_colors[level], timestamp, level_names[level], color_reset);
+    sf_fprintf(sf_stderr, "%s[%s] %s: %s", level_colors[level], timestamp, level_names[level], color_reset);
 
     va_list args;
     va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
+    sf_vfprintf(sf_stderr, fmt, args);
     va_end(args);
 
-    fprintf(stderr, "\n");
+    sf_fprintf(sf_stderr, "\n");
 }
 
 /* Dedicated test result logger (only shown for LOG_TEST or higher) */
@@ -113,6 +113,6 @@ void log_test_result(const char *word_name, TestResult result) {
             break;
     }
 
-    fprintf(stderr, "\x1b[35m[%s] TEST: %sTesting %-12s ... %s%s%s\n",
+    sf_fprintf(sf_stderr, "\x1b[35m[%s] TEST: %sTesting %-12s ... %s%s%s\n",
             timestamp, color_reset, word_name, color, status, color_reset);
 }

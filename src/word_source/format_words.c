@@ -1,4 +1,21 @@
 /*
+
+                                 ***   StarForth   ***
+  format_words.c - FORTH-79 Standard and ANSI C99 ONLY
+ Last modified - 8/14/25, 8:34 PM
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+ This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+
+ */
+
+/*
                                  ***   StarForth   ***
   format_words.c - FORTH-79 Standard and ANSI C99 ONLY
   Last modified - 2025-08-09
@@ -11,8 +28,7 @@
 #include "../../include/vm.h"
 #include "../../include/vm_api.h"
 
-#include <stdio.h>
-#include <string.h>
+#include "../../include/platform/starforth_platform.h"
 #include <stdint.h>
 #include <limits.h>
 
@@ -26,7 +42,7 @@ static void ensure_pn(VM *vm) {
         pn_buf = (unsigned char*)vm_allot(vm, 64);  /* same size as before */
         if (!pn_buf) { vm->error = 1; return; }
         pn_cap = 64;
-        memset(pn_buf, 0, pn_cap);
+        sf_memset(pn_buf, 0, pn_cap);
     }
 }
 
@@ -103,7 +119,7 @@ static void print_number_formatted(VM *vm, cell_t n, int width, int is_unsigned)
     }
 
     int len = i;
-    if (width > 0 && len < width) for (int s = 0; s < width - len; ++s) putchar(' ');
+    if (width > 0 && len < width) for (int s = 0; s < width - len; ++s) sf_putchar(' ');
     while (i--) putchar(buf[i]);
 }
 
@@ -294,7 +310,7 @@ void format_word_d_dot(VM *vm) {
     if ((dhigh == 0) || (dhigh == -1 && dlow < 0)) {
         print_number_formatted(vm, dlow, 0, 0);
     } else {
-        fputs("DOUBLE-OVERFLOW", stdout);
+        sf_fputs("DOUBLE-OVERFLOW", sf_stdout);
     }
     putchar(' ');
 }
@@ -308,7 +324,7 @@ void format_word_d_dot_r(VM *vm) {
     if ((dhigh == 0) || (dhigh == -1 && dlow < 0)) {
         print_number_formatted(vm, dlow, (int)width, 0);
     } else {
-        int len = (int)strlen("DOUBLE-OVERFLOW");
+        int len = (int)sf_strlen("DOUBLE-OVERFLOW");
         for (int i = 0; i < ((int)width > len ? (int)width - len : 0); ++i) putchar(' ');
         fputs("DOUBLE-OVERFLOW", stdout);
     }
@@ -317,7 +333,7 @@ void format_word_d_dot_r(VM *vm) {
 
 /* .S ( -- ) */
 void format_word_dot_s(VM *vm) {
-    printf("<%d> ", vm->dsp + 1);
+    sf_printf("<%d> ", vm->dsp + 1);
     for (int i = 0; i <= vm->dsp; i++) { print_number_formatted(vm, vm->data_stack[i], 0, 0); putchar(' '); }
     putchar('\n');
 }

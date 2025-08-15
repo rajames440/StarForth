@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   memory_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/13/25, 1:13 PM
+ Last modified - 8/14/25, 8:28 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -19,7 +19,7 @@
 #include "../../include/word_registry.h"
 #include "vm.h"
 #include "../../include/log.h"
-#include <string.h>   /* memset, memmove */
+#include "../../include/platform/starforth_platform.h"
 
 /* @ ( addr -- n )  Fetch cell from VM memory */
 void memory_word_fetch(VM *vm) {
@@ -85,9 +85,7 @@ void memory_word_fill(VM *vm) {
     vaddr_t addr = VM_ADDR(vm_pop(vm));
     if (!vm_addr_ok(vm, addr, len)) { vm->error = 1; return; }
     uint8_t *ptr = vm_ptr(vm, addr);
-    for (size_t i = 0; i < len; i++) {
-        ptr[i] = (uint8_t)(c_val & 0xFF);
-    }
+    sf_memset(ptr, (int)(c_val & 0xFF), len);
 }
 
 /* MOVE ( addr1 addr2 len -- )  Copy len bytes from addr1 to addr2 */
@@ -99,7 +97,7 @@ void memory_word_move(VM *vm) {
     if (!vm_addr_ok(vm, addr1, len) || !vm_addr_ok(vm, addr2, len)) { vm->error = 1; return; }
     uint8_t *src = vm_ptr(vm, addr1);
     uint8_t *dst = vm_ptr(vm, addr2);
-    memmove(dst, src, len);
+    sf_memmove(dst, src, len);
 }
 
 /* ERASE ( addr len -- )  Zero len bytes starting at addr */
@@ -109,7 +107,7 @@ void memory_word_erase(VM *vm) {
     vaddr_t addr = VM_ADDR(vm_pop(vm));
     if (!vm_addr_ok(vm, addr, len)) { vm->error = 1; return; }
     uint8_t *ptr = vm_ptr(vm, addr);
-    memset(ptr, 0, len);
+    sf_memset(ptr, 0, len);
 }
 
 /* 2@ ( addr -- x_low x_high )  Fetch two consecutive cells (low, then high) */

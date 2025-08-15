@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   logical_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/14/25, 8:34 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -19,7 +19,7 @@
 #include "include/logical_words.h"
 #include "../../include/log.h"
 #include "../../include/word_registry.h"
-#include <string.h>
+#include "../../include/platform/starforth_platform.h"
 
 /* FORTH-79 defines TRUE as -1 (all bits set) and FALSE as 0 */
 #define FORTH_TRUE  ((cell_t)-1)

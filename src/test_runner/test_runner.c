@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   test_runner.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/13/25, 12:02 PM
+ Last modified - 8/14/25, 8:28 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -17,9 +17,7 @@
 
 #include "include/test_runner.h"
 #include "../../include/log.h"
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
+#include "../../include/platform/starforth_platform.h"
 #include <stdint.h>
 
 /* Global test statistics */
@@ -40,14 +38,14 @@ typedef struct {
 static ModuleBenchmark module_benchmarks[32]; /* Max 32 modules */
 static int benchmark_count = 0;
 
-/* Simple portable timer using ANSI C clock() */
+/* Simple portable timer using platform clock() */
 static uint64_t get_time_ns(void) {
-    clock_t t = clock();
-    if (t == (clock_t) (-1)) {
+    sf_clock_t t = sf_clock();
+    if (t == (sf_clock_t) (-1)) {
         return 0; /* Error case */
     }
     /* Convert to nanoseconds: (clock_ticks / CLOCKS_PER_SEC) * 1,000,000,000 */
-    return (uint64_t) ((double) t / CLOCKS_PER_SEC * 1000000000.0);
+    return (uint64_t) ((double) t / SF_CLOCKS_PER_SEC * 1000000000.0);
 }
 
 /* Test modules in dependency order - matches your word registration order */

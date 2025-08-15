@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/14/25, 9:37 AM
+ Last modified - 8/14/25, 9:01 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -29,7 +29,8 @@
 #include "../include/log.h"
 #include "../include/io.h"
 #include "../include/word_registry.h"
-#include <string.h>
+#include "../include/profiler.h"
+#include "../include/platform/starforth_platform.h"
 #include <stdlib.h>
 
 /* forward decls for bootstraps defined later */

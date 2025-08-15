@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   stack_management.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/14/25, 8:59 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -15,11 +15,14 @@
 
  */
 
-#include "vm.h"
+#include "vm.h" 
 #include "log.h"
+#include "profiler.h"
 
 /* Data stack */
 void vm_push(VM *vm, cell_t value) {
+        PROFILE_INC_STACK_OP();
+
     if (vm->dsp >= STACK_SIZE - 1) {
         log_message(LOG_ERROR, "Stack overflow");
         vm->error = 1;
@@ -30,6 +33,8 @@ void vm_push(VM *vm, cell_t value) {
 }
 
 cell_t vm_pop(VM *vm) {
+        PROFILE_INC_STACK_OP();
+
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "Stack underflow (dsp=%d)", vm->dsp);
         vm->error = 1;

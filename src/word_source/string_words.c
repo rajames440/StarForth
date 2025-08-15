@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   string_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 4:03 PM
+ Last modified - 8/14/25, 9:26 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -747,7 +747,7 @@ void register_string_words(VM *vm) {
     register_word(vm, ">IN",     string_word_to_in);
     register_word(vm, "SOURCE",  string_word_source);
     register_word(vm, "BL",      string_word_bl);
-    register_word(vm, "'",       string_word_tick);
+    // ' (tick) word is registered in dictionary_manipulation_words.c
     register_word(vm, "[']",     string_word_bracket_tick);
     register_word(vm, "LITERAL", string_word_literal);
     register_word(vm, "[LITERAL]", string_word_bracket_literal);

@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   system_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/14/25, 7:38 PM
+ Last modified - 8/14/25, 8:34 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -19,9 +19,7 @@
 #include "../../include/vm.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "../../include/platform/starforth_platform.h"
 
 /* ───────────────────────── Global system state ───────────────────────── */
 static int system_running = 1;    /* System running flag */

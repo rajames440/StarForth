@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_manipulation_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/12/25, 5:27 PM
+ Last modified - 8/14/25, 9:27 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -19,7 +19,7 @@
 #include "include/dictionary_manipulation_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
-#include <string.h>
+#include "../../include/platform/starforth_platform.h"
 #include <ctype.h>
 
 /* Global state for dictionary manipulation */
@@ -118,25 +118,34 @@ static void dictionary_m_word_smudge(VM *vm){
 
 /* >BODY ( xt -- addr )  Convert execution token to body */
 void dictionary_m_word_to_body(VM *vm) {
-    cell_t xt;
-    DictEntry *entry;
-    void *body_addr;
-    
     if (vm->dsp < 0) {
+        log_message(LOG_ERROR, ">BODY: Stack underflow");
         vm->error = 1;
         return;
     }
-    
-    xt = vm_pop(vm);
-    entry = (DictEntry*)(uintptr_t)xt;
-    
-    body_addr = get_body_address(entry);
-    if (body_addr == NULL) {
+
+    cell_t xt = vm_pop(vm);
+    log_message(LOG_DEBUG, ">BODY: POP: %ld (dsp=%d)", (long)xt, vm->dsp);
+
+    DictEntry *entry = (DictEntry*)(intptr_t)xt;
+    if (!entry) {
+        log_message(LOG_ERROR, ">BODY: Invalid execution token (NULL)");
         vm->error = 1;
         return;
     }
-    
-    vm_push(vm, (cell_t)(uintptr_t)body_addr);
+
+    // Use the VM's dictionary function to get the data field
+    cell_t *data_field = vm_dictionary_get_data_field(entry);
+    if (!data_field) {
+        log_message(LOG_ERROR, ">BODY: Unable to get data field address for entry %p", (void*)entry);
+        vm->error = 1;
+        return;
+    }
+
+    cell_t body_addr = (cell_t)(intptr_t)data_field;
+    log_message(LOG_DEBUG, ">BODY: xt=%p -> body=%p", (void*)entry, (void*)data_field);
+    vm_push(vm, body_addr);
+    log_message(LOG_DEBUG, ">BODY: PUSH: %ld (dsp=%d)", (long)body_addr, vm->dsp);
 }
 
 /* >NAME ( xt -- addr )  Convert execution token to name */
@@ -364,22 +373,30 @@ static void dictionary_m_word_find(VM *vm) {
 static void dictionary_m_word_tick(VM *vm) {
     char namebuf[128];
     int nlen = vm_parse_word(vm, namebuf, sizeof namebuf);
-    if (nlen <= 0) { vm->error = 1; return; }
+    if (nlen <= 0) { 
+        log_message(LOG_ERROR, "': unable to parse word");
+        vm->error = 1; 
+        return; 
+    }
 
     DictEntry *e = vm_find_word(vm, namebuf, (size_t)nlen);
-    if (!e) { vm->error = 1; return; }
+    if (!e) { 
+        log_message(LOG_ERROR, "': word '%.*s' not found", nlen, namebuf);
+        vm->error = 1; 
+        return; 
+    }
 
-    cell_t addr = (cell_t)(uintptr_t)e;  // if you prefer CFA/PFA field, swap here
+    cell_t xt = (cell_t)(uintptr_t)e;
+    log_message(LOG_DEBUG, "': found '%.*s' xt=%p", nlen, namebuf, (void*)e);
 
     if (vm->mode == MODE_COMPILE) {
-        // Compile: LIT <addr>
-        DictEntry *lit = vm_find_word(vm, "LIT", 3);
-        if (!lit) { vm->error = 1; return; }
-        vm_compile_word(vm, lit);
-        vm_compile_literal(vm, addr);
+        // Compile mode: compile LIT <xt>
+        log_message(LOG_DEBUG, "': compile mode - compiling literal");
+        vm_compile_literal(vm, xt);
     } else {
-        // Interpret: push address
-        vm_push(vm, addr);
+        // Interpret mode: push execution token
+        log_message(LOG_DEBUG, "': interpret mode - pushing xt=%ld", (long)xt);
+        vm_push(vm, xt);
     }
 }
 

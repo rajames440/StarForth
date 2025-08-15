@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm_debug.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 12:55 PM
+ Last modified - 8/14/25, 9:02 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -15,9 +15,8 @@
 
  */
 
-#include <stdio.h>
 #include <signal.h>
-#include <string.h>
+#include "../include/platform/starforth_platform.h"
 #include "../include/vm.h"
 #include "../include/vm_debug.h"
 
@@ -54,56 +53,56 @@ static void dump_block_preview(const VM *vm, cell_t scr) {
         line[n++] = (ch < 32 || ch > 126) ? ' ' : (char)ch;
     }
     line[n] = '\0';
-    fprintf(stderr, "  block[%ld]: \"%s\"%s\n", (long)scr, line, (n==80?"...":""));
+    sf_fprintf(sf_stderr, "  block[%ld]: \"%s\"%s\n", (long)scr, line, (n==80?"...":""));
 }
 
 void vm_debug_dump_state(const VM *vm, const char *reason) {
-    if (!vm) { fprintf(stderr, "===== VM STATE DUMP (no VM) [%s] =====\n", reason?reason:""); return; }
+    if (!vm) { sf_fprintf(sf_stderr, "===== VM STATE DUMP (no VM) [%s] =====\n", reason?reason:""); return; }
 
     unsigned base = dbg_get_base(vm);
     cell_t scr = 0;
     if ((size_t)vm->scr_addr < (size_t)VM_MEMORY_SIZE) scr = vm->memory[(size_t)vm->scr_addr];
 
-    fprintf(stderr, "\n===== VM STATE DUMP ===== [%s]\n", reason?reason:"");
-    fprintf(stderr, "  mode=%s  error=%d\n", mode_str(vm->mode), vm->error);
-    fprintf(stderr, "  HERE=%ld  BASE=%u  SCR=%ld\n", (long)vm->here, base, (long)scr);
-    fprintf(stderr, "  dsp=%d  rsp=%d\n", vm->dsp, vm->rsp);
+    sf_fprintf(sf_stderr, "\n===== VM STATE DUMP ===== [%s]\n", reason?reason:"");
+    sf_fprintf(sf_stderr, "  mode=%s  error=%d\n", mode_str(vm->mode), vm->error);
+    sf_fprintf(sf_stderr, "  HERE=%ld  BASE=%u  SCR=%ld\n", (long)vm->here, base, (long)scr);
+    sf_fprintf(sf_stderr, "  dsp=%d  rsp=%d\n", vm->dsp, vm->rsp);
 
     /* If your VM struct exposes stacks, show top few items (guarded). */
 #ifdef DATA_STACK_SIZE
     if (vm->stack) {
-        fprintf(stderr, "  DATA(top=%d):", vm->dsp);
+        sf_fprintf(sf_stderr, "  DATA(top=%d):", vm->dsp);
         int shown=0;
-        for (int i = vm->dsp; i >= 0 && shown < 16; --i, ++shown) fprintf(stderr, " [%d]=%ld", i, (long)vm->stack[i]);
-        if (vm->dsp >= 16) fprintf(stderr, " ...");
-        fputc('\n', stderr);
+        for (int i = vm->dsp; i >= 0 && shown < 16; --i, ++shown) sf_fprintf(sf_stderr, " [%d]=%ld", i, (long)vm->stack[i]);
+        if (vm->dsp >= 16) sf_fprintf(sf_stderr, " ...");
+        sf_fprintf(sf_stderr, "\n");
     }
 #endif
 #ifdef RETURN_STACK_SIZE
     if (vm->rstack) {
-        fprintf(stderr, "  RETURN(top=%d):", vm->rsp);
+        sf_fprintf(sf_stderr, "  RETURN(top=%d):", vm->rsp);
         int shown=0;
-        for (int i = vm->rsp; i >= 0 && shown < 16; --i, ++shown) fprintf(stderr, " [%d]=%ld", i, (long)vm->rstack[i]);
-        if (vm->rsp >= 16) fprintf(stderr, " ...");
-        fputc('\n', stderr);
+        for (int i = vm->rsp; i >= 0 && shown < 16; --i, ++shown) sf_fprintf(sf_stderr, " [%d]=%ld", i, (long)vm->rstack[i]);
+        if (vm->rsp >= 16) sf_fprintf(sf_stderr, " ...");
+        sf_fprintf(sf_stderr, "\n");
     }
 #endif
 
     /* If you track current word/ip, print them (guard with your flags/macros). */
 #ifdef VM_HAS_CURRENT_ENTRY
-    if (vm->current_executing_entry) fprintf(stderr, "  current=%s\n", vm->current_executing_entry->name);
+    if (vm->current_executing_entry) sf_fprintf(sf_stderr, "  current=%s\n", vm->current_executing_entry->name);
 #endif
 #ifdef VM_HAS_IP
-    fprintf(stderr, "  ip=%ld\n", (long)vm->ip);
+    sf_fprintf(sf_stderr, "  ip=%ld\n", (long)vm->ip);
 #endif
 
     dump_block_preview(vm, scr);
-    fprintf(stderr, "===== END VM STATE DUMP =====\n");
+    sf_fprintf(sf_stderr, "===== END VM STATE DUMP =====\n");
 }
 
 static void sig_handler(int sig) {
     const char *name = (sig==SIGSEGV) ? "SIGSEGV" : (sig==SIGABRT) ? "SIGABRT" : "SIGNAL";
-    fprintf(stderr, "\n*** Caught %s ***\n", name);
+    sf_fprintf(sf_stderr, "\n*** Caught %s ***\n", name);
     if (g_vm) vm_debug_dump_state(g_vm, name);
     signal(sig, SIG_DFL);
     raise(sig);
