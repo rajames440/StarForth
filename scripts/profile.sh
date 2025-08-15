@@ -3,7 +3,7 @@
 #
 #                                 ***   StarForth   ***
 #  profile.sh - FORTH-79 Standard and ANSI C99 ONLY
-# Last modified - 8/14/25, 5:46 PM
+# Last modified - 8/14/25, 6:39 PM
 #  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 #
 # This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -20,7 +20,7 @@
 set -euo pipefail
 
 EXE="./build/starforth"       # executable ONLY
-ARGS=(--benchmark 50)         # your program's args (edit or leave empty)
+ARGS=(--log-info --benchmark)         # your program's args (edit or leave empty)
 
 echo "[CLEAN]"; make clean
 echo "[BUILD w/ symbols]"

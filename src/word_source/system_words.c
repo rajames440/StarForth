@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   system_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/13/25, 7:54 PM
+ Last modified - 8/14/25, 7:38 PM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -14,15 +14,6 @@
 
 
  */
-
-/*
-
-                                 ***   StarForth   ***
-  system_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 8/13/25, 9:10 AM
-  (c) 2025 Robert A. James (rajames) - StarshipOS Forth Project. CC0-1.0 / No warranty.
-
-*/
 
 #include "include/system_words.h"
 #include "../../include/vm.h"
