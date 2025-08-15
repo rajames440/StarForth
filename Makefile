@@ -38,6 +38,9 @@ l4re:
 profile:
 	$(MAKE) CFLAGS="$(BASE_CFLAGS) -DPROFILE_ENABLED=1 -g -O1"
 
+performance:
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) -O3 -DSTARFORTH_PERFORMANCE -DNDEBUG -march=native -flto -funroll-loops -finline-functions -fomit-frame-pointer" LDFLAGS="-flto -s"
+
 # Main executable
 $(TARGET): $(OBJ) | build
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
@@ -81,12 +84,13 @@ help:
 	@echo "======================"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all       - Build the main executable (default)"
-	@echo "  minimal   - Build for minimal/embedded environments"
-	@echo "  l4re      - Build for L4Re microkernel"
-	@echo "  profile   - Build with profiling support enabled"
-	@echo "  clean     - Remove build artifacts"
-	@echo "  help      - Show this help message"
+	@echo "  all         - Build the main executable (default)"
+	@echo "  minimal     - Build for minimal/embedded environments"
+	@echo "  l4re        - Build for L4Re microkernel"
+	@echo "  profile     - Build with profiling support enabled"
+	@echo "  performance - Build with maximum performance optimizations"
+	@echo "  clean       - Remove build artifacts"
+	@echo "  help        - Show this help message"
 	@echo ""
 	@echo "Configuration:"
 	@echo "  CC        - Compiler (default: gcc)"
@@ -100,4 +104,4 @@ help:
 	@echo "  make clean && make profile            # With profiling"
 	@echo "  make CFLAGS='-g -O0' clean all       # Debug build"
 
-.PHONY: all minimal l4re profile clean help
+.PHONY: all minimal l4re profile performance clean help

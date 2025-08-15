@@ -3,7 +3,7 @@
 #
 #                                 ***   StarForth   ***
 #  profile.sh - FORTH-79 Standard and ANSI C99 ONLY
-# Last modified - 8/14/25, 6:39 PM
+# Last modified - 8/15/25, 8:03 AM
 #  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 #
 # This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -20,11 +20,11 @@
 set -euo pipefail
 
 EXE="./build/starforth"       # executable ONLY
-ARGS=(--log-info --benchmark)         # your program's args (edit or leave empty)
+ARGS=(--log-error --benchmark 5000)   # Use more iterations and less logging for better profiling
 
 echo "[CLEAN]"; make clean
-echo "[BUILD w/ symbols]"
-make CFLAGS="-std=c99 -O2 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -Wall -Wextra -Iinclude -Isrc/word_source -Isrc/test_runner/include" LDFLAGS=""
+echo "[BUILD performance w/ symbols for profiling]"
+make CFLAGS="-std=c99 -O3 -g -fno-omit-frame-pointer -DSTARFORTH_PERFORMANCE -DNDEBUG -march=native -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include -DSTRICT_PTR=1" LDFLAGS=""
 
 [[ -x "$EXE" ]] || { echo "ERROR: $EXE missing/not executable"; exit 2; }
 

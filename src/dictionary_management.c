@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_management.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/14/25, 6:13 PM
+ Last modified - 8/15/25, 8:01 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -25,6 +25,14 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
+
+/* Branch prediction hints if not already defined */
+#ifndef LIKELY
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#endif
+#ifndef UNLIKELY
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#endif
 
 #ifndef SF_FC_BUCKETS
 #define SF_FC_BUCKETS 256
@@ -122,17 +130,17 @@ static void sf_try_fast_append(VM *vm) {
 
 /* Find by name: newest-first within the first-character bucket. */
 DictEntry* vm_find_word(VM *vm, const char *name, size_t len) {
-    if (!vm || !name || len == 0) return NULL;
+    if (UNLIKELY(!vm || !name || len == 0)) return NULL;
 
     /* Keep the index in sync with dictionary head, cheaply if possible. */
-    if (sf_cached_latest != vm->latest) sf_try_fast_append(vm);
+    if (UNLIKELY(sf_cached_latest != vm->latest)) sf_try_fast_append(vm);
 
     const unsigned char first = (unsigned char)name[0];
     const unsigned char last  = (unsigned char)name[len - 1];
 
     DictEntry **bucket = sf_fc_list[first];
     size_t      n      = sf_fc_count[first];
-    if (!bucket || n == 0) return NULL;
+    if (UNLIKELY(!bucket || n == 0)) return NULL;
 
     /* NEWEST-first: scan backwards so recent defs win and we bail early. */
     for (size_t i = n; i-- > 0;) {

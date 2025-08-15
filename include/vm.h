@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.h - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 5:01 PM
+ Last modified - 8/15/25, 8:03 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -199,5 +199,47 @@ void vm_run_smoke_tests(VM *vm);
 
 /* Add cleanup function declaration */
 void vm_cleanup(VM *vm);
+
+/* ===== Performance optimizations for release builds ==================== */
+#ifdef STARFORTH_PERFORMANCE
+
+/* Fast inline stack operations - skip bounds checking in performance builds */
+static inline void vm_push_fast(VM *vm, cell_t value) {
+    vm->data_stack[++vm->dsp] = value;
+}
+
+static inline cell_t vm_pop_fast(VM *vm) {
+    return vm->data_stack[vm->dsp--];
+}
+
+static inline void vm_rpush_fast(VM *vm, cell_t value) {
+    vm->return_stack[++vm->rsp] = value;
+}
+
+static inline cell_t vm_rpop_fast(VM *vm) {
+    return vm->return_stack[vm->rsp--];
+}
+
+/* Performance macros - use fast paths in hot code */
+#define VM_PUSH(vm, val) vm_push_fast(vm, val)
+#define VM_POP(vm) vm_pop_fast(vm)
+#define VM_RPUSH(vm, val) vm_rpush_fast(vm, val)
+#define VM_RPOP(vm) vm_rpop_fast(vm)
+
+/* Likely/unlikely branch prediction hints */
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
+
+#else
+
+/* Safe versions with bounds checking for debug builds */
+#define VM_PUSH(vm, val) vm_push(vm, val)
+#define VM_POP(vm) vm_pop(vm)
+#define VM_RPUSH(vm, val) vm_rpush(vm, val)
+#define VM_RPOP(vm) vm_rpop(vm)
+#define LIKELY(x) (x)
+#define UNLIKELY(x) (x)
+
+#endif
 
 #endif /* VM_H */

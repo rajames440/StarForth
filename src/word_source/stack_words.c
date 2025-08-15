@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   stack_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 10:32 AM
+ Last modified - 8/15/25, 8:01 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -47,6 +47,15 @@ static void stack_word_drop(VM *vm) {
 
 /* DUP ( n -- n n ) Duplicate top stack item */
 static void stack_word_dup(VM *vm) {
+#ifdef STARFORTH_PERFORMANCE
+    /* Fast path - skip bounds checking in performance builds */
+    if (UNLIKELY(vm->dsp < 0 || vm->dsp >= STACK_SIZE - 1)) {
+        vm->error = 1;
+        return;
+    }
+    cell_t value = vm->data_stack[vm->dsp];
+    vm->data_stack[++vm->dsp] = value;
+#else
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "DUP: Stack underflow");
         vm->error = 1;
@@ -62,6 +71,7 @@ static void stack_word_dup(VM *vm) {
     cell_t value = vm->data_stack[vm->dsp];
     vm->data_stack[++vm->dsp] = value;
     log_message(LOG_DEBUG, "DUP: Duplicated value");
+#endif
 }
 
 /* ?DUP ( n -- n n | n -- 0 ) Duplicate if non-zero */
@@ -88,6 +98,18 @@ static void stack_word_question_dup(VM *vm) {
 
 /* SWAP ( n1 n2 -- n2 n1 ) Exchange top two stack items */
 static void stack_word_swap(VM *vm) {
+#ifdef STARFORTH_PERFORMANCE
+    /* Fast path - minimal checking in performance builds */
+    if (UNLIKELY(vm->dsp < 1)) {
+        vm->error = 1;
+        return;
+    }
+
+    cell_t top = vm->data_stack[vm->dsp];
+    cell_t second = vm->data_stack[vm->dsp - 1];
+    vm->data_stack[vm->dsp] = second;
+    vm->data_stack[vm->dsp - 1] = top;
+#else
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "SWAP: Insufficient stack items (need 2)");
         vm->error = 1;
@@ -101,6 +123,7 @@ static void stack_word_swap(VM *vm) {
     vm->data_stack[vm->dsp - 1] = top;
 
     log_message(LOG_DEBUG, "SWAP: Exchanged top two values");
+#endif
 }
 
 /* OVER ( n1 n2 -- n1 n2 n1 ) Copy second stack item to top */
