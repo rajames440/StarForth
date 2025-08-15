@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   dictionary_management.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/15/25, 8:01 AM
+ Last modified - 8/15/25, 8:31 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 /* Branch prediction hints if not already defined */
 #ifndef LIKELY
@@ -128,6 +129,35 @@ static void sf_try_fast_append(VM *vm) {
 
 /* --- API ----------------------------------------------------------------- */
 
+/* Fast inline string comparison optimized for common Forth word lengths */
+static inline int fast_string_eq(const char *s1, const char *s2, size_t len) {
+    switch (len) {
+        case 1: 
+            return s1[0] == s2[0];
+        case 2: 
+            return ((uint16_t*)s1)[0] == ((uint16_t*)s2)[0];
+        case 3:
+            return s1[0] == s2[0] && 
+                   ((uint16_t*)(s1+1))[0] == ((uint16_t*)(s2+1))[0];
+        case 4:
+            return ((uint32_t*)s1)[0] == ((uint32_t*)s2)[0];
+        case 5:
+            return ((uint32_t*)s1)[0] == ((uint32_t*)s2)[0] && 
+                   s1[4] == s2[4];
+        case 6:
+            return ((uint32_t*)s1)[0] == ((uint32_t*)s2)[0] && 
+                   ((uint16_t*)(s1+4))[0] == ((uint16_t*)(s2+4))[0];
+        case 7:
+            return ((uint32_t*)s1)[0] == ((uint32_t*)s2)[0] && 
+                   ((uint16_t*)(s1+4))[0] == ((uint16_t*)(s2+4))[0] && 
+                   s1[6] == s2[6];
+        case 8:
+            return ((uint64_t*)s1)[0] == ((uint64_t*)s2)[0];
+        default:
+            return memcmp(s1, s2, len) == 0;
+    }
+}
+
 /* Find by name: newest-first within the first-character bucket. */
 DictEntry* vm_find_word(VM *vm, const char *name, size_t len) {
     if (UNLIKELY(!vm || !name || len == 0)) return NULL;
@@ -136,7 +166,7 @@ DictEntry* vm_find_word(VM *vm, const char *name, size_t len) {
     if (UNLIKELY(sf_cached_latest != vm->latest)) sf_try_fast_append(vm);
 
     const unsigned char first = (unsigned char)name[0];
-    const unsigned char last  = (unsigned char)name[len - 1];
+    const unsigned char last  = (len > 1) ? (unsigned char)name[len - 1] : first;
 
     DictEntry **bucket = sf_fc_list[first];
     size_t      n      = sf_fc_count[first];
@@ -146,17 +176,22 @@ DictEntry* vm_find_word(VM *vm, const char *name, size_t len) {
     for (size_t i = n; i-- > 0;) {
         DictEntry *e = bucket[i];
 
-        if ((size_t)e->name_len != len) continue;
+        /* Quick length check first - most discriminating */
+        if (UNLIKELY((size_t)e->name_len != len)) continue;
+
         const char *en = e->name;
-        if ((unsigned char)en[len - 1] != last) continue;
+        /* Skip last char check for single chars, already guaranteed by bucket */
+        if (LIKELY(len > 1) && UNLIKELY((unsigned char)en[len - 1] != last)) continue;
 
 #ifdef WORD_HIDDEN
-        if (e->flags & WORD_HIDDEN) continue;
+        if (UNLIKELY(e->flags & WORD_HIDDEN)) continue;
 #endif
 #ifdef WORD_SMUDGED
-        if (e->flags & WORD_SMUDGED) continue;
+        if (UNLIKELY(e->flags & WORD_SMUDGED)) continue;
 #endif
-        if (memcmp(en, name, len) == 0) return e;
+
+        /* Fast comparison optimized for short names */
+        if (LIKELY(fast_string_eq(en, name, len))) return e;
     }
     return NULL;
 }
