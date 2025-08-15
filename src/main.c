@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   main.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/14/25, 8:51 PM
+ Last modified - 8/15/25, 10:20 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -63,6 +63,7 @@ void print_usage(const char *program_name) {
     sf_printf("  --log-info        Set logging level to INFO (default)\n");
     sf_printf("  --log-test        Set logging level to TEST (test results only)\n");
     sf_printf("  --log-debug       Set logging level to DEBUG (all messages)\n");
+    sf_printf("  --log-none        Disable all logging (maximum performance)\n");
     sf_printf("  --fail-fast       Stop test suite immediately on first failure\n");
     sf_printf("  --help, -h        Show this help message\n\n");
     sf_printf("Examples:\n");
@@ -124,6 +125,10 @@ int main(int argc, char *argv[]) {
         }
         else if (strcmp(argv[i], "--log-debug") == 0) {
             log_level = LOG_DEBUG;
+            log_level_explicitly_set = 1;
+        }
+        else if (strcmp(argv[i], "--log-none") == 0) {
+            log_level = LOG_NONE;
             log_level_explicitly_set = 1;
         }
         else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {

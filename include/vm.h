@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.h - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/15/25, 8:03 AM
+ Last modified - 8/15/25, 10:41 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -57,25 +57,26 @@ static inline cell_t  CELL(vaddr_t a)   { return (cell_t)(int64_t)a; }
 
 #define STACK_SIZE 1024
 #define DICTIONARY_SIZE 1024
-#define VM_MEMORY_SIZE (1024 * 1024)  /* 1 MB - UPDATE THIS TOO */
+#define VM_MEMORY_SIZE (5 * 1024 * 1024)  /* 5 MB total VM memory */
 #define INPUT_BUFFER_SIZE 256
 #define WORD_NAME_MAX 31
 #define COMPILE_BUFFER_SIZE 1024
 
 /* Block system configuration */
 #define BLOCK_SIZE 1024                                 /* 1KB per block */
-#define MAX_BLOCKS (VM_MEMORY_SIZE / BLOCK_SIZE)        /* 1024 blocks from 1MB */
+#define MAX_BLOCKS (VM_MEMORY_SIZE / BLOCK_SIZE)        /* 5120 blocks from 5MB */
 
 /* Memory layout constants */
-#define DICTIONARY_BLOCKS 64                            /* First 64 blocks (64KB) for dictionary */
+#define DICTIONARY_BLOCKS 2048                          /* First 2048 blocks (2MB) for dictionary */
 #define DICTIONARY_MEMORY_SIZE (DICTIONARY_BLOCKS * BLOCK_SIZE)
-#define USER_BLOCKS_START DICTIONARY_BLOCKS             /* User blocks start at block 64 */
+#define USER_BLOCKS_START DICTIONARY_BLOCKS             /* User blocks start at block 2048 */
 
 /* Word flags */
 #define WORD_IMMEDIATE  0x80    /* Word executes immediately even in compile mode */
 #define WORD_HIDDEN     0x40    /* Word is hidden from dictionary searches */
 #define WORD_SMUDGED    0x20    /* Word is smudged (being defined) - FORTH-79 */
 #define WORD_COMPILED   0x10    /* Word is user-compiled (not built-in) */
+#define WORD_PINNED     0x08    /* Word's entropy is pinned (cannot decay to zero) */
 
 /* Dictionary entry - enhanced for FORTH-79 compatibility */
 typedef struct DictEntry {
@@ -83,6 +84,7 @@ typedef struct DictEntry {
     word_func_t func;           /* Function pointer for execution */
     uint8_t flags;              /* Word flags */
     uint8_t name_len;           /* Length of name */
+    cell_t entropy;             /* Usage counter - incremented on each execution */
     char name[];                /* Variable-length name + optional code */
 } DictEntry;
 
@@ -167,6 +169,8 @@ DictEntry* vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
 void vm_make_immediate(VM *vm);
 void vm_hide_word(VM *vm);
 void vm_smudge_word(VM *vm);        /* Added for FORTH-79 SMUDGE */
+void vm_pin_entropy(VM *vm);        /* Pin entropy (prevent decay) */
+void vm_unpin_entropy(VM *vm);      /* Unpin entropy (allow decay) */
 
 /* Enhanced dictionary search functions */
 DictEntry* vm_dictionary_find_by_func(VM *vm, word_func_t func);
@@ -224,7 +228,7 @@ static inline cell_t vm_rpop_fast(VM *vm) {
 #define VM_PUSH(vm, val) vm_push_fast(vm, val)
 #define VM_POP(vm) vm_pop_fast(vm)
 #define VM_RPUSH(vm, val) vm_rpush_fast(vm, val)
-#define VM_RPOP(vm) vm_rpop_fast(vm)
+#define VM_RPOP(vm) vm_rprop_fast(vm)
 
 /* Likely/unlikely branch prediction hints */
 #define LIKELY(x) __builtin_expect(!!(x), 1)

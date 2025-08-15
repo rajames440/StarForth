@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   arithmetic_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/15/25, 10:15 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -46,7 +46,7 @@ static void arithmetic_word_star_slash(VM *vm);
 static void arithmetic_word_star_slash_mod(VM *vm);
 
 /* + ( n1 n2 -- n3 ) Add n1 and n2 */
-static void arithmetic_word_plus(VM *vm) {
+void arithmetic_word_plus(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "+: Stack underflow");
         vm->error = 1;

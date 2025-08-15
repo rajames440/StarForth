@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   vm.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/14/25, 9:01 PM
+ Last modified - 8/15/25, 10:17 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -565,6 +565,12 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
     if (!entry) entry = canon;
 
     if (entry) {
+            /* Increment entropy counter (usage tracking) */
+            entry->entropy++;
+
+        /* Increment usage counter (entropy) */
+        entry->entropy++;
+
         /* Consider the word IMMEDIATE if either view marks it so */
         int is_immediate = 0;
         if (entry && (entry->flags & WORD_IMMEDIATE)) is_immediate = 1;

@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   memory_management.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/9/25, 1:07 PM
+ Last modified - 8/15/25, 9:58 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -15,8 +15,8 @@
 
  */
 
-#include "vm.h"
-#include "log.h"
+#include "../include/vm.h"
+#include "../include/log.h"
 
 /**
  * @brief Allocates memory from the VM's dictionary space
@@ -26,7 +26,15 @@
  * @note The allocation is done from the VM's dictionary space which is limited to DICTIONARY_MEMORY_SIZE
  */
 void* vm_allot(VM *vm, size_t bytes) {
-    /* Ensure we don't allocate beyond dictionary space (first 64 blocks) */
+    if (!vm || !vm->memory) {
+        log_message(LOG_ERROR, "vm_allot: VM or memory is NULL");
+        return NULL;
+    }
+
+    /* Ensure we don't allocate beyond dictionary space (first 1024 blocks = 1MB) */
+    log_message(LOG_DEBUG, "vm_allot: Requesting %zu bytes, current here=%zu, limit=%d", 
+                bytes, vm->here, DICTIONARY_MEMORY_SIZE);
+
     if (vm->here + bytes >= DICTIONARY_MEMORY_SIZE) {
         log_message(LOG_ERROR, "Dictionary space full (here=%zu, bytes=%zu, dict_limit=%d)",
                     vm->here, bytes, DICTIONARY_MEMORY_SIZE);

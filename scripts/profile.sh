@@ -3,7 +3,7 @@
 #
 #                                 ***   StarForth   ***
 #  profile.sh - FORTH-79 Standard and ANSI C99 ONLY
-# Last modified - 8/15/25, 8:03 AM
+# Last modified - 8/15/25, 10:08 AM
 #  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 #
 # This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -20,7 +20,8 @@
 set -euo pipefail
 
 EXE="./build/starforth"       # executable ONLY
-ARGS=(--log-error --benchmark 5000)   # Use more iterations and less logging for better profiling
+# Target just Control Words module for detailed profiling
+ARGS=(--log-error --run-tests)   # We need to run specific control word tests
 
 echo "[CLEAN]"; make clean
 echo "[BUILD performance w/ symbols for profiling]"

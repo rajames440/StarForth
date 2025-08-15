@@ -2,6 +2,23 @@
 
                                  ***   StarForth   ***
   control_words.c - FORTH-79 Standard and ANSI C99 ONLY
+ Last modified - 8/15/25, 10:11 AM
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+ This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+
+ */
+
+/*
+
+                                 ***   StarForth   ***
+  control_words.c - FORTH-79 Standard and ANSI C99 ONLY
   Last modified - 8/13/25, 9:42 PM
   (c) 2025 Robert A. James (rajames) - StarshipOS Forth Project. CC0-1.0 / No warranty.
 
@@ -565,12 +582,18 @@ static void control_forth_runtime_plus_loop(VM *vm) {
 /* ===================== Loop index words (I, J) ===================== */
 
 static void control_forth_I(VM *v) {
+#ifdef STARFORTH_PERFORMANCE
+    /* Fast path - assume we're in a loop (hot path optimization) */
+    vm_push(v, loop_stack[loop_sp].index);
+#else
+    /* Safe path with error checking for debug builds */
     if (loop_sp < 0) {
         v->error = 1;
         log_message(LOG_ERROR, "I: outside DO loop");
         return;
     }
     vm_push(v, loop_stack[loop_sp].index);
+#endif
 }
 
 static void control_forth_J(VM *v) {

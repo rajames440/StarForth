@@ -2,7 +2,7 @@
 
                                  ***   StarForth   ***
   log.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/14/25, 8:49 PM
+ Last modified - 8/15/25, 10:28 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
@@ -67,7 +67,8 @@ static void get_timestamp(char *buffer, size_t size) {
 
 /* Generic logger */
 void log_message(LogLevel level, const char *fmt, ...) {
-    if (level > current_level)
+    /* LOG_NONE (-1) disables ALL logging */
+    if (current_level == LOG_NONE || level > current_level)
         return;
 
     char timestamp[16];
@@ -85,7 +86,7 @@ void log_message(LogLevel level, const char *fmt, ...) {
 
 /* Dedicated test result logger (only shown for LOG_TEST or higher) */
 void log_test_result(const char *word_name, TestResult result) {
-    if (current_level < LOG_TEST)
+    if (current_level == LOG_NONE || current_level < LOG_TEST)
         return;
 
     char timestamp[16];
