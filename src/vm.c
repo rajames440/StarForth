@@ -31,7 +31,7 @@
 #include "../include/word_registry.h"
 #include "../include/profiler.h"
 #include "../include/platform/starforth_platform.h"
-#include <stdlib.h>
+#include "platform/starforth_platform.h"
 
 /* forward decls for bootstraps defined later */
 static void execute_colon_word(VM *vm);
@@ -91,7 +91,7 @@ void vm_bootstrap_base(VM *vm) {
  */
 void vm_init(VM *vm) {
     /* Clear all fields */
-    memset(vm, 0, sizeof(VM));
+        sf_memset(vm, 0, sizeof(VM));
 
     /* Allocate unified VM memory buffer */
     vm->memory = malloc(VM_MEMORY_SIZE);

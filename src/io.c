@@ -17,22 +17,7 @@
 
 #include "io.h"
 #include "log.h"
-#include <string.h>   /* memset, memcpy */
-
-/**
- * @brief Custom implementation of memcpy without string.h dependency
- * @param dest Destination memory address
- * @param src Source memory address
- * @param num Number of bytes to copy
- */
-static void io_memcpy(void *dest, const void *src, size_t num) {
-    unsigned char *d = (unsigned char*)dest;
-    const unsigned char *s = (const unsigned char*)src;
-    size_t i;
-    for (i = 0; i < num; i++) {
-        d[i] = s[i];
-    }
-}
+#include "platform/starforth_platform.h"
 
 /**
  * @brief Initialize the IO subsystem
@@ -48,7 +33,7 @@ void io_init(VM *vm) {
     }
 
     /* Zero the entire VM address space so blocks start clean. */
-    memset(vm->memory, 0, VM_MEMORY_SIZE);
+    sf_memset(vm->memory, 0, VM_MEMORY_SIZE);
 
     log_message(LOG_INFO,
                 "IO subsystem initialized with %d blocks of %d bytes",
@@ -71,7 +56,7 @@ int io_write_block(VM *vm, int block_num, const unsigned char *buffer) {
         return -1;
     }
     size_t off = (size_t)block_num * (size_t)BLOCK_SIZE;
-    io_memcpy(&vm->memory[off], buffer, BLOCK_SIZE);
+    sf_memcpy(&vm->memory[off], buffer, BLOCK_SIZE);
     log_message(LOG_DEBUG, "io_write_block: wrote block %d", block_num);
     return 0;
 }

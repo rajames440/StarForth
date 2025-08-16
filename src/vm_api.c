@@ -18,8 +18,7 @@
 #include "vm_api.h"
 #include "vm.h"       // internal details, not re-exposed to word modules
 #include "log.h"
-#include <string.h>
-#include <stdint.h>
+#include "platform/starforth_platform.h"
 
 /** @name Stack Operations
  * @{
@@ -95,7 +94,7 @@ int vm_input_ensure(VM *vm) {
         vm->tib_buf = (unsigned char*)vm_allot(vm, INPUT_BUFFER_SIZE);
         if (!vm->tib_buf) { vm->error = 1; return 1; }
         vm->tib_cap = INPUT_BUFFER_SIZE;
-        memset(vm->tib_buf, 0, vm->tib_cap);
+        sf_memset(vm->tib_buf, 0, vm->tib_cap);
     }
     if (!vm->in_var) {
         vm->in_var = (cell_t*)vm_allot(vm, sizeof(cell_t));
@@ -156,8 +155,8 @@ void vm_input_load_line(VM *vm, const char *src, size_t n) {
     }
     size_t nclamp = n;
     if (nclamp > vm->tib_cap) nclamp = vm->tib_cap;
-    memcpy(vm->tib_buf, src, nclamp);
-    if (nclamp < vm->tib_cap) memset(vm->tib_buf + nclamp, 0, vm->tib_cap - nclamp);
+    sf_memcpy(vm->tib_buf, src, nclamp);
+    if (nclamp < vm->tib_cap) sf_memset(vm->tib_buf + nclamp, 0, vm->tib_cap - nclamp);
     *vm->span_var = (cell_t) nclamp;
     *vm->in_var = 0;
 }
@@ -194,8 +193,8 @@ cell_t vm_addr_from_ptr(VM *vm, void *p) {
 #else
     /* Forth addresses are offsets into vm->memory */
     if (!vm->memory) return 0;
-    uintptr_t base = (uintptr_t)vm->memory;
-    uintptr_t addr = (uintptr_t)p;
+    unsigned long base = (unsigned long)vm->memory;
+    unsigned long addr = (unsigned long)p;
     if (addr < base) return 0;
     return (cell_t)(addr - base);
 #endif

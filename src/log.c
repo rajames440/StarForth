@@ -17,7 +17,6 @@
 
 #include "../include/log.h"
 #include "../include/platform/starforth_platform.h"
-#include <stdarg.h>
 
 /* Current log level (default to LOG_INFO) */
 static LogLevel current_level = LOG_INFO;

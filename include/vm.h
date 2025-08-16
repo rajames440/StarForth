@@ -18,14 +18,14 @@
 #ifndef VM_H
 #define VM_H
 
-/* ANSI C99 only - minimal headers */
-#include <stddef.h>
-#include <stdint.h>
+/* Bare metal - no system headers */
+#include "platform/starforth_platform.h"
 
 /* Forward declaration */
 struct VM;
 
-typedef intptr_t cell_t;
+/* Bare metal type definitions */
+typedef signed long cell_t;
 
 
 typedef void (*word_func_t)(struct VM *vm);
