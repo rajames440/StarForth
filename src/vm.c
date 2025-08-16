@@ -94,7 +94,7 @@ void vm_init(VM *vm) {
         sf_memset(vm, 0, sizeof(VM));
 
     /* Allocate unified VM memory buffer */
-    vm->memory = malloc(VM_MEMORY_SIZE);
+    vm->memory = sf_malloc(VM_MEMORY_SIZE);
     if (vm->memory == NULL) {
         log_message(LOG_ERROR, "Failed to allocate VM memory");
         vm->error = 1;
@@ -175,7 +175,7 @@ void vm_init(VM *vm) {
  */
 void vm_cleanup(VM *vm) {
     if (vm->memory != NULL) {
-        free(vm->memory);
+        sf_free(vm->memory);
         vm->memory = NULL;
     }
     vm->here = 0;
@@ -288,7 +288,7 @@ void vm_enter_compile_mode(VM *vm, const char *name, size_t len) {
     vm->state_var = -1;  /* FORTH-79 uses -1 for true/compile mode */
 
     if (len > WORD_NAME_MAX) len = WORD_NAME_MAX;
-    memcpy(vm->current_word_name, name, len);
+    sf_memcpy(vm->current_word_name, name, len);
     vm->current_word_name[len] = '\0';
 
     /* Create dictionary entry (smudged) for colon word */
