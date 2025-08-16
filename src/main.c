@@ -1,0 +1,219 @@
+/*
+
+                                 ***   StarForth   ***
+  main.c - FORTH-79 Standard and ANSI C99 ONLY
+ Last modified - 8/15/25, 10:20 AM
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+ This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+
+ */
+
+#include "vm.h"
+#include "vm_debug.h"
+#include "log.h"
+#include "word_registry.h"
+#include "platform/starforth_platform.h"
+#include "profiler.h"
+#include "test_runner/include/test_runner.h"
+#include "test_runner/include/test_common.h"
+
+/* Global VM pointer for cleanup */
+static VM *global_vm = NULL;
+
+/* Cleanup function for atexit() and signal handlers */
+void cleanup_and_exit(void) {
+    if (global_vm != NULL) {
+        vm_cleanup(global_vm);
+        global_vm = NULL;
+    }
+}
+
+/* Signal handler for CTRL-C (SIGINT) and CTRL-D equivalent */
+void signal_handler(int sig) {
+    switch (sig) {
+        case SF_SIGINT:
+            sf_printf("\nInterrupted! Cleaning up...\n");
+            break;
+        case SF_SIGTERM:
+            sf_printf("\nTerminating! Cleaning up...\n");
+            break;
+    }
+    cleanup_and_exit();
+    sf_exit(0);
+}
+
+void print_usage(const char *program_name) {
+    sf_printf("Usage: %s [OPTIONS]\n", program_name);
+    sf_printf("StarForth - A lightweight Forth virtual machine\n\n");
+    sf_printf("Options:\n");
+    sf_printf("  --run-tests       Run the comprehensive test suite before starting REPL\n");
+    sf_printf("                    (automatically enables TEST logging if no log level set)\n");
+    sf_printf("  --benchmark [N]   Run performance benchmarks (default: 1000 iterations)\n");
+    sf_printf("                    (exits after benchmarking, does not start REPL)\n");
+    sf_printf("  --log-error       Set logging level to ERROR (only errors)\n");
+    sf_printf("  --log-warn        Set logging level to WARN (warnings and errors)\n");
+    sf_printf("  --log-info        Set logging level to INFO (default)\n");
+    sf_printf("  --log-test        Set logging level to TEST (test results only)\n");
+    sf_printf("  --log-debug       Set logging level to DEBUG (all messages)\n");
+    sf_printf("  --log-none        Disable all logging (maximum performance)\n");
+    sf_printf("  --fail-fast       Stop test suite immediately on first failure\n");
+    sf_printf("  --help, -h        Show this help message\n\n");
+    sf_printf("Examples:\n");
+    sf_printf("  %s                        # Start REPL with INFO logging\n", program_name);
+    sf_printf("  %s --run-tests            # Run tests with TEST logging, then start REPL\n", program_name);
+    sf_printf("  %s --benchmark            # Run benchmarks with 1000 iterations\n", program_name);
+    sf_printf("  %s --benchmark 5000       # Run benchmarks with 5000 iterations\n", program_name);
+    sf_printf("  %s --log-debug --run-tests  # Run tests with DEBUG logging\n", program_name);
+}
+
+int main(int argc, char *argv[]) {
+    VM vm;
+    int run_tests = 0;
+    int run_benchmark = 0;
+    int benchmark_iterations = 1000;
+    LogLevel log_level = LOG_INFO; /* Default logging level */
+    int log_level_explicitly_set = 0; /* Track if user explicitly set log level */
+    ProfileLevel profile_level = PROFILE_DISABLED;
+    int profile_report = 0;
+
+    /* Set global VM pointer for cleanup */
+    global_vm = &vm;
+
+    /* Register cleanup function to run on exit */
+    sf_atexit(cleanup_and_exit);
+
+    /* Set up signal handlers */
+    sf_signal(SF_SIGINT, signal_handler); /* CTRL-C */
+    sf_signal(SF_SIGTERM, signal_handler); /* Termination */
+
+    /* Parse command line arguments */
+    for (int i = 1; i < argc; i++) {
+        if (sf_strcmp(argv[i], "--run-tests") == 0) {
+            run_tests = 1;
+        } else if (sf_strcmp(argv[i], "--benchmark") == 0) {
+            run_benchmark = 1;
+            /* Check if next argument is a number (iterations) */
+            if (i + 1 < argc && sf_atoi(argv[i + 1]) > 0) {
+                benchmark_iterations = sf_atoi(argv[i + 1]);
+                i++; /* Skip the iterations argument */
+            }
+        } else if (sf_strcmp(argv[i], "--log-error") == 0) {
+            log_level = LOG_ERROR;
+            log_level_explicitly_set = 1;
+        } else if (sf_strcmp(argv[i], "--log-warn") == 0) {
+            log_level = LOG_WARN;
+            log_level_explicitly_set = 1;
+        } else if (sf_strcmp(argv[i], "--log-info") == 0) {
+            log_level = LOG_INFO;
+            log_level_explicitly_set = 1;
+        } else if (sf_strcmp(argv[i], "--log-test") == 0) {
+            log_level = LOG_TEST;
+            log_level_explicitly_set = 1;
+        } else if (sf_strcmp(argv[i], "--log-debug") == 0) {
+            log_level = LOG_DEBUG;
+            log_level_explicitly_set = 1;
+        } else if (sf_strcmp(argv[i], "--log-none") == 0) {
+            log_level = LOG_NONE;
+            log_level_explicitly_set = 1;
+        } else if (sf_strcmp(argv[i], "--help") == 0 || sf_strcmp(argv[i], "-h") == 0) {
+            print_usage(argv[0]);
+            return 0;
+        } else if (sf_strcmp(argv[i], "--fail-fast") == 0) {
+            fail_fast = 1;
+        } else if (sf_strcmp(argv[i], "--profile") == 0) {
+            if (i + 1 < argc && sf_isdigit(argv[i + 1][0])) {
+                profile_level = (ProfileLevel)(argv[++i][0] - '0');
+                if (profile_level > PROFILE_FULL) profile_level = PROFILE_FULL;
+            } else {
+                profile_level = PROFILE_BASIC;
+            }
+        } else if (sf_strcmp(argv[i], "--profile-report") == 0) {
+            profile_report = 1;
+            if (profile_level == PROFILE_DISABLED) profile_level = PROFILE_DETAILED;
+        } else {
+            sf_printf("Unknown option: %s\n", argv[i]);
+            print_usage(argv[0]);
+            return 1;
+        }
+    }
+
+    /* If running tests and no explicit log level was set, default to TEST */
+    if (run_tests && !log_level_explicitly_set && !run_benchmark) {
+        log_level = LOG_TEST;
+        log_message(LOG_INFO, "Test mode enabled - using LOG_TEST level for diagnostics");
+    }
+
+    /* Set the logging level */
+    log_set_level(log_level);
+
+    /* Initialize profiler if requested */
+    if (profile_level > PROFILE_DISABLED) {
+        if (!profiler_init(profile_level)) {
+            sf_fprintf(sf_stderr, "Failed to initialize profiler\n");
+            return 1;
+        }
+    }
+
+    /* Initialize the VM */
+    vm_init(&vm);
+    sf_setvbuf(sf_stdout, NULL, SF_IOFBF, 1 << 16);
+
+    /* Check for initialization failure */
+    if (vm.error) {
+        sf_fprintf(sf_stderr, "Failed to initialize VM\n");
+        return 1;
+    }
+    /* Install VM dump hooks (segfault/abort + manual dumps) */
+    vm_debug_set_current_vm(&vm);
+    vm_debug_install_signal_handlers();
+    /* Handle benchmark mode */
+    if (run_benchmark) {
+        enable_benchmark_mode(benchmark_iterations);
+        run_all_tests(&vm);
+
+        /* Generate profiling report if requested */
+        if (profile_report && profile_level > PROFILE_DISABLED) {
+            profiler_generate_report();
+        }
+
+        /* Shutdown profiler */
+        if (profile_level > PROFILE_DISABLED) {
+            profiler_shutdown();
+        }
+
+        cleanup_and_exit();
+        return 0;
+    }
+
+    /* Run tests if requested */
+    if (run_tests) {
+        log_message(LOG_INFO, "Running comprehensive test suite...");
+        run_all_tests(&vm);
+        log_message(LOG_INFO, "Test run complete. Starting REPL...");
+    }
+
+    /* Start the REPL */
+    vm_repl(&vm);
+
+    /* Generate profiling report if requested */
+    if (profile_report && profile_level > PROFILE_DISABLED) {
+        profiler_generate_report();
+    }
+
+    /* Shutdown profiler */
+    if (profile_level > PROFILE_DISABLED) {
+        profiler_shutdown();
+    }
+
+    /* Normal cleanup (will also be called by atexit) */
+    cleanup_and_exit();
+
+    return 0;
+}

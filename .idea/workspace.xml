@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
+  </component>
+  <component name="CMakeProjectFlavorService">
+    <option name="flavorId" value="CMakePlainProjectFlavor" />
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="6ee9fd68-eb9b-4065-96ac-69276c19e88d" name="Changes" comment="Introduce standard platform implementation for signal and utility functions&#10;&#10;- Added `src/platform/starforth_standard.c` for platform abstraction.&#10;- Implemented standard functions like `sf_exit`, `sf_sleep`, `sf_sigaction`, and `sf_itoa`.&#10;- Provided POSIX and non-POSIX compatible implementations for signal handling.&#10;- Ensured compatibility with FORTH-79 Standard and ANSI C99." />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;rajames440&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/rajames440/StarForth.git&quot;,
+    &quot;accountId&quot;: &quot;d91b388f-ccd8-4da6-956c-e23fc5daddd4&quot;
+  }
+}</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="mock:///AIAssistantSnippet.." root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///AIAssistantSnippet.." root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///AIAssistantSnippet.." root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///AIAssistantSnippet.." root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///AIAssistantSnippet.." root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///AIAssistantSnippet.." root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///AIAssistantSnippet.." root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///AIAssistantSnippet.." root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///AIAssistantSnippet.." root0="SKIP_HIGHLIGHTING" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="31Mqan6ke3zWY50Ts265KB1YIU9" />
+  <component name="ProjectStatusUIService">{
+  &quot;uiKindId&quot;: &quot;Widget&quot;
+}</component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/rajames/CLionProjects/StarForth/Makefile&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="6ee9fd68-eb9b-4065-96ac-69276c19e88d" name="Changes" comment="" />
+      <created>1755344354962</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1755344354962</updated>
+      <workItem from="1755344356308" duration="91000" />
+      <workItem from="1755344494708" duration="1124000" />
+      <workItem from="1755346660896" duration="2640000" />
+      <workItem from="1755349326482" duration="2175000" />
+      <workItem from="1755351538491" duration="136000" />
+      <workItem from="1755351700207" duration="8306000" />
+      <workItem from="1755360406468" duration="1921000" />
+      <workItem from="1755363565702" duration="5555000" />
+      <workItem from="1755369650004" duration="22000" />
+    </task>
+    <task id="LOCAL-00001" summary="Refactor to use platform abstraction for memory operations and type definitions&#10;&#10;- Replaced standard library calls (`memset`, `memcpy`, etc.) with platform-specific wrappers (`sf_memset`, `sf_memcpy`, etc.).&#10;- Consolidated type definitions and removed system headers in favor of `starforth_platform.h`.&#10;- Simplified logging and IO setup by eliminating dependency on standard headers like `string.h` and `stdarg.h`.&#10;- Streamlined VM memory initialization using platform abstractions.">
+      <option name="closed" value="true" />
+      <created>1755345564922</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1755345564922</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Refactor to use platform abstraction for memory operations and type definitions&#10;&#10;- Replaced standard library calls (`memset`, `memcpy`, etc.) with platform-specific wrappers (`sf_memset`, `sf_memcpy`, etc.).&#10;- Consolidated type definitions and removed system headers in favor of `starforth_platform.h`.&#10;- Simplified logging and IO setup by eliminating dependency on standard headers like `string.h` and `stdarg.h`.&#10;- Streamlined VM memory initialization using platform abstractions.">
+      <option name="closed" value="true" />
+      <created>1755347040027</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1755347040027</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Refactor to use platform abstraction for memory operations and type definitions&#10;&#10;- Replaced standard library calls (`memset`, `memcpy`, etc.) with platform-specific wrappers (`sf_memset`, `sf_memcpy`, etc.).&#10;- Consolidated type definitions and removed system headers in favor of `starforth_platform.h`.&#10;- Simplified logging and IO setup by eliminating dependency on standard headers like `string.h` and `stdarg.h`.&#10;- Streamlined VM memory initialization using platform abstractions.">
+      <option name="closed" value="true" />
+      <created>1755360432250</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1755360432250</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Refactor to use platform abstraction for memory operations and type definitions&#10;&#10;- Replaced standard library calls (`memset`, `memcpy`, etc.) with platform-specific wrappers (`sf_memset`, `sf_memcpy`, etc.).&#10;- Consolidated type definitions and removed system headers in favor of `starforth_platform.h`.&#10;- Simplified logging and IO setup by eliminating dependency on standard headers like `string.h` and `stdarg.h`.&#10;- Streamlined VM memory initialization using platform abstractions.">
+      <option name="closed" value="true" />
+      <created>1755360701089</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1755360701089</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Refactor to use platform abstraction for memory operations and type definitions&#10;&#10;- Replaced standard library calls (`memset`, `memcpy`, etc.) with platform-specific wrappers (`sf_memset`, `sf_memcpy`, etc.).&#10;- Consolidated type definitions and removed system headers in favor of `starforth_platform.h`.&#10;- Simplified logging and IO setup by eliminating dependency on standard headers like `string.h` and `stdarg.h`.&#10;- Streamlined VM memory initialization using platform abstractions.">
+      <option name="closed" value="true" />
+      <created>1755360717641</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1755360717641</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Refactor to use platform abstraction for memory operations and type definitions&#10;&#10;- Replaced standard library calls (`memset`, `memcpy`, etc.) with platform-specific wrappers (`sf_memset`, `sf_memcpy`, etc.).&#10;- Consolidated type definitions and removed system headers in favor of `starforth_platform.h`.&#10;- Simplified logging and IO setup by eliminating dependency on standard headers like `string.h` and `stdarg.h`.&#10;- Streamlined VM memory initialization using platform abstractions.">
+      <option name="closed" value="true" />
+      <created>1755368472471</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1755368472471</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Introduce standard platform implementation for signal and utility functions&#10;&#10;- Added `src/platform/starforth_standard.c` for platform abstraction.&#10;- Implemented standard functions like `sf_exit`, `sf_sleep`, `sf_sigaction`, and `sf_itoa`.&#10;- Provided POSIX and non-POSIX compatible implementations for signal handling.&#10;- Ensured compatibility with FORTH-79 Standard and ANSI C99.">
+      <option name="closed" value="true" />
+      <created>1755368565020</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1755368565020</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Introduce standard platform implementation for signal and utility functions&#10;&#10;- Added `src/platform/starforth_standard.c` for platform abstraction.&#10;- Implemented standard functions like `sf_exit`, `sf_sleep`, `sf_sigaction`, and `sf_itoa`.&#10;- Provided POSIX and non-POSIX compatible implementations for signal handling.&#10;- Ensured compatibility with FORTH-79 Standard and ANSI C99.">
+      <option name="closed" value="true" />
+      <created>1755369142872</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1755369142872</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Refactor to use platform abstraction for memory operations and type definitions&#10;&#10;- Replaced standard library calls (`memset`, `memcpy`, etc.) with platform-specific wrappers (`sf_memset`, `sf_memcpy`, etc.).&#10;- Consolidated type definitions and removed system headers in favor of `starforth_platform.h`.&#10;- Simplified logging and IO setup by eliminating dependency on standard headers like `string.h` and `stdarg.h`.&#10;- Streamlined VM memory initialization using platform abstractions." />
+    <MESSAGE value="Introduce `starforth_standard.c` for FORTH-79 and ANSI C99 platform standardization&#10;&#10;- Added `starforth_standard.c` with platform abstraction implementations for signal handling, timing, and utility functions.&#10;- Implemented `sf_itoa` for custom integer-to-string conversion as `itoa` is non-standard.&#10;- Ensured cross-platform compatibility with conditional handling for POSIX and non-POSIX systems." />
+    <MESSAGE value="Introduce standard platform implementation for signal and utility functions&#10;&#10;- Added `src/platform/starforth_standard.c` for platform abstraction.&#10;- Implemented standard functions like `sf_exit`, `sf_sleep`, `sf_sigaction`, and `sf_itoa`.&#10;- Provided POSIX and non-POSIX compatible implementations for signal handling.&#10;- Ensured compatibility with FORTH-79 Standard and ANSI C99." />
+    <option name="LAST_COMMIT_MESSAGE" value="Introduce standard platform implementation for signal and utility functions&#10;&#10;- Added `src/platform/starforth_standard.c` for platform abstraction.&#10;- Implemented standard functions like `sf_exit`, `sf_sleep`, `sf_sigaction`, and `sf_itoa`.&#10;- Provided POSIX and non-POSIX compatible implementations for signal handling.&#10;- Ensured compatibility with FORTH-79 Standard and ANSI C99." />
+  </component>
+</project>
