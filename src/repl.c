@@ -15,26 +15,25 @@
 
  */
 
-#include "repl.h"
-#include "log.h"
-#include "platform/starforth_platform.h"
+#include "../include/repl.h"
+#include "../include/log.h"
 
 void vm_repl(VM *vm) {
     log_message(LOG_INFO, "Starting Forth REPL");
 
     char input[256];
     while (!vm->halted && !vm->error) {
-        sf_printf("ok> ");
-        sf_fflush(sf_stdout);
+        printf("ok> ");
+        fflush(stdout);
 
-        if (!sf_fgets(input, sizeof(input), sf_stdin)) {
+        if (!fgets(input, sizeof(input), stdin)) {
             break;
         }
 
         vm_interpret(vm, input);
 
         if (!vm->error) {
-            sf_printf(" ok\n");
+            printf(" ok\n");
         } else {
             sf_printf(" ERROR\n");
             vm->error = 0; /* Reset error for next input */
