@@ -101,6 +101,7 @@ typedef struct VM {
     cell_t return_stack[STACK_SIZE];
     int dsp; /* Data stack pointer */
     int rsp; /* Return stack pointer */
+    int exit_colon;
 
     /* Dictionary / heap */
     uint8_t *memory; /* Unified VM memory buffer */
