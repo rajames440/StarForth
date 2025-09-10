@@ -392,8 +392,13 @@ static void execute_colon_word(VM *vm) {
         }
 
         /* One-shot colon return (EXIT) — ONLY this colon frame */
+        /* One-shot colon return (EXIT) — ONLY this colon frame */
         if (vm->exit_colon) {
             vm->exit_colon = 0;
+
+            /* discard saved IP for this step so the caller’s R-stack layout is intact */
+            (void) vm_rpop(vm);
+
             vm->current_executing_entry = NULL;
             return;
         }
