@@ -58,21 +58,6 @@ static void reset_vm_state(VM *vm, int cold_start) {
 
 /* ───────────────────────────── Core words ───────────────────────────── */
 
-/* EXIT ( -- )  — terminate the current colon definition immediately */
-static void runtime_exit(VM *vm) {
-    if (!vm) return;
-
-    /* Discard the IP saved for the current step (if any) */
-    if (vm->rsp >= 0) {
-        (void) vm_rpop(vm);
-    }
-
-    /* Signal execute_colon_word() to unwind: empty the return stack */
-    vm->rsp = -1;
-
-    log_message(LOG_DEBUG, "EXIT: return from colon");
-}
-
 /* (  ( -- ) : Begin comment; skip to closing ) — IMMEDIATE */
 static void forth_paren(VM *vm) {
     char word[64];
@@ -310,9 +295,6 @@ void set_forth_79_compliance(int enabled) { forth_79_standard = enabled; }
 /* ──────────────────── System Word Registration ─────────────────────── */
 void register_system_words(VM *vm) {
     log_message(LOG_INFO, "Registering system & environment words...");
-
-    /* EXIT first — needed by colon definitions */
-    register_word(vm, "EXIT", runtime_exit);
 
     /* Comments */
     register_word(vm, "(", forth_paren);
