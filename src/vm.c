@@ -503,6 +503,7 @@ void vm_exit_compile_mode(VM *vm) {
  * FORTH-79 semantics:
  * - ABORT/QUIT may clear the return stack and/or flip to INTERPRET mode.
  * - That control transfer is NOT an error; unwind without touching R-stack.
+ * - EXIT returns from the *current* colon definition only (one level).
  */
 /* Execute a colon definition (threaded inner interpreter). */
 static void execute_colon_word(VM *vm) {
@@ -536,7 +537,7 @@ static void execute_colon_word(VM *vm) {
 
     /* Inner interpreter: each cell is a DictEntry* compiled by vm_compile_word. */
     while (!vm->error) {
-        DictEntry *w = (DictEntry *) (uintptr_t)(*ip);
+        DictEntry *w = (DictEntry *)(uintptr_t)(*ip);
         if (!w) {
             /* Optional 0 terminator: end of definition */
             vm->current_executing_entry = NULL;
@@ -557,22 +558,32 @@ static void execute_colon_word(VM *vm) {
             vm->error = 1;
         }
 
+        /* Error from callee => unwind this colon. */
         if (vm->error) {
             vm->current_executing_entry = NULL;
             return;
         }
 
-        /* If something like ABORT cleared the return stack, unwind cleanly. */
+        /* ===== ONE-LEVEL RETURN FOR EXIT =====
+           If EXIT was executed by the word we just ran, unwind ONLY this
+           colon activation: do NOT touch caller's return stack frame(s).
+           Do this BEFORE popping the next resume IP. */
+        if (vm->exit_colon) {
+            vm->exit_colon = 0;              /* one-shot */
+            vm->current_executing_entry = NULL;
+            return;                           /* return to caller (outer colon) */
+        }
+
+        /* If something like QUIT/ABORT cleared the return stack, unwind cleanly. */
         if (vm->rsp < 0) {
             vm->current_executing_entry = NULL;
             return;
         }
 
-        /* Resume at return IP (possibly modified by the word we just ran). */
-        ip = (cell_t *) (uintptr_t) vm_rpop(vm);
+        /* Normal case: resume at return IP (possibly modified by the word we just ran). */
+        ip = (cell_t *)(uintptr_t) vm_rpop(vm);
     }
 }
-
 
 /**
  * @brief Interpret or compile a word
