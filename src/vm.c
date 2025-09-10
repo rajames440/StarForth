@@ -537,7 +537,7 @@ static void execute_colon_word(VM *vm) {
 
     /* Inner interpreter: each cell is a DictEntry* compiled by vm_compile_word. */
     while (!vm->error) {
-        DictEntry *w = (DictEntry *)(uintptr_t)(*ip);
+        DictEntry *w = (DictEntry *) (uintptr_t)(*ip);
         if (!w) {
             /* Optional 0 terminator: end of definition */
             vm->current_executing_entry = NULL;
@@ -569,9 +569,9 @@ static void execute_colon_word(VM *vm) {
            colon activation: do NOT touch caller's return stack frame(s).
            Do this BEFORE popping the next resume IP. */
         if (vm->exit_colon) {
-            vm->exit_colon = 0;              /* one-shot */
+            vm->exit_colon = 0; /* one-shot */
             vm->current_executing_entry = NULL;
-            return;                           /* return to caller (outer colon) */
+            return; /* return to caller (outer colon) */
         }
 
         /* If something like QUIT/ABORT cleared the return stack, unwind cleanly. */
@@ -581,7 +581,7 @@ static void execute_colon_word(VM *vm) {
         }
 
         /* Normal case: resume at return IP (possibly modified by the word we just ran). */
-        ip = (cell_t *)(uintptr_t) vm_rpop(vm);
+        ip = (cell_t *) (uintptr_t) vm_rpop(vm);
     }
 }
 
