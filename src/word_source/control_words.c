@@ -1,164 +1,65 @@
-/*
-                                 ***   StarForth   ***
-  control_words.c - FORTH-79 Standard and ANSI C99 ONLY
+/* src/word_source/control_words.c
 
-  This module implements the FORTH-79 control-flow words using ONLY the
-  data stack and the return stack. Loop control parameters (index, limit)
-  are stored on the RETURN STACK *below* the per-step IP cell your VM
-  keeps on RS top. No third runtime stack is used.
+   ***   StarForth   ***
+   control_words.c - FORTH-79 Standard and ANSI C99 ONLY
+   SPDX-License-Identifier: CC0-1.0
 
-  Byte-offset branches: all compiled branch offsets are in BYTES and
-  are relative to the literal cell read by the runtime primitive, matching
-  your debug traces and existing codegen.
-
-  Runtime convention (inside a colon):
-      RS top (vm->return_stack[vm->rsp]) holds the current IP (cell_t* as cell).
-      Under that, this module inserts loop control as:
-          [ ... ,  index (rsp-1) , limit (rsp-2) ,  <-- deeper cells ... ]
-      So:
-          I pushes RS[rsp-1]
-          J pushes RS[rsp-3]   (index of next-outer DO)
-
-  Compile-time:
-      We use a small control-flow stack for forward/backpatching and a simple
-      LEAVE-site list (compile-time only). These are not runtime stacks; they
-      only exist during compilation to hold addresses to patch.
-
-  Public domain / CC0 — No warranty.
+   Design notes (FORTH-79 compliance):
+   - Exactly TWO stacks at runtime: parameter (data) and return.
+   - Loop parameters (index, limit) are stored on the RETURN STACK beneath IP.
+     RS layout within a DO…LOOP (top on right):
+       …, limit_outer, index_outer, ip_outer, limit_inner, index_inner, ip_inner
+     I  -> RS[-1] (current index)
+     J  -> RS[-3] (outer index)   <-- matches code below
+   - Compile-time: forward/backpatch via a small CF (control-flow) stack.
+   - Runtime branch words mutate the IP at top of RS.
 */
 
 #include "include/control_words.h"
-#include "../../include/vm.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+#include "../../include/vm.h"
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
-/* ================================================================
- * Helpers for RS layout used by this module
- * ----------------------------------------------------------------
- * RS TOS: vm->return_stack[vm->rsp] == current IP (cell_t-cast of pointer)
- * Immediately below (toward lower indices) we keep loop params:
- *   index at (rsp-1), limit at (rsp-2), then deeper frames/returns...
- * ================================================================ */
+/* ---------- Forward decls for internal runtimes & helpers ---------- */
+static void control_forth_branch(VM * vm);
+static void control_forth_0branch(VM * vm);
+static void control_forth_runtime_qdo(VM * vm);
+static void control_forth_runtime_do(VM * vm);
+static void control_forth_runtime_loop(VM * vm);
+static void control_forth_runtime_plus_loop(VM * vm);
+static void control_forth_runtime_leave(VM * vm);
+static void control_forth_I(VM * vm);
+static void control_forth_J(VM * vm);
+static void control_forth_EXIT(VM * vm);
 
-static inline int rs_has(VM *vm, int n) {
-    /* need at least n cells on RS */
-    return vm->rsp >= (n - 1);
-}
-
-static inline int rs_room(VM *vm, int n) {
-    /* need room for n more pushes */
-    return (vm->rsp + n) < STACK_SIZE;
-}
-
-/* Insert (limit,index) directly UNDER the IP cell at RS top.
-   After insertion:
-      RS[rsp]   = IP (restored)
-      RS[rsp-1] = index
-      RS[rsp-2] = limit
-*/
-static inline int rs_insert_loop_under_ip(VM *vm, cell_t limit, cell_t index) {
-    if (!rs_has(vm, 1) || !rs_room(vm, 2)) return 0;
-    cell_t ipcell = vm->return_stack[vm->rsp];
-    vm->return_stack[vm->rsp] = limit; /* overwrite IP slot with limit */
-    vm->rsp++;
-    vm->return_stack[vm->rsp] = index; /* push index */
-    vm->rsp++;
-    vm->return_stack[vm->rsp] = ipcell; /* restore IP to top */
-    return 1;
-}
-
-/* Drop the current loop frame (two cells) that sits under IP.
-   After drop:
-      RS[rsp] stays IP; (index,limit) removed.
-*/
-static inline int rs_drop_loop_under_ip(VM *vm) {
-    if (!rs_has(vm, 3)) return 0; /* need IP + index + limit */
-    /* Move IP down over the two cells, then shrink RSP by 2 */
-    vm->return_stack[vm->rsp - 2] = vm->return_stack[vm->rsp];
-    vm->rsp -= 2;
-    return 1;
-}
-
-/* Accessors for loop params under IP */
-static inline cell_t rs_peek_index(VM *vm) { return vm->return_stack[vm->rsp - 1]; }
-static inline cell_t rs_peek_limit(VM *vm) { return vm->return_stack[vm->rsp - 2]; }
-static inline void rs_store_index(VM *vm, cell_t v) { vm->return_stack[vm->rsp - 1] = v; }
-
-/* ================================================================
- * Low-level code emission
- * ================================================================ */
-
-static inline size_t emit_cell(VM *vm, cell_t v) {
-    if (vm->mode != MODE_COMPILE) {
-        VM_PUSH(vm, v);
-        return (size_t) -1;
-    }
-    vm_align(vm);
-    cell_t *p = (cell_t *) vm_allot(vm, sizeof(cell_t));
-    if (!p) {
-        vm->error = 1;
-        log_message(LOG_ERROR, "emit_cell: out of space");
-        return (size_t) -1;
-    }
-    *p = v;
-    return (size_t) ((uint8_t *) p - vm->memory);
-}
-
-/* ================================================================
- * Compile-time control-flow stack (forward/backpatching)
- * ================================================================ */
+/* ===================== Compile-time control-flow stack ===================== */
 
 #define CF_STACK_MAX 64
 
 typedef enum {
-    CF_BEGIN, /* mark: byte addr of BEGIN target */
-    CF_IF, /* mark: byte addr of IF’s 0BRANCH literal */
-    CF_ELSE, /* mark: byte addr of ELSE’s BRANCH literal */
-    CF_WHILE, /* mark: byte addr of WHILE’s 0BRANCH literal (paired with BEGIN) */
-    CF_DO /* mark: byte addr of loop-body start (back target for LOOP/+LOOP) */
+    CF_BEGIN, /* address of BEGIN target */
+    CF_IF, /* address of IF's 0BRANCH literal */
+    CF_ELSE, /* address of ELSE's BRANCH literal */
+    CF_WHILE, /* address of WHILE's 0BRANCH literal (paired with prior BEGIN) */
+    CF_DO /* address of loop body start (back target for LOOP/+LOOP) */
 } cf_tag_t;
 
 typedef struct {
-    size_t addr; /* byte address in vm->memory to patch/back-link to */
+    size_t addr; /* byte offset in vm->memory used for patching/back edges */
     cf_tag_t tag;
 } cf_item_t;
 
 static cf_item_t cf_stack[CF_STACK_MAX];
 static int cf_sp = -1;
 
-static inline int cf_push(cf_tag_t tag, size_t addr) {
-    if (cf_sp + 1 >= CF_STACK_MAX) {
-        log_message(LOG_ERROR, "CF: overflow");
-        return 0;
-    }
-    cf_stack[++cf_sp].tag = tag;
-    cf_stack[cf_sp].addr = addr;
-    return 1;
-}
-
-static inline int cf_pop(cf_item_t *out) {
-    if (cf_sp < 0) {
-        log_message(LOG_ERROR, "CF: underflow");
-        return 0;
-    }
-    if (out) *out = cf_stack[cf_sp];
-    --cf_sp;
-    return 1;
-}
-
-static inline int cf_peek(cf_item_t *out) {
-    if (cf_sp < 0) return 0;
-    if (out) *out = cf_stack[cf_sp];
-    return 1;
-}
-
-/* Reset CF stack across mode transitions to avoid leakage between definitions */
+/* Reset CF stack on mode transitions (between INTERPRET/COMPILE) */
 static int cf_last_mode = -999;
 
 static inline void cf_epoch_sync(VM *vm) {
+    if (!vm) return;
     if (cf_last_mode == -999) {
         cf_last_mode = vm->mode;
         return;
@@ -166,26 +67,75 @@ static inline void cf_epoch_sync(VM *vm) {
     if (vm->mode != cf_last_mode) {
         cf_sp = -1;
         cf_last_mode = vm->mode;
-        log_message(LOG_DEBUG, "CF: reset due to mode transition");
+        log_message(LOG_DEBUG, "CF: reset (mode transition)");
     }
 }
 
-/* ================================================================
- * Compile-time LEAVE site tracking (compile-time only)
- * ================================================================ */
+static inline int cf_push_item(cf_tag_t tag, size_t mark) {
+    if (cf_sp + 1 >= CF_STACK_MAX) {
+        log_message(LOG_ERROR, "CF: overflow");
+        return 0;
+    }
+    ++cf_sp;
+    cf_stack[cf_sp].tag = tag;
+    cf_stack[cf_sp].addr = mark;
+    return 1;
+}
 
-static size_t leave_sites[CF_STACK_MAX]; /* BRANCH literal addrs needing patch */
+static inline int cf_pop_item(cf_item_t *out) {
+    if (cf_sp < 0) {
+        log_message(LOG_ERROR, "CF: underflow");
+        return 0;
+    }
+    if (out) {
+        *out = cf_stack[cf_sp];
+    }
+    --cf_sp;
+    return 1;
+}
+
+static inline int cf_peek_item(cf_item_t *out) {
+    if (cf_sp < 0) return 0;
+    if (out) {
+        *out = cf_stack[cf_sp];
+    }
+    return 1;
+}
+
+/* ===================== LEAVE patching (compile-time) ===================== */
+/* We collect BRANCH literals for LEAVE sites and patch them at LOOP/+LOOP. */
+
+static size_t leave_addrs[CF_STACK_MAX];
 static int leave_sp = -1;
-static int leave_mark[CF_STACK_MAX]; /* mark per DO nesting for scoping LEAVEs */
+
+/* One mark per DO nesting: record leave_sp at DO/?DO; at LOOP/+LOOP patch and restore. */
+static int leave_mark_stack[CF_STACK_MAX];
 static int leave_mark_sp = -1;
 
-/* ================================================================
- * Runtime primitives (inner interpreter helpers)
- * ================================================================ */
+/* ===================== Low-level compile helpers ===================== */
 
-/* (BRANCH) — ip := ip + rel (rel in BYTES, relative to this literal cell) */
-static void rt_BRANCH(VM *vm) {
-    if (!rs_has(vm, 1)) {
+static inline size_t emit_cell(VM *vm, cell_t value) {
+    if (vm->mode != MODE_COMPILE) {
+        vm_push(vm, value);
+        return (size_t) -1;
+    }
+    vm_align(vm);
+    cell_t *addr = (cell_t *) vm_allot(vm, sizeof(cell_t));
+    if (!addr) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "emit_cell: out of space");
+        return (size_t) -1;
+    }
+    *addr = value;
+    return (size_t) ((uint8_t *) addr - vm->memory);
+}
+
+/* ===================== Runtime branch helpers ===================== */
+/* Operate on the per-step return IP (top of RS). Offsets are BYTES. */
+
+/* (BRANCH) */
+static void control_forth_branch(VM *vm) {
+    if (vm->rsp < 0) {
         vm->error = 1;
         log_message(LOG_ERROR, "BRANCH: RSP underflow");
         return;
@@ -198,15 +148,20 @@ static void rt_BRANCH(VM *vm) {
     log_message(LOG_DEBUG, "BRANCH: +%ld bytes", (long) rel);
 }
 
-/* (0BRANCH) — ( f -- ) if f==0 then ip := ip + rel else ip := ip + 1 */
-static void rt_0BRANCH(VM *vm) {
-    if (!rs_has(vm, 1) || vm->dsp < 0) {
+/* (0BRANCH)  ( f -- ) */
+static void control_forth_0branch(VM *vm) {
+    if (vm->rsp < 0) {
         vm->error = 1;
-        log_message(LOG_ERROR, "0BRANCH: underflow");
+        log_message(LOG_ERROR, "0BRANCH: RSP underflow");
         return;
     }
-    cell_t flag = VM_POP(vm);
+    if (vm->dsp < 0) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "0BRANCH: DSP underflow");
+        return;
+    }
     cell_t *ip = (cell_t *) (uintptr_t) vm->return_stack[vm->rsp];
+    cell_t flag = vm_pop(vm);
     cell_t rel = *ip;
     if (flag == 0) {
         ip = (cell_t *) ((uint8_t *) ip + (intptr_t) rel);
@@ -219,289 +174,302 @@ static void rt_0BRANCH(VM *vm) {
     ip;
 }
 
-/* (?DO) — ( limit start -- )  empty? skip body; non-empty: insert loop frame under IP */
-static void rt_QDO(VM *vm) {
-    if (!rs_has(vm, 1) || vm->dsp < 1) {
+/* (?DO)  ( limit index -- ) */
+static void control_forth_runtime_qdo(VM *vm) {
+    if (vm->rsp < 0) {
         vm->error = 1;
-        log_message(LOG_ERROR, "?DO: underflow");
+        log_message(LOG_ERROR, "?DO: RSP underflow");
+        return;
+    }
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "?DO: DSP underflow");
         return;
     }
 
-    cell_t start = VM_POP(vm);
-    cell_t limit = VM_POP(vm);
+    cell_t index = vm_pop(vm);
+    cell_t limit = vm_pop(vm);
 
     cell_t *ip = (cell_t *) (uintptr_t) vm->return_stack[vm->rsp];
-    cell_t rel = *ip; /* forward offset if empty */
+    cell_t rel = *ip;
 
-    if (start == limit) {
+    if (index == limit) {
         ip = (cell_t *) ((uint8_t *) ip + (intptr_t) rel);
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
         ip;
-        log_message(LOG_DEBUG, "?DO: empty, jump +%ld", (long) rel);
+        log_message(LOG_DEBUG, "?DO: empty -> +%ld", (long) rel);
         return;
     }
 
-    /* enter: skip rel cell, insert loop frame under IP */
+    /* enter loop at body (skip rel) and insert (limit,index) under IP */
     ip = ip + 1;
-    vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
+    if (vm->rsp + 2 >= STACK_SIZE) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "?DO: RSTACK overflow");
+        return;
+    }
+    vm->return_stack[vm->rsp + 2] = (cell_t)(uintptr_t)
     ip;
+    vm->return_stack[vm->rsp + 1] = index;
+    vm->return_stack[vm->rsp + 0] = limit;
+    vm->rsp += 2;
 
-    if (!rs_insert_loop_under_ip(vm, limit, start)) {
-        vm->error = 1;
-        log_message(LOG_ERROR, "?DO: RS overflow");
-        return;
-    }
-    log_message(LOG_DEBUG, "?DO: enter (index=%ld limit=%ld)", (long) start, (long) limit);
+    log_message(LOG_DEBUG, "?DO: enter (index=%ld limit=%ld)", (long) index, (long) limit);
 }
 
-/* (DO) — ( limit start -- ) insert loop frame under IP */
-static void rt_DO(VM *vm) {
-    if (!rs_has(vm, 1) || vm->dsp < 1) {
+/* (DO)  ( limit index -- ) */
+static void control_forth_runtime_do(VM *vm) {
+    if (vm->rsp < 0) {
         vm->error = 1;
-        log_message(LOG_ERROR, "DO: underflow");
+        log_message(LOG_ERROR, "DO: RSP underflow");
+        return;
+    }
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "DO: DSP underflow");
         return;
     }
 
-    cell_t start = VM_POP(vm);
-    cell_t limit = VM_POP(vm);
+    cell_t index = vm_pop(vm);
+    cell_t limit = vm_pop(vm);
 
-    if (!rs_insert_loop_under_ip(vm, limit, start)) {
+    if (vm->rsp + 2 >= STACK_SIZE) {
         vm->error = 1;
-        log_message(LOG_ERROR, "DO: RS overflow");
+        log_message(LOG_ERROR, "DO: RSTACK overflow");
         return;
     }
-    log_message(LOG_DEBUG, "DO: enter (index=%ld limit=%ld)", (long) start, (long) limit);
+    cell_t ip_cell = vm->return_stack[vm->rsp];
+    vm->return_stack[vm->rsp + 2] = ip_cell; /* move IP up */
+    vm->return_stack[vm->rsp + 1] = index;
+    vm->return_stack[vm->rsp + 0] = limit;
+    vm->rsp += 2;
+
+    log_message(LOG_DEBUG, "DO: enter (index=%ld limit=%ld)", (long) index, (long) limit);
 }
 
-/* (LOOP) — index++ ; if index == limit then exit (drop frame and skip literal)
-              else branch back by byte offset literal at IP */
-static void rt_LOOP(VM *vm) {
-    if (!rs_has(vm, 3)) {
+/* (LOOP) */
+static void control_forth_runtime_loop(VM *vm) {
+    if (vm->rsp < 2) {
         vm->error = 1;
-        log_message(LOG_ERROR, "LOOP: RS underflow");
+        log_message(LOG_ERROR, "LOOP: missing loop frame");
         return;
     }
-
-    cell_t idx = rs_peek_index(vm) + 1;
-    cell_t lim = rs_peek_limit(vm);
 
     cell_t *ip = (cell_t *) (uintptr_t) vm->return_stack[vm->rsp];
-    cell_t back = *ip; /* BYTES back to DO-body start */
+    cell_t *idxp = &vm->return_stack[vm->rsp - 1];
+    cell_t *limp = &vm->return_stack[vm->rsp - 2];
 
-    if (idx == lim) {
-        /* exit: drop loop frame, skip back-literal */
-        if (!rs_drop_loop_under_ip(vm)) {
-            vm->error = 1;
-            log_message(LOG_ERROR, "LOOP: frame drop failed");
-            return;
-        }
-        ip = ip + 1;
+    (*idxp) += 1;
+    cell_t back = *ip; /* BYTES */
+
+    if (*idxp < *limp) {
+        ip = (cell_t *) ((uint8_t *) ip + (intptr_t) back);
+        vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
+        ip;
+        log_message(LOG_DEBUG, "LOOP: continue (index=%ld)", (long) *idxp);
+    } else {
+        vm->rsp -= 2; /* drop INDEX,LIMIT */
+        ip = ip + 1; /* skip back-offset */
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
         ip;
         log_message(LOG_DEBUG, "LOOP: exit");
-    } else {
-        /* continue */
-        rs_store_index(vm, idx);
-        ip = (cell_t *) ((uint8_t *) ip + (intptr_t) back);
-        vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
-        ip;
-        log_message(LOG_DEBUG, "LOOP: continue (index=%ld)", (long) idx);
     }
 }
 
-/* (+LOOP) — ( n -- )
-   Continue unless index crosses the limit in the direction of n.
-   If n==0: continue (degenerate but defined). */
-static void rt_PLOOP(VM *vm) {
-    if (!rs_has(vm, 3) || vm->dsp < 0) {
+/* (+LOOP)  ( n -- ) */
+static void control_forth_runtime_plus_loop(VM *vm) {
+    if (vm->dsp < 0) {
         vm->error = 1;
-        log_message(LOG_ERROR, "+LOOP: underflow");
+        log_message(LOG_ERROR, "+LOOP: DSP underflow");
+        return;
+    }
+    if (vm->rsp < 2) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "+LOOP: missing loop frame");
         return;
     }
 
-    cell_t n = VM_POP(vm);
-    cell_t idx = rs_peek_index(vm);
-    cell_t lim = rs_peek_limit(vm);
-
+    cell_t n = vm_pop(vm);
     cell_t *ip = (cell_t *) (uintptr_t) vm->return_stack[vm->rsp];
-    cell_t back = *ip; /* BYTES */
+    cell_t *idxp = &vm->return_stack[vm->rsp - 1];
+    cell_t *limp = &vm->return_stack[vm->rsp - 2];
 
-    if (n > 0) {
-        cell_t newv = idx + n;
-        if (newv >= lim) {
-            if (!rs_drop_loop_under_ip(vm)) {
-                vm->error = 1;
-                log_message(LOG_ERROR, "+LOOP: frame drop failed");
-                return;
-            }
-            ip = ip + 1;
-            vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
-            ip;
-            log_message(LOG_DEBUG, "+LOOP: exit (index=%ld -> %ld >= %ld)", (long) idx, (long) newv, (long) lim);
-        } else {
-            rs_store_index(vm, newv);
-            ip = (cell_t *) ((uint8_t *) ip + (intptr_t) back);
-            vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
-            ip;
-            log_message(LOG_DEBUG, "+LOOP: cont (index=%ld)", (long) newv);
-        }
-    } else if (n < 0) {
-        cell_t newv = idx + n;
-        if (newv < lim) {
-            if (!rs_drop_loop_under_ip(vm)) {
-                vm->error = 1;
-                log_message(LOG_ERROR, "+LOOP: frame drop failed");
-                return;
-            }
-            ip = ip + 1;
-            vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
-            ip;
-            log_message(LOG_DEBUG, "+LOOP: exit (index=%ld -> %ld < %ld)", (long) idx, (long) newv, (long) lim);
-        } else {
-            rs_store_index(vm, newv);
-            ip = (cell_t *) ((uint8_t *) ip + (intptr_t) back);
-            vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
-            ip;
-            log_message(LOG_DEBUG, "+LOOP: cont (index=%ld)", (long) newv);
-        }
-    } else {
-        /* n == 0: always continue (no progress, user’s problem) */
+    cell_t newv = (*idxp) + n;
+    *idxp = newv;
+
+    cell_t back = *ip; /* BYTES */
+    int cont = (n >= 0) ? (newv < *limp) : (newv >= *limp);
+
+    if (cont) {
         ip = (cell_t *) ((uint8_t *) ip + (intptr_t) back);
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
         ip;
-        log_message(LOG_DEBUG, "+LOOP: zero increment, continue");
+        log_message(LOG_DEBUG, "+LOOP: continue (index=%ld)", (long) newv);
+    } else {
+        vm->rsp -= 2;
+        ip = ip + 1;
+        vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
+        ip;
+        log_message(LOG_DEBUG, "+LOOP: exit");
     }
 }
 
-/* (LEAVE) — drop the current loop frame immediately (so the subsequent BRANCH
-   skips cleanly past the loop end). */
-static void rt_LEAVE(VM *vm) {
-    if (!rs_drop_loop_under_ip(vm)) {
+/* (LEAVE)  ( -- ) — force loop to exit at next LOOP/+LOOP */
+static void control_forth_runtime_leave(VM *vm) {
+    if (vm->rsp < 2) {
         vm->error = 1;
-        log_message(LOG_ERROR, "LEAVE: outside DO loop");
+        log_message(LOG_ERROR, "LEAVE: outside loop");
         return;
     }
-    log_message(LOG_DEBUG, "LEAVE: frame dropped");
+    vm->return_stack[vm->rsp - 1] = vm->return_stack[vm->rsp - 2]; /* index = limit */
+    log_message(LOG_DEBUG, "LEAVE: flagged exit");
 }
 
-/* (EXIT) — runtime: request return from current colon definition. */
-static void rt_EXIT(VM *vm) {
+/* I ( -- i ) */
+static void control_forth_I(VM *vm) {
+    if (vm->rsp < 2) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "I: outside DO loop");
+        return;
+    }
+    vm_push(vm, vm->return_stack[vm->rsp - 1]); /* INDEX */
+}
+
+/* J ( -- j ) — next-outer loop index */
+static void control_forth_J(VM *vm) {
+    if (vm->rsp < 4) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "J: needs nested DO loops");
+        return;
+    }
+    vm_push(vm, vm->return_stack[vm->rsp - 3]); /* outer INDEX */
+}
+
+/* EXIT — one-shot return from current colon definition (guarded) */
+static void control_forth_EXIT(VM *vm) {
+    if (vm->rsp < 0) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "EXIT: interpret-time use is invalid");
+        return;
+    }
     vm->exit_colon = 1;
     log_message(LOG_DEBUG, "EXIT: return from colon");
 }
 
-/* ================================================================
- * Compile-time words
- * ================================================================ */
+/* ===================== Compile-time words ===================== */
 
-/* IF ( flag -- ) compiles: (0BRANCH) <fwd> */
-static void w_IF(VM *vm) {
+static void control_forth_if(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
         log_message(LOG_ERROR, "IF: compile-only");
         return;
     }
-    vm_compile_call(vm, rt_0BRANCH);
+    vm_compile_call(vm, control_forth_0branch);
     size_t lit = emit_cell(vm, 0);
-    if (!cf_push(CF_IF, lit)) {
+    if (!cf_push_item(CF_IF, lit)) {
         vm->error = 1;
         return;
     }
+    log_message(LOG_DEBUG, "IF: placeholder @ %zu", lit);
 }
 
-/* ELSE compiles: (BRANCH) <fwd>; patches IF’s 0BRANCH */
-static void w_ELSE(VM *vm) {
+static void control_forth_else(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
         log_message(LOG_ERROR, "ELSE: compile-only");
         return;
     }
-    cf_item_t t;
-    if (!cf_peek(&t) || t.tag != CF_IF) {
+    cf_item_t it;
+    if (!cf_peek_item(&it) || it.tag != CF_IF) {
         vm->error = 1;
-        log_message(LOG_ERROR, "ELSE: needs IF");
+        log_message(LOG_ERROR, "ELSE: missing IF");
         return;
     }
-    (void) cf_pop(&t);
-
-    vm_compile_call(vm, rt_BRANCH);
+    (void) cf_pop_item(&it);
+    vm_compile_call(vm, control_forth_branch);
     size_t new_lit = emit_cell(vm, 0);
-    *(cell_t *) (void *) (vm->memory + t.addr) = (cell_t)((size_t) vm->here - t.addr);
-
-    if (!cf_push(CF_ELSE, new_lit)) {
+    cell_t off = (cell_t)((size_t) vm->here - it.addr);
+    *(cell_t *) (vm->memory + it.addr) = off;
+    if (!cf_push_item(CF_ELSE, new_lit)) {
         vm->error = 1;
         return;
     }
+    log_message(LOG_DEBUG, "ELSE: patched IF @ %zu -> +%ld; new lit @ %zu", it.addr, (long) off, new_lit);
 }
 
-/* THEN — patch outstanding IF/ELSE forward */
-static void w_THEN(VM *vm) {
+static void control_forth_then(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
         log_message(LOG_ERROR, "THEN: compile-only");
         return;
     }
-    cf_item_t t;
-    if (!cf_pop(&t) || (t.tag != CF_IF && t.tag != CF_ELSE)) {
+    cf_item_t it;
+    if (!cf_pop_item(&it) || (it.tag != CF_IF && it.tag != CF_ELSE)) {
         vm->error = 1;
         log_message(LOG_ERROR, "THEN: unmatched");
         return;
     }
-    *(cell_t *) (void *) (vm->memory + t.addr) = (cell_t)((size_t) vm->here - t.addr);
+    cell_t off = (cell_t)((size_t) vm->here - it.addr);
+    *(cell_t *) (vm->memory + it.addr) = off;
+    log_message(LOG_DEBUG, "THEN: patched lit @ %zu -> +%ld", it.addr, (long) off);
 }
 
-/* BEGIN — mark back target */
-static void w_BEGIN(VM *vm) {
+static void control_forth_begin(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
         log_message(LOG_ERROR, "BEGIN: compile-only");
         return;
     }
-    if (!cf_push(CF_BEGIN, vm->here)) { vm->error = 1; }
+    if (!cf_push_item(CF_BEGIN, vm->here)) {
+        vm->error = 1;
+        return;
+    }
+    log_message(LOG_DEBUG, "BEGIN: mark @ %zu", vm->here);
 }
 
-/* UNTIL ( flag -- ) — compile (0BRANCH) <back> */
-static void w_UNTIL(VM *vm) {
+static void control_forth_until(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
         log_message(LOG_ERROR, "UNTIL: compile-only");
         return;
     }
-    cf_item_t b;
-    if (!cf_pop(&b) || b.tag != CF_BEGIN) {
+    cf_item_t begin;
+    if (!cf_pop_item(&begin) || begin.tag != CF_BEGIN) {
         vm->error = 1;
-        log_message(LOG_ERROR, "UNTIL: needs BEGIN");
+        log_message(LOG_ERROR, "UNTIL: missing BEGIN");
         return;
     }
-    vm_compile_call(vm, rt_0BRANCH);
-    (void) emit_cell(vm, (cell_t)((cell_t) b.addr - (cell_t) vm->here));
+    vm_compile_call(vm, control_forth_0branch);
+    cell_t back = (cell_t)((cell_t) begin.addr - (cell_t) vm->here);
+    (void) emit_cell(vm, back);
+    log_message(LOG_DEBUG, "UNTIL: back -> %zu (%ld bytes)", begin.addr, (long) back);
 }
 
-/* AGAIN — compile (BRANCH) <back> */
-static void w_AGAIN(VM *vm) {
+static void control_forth_again(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
         log_message(LOG_ERROR, "AGAIN: compile-only");
         return;
     }
-    cf_item_t b;
-    if (!cf_pop(&b) || b.tag != CF_BEGIN) {
+    cf_item_t begin;
+    if (!cf_pop_item(&begin) || begin.tag != CF_BEGIN) {
         vm->error = 1;
-        log_message(LOG_ERROR, "AGAIN: needs BEGIN");
+        log_message(LOG_ERROR, "AGAIN: missing BEGIN");
         return;
     }
-    vm_compile_call(vm, rt_BRANCH);
-    (void) emit_cell(vm, (cell_t)((cell_t) b.addr - (cell_t) vm->here));
+    vm_compile_call(vm, control_forth_branch);
+    cell_t back = (cell_t)((cell_t) begin.addr - (cell_t) vm->here);
+    (void) emit_cell(vm, back);
+    log_message(LOG_DEBUG, "AGAIN: back -> %zu (%ld bytes)", begin.addr, (long) back);
 }
 
-/* WHILE ( flag -- ) — compile (0BRANCH) <fwd>, paired with prior BEGIN */
-static void w_WHILE(VM *vm) {
+static void control_forth_while(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
@@ -509,18 +477,21 @@ static void w_WHILE(VM *vm) {
         return;
     }
     cf_item_t b;
-    if (!cf_peek(&b) || b.tag != CF_BEGIN) {
+    if (!cf_peek_item(&b) || b.tag != CF_BEGIN) {
         vm->error = 1;
         log_message(LOG_ERROR, "WHILE: needs BEGIN");
         return;
     }
-    vm_compile_call(vm, rt_0BRANCH);
+    vm_compile_call(vm, control_forth_0branch);
     size_t lit = emit_cell(vm, 0);
-    if (!cf_push(CF_WHILE, lit)) { vm->error = 1; }
+    if (!cf_push_item(CF_WHILE, lit)) {
+        vm->error = 1;
+        return;
+    }
+    log_message(LOG_DEBUG, "WHILE: placeholder @ %zu", lit);
 }
 
-/* REPEAT — close WHILE .. REPEAT back to BEGIN and patch WHILE forward */
-static void w_REPEAT(VM *vm) {
+static void control_forth_repeat(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
@@ -528,92 +499,100 @@ static void w_REPEAT(VM *vm) {
         return;
     }
     cf_item_t w, b;
-    if (!cf_pop(&w) || w.tag != CF_WHILE) {
+    if (!cf_pop_item(&w) || w.tag != CF_WHILE) {
         vm->error = 1;
-        log_message(LOG_ERROR, "REPEAT: needs WHILE");
+        log_message(LOG_ERROR, "REPEAT: missing WHILE");
         return;
     }
-    if (!cf_pop(&b) || b.tag != CF_BEGIN) {
+    if (!cf_pop_item(&b) || b.tag != CF_BEGIN) {
         vm->error = 1;
-        log_message(LOG_ERROR, "REPEAT: needs BEGIN");
+        log_message(LOG_ERROR, "REPEAT: missing BEGIN");
         return;
     }
-    vm_compile_call(vm, rt_BRANCH);
-    (void) emit_cell(vm, (cell_t)((cell_t) b.addr - (cell_t) vm->here));
-    *(cell_t *) (void *) (vm->memory + w.addr) = (cell_t)((size_t) vm->here - w.addr);
+    vm_compile_call(vm, control_forth_branch);
+    cell_t back = (cell_t)((cell_t) b.addr - (cell_t) vm->here);
+    (void) emit_cell(vm, back);
+    cell_t fwd = (cell_t)((size_t) vm->here - w.addr);
+    *(cell_t *) (vm->memory + w.addr) = fwd;
+    log_message(LOG_DEBUG, "REPEAT: WHILE @ %zu -> +%ld; back=%ld to %zu", w.addr, (long) fwd, (long) back, b.addr);
 }
 
-/* ?DO ( limit start -- ) — compile (?DO) <fwd>; mark DO for LOOP/+LOOP back */
-static void w_QDO(VM *vm) {
+/* ?DO ( limit index -- ) compile */
+static void control_forth_qdo(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
         log_message(LOG_ERROR, "?DO: compile-only");
         return;
     }
-    vm_compile_call(vm, rt_QDO);
-    size_t fwd = emit_cell(vm, 0);
-    if (!cf_push(CF_DO, vm->here)) {
+    vm_compile_call(vm, control_forth_runtime_qdo);
+    size_t fwd_lit = emit_cell(vm, 0);
+    if (!cf_push_item(CF_DO, vm->here)) {
         vm->error = 1;
         return;
-    } /* back target */
-    if (!cf_push(CF_WHILE, fwd)) {
+    } /* back target for LOOP */
+    if (!cf_push_item(CF_WHILE, fwd_lit)) {
         vm->error = 1;
         return;
-    } /* reuse tag for 'pending fwd' */
-    leave_mark[++leave_mark_sp] = leave_sp;
+    } /* forward to loop-end */
+    leave_mark_stack[++leave_mark_sp] = leave_sp;
+    log_message(LOG_DEBUG, "?DO: fwd lit @ %zu; back mark=%d", fwd_lit, leave_mark_stack[leave_mark_sp]);
 }
 
-/* DO ( limit start -- ) — compile (DO); mark back target */
-static void w_DO(VM *vm) {
+/* DO ( limit index -- ) compile */
+static void control_forth_do(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
         log_message(LOG_ERROR, "DO: compile-only");
         return;
     }
-    vm_compile_call(vm, rt_DO);
-    if (!cf_push(CF_DO, vm->here)) {
+    vm_compile_call(vm, control_forth_runtime_do);
+    if (!cf_push_item(CF_DO, vm->here)) {
         vm->error = 1;
         return;
     }
-    leave_mark[++leave_mark_sp] = leave_sp;
+    leave_mark_stack[++leave_mark_sp] = leave_sp;
+    log_message(LOG_DEBUG, "DO: mark @ %zu; leave_mark=%d", vm->here, leave_mark_stack[leave_mark_sp]);
 }
 
-/* LEAVE — compile (LEAVE) then (BRANCH) <fwd>; record for patching at LOOP */
-static void w_LEAVE(VM *vm) {
+/* LEAVE — compile runtime LEAVE plus BRANCH <placeholder>, collect patch site */
+static void control_forth_leave(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
         log_message(LOG_ERROR, "LEAVE: compile-only");
         return;
     }
-    /* Must be inside a DO; quick scan for a CF_DO */
-    int ok = 0;
-    for (int i = cf_sp; i >= 0; --i) if (cf_stack[i].tag == CF_DO) {
-        ok = 1;
-        break;
+
+    /* verify inside DO */
+    int seen_do = 0;
+    for (int i = cf_sp; i >= 0; --i) {
+        if (cf_stack[i].tag == CF_DO) {
+            seen_do = 1;
+            break;
+        }
     }
-    if (!ok || leave_mark_sp < 0) {
+    if (!seen_do || leave_mark_sp < 0) {
         vm->error = 1;
-        log_message(LOG_ERROR, "LEAVE: not in DO");
+        log_message(LOG_ERROR, "LEAVE: needs DO");
         return;
     }
 
-    vm_compile_call(vm, rt_LEAVE);
-    vm_compile_call(vm, rt_BRANCH);
+    vm_compile_call(vm, control_forth_runtime_leave);
+    vm_compile_call(vm, control_forth_branch);
     size_t lit = emit_cell(vm, 0);
-
     if (leave_sp + 1 >= CF_STACK_MAX) {
         vm->error = 1;
-        log_message(LOG_ERROR, "LEAVE: too many");
+        log_message(LOG_ERROR, "LEAVE: too many sites");
         return;
     }
-    leave_sites[++leave_sp] = lit;
+    leave_addrs[++leave_sp] = lit;
+    log_message(LOG_DEBUG, "LEAVE: site lit @ %zu (leave_sp=%d)", lit, leave_sp);
 }
 
-/* LOOP — compile (LOOP) <back>; patch ?DO fwd (if any) and LEAVEs */
-static void w_LOOP(VM *vm) {
+/* LOOP — compile runtime LOOP + backoffset; patch ?DO fwd and LEAVE sites */
+static void control_forth_loop(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
@@ -622,26 +601,30 @@ static void w_LOOP(VM *vm) {
     }
 
     /* Optional ?DO forward */
-    cf_item_t maybe_fwd;
-    int have_fwd = 0;
-    if (cf_peek(&maybe_fwd) && maybe_fwd.tag == CF_WHILE) {
-        (void) cf_pop(&maybe_fwd);
-        have_fwd = 1;
+    cf_item_t maybe_qdo;
+    int have_qdo = 0;
+    cf_item_t top;
+    if (cf_peek_item(&top) && top.tag == CF_WHILE) {
+        (void) cf_pop_item(&maybe_qdo);
+        have_qdo = 1;
     }
 
     /* Required DO back mark */
-    cf_item_t domark;
-    if (!cf_pop(&domark) || domark.tag != CF_DO) {
+    cf_item_t do_mark;
+    if (!cf_pop_item(&do_mark) || do_mark.tag != CF_DO) {
         vm->error = 1;
-        log_message(LOG_ERROR, "LOOP: needs DO");
+        log_message(LOG_ERROR, "LOOP: missing DO");
         return;
     }
 
-    vm_compile_call(vm, rt_LOOP);
-    (void) emit_cell(vm, (cell_t)((cell_t) domark.addr - (cell_t) vm->here));
+    vm_compile_call(vm, control_forth_runtime_loop);
+    cell_t back = (cell_t)((cell_t) do_mark.addr - (cell_t) vm->here);
+    (void) emit_cell(vm, back);
 
-    if (have_fwd) {
-        *(cell_t *) (void *) (vm->memory + maybe_fwd.addr) = (cell_t)((size_t) vm->here - maybe_fwd.addr);
+    if (have_qdo) {
+        cell_t fwd = (cell_t)((size_t) vm->here - maybe_qdo.addr);
+        *(cell_t *) (vm->memory + maybe_qdo.addr) = fwd;
+        log_message(LOG_DEBUG, "LOOP: patched ?DO @ %zu -> +%ld", maybe_qdo.addr, (long) fwd);
     }
 
     if (leave_mark_sp < 0) {
@@ -649,16 +632,20 @@ static void w_LOOP(VM *vm) {
         log_message(LOG_ERROR, "LOOP: LEAVE mark underflow");
         return;
     }
-    int mark = leave_mark[leave_mark_sp--];
+    int mark = leave_mark_stack[leave_mark_sp--];
     for (int i = leave_sp; i > mark; --i) {
-        size_t a = leave_sites[i];
-        *(cell_t *) (void *) (vm->memory + a) = (cell_t)((size_t) vm->here - a);
+        size_t addr = leave_addrs[i];
+        cell_t fwd = (cell_t)((size_t) vm->here - addr);
+        *(cell_t *) (vm->memory + addr) = fwd;
+        log_message(LOG_DEBUG, "LEAVE: patched @ %zu -> +%ld", addr, (long) fwd);
     }
     leave_sp = mark;
+
+    log_message(LOG_DEBUG, "LOOP: back -> %zu (%ld bytes)", do_mark.addr, (long) back);
 }
 
-/* +LOOP — compile (+LOOP) <back>; same patching as LOOP */
-static void w_PLOOP(VM *vm) {
+/* +LOOP — same as LOOP but with runtime +LOOP */
+static void control_forth_plus_loop(VM *vm) {
     cf_epoch_sync(vm);
     if (vm->mode != MODE_COMPILE) {
         vm->error = 1;
@@ -666,25 +653,29 @@ static void w_PLOOP(VM *vm) {
         return;
     }
 
-    cf_item_t maybe_fwd;
-    int have_fwd = 0;
-    if (cf_peek(&maybe_fwd) && maybe_fwd.tag == CF_WHILE) {
-        (void) cf_pop(&maybe_fwd);
-        have_fwd = 1;
+    cf_item_t maybe_qdo;
+    int have_qdo = 0;
+    cf_item_t top;
+    if (cf_peek_item(&top) && top.tag == CF_WHILE) {
+        (void) cf_pop_item(&maybe_qdo);
+        have_qdo = 1;
     }
 
-    cf_item_t domark;
-    if (!cf_pop(&domark) || domark.tag != CF_DO) {
+    cf_item_t do_mark;
+    if (!cf_pop_item(&do_mark) || do_mark.tag != CF_DO) {
         vm->error = 1;
-        log_message(LOG_ERROR, "+LOOP: needs DO");
+        log_message(LOG_ERROR, "+LOOP: missing DO");
         return;
     }
 
-    vm_compile_call(vm, rt_PLOOP);
-    (void) emit_cell(vm, (cell_t)((cell_t) domark.addr - (cell_t) vm->here));
+    vm_compile_call(vm, control_forth_runtime_plus_loop);
+    cell_t back = (cell_t)((cell_t) do_mark.addr - (cell_t) vm->here);
+    (void) emit_cell(vm, back);
 
-    if (have_fwd) {
-        *(cell_t *) (void *) (vm->memory + maybe_fwd.addr) = (cell_t)((size_t) vm->here - maybe_fwd.addr);
+    if (have_qdo) {
+        cell_t fwd = (cell_t)((size_t) vm->here - maybe_qdo.addr);
+        *(cell_t *) (vm->memory + maybe_qdo.addr) = fwd;
+        log_message(LOG_DEBUG, "+LOOP: patched ?DO @ %zu -> +%ld", maybe_qdo.addr, (long) fwd);
     }
 
     if (leave_mark_sp < 0) {
@@ -692,105 +683,68 @@ static void w_PLOOP(VM *vm) {
         log_message(LOG_ERROR, "+LOOP: LEAVE mark underflow");
         return;
     }
-    int mark = leave_mark[leave_mark_sp--];
+    int mark = leave_mark_stack[leave_mark_sp--];
     for (int i = leave_sp; i > mark; --i) {
-        size_t a = leave_sites[i];
-        *(cell_t *) (void *) (vm->memory + a) = (cell_t)((size_t) vm->here - a);
+        size_t addr = leave_addrs[i];
+        cell_t fwd = (cell_t)((size_t) vm->here - addr);
+        *(cell_t *) (vm->memory + addr) = fwd;
+        log_message(LOG_DEBUG, "LEAVE: patched @ %zu -> +%ld", addr, (long) fwd);
     }
     leave_sp = mark;
+
+    log_message(LOG_DEBUG, "+LOOP: back -> %zu (%ld bytes)", do_mark.addr, (long) back);
 }
 
-/* EXIT — compile-time only: compiles (EXIT). Interpret-time: error. */
-static void w_EXIT(VM *vm) {
-    /* If there is no active return stack frame, we're not in a colon definition. */
-    if (vm->rsp < 0) {
-        /* Mark the VM as errored and report that EXIT was misused at the interpreter prompt. */
-        vm->error = 1;
-        log_message(LOG_ERROR, "EXIT: interpret-time use is invalid");
-        return;
-    }
-    /* Otherwise, set a flag telling the VM to break out of the current colon definition. */
-    vm->exit_colon = 1;
-    log_message(LOG_DEBUG, "EXIT: return from colon");
-}
-
-/* ================================================================
- * Loop index words (I, J)
- * ================================================================ */
-
-static void w_I(VM *vm) {
-    if (!rs_has(vm, 2)) {
-        vm->error = 1;
-        log_message(LOG_ERROR, "I: outside DO loop");
-        return;
-    }
-    VM_PUSH(vm, rs_peek_index(vm));
-}
-
-static void w_J(VM *vm) {
-    /* Need at least IP + (inner idx,lim) + (outer idx) = 1 + 2 + 1 = 4 cells */
-    if (!rs_has(vm, 4)) {
-        vm->error = 1;
-        log_message(LOG_ERROR, "J: needs nested DO loops");
-        return;
-    }
-    VM_PUSH(vm, vm->return_stack[vm->rsp - 3]); /* outer index */
-}
-
-/* ================================================================
- * Registration
- * ================================================================ */
+/* ===================== Registration ===================== */
 
 void register_control_words(VM *vm) {
     if (!vm) return;
 
-    /* Internal runtime helpers */
-    register_word(vm, "(BRANCH)", rt_BRANCH);
-    register_word(vm, "(0BRANCH)", rt_0BRANCH);
-    register_word(vm, "(?DO)", rt_QDO);
-    register_word(vm, "(DO)", rt_DO);
-    register_word(vm, "(LOOP)", rt_LOOP);
-    register_word(vm, "(+LOOP)", rt_PLOOP);
-    register_word(vm, "(LEAVE)", rt_LEAVE);
-    register_word(vm, "(EXIT)", rt_EXIT);
+    /* Internal branches & runtimes */
+    register_word(vm, "(BRANCH)", control_forth_branch);
+    register_word(vm, "(0BRANCH)", control_forth_0branch);
+    register_word(vm, "(?DO)", control_forth_runtime_qdo);
+    register_word(vm, "(DO)", control_forth_runtime_do);
+    register_word(vm, "(LOOP)", control_forth_runtime_loop);
+    register_word(vm, "(+LOOP)", control_forth_runtime_plus_loop);
+    register_word(vm, "(LEAVE)", control_forth_runtime_leave);
 
     /* IF/ELSE/THEN */
-    register_word(vm, "IF", w_IF);
+    register_word(vm, "IF", control_forth_if);
     vm_make_immediate(vm);
-    register_word(vm, "ELSE", w_ELSE);
+    register_word(vm, "ELSE", control_forth_else);
     vm_make_immediate(vm);
-    register_word(vm, "THEN", w_THEN);
-    vm_make_immediate(vm);
-
-    /* BEGIN-family */
-    register_word(vm, "BEGIN", w_BEGIN);
-    vm_make_immediate(vm);
-    register_word(vm, "UNTIL", w_UNTIL);
-    vm_make_immediate(vm);
-    register_word(vm, "AGAIN", w_AGAIN);
-    vm_make_immediate(vm);
-    register_word(vm, "WHILE", w_WHILE);
-    vm_make_immediate(vm);
-    register_word(vm, "REPEAT", w_REPEAT);
+    register_word(vm, "THEN", control_forth_then);
     vm_make_immediate(vm);
 
-    /* DO-family */
-    register_word(vm, "?DO", w_QDO);
+    /* BEGIN/WHILE/REPEAT/AGAIN/UNTIL */
+    register_word(vm, "BEGIN", control_forth_begin);
     vm_make_immediate(vm);
-    register_word(vm, "DO", w_DO);
+    register_word(vm, "WHILE", control_forth_while);
     vm_make_immediate(vm);
-    register_word(vm, "LOOP", w_LOOP);
+    register_word(vm, "REPEAT", control_forth_repeat);
     vm_make_immediate(vm);
-    register_word(vm, "+LOOP", w_PLOOP);
+    register_word(vm, "AGAIN", control_forth_again);
     vm_make_immediate(vm);
-    register_word(vm, "LEAVE", w_LEAVE);
+    register_word(vm, "UNTIL", control_forth_until);
     vm_make_immediate(vm);
 
-    /* EXIT (compile-only) and loop indices */
-    register_word(vm, "EXIT", w_EXIT);
+    /* DO/?DO/LOOP/+LOOP/LEAVE */
+    register_word(vm, "?DO", control_forth_qdo);
     vm_make_immediate(vm);
-    register_word(vm, "I", w_I);
-    register_word(vm, "J", w_J);
+    register_word(vm, "DO", control_forth_do);
+    vm_make_immediate(vm);
+    register_word(vm, "LOOP", control_forth_loop);
+    vm_make_immediate(vm);
+    register_word(vm, "+LOOP", control_forth_plus_loop);
+    vm_make_immediate(vm);
+    register_word(vm, "LEAVE", control_forth_leave);
+    vm_make_immediate(vm);
 
-    log_message(LOG_INFO, "Control words registered (FORTH-79 style: loop control on RS, byte offsets).");
+    /* Loop indices & EXIT */
+    register_word(vm, "I", control_forth_I);
+    register_word(vm, "J", control_forth_J);
+    register_word(vm, "EXIT", control_forth_EXIT);
+
+    log_message(LOG_INFO, "Registering FORTH-79 control flow words (two-stack VM)");
 }
