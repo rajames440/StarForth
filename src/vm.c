@@ -10,7 +10,6 @@
 #include "../include/word_registry.h"
 #include "../include/vm_debug.h"
 #include "../include/profiler.h"
-#include "../include/io.h"
 #include "../include/platform/starforth_platform.h"
 
 #include <string.h>
@@ -18,6 +17,7 @@
 
 /* ====================== Forward declarations ======================= */
 static void execute_colon_word(VM * vm);
+
 static void vm_bootstrap_scr(VM * vm);
 
 static unsigned vm_get_base(const VM *vm);
@@ -331,95 +331,74 @@ void vm_exit_compile_mode(VM *vm) {
      We honor that flag here to unwind the *current* colon only,
      without disturbing the caller’s R-stack frame.
 */
+
+/* vm.c */
+
+/* Executes the threaded code of a colon definition.
+ * Uses a return-stack IP: each call saves the next IP on RS and pops it on return.
+ * When vm->exit_colon is set, it discards the saved IP and returns early.
+ */
+/* Executes a colon-defined word (direct/threaded).
+ * Contract: before each call we push the resume IP on RS; after the call we pop
+ * the (possibly modified) IP. If a word sets vm->exit_colon, we discard the
+ * saved resume IP and return to the caller (one-shot).
+ */
 static void execute_colon_word(VM *vm) {
-    if (!vm) return;
+    if (!vm || !vm->current_executing_entry) return;
 
+    /* Fetch threaded body address from the DictEntry's data field (DF) */
     DictEntry *entry = vm->current_executing_entry;
-    if (!entry) {
-        log_message(LOG_ERROR, "execute_colon_word: no current entry");
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) {
         vm->error = 1;
         return;
     }
 
-    /* DF cell holds VM offset of threaded body start */
-    cell_t *df_cell = vm_dictionary_get_data_field(entry);
-    if (!df_cell) {
-        log_message(LOG_ERROR, "execute_colon_word: no data field");
-        vm->error = 1;
-        return;
-    }
-    vaddr_t body_va = (vaddr_t)(uint64_t)(*df_cell);
-    cell_t *ip = (cell_t *) vm_ptr(vm, body_va);
+    /* DF holds a VM virtual address (byte offset) of the first code cell */
+    vaddr_t body_addr = (vaddr_t)(uint64_t)(*df);
+    cell_t *ip = (cell_t *) vm_ptr(vm, body_addr);
     if (!ip) {
-        log_message(LOG_ERROR, "execute_colon_word: bad body VA=%ld", (long) body_va);
         vm->error = 1;
         return;
     }
 
-    log_message(LOG_DEBUG, "execute_colon_word: '%.*s' body @ VA=%ld host=%p",
-                (int) entry->name_len, entry->name, (long) body_va, (void *) ip);
-
-    /* Threaded inner interpreter */
     for (;;) {
+        /* Each code cell stores a DictEntry* (called word) */
         DictEntry *w = (DictEntry *) (uintptr_t)(*ip);
-        if (!w) {
-            /* Optional 0 terminator: end of definition */
-            vm->current_executing_entry = NULL;
-            return;
-        }
 
-        /* Save resume address, then advance */
-        ip++;
+        /* Advance IP to next cell and save resume IP on return stack */
+        ip = ip + 1;
         vm_rpush(vm, (cell_t)(uintptr_t)ip);
-        if (vm->error) {
-            vm->current_executing_entry = NULL;
-            return;
-        }
+        if (vm->error) { return; }
 
         /* Execute the word */
         vm->current_executing_entry = w;
-        if (w->func) {
+        if (w && w->func) {
             w->func(vm);
         } else {
-            log_message(LOG_ERROR, "execute_colon_word: NULL func");
+            log_message(LOG_ERROR, "execute_colon_word: null word func");
             vm->error = 1;
         }
+        vm->current_executing_entry = entry; /* restore current colon */
 
-        /* If a word set vm->error, unwind this colon */
-        if (vm->error) {
-            vm->current_executing_entry = NULL;
-            return;
-        }
+        if (vm->error) { return; }
 
-        /* One-shot colon return (EXIT) — ONLY this colon frame */
-        /* One-shot colon return (EXIT) — ONLY this colon frame */
+        /* One-shot early return? (EXIT) */
         if (vm->exit_colon) {
             vm->exit_colon = 0;
 
-            /* discard saved IP for this step so the caller’s R-stack layout is intact */
+            /* CRITICAL: discard the per-step resume IP */
             (void) vm_rpop(vm);
 
-            vm->current_executing_entry = NULL;
             return;
         }
 
-        /* If QUIT/ABORT cleared the return stack, unwind cleanly */
-        if (vm->rsp < 0) {
-            vm->current_executing_entry = NULL;
-            return;
-        }
-
-        /* Normal case: resume at saved IP (possibly modified by branch) */
+        /* Normal path: resume at IP popped from RS (possibly patched by runtime) */
         ip = (cell_t *) (uintptr_t) vm_rpop(vm);
-        if (vm->error) {
-            vm->current_executing_entry = NULL;
-            return;
-        }
-
-        /* Continue loop */
-        vm->current_executing_entry = entry; /* restore current colon context */
+        if (vm->error) { return; }
     }
 }
+
 
 /* ====================== Outer interpreter ======================= */
 
