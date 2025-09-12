@@ -19,7 +19,7 @@
 #include "include/logical_words.h"
 #include "../../include/log.h"
 #include "../../include/word_registry.h"
-#include "../../include/platform/starforth_platform.h"
+
 
 /* FORTH-79 defines TRUE as -1 (all bits set) and FALSE as 0 */
 #define FORTH_TRUE  ((cell_t)-1)

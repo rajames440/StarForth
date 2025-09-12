@@ -17,8 +17,11 @@
 
 #include "include/test_runner.h"
 #include "../../include/log.h"
-#include "../../include/platform/starforth_platform.h"
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 /* Global test statistics */
 TestStats global_test_stats = {0, 0, 0, 0, 0};
@@ -40,12 +43,12 @@ static int benchmark_count = 0;
 
 /* Simple portable timer using platform clock() */
 static uint64_t get_time_ns(void) {
-    sf_clock_t t = sf_clock();
-    if (t == (sf_clock_t) (-1)) {
+    clock_t t = clock();
+    if (t == (clock_t) (-1)) {
         return 0; /* Error case */
     }
     /* Convert to nanoseconds: (clock_ticks / CLOCKS_PER_SEC) * 1,000,000,000 */
-    return (uint64_t) ((double) t / SF_CLOCKS_PER_SEC * 1000000000.0);
+    return (uint64_t) ((double) t / CLOCKS_PER_SEC * 1000000000.0);
 }
 
 /* Test modules in dependency order - matches your word registration order */

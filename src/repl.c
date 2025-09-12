@@ -17,6 +17,8 @@
 
 #include "../include/repl.h"
 #include "../include/log.h"
+#include "../include/vm.h"
+#include <stdio.h>
 
 void vm_repl(VM *vm) {
     log_message(LOG_INFO, "Starting Forth REPL");
@@ -35,7 +37,7 @@ void vm_repl(VM *vm) {
         if (!vm->error) {
             printf(" ok\n");
         } else {
-            sf_printf(" ERROR\n");
+            printf(" ERROR\n");
             vm->error = 0; /* Reset error for next input */
         }
     }

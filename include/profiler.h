@@ -18,9 +18,9 @@
 #ifndef STARFORTH_PROFILER_H
 #define STARFORTH_PROFILER_H
 
-#include "platform/starforth_platform.h"
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 
 /* Forward declarations */
 typedef struct VM VM;

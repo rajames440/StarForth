@@ -18,7 +18,6 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include "platform/starforth_platform.h"
 
 /* Logging levels */
 typedef enum {

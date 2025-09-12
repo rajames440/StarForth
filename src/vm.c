@@ -10,7 +10,6 @@
 #include "../include/word_registry.h"
 #include "../include/vm_debug.h"
 #include "../include/profiler.h"
-#include "../include/platform/starforth_platform.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -51,9 +50,9 @@ static void vm_set_base(VM *vm, unsigned b) {
 
 void vm_init(VM *vm) {
     if (!vm) return;
-    sf_memset(vm, 0, sizeof(*vm));
+    memset(vm, 0, sizeof(*vm));
 
-    vm->memory = (uint8_t *) sf_malloc(VM_MEMORY_SIZE);
+    vm->memory = (uint8_t *) malloc(VM_MEMORY_SIZE);
     if (!vm->memory) {
         log_message(LOG_ERROR, "vm_init: out of host memory");
         vm->error = 1;
@@ -130,7 +129,7 @@ void vm_init(VM *vm) {
 void vm_cleanup(VM *vm) {
     if (!vm) return;
     if (vm->memory) {
-        sf_free(vm->memory);
+        free(vm->memory);
         vm->memory = NULL;
     }
     vm->here = 0;
@@ -200,7 +199,7 @@ void vm_enter_compile_mode(VM *vm, const char *name, size_t len) {
     vm_store_cell(vm, vm->state_addr, vm->state_var);
 
     if (len > WORD_NAME_MAX) len = WORD_NAME_MAX;
-    sf_memcpy(vm->current_word_name, name, len);
+    memcpy(vm->current_word_name, name, len);
     vm->current_word_name[len] = '\0';
 
     /* Create colon word header with code pointer = execute_colon_word */

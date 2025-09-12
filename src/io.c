@@ -17,7 +17,8 @@
 
 #include "io.h"
 #include "log.h"
-#include "platform/starforth_platform.h"
+
+#include <string.h>
 
 /**
  * @brief Initialize the IO subsystem
@@ -33,7 +34,7 @@ void io_init(VM *vm) {
     }
 
     /* Zero the entire VM address space so blocks start clean. */
-    sf_memset(vm->memory, 0, VM_MEMORY_SIZE);
+    memset(vm->memory, 0, VM_MEMORY_SIZE);
 
     log_message(LOG_INFO,
                 "IO subsystem initialized with %d blocks of %d bytes",
@@ -57,7 +58,7 @@ int io_write_block(VM *vm, int block_num, const unsigned char *buffer) {
         return -1;
     }
     size_t off = (size_t) block_num * (size_t) BLOCK_SIZE;
-    sf_memcpy(&vm->memory[off], buffer, BLOCK_SIZE);
+    memcpy(&vm->memory[off], buffer, BLOCK_SIZE);
     log_message(LOG_DEBUG, "io_write_block: wrote block %d", block_num);
     return 0;
 }

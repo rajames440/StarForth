@@ -15,10 +15,9 @@
 
  */
 
-#include "vm_api.h"
-#include "vm.h"       // internal details, not re-exposed to word modules
-#include "log.h"
-#include "platform/starforth_platform.h"
+#include "../include/vm_api.h"
+#include "../include/vm.h"       // internal details, not re-exposed to word modules
+#include <string.h>
 
 /** @name Stack Operations
  * @{
@@ -97,7 +96,7 @@ int vm_input_ensure(VM *vm) {
             return 1;
         }
         vm->tib_cap = INPUT_BUFFER_SIZE;
-        sf_memset(vm->tib_buf, 0, vm->tib_cap);
+        memset(vm->tib_buf, 0, vm->tib_cap);
     }
     if (!vm->in_var) {
         vm->in_var = (cell_t *) vm_allot(vm, sizeof(cell_t));
@@ -164,8 +163,8 @@ void vm_input_load_line(VM *vm, const char *src, size_t n) {
     }
     size_t nclamp = n;
     if (nclamp > vm->tib_cap) nclamp = vm->tib_cap;
-    sf_memcpy(vm->tib_buf, src, nclamp);
-    if (nclamp < vm->tib_cap) sf_memset(vm->tib_buf + nclamp, 0, vm->tib_cap - nclamp);
+    memcpy(vm->tib_buf, src, nclamp);
+    if (nclamp < vm->tib_cap) memset(vm->tib_buf + nclamp, 0, vm->tib_cap - nclamp);
     *vm->span_var = (cell_t) nclamp;
     *vm->in_var = 0;
 }

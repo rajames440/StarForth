@@ -16,7 +16,9 @@
  */
 
 #include "../include/log.h"
-#include "../include/platform/starforth_platform.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <time.h>
 
 /* Current log level (default to LOG_INFO) */
 static LogLevel current_level = LOG_INFO;
@@ -68,9 +70,9 @@ LogLevel log_get_level(void) {
 
 /* Timestamp helper */
 static void get_timestamp(char *buffer, size_t size) {
-    sf_time_t now = sf_time(NULL);
-    sf_tm *tm_info = sf_localtime(&now);
-    sf_strftime(buffer, size, "%H:%M:%S", tm_info);
+    time_t now = time(NULL);
+    struct tm *tm_info = localtime(&now);
+    strftime(buffer, size, "%H:%M:%S", tm_info);
 }
 
 /* Generic logger */
@@ -83,17 +85,17 @@ void log_message(LogLevel level, const char *fmt, ...) {
     get_timestamp(timestamp, sizeof(timestamp));
 
 #ifndef STARFORTH_MINIMAL
-    sf_fprintf(sf_stderr, "%s[%s] %s: %s", level_colors[level], timestamp, level_names[level], color_reset);
+    fprintf(stderr, "%s[%s] %s: %s", level_colors[level], timestamp, level_names[level], color_reset);
 #else
-    sf_fprintf(sf_stderr, "[%s] %s: ", timestamp, level_names[level]);
+    fprintf(stderr, "[%s] %s: ", timestamp, level_names[level]);
 #endif
 
     va_list args;
     va_start(args, fmt);
-    sf_vfprintf(sf_stderr, fmt, args);
+    vfprintf(stderr, fmt, args);
     va_end(args);
 
-    sf_fprintf(sf_stderr, "\n");
+    fprintf(stderr, "\n");
 }
 
 /* Dedicated test result logger (only shown for LOG_TEST or higher) */
@@ -127,10 +129,10 @@ void log_test_result(const char *word_name, TestResult result) {
     }
 
 #ifndef STARFORTH_MINIMAL
-    sf_fprintf(sf_stderr, "\x1b[35m[%s] TEST: %sTesting %-12s ... %s%s%s\n",
-               timestamp, color_reset, word_name, color, status, color_reset);
+    fprintf(stderr, "\x1b[35m[%s] TEST: %sTesting %-12s ... %s%s%s\n",
+            timestamp, color_reset, word_name, color, status, color_reset);
 #else
-    sf_fprintf(sf_stderr, "[%s] TEST: Testing %-12s ... %s\n",
-               timestamp, word_name, status);
+    fprintf(stderr, "[%s] TEST: Testing %-12s ... %s\n",
+            timestamp, word_name, status);
 #endif
 }

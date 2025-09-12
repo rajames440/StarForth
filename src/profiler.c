@@ -16,21 +16,16 @@
  */
 
 #include "../include/profiler.h"
-#include "../include/platform/starforth_platform.h"
+#include <stdio.h>
 
 /* Global profiler stub */
 void *g_profiler = (void *) 0;
-
-int profiler_init(ProfileLevel level) {
-    SF_UNUSED(level);
-    return 1;
-}
 
 void profiler_shutdown(void) {
 }
 
 void profiler_generate_report(void) {
-    sf_printf("Profiler: Report generation not yet implemented\n");
+    printf("Profiler: Report generation not yet implemented\n");
 }
 
 void profiler_inc_stack_op(void) {
