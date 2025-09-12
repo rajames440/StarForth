@@ -19,7 +19,11 @@
 #include "../../include/vm.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
-#include "../../include/platform/starforth_platform.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <signal.h>
 
 /* ───────────────────────── Global system state ───────────────────────── */
 static int system_running = 1; /* System running flag */

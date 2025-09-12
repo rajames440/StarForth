@@ -19,8 +19,6 @@
 #include "include/dictionary_manipulation_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
-#include "../../include/platform/starforth_platform.h"
-#include <ctype.h>
 
 /* Global state for dictionary manipulation */
 static cell_t state_variable = 0; /* STATE - compilation state */

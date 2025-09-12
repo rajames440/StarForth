@@ -26,11 +26,12 @@
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include "../../include/vm.h"
-#include "../../include/vm_api.h"
 
-#include "../../include/platform/starforth_platform.h"
 #include <stdint.h>
 #include <limits.h>
+#include <string.h>
+#include <stdio.h>
+
 
 /* Conversion buffer for <# ... #> */
 static unsigned char *pn_buf = NULL;
@@ -45,7 +46,7 @@ static void ensure_pn(VM *vm) {
             return;
         }
         pn_cap = 64;
-        sf_memset(pn_buf, 0, pn_cap);
+        memset(pn_buf, 0, pn_cap);
     }
 }
 
@@ -129,7 +130,7 @@ static void print_number_formatted(VM *vm, cell_t n, int width, int is_unsigned)
     }
 
     int len = i;
-    if (width > 0 && len < width) for (int s = 0; s < width - len; ++s) sf_putchar(' ');
+    if (width > 0 && len < width) for (int s = 0; s < width - len; ++s) putchar(' ');
     while (i--) putchar(buf[i]);
 }
 
@@ -356,7 +357,7 @@ void format_word_d_dot(VM *vm) {
     if ((dhigh == 0) || (dhigh == -1 && dlow < 0)) {
         print_number_formatted(vm, dlow, 0, 0);
     } else {
-        sf_fputs("DOUBLE-OVERFLOW", sf_stdout);
+        fputs("DOUBLE-OVERFLOW", stdout);
     }
     putchar(' ');
 }
@@ -373,7 +374,7 @@ void format_word_d_dot_r(VM *vm) {
     if ((dhigh == 0) || (dhigh == -1 && dlow < 0)) {
         print_number_formatted(vm, dlow, (int) width, 0);
     } else {
-        int len = (int) sf_strlen("DOUBLE-OVERFLOW");
+        int len = (int) strlen("DOUBLE-OVERFLOW");
         for (int i = 0; i < ((int) width > len ? (int) width - len : 0); ++i) putchar(' ');
         fputs("DOUBLE-OVERFLOW", stdout);
     }
@@ -382,7 +383,7 @@ void format_word_d_dot_r(VM *vm) {
 
 /* .S ( -- ) */
 void format_word_dot_s(VM *vm) {
-    sf_printf("<%d> ", vm->dsp + 1);
+    printf("<%d> ", vm->dsp + 1);
     for (int i = 0; i <= vm->dsp; i++) {
         print_number_formatted(vm, vm->data_stack[i], 0, 0);
         putchar(' ');

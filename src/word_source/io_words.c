@@ -19,6 +19,8 @@
 #include "include/io_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+#include <stdio.h>
+
 
 /* EMIT ( c -- ) - Output character to terminal */
 static void io_word_emit(VM *vm) {

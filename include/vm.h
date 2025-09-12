@@ -20,7 +20,8 @@
 #define VM_H
 
 /* Bare metal - no system headers */
-#include "platform/starforth_platform.h"
+#include <stdint.h>
+#include <stddef.h>
 
 /* Forward declaration */
 struct VM;

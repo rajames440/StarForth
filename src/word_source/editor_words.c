@@ -20,7 +20,9 @@
 #include "../../include/vm.h"            /* VM, vm_load_cell, vm_store_cell, vm_addr_ok, vm_ptr */
 #include "../../include/word_registry.h" /* register_word */
 #include "../../include/log.h"           /* log_message */
-#include "../../include/platform/starforth_platform.h"
+#include <stdio.h>                      /* fputs, fflush, puts, printf */
+#include <string.h>                     /* memset, memcpy, strlen, isdigit, isspace */
+#include <ctype.h>                      /* isdigit, isspace */
 
 /* -------- helpers -------- */
 
@@ -51,11 +53,11 @@ static void print_line_64(const unsigned char *p) {
 #endif
     for (int i = 0; i < 64; ++i) {
         unsigned char c = p[i];
-        if (c == 0) { sf_putchar(' '); } else if (c >= 32 && c <= 126) { sf_putchar((int) c); } else {
-            sf_putchar('.');
+        if (c == 0) { putchar(' '); } else if (c >= 32 && c <= 126) { putchar((int) c); } else {
+            putchar('.');
         }
     }
-    sf_putchar('\n');
+    putchar('\n');
 }
 
 /* -------- words -------- */
@@ -162,10 +164,10 @@ static void editor_word_show(VM *vm) {
 
 #ifdef STARFORTH_ANSI
     /* Clear + home (optional; compile-time opt-in) */
-    sf_fputs("\x1b[2J\x1b[H", sf_stdout);
-    sf_printf("\x1b[1mScreen %ld\x1b[0m:\n", (long) scr);
+    fputs("\x1b[2J\x1b[H", stdout);
+    printf("\x1b[1mScreen %ld\x1b[0m:\n", (long) scr);
 #else
-    sf_printf("Screen %ld:\n", (long) scr);
+    printf("Screen %ld:\n", (long) scr);
 #endif
 
     for (cell_t line = 0; line < 16; ++line) {
@@ -175,9 +177,9 @@ static void editor_word_show(VM *vm) {
             return;
         }
 #ifdef STARFORTH_ANSI
-        sf_printf("\x1b[90m%2ld:\x1b[0m ", (long) line);
+        printf("\x1b[90m%2ld:\x1b[0m ", (long) line);
 #else
-        sf_printf("%2ld: ", (long) line);
+        printf("%2ld: ", (long) line);
 #endif
         print_line_64(lp);
     }
@@ -205,17 +207,17 @@ static void editor_word_edit(VM *vm) {
 
     char buf[1024];
     for (;;) {
-        sf_printf("SCR %ld> ", (long) vm_load_cell(vm, vm->scr_addr));
-        sf_fflush(sf_stdout);
-        if (!sf_fgets(buf, sizeof buf, sf_stdin)) break;
+        printf("SCR %ld> ", (long) vm_load_cell(vm, vm->scr_addr));
+        fflush(stdout);
+        if (!fgets(buf, sizeof buf, stdin)) break;
 
         /* Trim trailing newline */
-        size_t L = sf_strlen(buf);
+        size_t L = strlen(buf);
         if (L && buf[L - 1] == '\n') buf[L - 1] = '\0';
 
         if (buf[0] == 'q' || buf[0] == 'Q') break;
         else if (buf[0] == 'h' || buf[0] == 'H') {
-            sf_puts("Commands: p=print, l <n>=line, s <n> <text>=set, n=next, b=prev, w=write, q=quit");
+            puts("Commands: p=print, l <n>=line, s <n> <text>=set, n=next, b=prev, w=write, q=quit");
         } else if (buf[0] == 'p' || buf[0] == 'P') {
             editor_word_show(vm);
         } else if (buf[0] == 'l' || buf[0] == 'L') {
@@ -223,48 +225,48 @@ static void editor_word_edit(VM *vm) {
             /* Simple number parsing to avoid sscanf */
             const char *p = buf + 1;
             while (*p == ' ' || *p == '\t') p++;
-            if (sf_isdigit(*p)) {
+            if (isdigit(*p)) {
                 ln = 0;
-                while (sf_isdigit(*p)) {
+                while (isdigit(*p)) {
                     ln = ln * 10 + (*p - '0');
                     p++;
                 }
                 vm_push(vm, (cell_t) ln);
                 editor_word_l(vm);
             } else {
-                sf_puts("usage: l <0..15>");
+                puts("usage: l <0..15>");
             }
         } else if (buf[0] == 's' || buf[0] == 'S') {
             long ln = -1;
             const char *p = buf + 1;
-            while (*p && sf_isspace((unsigned char) *p)) ++p;
+            while (*p && isspace((unsigned char) *p)) ++p;
             /* Parse number manually */
-            if (sf_isdigit(*p)) {
+            if (isdigit(*p)) {
                 ln = 0;
-                while (sf_isdigit(*p)) {
+                while (isdigit(*p)) {
                     ln = ln * 10 + (*p - '0');
                     p++;
                 }
                 /* Move past any remaining spaces */
-                while (*p && sf_isspace((unsigned char) *p)) ++p;
+                while (*p && isspace((unsigned char) *p)) ++p;
                 /* p is now the text to write */
-                size_t tlen = sf_strlen(p);
+                size_t tlen = strlen(p);
 
                 cell_t scr = vm_load_cell(vm, vm->scr_addr);
                 unsigned char *dst = NULL;
                 if (ln < 0 || ln > 15 || scr < 1 || scr >= (cell_t) MAX_BLOCKS ||
                     !line_ptr(vm, scr, (cell_t) ln, &dst)) {
-                    sf_puts("error: bad SCR/line");
+                    puts("error: bad SCR/line");
                 } else {
-                    sf_memset(dst, ' ', 64);
+                    memset(dst, ' ', 64);
                     size_t n = (tlen > 64) ? 64 : tlen;
-                    if (n) sf_memcpy(dst, p, n);
+                    if (n) memcpy(dst, p, n);
                     /* ✅ Use helpers declared in block_words.h (no implicit decl) */
                     mark_buffer_dirty(vm);
-                    sf_puts("ok");
+                    puts("ok");
                 }
             } else {
-                sf_puts("usage: s <0..15> <text>");
+                puts("usage: s <0..15> <text>");
             }
         } else if (buf[0] == 'n' || buf[0] == 'N') {
             cell_t s = vm_load_cell(vm, vm->scr_addr);
@@ -278,13 +280,13 @@ static void editor_word_edit(VM *vm) {
             /* ✅ No more implicit decls: use helpers */
             mark_buffer_dirty(vm);
             save_all_buffers(vm);
-            sf_puts("saved");
+            puts("saved");
         } else {
-            sf_puts("h for help");
+            puts("h for help");
         }
 
         if (vm->error) {
-            sf_puts("error");
+            puts("error");
             vm->error = 0; /* keep shell alive */
         }
     }

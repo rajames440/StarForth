@@ -19,7 +19,8 @@
 #include "../../include/word_registry.h"
 #include "vm.h"
 #include "../../include/log.h"
-#include "../../include/platform/starforth_platform.h"
+#include <string.h>
+
 
 /* @ ( addr -- n )  Fetch cell from VM memory */
 void memory_word_fetch(VM *vm) {
@@ -127,7 +128,7 @@ void memory_word_fill(VM *vm) {
         return;
     }
     uint8_t *ptr = vm_ptr(vm, addr);
-    sf_memset(ptr, (int) (c_val & 0xFF), len);
+    memset(ptr, (int) (c_val & 0xFF), len);
 }
 
 /* MOVE ( addr1 addr2 len -- )  Copy len bytes from addr1 to addr2 */
@@ -145,7 +146,7 @@ void memory_word_move(VM *vm) {
     }
     uint8_t *src = vm_ptr(vm, addr1);
     uint8_t *dst = vm_ptr(vm, addr2);
-    sf_memmove(dst, src, len);
+    memmove(dst, src, len);
 }
 
 /* ERASE ( addr len -- )  Zero len bytes starting at addr */
@@ -161,7 +162,7 @@ void memory_word_erase(VM *vm) {
         return;
     }
     uint8_t *ptr = vm_ptr(vm, addr);
-    sf_memset(ptr, 0, len);
+    memset(ptr, 0, len);
 }
 
 /* 2@ ( addr -- x_low x_high )  Fetch two consecutive cells (low, then high) */
