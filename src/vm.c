@@ -12,6 +12,7 @@
 #include "../include/profiler.h"
 #include "../include/platform/starforth_platform.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 
