@@ -14,6 +14,10 @@
 
 #include "vm.h"
 #include <stdint.h>
+#ifdef __linux__
+#include <sys/auxv.h>  /* For getauxval, AT_HWCAP */
+#include <asm/hwcap.h> /* For HWCAP_ASIMD */
+#endif
 
 /*
  * Configuration: Define USE_ASM_OPT=1 to enable assembly optimizations
@@ -69,12 +73,11 @@
 
 /* vm_push optimized - Data stack push */
 static inline void vm_push_asm(VM *vm, cell_t value) {
-    int dsp = vm->dsp;
     int error = 0;
 
     __asm__ __volatile__(
         /* Load current dsp */
-        "ldr     w0, %[dsp_in]\n\t"
+        "ldr     w0, %[dsp]\n\t"
 
         /* Check for overflow: dsp >= 1022 */
         "cmp     w0, #1022\n\t"
@@ -82,12 +85,16 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
 
         /* No overflow: increment dsp */
         "add     w1, w0, #1\n\t" /* w1 = dsp + 1 */
-        "str     w1, %[dsp_out]\n\t"
+        "str     w1, %[dsp]\n\t"
 
         /* Store value: vm->data_stack[dsp+1] = value */
         /* Calculate address: base + (dsp+1)*8 */
         "ldr     x2, %[stack]\n\t" /* Load stack base */
         "str     %[val], [x2, w1, sxtw #3]\n\t" /* Sign-extend w1, shift left 3, store */
+
+        /* Set error=0 in success path */
+        "mov     w3, #0\n\t"
+        "str     w3, %[err]\n\t"
         "b       2f\n\t"
 
         /* Overflow path */
@@ -96,10 +103,9 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
         "str     w3, %[err]\n\t"
 
         "2:\n\t"
-        : [dsp_out]"=m"(vm->dsp),
+        : [dsp]"+m"(vm->dsp),
         [err]"=m"(error)
-        : [dsp_in]"m"(vm->dsp),
-        [val]"r"(value),
+        : [val]"r"(value),
         [stack]"m"(vm->data_stack)
         : "x0", "x1", "x2", "x3", "cc", "memory"
     );
@@ -111,13 +117,12 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
 
 /* vm_pop optimized - Data stack pop */
 static inline cell_t vm_pop_asm(VM *vm) {
-    int dsp = vm->dsp;
     cell_t value = 0;
     int error = 0;
 
     __asm__ __volatile__(
         /* Load current dsp */
-        "ldr     w0, %[dsp_in]\n\t"
+        "ldr     w0, %[dsp]\n\t"
 
         /* Check for underflow: dsp < 0 */
         "cmp     w0, #0\n\t"
@@ -129,7 +134,11 @@ static inline cell_t vm_pop_asm(VM *vm) {
 
         /* Decrement dsp */
         "sub     w1, w0, #1\n\t"
-        "str     w1, %[dsp_out]\n\t"
+        "str     w1, %[dsp]\n\t"
+
+        /* Set error=0 in success path */
+        "mov     w3, #0\n\t"
+        "str     w3, %[err]\n\t"
         "b       2f\n\t"
 
         /* Underflow path */
@@ -139,11 +148,10 @@ static inline cell_t vm_pop_asm(VM *vm) {
         "mov     %[val], #0\n\t" /* Return 0 on error */
 
         "2:\n\t"
-        : [dsp_out]"=m"(vm->dsp),
+        : [dsp]"+m"(vm->dsp),
         [val]"=r"(value),
         [err]"=m"(error)
-        : [dsp_in]"m"(vm->dsp),
-        [stack]"m"(vm->data_stack)
+        : [stack]"m"(vm->data_stack)
         : "x0", "x1", "x2", "x3", "cc", "memory"
     );
 
@@ -156,26 +164,26 @@ static inline cell_t vm_pop_asm(VM *vm) {
 
 /* vm_rpush optimized - Return stack push */
 static inline void vm_rpush_asm(VM *vm, cell_t value) {
-    int rsp = vm->rsp;
     int error = 0;
 
     __asm__ __volatile__(
-        "ldr     w0, %[rsp_in]\n\t"
+        "ldr     w0, %[rsp]\n\t"
         "cmp     w0, #1022\n\t"
         "b.ge    1f\n\t"
         "add     w1, w0, #1\n\t"
-        "str     w1, %[rsp_out]\n\t"
+        "str     w1, %[rsp]\n\t"
         "ldr     x2, %[stack]\n\t"
         "str     %[val], [x2, w1, sxtw #3]\n\t"
+        "mov     w3, #0\n\t"
+        "str     w3, %[err]\n\t"
         "b       2f\n\t"
         "1:\n\t"
         "mov     w3, #1\n\t"
         "str     w3, %[err]\n\t"
         "2:\n\t"
-        : [rsp_out]"=m"(vm->rsp),
+        : [rsp]"+m"(vm->rsp),
         [err]"=m"(error)
-        : [rsp_in]"m"(vm->rsp),
-        [val]"r"(value),
+        : [val]"r"(value),
         [stack]"m"(vm->return_stack)
         : "x0", "x1", "x2", "x3", "cc", "memory"
     );
@@ -187,29 +195,29 @@ static inline void vm_rpush_asm(VM *vm, cell_t value) {
 
 /* vm_rpop optimized - Return stack pop */
 static inline cell_t vm_rpop_asm(VM *vm) {
-    int rsp = vm->rsp;
     cell_t value = 0;
     int error = 0;
 
     __asm__ __volatile__(
-        "ldr     w0, %[rsp_in]\n\t"
+        "ldr     w0, %[rsp]\n\t"
         "cmp     w0, #0\n\t"
         "b.lt    1f\n\t"
         "ldr     x2, %[stack]\n\t"
         "ldr     %[val], [x2, w0, sxtw #3]\n\t"
         "sub     w1, w0, #1\n\t"
-        "str     w1, %[rsp_out]\n\t"
+        "str     w1, %[rsp]\n\t"
+        "mov     w3, #0\n\t"
+        "str     w3, %[err]\n\t"
         "b       2f\n\t"
         "1:\n\t"
         "mov     w3, #1\n\t"
         "str     w3, %[err]\n\t"
         "mov     %[val], #0\n\t"
         "2:\n\t"
-        : [rsp_out]"=m"(vm->rsp),
+        : [rsp]"+m"(vm->rsp),
         [val]"=r"(value),
         [err]"=m"(error)
-        : [rsp_in]"m"(vm->rsp),
-        [stack]"m"(vm->return_stack)
+        : [stack]"m"(vm->return_stack)
         : "x0", "x1", "x2", "x3", "cc", "memory"
     );
 
@@ -268,7 +276,7 @@ static inline int vm_sub_check_overflow(cell_t a, cell_t b, cell_t *result) {
     return overflow;
 }
 
-/* Fast multiply with high-word result (for */MOD) */
+/* Fast multiply with high-word result (for star-slash-MOD) */
 static inline void vm_mul_double(cell_t a, cell_t b, cell_t *hi, cell_t *lo) {
     __asm__(
         "mul     %[lo], %[a], %[b]\n\t" /* Low 64 bits */
@@ -395,6 +403,7 @@ static inline int vm_strcmp_neon(const char *s1, const char *s2, size_t len) {
 
 /* Main string comparison wrapper */
 static inline int vm_strcmp_asm(const char *s1, const char *s2, size_t len) {
+
 
 #ifdef __ARM_NEON
 if (len>= 16) {
@@ -565,6 +574,7 @@ static inline uint64_t vm_read_midr(void) {
 /* Check for specific CPU features via auxiliary control register */
 static inline int vm_has_neon(void) {
 
+
 #ifdef __ARM_NEON
 return 1;
 #else
@@ -574,6 +584,7 @@ return 0;
 
 /* Check for Cortex-A72 (Raspberry Pi 4) */
 static inline int vm_is_cortex_a72(void) {
+
 
 /* Cortex-A72 MIDR: 0x410FD083 */
 /* Note: Reading MIDR requires EL1, may not work in userspace */

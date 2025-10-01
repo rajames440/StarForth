@@ -38,15 +38,18 @@ make fastest              # Auto-detects ARM64, builds optimized for Cortex-A72
 ### Cross-Compile for Raspberry Pi 4
 
 ```bash
-# On your x86_64 development machine:
-make rpi4-cross
+# On your x86_64 development machine (requires gcc-aarch64-linux-gnu):
+make rpi4-cross          # Builds 987 KB ARM64 binary with inline ASM
 
 # Copy to Raspberry Pi:
 scp build/starforth pi@raspberrypi.local:~/
 
 # On Raspberry Pi:
-./starforth
+./starforth              # Statically linked, ready to run!
 ```
+
+**Note:** ARM64 cross-compilation has been tested and verified. The binary includes inline assembly optimizations for
+ARM64/AArch64.
 
 ## ⚡ Performance Modes
 

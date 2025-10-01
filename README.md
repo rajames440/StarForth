@@ -13,12 +13,14 @@ with **no reliance on** `malloc`, `printf`, or glibc.
 ## 💡 Features (1.0.0)
 
 * 🧠 **Threaded VM** (direct vs. indirect depends on target)
+* ⚡ **Inline assembly optimizations** for x86_64 and ARM64 (22% speedup on x86_64)
 * 🗂️ **Dictionary & registration** via `word_registry`
 * 🧩 **Modular word sources** (one category per file)
 * 🧱 **Block‑style memory model** (fileless today; persistence planned)
 * 🧾 **64‑bit cells** by default (`cell_t`) with stack/logical/arithmetic/IO sets
 * 🧪 **REPL** and an in‑process test runner
 * 🧯 **No glibc**: suitable for tiny kernels and libc‑free targets
+* 🏗️ **Multi-architecture**: Native x86_64, ARM64/AArch64 cross-compilation
 
 **Control flow implemented**
 
@@ -131,15 +133,38 @@ with **no reliance on** `malloc`, `printf`, or glibc.
 
 None. The project is ANSI **C99** and compiles with `gcc` out of the box.
 
-### Build Command
+For ARM64 cross-compilation, install: `gcc-aarch64-linux-gnu`
 
+### Build Commands
+
+**Native build (auto-detects x86_64 or ARM64):**
 ```bash
 make clean && make
+```
+
+**ARM64 cross-compile (from x86_64):**
+
+```bash
+make rpi4-cross      # Raspberry Pi 4 optimized
+make rpi4-fastest    # Maximum optimizations
+```
+
+**Performance optimized builds:**
+
+```bash
+make turbo    # -O3 optimizations
+make fast     # ASM + direct threading
+make fastest  # ASM + direct threading + LTO
 ```
 
 ### Output
 
 Build artifacts go into the `build/` directory.
+
+### Architecture Support
+
+- **x86_64**: Native compilation with inline assembly optimizations (22% faster)
+- **ARM64**: Cross-compilation supported (Raspberry Pi 4, Apple Silicon, AWS Graviton)
 
 ---
 

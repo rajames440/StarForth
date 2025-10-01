@@ -41,23 +41,25 @@
 
 /* vm_push optimized - Data stack push */
 static inline void vm_push_asm(VM *vm, cell_t value) {
-    int dsp = vm->dsp;
     int error = 0;
 
     __asm__ __volatile__(
-        /* Load current dsp into register */
-        "movl    %[dsp_in], %%eax\n\t"
+        /* Load current dsp into register with sign extension */
+        "movslq  %[dsp], %%rax\n\t"
 
         /* Check for overflow: dsp >= STACK_SIZE-1 (1023) */
-        "cmpl    $1022, %%eax\n\t"
+        "cmpq    $1022, %%rax\n\t"
         "jg      1f\n\t" /* Jump if overflow */
 
         /* No overflow: increment dsp */
-        "leal    1(%%rax), %%ecx\n\t" /* ecx = dsp + 1 */
-        "movl    %%ecx, %[dsp_out]\n\t"
+        "addq    $1, %%rax\n\t" /* rax = dsp + 1 */
+        "movl    %%eax, %[dsp]\n\t" /* Save new dsp (32-bit) */
 
-        /* Store value: vm->data_stack[dsp+1] = value */
-        "movq    %[val], (%[stack], %%rcx, 8)\n\t"
+        /* Store value: vm->data_stack[dsp] = value (dsp already incremented) */
+        "movq    %[val], (%[stack], %%rax, 8)\n\t"
+
+        /* Success: set error = 0 */
+        "xorl    %[err], %[err]\n\t"
         "jmp     2f\n\t"
 
         /* Overflow path */
@@ -65,12 +67,11 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
         "movl    $1, %[err]\n\t"
 
         "2:\n\t"
-        : [dsp_out]"=m"(vm->dsp),
+        : [dsp]"+m"(vm->dsp),
         [err]"=r"(error)
-        : [dsp_in]"m"(vm->dsp),
-        [val]"r"(value),
+        : [val]"r"(value),
         [stack]"r"(vm->data_stack)
-        : "rax", "rcx", "cc", "memory"
+        : "rax", "cc", "memory"
     );
 
     if (__builtin_expect(error, 0)) {
@@ -81,39 +82,40 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
 
 /* vm_pop optimized - Data stack pop */
 static inline cell_t vm_pop_asm(VM *vm) {
-    int dsp = vm->dsp;
     cell_t value = 0;
     int error = 0;
 
     __asm__ __volatile__(
-        /* Load current dsp */
-        "movl    %[dsp_in], %%eax\n\t"
+        /* Load current dsp with sign extension */
+        "movslq  %[dsp], %%rax\n\t"
 
         /* Check for underflow: dsp < 0 */
-        "testl   %%eax, %%eax\n\t"
+        "testq   %%rax, %%rax\n\t"
         "js      1f\n\t" /* Jump if negative (underflow) */
 
         /* No underflow: load value */
         "movq    (%[stack], %%rax, 8), %[val]\n\t"
 
         /* Decrement dsp */
-        "leal    -1(%%rax), %%ecx\n\t"
-        "movl    %%ecx, %[dsp_out]\n\t"
+        "subq    $1, %%rax\n\t"
+        "movl    %%eax, %[dsp]\n\t"
+
+        /* Success: set error = 0 */
+        "xorl    %[err], %[err]\n\t"
         "jmp     2f\n\t"
 
         /* Underflow path */
         "1:\n\t"
         "movl    $1, %[err]\n\t"
-        "xorl    %%eax, %%eax\n\t" /* Return 0 on error */
+        "xorq    %%rax, %%rax\n\t" /* Return 0 on error */
         "movq    %%rax, %[val]\n\t"
 
         "2:\n\t"
-        : [dsp_out]"=m"(vm->dsp),
+        : [dsp]"+m"(vm->dsp),
         [val]"=r"(value),
         [err]"=r"(error)
-        : [dsp_in]"m"(vm->dsp),
-        [stack]"r"(vm->data_stack)
-        : "rax", "rcx", "cc", "memory"
+        : [stack]"r"(vm->data_stack)
+        : "rax", "cc", "memory"
     );
 
     if (__builtin_expect(error, 0)) {
@@ -125,26 +127,25 @@ static inline cell_t vm_pop_asm(VM *vm) {
 
 /* vm_rpush optimized - Return stack push */
 static inline void vm_rpush_asm(VM *vm, cell_t value) {
-    int rsp = vm->rsp;
     int error = 0;
 
     __asm__ __volatile__(
-        "movl    %[rsp_in], %%eax\n\t"
-        "cmpl    $1022, %%eax\n\t"
+        "movslq  %[rsp], %%rax\n\t"
+        "cmpq    $1022, %%rax\n\t"
         "jg      1f\n\t"
-        "leal    1(%%rax), %%ecx\n\t"
-        "movl    %%ecx, %[rsp_out]\n\t"
-        "movq    %[val], (%[stack], %%rcx, 8)\n\t"
+        "addq    $1, %%rax\n\t"
+        "movl    %%eax, %[rsp]\n\t"
+        "movq    %[val], (%[stack], %%rax, 8)\n\t"
+        "xorl    %[err], %[err]\n\t"
         "jmp     2f\n\t"
         "1:\n\t"
         "movl    $1, %[err]\n\t"
         "2:\n\t"
-        : [rsp_out]"=m"(vm->rsp),
+        : [rsp]"+m"(vm->rsp),
         [err]"=r"(error)
-        : [rsp_in]"m"(vm->rsp),
-        [val]"r"(value),
+        : [val]"r"(value),
         [stack]"r"(vm->return_stack)
-        : "rax", "rcx", "cc", "memory"
+        : "rax", "cc", "memory"
     );
 
     if (__builtin_expect(error, 0)) {
@@ -154,29 +155,28 @@ static inline void vm_rpush_asm(VM *vm, cell_t value) {
 
 /* vm_rpop optimized - Return stack pop */
 static inline cell_t vm_rpop_asm(VM *vm) {
-    int rsp = vm->rsp;
     cell_t value = 0;
     int error = 0;
 
     __asm__ __volatile__(
-        "movl    %[rsp_in], %%eax\n\t"
-        "testl   %%eax, %%eax\n\t"
+        "movslq  %[rsp], %%rax\n\t"
+        "testq   %%rax, %%rax\n\t"
         "js      1f\n\t"
         "movq    (%[stack], %%rax, 8), %[val]\n\t"
-        "leal    -1(%%rax), %%ecx\n\t"
-        "movl    %%ecx, %[rsp_out]\n\t"
+        "subq    $1, %%rax\n\t"
+        "movl    %%eax, %[rsp]\n\t"
+        "xorl    %[err], %[err]\n\t"
         "jmp     2f\n\t"
         "1:\n\t"
         "movl    $1, %[err]\n\t"
-        "xorl    %%eax, %%eax\n\t"
+        "xorq    %%rax, %%rax\n\t"
         "movq    %%rax, %[val]\n\t"
         "2:\n\t"
-        : [rsp_out]"=m"(vm->rsp),
+        : [rsp]"+m"(vm->rsp),
         [val]"=r"(value),
         [err]"=r"(error)
-        : [rsp_in]"m"(vm->rsp),
-        [stack]"r"(vm->return_stack)
-        : "rax", "rcx", "cc", "memory"
+        : [stack]"r"(vm->return_stack)
+        : "rax", "cc", "memory"
     );
 
     if (__builtin_expect(error, 0)) {
@@ -223,7 +223,7 @@ static inline int vm_add_check_overflow(cell_t a, cell_t b, cell_t *result) {
     return overflow;
 }
 
-/* Fast multiply with double-width result for */MOD operations */
+/* Fast multiply with double-width result for */ /* MOD operations */
 static inline void vm_mul_double(cell_t a, cell_t b, cell_t *hi, cell_t *lo) {
     __asm__(
         "movq    %[a], %%rax\n\t"
