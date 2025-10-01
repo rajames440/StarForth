@@ -303,6 +303,31 @@ docs-pdf: docs-html
 	@echo "📄 Generating PDF documentation..."
 	@cd docs/api/latex && $(MAKE) pdf > /dev/null 2>&1 && cp refman.pdf ../StarForth-API-Reference.pdf && echo "✓ PDF: docs/api/StarForth-API-Reference.pdf"
 
+# Generate complete manual book (DocBook → HTML/PDF)
+book:
+	@echo "📖 Building StarForth Complete Manual..."
+	@./scripts/build-docs.sh
+
+# Generate book HTML only
+book-html:
+	@echo "📖 Building StarForth Manual (HTML)..."
+	@./scripts/build-docs.sh html
+
+# Open the complete manual
+book-open:
+	@echo "🌐 Opening StarForth Manual..."
+	@if [ -f docs/build/starforth-manual.html ]; then \
+		if command -v xdg-open > /dev/null; then \
+			xdg-open docs/build/starforth-manual.html; \
+		elif command -v open > /dev/null; then \
+			open docs/build/starforth-manual.html; \
+		else \
+			echo "Please open docs/build/starforth-manual.html"; \
+		fi; \
+	else \
+		echo "Manual not built yet. Run 'make book' first."; \
+	fi
+
 # Open documentation in browser
 docs-open: docs-html
 	@echo "🌐 Opening documentation in browser..."

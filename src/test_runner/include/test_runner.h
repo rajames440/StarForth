@@ -65,6 +65,13 @@ void run_control_words_tests(VM * vm);
 /* Add benchmark mode support */
 void enable_benchmark_mode(int iterations);
 
+/* Compute-intensive benchmarks */
+void run_compute_benchmarks(VM * vm);
+
+/* Stress and integration tests */
+void run_stress_tests(VM * vm);
+void run_integration_tests(VM * vm);
+
 /* Existing functions */
 void run_all_tests(VM * vm);
 

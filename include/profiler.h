@@ -133,9 +133,9 @@ void profiler_start_timer(ProfileCategory category);
 void profiler_end_timer(ProfileCategory category);
 
 /* Word profiling */
-void profiler_word_enter(const char *word_name);
+void profiler_word_enter(const DictEntry *entry);
 
-void profiler_word_exit(const char *word_name);
+void profiler_word_exit(const DictEntry *entry);
 
 /* Memory profiling */
 void profiler_memory_read(size_t bytes);
