@@ -16,7 +16,7 @@
 #include <stdint.h>
 
 /* ====================== Forward declarations ======================= */
-static void execute_colon_word(VM * vm);
+void execute_colon_word(VM * vm); /* Non-static for SEE decompiler */
 
 static void vm_bootstrap_scr(VM * vm);
 
@@ -343,7 +343,7 @@ void vm_exit_compile_mode(VM *vm) {
  * the (possibly modified) IP. If a word sets vm->exit_colon, we discard the
  * saved resume IP and return to the caller (one-shot).
  */
-static void execute_colon_word(VM *vm) {
+void execute_colon_word(VM *vm) {
     if (!vm || !vm->current_executing_entry) return;
 
     /* Fetch threaded body address from the DictEntry's data field (DF) */

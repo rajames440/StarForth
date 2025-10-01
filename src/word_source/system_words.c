@@ -292,6 +292,120 @@ static void system_word_abort_quote(VM *vm) {
     vm_compile_call(vm, (word_func_t) runtime_abortq);
 }
 
+/* SEE ( "name" -- ) Decompile and display a word's definition */
+static void system_word_see(VM *vm) {
+    if (!vm) return;
+
+    /* Parse word name */
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) {
+        printf("SEE: word name required\n");
+        vm->error = 1;
+        return;
+    }
+
+    /* Find the word */
+    DictEntry *entry = vm_find_word(vm, namebuf, (size_t) nlen);
+    if (!entry) {
+        printf("SEE: '%.*s' not found\n", nlen, namebuf);
+        vm->error = 1;
+        return;
+    }
+
+    /* Print word name and start of definition */
+    printf(": ");
+    print_word_name(entry);
+    printf("\n");
+
+    /* Check if it's a primitive (built-in) or colon word */
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) {
+        printf("  <primitive>\n;\n");
+        return;
+    }
+
+    /* Check if it's a colon word by comparing func pointer */
+    extern void execute_colon_word(VM * vm); /* Forward declaration */
+    if (entry->func != execute_colon_word) {
+        /* It's a primitive with data (like CONSTANT, VARIABLE, CREATE) */
+        printf("  <primitive with data: %ld>\n;\n", (long) *df);
+        return;
+    }
+
+    /* It's a colon word - decompile the threaded code */
+    vaddr_t body_addr = (vaddr_t)(uint64_t)(*df);
+    if (!vm_addr_ok(vm, body_addr, sizeof(cell_t))) {
+        printf("  <invalid body address>\n;\n");
+        return;
+    }
+
+    cell_t *ip = (cell_t *) vm_ptr(vm, body_addr);
+    int indent = 2;
+    int word_count = 0;
+
+    /* Walk through threaded code until EXIT */
+    while (word_count < 1000) {
+        /* Safety limit */
+        /* Check if we're still within valid VM memory */
+        vaddr_t current_addr = (vaddr_t)((uint8_t *) ip - vm->memory);
+        if (!vm_addr_ok(vm, current_addr, sizeof(cell_t))) {
+            printf("\n  <invalid address>\n");
+            break;
+        }
+
+        DictEntry *w = (DictEntry *) (uintptr_t)(*ip);
+        ip++;
+        word_count++;
+
+        /* Basic sanity checks on the entry pointer */
+        if (!w) {
+            printf("\n  <null entry>\n");
+            break;
+        }
+
+        /* Check if name_len is reasonable (0-32 chars) */
+        if (w->name_len == 0 || w->name_len > 32) {
+            printf("\n  <invalid name_len=%d>\n", w->name_len);
+            break;
+        }
+
+        /* Print indentation */
+        for (int i = 0; i < indent; i++) putchar(' ');
+
+        /* Print word name */
+        print_word_name(w);
+
+        /* Check for EXIT - end of definition */
+        if (w->name_len == 4 && strncmp(w->name, "EXIT", 4) == 0) {
+            printf("\n");
+            break;
+        }
+
+        /* Check for special words that have inline data */
+        if (w->name_len == 3 && strncmp(w->name, "LIT", 3) == 0) {
+            /* Next cell is the literal value */
+            cell_t lit_val = *ip++;
+            word_count++;
+            printf(" %ld", (long) lit_val);
+        } else if (w->name_len == 7 && strncmp(w->name, "0BRANCH", 7) == 0) {
+            /* Conditional branch */
+            cell_t offset = *ip++;
+            word_count++;
+            printf(" (offset=%ld)", (long) offset);
+        } else if (w->name_len == 6 && strncmp(w->name, "BRANCH", 6) == 0) {
+            /* Unconditional branch */
+            cell_t offset = *ip++;
+            word_count++;
+            printf(" (offset=%ld)", (long) offset);
+        }
+
+        printf("\n");
+    }
+
+    printf(";\n");
+}
+
 /* ───────────────────────────── API helpers ─────────────────────────── */
 int system_is_running(void) { return system_running; }
 void set_forth_79_compliance(int enabled) { forth_79_standard = enabled; }
@@ -311,6 +425,7 @@ void register_system_words(VM *vm) {
     register_word(vm, "SAVE-SYSTEM", system_word_save_system);
     register_word(vm, "WORDS", system_word_words);
     register_word(vm, "VLIST", system_word_vlist);
+    register_word(vm, "SEE", system_word_see);
     register_word(vm, "PAGE", system_word_page);
     register_word(vm, "NOP", system_word_nop);
     register_word(vm, "79-STANDARD", system_word_79_standard);

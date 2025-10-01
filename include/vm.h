@@ -208,6 +208,9 @@ void vm_enter_compile_mode(VM *vm, const char *name, size_t len);
 
 void vm_exit_compile_mode(VM *vm);
 
+/* Colon word execution (exposed for SEE decompiler) */
+void execute_colon_word(VM *vm);
+
 void vm_compile_call(VM *vm, word_func_t func);
 
 void vm_compile_literal(VM *vm, cell_t value);

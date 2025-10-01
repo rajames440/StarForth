@@ -59,6 +59,8 @@ void print_usage(const char *program_name) {
     printf("Options:\n");
     printf("  --run-tests       Run the comprehensive test suite before starting REPL\n");
     printf("                    (automatically enables TEST logging if no log level set)\n");
+    printf("  --stress-tests    Run stress tests (deep nesting, stack exhaustion, large definitions)\n");
+    printf("  --integration     Run integration tests (complete Forth programs)\n");
     printf("  --benchmark [N]   Run performance benchmarks (default: 1000 iterations)\n");
     printf("                    (exits after benchmarking, does not start REPL)\n");
     printf("  --log-error       Set logging level to ERROR (only errors)\n");
@@ -81,6 +83,8 @@ int main(int argc, char *argv[]) {
     VM vm;
     int run_tests = 0;
     int run_benchmark = 0;
+    int do_stress_tests = 0;
+    int do_integration_tests = 0;
     int benchmark_iterations = 1000;
     LogLevel log_level = LOG_INFO; /* Default logging level */
     int log_level_explicitly_set = 0; /* Track if user explicitly set log level */
@@ -101,6 +105,10 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--run-tests") == 0) {
             run_tests = 1;
+        } else if (strcmp(argv[i], "--stress-tests") == 0) {
+            do_stress_tests = 1;
+        } else if (strcmp(argv[i], "--integration") == 0) {
+            do_integration_tests = 1;
         } else if (strcmp(argv[i], "--benchmark") == 0) {
             run_benchmark = 1;
             /* Check if next argument is a number (iterations) */
@@ -166,11 +174,31 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Failed to initialize VM\n");
         return 1;
     }
+
+    /* Initialize profiler if enabled */
+    if (profile_level > PROFILE_DISABLED) {
+        if (profiler_init(profile_level) != 0) {
+            fprintf(stderr, "Warning: Failed to initialize profiler\n");
+        }
+    }
     /* Install VM dump hooks (segfault/abort + manual dumps) */
     vm_debug_set_current_vm(&vm);
     vm_debug_install_signal_handlers();
     /* Handle benchmark mode */
     if (run_benchmark) {
+        log_message(LOG_INFO, "==============================================");
+        log_message(LOG_INFO, "   StarForth Performance Benchmark Suite");
+        log_message(LOG_INFO, "==============================================\n");
+
+        /* Run compute-intensive benchmarks */
+        run_compute_benchmarks(&vm);
+
+        log_message(LOG_INFO, "\n==============================================");
+        log_message(LOG_INFO, "   Full Test Suite Benchmark");
+        log_message(LOG_INFO, "   (Running %d iterations per module)", benchmark_iterations);
+        log_message(LOG_INFO, "==============================================\n");
+
+        /* Run full test suite with iterations */
         enable_benchmark_mode(benchmark_iterations);
         run_all_tests(&vm);
 
@@ -195,8 +223,20 @@ int main(int argc, char *argv[]) {
         log_message(LOG_INFO, "Test run complete. Starting REPL...");
     }
 
-    /* Start the REPL */
-    vm_repl(&vm);
+    if (do_stress_tests) {
+        run_stress_tests(&vm);
+        log_message(LOG_INFO, "Stress tests complete.");
+    }
+
+    if (do_integration_tests) {
+        run_integration_tests(&vm);
+        log_message(LOG_INFO, "Integration tests complete.");
+    }
+
+    /* Start the REPL if not running tests that exit */
+    if (!do_stress_tests && !do_integration_tests) {
+        vm_repl(&vm);
+    }
 
     /* Generate profiling report if requested */
     if (profile_report && profile_level > PROFILE_DISABLED) {
