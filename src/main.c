@@ -80,7 +80,7 @@ void print_usage(const char *program_name) {
 }
 
 int main(int argc, char *argv[]) {
-    VM vm;
+    VM vm = {0}; /* Zero-initialize to prevent crashes if cleanup called before vm_init */
     int run_tests = 0;
     int run_benchmark = 0;
     int do_stress_tests = 0;

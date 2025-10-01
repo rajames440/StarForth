@@ -38,6 +38,7 @@ BASE_CFLAGS = -std=c99 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runn
 
 # Fast defaults; override CFLAGS on the command line if you need a debug build.
 CFLAGS ?= $(BASE_CFLAGS) -O2 -march=native -flto=auto -fuse-linker-plugin -DNDEBUG \
+          -DUSE_ASM_OPT=1 \
           -ffunction-sections -fdata-sections -fomit-frame-pointer \
           -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-strict-aliasing
 

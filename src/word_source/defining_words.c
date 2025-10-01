@@ -149,7 +149,9 @@ static void defining_runtime_lit(VM *vm) {
     log_message(LOG_DEBUG, "LIT: pushed %ld", (long) value);
 }
 
-/* DODOES runtime: when a created word runs, push PFA then execute DOES>-body */
+/* DODOES runtime: when a created word runs, push PFA+8 (user data addr) then execute DOES>-body
+   PFA layout: [body_vaddr][user_data...]
+   We push the address of user_data, then execute body_vaddr code. */
 static void defining_runtime_dodoes(VM *vm) {
     if (!vm) return;
 
@@ -167,19 +169,23 @@ static void defining_runtime_dodoes(VM *vm) {
     }
     vaddr_t pfa = (vaddr_t)(uint64_t)(*df);
 
-    /* Push PFA per DOES> semantics */
-    vm_push(vm, (cell_t) pfa);
-
     /* PFA[0] holds vaddr of DOES>-body */
     if (!vm_addr_ok(vm, pfa, sizeof(cell_t))) {
         vm->error = 1;
+        log_message(LOG_ERROR, "DODOES: invalid PFA address %zu", (size_t) pfa);
         return;
     }
     vaddr_t body_vaddr = (vaddr_t)(uint64_t)(*(cell_t *) vm_ptr(vm, pfa));
+    log_message(LOG_DEBUG, "DODOES: body_vaddr=%zu (loaded from PFA[0] at %zu)", (size_t) body_vaddr, (size_t) pfa);
     if (!vm_addr_ok(vm, body_vaddr, sizeof(cell_t))) {
         vm->error = 1;
+        log_message(LOG_ERROR, "DODOES: invalid body_vaddr %zu", (size_t) body_vaddr);
         return;
     }
+
+    /* Push address of user data (PFA + sizeof(cell_t)) per DOES> semantics */
+    vaddr_t user_data_addr = pfa + sizeof(cell_t);
+    vm_push(vm, (cell_t) user_data_addr);
 
     /* Execute like a colon word until EXIT pops the frame */
     int base_rsp = vm->rsp;
@@ -194,7 +200,7 @@ static void defining_runtime_dodoes(VM *vm) {
     vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
     ip;
 
-    while (!vm->error && vm->rsp >= base_rsp + 1) {
+    while (!vm->error && !vm->exit_colon && vm->rsp >= base_rsp + 1) {
         cell_t *cur_ip = (cell_t *) (uintptr_t) vm->return_stack[vm->rsp];
         DictEntry *entry = (DictEntry *) (uintptr_t)(*cur_ip++);
         vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)
@@ -208,12 +214,22 @@ static void defining_runtime_dodoes(VM *vm) {
         entry->func(vm);
     }
 
+    /* Handle EXIT from the DOES> body */
+    if (vm->exit_colon) {
+        vm->rsp = base_rsp;
+        vm->exit_colon = 0;
+    }
+
     if (vm->rsp < base_rsp) vm->rsp = base_rsp;
 }
 
 /* does_rt: runs inside the defining word at DOES> time.
    Converts the just-created child so its runtime is DODOES and
-   records the DOES>-body start address at the child's PFA[0]. */
+   records the DOES>-body start address at the child's PFA[0].
+
+   NOTE: PFA already contains user data from , or other compile-time words.
+   We need to build a new PFA structure: [body_vaddr][old_user_data...]
+   and update the child's DF to point to this new PFA. */
 static void defining_runtime_does_rt(VM *vm) {
     if (!vm) return;
 
@@ -229,7 +245,7 @@ static void defining_runtime_does_rt(VM *vm) {
         vm->error = 1;
         return;
     }
-    cell_t *ip = (cell_t *) (uintptr_t) vm->return_stack[vm->rsp];
+    cell_t *ip = (cell_t *) (uintptr_t) vm->return_stack[vm->rsp]; /* IP is a real pointer, not vaddr */
     cell_t *body_ip = ip + 1; /* first entry AFTER EXIT */
 
     vaddr_t body_vaddr = (vaddr_t)((uint8_t *) body_ip - vm->memory);
@@ -239,13 +255,38 @@ static void defining_runtime_does_rt(VM *vm) {
         vm->error = 1;
         return;
     }
-    vaddr_t pfa = (vaddr_t)(uint64_t)(*df);
-    if (!vm_addr_ok(vm, pfa, sizeof(cell_t))) {
+    vaddr_t old_pfa = (vaddr_t)(uint64_t)(*df);
+
+    /* Calculate how much user data was allocated between old PFA and current HERE */
+    vaddr_t current_here = (vaddr_t) vm->here;
+    size_t user_data_size = (old_pfa < current_here) ? (current_here - old_pfa) : 0;
+
+    /* Allocate new PFA: [body_vaddr][user_data...] */
+    vm_align(vm);
+    vaddr_t new_pfa = (vaddr_t) vm->here;
+
+    /* Allocate space for body_vaddr pointer */
+    cell_t *body_ptr = (cell_t *) vm_allot(vm, sizeof(cell_t));
+    if (!body_ptr) {
         vm->error = 1;
         return;
     }
+    *body_ptr = (cell_t) body_vaddr;
 
-    *(cell_t *) vm_ptr(vm, pfa) = (cell_t) body_vaddr;
+    /* Copy user data if any was allocated */
+    if (user_data_size > 0) {
+        void *user_data_dest = vm_allot(vm, user_data_size);
+        if (!user_data_dest) {
+            vm->error = 1;
+            return;
+        }
+        if (vm_addr_ok(vm, old_pfa, user_data_size)) {
+            memcpy(user_data_dest, vm_ptr(vm, old_pfa), user_data_size);
+        }
+    }
+
+    /* Update child's DF to point to new PFA */
+    *df = (cell_t) new_pfa;
     child->func = defining_runtime_dodoes;
 }
 
