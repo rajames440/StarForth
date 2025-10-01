@@ -1,0 +1,401 @@
+# Doxygen Quick Reference Card
+
+One-page cheat sheet for adding Doxygen documentation to StarForth code.
+
+## Essential Commands
+
+```bash
+make docs          # Generate all formats (HTML, PDF, AsciiDoc, MD, Man)
+make docs-html     # HTML only (fastest)
+make docs-open     # Generate and open in browser
+make docs-clean    # Remove generated docs
+```
+
+## Basic Comment Syntax
+
+### File Header
+
+```c
+/**
+ * @file filename.h
+ * @brief One-line file description
+ * @author Your Name
+ * @date 2025-10-01
+ */
+```
+
+### Function
+
+```c
+/**
+ * @brief One-line description
+ * @param name Parameter description
+ * @return Return value description
+ */
+type function(type name);
+```
+
+### Struct
+
+```c
+/**
+ * @struct StructName
+ * @brief One-line description
+ */
+typedef struct {
+    int member;  /**< Member description */
+} StructName;
+```
+
+### Enum
+
+```c
+/**
+ * @enum EnumName
+ * @brief One-line description
+ */
+typedef enum {
+    VALUE_A,  /**< Description of A */
+    VALUE_B   /**< Description of B */
+} EnumName;
+```
+
+### Macro
+
+```c
+/**
+ * @def MACRO_NAME
+ * @brief One-line description
+ */
+#define MACRO_NAME value
+```
+
+### Typedef
+
+```c
+/**
+ * @typedef TypeName
+ * @brief One-line description
+ */
+typedef type TypeName;
+```
+
+## Common Tags
+
+| Tag             | Purpose              | Example                            |
+|-----------------|----------------------|------------------------------------|
+| `@brief`        | Short description    | `@brief Initialize VM`             |
+| `@details`      | Detailed description | `@details Allocates memory and...` |
+| `@param name`   | Parameter            | `@param vm VM instance pointer`    |
+| `@return`       | Return value         | `@return 0 on success`             |
+| `@retval value` | Specific return      | `@retval 0 Success`                |
+| `@see`          | Cross-reference      | `@see vm_cleanup()`                |
+| `@note`         | Important note       | `@note Thread-safe`                |
+| `@warning`      | Warning              | `@warning May block`               |
+| `@bug`          | Known bug            | `@bug Issue #42`                   |
+| `@todo`         | Future work          | `@todo Add optimization`           |
+| `@deprecated`   | Deprecated           | `@deprecated Use foo() instead`    |
+
+## Conditions and Invariants
+
+```c
+/**
+ * @pre condition must be true before call
+ * @post condition will be true after call
+ * @invariant condition always true
+ */
+```
+
+## Code Examples
+
+```c
+/**
+ * @par Example:
+ * @code
+ * VM vm;
+ * vm_init(&vm);
+ * vm_push(&vm, 42);
+ * @endcode
+ */
+```
+
+## Grouping Functions
+
+```c
+/**
+ * @defgroup group_name Group Display Name
+ * @brief Group description
+ * @{
+ */
+
+/** Function in group */
+void func1(void);
+
+/** Another function in group */
+void func2(void);
+
+/** @} */ // End of group_name
+```
+
+## Formatting
+
+### Lists
+
+```c
+/**
+ * List example:
+ * - Item 1
+ * - Item 2
+ * - Item 3
+ */
+```
+
+### Numbered Lists
+
+```c
+/**
+ * Steps:
+ * 1. First step
+ * 2. Second step
+ * 3. Third step
+ */
+```
+
+### Sections
+
+```c
+/**
+ * ## Section Title
+ *
+ * ### Subsection
+ *
+ * Content here.
+ */
+```
+
+### Emphasis
+
+```c
+/**
+ * *Italic text*
+ * **Bold text**
+ * `code text`
+ */
+```
+
+## Quick Templates
+
+### Simple Function
+
+```c
+/**
+ * @brief Short description
+ * @param p1 First parameter
+ * @param p2 Second parameter
+ * @return Result
+ */
+int my_func(int p1, int p2);
+```
+
+### Complex Function
+
+```c
+/**
+ * @brief Short description
+ *
+ * @details
+ * Detailed explanation of what this function does,
+ * how it works, and any important considerations.
+ *
+ * @param vm VM instance pointer
+ * @param value Input value
+ *
+ * @return Result value
+ * @retval 0 Success
+ * @retval -1 Error
+ *
+ * @pre vm must be initialized
+ * @post vm->state is updated
+ *
+ * @note Important implementation detail
+ * @warning Potential issue to be aware of
+ *
+ * @see related_function()
+ *
+ * @par Example:
+ * @code
+ * int result = my_func(&vm, 42);
+ * if (result < 0) {
+ *     handle_error();
+ * }
+ * @endcode
+ */
+int my_func(VM *vm, int value);
+```
+
+### Structure
+
+```c
+/**
+ * @struct MyStruct
+ * @brief Short description
+ *
+ * @details
+ * Detailed explanation of the structure's purpose
+ * and usage.
+ */
+typedef struct MyStruct {
+    /** @brief Field 1 description */
+    int field1;
+
+    /**
+     * @brief Field 2 description
+     * @note Special consideration for field2
+     */
+    char *field2;
+
+    int field3;  /**< Field 3 inline description */
+} MyStruct;
+```
+
+## Best Practices
+
+### DO:
+
+- ✅ Document ALL public functions
+- ✅ Keep @brief to one line
+- ✅ Use @details for longer explanations
+- ✅ Provide examples for complex functions
+- ✅ Cross-reference related functions with @see
+- ✅ Document all parameters and return values
+- ✅ Use @warning for dangerous operations
+- ✅ Use @note for important details
+
+### DON'T:
+
+- ❌ Document obvious things
+- ❌ Repeat the function name in description
+- ❌ Leave out parameter descriptions
+- ❌ Forget to document return values
+- ❌ Write vague descriptions
+- ❌ Use unclear variable names in examples
+- ❌ Forget to update docs when changing code
+
+## IDE Integration
+
+### Visual Studio Code
+
+1. Install "Doxygen Documentation Generator" extension
+2. Type `/**` above function
+3. Press Enter → template generated
+
+### CLion
+
+1. Built-in support
+2. Type `/**` and Enter
+3. Fill in generated template
+
+### Vim
+
+1. Install DoxygenToolkit.vim
+2. Position cursor on function
+3. Use `:Dox` command
+
+## Checking Your Work
+
+```bash
+# Generate docs
+make docs-html
+
+# Check for warnings
+cat docs/api/doxygen_warnings.log
+
+# View in browser
+make docs-open
+```
+
+## Common Warnings and Fixes
+
+| Warning                            | Fix                        |
+|------------------------------------|----------------------------|
+| "Member X is not documented"       | Add `@param X description` |
+| "No documentation for function"    | Add `@brief` comment       |
+| "Return value not documented"      | Add `@return description`  |
+| "Warning: invalid cross-reference" | Check @see target exists   |
+
+## Example Workflow
+
+1. **Write function:**
+   ```c
+   void my_function(int param) {
+       // implementation
+   }
+   ```
+
+2. **Add basic docs:**
+   ```c
+   /**
+    * @brief Does something with param
+    * @param param Input value
+    */
+   void my_function(int param) {
+       // implementation
+   }
+   ```
+
+3. **Generate and check:**
+   ```bash
+   make docs-html
+   cat docs/api/doxygen_warnings.log
+   ```
+
+4. **View result:**
+   ```bash
+   make docs-open
+   ```
+
+5. **Enhance docs if needed:**
+   ```c
+   /**
+    * @brief Does something with param
+    *
+    * @details
+    * More detailed explanation here.
+    *
+    * @param param Input value (must be > 0)
+    * @return Processed result
+    *
+    * @pre param > 0
+    * @post Result is always positive
+    *
+    * @see related_function()
+    *
+    * @par Example:
+    * @code
+    * int result = my_function(42);
+    * @endcode
+    */
+   void my_function(int param) {
+       // implementation
+   }
+   ```
+
+## Resources
+
+- **Full Style Guide:** `docs/DOXYGEN_STYLE_GUIDE.md`
+- **Example Header:** `docs/examples/doxygen_example.h`
+- **User Guide:** `docs/DOCUMENTATION_README.md`
+- **Setup Summary:** `docs/DOCUMENTATION_SETUP_SUMMARY.md`
+- **Doxygen Manual:** https://www.doxygen.nl/manual/
+
+## Time Estimates
+
+- Simple function: 2-5 minutes
+- Complex function with example: 10-15 minutes
+- Struct with 10 fields: 10-15 minutes
+- Complete header file (20 functions): 1-2 hours
+
+---
+
+**Keep this card handy while documenting!**
+**Print or bookmark for quick reference.**
