@@ -40,8 +40,8 @@ int fail_fast = 0;
  * @param line Line number where failure occurred
  */
 static void dump_and_die(VM *vm, const char *reason, const char *file, int line) {
-    fprintf(stderr, "\n[TEST-RUNNER] abort @ %s:%d (%s)\n",
-            file, line, reason ? reason : "no-reason");
+    log_message(LOG_ERROR, "[TEST-RUNNER] abort @ %s:%d (%s)",
+                file, line, reason ? reason : "no-reason");
     vm_debug_dump_state(vm, reason ? reason : "test-failure");
     exit(1);
 }
@@ -63,12 +63,18 @@ static void fail_and_exit(VM *vm,
                           const char *case_name,
                           const char *input,
                           const char *reason) {
-    if (module && *module) fprintf(stderr, "\n[TEST-RUNNER] FAIL in %s", module);
-    if (case_name && *case_name) fprintf(stderr, ".%s", case_name);
-    fputc('\n', stderr);
+    if (module && *module && case_name && *case_name) {
+        log_message(LOG_ERROR, "[TEST-RUNNER] FAIL in %s.%s", module, case_name);
+    } else if (module && *module) {
+        log_message(LOG_ERROR, "[TEST-RUNNER] FAIL in %s", module);
+    }
 
-    if (input && *input) fprintf(stderr, "[TEST-RUNNER] Input: %s\n", input);
-    if (reason && *reason) fprintf(stderr, "[TEST-RUNNER] Reason: %s\n", reason);
+    if (input && *input) {
+        log_message(LOG_ERROR, "[TEST-RUNNER] Input: %s", input);
+    }
+    if (reason && *reason) {
+        log_message(LOG_ERROR, "[TEST-RUNNER] Reason: %s", reason);
+    }
 
     /* Dump VM state at point-of-failure and exit */
     DIE(vm, reason ? reason : "assertion failed");
@@ -100,10 +106,21 @@ void save_vm_state(VM *vm, int *dsp, int *rsp, int *error, vm_mode_t *mode) {
  * @param mode VM mode to restore
  */
 void restore_vm_state(VM *vm, int dsp, int rsp, int error, vm_mode_t mode) {
-    vm->dsp = dsp;
-    vm->rsp = rsp;
-    vm->error = error;
-    vm->mode = mode;
+    /* For stress tests and error recovery, aggressively clear both stacks
+     * to prevent any stale state from affecting subsequent tests.
+     * This is safer than trying to selectively clear ranges. */
+    vm->dsp = -1;
+    vm->rsp = -1;
+    vm->error = 0;
+    vm->mode = MODE_INTERPRET;
+
+    /* Clear control flow flags to prevent stale state between tests */
+    vm->exit_colon = 0;
+    vm->abort_requested = 0;
+
+    /* Clear compilation state in case test left system in compile mode */
+    vm->compiling_word = NULL;
+    vm->current_executing_entry = NULL;
 }
 
 /* ---------- Assertions ---------- */

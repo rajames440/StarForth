@@ -174,7 +174,7 @@ void run_all_tests(VM *vm) {
     }
 
     /* Print comprehensive benchmark summary */
-    log_message(LOG_INFO, "\n==============================================");
+    log_message(LOG_INFO, "==============================================");
     if (benchmark_mode) {
         double total_time_sec = (double) total_benchmark_time / 1000000000.0;
         int active_modules = benchmark_count;
