@@ -171,13 +171,19 @@ void memory_word_fill(VM *vm) {
     }
     cell_t c_val = vm_pop(vm);
     size_t len = (size_t) vm_pop(vm);
-    vaddr_t addr = VM_ADDR(vm_pop(vm));
-    if (!vm_addr_ok(vm, addr, len)) {
-        vm->error = 1;
-        return;
+    cell_t addr_cell = vm_pop(vm);
+
+    /* Try VM address first */
+    vaddr_t addr = VM_ADDR(addr_cell);
+    if (vm_addr_ok(vm, addr, len)) {
+        /* It's a valid VM address, use vm_ptr */
+        uint8_t *ptr = vm_ptr(vm, addr);
+        memset(ptr, (int) (c_val & 0xFF), len);
+    } else {
+        /* It's an external pointer (from BLOCK/BUFFER), use it directly */
+        uint8_t *ptr = (uint8_t *) (uintptr_t) addr_cell;
+        memset(ptr, (int) (c_val & 0xFF), len);
     }
-    uint8_t *ptr = vm_ptr(vm, addr);
-    memset(ptr, (int) (c_val & 0xFF), len);
 }
 
 /**
