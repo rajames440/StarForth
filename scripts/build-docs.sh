@@ -62,7 +62,7 @@ echo "Creating build directories..."
 mkdir -p "$BUILD_DIR"
 mkdir -p "$GENERATED_DIR"
 
-# Generate Doxygen API documentation first
+# Generate Doxygen API documentation first (including DocBook XML)
 echo ""
 echo "Generating Doxygen API documentation..."
 if command -v doxygen &> /dev/null; then
@@ -70,6 +70,9 @@ if command -v doxygen &> /dev/null; then
     doxygen Doxyfile > /dev/null 2>&1 || echo -e "${YELLOW}⚠${NC}  Doxygen had warnings (continuing...)"
     if [ -d "docs/api/html" ]; then
         echo -e "${GREEN}✓${NC} Doxygen HTML API docs generated"
+    fi
+    if [ -d "docs/api/docbook" ]; then
+        echo -e "${GREEN}✓${NC} Doxygen DocBook XML generated for book integration"
     fi
     cd "$SCRIPT_DIR"
 else
@@ -182,105 +185,328 @@ cat > "$GENERATED_DIR/forth79-generated.xml" <<'EOF'
 </section>
 EOF
 
-# Create API reference section with link to Doxygen
-echo "  Generating API reference..."
-cat > "$GENERATED_DIR/api-reference-generated.xml" <<'EOF'
+# Integrate Doxygen DocBook XML into book
+echo "  Integrating COMPLETE Doxygen API documentation..."
+if [ -d "$PROJECT_ROOT/docs/api/docbook" ]; then
+    DOXY_DOCBOOK="$PROJECT_ROOT/docs/api/docbook"
+
+    # Check if Doxygen DocBook was generated successfully
+    if [ -f "$DOXY_DOCBOOK/index.xml" ]; then
+        echo "    Converting and merging full Doxygen DocBook content..."
+
+        # Create wrapper with introduction
+        cat > "$GENERATED_DIR/api-reference-generated.xml" <<'XMLEOF'
 <section>
-  <title>API Reference (Doxygen)</title>
+  <title>Complete API Documentation</title>
   <para>
-    Complete API documentation for StarForth internal functions and data structures is available
-    in the Doxygen-generated documentation. The API reference includes detailed documentation for:
+    This chapter contains complete API documentation for StarForth, automatically
+    generated from source code comments using Doxygen.
   </para>
-  <itemizedlist>
-    <listitem><para><emphasis>VM Core</emphasis> - Virtual machine initialization, execution, and state management</para></listitem>
-    <listitem><para><emphasis>Stack Management</emphasis> - Data stack, return stack, control-flow stack operations</para></listitem>
-    <listitem><para><emphasis>Dictionary</emphasis> - Word lookup, registration, and management</para></listitem>
-    <listitem><para><emphasis>Memory System</emphasis> - VM memory access, bounds checking, block operations</para></listitem>
-    <listitem><para><emphasis>Compiler</emphasis> - Word compilation, control flow, threaded code generation</para></listitem>
-    <listitem><para><emphasis>I/O System</emphasis> - Input/output operations, TIB management</para></listitem>
-    <listitem><para><emphasis>Profiler</emphasis> - Performance profiling and execution tracking</para></listitem>
-    <listitem><para><emphasis>Word Modules</emphasis> - All 19 word category implementations</para></listitem>
-  </itemizedlist>
 
   <section>
-    <title>Accessing API Documentation</title>
+    <title>Documentation Overview</title>
     <para>
-      To view the complete API documentation, open the Doxygen HTML output:
+      The StarForth codebase is extensively documented with inline Doxygen comments.
+      For the most up-to-date and interactive API documentation with cross-references,
+      syntax highlighting, and call graphs, please refer to the HTML documentation:
     </para>
     <programlisting>
-# Generate API docs (if not already generated)
-make docs
-
-# Open in browser
-xdg-open docs/api/html/index.html    # Linux
-open docs/api/html/index.html        # macOS
-start docs/api/html/index.html       # Windows
+# Generate and open HTML API docs
+make docs-html   # Generate HTML API documentation
+make docs-open   # Generate and open in browser
     </programlisting>
+
+    <para>
+      The API documentation covers the following major modules:
+    </para>
+    <itemizedlist>
+      <listitem><para><emphasis>VM Core</emphasis> - Virtual machine initialization, execution, and state management</para></listitem>
+      <listitem><para><emphasis>Stack Management</emphasis> - Data stack, return stack, control-flow stack operations with bounds checking</para></listitem>
+      <listitem><para><emphasis>Dictionary Management</emphasis> - Word lookup, registration, and hash table management</para></listitem>
+      <listitem><para><emphasis>Memory System</emphasis> - VM memory access, bounds checking, block operations</para></listitem>
+      <listitem><para><emphasis>Compiler</emphasis> - Word compilation, control flow, threaded code generation</para></listitem>
+      <listitem><para><emphasis>I/O System</emphasis> - Input/output operations, TIB (Terminal Input Buffer) management</para></listitem>
+      <listitem><para><emphasis>Profiler</emphasis> - Performance profiling and execution tracking</para></listitem>
+      <listitem><para><emphasis>Word Modules</emphasis> - All 19 FORTH-79 word category implementations</para></listitem>
+      <listitem><para><emphasis>Platform Support</emphasis> - L4Re microkernel integration and minimal/embedded builds</para></listitem>
+      <listitem><para><emphasis>Test Framework</emphasis> - Comprehensive test suite with 400+ tests</para></listitem>
+    </itemizedlist>
   </section>
 
   <section>
-    <title>Key API Components</title>
+    <title>Key API Functions</title>
 
     <section>
       <title>VM Initialization and Lifecycle</title>
-      <itemizedlist>
-        <listitem><para><literal>vm_init(VM *vm)</literal> - Initialize virtual machine</para></listitem>
-        <listitem><para><literal>vm_reset(VM *vm)</literal> - Reset VM to initial state</para></listitem>
-        <listitem><para><literal>vm_cleanup(VM *vm)</literal> - Clean up VM resources</para></listitem>
-      </itemizedlist>
+      <variablelist>
+        <varlistentry>
+          <term><literal>void vm_init(VM *vm)</literal></term>
+          <listitem><para>Initialize the virtual machine, set up stacks, dictionary, and memory.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void vm_reset(VM *vm)</literal></term>
+          <listitem><para>Reset VM to initial state, clearing stacks and state flags.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void vm_cleanup(VM *vm)</literal></term>
+          <listitem><para>Clean up VM resources before shutdown.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void vm_run(VM *vm)</literal></term>
+          <listitem><para>Start the VM's main execution loop (REPL or script mode).</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
 
     <section>
       <title>Stack Operations</title>
-      <itemizedlist>
-        <listitem><para><literal>vm_push(VM *vm, cell_t value)</literal> - Push to data stack</para></listitem>
-        <listitem><para><literal>vm_pop(VM *vm)</literal> - Pop from data stack</para></listitem>
-        <listitem><para><literal>vm_rpush(VM *vm, cell_t value)</literal> - Push to return stack</para></listitem>
-        <listitem><para><literal>vm_rpop(VM *vm)</literal> - Pop from return stack</para></listitem>
-      </itemizedlist>
+      <variablelist>
+        <varlistentry>
+          <term><literal>void vm_push(VM *vm, cell_t value)</literal></term>
+          <listitem><para>Push a value onto the data stack with overflow checking.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>cell_t vm_pop(VM *vm)</literal></term>
+          <listitem><para>Pop a value from the data stack with underflow checking.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void vm_rpush(VM *vm, cell_t value)</literal></term>
+          <listitem><para>Push a value onto the return stack.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>cell_t vm_rpop(VM *vm)</literal></term>
+          <listitem><para>Pop a value from the return stack.</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
 
     <section>
       <title>Memory Access</title>
-      <itemizedlist>
-        <listitem><para><literal>vm_addr_ok(VM *vm, vaddr_t addr, size_t len)</literal> - Validate address range</para></listitem>
-        <listitem><para><literal>vm_load_cell(VM *vm, vaddr_t addr)</literal> - Load cell from VM memory</para></listitem>
-        <listitem><para><literal>vm_store_cell(VM *vm, vaddr_t addr, cell_t value)</literal> - Store cell to VM memory</para></listitem>
-        <listitem><para><literal>vm_allot(VM *vm, size_t bytes)</literal> - Allocate VM memory</para></listitem>
-      </itemizedlist>
+      <variablelist>
+        <varlistentry>
+          <term><literal>int vm_addr_ok(VM *vm, vaddr_t addr, size_t len)</literal></term>
+          <listitem><para>Validate that an address range is within VM memory bounds.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>cell_t vm_load_cell(VM *vm, vaddr_t addr)</literal></term>
+          <listitem><para>Load a cell value from VM memory at the given address.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void vm_store_cell(VM *vm, vaddr_t addr, cell_t value)</literal></term>
+          <listitem><para>Store a cell value to VM memory at the given address.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>vaddr_t vm_allot(VM *vm, size_t bytes)</literal></term>
+          <listitem><para>Allocate memory in the VM dictionary space, returning the address.</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
 
     <section>
       <title>Dictionary Operations</title>
-      <itemizedlist>
-        <listitem><para><literal>vm_find(VM *vm, const char *name, size_t len)</literal> - Find word in dictionary</para></listitem>
-        <listitem><para><literal>vm_register_word(VM *vm, const char *name, word_func_t func, uint8_t flags)</literal> - Register new word</para></listitem>
-        <listitem><para><literal>vm_execute_word(VM *vm, DictEntry *entry)</literal> - Execute dictionary entry</para></listitem>
-      </itemizedlist>
+      <variablelist>
+        <varlistentry>
+          <term><literal>DictEntry* vm_find(VM *vm, const char *name, size_t len)</literal></term>
+          <listitem><para>Find a word in the dictionary by name. Uses hash table for O(1) average lookup.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void vm_register_word(VM *vm, const char *name, word_func_t func, uint8_t flags)</literal></term>
+          <listitem><para>Register a new primitive word with the given name, function, and flags.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void vm_execute_word(VM *vm, DictEntry *entry)</literal></term>
+          <listitem><para>Execute a dictionary entry (either primitive or compiled word).</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </section>
+
+    <section>
+      <title>Compiler Functions</title>
+      <variablelist>
+        <varlistentry>
+          <term><literal>void vm_compile_cell(VM *vm, cell_t value)</literal></term>
+          <listitem><para>Compile a cell value into the current word definition.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void vm_compile_word(VM *vm, DictEntry *entry)</literal></term>
+          <listitem><para>Compile a reference to a word into the current definition.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </section>
+
+    <section>
+      <title>I/O Functions</title>
+      <variablelist>
+        <varlistentry>
+          <term><literal>void vm_emit(VM *vm, char c)</literal></term>
+          <listitem><para>Output a single character.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void vm_type(VM *vm, const char *str, size_t len)</literal></term>
+          <listitem><para>Output a string of given length.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>int vm_key(VM *vm)</literal></term>
+          <listitem><para>Read a single character from input.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>const char* vm_parse_word(VM *vm, size_t *len)</literal></term>
+          <listitem><para>Parse the next word from the input buffer, returning pointer and length.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </section>
+
+    <section>
+      <title>Profiler API</title>
+      <variablelist>
+        <varlistentry>
+          <term><literal>void profiler_start(Profiler *prof, const char *name)</literal></term>
+          <listitem><para>Start profiling a named operation.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void profiler_end(Profiler *prof)</literal></term>
+          <listitem><para>End the current profiling operation and record timing.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>void profiler_report(const Profiler *prof)</literal></term>
+          <listitem><para>Generate a profiling report with timing statistics.</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
   </section>
 
   <section>
-    <title>Building with API Documentation</title>
+    <title>Data Structures</title>
     <para>
-      API documentation is automatically generated as part of the documentation build process:
+      The following data structures are central to StarForth's implementation:
     </para>
-    <programlisting>
-make docs        # Generate all documentation (includes API docs)
-make docs-html   # Generate HTML API docs only
-make docs-open   # Generate and open API docs in browser
-    </programlisting>
+
+    <variablelist>
+      <varlistentry>
+        <term><literal>VM</literal></term>
+        <listitem>
+          <para>The main virtual machine structure containing all VM state:</para>
+          <itemizedlist>
+            <listitem><para>Data stack and return stack</para></listitem>
+            <listitem><para>Dictionary and HERE pointer</para></listitem>
+            <listitem><para>Memory array (5MB)</para></listitem>
+            <listitem><para>State flags (compiling, interpreting, etc.)</para></listitem>
+            <listitem><para>Input buffer (TIB) and parsing state</para></listitem>
+          </itemizedlist>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><literal>DictEntry</literal></term>
+        <listitem>
+          <para>Dictionary entry representing a FORTH word:</para>
+          <itemizedlist>
+            <listitem><para>Word name (counted string)</para></listitem>
+            <listitem><para>Code field (function pointer or threaded code address)</para></listitem>
+            <listitem><para>Flags (IMMEDIATE, HIDDEN, etc.)</para></listitem>
+            <listitem><para>Link to previous entry</para></listitem>
+          </itemizedlist>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><literal>cell_t</literal></term>
+        <listitem>
+          <para>The fundamental data type in FORTH (typically int32_t)</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><literal>vaddr_t</literal></term>
+        <listitem>
+          <para>Virtual machine address type (uint32_t)</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
   </section>
 
   <section>
-    <title>Contributing API Documentation</title>
+    <title>Additional Documentation</title>
     <para>
-      StarForth uses Doxygen-style comments for API documentation. See the Doxygen Style Guide
-      appendix for formatting guidelines and examples.
+      For detailed documentation including:
+    </para>
+    <itemizedlist>
+      <listitem><para>Function parameter descriptions</para></listitem>
+      <listitem><para>Return value documentation</para></listitem>
+      <listitem><para>Code examples and usage notes</para></listitem>
+      <listitem><para>Cross-references between functions</para></listitem>
+      <listitem><para>Call graphs and dependency diagrams</para></listitem>
+      <listitem><para>Source code browsing with syntax highlighting</para></listitem>
+    </itemizedlist>
+    <para>
+      Please generate and view the HTML documentation using <literal>make docs-html</literal>
+      or <literal>make docs-open</literal>.
     </para>
   </section>
+XMLEOF
+
+        # Now extract COMPLETE function documentation with parameters and returns
+        echo "    Extracting COMPLETE function documentation with parameters and returns..."
+
+        # Check if Python 3 is available
+        if command -v python3 &> /dev/null; then
+            # Use Python script for complete extraction
+            python3 "$SCRIPT_DIR/extract-doxygen-api.py" "$PROJECT_ROOT/docs/api/xml" "$GENERATED_DIR/api-doxygen-full.xml" 2>&1 | sed 's/^/      /'
+
+            # Append the full Doxygen content to our wrapper (skip XML declaration)
+            if [ -f "$GENERATED_DIR/api-doxygen-full.xml" ]; then
+                # Strip XML declaration and append
+                tail -n +2 "$GENERATED_DIR/api-doxygen-full.xml" >> "$GENERATED_DIR/api-reference-generated.xml"
+                echo "</section>" >> "$GENERATED_DIR/api-reference-generated.xml"
+                echo -e "${GREEN}✓${NC} Integrated COMPLETE function documentation with params/returns into book"
+            else
+                # Just close the wrapper if conversion failed
+                echo "</section>" >> "$GENERATED_DIR/api-reference-generated.xml"
+                echo -e "${YELLOW}⚠${NC} Could not extract Doxygen content, using summary only"
+            fi
+        else
+            echo -e "${YELLOW}⚠${NC} Python 3 not found, using legacy conversion..."
+            # Fallback to old script
+            "$SCRIPT_DIR/convert-doxygen-docbook.sh" "$DOXY_DOCBOOK" "$GENERATED_DIR/api-doxygen-full.xml" 2>&1 | sed 's/^/      /'
+            if [ -f "$GENERATED_DIR/api-doxygen-full.xml" ]; then
+                cat "$GENERATED_DIR/api-doxygen-full.xml" >> "$GENERATED_DIR/api-reference-generated.xml"
+                echo "</section>" >> "$GENERATED_DIR/api-reference-generated.xml"
+            else
+                echo "</section>" >> "$GENERATED_DIR/api-reference-generated.xml"
+            fi
+        fi
+    else
+        echo -e "${YELLOW}⚠${NC}  Doxygen DocBook index not found, creating summary"
+        # Create fallback summary
+        cat > "$GENERATED_DIR/api-reference-generated.xml" <<'EOF'
+<section>
+  <title>API Reference</title>
+  <para>
+    Complete API documentation is available in the separately generated Doxygen HTML output.
+    To view the full API documentation:
+  </para>
+  <programlisting>
+make docs-open   # Generate and open API docs in browser
+  </programlisting>
 </section>
 EOF
+    fi
+else
+    echo -e "${YELLOW}⚠${NC}  Doxygen DocBook directory not found, creating summary"
+    # Create fallback summary
+    cat > "$GENERATED_DIR/api-reference-generated.xml" <<'EOF'
+<section>
+  <title>API Reference</title>
+  <para>
+    Complete API documentation is available in the separately generated Doxygen HTML output.
+    To view the full API documentation:
+  </para>
+  <programlisting>
+make docs-open   # Generate and open API docs in browser
+  </programlisting>
+</section>
+EOF
+fi
 
 # Create word reference
 echo "  Generating word reference..."
@@ -766,6 +992,29 @@ if [ $HAS_FOP -eq 1 ]; then
     fi
 fi
 
+# Generate EPUB using pandoc (from HTML for better conversion)
+echo "  Generating EPUB..."
+if [ -f "$BUILD_DIR/starforth-manual.html" ]; then
+    if pandoc --from html --to epub3 \
+        --metadata title="StarForth Complete Manual" \
+        --metadata author="StarForth Project" \
+        --metadata lang=en-US \
+        --toc --toc-depth=3 \
+        --epub-chapter-level=2 \
+        --standalone \
+        --output "$BUILD_DIR/starforth-manual.epub" \
+        "$BUILD_DIR/starforth-manual.html" 2>/dev/null; then
+        echo -e "${GREEN}✓${NC} EPUB generated successfully"
+    else
+        echo -e "${YELLOW}⚠${NC}  EPUB generation had issues (may still be usable)"
+        if [ -f "$BUILD_DIR/starforth-manual.epub" ] && [ -s "$BUILD_DIR/starforth-manual.epub" ]; then
+            echo -e "${GREEN}✓${NC} EPUB file was created despite warnings"
+        fi
+    fi
+else
+    echo -e "${YELLOW}⚠${NC}  HTML file not found, skipping EPUB generation"
+fi
+
 echo ""
 echo "════════════════════════════════════════════════════════════"
 echo -e "${GREEN}✓ Documentation build complete!${NC}"
@@ -775,6 +1024,9 @@ echo "Output files:"
 echo "  HTML: $BUILD_DIR/starforth-manual.html"
 if [ $HAS_FOP -eq 1 ] && [ -f "$BUILD_DIR/starforth-manual.pdf" ]; then
     echo "  PDF:  $BUILD_DIR/starforth-manual.pdf"
+fi
+if [ -f "$BUILD_DIR/starforth-manual.epub" ]; then
+    echo "  EPUB: $BUILD_DIR/starforth-manual.epub"
 fi
 echo "  Build artifacts: $BUILD_DIR/"
 echo ""

@@ -108,14 +108,16 @@ pgo: banner
 	@echo "📊 Building with Profile-Guided Optimization..."
 	@echo "   Stage 1: Instrumentation build..."
 	$(MAKE) clean
+	@rm -f build/*.gcda build/*/*.gcda build/*/*/*.gcda 2>/dev/null || true
 	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O2 -DUSE_ASM_OPT=1 -fprofile-generate" LDFLAGS="-fprofile-generate" $(TARGET)
 	@echo "   Stage 2: Running profiling workload..."
-	@./$(TARGET) -c ": PROFILE-TEST 100000 0 DO 1 2 + 3 * DROP LOOP ; PROFILE-TEST BYE" || true
+	@./$(TARGET) --benchmark 1000 --log-none || true
 	@echo "   Stage 3: Optimized build with profile data..."
 	$(MAKE) clean-obj
-	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -fprofile-use -fprofile-correction" LDFLAGS="-fprofile-use" $(TARGET)
+	@rm -f build/*.gcno build/*/*.gcno build/*/*/*.gcno 2>/dev/null || true
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -fprofile-use -fprofile-correction -Wno-error=coverage-mismatch" LDFLAGS="-fprofile-use" $(TARGET)
 	@echo "   Cleaning up profile data..."
-	@rm -f src/*.gcda src/word_source/*.gcda
+	@rm -f src/*.gcda src/word_source/*.gcda build/*.gcda build/*/*.gcda build/*/*/*.gcda 2>/dev/null || true
 	@echo "✓ PGO build complete!"
 
 # ==============================================================================
@@ -305,9 +307,9 @@ docs-pdf: docs-html
 	@echo "📄 Generating PDF documentation..."
 	@cd docs/api/latex && $(MAKE) pdf > /dev/null 2>&1 && cp refman.pdf ../StarForth-API-Reference.pdf && echo "✓ PDF: docs/api/StarForth-API-Reference.pdf"
 
-# Generate complete manual book (DocBook → HTML/PDF)
-book:
-	@echo "📖 Building StarForth Complete Manual..."
+# Generate complete manual book (DocBook → HTML/PDF) with API documentation
+book: docs-html
+	@echo "📖 Building StarForth Complete Manual with API Documentation..."
 	@./scripts/build-docs.sh
 
 # Generate book HTML only
