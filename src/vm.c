@@ -82,6 +82,7 @@ void vm_init(VM *vm) {
     vm->rsp = -1;
     vm->here = 0;
     vm->exit_colon = 0;
+    vm->abort_requested = 0;
 
     vm_align(vm);
 
@@ -429,6 +430,12 @@ void execute_colon_word(VM *vm) {
         vm->current_executing_entry = entry; /* restore current colon */
 
         if (vm->error) { return; }
+
+        /* Check for ABORT request (clears both stacks, immediate termination) */
+        if (vm->abort_requested) {
+            vm->abort_requested = 0;
+            return;
+        }
 
         /* One-shot early return? (EXIT) */
         if (vm->exit_colon) {
