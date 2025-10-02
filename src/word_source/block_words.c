@@ -51,11 +51,21 @@ static void set_scr(VM *vm, cell_t blk) {
 }
 
 /* Optional utility surface (matches your header) */
+/** 
+ * @brief Initializes the block system
+ * @param vm Pointer to the VM instance
+ */
 void init_block_system(VM *vm) {
     (void) vm;
     memset(dirty_blocks, 0, sizeof(dirty_blocks));
 }
 
+/**
+ * @brief Gets a buffer for the specified block
+ * @param vm Pointer to the VM instance
+ * @param block_num Block number to retrieve
+ * @return Pointer to block buffer or NULL if invalid
+ */
 unsigned char *get_block_buffer(VM *vm, int block_num) {
     if (!vm) return NULL;
     cell_t blk = (cell_t) block_num;
@@ -68,6 +78,12 @@ unsigned char *get_block_buffer(VM *vm, int block_num) {
     return (unsigned char *) vm_ptr(vm, addr);
 }
 
+/**
+ * @brief Gets an empty buffer for the specified block
+ * @param vm Pointer to the VM instance
+ * @param block_num Block number to create
+ * @return Pointer to empty block buffer or NULL if invalid
+ */
 unsigned char *get_empty_buffer(VM *vm, int block_num) {
     if (!vm) return NULL;
     cell_t blk = (cell_t) block_num;
@@ -83,12 +99,20 @@ unsigned char *get_empty_buffer(VM *vm, int block_num) {
     return p;
 }
 
+/**
+ * @brief Marks the current block buffer as dirty
+ * @param vm Pointer to the VM instance
+ */
 void mark_buffer_dirty(VM *vm) {
     if (!vm) return;
     cell_t blk = vm_load_cell(vm, vm->scr_addr);
     if (block_in_range(blk)) dirty_blocks[blk] = 1;
 }
 
+/**
+ * @brief Saves all dirty buffers
+ * @param vm Pointer to the VM instance
+ */
 void save_all_buffers(VM *vm) {
     (void) vm;
     for (int i = 1; i < (int) MAX_BLOCKS; ++i) {
@@ -99,6 +123,10 @@ void save_all_buffers(VM *vm) {
     }
 }
 
+/**
+ * @brief Empties all user block buffers
+ * @param vm Pointer to the VM instance
+ */
 void empty_all_buffers(VM *vm) {
     if (!vm) return;
     for (int blk = USER_BLOCKS_START; blk < (int) MAX_BLOCKS; ++blk) {
@@ -271,6 +299,10 @@ void block_word_scr(VM *vm) {
 
 /* --- Registration ----------------------------------------------------- */
 
+/**
+ * @brief Registers all block-related FORTH words
+ * @param vm Pointer to the VM instance
+ */
 void register_block_words(VM *vm) {
     register_word(vm, "BLOCK", block_word_block);
     register_word(vm, "BUFFER", block_word_buffer);

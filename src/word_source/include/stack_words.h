@@ -20,19 +20,31 @@
 
 #include "../../../include/vm.h"
 
-/* FORTH-79 Stack Operation Words to implement:
- * DROP      ( n -- )                    Remove top stack item
- * DUP       ( n -- n n )                Duplicate top stack item  
- * ?DUP      ( n -- n n | n -- 0 )       Duplicate if non-zero
- * SWAP      ( n1 n2 -- n2 n1 )          Exchange top two stack items
- * OVER      ( n1 n2 -- n1 n2 n1 )       Copy second stack item to top
- * ROT       ( n1 n2 n3 -- n2 n3 n1 )    Rotate top three stack items
- * -ROT      ( n1 n2 n3 -- n3 n1 n2 )    Reverse rotate top three items
- * DEPTH     ( -- n )                    Return number of stack items
- * PICK      ( n -- stack[n] )           Copy nth stack item to top
- * ROLL      ( n -- )                    Move nth stack item to top
+/**
+ * @defgroup stack_ops FORTH-79 Stack Operations
+ * @{
+ *
+ * @brief Standard FORTH-79 stack manipulation words
+ *
+ * @details The following FORTH words are implemented for stack manipulation:
+ * - DROP      ( n -- )                    Remove top stack item
+ * - DUP       ( n -- n n )                Duplicate top stack item  
+ * - ?DUP      ( n -- n n | n -- 0 )       Duplicate if non-zero
+ * - SWAP      ( n1 n2 -- n2 n1 )          Exchange top two stack items
+ * - OVER      ( n1 n2 -- n1 n2 n1 )       Copy second stack item to top
+ * - ROT       ( n1 n2 n3 -- n2 n3 n1 )    Rotate top three stack items
+ * - -ROT      ( n1 n2 n3 -- n3 n1 n2 )    Reverse rotate top three items
+ * - DEPTH     ( -- n )                    Return number of stack items
+ * - PICK      ( n -- stack[n] )           Copy nth stack item to top
+ * - ROLL      ( n -- )                    Move nth stack item to top
+ * @}
  */
 
+/**
+ * @brief Registers all stack operation words with the virtual machine
+ *
+ * @param vm Pointer to the virtual machine instance
+ */
 void register_stack_words(VM * vm);
 
 #endif /* STACK_WORDS_H */

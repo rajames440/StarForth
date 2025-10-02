@@ -20,7 +20,13 @@
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 
-/* S>D ( n -- d ) */
+/**
+ * @brief Convert single number to double ( n -- d )
+ *
+ * Converts a single-precision number to double-precision format.
+ *
+ * @param vm Pointer to the virtual machine state
+ */
 void double_word_s_to_d(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -103,7 +109,15 @@ void double_word_dabs(VM *vm) {
     }
 }
 
-/* Internal comparison helper */
+/**
+ * @brief Compare two double numbers
+ *
+ * @param d1h High cell of first double number
+ * @param d1l Low cell of first double number
+ * @param d2h High cell of second double number
+ * @param d2l Low cell of second double number
+ * @return int -1 if d1<d2, 0 if d1=d2, 1 if d1>d2
+ */
 static int d_compare(cell_t d1h, cell_t d1l, cell_t d2h, cell_t d2l) {
     if (d1h < d2h) return -1;
     if (d1h > d2h) return 1;
@@ -361,7 +375,15 @@ void double_word_d_two_slash(VM *vm) {
     vm_push(vm, new_dlow);
 }
 
-/* Registration */
+/**
+ * @brief Register all double number words
+ *
+ * Registers all double-precision number operations with the virtual machine.
+ *
+ * @param vm Pointer to the virtual machine state
+ *
+ * @note This function must be called during VM initialization.
+ */
 void register_double_words(VM *vm) {
     log_message(LOG_INFO, "Registering double number words...");
 

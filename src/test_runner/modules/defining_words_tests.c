@@ -18,7 +18,10 @@
 #include "../include/test_runner.h"
 #include "../include/test_common.h"
 
-/* Defining Words Test Suites - Module 13 */
+/** @brief Test suites for Forth defining words (Module 13)
+ *  @details Contains test cases for core defining words including:
+ *           :, ;, CONSTANT, VARIABLE, CREATE, DOES>, [, and ]
+ */
 static WordTestSuite defining_word_suites[] = {
     {
         ":", {
@@ -108,6 +111,11 @@ static WordTestSuite defining_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/** @brief Executes all test suites for Forth defining words
+ *  @param vm Pointer to the Forth virtual machine instance
+ *  @details Runs through each test suite in defining_word_suites array,
+ *           executing individual test cases and logging results
+ */
 void run_defining_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Defining Words Tests (Module 13)...");
 

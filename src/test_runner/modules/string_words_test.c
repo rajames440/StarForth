@@ -133,6 +133,14 @@ static WordTestSuite string_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all string manipulation word tests
+ *
+ * @details Runs test suites for FORTH string operations including COUNT, -TRAILING,
+ * CMOVE, CMOVE>, COMPARE, SEARCH, SCAN, SKIP, and BLANK
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void run_string_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running String Words Tests (Module 11)...");
 

@@ -26,49 +26,61 @@
 typedef struct VM VM;
 typedef struct DictEntry DictEntry;
 
-/* Profiling levels */
+/**
+ * @brief Profiling detail levels
+ *
+ * Controls the amount of profiling information collected during execution
+ */
 typedef enum {
-    PROFILE_DISABLED = 0,
-    PROFILE_BASIC = 1, /* VM operations only */
-    PROFILE_DETAILED = 2, /* + word execution times */
-    PROFILE_VERBOSE = 3, /* + memory access patterns */
-    PROFILE_FULL = 4 /* + instruction-level timing */
+    PROFILE_DISABLED = 0, /**< Profiling disabled */
+    PROFILE_BASIC = 1, /**< VM operations only */
+    PROFILE_DETAILED = 2, /**< Basic + word execution times */
+    PROFILE_VERBOSE = 3, /**< Detailed + memory access patterns */
+    PROFILE_FULL = 4 /**< Verbose + instruction-level timing */
 } ProfileLevel;
 
-/* Profile categories */
+/**
+ * @brief Profiling measurement categories
+ *
+ * Different aspects of VM operation that can be profiled
+ */
 typedef enum {
-    PROF_VM_INIT = 0,
-    PROF_VM_EXECUTE,
-    PROF_VM_COMPILE,
-    PROF_DICT_LOOKUP,
-    PROF_DICT_ADD,
-    PROF_STACK_OPS,
-    PROF_MEMORY_ACCESS,
-    PROF_WORD_EXEC,
-    PROF_IO_OPS,
-    PROF_CONTROL_FLOW,
-    PROF_CATEGORY_COUNT
+    PROF_VM_INIT = 0, /**< VM initialization */
+    PROF_VM_EXECUTE, /**< VM execution loop */
+    PROF_VM_COMPILE, /**< Word compilation */
+    PROF_DICT_LOOKUP, /**< Dictionary searches */
+    PROF_DICT_ADD, /**< Dictionary additions */
+    PROF_STACK_OPS, /**< Stack operations */
+    PROF_MEMORY_ACCESS, /**< Memory access operations */
+    PROF_WORD_EXEC, /**< Word execution */
+    PROF_IO_OPS, /**< I/O operations */
+    PROF_CONTROL_FLOW, /**< Control flow operations */
+    PROF_CATEGORY_COUNT /**< Total number of categories */
 } ProfileCategory;
 
-/* Timing measurement structure */
+/**
+ * @brief Timer for measuring execution duration
+ */
 typedef struct {
-    uint64_t start_time;
-    uint64_t total_time;
-    uint64_t call_count;
-    uint64_t min_time;
-    uint64_t max_time;
-    const char *name;
+    uint64_t start_time; /**< Start timestamp */
+    uint64_t total_time; /**< Accumulated execution time */
+    uint64_t call_count; /**< Number of measurements */
+    uint64_t min_time; /**< Minimum recorded time */
+    uint64_t max_time; /**< Maximum recorded time */
+    const char *name; /**< Timer identifier */
 } ProfileTimer;
 
-/* Word execution profile */
+/**
+ * @brief Execution statistics for a single word
+ */
 typedef struct {
-    const char *word_name;
-    uint64_t total_time;
-    uint64_t call_count;
-    uint64_t avg_time;
-    uint64_t min_time;
-    uint64_t max_time;
-    double percentage;
+    const char *word_name; /**< Name of the profiled word */
+    uint64_t total_time; /**< Total execution time */
+    uint64_t call_count; /**< Number of executions */
+    uint64_t avg_time; /**< Average execution time */
+    uint64_t min_time; /**< Minimum execution time */
+    uint64_t max_time; /**< Maximum execution time */
+    double percentage; /**< Percentage of total runtime */
 } WordProfile;
 
 /* Memory access pattern tracking */
@@ -117,11 +129,27 @@ typedef struct {
 extern void *g_profiler;
 
 /* Profiler lifecycle */
+/**
+ * @brief Initialize the profiling system
+ * @param level Initial profiling detail level
+ * @return 0 on success, non-zero on failure
+ */
 int profiler_init(ProfileLevel level);
 
+/**
+ * @brief Shutdown and cleanup the profiling system
+ */
 void profiler_shutdown(void);
 
+/**
+ * @brief Reset all profiling statistics
+ */
 void profiler_reset(void);
+
+/**
+ * @brief Change the current profiling detail level
+ * @param level New profiling level to set
+ */
 
 void profiler_set_level(ProfileLevel level);
 

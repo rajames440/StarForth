@@ -26,14 +26,29 @@
 
 /* -------- helpers -------- */
 
+/** @brief Get current screen number from VM
+ *  @param vm Pointer to VM instance
+ *  @return Current screen number
+ */
 static inline cell_t current_scr(VM *vm) {
     return vm_load_cell(vm, vm->scr_addr);
 }
 
+/** @brief Set current screen number in VM
+ *  @param vm Pointer to VM instance
+ *  @param blk Screen number to set
+ */
 static inline void set_scr(VM *vm, cell_t blk) {
     vm_store_cell(vm, vm->scr_addr, blk);
 }
 
+/** @brief Get pointer to specific line in a screen
+ *  @param vm Pointer to VM instance
+ *  @param scr Screen number (1-based)
+ *  @param line Line number (0-15)
+ *  @param out Output parameter for line pointer
+ *  @return 1 if successful, 0 if parameters invalid
+ */
 static int line_ptr(VM *vm, cell_t scr, cell_t line, unsigned char **out) {
     if (!vm || !out) return 0;
     if (scr < 1 || scr >= (cell_t) MAX_BLOCKS) return 0;
@@ -47,6 +62,9 @@ static int line_ptr(VM *vm, cell_t scr, cell_t line, unsigned char **out) {
     return 1;
 }
 
+/** @brief Print 64-character line with character filtering
+ *  @param p Pointer to 64-byte line buffer
+ */
 static void print_line_64(const unsigned char *p) {
 #ifdef STARFORTH_ANSI
     /* No cursor moves unless asked; just render content cleanly. */

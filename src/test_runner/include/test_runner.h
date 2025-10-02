@@ -21,29 +21,37 @@
 #include "../../../include/vm.h"
 #include <stdint.h>
 
-/* Test statistics structure */
+/**
+ * @brief Structure holding test execution statistics
+ */
 typedef struct {
-    int total_tests;
-    int total_pass;
-    int total_fail;
-    int total_skip;
-    int total_error;
+    int total_tests; /**< Total number of tests executed */
+    int total_pass; /**< Number of passed tests */
+    int total_fail; /**< Number of failed tests */
+    int total_skip; /**< Number of skipped tests */
+    int total_error; /**< Number of tests that resulted in errors */
 } TestStats;
 
-/* Test module structure */
+/**
+ * @brief Structure representing a test module
+ */
 typedef struct {
-    const char *module_name;
-    void *reserved;
-    int reserved_int;
+    const char *module_name; /**< Name of the test module */
+    void *reserved; /**< Reserved for future use */
+    int reserved_int; /**< Reserved integer value */
 
-    void (*run_module_tests)(VM *vm);
+    void (*run_module_tests)(VM *vm); /**< Function pointer to run module tests */
 } TestModule;
 
 /* Global test statistics - extern declaration */
 extern TestStats global_test_stats;
 
-/* Function declarations for test modules */
+/**
+ * @brief Run tests for stack manipulation words
+ * @param vm Pointer to the VM instance
+ */
 void run_stack_words_tests(VM * vm);
+
 void run_return_stack_words_tests(VM * vm);
 void run_memory_words_tests(VM * vm);
 void run_arithmetic_words_tests(VM * vm);
@@ -62,21 +70,48 @@ void run_system_words_tests(VM * vm);
 void run_defining_words_tests(VM * vm);
 void run_control_words_tests(VM * vm);
 
-/* Add benchmark mode support */
+/**
+ * @brief Enable benchmark mode for performance testing
+ * @param iterations Number of iterations for benchmark tests
+ */
 void enable_benchmark_mode(int iterations);
 
-/* Compute-intensive benchmarks */
+/**
+ * @brief Run compute-intensive benchmark tests
+ * @param vm Pointer to the VM instance
+ */
 void run_compute_benchmarks(VM * vm);
 
-/* Stress and integration tests */
+/**
+ * @brief Execute stress tests
+ * @param vm Pointer to the VM instance
+ */
 void run_stress_tests(VM * vm);
+
+/**
+ * @brief Execute integration tests
+ * @param vm Pointer to the VM instance
+ */
 void run_integration_tests(VM * vm);
 
-/* Existing functions */
+/**
+ * @brief Run all available tests
+ * @param vm Pointer to the VM instance
+ */
 void run_all_tests(VM * vm);
 
+/**
+ * @brief Run tests for a specific module
+ * @param vm Pointer to the VM instance
+ * @param module_name Name of the module to test
+ */
 void run_module_tests(VM *vm, const char *module_name);
 
+/**
+ * @brief Run tests for a specific word
+ * @param vm Pointer to the VM instance
+ * @param word_name Name of the word to test
+ */
 void run_word_tests(VM *vm, const char *word_name);
 
 #endif /* TEST_RUNNER_H */

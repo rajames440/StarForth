@@ -1,6 +1,14 @@
-/*
- * stress_tests.c - Stress testing for StarForth
- * Tests extreme scenarios: deep nesting, large definitions, stack exhaustion
+/**
+ * @file stress_tests.c
+ * @brief Stress testing module for StarForth
+ *
+ * This module contains stress tests that verify the interpreter's behavior
+ * under extreme conditions including:
+ * - Deep nesting of control structures
+ * - Large word definitions
+ * - Stack manipulation limits
+ * - Memory allocation stress
+ * - Deep recursion
  */
 
 #include "test_common.h"
@@ -84,6 +92,15 @@ static WordTestSuite stress_suites[] = {
     },
 };
 
+/**
+ * @brief Execute all stress test suites
+ *
+ * Runs a comprehensive set of stress tests to verify the VM's behavior
+ * under extreme conditions. Tests include stack operations, control flow,
+ * large definitions, recursion, and memory allocation.
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void run_stress_tests(VM *vm) {
     if (!vm) return;
 

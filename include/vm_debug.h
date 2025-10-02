@@ -15,18 +15,32 @@
 
  */
 
+/** @cond */
 #ifndef VM_DEBUG_H
 #define VM_DEBUG_H
+/** @endcond */
 
 #include "vm.h"
 
-/* Set which VM to dump if a signal hits (call once after vm_init). */
+/**
+ * @brief Sets the VM instance to dump state for when signals occur
+ * @param vm Pointer to the VM instance to monitor
+ * @note Should be called once after vm_init
+ */
 void vm_debug_set_current_vm(VM * vm);
 
-/* Install SIGSEGV/SIGABRT handlers that print VM state before re-raising. */
+/**
+ * @brief Installs signal handlers for SIGSEGV and SIGABRT
+ * @details The handlers will print VM state before re-raising the signal
+ */
 void vm_debug_install_signal_handlers(void);
 
-/* Manually dump VM state (call this right before exit(1) on test failure). */
+/**
+ * @brief Manually dumps the state of a VM instance
+ * @param vm The VM instance to dump state for
+ * @param reason Description of why the dump was triggered
+ * @note Typically called before exit(1) on test failure
+ */
 void vm_debug_dump_state(const VM *vm, const char *reason);
 
 #endif /* VM_DEBUG_H */

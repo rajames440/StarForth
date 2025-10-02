@@ -1,19 +1,21 @@
-/* src/word_source/control_words.c
-
-   ***   StarForth   ***
-   control_words.c - FORTH-79 Standard and ANSI C99 ONLY
-   SPDX-License-Identifier: CC0-1.0
-
-   Design notes (FORTH-79 compliance):
-   - Exactly TWO stacks at runtime: parameter (data) and return.
-   - Loop parameters (index, limit) are stored on the RETURN STACK beneath IP.
-     RS layout within a DO…LOOP (top on right):
-       …, limit_outer, index_outer, ip_outer, limit_inner, index_inner, ip_inner
-     I  -> RS[-1] (current index)
-     J  -> RS[-3] (outer index)   <-- matches code below
-   - Compile-time: forward/backpatch via a small CF (control-flow) stack.
-   - Runtime branch words mutate the IP at top of RS.
-*/
+/**
+ * @file control_words.c
+ * @brief FORTH-79 Standard control flow implementation using ANSI C99
+ * @details Provides control flow words and runtime support for the StarForth interpreter
+ *
+ * Design notes (FORTH-79 compliance):
+ * - Exactly TWO stacks at runtime: parameter (data) and return.
+ * - Loop parameters (index, limit) are stored on the RETURN STACK beneath IP.
+ *   RS layout within a DO…LOOP (top on right):
+ *     …, limit_outer, index_outer, ip_outer, limit_inner, index_inner, ip_inner
+ *   I  -> RS[-1] (current index)
+ *   J  -> RS[-3] (outer index)   <-- matches code below
+ * - Compile-time: forward/backpatch via a small CF (control-flow) stack.
+ * - Runtime branch words mutate the IP at top of RS.
+ *
+ * @copyright StarForth project contributors
+ * @license CC0-1.0
+ */
 
 #include "include/control_words.h"
 #include "../../include/word_registry.h"
@@ -23,29 +25,62 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* ---------- Forward decls for internal runtimes & helpers ---------- */
+/** @name Internal Runtime Functions
+ * Forward declarations for internal runtime helpers and control flow primitives
+ * @{
+ */
+
+/** Execute unconditional branch */
 static void control_forth_branch(VM * vm);
+
+/** Execute conditional branch based on top of stack */
 static void control_forth_0branch(VM * vm);
+
+/** Runtime handler for ?DO loops */
 static void control_forth_runtime_qdo(VM * vm);
+
+/** Runtime handler for DO loops */
 static void control_forth_runtime_do(VM * vm);
+
+/** Runtime handler for LOOP */
 static void control_forth_runtime_loop(VM * vm);
+
+/** Runtime handler for +LOOP */
 static void control_forth_runtime_plus_loop(VM * vm);
+
+/** Runtime handler for LEAVE */
 static void control_forth_runtime_leave(VM * vm);
+
+/** Get current loop index */
 static void control_forth_I(VM * vm);
+
+/** Get outer loop index */
 static void control_forth_J(VM * vm);
+
+/** Exit from current definition */
 static void control_forth_EXIT(VM * vm);
 
-/* ===================== Compile-time control-flow stack ===================== */
+/** @} */
 
+/**
+ * @defgroup cf Control Flow Stack
+ * Compile-time control flow stack for tracking branch targets and loop structures
+ * @{
+ */
+
+/** Maximum depth of control flow stack */
 #define CF_STACK_MAX 64
 
+/** Control flow item types */
 typedef enum {
-    CF_BEGIN, /* address of BEGIN target */
-    CF_IF, /* address of IF's 0BRANCH literal */
-    CF_ELSE, /* address of ELSE's BRANCH literal */
-    CF_WHILE, /* address of WHILE's 0BRANCH literal (paired with prior BEGIN) */
-    CF_DO /* address of loop body start (back target for LOOP/+LOOP) */
+    CF_BEGIN, /**< Address of BEGIN target */
+    CF_IF, /**< Address of IF's 0BRANCH literal */
+    CF_ELSE, /**< Address of ELSE's BRANCH literal */
+    CF_WHILE, /**< Address of WHILE's 0BRANCH literal (paired with prior BEGIN) */
+    CF_DO /**< Address of loop body start (back target for LOOP/+LOOP) */
 } cf_tag_t;
+
+/** @} */
 
 typedef struct {
     size_t addr; /* byte offset in vm->memory used for patching/back edges */
@@ -130,10 +165,18 @@ static inline size_t emit_cell(VM *vm, cell_t value) {
     return (size_t) ((uint8_t *) addr - vm->memory);
 }
 
-/* ===================== Runtime branch helpers ===================== */
-/* Operate on the per-step return IP (top of RS). Offsets are BYTES. */
+/**
+ * @defgroup runtime Runtime Branch Helpers
+ * Runtime support for control flow operations
+ * @details All functions operate on the per-step return IP (top of RS).
+ *          All offsets are in BYTES.
+ * @{
+ */
 
-/* (BRANCH) */
+/** 
+ * Runtime unconditional branch
+ * @param vm Virtual machine state
+ */
 static void control_forth_branch(VM *vm) {
     if (vm->rsp < 0) {
         vm->error = 1;

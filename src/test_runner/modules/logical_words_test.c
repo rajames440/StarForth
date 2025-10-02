@@ -166,6 +166,14 @@ static WordTestSuite logical_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all logical words test suites
+ *
+ * This function runs comprehensive tests for all FORTH logical and comparison operators,
+ * including stack underflow checks and edge cases.
+ *
+ * @param vm Pointer to the FORTH virtual machine instance
+ */
 void run_logical_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Logical Words Tests (Module 8)...");
 

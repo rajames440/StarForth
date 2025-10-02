@@ -1,9 +1,14 @@
-/*
-                                 ***   StarForth   ***
-   vm.c - FORTH-79 Standard and ANSI C99 ONLY
-   Last modified - 2025-09-10
-   Public domain / CC0 — No warranty.
-*/
+/**
+ * @file vm.c
+ * @brief Virtual Machine implementation for StarForth
+ *
+ * This file implements a FORTH-79 Standard compliant virtual machine using ANSI C99.
+ * It provides the core execution environment, memory management, and interpretation
+ * facilities for the StarForth system.
+ *
+ * @note Last modified - 2025-09-10
+ * @copyright Public domain / CC0 — No warranty.
+ */
 
 #include "../include/vm.h"
 #include "../include/log.h"
@@ -15,7 +20,9 @@
 #include <string.h>
 #include <stdint.h>
 
-/* ====================== Forward declarations ======================= */
+/** @name Forward Declarations
+ * @{
+ */
 void execute_colon_word(VM * vm); /* Non-static for SEE decompiler */
 
 static void vm_bootstrap_scr(VM * vm);
@@ -48,6 +55,18 @@ static void vm_set_base(VM *vm, unsigned b) {
 
 /* ====================== VM init / teardown ======================= */
 
+/**
+ * @brief Initialize a new virtual machine instance
+ *
+ * Allocates memory and initializes all VM structures including:
+ * - Memory array
+ * - Data and return stacks
+ * - System variables (SCR, STATE, BASE)
+ * - Dictionary
+ * - Forth-79 wordset
+ *
+ * @param vm Pointer to VM structure to initialize
+ */
 void vm_init(VM *vm) {
     if (!vm) return;
     memset(vm, 0, sizeof(*vm));
@@ -126,6 +145,13 @@ void vm_init(VM *vm) {
     vm->dict_fence_here = vm->here;
 }
 
+/**
+ * @brief Clean up and free VM resources
+ *
+ * Frees allocated memory and resets VM state.
+ *
+ * @param vm Pointer to VM structure to clean up
+ */
 void vm_cleanup(VM *vm) {
     if (!vm) return;
     if (vm->memory) {
@@ -137,6 +163,16 @@ void vm_cleanup(VM *vm) {
 
 /* ====================== Parser / number ======================= */
 
+/**
+ * @brief Parse next word from input buffer
+ *
+ * Skips leading whitespace and extracts next word delimited by whitespace.
+ *
+ * @param vm Pointer to VM instance
+ * @param word Buffer to store parsed word
+ * @param max_len Maximum length of word buffer
+ * @return Length of parsed word or 0 if no word found
+ */
 int vm_parse_word(VM *vm, char *word, size_t max_len) {
     if (!vm || !word || max_len == 0) return 0;
 
@@ -159,6 +195,17 @@ int vm_parse_word(VM *vm, char *word, size_t max_len) {
     return (int) len;
 }
 
+/**
+ * @brief Parse string as number in current base
+ *
+ * Attempts to parse string as number using VM's current number base.
+ * Handles optional sign prefix.
+ *
+ * @param vm Pointer to VM instance 
+ * @param s String to parse
+ * @param out Pointer to store parsed value
+ * @return 1 on success, 0 on parse failure
+ */
 int vm_parse_number(VM *vm, const char *s, cell_t *out) {
     if (!s || !*s || !out) return 0;
 
@@ -460,6 +507,18 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
     vm->error = 1;
 }
 
+/**
+ * @brief Interpret a string of Forth code
+ *
+ * Main interpretation loop that:
+ * - Loads input into VM buffer
+ * - Parses words
+ * - Executes or compiles each word
+ * - Handles numbers
+ *
+ * @param vm Pointer to VM instance
+ * @param input String containing Forth code to interpret
+ */
 void vm_interpret(VM *vm, const char *input) {
     if (!vm || !input) return;
 
@@ -485,6 +544,16 @@ void vm_interpret(VM *vm, const char *input) {
 
 /* ====================== VM memory helpers ======================= */
 
+/**
+ * @brief Check if memory address range is valid
+ *
+ * Validates that an address range falls within VM memory bounds.
+ *
+ * @param vm Pointer to VM instance
+ * @param addr Virtual address to check
+ * @param len Length of memory range
+ * @return 1 if range is valid, 0 if invalid
+ */
 int vm_addr_ok(struct VM *vm, vaddr_t addr, size_t len) {
     if (!vm || !vm->memory) return 0;
     if (len > VM_MEMORY_SIZE) return 0;

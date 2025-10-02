@@ -20,21 +20,31 @@
 
 #include "../../../include/vm.h"
 
-/* FORTH-79 Memory Operation Words:
- * !         ( n addr -- )               Store n at addr
- * @         ( addr -- n )               Fetch n from addr
- * C!        ( c addr -- )               Store character at addr
- * C@        ( addr -- c )               Fetch character from addr
- * +!        ( n addr -- )               Add n to value at addr
- * 2!        ( d addr -- )               Store double at addr
- * 2@        ( addr -- d )               Fetch double from addr
- * FILL      ( addr u c -- )             Fill u bytes at addr with c
- * MOVE      ( addr1 addr2 u -- )        Move u bytes from addr1 to addr2
- * CMOVE     ( addr1 addr2 u -- )        Move u bytes, low to high addresses
- * CMOVE>    ( addr1 addr2 u -- )        Move u bytes, high to low addresses
- * ERASE     ( addr u -- )               Fill u bytes at addr with zeros
+/**
+ * @defgroup memory_ops FORTH-79 Memory Operations
+ * @{
+ * @brief Memory operation words defined in FORTH-79 standard
+ *
+ * @par Available operations:
+ * - !     ( n addr -- )     Store n at addr
+ * - @     ( addr -- n )     Fetch n from addr
+ * - C!    ( c addr -- )     Store character at addr
+ * - C@    ( addr -- c )     Fetch character from addr
+ * - +!    ( n addr -- )     Add n to value at addr
+ * - 2!    ( d addr -- )     Store double at addr
+ * - 2@    ( addr -- d )     Fetch double from addr
+ * - FILL  ( addr u c -- )   Fill u bytes at addr with c
+ * - MOVE  ( addr1 addr2 u -- ) Move u bytes from addr1 to addr2
+ * - CMOVE ( addr1 addr2 u -- ) Move u bytes, low to high addresses
+ * - CMOVE> ( addr1 addr2 u -- ) Move u bytes, high to low addresses
+ * - ERASE ( addr u -- )     Fill u bytes at addr with zeros
+ * @}
  */
 
+/**
+ * @brief Registers all memory operation words with the Forth virtual machine
+ * @param vm Pointer to the virtual machine instance
+ */
 void register_memory_words(VM * vm);
 
 #endif /* MEMORY_WORDS_H */

@@ -42,6 +42,10 @@
  * OCTAL     ( -- )                      Set base to 8
  */
 
+/**
+ * @brief Registers all formatting and conversion words with the Forth virtual machine
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void register_format_words(VM * vm);
 
 #endif /* FORMAT_WORDS_H */

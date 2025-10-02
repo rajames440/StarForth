@@ -52,20 +52,25 @@
 
 #if USE_DIRECT_THREADING
 
-/*
- * Register Allocation Strategy:
- * - r12: VM pointer (callee-saved, preserved across calls)
- * - r13: Instruction Pointer (IP) - points to current cell
- * - r14: Data Stack Pointer (DSP) - points to vm->data_stack[vm->dsp]
- * - r15: Return Stack Pointer (RSP) - points to vm->return_stack[vm->rsp]
+/**
+ * @brief Register allocation strategy for optimized execution
+ * 
+ * Register usage:
+ * @arg r12 VM pointer (callee-saved, preserved across calls)
+ * @arg r13 Instruction Pointer (IP) - points to current cell
+ * @arg r14 Data Stack Pointer (DSP) - points to vm->data_stack[vm->dsp]
+ * @arg r15 Return Stack Pointer (RSP) - points to vm->return_stack[vm->rsp]
  *
- * Why callee-saved registers?
+ * Callee-saved registers are used because:
  * - They're preserved across function calls
  * - Allows mixing C and assembly code
  * - No need to save/restore on each word execution
  */
 
-/* NEXT macro - the heart of the inner interpreter */
+/**
+ * @brief Core inner interpreter macro - executes next word
+ * @details Fetches next word pointer from IP, increments IP, and jumps to word
+ */
 #define NEXT_ASM() \
     __asm__ __volatile__ ( \
         "movq    (%%r13), %%rax\n\t"      /* Load word pointer from [IP] */ \
@@ -74,9 +79,10 @@
         ::: "rax", "memory" \
     )
 
-/*
- * DOCOL - Enter a colon definition
- * Called when executing a user-defined word
+/**
+ * @brief Enter a colon definition (DOCOL)
+ * @param vm Pointer to VM instance
+ * @details Called when executing a user-defined word
  */
 static inline void vm_docol_asm(VM *vm) {
     __asm__ __volatile__(
@@ -98,9 +104,9 @@ static inline void vm_docol_asm(VM *vm) {
     );
 }
 
-/*
- * EXIT - Return from a colon definition
- * Pops IP from return stack
+/**
+ * @brief Return from a colon definition (EXIT)
+ * @details Pops IP from return stack and continues execution
  */
 static inline void vm_exit_asm(void) {
     __asm__ __volatile__(
@@ -116,14 +122,15 @@ static inline void vm_exit_asm(void) {
     );
 }
 
-/*
- * VM_INNER_LOOP - Main interpreter loop
+/**
+ * @brief Main interpreter loop implementation
+ * @details Replaces execute_colon_word function with optimized assembly
  *
- * This replaces the execute_colon_word function with a tight assembly loop
- *
- * Usage:
- *   vm_setup_registers(vm);
- *   VM_INNER_LOOP();
+ * Usage example:
+ * @code
+ * vm_setup_registers(vm);
+ * VM_INNER_LOOP();
+ * @endcode
  */
 
 /* Setup registers before entering inner loop */

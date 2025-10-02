@@ -1,6 +1,10 @@
-/*
- * integration_tests.c - Full program integration tests for StarForth
- * Tests complete Forth programs as regression tests
+/**
+ * @file integration_tests.c
+ * @brief Full program integration tests for StarForth
+ *
+ * This file contains integration tests that verify complete Forth programs
+ * as regression tests. It includes test suites for complete programs,
+ * data structures, and algorithms implementations.
  */
 
 #include "test_common.h"
@@ -159,6 +163,16 @@ static WordTestSuite integration_suites[] = {
     },
 };
 
+/**
+ * @brief Executes all integration test suites for StarForth
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ *
+ * This function runs through all defined integration test suites, including:
+ * - Complete Programs suite (prime checker, array operations, etc)
+ * - Data Structures suite (linked list, min/max tracker)
+ * - Algorithms suite (sorting, GCD)
+ */
 void run_integration_tests(VM *vm) {
     if (!vm) return;
 

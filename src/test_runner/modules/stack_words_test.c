@@ -14,11 +14,21 @@
 
 
  */
+/**
+ * @file stack_words_test.c
+ * @brief Test module for Forth stack manipulation words
+ * @details Contains test suites for basic stack operations including
+ *          DUP, DROP, SWAP, OVER, ROT, DEPTH, PICK, and ROLL
+ */
 
 #include "../include/test_runner.h"
 #include "../include/test_common.h"
 
-/* Stack Words Test Suites - Module 1: Foundation */
+/** 
+ * @brief Test suites for stack manipulation words
+ * @details Contains comprehensive test cases for all standard stack operations,
+ *          including normal cases, edge cases, and error conditions
+ */
 static WordTestSuite stack_word_suites[] = {
     {
         "DUP", {
@@ -115,6 +125,12 @@ static WordTestSuite stack_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all test suites for stack manipulation words
+ * @param vm Pointer to the Forth virtual machine instance
+ * @details Runs through all defined test cases for stack manipulation words
+ *          and reports results through the logging system
+ */
 void run_stack_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Stack Words Tests (Module 1: Foundation)...");
 

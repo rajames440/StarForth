@@ -110,6 +110,11 @@
     <part id="reference">
         <title>Reference Material</title>
 
+        <chapter id="api-reference">
+            <title>API Reference (Doxygen)</title>
+            <xi:include href="generated/api-reference-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
         <chapter id="word-reference">
             <title>Complete Word Reference</title>
             <xi:include href="generated/words-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

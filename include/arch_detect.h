@@ -1,20 +1,23 @@
-/*
-                                 ***   StarForth   ***
-  arch_detect.h - Architecture Detection and Unified API
-  Automatically selects x86_64 or ARM64 optimizations
-
-  This work is released into the public domain under CC0 v1.0 Universal license.
-  No warranty. Use at your own risk.
-*/
+/**
+ * @file arch_detect.h
+ * @brief Architecture Detection and Unified API for StarForth
+ * @details Automatically selects x86_64 or ARM64 optimizations and provides
+ *          a unified interface for architecture-specific optimizations.
+ *
+ * This work is released into the public domain under CC0 v1.0 Universal license.
+ * No warranty. Use at your own risk.
+ */
 
 #ifndef ARCH_DETECT_H
 #define ARCH_DETECT_H
 
-/*
- * ARCHITECTURE DETECTION
- * ======================
+/**
+ * @defgroup arch_detect Architecture Detection
+ * @{
  *
- * This header automatically detects the target architecture and includes
+ * @brief Automatic detection of target architecture and inclusion of optimization headers
+ *
+ * This module automatically detects the target architecture at compile time and includes
  * the appropriate assembly optimization headers.
  *
  * Supported architectures:
@@ -22,6 +25,7 @@
  * - ARM64 (AArch64, ARMv8-A)
  *
  * Unsupported architectures fall back to pure C implementations.
+ * @}
  */
 
 /* Detect architecture at compile time */
@@ -53,12 +57,16 @@
 #endif
 #endif
 
-/*
- * UNIFIED API WRAPPERS
- * ====================
+/**
+ * @defgroup unified_api Unified API Wrappers
+ * @{
  *
- * These macros provide a consistent API across all architectures.
- * They automatically dispatch to the appropriate implementation.
+ * @brief Consistent API macros across all architectures
+ *
+ * These macros provide a consistent API across all architectures by automatically
+ * dispatching to the appropriate optimized or fallback implementation based on
+ * the target architecture and available optimizations.
+ * @}
  */
 
 /* ========== Stack Operations ========== */
@@ -328,16 +336,21 @@ static inline void vm_prefetch_stream_opt(const void *addr) {
 /* ... etc ... */
 #endif
 
-/*
- * RUNTIME ARCHITECTURE DETECTION
- * ===============================
+/**
+ * @defgroup runtime_detect Runtime Architecture Detection
+ * @{
  *
- * For features that can be detected at runtime (like SIMD support)
+ * @brief Runtime detection of CPU features
+ *
+ * Functions for detecting available CPU features at runtime, such as SIMD
+ * support (SSE4.2, AVX, NEON) and other architecture-specific capabilities.
+ * @}
  */
 
 #if ARCH_X86_64
 /* Check for SSE4.2, AVX, etc. */
 static inline int vm_has_sse42_opt(void) {
+
 
 #if USE_ASM_OPT
 return vm_has_sse42();
@@ -348,6 +361,7 @@ return 0;
 #elif ARCH_ARM64
 /* Check for NEON, CRC32, etc. */
 static inline int vm_has_neon_opt(void) {
+
 
 #if USE_ASM_OPT
 return vm_has_neon();
@@ -360,9 +374,15 @@ static inline int vm_has_sse42_opt(void) { return 0; }
 static inline int vm_has_neon_opt(void) { return 0; }
 #endif
 
-/*
- * BUILD INFORMATION
- * =================
+/**
+ * @defgroup build_info Build Information
+ * @{
+ *
+ * @brief Functions for querying build configuration
+ *
+ * Provides information about the build configuration, including target
+ * architecture, enabled optimizations, and threading model.
+ * @}
  */
 
 static inline const char *vm_get_arch_name(void) {

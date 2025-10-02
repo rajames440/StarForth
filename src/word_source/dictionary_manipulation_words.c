@@ -86,24 +86,41 @@ static char *traverse_name_field(char *name_addr, int direction) {
     }
 }
 
-/* [ ( -- )  Enter interpretation mode */
+/** 
+ * @brief FORTH word [ - Enter interpretation mode
+ * @param vm Pointer to VM instance
+ * @stack ( -- )
+ */
 void dictionary_m_word_left_bracket(VM *vm) {
     vm->mode = MODE_INTERPRET;
     state_variable = 0;
 }
 
-/* ] ( -- )  Enter compilation mode */
+/**
+ * @brief FORTH word ] - Enter compilation mode
+ * @param vm Pointer to VM instance
+ * @stack ( -- )
+ */
 void dictionary_m_word_right_bracket(VM *vm) {
     vm->mode = MODE_COMPILE;
     state_variable = -1; /* FORTH-79 uses -1 for true */
 }
 
-/* STATE ( -- addr )  Variable: compilation state */
+/**
+ * @brief FORTH word STATE - Get compilation state variable address
+ * @param vm Pointer to VM instance
+ * @stack ( -- addr )
+ */
 void dictionary_m_word_state(VM *vm) {
     vm_push(vm, (cell_t)(uintptr_t) & state_variable);
 }
 
-/* SMUDGE ( -- )  Toggle smudge bit of latest word */
+/**
+ * @brief FORTH word SMUDGE - Toggle smudge bit of latest word
+ * @param vm Pointer to VM instance
+ * @stack ( -- )
+ * @note Compile-only word
+ */
 static void dictionary_m_word_smudge(VM *vm) {
     // compile-only: error if used while interpreting
     if (vm->mode != MODE_COMPILE) {
@@ -430,7 +447,11 @@ static void dictionary_m_word_hidden(VM *vm) {
 #endif
 }
 
-/* FORTH-79 Dictionary Manipulation Word Registration and Testing */
+/**
+ * @brief Register all dictionary manipulation words with the VM
+ * @param vm Pointer to VM instance
+ * @details Registers standard FORTH-79 dictionary manipulation words
+ */
 void register_dictionary_manipulation_words(VM *vm) {
     log_message(LOG_INFO, "Registering dictionary manipulation words...");
 

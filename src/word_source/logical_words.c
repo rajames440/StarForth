@@ -21,11 +21,18 @@
 #include "../../include/word_registry.h"
 
 
-/* FORTH-79 defines TRUE as -1 (all bits set) and FALSE as 0 */
+/** @brief FORTH-79 TRUE value (-1, all bits set) */
 #define FORTH_TRUE  ((cell_t)-1)
+/** @brief FORTH-79 FALSE value (0) */
 #define FORTH_FALSE ((cell_t)0)
 
-/* AND - Bitwise AND ( n1 n2 -- n3 ) */
+/**
+ * @brief FORTH word: AND ( n1 n2 -- n3 )
+ * @param vm Pointer to the virtual machine instance
+ *
+ * Performs bitwise AND operation on top two stack values.
+ * Stack effect: ( n1 n2 -- n3 ) where n3 = n1 AND n2
+ */
 static void logical_word_and(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "AND: Stack underflow");
@@ -287,7 +294,14 @@ void logical_word_zero_not_equal(VM *vm) {
     vm_push(vm, x != 0 ? -1 : 0); /* Forth truth values: -1 true, 0 false */
 }
 
-/* Register all logical and comparison words */
+/**
+ * @brief Registers all FORTH-79 logical and comparison words with the VM
+ * @param vm Pointer to the virtual machine instance
+ *
+ * Registers logical operations (AND, OR, XOR, NOT),
+ * comparison operations (=, <>, <, >, etc.),
+ * and constant words (TRUE, FALSE) with the virtual machine.
+ */
 void register_logical_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 logical and comparison words...");
 

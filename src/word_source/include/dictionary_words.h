@@ -20,18 +20,29 @@
 
 #include "../../../include/vm.h"
 
-/* FORTH-79 Dictionary & Compilation Words:
- * HERE      ( -- addr )                 Address of next free dictionary space
- * ALLOT     ( n -- )                    Allocate n bytes in dictionary
- * ,         ( n -- )                    Compile n into dictionary
- * C,        ( c -- )                    Compile character into dictionary
- * 2,        ( d -- )                    Compile double into dictionary
- * PAD       ( -- addr )                 Address of temporary text buffer
- * SP!       ( addr -- )                 Set data stack pointer
- * SP@       ( -- addr )                 Get data stack pointer
- * LATEST    ( -- addr )                 Address of most recent definition
+/**
+ * @defgroup dictionary FORTH-79 Dictionary & Compilation Words
+ * @{
+ * 
+ * @brief Dictionary and compilation words as defined in FORTH-79 Standard
+ *
+ * @word HERE ( -- addr )    Returns address of next free dictionary space
+ * @word ALLOT ( n -- )      Allocates n bytes in dictionary
+ * @word , ( n -- )          Compiles n into dictionary
+ * @word C, ( c -- )         Compiles character into dictionary
+ * @word 2, ( d -- )         Compiles double into dictionary
+ * @word PAD ( -- addr )     Returns address of temporary text buffer
+ * @word SP! ( addr -- )     Sets data stack pointer
+ * @word SP@ ( -- addr )     Gets data stack pointer
+ * @word LATEST ( -- addr )  Returns address of most recent definition
+ * @}
  */
 
+/**
+ * @brief Registers all dictionary and compilation words with the Forth VM
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void register_dictionary_words(VM * vm);
 
 #endif /* DICTIONARY_WORDS_H */

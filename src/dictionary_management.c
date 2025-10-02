@@ -133,6 +133,17 @@ static void sf_try_fast_append(VM *vm) {
 /* --- API ----------------------------------------------------------------- */
 
 /* Find by name: newest-first within the first-character bucket. */
+/**
+ * @brief Finds a word in the dictionary by name
+ *
+ * Searches for a word in the dictionary using an optimized first-character index.
+ * The search is performed newest-first within the matching first-character bucket.
+ *
+ * @param vm The virtual machine context
+ * @param name The name to search for
+ * @param len Length of the name string
+ * @return DictEntry* Pointer to found dictionary entry or NULL if not found
+ */
 DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
     if (UNLIKELY(!vm || !name || len == 0)) return NULL;
 
@@ -172,6 +183,18 @@ DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
 }
 
 /* Create a new word (unchanged layout); index append happens lazily on next lookup. */
+/**
+ * @brief Creates a new word in the dictionary
+ *
+ * Allocates and initializes a new dictionary entry with the given name and function.
+ * The word is added to the dictionary but index update is deferred until next lookup.
+ *
+ * @param vm The virtual machine context
+ * @param name Name for the new word
+ * @param len Length of the name string
+ * @param func Function pointer for the word's behavior
+ * @return DictEntry* Pointer to new dictionary entry or NULL on failure
+ */
 DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func) {
     if (!vm || !name || len == 0 || len > WORD_NAME_MAX) {
         if (vm) vm->error = 1;
@@ -195,7 +218,7 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     entry->flags = 0;
     entry->name_len = (uint8_t) len;
     entry->entropy = 0; /* Initialize usage counter */
-    entry->entropy = 0; /* Initialize usage counter */
+    // entry->entropy = 0; /* Initialize usage counter */
 
     memcpy(entry->name, name, len);
     entry->name[len] = '\0';
@@ -213,6 +236,15 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
 }
 
 /* Linear scan by func (left as-is; usually cold path). */
+/**
+ * @brief Finds a word by its function pointer
+ *
+ * Performs a linear scan of the dictionary to find an entry with matching function.
+ *
+ * @param vm The virtual machine context
+ * @param func Function pointer to search for
+ * @return DictEntry* Pointer to found dictionary entry or NULL if not found
+ */
 DictEntry *vm_dictionary_find_by_func(VM *vm, word_func_t func) {
     for (DictEntry *e = vm ? vm->latest : NULL; e; e = e->link) {
         if (e->func == func) return e;
@@ -224,6 +256,14 @@ DictEntry *vm_dictionary_find_latest_by_func(VM *vm, word_func_t func) {
     return vm_dictionary_find_by_func(vm, func);
 }
 
+/**
+ * @brief Gets pointer to a word's data field
+ *
+ * Calculates and returns pointer to the aligned data field following the name field.
+ *
+ * @param entry Dictionary entry to get data field from
+ * @return cell_t* Pointer to data field or NULL if entry is NULL
+ */
 cell_t *vm_dictionary_get_data_field(DictEntry *entry) {
     if (!entry) return NULL;
     size_t base = offsetof(DictEntry, name);
@@ -233,6 +273,13 @@ cell_t *vm_dictionary_get_data_field(DictEntry *entry) {
     return (cell_t *) (((uint8_t *) entry) + df_off);
 }
 
+/**
+ * @brief Marks the latest word as hidden
+ *
+ * Sets the WORD_HIDDEN flag on the most recently defined word.
+ *
+ * @param vm The virtual machine context
+ */
 void vm_hide_word(VM *vm) {
     if (vm && vm->latest) vm->latest->flags |= WORD_HIDDEN;
 }
@@ -262,6 +309,11 @@ void vm_unpin_entropy(VM *vm) {
 }
 
 /* If you ever need to hard-reset (e.g., switching vocabularies wholesale) */
+/**
+ * @brief Resets the dictionary index
+ *
+ * Clears all index data and cached state. Used when switching vocabularies.
+ */
 void vm_dictionary_index_reset(void) {
     sf_cached_latest = NULL;
     sf_fc_clear_all();

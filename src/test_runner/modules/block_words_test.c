@@ -18,7 +18,20 @@
 #include "../include/test_runner.h"
 #include "../include/test_common.h"
 
-/* Block Words Test Suites - Module 16 */
+/**
+ * @brief Test suites for FORTH block words (Module 16)
+ *
+ * Contains test cases for the following FORTH words:
+ * - BLOCK: Block access
+ * - BUFFER: Buffer management
+ * - UPDATE: Block modification marking
+ * - SAVE-BUFFERS: Buffer flushing
+ * - EMPTY-BUFFERS: Buffer invalidation
+ * - FLUSH: Buffer saving and invalidation
+ * - LOAD: Block interpretation
+ * - LIST: Block display
+ * - SCR: Current block number
+ */
 static WordTestSuite block_word_suites[] = {
     {
         "BLOCK", {
@@ -119,6 +132,14 @@ static WordTestSuite block_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all block words test suites
+ * @param vm Pointer to the FORTH virtual machine instance
+ *
+ * Runs through all test cases for block manipulation words, including
+ * block access, buffer management, and block I/O operations. Results
+ * are logged and summarized after completion.
+ */
 void run_block_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Block Words Tests (Module 16)...");
 

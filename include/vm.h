@@ -97,18 +97,30 @@ typedef enum {
     MODE_COMPILE = 1
 } vm_mode_t;
 
+/**
+ * @struct VM
+ * @brief Main virtual machine state container
+ *
+ * Contains all state information for a StarForth VM instance including stacks,
+ * dictionary, memory, and execution state.
+ */
 typedef struct VM {
-    /* Stacks */
-    cell_t data_stack[STACK_SIZE];
-    cell_t return_stack[STACK_SIZE];
-    int dsp; /* Data stack pointer */
-    int rsp; /* Return stack pointer */
-    int exit_colon;
+    /** @name Stack Management
+     * @{
+     */
+    cell_t data_stack[STACK_SIZE]; /**< Parameter stack storage */
+    cell_t return_stack[STACK_SIZE]; /**< Return stack storage */
+    int dsp; /**< Data stack pointer */
+    int rsp; /**< Return stack pointer */
+    int exit_colon; /**< Exit flag for colon definitions */
+    /** @} */
 
-    /* Dictionary / heap */
-    uint8_t *memory; /* Unified VM memory buffer */
-    size_t here; /* Next free memory location (byte offset) */
-    DictEntry *latest; /* Most recent word */
+    /** @name Dictionary Management 
+     * @{
+     */
+    uint8_t *memory; /**< Unified VM memory buffer */
+    size_t here; /**< Next free memory location (byte offset) */
+    DictEntry *latest; /**< Most recent word */
 
     /* Dictionary protection fence: words at/older than this are protected from FORGET */
     DictEntry *dict_fence_latest;
@@ -155,12 +167,29 @@ typedef struct VM {
     vaddr_t base_addr; /* VM cell: numeric base (2..36), default 10 */
 } VM;
 
-/* Core VM functions */
+/** @name Core VM Functions
+ * @{
+ */
+/**
+ * @brief Initialize a new VM instance
+ * @param vm Pointer to VM structure to initialize
+ */
 void vm_init(VM *vm);
 
+/**
+ * @brief Interpret a string of Forth code
+ * @param vm VM instance to use
+ * @param input String containing Forth code to interpret
+ */
 void vm_interpret(VM *vm, const char *input);
 
+/**
+ * @brief Start the VM's read-eval-print loop
+ * @param vm VM instance to run
+ */
 void vm_repl(VM *vm);
+
+/** @} */
 
 /* Stack operations */
 void vm_push(VM *vm, cell_t value);

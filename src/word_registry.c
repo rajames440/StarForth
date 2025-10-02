@@ -39,7 +39,12 @@
 #include "word_source/include/editor_words.h"
 #include "word_source/include/system_words.h"
 
-/* Simple word registration */
+/**
+ * @brief Registers a single FORTH word in the virtual machine
+ * @param vm Pointer to the virtual machine instance
+ * @param name Name of the FORTH word to register
+ * @param func Function pointer to the word's implementation
+ */
 void register_word(VM *vm, const char *name, word_func_t func) {
     DictEntry *entry = vm_create_word(vm, name, strlen(name), func);
     if (entry) {
@@ -49,7 +54,13 @@ void register_word(VM *vm, const char *name, word_func_t func) {
     }
 }
 
-/* Master registration function - registers all 18 FORTH-79 modules */
+/**
+ * @brief Registers all standard FORTH-79 words in the virtual machine
+ * @param vm Pointer to the virtual machine instance
+ * @details Registers all 18 FORTH-79 word modules in dependency order,
+ *          starting with fundamental stack operations and building up to
+ *          more complex functionality like control flow and editing.
+ */
 void register_forth79_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 Standard word set...");
 

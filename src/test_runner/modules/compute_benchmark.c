@@ -1,5 +1,6 @@
-/*
- * compute_benchmark.c - Compute-intensive benchmarks for StarForth
+/**
+ * @file compute_benchmark.c
+ * @brief Compute-intensive benchmarks for StarForth
  *
  * Tests CPU-bound operations to measure optimization effectiveness:
  * - Arithmetic in tight loops
@@ -12,7 +13,15 @@
 #include "test_runner.h"
 #include <time.h>
 
-/* Benchmark test suites */
+/** 
+ * @brief Benchmark test suites for compute-intensive operations
+ *
+ * Array of test suites that measure performance of various CPU-bound operations:
+ * - Arithmetic operations in tight loops
+ * - Stack manipulation operations
+ * - Memory access patterns
+ * - Control flow constructs
+ */
 static WordTestSuite compute_suites[] = {
     {
         "ARITHMETIC-BENCH", {
@@ -72,6 +81,14 @@ static WordTestSuite compute_suites[] = {
     }
 };
 
+/**
+ * @brief Runs all compute-intensive benchmark suites
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ *
+ * Executes all benchmark test suites measuring CPU-bound operations
+ * and reports execution time for each suite and total time.
+ */
 void run_compute_benchmarks(VM *vm) {
     clock_t start = clock();
 

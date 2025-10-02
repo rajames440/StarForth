@@ -229,6 +229,15 @@ static WordTestSuite double_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all test suites for double number words
+ *
+ * This function runs comprehensive tests for all double number word operations,
+ * including stack manipulation (2DROP, 2DUP, etc.), arithmetic operations (D+, D-, etc.),
+ * and comparison operations (D=, D<, etc.).
+ *
+ * @param vm Pointer to the virtual machine instance where tests will be executed
+ */
 void run_double_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Double Number Words Tests (Module 6)...");
 

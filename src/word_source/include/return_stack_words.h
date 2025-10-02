@@ -20,14 +20,37 @@
 
 #include "../../../include/vm.h"
 
-/* FORTH-79 Return Stack Operation Words:
- * >R        ( n -- ) ( R: -- n )        Move item from data to return stack
- * R>        ( -- n ) ( R: n -- )        Move item from return to data stack
- * R@        ( -- n ) ( R: n -- n )      Copy top of return stack to data stack
- * RP!       ( addr -- )                 Set return stack pointer
- * RP@       ( -- addr )                 Get return stack pointer
+/**
+ * @defgroup ReturnStackOps FORTH-79 Return Stack Operations
+ * @{
+ *
+ * @def >R
+ * @brief Move item from data to return stack
+ * Stack effect: ( n -- ) ( R: -- n )
+ *
+ * @def R>
+ * @brief Move item from return to data stack
+ * Stack effect: ( -- n ) ( R: n -- )
+ *
+ * @def R@
+ * @brief Copy top of return stack to data stack
+ * Stack effect: ( -- n ) ( R: n -- n )
+ *
+ * @def RP!
+ * @brief Set return stack pointer
+ * Stack effect: ( addr -- )
+ *
+ * @def RP@
+ * @brief Get return stack pointer
+ * Stack effect: ( -- addr )
+ * @}
  */
 
+/**
+ * @brief Registers all return stack manipulation words with the virtual machine
+ *
+ * @param vm Pointer to the virtual machine instance
+ */
 void register_return_stack_words(VM * vm);
 
 #endif /* RETURN_STACK_WORDS_H */

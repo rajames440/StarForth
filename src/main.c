@@ -32,6 +32,12 @@
 static VM *global_vm = NULL;
 
 /* Cleanup function for atexit() and signal handlers */
+/** 
+ * @brief Performs cleanup operations before program termination
+ *
+ * Cleans up the VM resources if initialized. This function is registered with
+ * atexit() and is also called by signal handlers.
+ */
 void cleanup_and_exit(void) {
     if (global_vm != NULL) {
         vm_cleanup(global_vm);
@@ -40,6 +46,13 @@ void cleanup_and_exit(void) {
 }
 
 /* Signal handler for CTRL-C (SIGINT) and CTRL-D equivalent */
+/**
+ * @brief Handles system signals for graceful termination
+ * @param sig Signal number received
+ *
+ * Handles SIGINT (CTRL-C) and SIGTERM signals by performing cleanup
+ * and terminating the program gracefully.
+ */
 void signal_handler(int sig) {
     switch (sig) {
         case SIGINT:
@@ -53,6 +66,13 @@ void signal_handler(int sig) {
     exit(0);
 }
 
+/**
+ * @brief Prints program usage information
+ * @param program_name Name of the executable
+ *
+ * Displays detailed usage instructions including all available
+ * command-line options and examples.
+ */
 void print_usage(const char *program_name) {
     printf("Usage: %s [OPTIONS]\n", program_name);
     printf("StarForth - A lightweight Forth virtual machine\n\n");
@@ -79,6 +99,15 @@ void print_usage(const char *program_name) {
     printf("  %s --log-debug --run-tests  # Run tests with DEBUG logging\n", program_name);
 }
 
+/**
+ * @brief Main entry point for StarForth
+ * @param argc Number of command-line arguments
+ * @param argv Array of command-line argument strings
+ * @return 0 on successful execution, 1 on error
+ *
+ * Initializes the virtual machine, processes command-line arguments,
+ * runs tests if requested, and starts the REPL interface.
+ */
 int main(int argc, char *argv[]) {
     VM vm = {0}; /* Zero-initialize to prevent crashes if cleanup called before vm_init */
     int run_tests = 0;

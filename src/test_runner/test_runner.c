@@ -23,32 +23,41 @@
 #include <string.h>
 #include <time.h>
 
-/* Global test statistics */
+/** @brief Global statistics for test execution */
 TestStats global_test_stats = {0, 0, 0, 0, 0};
 
-/* Benchmark mode flag */
+/** @brief Flag indicating if benchmark mode is enabled */
 static int benchmark_mode = 0;
+/** @brief Number of iterations for benchmark tests */
 static int benchmark_iterations = 1000;
 
-/* Per-module timing data for detailed reporting */
+/**
+ * @brief Structure for storing per-module benchmark data
+ */
 typedef struct {
-    const char *module_name;
-    uint64_t execution_time;
-    double runs_per_second;
-    int active;
+    const char *module_name; /**< Name of the test module */
+    uint64_t execution_time; /**< Total execution time in nanoseconds */
+    double runs_per_second; /**< Performance metric in operations per second */
+    int active; /**< Flag indicating if module is active */
 } ModuleBenchmark;
 
 static ModuleBenchmark module_benchmarks[32]; /* Max 32 modules */
 static int benchmark_count = 0;
 
-/* Simple portable timer using platform clock() */
+/**
+ * @brief Get current time in nanoseconds
+ *
+ * Uses platform's clock() function to measure time with nanosecond precision.
+ *
+ * @return Current time in nanoseconds, or 0 on error
+ */
 static uint64_t get_time_ns(void) {
     clock_t t = clock();
-    if (t == (clock_t) (-1)) {
+    if (t == (clock_t)(-1)) {
         return 0; /* Error case */
     }
     /* Convert to nanoseconds: (clock_ticks / CLOCKS_PER_SEC) * 1,000,000,000 */
-    return (uint64_t) ((double) t / CLOCKS_PER_SEC * 1000000000.0);
+    return (uint64_t)((double) t / CLOCKS_PER_SEC * 1000000000.0);
 }
 
 /* Test modules in dependency order - matches your word registration order */
@@ -73,7 +82,11 @@ static TestModule test_modules[] = {
     {NULL, NULL, 0, NULL} /* End marker */
 };
 
-/* Enable benchmark mode */
+/**
+ * @brief Enable benchmark mode for test execution
+ *
+ * @param iterations Number of times each test should be repeated
+ */
 void enable_benchmark_mode(int iterations) {
     benchmark_mode = 1;
     benchmark_iterations = iterations;
@@ -81,7 +94,14 @@ void enable_benchmark_mode(int iterations) {
     log_message(LOG_INFO, "Benchmark mode enabled: %d iterations per module", iterations);
 }
 
-/* Run all test modules with optional benchmarking */
+/**
+ * @brief Run all test modules with optional benchmarking
+ *
+ * Executes all registered test modules sequentially, collecting statistics
+ * and/or benchmark data depending on the current mode.
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void run_all_tests(VM *vm) {
     if (benchmark_mode) {
         log_message(LOG_INFO, "Starting STARFORTH PERFORMANCE BENCHMARKS...");
@@ -272,7 +292,12 @@ void run_all_tests(VM *vm) {
     log_message(LOG_INFO, "==============================================");
 }
 
-/* Run tests for a specific module with optional benchmarking */
+/**
+ * @brief Run tests for a specific module
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ * @param module_name Name of the module to test
+ */
 void run_module_tests(VM *vm, const char *module_name) {
     for (int i = 0; test_modules[i].module_name != NULL; i++) {
         if (strcmp(test_modules[i].module_name, module_name) == 0) {
@@ -312,7 +337,14 @@ void run_module_tests(VM *vm, const char *module_name) {
     log_message(LOG_ERROR, "Unknown test module: %s", module_name);
 }
 
-/* Run tests for a specific word (searches all modules) */
+/**
+ * @brief Run tests for a specific Forth word
+ *
+ * Searches all modules for tests related to the specified word and executes them.
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ * @param word_name Name of the Forth word to test
+ */
 void run_word_tests(VM *vm, const char *word_name) {
     log_message(LOG_INFO, "Searching for tests for word: %s", word_name);
 

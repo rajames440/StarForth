@@ -20,31 +20,83 @@
 
 #include "../../../include/vm.h"
 
-/* FORTH-79 Control Flow Words:
- * IF        ( flag -- )                 Conditional execution
- * THEN      ( -- )                      End of IF
- * ELSE      ( -- )                      Alternative execution
- * BEGIN     ( -- )                      Start indefinite loop
- * UNTIL     ( flag -- )                 End loop if flag true
- * AGAIN     ( -- )                      End infinite loop
- * WHILE     ( flag -- )                 Test in BEGIN loop
- * REPEAT    ( -- )                      End of WHILE loop
- * DO        ( limit start -- )          Start definite loop
- * LOOP      ( -- )                      End DO loop, increment by 1
- * +LOOP     ( n -- )                    End DO loop, increment by n
- * I         ( -- n )                    Current loop index
- * J         ( -- n )                    Outer loop index
- * LEAVE     ( -- )                      Exit current loop
- * UNLOOP    ( -- )                      Discard loop parameters
- * EXIT      ( -- )                      Exit current word
- * ABORT     ( -- )                      Abort execution
- * QUIT      ( -- )                      Return to interpreter
- * EXECUTE   ( xt -- )                   Execute word at address
- * BRANCH    ( -- )                      Unconditional branch
- * 0BRANCH   ( flag -- )                 Branch if flag is zero
- * (LIT)     ( -- n )                    Push inline literal
+/**
+ * @defgroup control_words FORTH-79 Control Flow Words
+ * @{
+ * @brief Standard FORTH-79 control flow words implementation
+ *
+ * @def IF ( flag -- )
+ * Conditional execution based on flag
+ *
+ * @def THEN ( -- )
+ * End of IF conditional block
+ *
+ * @def ELSE ( -- )
+ * Alternative execution path
+ *
+ * @def BEGIN ( -- )
+ * Start of indefinite loop
+ *
+ * @def UNTIL ( flag -- )
+ * End loop if flag is true
+ *
+ * @def AGAIN ( -- )
+ * End infinite loop
+ *
+ * @def WHILE ( flag -- )
+ * Test condition in BEGIN loop
+ *
+ * @def REPEAT ( -- )
+ * End of WHILE loop
+ *
+ * @def DO ( limit start -- )
+ * Start definite loop
+ *
+ * @def LOOP ( -- )
+ * End DO loop, increment by 1
+ *
+ * @def +LOOP ( n -- )
+ * End DO loop, increment by n
+ *
+ * @def I ( -- n )
+ * Get current loop index
+ *
+ * @def J ( -- n )
+ * Get outer loop index
+ *
+ * @def LEAVE ( -- )
+ * Exit current loop
+ *
+ * @def UNLOOP ( -- )
+ * Discard loop parameters
+ *
+ * @def EXIT ( -- )
+ * Exit current word
+ *
+ * @def ABORT ( -- )
+ * Abort execution
+ *
+ * @def QUIT ( -- )
+ * Return to interpreter
+ *
+ * @def EXECUTE ( xt -- )
+ * Execute word at address
+ *
+ * @def BRANCH ( -- )
+ * Unconditional branch
+ *
+ * @def 0BRANCH ( flag -- )
+ * Branch if flag is zero
+ *
+ * @def (LIT) ( -- n )
+ * Push inline literal
+ * @}
  */
 
+/**
+ * @brief Registers all control flow words with the Forth virtual machine
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void register_control_words(VM * vm);
 
 #endif /* CONTROL_WORDS_H */

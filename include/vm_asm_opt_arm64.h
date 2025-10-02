@@ -1,13 +1,25 @@
-/*
-                                 ***   StarForth   ***
-  vm_asm_opt_arm64.h - ARM64/AArch64 Inline Assembly Optimizations
-  Compatible with: Raspberry Pi 4, ARM64 Linux, L4Re on ARM64
-
-  Optimized for: Cortex-A72 (Raspberry Pi 4), Cortex-A53, Cortex-A76
-
-  This work is released into the public domain under CC0 v1.0 Universal license.
-  No warranty. Use at your own risk.
-*/
+/**
+ * @file vm_asm_opt_arm64.h
+ * @brief ARM64/AArch64 Inline Assembly Optimizations for StarForth VM
+ * @details
+ * Provides optimized assembly implementations of core VM operations for ARM64
+ * architectures, specifically targeting Raspberry Pi 4 and similar platforms.
+ *
+ * Compatible with:
+ * - Raspberry Pi 4 (Cortex-A72)
+ * - ARM64 Linux
+ * - L4Re on ARM64
+ *
+ * Optimized for:
+ * - Cortex-A72 (Raspberry Pi 4)
+ * - Cortex-A53
+ * - Cortex-A76
+ *
+ * @note Enable optimizations by defining USE_ASM_OPT=1
+ *
+ * @copyright This work is released into the public domain under CC0 v1.0 Universal license.
+ * @warning No warranty. Use at your own risk.
+ */
 
 #ifndef VM_ASM_OPT_ARM64_H
 #define VM_ASM_OPT_ARM64_H
@@ -72,6 +84,12 @@
 #if USE_ASM_OPT
 
 /* vm_push optimized - Data stack push */
+/**
+ * @brief Optimized assembly implementation of data stack push operation
+ * @param vm Pointer to VM instance
+ * @param value Value to push onto data stack
+ * @note Sets vm->error on stack overflow
+ */
 static inline void vm_push_asm(VM *vm, cell_t value) {
     int error = 0;
 
@@ -116,6 +134,12 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
 }
 
 /* vm_pop optimized - Data stack pop */
+/**
+ * @brief Optimized assembly implementation of data stack pop operation
+ * @param vm Pointer to VM instance
+ * @return Popped value, or 0 on underflow
+ * @note Sets vm->error on stack underflow
+ */
 static inline cell_t vm_pop_asm(VM *vm) {
     cell_t value = 0;
     int error = 0;
@@ -163,6 +187,12 @@ static inline cell_t vm_pop_asm(VM *vm) {
 }
 
 /* vm_rpush optimized - Return stack push */
+/**
+ * @brief Optimized assembly implementation of return stack push operation
+ * @param vm Pointer to VM instance
+ * @param value Value to push onto return stack
+ * @note Sets vm->error on stack overflow
+ */
 static inline void vm_rpush_asm(VM *vm, cell_t value) {
     int error = 0;
 
@@ -194,6 +224,12 @@ static inline void vm_rpush_asm(VM *vm, cell_t value) {
 }
 
 /* vm_rpop optimized - Return stack pop */
+/**
+ * @brief Optimized assembly implementation of return stack pop operation
+ * @param vm Pointer to VM instance
+ * @return Popped value, or 0 on underflow
+ * @note Sets vm->error on stack underflow
+ */
 static inline cell_t vm_rpop_asm(VM *vm) {
     cell_t value = 0;
     int error = 0;
@@ -239,6 +275,13 @@ static inline cell_t vm_rpop_asm(VM *vm) {
  */
 
 /* Fast add with overflow detection using ADDS and conditional select */
+/**
+ * @brief Fast addition with overflow detection using ARM64 ADDS instruction
+ * @param a First operand
+ * @param b Second operand
+ * @param result Pointer to store result
+ * @return 1 if overflow occurred, 0 otherwise
+ */
 static inline int vm_add_check_overflow(cell_t a, cell_t b, cell_t *result) {
     cell_t res;
     int overflow;
@@ -258,6 +301,13 @@ static inline int vm_add_check_overflow(cell_t a, cell_t b, cell_t *result) {
 }
 
 /* Fast subtract with overflow detection */
+/**
+ * @brief Fast subtraction with overflow detection using ARM64 SUBS instruction
+ * @param a First operand
+ * @param b Second operand
+ * @param result Pointer to store result
+ * @return 1 if overflow occurred, 0 otherwise
+ */
 static inline int vm_sub_check_overflow(cell_t a, cell_t b, cell_t *result) {
     cell_t res;
     int overflow;
@@ -277,6 +327,13 @@ static inline int vm_sub_check_overflow(cell_t a, cell_t b, cell_t *result) {
 }
 
 /* Fast multiply with high-word result (for star-slash-MOD) */
+/**
+ * @brief Fast 128-bit multiplication using ARM64 SMULH instruction
+ * @param a First operand
+ * @param b Second operand
+ * @param hi Pointer to store high 64 bits of result
+ * @param lo Pointer to store low 64 bits of result
+ */
 static inline void vm_mul_double(cell_t a, cell_t b, cell_t *hi, cell_t *lo) {
     __asm__(
         "mul     %[lo], %[a], %[b]\n\t" /* Low 64 bits */
@@ -289,6 +346,13 @@ static inline void vm_mul_double(cell_t a, cell_t b, cell_t *hi, cell_t *lo) {
 }
 
 /* Fast divide with remainder (for /MOD) */
+/**
+ * @brief Fast division with remainder using ARM64 SDIV and MSUB instructions
+ * @param dividend Dividend value
+ * @param divisor Divisor value
+ * @param quotient Pointer to store quotient
+ * @param remainder Pointer to store remainder
+ */
 static inline void vm_divmod(cell_t dividend, cell_t divisor,
                              cell_t *quotient, cell_t *remainder) {
     cell_t quot, rem;
@@ -319,6 +383,13 @@ static inline void vm_divmod(cell_t dividend, cell_t divisor,
  */
 
 /* Fast string comparison for short strings (<=32 bytes) */
+/**
+ * @brief Optimized string comparison for short strings (<=32 bytes)
+ * @param s1 First string
+ * @param s2 Second string
+ * @param len Length to compare
+ * @return 0 if equal, 1 if different
+ */
 static inline int vm_strcmp_short_asm(const char *s1, const char *s2, size_t len) {
     int result = 0;
 
@@ -405,6 +476,7 @@ static inline int vm_strcmp_neon(const char *s1, const char *s2, size_t len) {
 static inline int vm_strcmp_asm(const char *s1, const char *s2, size_t len) {
 
 
+
 #ifdef __ARM_NEON
 if (len>= 16) {
         return vm_strcmp_neon(s1, s2, len);
@@ -414,6 +486,12 @@ return vm_strcmp_short_asm(s1, s2, len);
 }
 
 /* Fast memory copy optimized for ARM64 */
+/**
+ * @brief Optimized memory copy using ARM64 load/store pair instructions
+ * @param dest Destination buffer
+ * @param src Source buffer
+ * @param len Number of bytes to copy
+ */
 static inline void vm_memcpy_asm(void *dest, const void *src, size_t len) {
     /* ARM64 has efficient load/store pair instructions */
     if (len >= 16) {
@@ -441,6 +519,11 @@ static inline void vm_memcpy_asm(void *dest, const void *src, size_t len) {
 }
 
 /* Fast memory zero using store pair */
+/**
+ * @brief Fast memory zeroing using ARM64 store pair instructions
+ * @param dest Buffer to zero
+ * @param len Number of bytes to zero
+ */
 static inline void vm_memzero_asm(void *dest, size_t len) {
     if (len >= 16) {
         __asm__ __volatile__(
@@ -575,6 +658,7 @@ static inline uint64_t vm_read_midr(void) {
 static inline int vm_has_neon(void) {
 
 
+
 #ifdef __ARM_NEON
 return 1;
 #else
@@ -584,6 +668,7 @@ return 0;
 
 /* Check for Cortex-A72 (Raspberry Pi 4) */
 static inline int vm_is_cortex_a72(void) {
+
 
 
 /* Cortex-A72 MIDR: 0x410FD083 */

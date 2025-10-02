@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+/** @} */
+
 /**
  * @brief Initialize the IO subsystem
  * @param vm Pointer to VM instance
@@ -47,6 +49,19 @@ void io_init(VM *vm) {
  * @param block_num Block number to write (0 to MAX_BLOCKS-1)
  * @param buffer Source buffer containing block data
  * @return 0 on success, -1 on error
+ */
+/**
+ * @brief Write a block to VM memory
+ * @param vm Pointer to VM instance
+ * @param block_num Block number to write (0 to MAX_BLOCKS-1)
+ * @param buffer Source buffer containing block data
+ * @return 0 on success, -1 on error
+ *
+ * Writes a BLOCK_SIZE chunk of data from the provided buffer into the VM's memory
+ * at the specified block number offset. The block number must be within valid range.
+ * The entire block is written atomically.
+ *
+ * @note The buffer must contain at least BLOCK_SIZE bytes of valid data
  */
 int io_write_block(VM *vm, int block_num, const unsigned char *buffer) {
     if (!vm || !vm->memory || !buffer) {

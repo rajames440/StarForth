@@ -20,6 +20,10 @@
 
 #include "vm.h"
 
+/**
+ * @brief Starts the REPL (Read-Eval-Print Loop) for the Forth virtual machine
+ * @param vm Pointer to the VM instance to run the REPL on
+ */
 void vm_repl(VM * vm);
 
 #endif /* REPL_H */

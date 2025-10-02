@@ -20,10 +20,18 @@
 
 #include "vm.h"
 
-/* Simple word registration function */
+/**
+ * @brief Registers a single FORTH word in the virtual machine
+ * @param vm Pointer to the virtual machine instance
+ * @param name Name of the FORTH word to register
+ * @param func Function pointer to the word's implementation
+ */
 void register_word(VM *vm, const char *name, word_func_t func);
 
-/* Master registration function - registers all FORTH-79 words */
+/**
+ * @brief Registers all standard FORTH-79 words in the virtual machine
+ * @param vm Pointer to the virtual machine instance
+ */
 void register_forth79_words(VM * vm);
 
 #endif /* WORD_REGISTRY_H */

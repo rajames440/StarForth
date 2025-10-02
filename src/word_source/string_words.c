@@ -15,15 +15,6 @@
 
  */
 
-/*
-
-                                 ***   StarForth   ***
-  string_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 8/10/25, 5:35 PM
-  Public Domain / CC0
-
- */
-
 /* string_words.c - FORTH-79 String & Text Processing Words */
 #include "include/string_words.h"
 #include "../../include/word_registry.h"
@@ -37,12 +28,21 @@
 
 /* === Helpers ============================================================= */
 
-/* Convert a C pointer that points into vm->memory into a VM address (offset) */
+/**
+ * @brief Convert a C pointer that points into vm->memory into a VM address (offset)
+ * @param vm Pointer to VM instance
+ * @param p Pointer into VM memory space
+ * @return Virtual address (offset) corresponding to the pointer
+ */
 static inline vaddr_t vaddr_from_ptr(VM *vm, const void *p) {
     return (vaddr_t)((const uint8_t *) p - vm->memory);
 }
 
-/* Ensure we have input buffers/vars available */
+/**
+ * @brief Ensure input buffers and variables are available
+ * @param vm Pointer to VM instance
+ * @return 0 on success, non-zero on error
+ */
 static inline int ensure_input(VM *vm) {
     int err = vm_input_ensure(vm);
     if (err) { vm->error = 1; }
@@ -69,7 +69,14 @@ static int convert_string_to_number(const char *str, size_t len, cell_t *result)
 
 /* === Words =============================================================== */
 
-/* COUNT ( addr1 -- addr2 u )  Get string length and address */
+/**
+ * @brief COUNT ( addr1 -- addr2 u )
+ *
+ * Get string length and address. Converts a counted string at addr1 
+ * into an address (addr2) and length (u) pair.
+ *
+ * @param vm Pointer to VM instance
+ */
 void string_word_count(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "COUNT: Data stack underflow");

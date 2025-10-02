@@ -22,7 +22,12 @@
 #include <stdio.h>
 
 
-/* EMIT ( c -- ) - Output character to terminal */
+/**
+ * @brief FORTH word EMIT - Output character to terminal
+ * @param vm Pointer to the VM structure
+ * @details Stack effect: ( c -- )
+ *          Outputs the character from top of stack to the terminal
+ */
 static void io_word_emit(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -34,13 +39,23 @@ static void io_word_emit(VM *vm) {
     fflush(stdout);
 }
 
-/* CR ( -- ) - Output carriage return */
+/**
+ * @brief FORTH word CR - Output carriage return
+ * @param vm Pointer to the VM structure
+ * @details Stack effect: ( -- )
+ *          Outputs a newline character to the terminal
+ */
 static void io_word_cr(VM *vm) {
     putchar('\n');
     fflush(stdout);
 }
 
-/* KEY ( -- c ) - Input character from terminal */
+/**
+ * @brief FORTH word KEY - Input character from terminal
+ * @param vm Pointer to the VM structure
+ * @details Stack effect: ( -- c )
+ *          Reads one character from terminal and pushes it to stack
+ */
 static void io_word_key(VM *vm) {
     if (vm->dsp >= STACK_SIZE - 1) {
         vm->error = 1;
@@ -51,7 +66,12 @@ static void io_word_key(VM *vm) {
     vm->data_stack[++vm->dsp] = (cell_t) c;
 }
 
-/* ?TERMINAL ( -- flag ) - Check if input available */
+/**
+ * @brief FORTH word ?TERMINAL - Check if input is available
+ * @param vm Pointer to the VM structure
+ * @details Stack effect: ( -- flag )
+ *          Pushes true if input is available, false otherwise
+ */
 static void io_word_question_terminal(VM *vm) {
     if (vm->dsp >= STACK_SIZE - 1) {
         vm->error = 1;
@@ -62,7 +82,12 @@ static void io_word_question_terminal(VM *vm) {
     vm->data_stack[++vm->dsp] = 0;
 }
 
-/* TYPE ( addr u -- ) - Output u characters from addr */
+/**
+ * @brief FORTH word TYPE - Output string of characters
+ * @param vm Pointer to the VM structure
+ * @details Stack effect: ( addr u -- )
+ *          Outputs u characters from memory starting at addr
+ */
 static void io_word_type(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "TYPE: Data stack underflow");
@@ -89,13 +114,23 @@ static void io_word_type(VM *vm) {
     log_message(LOG_DEBUG, "TYPE: Output %ld characters from address %ld", (long) count, (long) addr);
 }
 
-/* SPACE ( -- ) - Output one space */
+/**
+ * @brief FORTH word SPACE - Output one space character
+ * @param vm Pointer to the VM structure
+ * @details Stack effect: ( -- )
+ *          Outputs a single space character to terminal
+ */
 static void io_word_space(VM *vm) {
     putchar(' ');
     fflush(stdout);
 }
 
-/* SPACES ( n -- ) - Output n spaces */
+/**
+ * @brief FORTH word SPACES - Output multiple spaces
+ * @param vm Pointer to the VM structure
+ * @details Stack effect: ( n -- )
+ *          Outputs n space characters to terminal
+ */
 static void io_word_spaces(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -112,7 +147,11 @@ static void io_word_spaces(VM *vm) {
     fflush(stdout);
 }
 
-/* Register all I/O words with the VM */
+/**
+ * @brief Register all I/O words with the VM
+ * @param vm Pointer to the VM structure
+ * @details Registers all FORTH-79 I/O and terminal words with the virtual machine
+ */
 void register_io_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 I/O & terminal words...");
 

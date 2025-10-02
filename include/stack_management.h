@@ -15,6 +15,19 @@
 
  */
 
+/**
+ * @file stack_management.h
+ * @brief Stack management functionality for the StarForth virtual machine
+ *
+ * This module provides the stack management operations required by the FORTH-79
+ * virtual machine implementation. It handles both the data and return stacks,
+ * including push, pop, and stack manipulation operations.
+ *
+ * All function implementations are located in stack_management.c while the
+ * prototypes are maintained in vm.h for API consistency.
+ */
+
+/** @brief Include guard for stack_management.h */
 #ifndef STACK_MANAGEMENT_H
 #define STACK_MANAGEMENT_H
 

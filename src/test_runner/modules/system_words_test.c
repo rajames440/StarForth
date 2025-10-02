@@ -18,7 +18,11 @@
 #include "../include/test_runner.h"
 #include "../include/test_common.h"
 
-/* System Words Test Suites - Module 18 */
+/** 
+ * @brief Test suite definitions for system control words
+ * @details Contains test cases for each system word including normal operations
+ * and error conditions
+ */
 static WordTestSuite system_word_suites[] = {
     {
         "QUIT", {
@@ -83,6 +87,14 @@ static WordTestSuite system_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all system word tests
+ * @details Runs test suites for FORTH system control operations including QUIT,
+ * ABORT, ABORT", BYE, COLD, and WARM. Some tests are marked as unimplemented
+ * due to their system-level effects
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void run_system_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running System Words Tests (Module 18)...");
     log_message(LOG_WARN, "Some system tests marked as unimplemented due to system-level effects");

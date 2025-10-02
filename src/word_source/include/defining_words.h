@@ -20,23 +20,33 @@
 
 #include "../../../include/vm.h"
 
-/* FORTH-79 Defining Words:
- * :         ( -- )                      Start colon definition
- * ;         ( -- )                      End colon definition
- * CREATE    ( -- )                      Create dictionary entry
- * DOES>     ( -- )                      Define runtime behavior
- * <BUILDS   ( -- )                      Create word with <BUILDS/DOES>
- * CONSTANT  ( n -- )                    Define constant
- * VARIABLE  ( -- )                      Define variable
- * 2CONSTANT ( d -- )                    Define double constant
- * 2VARIABLE ( -- )                      Define double variable
- * USER      ( n -- )                    Define user variable
- * IMMEDIATE ( -- )                      Make most recent word immediate
- * [COMPILE] ( -- )                      Force compilation of immediate word
- * COMPILE   ( -- )                      Compile inline code
- * FORGET    ( -- )                      Remove word and all after it
+/**
+ * @defgroup DefiningWords FORTH-79 Defining Words
+ * @{
+ * @brief Standard FORTH-79 defining words
+ *
+ * @details These words are used for creating new dictionary entries and defining words:
+ * - :         ( -- )     Start colon definition
+ * - ;         ( -- )     End colon definition
+ * - CREATE    ( -- )     Create dictionary entry
+ * - DOES>     ( -- )     Define runtime behavior
+ * - <BUILDS   ( -- )     Create word with <BUILDS/DOES>
+ * - CONSTANT  ( n -- )   Define constant
+ * - VARIABLE  ( -- )     Define variable
+ * - 2CONSTANT ( d -- )   Define double constant
+ * - 2VARIABLE ( -- )     Define double variable
+ * - USER      ( n -- )   Define user variable
+ * - IMMEDIATE ( -- )     Make most recent word immediate
+ * - [COMPILE] ( -- )     Force compilation of immediate word
+ * - COMPILE   ( -- )     Compile inline code
+ * - FORGET    ( -- )     Remove word and all after it
+ * @}
  */
 
+/**
+ * @brief Registers all FORTH-79 defining words with the virtual machine
+ * @param vm Pointer to the virtual machine instance
+ */
 void register_defining_words(VM * vm);
 
 #endif /* DEFINING_WORDS_H */

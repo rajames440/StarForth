@@ -18,7 +18,11 @@
 #include "../include/test_runner.h"
 #include "../include/test_common.h"
 
-/* Return Stack Words Test Suites - Module 2 */
+/** 
+ * @brief Test suites for return stack manipulation words
+ * @details Contains test cases for >R (push to return stack), 
+ *          R> (pop from return stack), and R@ (copy top of return stack)
+ */
 static WordTestSuite return_stack_word_suites[] = {
     {
         ">R", {
@@ -56,6 +60,12 @@ static WordTestSuite return_stack_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all test suites for return stack manipulation words
+ * @param vm Pointer to the Forth virtual machine instance
+ * @details Runs through all defined test cases for >R, R>, and R@ words
+ *          and reports results through the logging system
+ */
 void run_return_stack_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Return Stack Words Tests (Module 2)...");
 
