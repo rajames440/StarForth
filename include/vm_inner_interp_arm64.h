@@ -1,11 +1,15 @@
-/*
-                                 ***   StarForth   ***
-  vm_inner_interp_arm64.h - ARM64 Optimized Inner Interpreter
-  Optimized for: Raspberry Pi 4 (Cortex-A72), ARM64 Linux, L4Re ARM64
-
-  This work is released into the public domain under CC0 v1.0 Universal license.
-  No warranty. Use at your own risk.
-*/
+/**
+ * @file vm_inner_interp_arm64.h
+ * @brief ARM64 Optimized Inner Interpreter for StarForth VM
+ *
+ * Optimized implementation for:
+ * - Raspberry Pi 4 (Cortex-A72)
+ * - ARM64 Linux
+ * - L4Re ARM64
+ *
+ * @copyright This work is released into the public domain under CC0 v1.0 Universal license.
+ * @note No warranty. Use at your own risk.
+ */
 
 #ifndef VM_INNER_INTERP_ARM64_H
 #define VM_INNER_INTERP_ARM64_H
@@ -182,13 +186,15 @@ static inline void vm_save_registers_arm64(VM *vm) {
     );
 }
 
-/*
- * Fast primitive word implementations using register-based stacks
+/**
+ * @defgroup primitives Fast Primitive Word Implementations
+ * @brief Register-based stack primitives optimized for ARM64
  *
  * Key optimization: TOS stays in x23, avoiding memory traffic
+ * @{
  */
 
-/* DUP - duplicate top of stack */
+/** @brief DUP primitive - duplicates top of stack item */
 #define PRIM_DUP_ARM64() \
     __asm__ __volatile__ ( \
         "str     x23, [x21, #8]!\n\t"     /* Store TOS, advance DSP */ \

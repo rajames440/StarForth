@@ -19,34 +19,58 @@
 #define LOG_H
 
 
-/* Logging levels */
+/**
+ * @brief Logging level enumeration
+ *
+ * Defines the available logging levels in order of increasing verbosity.
+ */
 typedef enum {
-    LOG_NONE = -1, /* Completely disable all logging */
-    LOG_ERROR = 0,
-    LOG_WARN,
-    LOG_INFO,
-    LOG_TEST, // 🔥 NEW
-    LOG_DEBUG
+    LOG_NONE = -1, /**< Completely disable all logging */
+    LOG_ERROR = 0, /**< Error messages only */
+    LOG_WARN, /**< Warning and error messages */
+    LOG_INFO, /**< Informational, warning and error messages */
+    LOG_TEST, /**< Test results and all previous levels */
+    LOG_DEBUG /**< Debug messages and all previous levels */
 } LogLevel;
 
-/* Test result types */
+/**
+ * @brief Test result type enumeration
+ *
+ * Defines the possible outcomes of test execution.
+ */
 typedef enum {
-    TEST_PASS = 0,
-    TEST_FAIL,
-    TEST_SKIP,
-    TEST_ERROR
+    TEST_PASS = 0, /**< Test completed successfully */
+    TEST_FAIL, /**< Test failed */
+    TEST_SKIP, /**< Test was skipped */
+    TEST_ERROR /**< Test encountered an error during execution */
 } TestResult;
 
-/* Set the global logging level (default LOG_INFO) */
+/**
+ * @brief Set the global logging level
+ * @param level The new logging level to set
+ * @note Default level is LOG_INFO
+ */
 void log_set_level(LogLevel level);
 
-/* Get the current logging level */
+/**
+ * @brief Get the current logging level
+ * @return The current logging level
+ */
 LogLevel log_get_level(void);
 
-/* Log a formatted message at the specified level */
+/**
+ * @brief Log a formatted message at the specified level
+ * @param level The logging level for this message
+ * @param fmt Printf-style format string
+ * @param ... Variable arguments for format string
+ */
 void log_message(LogLevel level, const char *fmt, ...);
 
-/* Log a test result with colored output */
+/**
+ * @brief Log a test result with colored output
+ * @param word_name Name of the word being tested
+ * @param result Result of the test execution
+ */
 void log_test_result(const char *word_name, TestResult result);
 
 #endif /* LOG_H */

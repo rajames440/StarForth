@@ -34,7 +34,11 @@
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 
-/* DROP ( n -- ) Remove top stack item */
+/**
+ * @brief Implements DROP ( n -- ) - Removes top stack item
+ * @param vm Pointer to the virtual machine state
+ * @details Removes the top item from the data stack. Generates an error on stack underflow.
+ */
 static void stack_word_drop(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "DROP: Stack underflow");
@@ -45,7 +49,11 @@ static void stack_word_drop(VM *vm) {
     log_message(LOG_DEBUG, "DROP: Stack depth now %d", vm->dsp + 1);
 }
 
-/* DUP ( n -- n n ) Duplicate top stack item */
+/**
+ * @brief Implements DUP ( n -- n n ) - Duplicates top stack item
+ * @param vm Pointer to the virtual machine state
+ * @details Duplicates the top item on the data stack. Generates an error on stack underflow/overflow.
+ */
 static void stack_word_dup(VM *vm) {
 #ifdef STARFORTH_PERFORMANCE
     /* Fast path - skip bounds checking in performance builds */
@@ -74,7 +82,11 @@ static void stack_word_dup(VM *vm) {
 #endif
 }
 
-/* ?DUP ( n -- n n | n -- 0 ) Duplicate if non-zero */
+/**
+ * @brief Implements ?DUP ( n -- n n | n -- 0 ) - Conditionally duplicates top stack item
+ * @param vm Pointer to the virtual machine state
+ * @details Duplicates top stack item if it's non-zero, otherwise leaves it unchanged.
+ */
 static void stack_word_question_dup(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "?DUP: Stack underflow");
@@ -96,7 +108,11 @@ static void stack_word_question_dup(VM *vm) {
     }
 }
 
-/* SWAP ( n1 n2 -- n2 n1 ) Exchange top two stack items */
+/**
+ * @brief Implements SWAP ( n1 n2 -- n2 n1 ) - Exchanges top two stack items
+ * @param vm Pointer to the virtual machine state
+ * @details Exchanges the positions of the top two items on the data stack.
+ */
 static void stack_word_swap(VM *vm) {
 #ifdef STARFORTH_PERFORMANCE
     /* Fast path - minimal checking in performance builds */
@@ -126,7 +142,11 @@ static void stack_word_swap(VM *vm) {
 #endif
 }
 
-/* OVER ( n1 n2 -- n1 n2 n1 ) Copy second stack item to top */
+/**
+ * @brief Implements OVER ( n1 n2 -- n1 n2 n1 ) - Copies second stack item to top
+ * @param vm Pointer to the virtual machine state
+ * @details Copies the second item from the top of the stack to the top.
+ */
 static void stack_word_over(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "OVER: Insufficient stack items (need 2)");
@@ -146,7 +166,11 @@ static void stack_word_over(VM *vm) {
     log_message(LOG_DEBUG, "OVER: Copied second to top");
 }
 
-/* ROT ( n1 n2 n3 -- n2 n3 n1 ) Rotate top three stack items */
+/**
+ * @brief Implements ROT ( n1 n2 n3 -- n2 n3 n1 ) - Rotates top three stack items
+ * @param vm Pointer to the virtual machine state
+ * @details Rotates the top three items on the stack, moving the third item to the top.
+ */
 static void stack_word_rot(VM *vm) {
     if (vm->dsp < 2) {
         log_message(LOG_ERROR, "ROT: Insufficient stack items (need 3)");
@@ -166,7 +190,11 @@ static void stack_word_rot(VM *vm) {
     log_message(LOG_DEBUG, "ROT: Rotated top three items");
 }
 
-/* -ROT ( n1 n2 n3 -- n3 n1 n2 ) Reverse rotate top three items */
+/**
+ * @brief Implements -ROT ( n1 n2 n3 -- n3 n1 n2 ) - Reverse rotates top three items
+ * @param vm Pointer to the virtual machine state
+ * @details Performs the reverse rotation of the top three stack items.
+ */
 static void stack_word_minus_rot(VM *vm) {
     if (vm->dsp < 2) {
         log_message(LOG_ERROR, "-ROT: Insufficient stack items (need 3)");
@@ -186,7 +214,11 @@ static void stack_word_minus_rot(VM *vm) {
     log_message(LOG_DEBUG, "-ROT: Reverse rotated top three items");
 }
 
-/* DEPTH ( -- n ) Return number of stack items */
+/**
+ * @brief Implements DEPTH ( -- n ) - Returns number of stack items
+ * @param vm Pointer to the virtual machine state
+ * @details Pushes the current number of items on the data stack onto the stack.
+ */
 static void stack_word_depth(VM *vm) {
     if (vm->dsp >= STACK_SIZE - 1) {
         log_message(LOG_ERROR, "DEPTH: Stack overflow");
@@ -200,7 +232,11 @@ static void stack_word_depth(VM *vm) {
     log_message(LOG_DEBUG, "DEPTH: Stack depth returned");
 }
 
-/* PICK ( n -- stack[n] ) Copy nth stack item to top */
+/**
+ * @brief Implements PICK ( n -- stack[n] ) - Copies nth stack item to top
+ * @param vm Pointer to the virtual machine state
+ * @details Copies the nth item from the stack to the top, where n is popped from the stack.
+ */
 static void stack_word_pick(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "PICK: Stack underflow");
@@ -224,7 +260,11 @@ static void stack_word_pick(VM *vm) {
     log_message(LOG_DEBUG, "PICK: Copied item at index %ld to top", (long) n);
 }
 
-/* ROLL ( n -- ) Move nth stack item to top */
+/**
+ * @brief Implements ROLL ( n -- ) - Moves nth stack item to top
+ * @param vm Pointer to the virtual machine state
+ * @details Moves the nth item from the stack to the top, shifting intermediate items down.
+ */
 static void stack_word_roll(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "ROLL: Stack underflow");
@@ -266,7 +306,11 @@ static void stack_word_roll(VM *vm) {
     log_message(LOG_DEBUG, "ROLL: Moved item at index %ld to top", (long) n);
 }
 
-/* Registration function - called by word_registry.c */
+/**
+ * @brief Registers all stack operation words with the virtual machine
+ * @param vm Pointer to the virtual machine state
+ * @details Registers all FORTH-79 standard stack operation words with the word registry.
+ */
 void register_stack_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 stack operation words...");
 

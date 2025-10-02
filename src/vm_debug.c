@@ -23,9 +23,16 @@
 
 static VM *g_vm = NULL;
 
+/** @brief Sets the current VM instance for debug operations
+ *  @param vm Pointer to the VM instance to be monitored
+ */
 void vm_debug_set_current_vm(VM *vm) { g_vm = vm; }
 
 /* Safe BASE read (never touches vm->error). Adjust if you have a helper. */
+/** @brief Safely retrieves the current number base from VM
+ *  @param vm Pointer to the VM instance
+ *  @return Current number base (2-36) or 10 if invalid
+ */
 static unsigned dbg_get_base(const VM *vm) {
     if (!vm) return 10u;
     size_t idx = (size_t) vm->base_addr;
@@ -37,6 +44,10 @@ static unsigned dbg_get_base(const VM *vm) {
     return 10u;
 }
 
+/** @brief Converts VM mode to string representation
+ *  @param m The VM mode value
+ *  @return String representing the mode
+ */
 static const char *mode_str(int m) {
     switch (m) {
         case MODE_INTERPRET: return "INTERPRET";
@@ -45,6 +56,10 @@ static const char *mode_str(int m) {
     }
 }
 
+/** @brief Dumps preview of a block's contents
+ *  @param vm Pointer to the VM instance
+ *  @param scr Block number to preview
+ */
 static void dump_block_preview(const VM *vm, cell_t scr) {
     if (!vm) return;
     if (scr < 1 || scr >= (cell_t) MAX_BLOCKS) return;
@@ -62,6 +77,10 @@ static void dump_block_preview(const VM *vm, cell_t scr) {
     fprintf(stderr, "  block[%ld]: \"%s\"%s\n", (long) scr, line, (n == 80 ? "..." : ""));
 }
 
+/** @brief Dumps the current state of the VM for debugging
+ *  @param vm Pointer to the VM instance to dump
+ *  @param reason Optional string describing the reason for the dump
+ */
 void vm_debug_dump_state(const VM *vm, const char *reason) {
     if (!vm) {
         fprintf(stderr, "===== VM STATE DUMP (no VM) [%s] =====\n", reason ? reason : "");
@@ -113,6 +132,9 @@ void vm_debug_dump_state(const VM *vm, const char *reason) {
     fprintf(stderr, "===== END VM STATE DUMP =====\n");
 }
 
+/** @brief Signal handler for crash debugging
+ *  @param sig Signal number that was caught
+ */
 static void sig_handler(int sig) {
     const char *name = (sig == SIGSEGV) ? "SIGSEGV" : (sig == SIGABRT) ? "SIGABRT" : "SIGNAL";
     fprintf(stderr, "\n*** Caught %s ***\n", name);
@@ -121,6 +143,9 @@ static void sig_handler(int sig) {
     raise(sig);
 }
 
+/** @brief Installs signal handlers for crash debugging
+ *  @details Sets up handlers for SIGSEGV and SIGABRT to dump VM state on crash
+ */
 void vm_debug_install_signal_handlers(void) {
 #if defined(__unix__) || defined(__APPLE__)
     /* Use sigaction when available */

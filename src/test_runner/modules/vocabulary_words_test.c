@@ -18,7 +18,10 @@
 #include "../include/test_runner.h"
 #include "../include/test_common.h"
 
-/* Vocabulary Words Test Suites - Module 15 */
+/** @brief Test suites for vocabulary-related FORTH words (Module 15)
+ *  @details Contains test cases for each vocabulary word, including normal operations
+ *           and error cases. Each suite tests specific functionality of the vocabulary system.
+ */
 static WordTestSuite vocabulary_word_suites[] = {
     {
         "VOCABULARY", {
@@ -99,6 +102,11 @@ static WordTestSuite vocabulary_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/** @brief Executes all vocabulary word test suites
+ *  @param vm Pointer to the Forth virtual machine instance
+ *  @details Runs through all vocabulary-related test suites, executing each test case
+ *           and logging the results. Tests vocabulary creation, selection, and manipulation.
+ */
 void run_vocabulary_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Vocabulary Words Tests (Module 15)...");
 

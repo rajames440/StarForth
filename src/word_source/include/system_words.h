@@ -20,19 +20,55 @@
 
 #include "../../../include/vm.h"
 
-/* FORTH-79 System & Environment Words:
- * COLD      ( -- )                      Cold start system
- * WARM      ( -- )                      Warm start system  
- * BYE       ( -- )                      Exit FORTH system
- * SAVE-SYSTEM ( -- )                    Save system image
- * WORDS     ( -- )                      List words in current vocabulary
- * VLIST     ( -- )                      List all words in vocabulary
- * ?STACK    ( -- )                      Check stack depth
- * PAGE      ( -- )                      Clear screen/page
- * NOP       ( -- )                      No operation
- * 79-STANDARD ( -- )                    Ensure FORTH-79 compliance
+/**
+ * @defgroup system_words FORTH-79 System & Environment Words
+ * @{
+ *
+ * @brief System and environment control words for FORTH-79
+ *
+ * @details The following words provide system and environment control functionality:
+ *
+ * @par COLD ( -- )
+ * Performs a cold start of the system, reinitializing all system variables
+ *
+ * @par WARM ( -- )
+ * Performs a warm start of the system, preserving some system state
+ *
+ * @par BYE ( -- )
+ * Exits the FORTH system and returns to the host operating system
+ *
+ * @par SAVE-SYSTEM ( -- )
+ * Saves the current system image to disk
+ *
+ * @par WORDS ( -- )
+ * Lists all words in the current vocabulary
+ *
+ * @par VLIST ( -- )
+ * Lists all words in all vocabularies
+ *
+ * @par ?STACK ( -- )
+ * Checks the stack depth and reports any stack errors
+ *
+ * @par PAGE ( -- )
+ * Clears the screen or outputs a form feed
+ *
+ * @par NOP ( -- )
+ * Performs no operation
+ *
+ * @par 79-STANDARD ( -- )
+ * Ensures FORTH-79 standard compliance
+ * @}
  */
 
+/**
+ * @brief Registers all system words with the virtual machine
+ *
+ * @param vm Pointer to the virtual machine instance
+ *
+ * @details This function registers all FORTH-79 system and environment words
+ * with the specified virtual machine instance, making them available for use
+ * in the FORTH environment.
+ */
 void register_system_words(VM * vm);
 
 #endif /* SYSTEM_WORDS_H */

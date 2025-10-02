@@ -18,7 +18,10 @@
 #include "../include/test_runner.h"
 #include "../include/test_common.h"
 
-/* Control Words Test Suites - Module 12 */
+/** @brief Test suites for FORTH control words
+ *  @details Contains test cases for all control flow words in Module 12,
+ *           including conditional branches and loop structures
+ */
 static WordTestSuite control_word_suites[] = {
     {
         "IF", {
@@ -152,6 +155,11 @@ static WordTestSuite control_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/** @brief Executes all control words test suites
+ *  @param vm Pointer to the FORTH virtual machine instance
+ *  @details Runs through all defined test cases for control words,
+ *           testing conditional branches and loop constructs
+ */
 void run_control_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Control Words Tests (Module 12)...");
 

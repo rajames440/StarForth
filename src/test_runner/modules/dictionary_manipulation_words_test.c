@@ -123,6 +123,12 @@ static WordTestSuite dict_manip_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all dictionary manipulation words test suites
+ * @param vm Pointer to the Forth virtual machine instance
+ * @details Runs through all test cases for CREATE, FORGET, IMMEDIATE, FIND,
+ *          DEFINITIONS, SMUDGE, LATEST, >BODY, and HIDDEN words
+ */
 void run_dictionary_manipulation_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Dictionary Manipulation Words Tests (Module 14)...");
 

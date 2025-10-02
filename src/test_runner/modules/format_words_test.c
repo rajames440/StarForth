@@ -18,7 +18,10 @@
 #include "../include/test_runner.h"
 #include "../include/test_common.h"
 
-/* Format Words Test Suites - Module 10 */
+/** 
+ * @brief Test suites for format words (Module 10)
+ * Contains test cases for number base conversion and formatting operations
+ */
 static WordTestSuite format_word_suites[] = {
     {
         "BASE", {
@@ -125,6 +128,11 @@ static WordTestSuite format_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all format words test suites
+ * @param vm Pointer to the Forth virtual machine instance
+ * @details Runs through all test cases for number base manipulation and formatting words
+ */
 void run_format_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Format Words Tests (Module 10)...");
 

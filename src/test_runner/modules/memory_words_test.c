@@ -130,6 +130,13 @@ static WordTestSuite memory_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes the test suite for memory manipulation words
+ * @details Runs through a series of test cases for Forth memory operations including
+ *          store, fetch, allot, and other memory-related words
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void run_memory_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Memory Words Tests (Module 3)...");
 

@@ -155,6 +155,13 @@ static WordTestSuite arithmetic_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all arithmetic word test suites
+ * @param vm Pointer to the Forth virtual machine instance
+ * @details Runs through all test cases for arithmetic operations including
+ *          basic operations (+, -, *, /), modulo operations (MOD, /MOD),
+ *          and numeric functions (ABS, NEGATE, MIN, MAX)
+ */
 void run_arithmetic_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Arithmetic Words Tests (Module 5)...");
 

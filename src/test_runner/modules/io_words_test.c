@@ -18,7 +18,11 @@
 #include "../include/test_runner.h"
 #include "../include/test_common.h"
 
-/* I/O Words Test Suites - Module 9 */
+/** 
+ * @brief Test suites for I/O words (Module 9)
+ * @details Contains comprehensive test cases for all I/O related FORTH words
+ *          including output formatting, character I/O, and base conversion operations
+ */
 static WordTestSuite io_word_suites[] = {
     {
         ".", {
@@ -210,6 +214,12 @@ static WordTestSuite io_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all I/O words test suites
+ * @param vm Pointer to the FORTH virtual machine instance
+ * @details Runs through all defined test suites for I/O words, logging results
+ *          and providing a summary of the test execution
+ */
 void run_io_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running I/O Words Tests (Module 9)...");
 

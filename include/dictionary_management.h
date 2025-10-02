@@ -20,16 +20,44 @@
 
 #include "vm.h"  /* For VM type and word_func_t */
 
-/* Initialize dictionary structures */
+/**
+ * @brief Initialize the Forth dictionary
+ *
+ * @param vm Pointer to the virtual machine instance
+ *
+ * Initializes all dictionary structures and prepares them for use.
+ * Must be called before any other dictionary operations.
+ */
 void dictionary_init(VM * vm);
 
-/* Register a word into the dictionary */
+/**
+ * @brief Register a new word in the dictionary
+ *
+ * @param vm Pointer to the virtual machine instance
+ * @param name Name of the word to register
+ * @param func Function pointer to the word's implementation
+ *
+ * Adds a new word to the dictionary with the specified name and implementation.
+ */
 void dictionary_register(VM *vm, const char *name, word_func_t func);
 
-/* Look up a word by name */
+/**
+ * @brief Look up a word in the dictionary by name
+ *
+ * @param vm Pointer to the virtual machine instance
+ * @param name Name of the word to look up
+ * @return word_func_t Function pointer to the word's implementation or NULL if not found
+ */
 word_func_t dictionary_lookup(VM *vm, const char *name);
 
-/* Clear dictionary (optional) */
+/**
+ * @brief Clear the entire dictionary
+ *
+ * @param vm Pointer to the virtual machine instance
+ *
+ * Removes all words from the dictionary and frees associated memory.
+ * This is an optional operation that may be used during cleanup.
+ */
 void dictionary_clear(VM * vm);
 
 #endif

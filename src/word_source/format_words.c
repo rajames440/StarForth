@@ -15,13 +15,6 @@
 
  */
 
-/*
-                                 ***   StarForth   ***
-  format_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 2025-08-09
-  (c) 2025 Robert A. James - StarshipOS Forth Project. CC0-1.0
-*/
-
 #include "include/format_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
@@ -33,11 +26,14 @@
 #include <stdio.h>
 
 
-/* Conversion buffer for <# ... #> */
+/** @brief Picture number buffer for numeric conversion */
 static unsigned char *pn_buf = NULL;
+/** @brief Capacity of picture number buffer */
 static size_t pn_cap = 0;
+/** @brief Current position in picture number buffer */
 static int conversion_pos = 0;
 
+/** @brief Ensures picture number buffer is allocated */
 static void ensure_pn(VM *vm) {
     if (!pn_buf) {
         pn_buf = (unsigned char *) vm_allot(vm, 64); /* same size as before */
@@ -54,16 +50,19 @@ static void ensure_pn(VM *vm) {
 #define CHUNK_BITS  16
 #define CHUNK_MASK  ((unsigned long)((1UL << CHUNK_BITS) - 1))
 
+/** @brief Returns current numeric conversion base, defaulting to 10 if invalid */
 static unsigned current_base(VM *vm) {
     unsigned b = (unsigned) vm->base;
     return (b < 2 || b > 36) ? 10u : b;
 }
 
+/** @brief Converts value 0-35 to character '0'-'9' or 'A'-'Z' */
 static char digit_for(unsigned v) {
     return (v < 10) ? (char) ('0' + v) : (char) ('A' + (v - 10));
 }
 
 /* Divide unsigned double-cell (dhigh:dlow) by base (2..36), portable C99 */
+/** @brief Divides unsigned double-cell number by base using portable C99 code */
 static void div_ud_by_base(cell_t dhigh_in, cell_t dlow_in, unsigned base,
                            cell_t *qhigh_out, cell_t *qlow_out, unsigned *rem_out) {
     unsigned long base_ul = (unsigned long) base;
@@ -101,6 +100,7 @@ static void div_ud_by_base(cell_t dhigh_in, cell_t dlow_in, unsigned base,
 }
 
 /* Render one cell in current base (no printf %x/%o so input==output base) */
+/** @brief Prints number with optional width field and sign handling */
 static void print_number_formatted(VM *vm, cell_t n, int width, int is_unsigned) {
     char buf[80];
     int i = 0;
@@ -443,6 +443,17 @@ void format_word_dump(VM *vm) {
 }
 
 /* Registration */
+/**
+ * @brief Registers all formatting and numeric conversion words with the VM.
+ *
+ * This function registers the standard FORTH formatting words including:
+ * - Number output words (., .R, U., U.R, D., D.R, .S, ?)
+ * - Picture number formatting (<#, #, #S, #>, HOLD, SIGN)
+ * - Base conversion (BASE, DECIMAL, HEX, OCTAL)
+ * - Memory dump (DUMP)
+ *
+ * @param vm Pointer to the virtual machine instance
+ */
 void register_format_words(VM *vm) {
     log_message(LOG_INFO, "Registering formatting & conversion words...");
 

@@ -22,7 +22,14 @@
 #include <string.h>
 
 
-/* @ ( addr -- n )  Fetch cell from VM memory */
+/**
+ * @brief Implements FORTH word '@' - Fetch cell from VM memory
+ * 
+ * Stack effect: ( addr -- n )
+ * Fetches a cell value from the given memory address in VM memory.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_fetch(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -37,7 +44,14 @@ void memory_word_fetch(VM *vm) {
     vm_push(vm, value);
 }
 
-/* ! ( n addr -- )  Store cell into VM memory */
+/**
+ * @brief Implements FORTH word '!' - Store cell into VM memory
+ *
+ * Stack effect: ( n addr -- )
+ * Stores a cell value at the given memory address in VM memory.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_store(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -52,7 +66,14 @@ void memory_word_store(VM *vm) {
     vm_store_cell(vm, addr, value);
 }
 
-/* C@ ( addr -- c )  Fetch byte from VM memory */
+/**
+ * @brief Implements FORTH word 'C@' - Fetch byte from VM memory
+ *
+ * Stack effect: ( addr -- c )
+ * Fetches a byte value from the given memory address in VM memory.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_cfetch(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -67,7 +88,14 @@ void memory_word_cfetch(VM *vm) {
     vm_push(vm, (cell_t) value);
 }
 
-/* C! ( c addr -- )  Store byte into VM memory */
+/**
+ * @brief Implements FORTH word 'C!' - Store byte into VM memory
+ *
+ * Stack effect: ( c addr -- )
+ * Stores a byte value at the given memory address in VM memory.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_cstore(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -82,7 +110,14 @@ void memory_word_cstore(VM *vm) {
     vm_store_u8(vm, addr, (uint8_t)(value & 0xFF));
 }
 
-/* +! ( n addr -- )  Add n to contents of cell at addr */
+/**
+ * @brief Implements FORTH word '+!' - Add to contents of cell
+ *
+ * Stack effect: ( n addr -- )
+ * Adds n to the contents of the cell at the given address.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_plus_store(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -98,7 +133,14 @@ void memory_word_plus_store(VM *vm) {
     vm_store_cell(vm, addr, current + n);
 }
 
-/* -! ( n addr -- )  Subtract n from contents of cell at addr */
+/**
+ * @brief Implements FORTH word '-!' - Subtract from contents of cell
+ *
+ * Stack effect: ( n addr -- )
+ * Subtracts n from the contents of the cell at the given address.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_minus_store(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -114,7 +156,14 @@ void memory_word_minus_store(VM *vm) {
     vm_store_cell(vm, addr, current - n);
 }
 
-/* FILL ( addr len c -- )  Fill len bytes at addr with c */
+/**
+ * @brief Implements FORTH word 'FILL' - Fill memory with byte value
+ *
+ * Stack effect: ( addr len c -- )
+ * Fills len bytes of memory starting at addr with the value c.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_fill(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
@@ -131,7 +180,14 @@ void memory_word_fill(VM *vm) {
     memset(ptr, (int) (c_val & 0xFF), len);
 }
 
-/* MOVE ( addr1 addr2 len -- )  Copy len bytes from addr1 to addr2 */
+/**
+ * @brief Implements FORTH word 'MOVE' - Copy memory region
+ *
+ * Stack effect: ( addr1 addr2 len -- )
+ * Copies len bytes from addr1 to addr2, handling overlapping regions correctly.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_move(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
@@ -149,7 +205,14 @@ void memory_word_move(VM *vm) {
     memmove(dst, src, len);
 }
 
-/* ERASE ( addr len -- )  Zero len bytes starting at addr */
+/**
+ * @brief Implements FORTH word 'ERASE' - Zero memory region
+ *
+ * Stack effect: ( addr len -- )
+ * Sets len bytes to zero starting at addr.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_erase(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -165,7 +228,14 @@ void memory_word_erase(VM *vm) {
     memset(ptr, 0, len);
 }
 
-/* 2@ ( addr -- x_low x_high )  Fetch two consecutive cells (low, then high) */
+/**
+ * @brief Implements FORTH word '2@' - Fetch double cell
+ *
+ * Stack effect: ( addr -- x_low x_high )
+ * Fetches two consecutive cells from memory, pushing low cell then high cell.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_2fetch(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -188,7 +258,14 @@ void memory_word_2fetch(VM *vm) {
     vm_push(vm, high);
 }
 
-/* 2! ( x_low x_high addr -- )  Store two consecutive cells (low at addr, high at addr+cell) */
+/**
+ * @brief Implements FORTH word '2!' - Store double cell
+ *
+ * Stack effect: ( x_low x_high addr -- )
+ * Stores two consecutive cells to memory, low cell at addr, high cell at addr+cell.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void memory_word_2store(VM *vm) {
     if (vm->dsp < 2) {
         vm->error = 1;
@@ -210,7 +287,14 @@ void memory_word_2store(VM *vm) {
 }
 
 /* CELLS ( n -- n' )  Multiply by cell size (bytes per cell). */
-/* CELLS ( n -- n' )  Scale by cell size in bytes. */
+/**
+ * @brief Implements FORTH word 'CELLS' - Scale by cell size
+ *
+ * Stack effect: ( n -- n' )
+ * Multiplies top of stack by cell size in bytes.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void memory_word_cells(VM *vm) {
     if (!vm) return;
     if (vm->dsp < 0) {
@@ -223,7 +307,13 @@ static void memory_word_cells(VM *vm) {
 }
 
 
-/* Register memory words */
+/**
+ * @brief Register all memory manipulation words with the VM
+ *
+ * Registers all standard memory words (@, !, C@, C!, etc.) with the VM's word dictionary.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void register_memory_words(VM *vm) {
     register_word(vm, "@", memory_word_fetch);
     register_word(vm, "!", memory_word_store);

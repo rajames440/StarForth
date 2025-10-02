@@ -26,8 +26,11 @@
 #include <signal.h>
 
 /* ───────────────────────── Global system state ───────────────────────── */
-static int system_running = 1; /* System running flag */
-static int forth_79_standard = 1; /* FORTH-79 standard compliance */
+/** @brief Flag indicating if the Forth system is currently running */
+static int system_running = 1;
+
+/** @brief Flag controlling FORTH-79 standard compliance mode */
+static int forth_79_standard = 1;
 
 /* ─────────────────────────── Utilities/helpers ───────────────────────── */
 

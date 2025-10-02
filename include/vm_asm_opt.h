@@ -21,11 +21,14 @@
 #define USE_ASM_OPT 0
 #endif
 
-/* ============================================================================
- * OPTIMIZATION 1: Stack Operations (vm_push, vm_pop, vm_rpush, vm_rpop)
- * ============================================================================
+/**
+ * @defgroup stack_ops Stack Operations
+ * @{
+ * 
+ * @brief Optimized stack manipulation operations
+ * @details Critical optimizations for vm_push, vm_pop, vm_rpush, vm_rpop
  *
- * IMPACT: EXTREME - These are called on nearly every Forth word execution
+ * Impact: EXTREME - These are called on nearly every Forth word execution
  *
  * Benefits:
  * - Eliminates function call overhead (inline)
@@ -34,12 +37,18 @@
  * - Uses lea for pointer arithmetic (no flags affected)
  *
  * L4Re Compatibility: YES - Pure computational code, no syscalls
- * ============================================================================
  */
 
 #if USE_ASM_OPT
 
 /* vm_push optimized - Data stack push */
+/**
+ * @brief Optimized data stack push operation
+ * @param vm Pointer to VM context
+ * @param value Value to push onto stack
+ * @return void
+ * @note Sets vm->error on stack overflow
+ */
 static inline void vm_push_asm(VM *vm, cell_t value) {
     int error = 0;
 
@@ -81,6 +90,12 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
 }
 
 /* vm_pop optimized - Data stack pop */
+/**
+ * @brief Optimized data stack pop operation
+ * @param vm Pointer to VM context
+ * @return Top value from stack, 0 on underflow
+ * @note Sets vm->error on stack underflow
+ */
 static inline cell_t vm_pop_asm(VM *vm) {
     cell_t value = 0;
     int error = 0;
@@ -126,6 +141,13 @@ static inline cell_t vm_pop_asm(VM *vm) {
 }
 
 /* vm_rpush optimized - Return stack push */
+/**
+ * @brief Optimized return stack push operation
+ * @param vm Pointer to VM context
+ * @param value Value to push onto return stack
+ * @return void
+ * @note Sets vm->error on stack overflow
+ */
 static inline void vm_rpush_asm(VM *vm, cell_t value) {
     int error = 0;
 
@@ -154,6 +176,12 @@ static inline void vm_rpush_asm(VM *vm, cell_t value) {
 }
 
 /* vm_rpop optimized - Return stack pop */
+/**
+ * @brief Optimized return stack pop operation
+ * @param vm Pointer to VM context
+ * @return Top value from return stack, 0 on underflow
+ * @note Sets vm->error on stack underflow
+ */
 static inline cell_t vm_rpop_asm(VM *vm) {
     cell_t value = 0;
     int error = 0;
@@ -202,6 +230,13 @@ static inline cell_t vm_rpop_asm(VM *vm) {
  */
 
 /* Fast add with overflow detection */
+/**
+ * @brief Performs addition with hardware overflow detection
+ * @param a First operand
+ * @param b Second operand
+ * @param result Pointer to store result
+ * @return 1 if overflow occurred, 0 otherwise
+ */
 static inline int vm_add_check_overflow(cell_t a, cell_t b, cell_t *result) {
     cell_t res;
     int overflow;
@@ -224,6 +259,13 @@ static inline int vm_add_check_overflow(cell_t a, cell_t b, cell_t *result) {
 }
 
 /* Fast multiply with double-width result for */ /* MOD operations */
+/**
+ * @brief Performs double-width multiplication
+ * @param a First operand
+ * @param b Second operand
+ * @param hi Pointer to store high 64 bits
+ * @param lo Pointer to store low 64 bits
+ */
 static inline void vm_mul_double(cell_t a, cell_t b, cell_t *hi, cell_t *lo) {
     __asm__(
         "movq    %[a], %%rax\n\t"
@@ -239,6 +281,13 @@ static inline void vm_mul_double(cell_t a, cell_t b, cell_t *hi, cell_t *lo) {
 }
 
 /* Fast divide with remainder (for /MOD) */
+/**
+ * @brief Performs division with remainder
+ * @param dividend Dividend value
+ * @param divisor Divisor value
+ * @param quotient Pointer to store quotient
+ * @param remainder Pointer to store remainder
+ */
 static inline void vm_divmod(cell_t dividend, cell_t divisor,
                              cell_t *quotient, cell_t *remainder) {
     cell_t quot, rem;
@@ -276,6 +325,13 @@ static inline void vm_divmod(cell_t dividend, cell_t divisor,
  */
 
 /* Fast string comparison - returns 0 if equal, non-zero otherwise */
+/**
+ * @brief Hardware-accelerated string comparison
+ * @param s1 First string
+ * @param s2 Second string
+ * @param len Length to compare
+ * @return 0 if equal, non-zero otherwise
+ */
 static inline int vm_strcmp_asm(const char *s1, const char *s2, size_t len) {
     int result;
 
@@ -299,6 +355,12 @@ static inline int vm_strcmp_asm(const char *s1, const char *s2, size_t len) {
 }
 
 /* Fast memory copy for block operations */
+/**
+ * @brief Hardware-accelerated memory copy
+ * @param dest Destination buffer
+ * @param src Source buffer
+ * @param len Number of bytes to copy
+ */
 static inline void vm_memcpy_asm(void *dest, const void *src, size_t len) {
     __asm__ __volatile__(
         "movq    %[dst], %%rdi\n\t"
@@ -314,6 +376,11 @@ static inline void vm_memcpy_asm(void *dest, const void *src, size_t len) {
 }
 
 /* Fast memory zero for alignment padding */
+/**
+ * @brief Hardware-accelerated memory zero
+ * @param dest Buffer to zero
+ * @param len Number of bytes to zero
+ */
 static inline void vm_memzero_asm(void *dest, size_t len) {
     __asm__ __volatile__(
         "movq    %[dst], %%rdi\n\t"
@@ -341,6 +408,12 @@ static inline void vm_memzero_asm(void *dest, size_t len) {
  * ============================================================================
  */
 
+/**
+ * @brief Branchless minimum calculation
+ * @param a First value
+ * @param b Second value
+ * @return Smaller of a and b
+ */
 static inline cell_t vm_min_asm(cell_t a, cell_t b) {
     cell_t result;
     __asm__(
@@ -357,6 +430,12 @@ static inline cell_t vm_min_asm(cell_t a, cell_t b) {
     return result;
 }
 
+/**
+ * @brief Branchless maximum calculation
+ * @param a First value
+ * @param b Second value
+ * @return Larger of a and b
+ */
 static inline cell_t vm_max_asm(cell_t a, cell_t b) {
     cell_t result;
     __asm__(
@@ -382,6 +461,14 @@ static inline cell_t vm_max_asm(cell_t a, cell_t b) {
  * ============================================================================
  */
 
+/**
+ * @brief Wrapper for CPUID instruction
+ * @param leaf CPUID leaf number
+ * @param eax Pointer to store EAX result
+ * @param ebx Pointer to store EBX result
+ * @param ecx Pointer to store ECX result
+ * @param edx Pointer to store EDX result
+ */
 static inline void vm_cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx,
                             uint32_t *ecx, uint32_t *edx) {
     __asm__(
@@ -392,6 +479,10 @@ static inline void vm_cpuid(uint32_t leaf, uint32_t *eax, uint32_t *ebx,
 }
 
 /* Check for SSE4.2 support (for fast string operations) */
+/**
+ * @brief Checks for SSE4.2 support
+ * @return 1 if SSE4.2 is supported, 0 otherwise
+ */
 static inline int vm_has_sse42(void) {
     uint32_t eax, ebx, ecx, edx;
     vm_cpuid(1, &eax, &ebx, &ecx, &edx);

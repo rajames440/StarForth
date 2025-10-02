@@ -20,6 +20,16 @@
 #include "../include/vm.h"
 #include <stdio.h>
 
+/**
+ * @brief Starts the Forth REPL (Read-Eval-Print Loop)
+ * 
+ * @param vm Pointer to the VM structure
+ * 
+ * @details This function implements an interactive REPL for the Forth interpreter.
+ * It continuously reads input from the user, interprets it, and prints the result
+ * until the VM is halted or an error occurs. Each successful command is acknowledged
+ * with "ok", while errors are reported and reset for the next input.
+ */
 void vm_repl(VM *vm) {
     log_message(LOG_INFO, "Starting Forth REPL");
 

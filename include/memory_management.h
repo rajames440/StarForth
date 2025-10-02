@@ -15,11 +15,29 @@
 
  */
 
+/**
+ * @file memory_management.h
+ * @brief Memory management functions for the StarForth virtual machine
+ *
+ * This file contains functions for managing memory allocation and alignment
+ * in the StarForth virtual machine implementation.
+ */
+
 #ifndef VM_MEMORY_H
 #define VM_MEMORY_H
 #include "vm.h"
 
+/**
+ * @brief Allocates memory in the virtual machine's memory space
+ * @param vm Pointer to the virtual machine instance
+ * @param bytes Number of bytes to allocate
+ * @return Pointer to the allocated memory or NULL if allocation fails
+ */
 void *vm_allot(VM *vm, size_t bytes);
 
+/**
+ * @brief Aligns the virtual machine's memory pointer to the next word boundary
+ * @param vm Pointer to the virtual machine instance
+ */
 void vm_align(VM * vm);
 #endif

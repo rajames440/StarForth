@@ -59,16 +59,32 @@ static const char *color_reset = "";
 #endif
 
 /* Set global log level */
+/**
+ * @brief Sets the global logging level
+ *
+ * @param level The LogLevel to set as current logging level
+ */
 void log_set_level(LogLevel level) {
     current_level = level;
 }
 
 /* Get current log level */
+/**
+ * @brief Gets the current global logging level
+ *
+ * @return LogLevel Current logging level
+ */
 LogLevel log_get_level(void) {
     return current_level;
 }
 
 /* Timestamp helper */
+/**
+ * @brief Helper function to generate timestamp string
+ *
+ * @param buffer Output buffer for the timestamp string
+ * @param size Size of the output buffer
+ */
 static void get_timestamp(char *buffer, size_t size) {
     time_t now = time(NULL);
     struct tm *tm_info = localtime(&now);
@@ -76,6 +92,13 @@ static void get_timestamp(char *buffer, size_t size) {
 }
 
 /* Generic logger */
+/**
+ * @brief Logs a message with the specified level and format
+ *
+ * @param level The LogLevel for this message
+ * @param fmt Printf-style format string
+ * @param ... Variable arguments for format string
+ */
 void log_message(LogLevel level, const char *fmt, ...) {
     /* LOG_NONE (-1) disables ALL logging */
     if (current_level == LOG_NONE || level > current_level)
@@ -99,6 +122,12 @@ void log_message(LogLevel level, const char *fmt, ...) {
 }
 
 /* Dedicated test result logger (only shown for LOG_TEST or higher) */
+/**
+ * @brief Logs test results with appropriate formatting and colors
+ *
+ * @param word_name Name of the word being tested
+ * @param result Test result (PASS/FAIL/SKIP)
+ */
 void log_test_result(const char *word_name, TestResult result) {
     if (current_level == LOG_NONE || current_level < LOG_TEST)
         return;

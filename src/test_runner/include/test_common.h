@@ -15,61 +15,140 @@
 
  */
 
+/**
+ * @file test_common.h
+ * @brief Common test utilities and structures for StarForth test runner
+ * @details This file contains test configuration, structures, and utility functions
+ * used throughout the StarForth test framework.
+ */
+
 #ifndef TEST_COMMON_H
 #define TEST_COMMON_H
 
-#include "../../include/vm.h"
-#include "../../include/log.h"
+#include "../include/vm.h"
+#include "../include/log.h"
 
-/* Test configuration */
+/** @name Test Configuration
+ * @{
+ */
+/** Maximum length of test output buffer */
 #define MAX_TEST_OUTPUT 1024
+/** Maximum length of test input buffer */
 #define MAX_TEST_INPUT 256
+/** Maximum number of test cases per word */
 #define MAX_TESTS_PER_WORD 20
+/** @} */
 
 /* fail fast */
 extern int fail_fast;
 
-/* Test types */
+/** @brief Types of test cases */
 typedef enum {
-    TEST_NORMAL = 0,
-    TEST_EDGE_CASE = 1,
-    TEST_ERROR_CASE = 2
+    TEST_NORMAL = 0, /**< Standard test case */
+    TEST_EDGE_CASE = 1, /**< Edge case test */
+    TEST_ERROR_CASE = 2 /**< Error condition test */
 } TestType;
 
-/* Test case structure */
+/** @brief Structure representing a single test case */
 typedef struct {
-    const char *name;
-    const char *input;
-    const char *expected;
-    TestType type;
-    int should_error;
-    int implemented;
+    const char *name; /**< Name of the test case */
+    const char *input; /**< Input Forth code */
+    const char *expected; /**< Expected output */
+    TestType type; /**< Type of test case */
+    int should_error; /**< Whether test should produce an error */
+    int implemented; /**< Whether the functionality is implemented */
 } TestCase;
 
-/* Test suite structure for a single word */
+/** @brief Collection of test cases for a single Forth word */
 typedef struct {
-    const char *word_name;
-    TestCase tests[MAX_TESTS_PER_WORD];
-    int test_count;
+    const char *word_name; /**< Name of the Forth word being tested */
+    TestCase tests[MAX_TESTS_PER_WORD]; /**< Array of test cases */
+    int test_count; /**< Number of tests in the suite */
 } WordTestSuite;
 
-/* Core test execution functions */
+/** @name Core Test Execution Functions
+ * @{
+ */
+/** 
+ * @brief Executes a single test case
+ * @param vm Pointer to the VM instance
+ * @param word_name Name of the word being tested
+ * @param test Test case to execute
+ * @return Test execution result
+ */
 TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test);
 
+/**
+ * @brief Runs all tests in a test suite
+ * @param vm Pointer to the VM instance
+ * @param suite Test suite to execute
+ */
 void run_test_suite(VM *vm, const WordTestSuite *suite);
 
+/**
+ * @brief Prints test results summary for a module
+ * @param module_name Name of the module
+ * @param pass Number of passed tests
+ * @param fail Number of failed tests
+ * @param skip Number of skipped tests
+ * @param error Number of errors
+ */
 void print_module_summary(const char *module_name, int pass, int fail, int skip, int error);
 
-/* Test assertion functions */
+/** @} */
+
+/** @name Test Assertion Functions
+ * @{
+ */
+/**
+ * @brief Verifies the VM stack depth
+ * @param vm Pointer to the VM instance
+ * @param expected_depth Expected stack depth
+ * @return 1 if assertion passes, 0 otherwise
+ */
 int assert_stack_depth(VM *vm, int expected_depth);
 
+/**
+ * @brief Verifies the value at the top of the stack
+ * @param vm Pointer to the VM instance
+ * @param expected_value Expected value
+ * @return 1 if assertion passes, 0 otherwise
+ */
 int assert_stack_top(VM *vm, int expected_value);
 
+/**
+ * @brief Verifies VM error state
+ * @param vm Pointer to the VM instance
+ * @param should_have_error Expected error state
+ * @return 1 if assertion passes, 0 otherwise
+ */
 int assert_vm_error(VM *vm, int should_have_error);
 
-/* VM state management for tests */
+/** @} */
+
+/** @name VM State Management Functions
+ * @{
+ */
+/**
+ * @brief Saves current VM state
+ * @param vm Pointer to the VM instance
+ * @param dsp Pointer to store data stack pointer
+ * @param rsp Pointer to store return stack pointer
+ * @param error Pointer to store error state
+ * @param mode Pointer to store VM mode
+ */
 void save_vm_state(VM *vm, int *dsp, int *rsp, int *error, vm_mode_t *mode);
 
+/**
+ * @brief Restores VM state from saved values
+ * @param vm Pointer to the VM instance
+ * @param dsp Data stack pointer to restore
+ * @param rsp Return stack pointer to restore
+ * @param error Error state to restore
+ * @param mode VM mode to restore
+ */
 void restore_vm_state(VM *vm, int dsp, int rsp, int error, vm_mode_t mode);
+
+/** @} */
 
 #endif /* TEST_COMMON_H */

@@ -15,8 +15,8 @@
 
  */
 
-#ifndef IO_WORDS_H
-#define IO_WORDS_H
+#ifndef IO_WORDS_H  //!< Include guard
+#define IO_WORDS_H  //!< Include guard
 
 #include "../../../include/vm.h"
 
@@ -30,6 +30,19 @@
  * SPACES    ( n -- )                    Output n spaces
  */
 
+/**
+ * @brief Registers all I/O related FORTH words with the virtual machine
+ * @param vm Pointer to the virtual machine instance
+ *
+ * Registers the following FORTH-79 I/O & Terminal Words:
+ * - EMIT      ( c -- )    Output character c
+ * - CR        ( -- )      Output carriage return
+ * - KEY       ( -- c )    Input character from keyboard
+ * - ?TERMINAL ( -- flag ) True if key pressed
+ * - TYPE      ( addr u -- ) Output u characters from addr
+ * - SPACE     ( -- )      Output one space
+ * - SPACES    ( n -- )    Output n spaces
+ */
 void register_io_words(VM * vm);
 
 #endif /* IO_WORDS_H */

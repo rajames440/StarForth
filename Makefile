@@ -266,7 +266,8 @@ test: $(TARGET)
 
 clean:
 	@echo "🧹 Cleaning build artifacts..."
-	@rm -rf build/*
+	@rm -rfv build/*
+	@rm -rfv docs/build/*
 	@rm -f src/*.gcda src/word_source/*.gcda src/*.gcno src/word_source/*.gcno
 	@echo "✓ Clean complete"
 
@@ -289,7 +290,7 @@ asm: banner
 # ==============================================================================
 
 # Generate all documentation formats
-docs:
+docs: book
 	@echo "📚 Generating comprehensive API documentation..."
 	@./scripts/generate_docs.sh
 

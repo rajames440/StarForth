@@ -45,7 +45,14 @@
 static void arithmetic_word_star_slash(VM * vm);
 static void arithmetic_word_star_slash_mod(VM * vm);
 
-/* + ( n1 n2 -- n3 ) Add n1 and n2 */
+/**
+ * @brief Implements FORTH word "+" that adds two numbers
+ * 
+ * Stack effect: ( n1 n2 -- n3 )
+ * Adds n1 and n2, pushing their sum n3 onto the stack.
+ * 
+ * @param vm Pointer to the VM structure
+ */
 void arithmetic_word_plus(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "+: Stack underflow");
@@ -61,7 +68,14 @@ void arithmetic_word_plus(VM *vm) {
     log_message(LOG_DEBUG, "+: %ld + %ld = %ld", (long) n1, (long) n2, (long) result);
 }
 
-/* - ( n1 n2 -- n3 ) Subtract n2 from n1 */
+/**
+ * @brief Implements FORTH word "-" that subtracts two numbers
+ * 
+ * Stack effect: ( n1 n2 -- n3 )
+ * Subtracts n2 from n1, pushing their difference n3 onto the stack.
+ * 
+ * @param vm Pointer to the VM structure
+ */
 static void arithmetic_word_minus(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "-: Stack underflow");
@@ -77,7 +91,14 @@ static void arithmetic_word_minus(VM *vm) {
     log_message(LOG_DEBUG, "-: %ld - %ld = %ld", (long) n1, (long) n2, (long) result);
 }
 
-/* MULTIPLY ( n1 n2 -- n3 ) Multiply n1 and n2 */
+/**
+ * @brief Implements FORTH word "*" that multiplies two numbers
+ * 
+ * Stack effect: ( n1 n2 -- n3 )
+ * Multiplies n1 by n2, pushing their product n3 onto the stack.
+ * 
+ * @param vm Pointer to the VM structure
+ */
 static void arithmetic_word_multiply(VM *vm) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "*: Stack underflow");
@@ -355,7 +376,15 @@ static void arithmetic_word_max(VM *vm) {
     log_message(LOG_DEBUG, "MAX: max(%ld, %ld) = %ld", (long) n1, (long) n2, (long) result);
 }
 
-/* Register all arithmetic words */
+/**
+ * @brief Registers all FORTH-79 arithmetic words with the VM
+ *
+ * This function registers all the standard FORTH-79 arithmetic operations
+ * including basic arithmetic, advanced math operations, increment/decrement
+ * operations, and comparison functions.
+ *
+ * @param vm Pointer to the VM structure where words will be registered
+ */
 void register_arithmetic_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 arithmetic words...");
 

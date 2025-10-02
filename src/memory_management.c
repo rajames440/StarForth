@@ -81,6 +81,13 @@ void vm_align(VM *vm) {
     }
 }
 
+/**
+ * @brief Gets the memory address for a specified block number
+ * @param vm Pointer to the VM instance
+ * @param block_num Block number to get the address for
+ * @return Pointer to the start of the block or NULL if block number is invalid
+ * @note Blocks are fixed-size memory regions of BLOCK_SIZE bytes
+ */
 void *vm_get_block_addr(VM *vm, int block_num) {
     if (block_num < 0 || block_num >= MAX_BLOCKS) {
         log_message(LOG_ERROR, "vm_get_block_addr: Invalid block number %d", block_num);
@@ -90,6 +97,13 @@ void *vm_get_block_addr(VM *vm, int block_num) {
 }
 
 /* Convert address to block number */
+/**
+ * @brief Converts a memory address to its corresponding block number
+ * @param vm Pointer to the VM instance
+ * @param addr Memory address to convert
+ * @return Block number (0 to MAX_BLOCKS-1) or -1 if address is outside VM memory
+ * @note Used for determining which block a memory address belongs to
+ */
 int vm_addr_to_block(VM *vm, void *addr) {
     if (addr < (void *) vm->memory ||
         addr >= (void *) (vm->memory + VM_MEMORY_SIZE)) {

@@ -22,12 +22,20 @@
 
 /* === SAFE DICTIONARY WORDS IMPLEMENTATION (addresses are VM offsets) === */
 
+/**
+ * @brief HERE ( -- addr ) Returns the dictionary pointer
+ * @param vm Pointer to the VM structure
+ */
 void dictionary_word_here(VM *vm) {
     vm_align(vm);
     vm_push(vm, vm->here);
 }
 
-/* ALLOT ( n -- )  Allocate n bytes in dictionary (can be negative) */
+/**
+ * @brief ALLOT ( n -- ) Allocate n bytes in dictionary
+ * @param vm Pointer to the VM structure
+ * @details Allocates n bytes in the dictionary. n can be negative to deallocate space
+ */
 void dictionary_word_allot(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -42,7 +50,11 @@ void dictionary_word_allot(VM *vm) {
     vm->here = new_here;
 }
 
-/* , ( n -- )  Compile cell into dictionary */
+/**
+ * @brief , ( n -- ) Compile cell into dictionary
+ * @param vm Pointer to the VM structure
+ * @details Compiles a single cell value into the dictionary at HERE
+ */
 void dictionary_word_comma(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -63,7 +75,11 @@ void dictionary_word_comma(VM *vm) {
     vm->here += sizeof(cell_t);
 }
 
-/* C, ( c -- )  Compile byte into dictionary */
+/**
+ * @brief C, ( c -- ) Compile byte into dictionary
+ * @param vm Pointer to the VM structure
+ * @details Compiles a single byte value into the dictionary at HERE
+ */
 void dictionary_word_c_comma(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -83,7 +99,11 @@ void dictionary_word_c_comma(VM *vm) {
     vm->here += 1;
 }
 
-/* 2, ( d -- )  Compile double-cell into dictionary: low then high */
+/**
+ * @brief 2, ( d -- ) Compile double-cell into dictionary
+ * @param vm Pointer to the VM structure
+ * @details Compiles a double cell value into the dictionary at HERE, low cell first
+ */
 void dictionary_word_2comma(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -106,19 +126,31 @@ void dictionary_word_2comma(VM *vm) {
     vm->here += 2 * sizeof(cell_t);
 }
 
-/* PAD ( -- addr )  VM address of 512-byte temporary text buffer at top of memory */
+/**
+ * @brief PAD ( -- addr ) Get scratch pad buffer address
+ * @param vm Pointer to the VM structure
+ * @details Returns VM address of 512-byte temporary text buffer at top of memory
+ */
 void dictionary_word_pad(VM *vm) {
     size_t pad_offset = VM_MEMORY_SIZE - 512;
     vm_push(vm, (cell_t) pad_offset);
 }
 
-/* SP@ ( -- sp )  Return the current stack-pointer index (top is 0) */
+/**
+ * @brief SP@ ( -- sp ) Get current stack pointer
+ * @param vm Pointer to the VM structure
+ * @details Returns the current stack-pointer index (top is 0)
+ */
 void dictionary_word_sp_fetch(VM *vm) {
     /* No stack args required */
     vm_push(vm, (cell_t) vm->dsp);
 }
 
-/* SP! ( sp -- )  Restore the stack-pointer, but never grow the stack */
+/**
+ * @brief SP! ( sp -- ) Set stack pointer
+ * @param vm Pointer to the VM structure
+ * @details Restores the stack-pointer, but never allows growing the stack
+ */
 void dictionary_word_sp_store(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -136,7 +168,11 @@ void dictionary_word_sp_store(VM *vm) {
     /* We don’t need to scrub values above dsp; they’re considered garbage/unused. */
 }
 
-/* LATEST ( -- addr )  Return VM address near most recent compiled definition (end of dictionary) */
+/**
+ * @brief LATEST ( -- addr ) Get latest definition address
+ * @param vm Pointer to the VM structure
+ * @details Returns VM address near most recent compiled definition (end of dictionary)
+ */
 void dictionary_word_latest(VM *vm) {
     vm_push(vm, vm->here);
 }

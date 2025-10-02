@@ -15,6 +15,15 @@
 
  */
 
+/**
+ * @file stack_management.c
+ * @brief Implementation of stack operations for the Forth virtual machine
+ * 
+ * This module provides the core stack manipulation functions for both the data stack
+ * and return stack of the Forth virtual machine. It includes optimized assembly 
+ * implementations for x86_64 and ARM64 architectures when available.
+ */
+
 #include "vm.h"
 #include "log.h"
 #include "profiler.h"
@@ -27,7 +36,15 @@
 #  endif
 #endif
 
-/* Data stack */
+/**
+ * @brief Push a value onto the data stack
+ *
+ * @param vm Pointer to the VM structure
+ * @param value Value to push onto the stack
+ *
+ * @note Performs bounds checking to prevent stack overflow
+ * @note Uses assembly optimization if available for x86_64 or ARM64
+ */
 void vm_push(VM *vm, cell_t value) {
     PROFILE_INC_STACK_OP();
 
@@ -51,6 +68,15 @@ void vm_push(VM *vm, cell_t value) {
 #endif
 }
 
+/**
+ * @brief Pop a value from the data stack
+ *
+ * @param vm Pointer to the VM structure
+ * @return The popped value
+ *
+ * @note Returns 0 and sets error flag if stack underflow occurs
+ * @note Uses assembly optimization if available for x86_64 or ARM64
+ */
 cell_t vm_pop(VM *vm) {
     PROFILE_INC_STACK_OP();
 
@@ -76,7 +102,15 @@ cell_t vm_pop(VM *vm) {
 #endif
 }
 
-/* Return stack */
+/**
+ * @brief Push a value onto the return stack
+ *
+ * @param vm Pointer to the VM structure
+ * @param value Value to push onto the return stack
+ *
+ * @note Sets error flag if stack overflow occurs
+ * @note Uses assembly optimization if available for x86_64 or ARM64
+ */
 void vm_rpush(VM *vm, cell_t value) {
 #if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64))
     /* Use optimized assembly version for x86_64 */
@@ -91,6 +125,15 @@ void vm_rpush(VM *vm, cell_t value) {
 #endif
 }
 
+/**
+ * @brief Pop a value from the return stack
+ *
+ * @param vm Pointer to the VM structure
+ * @return The popped value
+ *
+ * @note Returns 0 and sets error flag if stack underflow occurs
+ * @note Uses assembly optimization if available for x86_64 or ARM64
+ */
 cell_t vm_rpop(VM *vm) {
 #if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64))
     /* Use optimized assembly version for x86_64 */

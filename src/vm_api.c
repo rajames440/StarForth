@@ -187,6 +187,9 @@ void vm_input_source(VM *vm, cell_t *out_addr, cell_t *out_len) {
     if (out_len) *out_len = (*vm->span_var < 0) ? 0 : *vm->span_var;
 }
 
+/** @name Memory Operations
+ * @{
+ */
 /** @brief Convert native pointer to Forth memory address
  * @param vm VM instance
  * @param p Native pointer to convert
@@ -208,3 +211,5 @@ cell_t vm_addr_from_ptr(VM *vm, void *p) {
     return (cell_t)(addr - base);
 #endif
 }
+
+/** @} */

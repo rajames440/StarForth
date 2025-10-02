@@ -165,6 +165,21 @@ static WordTestSuite dictionary_word_suites[] = {
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
 
+/**
+ * @brief Executes all dictionary word test suites
+ *
+ * @param vm Pointer to the FORTH virtual machine instance
+ * 
+ * This function runs through all dictionary word test suites, including tests for:
+ * - HERE (dictionary pointer)
+ * - ALLOT (memory allocation)
+ * - Comma operations (, C, 2,)
+ * - PAD (scratch pad area)
+ * - Stack pointer operations (SP@ SP!)
+ * - LATEST (most recent dictionary entry)
+ * - Compilation sequences
+ * - Stack management operations
+ */
 void run_dictionary_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Dictionary Words Tests (Module 4)...");
 

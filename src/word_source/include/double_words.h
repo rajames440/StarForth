@@ -44,6 +44,10 @@
  * D2/       ( d1 -- d2 )                Divide double by 2
  */
 
+/**
+ * @brief Registers all double precision number manipulation words with the Forth virtual machine
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void register_double_words(VM * vm);
 
 #endif /* DOUBLE_WORDS_H */

@@ -21,14 +21,35 @@
 #include <stdint.h>
 #include "vm.h"
 
+/** @brief Size of a single block in bytes */
 #define BLOCK_SIZE 1024
+/** @brief Total number of blocks available */
 #define BLOCK_COUNT 1024
+/** @brief Total memory size in bytes */
 #define MEMORY_SIZE (BLOCK_SIZE * BLOCK_COUNT)
 
+/**
+ * @brief Initialize the I/O subsystem
+ * @param vm Pointer to the virtual machine instance
+ */
 void io_init(VM * vm);
 
+/**
+ * @brief Read a block from storage
+ * @param vm Pointer to the virtual machine instance
+ * @param block_num Block number to read
+ * @param buffer Buffer to store the read data
+ * @return 0 on success, non-zero on failure
+ */
 int io_read_block(VM *vm, int block_num, unsigned char *buffer);
 
+/**
+ * @brief Write a block to storage
+ * @param vm Pointer to the virtual machine instance
+ * @param block_num Block number to write
+ * @param buffer Buffer containing data to write
+ * @return 0 on success, non-zero on failure
+ */
 int io_write_block(VM *vm, int block_num, const unsigned char *buffer);
 
 #endif /* IO_H */

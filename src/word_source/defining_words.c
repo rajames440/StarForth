@@ -15,13 +15,6 @@
 
  */
 
-/*
-                                 ***   StarForth   ***
-  defining_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 2025-08-13
-  (c) 2025 Robert A. James - StarshipOS Forth Project. CC0-1.0 / No warranty.
-*/
-
 #include "include/defining_words.h"
 #include "../../include/vm.h"
 #include "../../include/word_registry.h"
@@ -58,6 +51,14 @@ static void dictionary_word_forget(VM * vm);
 /* ───────────────────────────── Runtimes ───────────────────────────── */
 
 /* CONSTANT runtime: ( -- n )  Push stored value from header DF cell */
+/**
+ * @brief Runtime behavior for CONSTANT words
+ *
+ * Pushes the constant value stored in the word's data field onto the stack.
+ * Stack effect: ( -- n )
+ *
+ * @param vm Pointer to the VM context
+ */
 static void defining_runtime_constant(VM *vm) {
     if (!vm) return;
 
@@ -79,6 +80,14 @@ static void defining_runtime_constant(VM *vm) {
 }
 
 /* VARIABLE runtime: ( -- addr )  Push VM offset stored in header DF cell */
+/**
+ * @brief Runtime behavior for VARIABLE words
+ *
+ * Pushes the variable's address (VM offset) stored in the word's data field.
+ * Stack effect: ( -- addr )
+ *
+ * @param vm Pointer to the VM context
+ */
 static void defining_runtime_variable(VM *vm) {
     if (!vm) return;
 
@@ -100,6 +109,14 @@ static void defining_runtime_variable(VM *vm) {
 }
 
 /* CREATE runtime: ( -- addr )  Push DFA (VM byte offset) captured at CREATE */
+/**
+ * @brief Runtime behavior for words defined by CREATE
+ *
+ * Pushes the word's data field address (DFA) captured at CREATE time.
+ * Stack effect: ( -- addr )
+ *
+ * @param vm Pointer to the VM context
+ */
 static void defining_runtime_create(VM *vm) {
     if (!vm) return;
 
@@ -127,6 +144,14 @@ static void defining_runtime_create(VM *vm) {
 }
 
 /* LIT runtime: ( -- n ) — fetch next cell from threaded code via R-stack IP */
+/**
+ * @brief Runtime behavior for literal values in threaded code
+ *
+ * Fetches the next cell from threaded code via IP and pushes it.
+ * Stack effect: ( -- n )
+ *
+ * @param vm Pointer to the VM context
+ */
 static void defining_runtime_lit(VM *vm) {
     if (!vm) return;
     if (vm->rsp < 0) {
@@ -152,6 +177,14 @@ static void defining_runtime_lit(VM *vm) {
 /* DODOES runtime: when a created word runs, push PFA+8 (user data addr) then execute DOES>-body
    PFA layout: [body_vaddr][user_data...]
    We push the address of user_data, then execute body_vaddr code. */
+/**
+ * @brief Runtime behavior for words defined with DOES>
+ *
+ * Pushes the address of user data area then executes the DOES> body code.
+ * PFA layout: [body_vaddr][user_data...]
+ *
+ * @param vm Pointer to the VM context
+ */
 static void defining_runtime_dodoes(VM *vm) {
     if (!vm) return;
 
@@ -230,6 +263,14 @@ static void defining_runtime_dodoes(VM *vm) {
    NOTE: PFA already contains user data from , or other compile-time words.
    We need to build a new PFA structure: [body_vaddr][old_user_data...]
    and update the child's DF to point to this new PFA. */
+/**
+ * @brief Helper routine executed at DOES> time
+ *
+ * Converts the just-created child word to use DODOES runtime behavior
+ * and records the DOES> body address in the child's PFA.
+ *
+ * @param vm Pointer to the VM context
+ */
 static void defining_runtime_does_rt(VM *vm) {
     if (!vm) return;
 
@@ -603,6 +644,14 @@ static void defining_word_immediate(VM *vm) {
 
 /* ───────────────────────────── Registration ───────────────────────── */
 
+/**
+ * @brief Register all defining words in the dictionary
+ *
+ * Registers core defining words like :, ;, CREATE, CONSTANT, VARIABLE,
+ * and their support words like IMMEDIATE, STATE, etc.
+ *
+ * @param vm Pointer to the VM context
+ */
 void register_defining_words(VM *vm) {
     log_message(LOG_INFO, "Registering defining words...");
 

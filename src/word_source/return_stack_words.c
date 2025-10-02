@@ -1,20 +1,26 @@
-/*
-                                 ***   StarForth   ***
-  return_stack_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 2025-09-10
-  Public domain / CC0 — No warranty.
-
-  FORTH-79 compliance:
-  - Provide only >R, R>, R@ for return stack transfer.
-  - No direct stack addressing (no RP!, RP@) — forbidden by FORTH-79.
-*/
+/**
+ * @file return_stack_words.c
+ * @brief Implementation of FORTH-79 standard return stack words
+ * 
+ * StarForth - FORTH-79 Standard and ANSI C99 ONLY
+ * Last modified - 2025-09-10
+ * Public domain / CC0 — No warranty.
+ *
+ * FORTH-79 compliance:
+ * - Provide only >R, R>, R@ for return stack transfer.
+ * - No direct stack addressing (no RP!, RP@) — forbidden by FORTH-79.
+ */
 
 #include "include/return_stack_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include "../../include/vm.h"
 
-/* >R  ( x -- )  move TOS from data stack to return stack */
+/**
+ * @brief Move TOS from data stack to return stack (>R word)
+ * @param vm Pointer to VM instance
+ * @details Stack effect: ( x -- )
+ */
 static void return_stack_word_to_r(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -30,7 +36,11 @@ static void return_stack_word_to_r(VM *vm) {
     vm_rpush(vm, x);
 }
 
-/* R>  ( -- x )  move TOS from return stack back to data stack */
+/**
+ * @brief Move TOS from return stack back to data stack (R> word)
+ * @param vm Pointer to VM instance
+ * @details Stack effect: ( -- x )
+ */
 static void return_stack_word_r_from(VM *vm) {
     if (vm->rsp < 0) {
         vm->error = 1;
@@ -46,7 +56,11 @@ static void return_stack_word_r_from(VM *vm) {
     vm_push(vm, x);
 }
 
-/* R@  ( -- x )  copy TOS of return stack to data stack */
+/**
+ * @brief Copy TOS of return stack to data stack (R@ word)
+ * @param vm Pointer to VM instance
+ * @details Stack effect: ( -- x )
+ */
 static void return_stack_word_r_fetch(VM *vm) {
     if (vm->rsp < 0) {
         vm->error = 1;
@@ -62,6 +76,12 @@ static void return_stack_word_r_fetch(VM *vm) {
     vm_push(vm, x);
 }
 
+/**
+ * @brief Register all FORTH-79 return stack manipulation words
+ * @param vm Pointer to VM instance
+ * @details Registers >R, R>, and R@ words. Direct stack addressing words
+ *          (RP!, RP@) are deliberately omitted for FORTH-79 compliance.
+ */
 void register_return_stack_words(VM *vm) {
     if (!vm) return;
     log_message(LOG_INFO, "Registering FORTH-79 return stack words...");

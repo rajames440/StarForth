@@ -24,11 +24,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* fail fast (set by --fail-fast) */
+/** 
+ * @brief Global flag to control test execution behavior
+ * @details When set to non-zero, causes test runner to exit immediately on first failure
+ */
 int fail_fast = 0;
 
 /* ---------- debug helpers (dump on fatal and exit) ---------- */
 
+/**
+ * @brief Dumps VM state and terminates execution
+ * @param vm Pointer to VM instance
+ * @param reason String describing the failure reason
+ * @param file Source file where failure occurred
+ * @param line Line number where failure occurred
+ */
 static void dump_and_die(VM *vm, const char *reason, const char *file, int line) {
     fprintf(stderr, "\n[TEST-RUNNER] abort @ %s:%d (%s)\n",
             file, line, reason ? reason : "no-reason");
@@ -40,6 +50,14 @@ static void dump_and_die(VM *vm, const char *reason, const char *file, int line)
 #define DIE(vm, why) dump_and_die((vm), (why), __FILE__, __LINE__)
 
 /* Single gate used by fail-fast paths */
+/**
+ * @brief Handles test failure and exits
+ * @param vm Pointer to VM instance
+ * @param module Name of the test module
+ * @param case_name Name of the test case
+ * @param input Test input that caused the failure
+ * @param reason Description of failure reason
+ */
 static void fail_and_exit(VM *vm,
                           const char *module,
                           const char *case_name,
@@ -58,6 +76,14 @@ static void fail_and_exit(VM *vm,
 
 /* ---------- VM state save/restore ---------- */
 
+/**
+ * @brief Saves current VM state
+ * @param vm Pointer to VM instance
+ * @param dsp Pointer to store data stack pointer
+ * @param rsp Pointer to store return stack pointer
+ * @param error Pointer to store error state
+ * @param mode Pointer to store VM mode
+ */
 void save_vm_state(VM *vm, int *dsp, int *rsp, int *error, vm_mode_t *mode) {
     *dsp = vm->dsp;
     *rsp = vm->rsp;
@@ -65,6 +91,14 @@ void save_vm_state(VM *vm, int *dsp, int *rsp, int *error, vm_mode_t *mode) {
     *mode = vm->mode;
 }
 
+/**
+ * @brief Restores previously saved VM state
+ * @param vm Pointer to VM instance
+ * @param dsp Data stack pointer to restore
+ * @param rsp Return stack pointer to restore
+ * @param error Error state to restore
+ * @param mode VM mode to restore
+ */
 void restore_vm_state(VM *vm, int dsp, int rsp, int error, vm_mode_t mode) {
     vm->dsp = dsp;
     vm->rsp = rsp;
@@ -74,6 +108,12 @@ void restore_vm_state(VM *vm, int dsp, int rsp, int error, vm_mode_t mode) {
 
 /* ---------- Assertions ---------- */
 
+/**
+ * @brief Verifies VM stack depth matches expected value
+ * @param vm Pointer to VM instance
+ * @param expected_depth Expected stack depth
+ * @return 1 if assertion passes, 0 if it fails
+ */
 int assert_stack_depth(VM *vm, int expected_depth) {
     if (vm->dsp == expected_depth) {
         return 1;
@@ -82,6 +122,12 @@ int assert_stack_depth(VM *vm, int expected_depth) {
     return 0;
 }
 
+/**
+ * @brief Verifies top value on VM stack matches expected value
+ * @param vm Pointer to VM instance
+ * @param expected_value Expected value on top of stack
+ * @return 1 if assertion passes, 0 if it fails
+ */
 int assert_stack_top(VM *vm, int expected_value) {
     if (vm->dsp < 1) {
         log_message(LOG_ERROR, "Stack underflow when checking top value");
@@ -95,6 +141,12 @@ int assert_stack_top(VM *vm, int expected_value) {
     return 0;
 }
 
+/**
+ * @brief Verifies VM error state matches expectation
+ * @param vm Pointer to VM instance
+ * @param should_have_error Expected error state (1 for error, 0 for no error)
+ * @return 1 if assertion passes, 0 if it fails
+ */
 int assert_vm_error(VM *vm, int should_have_error) {
     int has_error = (vm->error != 0);
     if (has_error == should_have_error) {
@@ -111,6 +163,13 @@ int assert_vm_error(VM *vm, int should_have_error) {
 /* ---------- Test execution ---------- */
 
 /* Run a single test case */
+/**
+ * @brief Executes a single test case
+ * @param vm Pointer to VM instance
+ * @param word_name Name of the word being tested
+ * @param test Pointer to test case definition
+ * @return Test result (PASS, FAIL, SKIP, or ERROR)
+ */
 TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test) {
     if (!test->implemented) {
         log_test_result(word_name, TEST_SKIP);
@@ -173,6 +232,11 @@ TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test) 
 }
 
 /* Run a complete test suite for one word */
+/**
+ * @brief Executes a complete test suite for a Forth word
+ * @param vm Pointer to VM instance
+ * @param suite Pointer to test suite definition
+ */
 void run_test_suite(VM *vm, const WordTestSuite *suite) {
     log_message(LOG_TEST, "Testing word: %s", suite->word_name);
     log_message(LOG_TEST, "------------------------");
@@ -215,6 +279,14 @@ void run_test_suite(VM *vm, const WordTestSuite *suite) {
 }
 
 /* Print module summary */
+/**
+ * @brief Prints test module execution summary
+ * @param module_name Name of the test module
+ * @param pass Number of passed tests
+ * @param fail Number of failed tests
+ * @param skip Number of skipped tests
+ * @param error Number of tests with errors
+ */
 void print_module_summary(const char *module_name, int pass, int fail, int skip, int error) {
     log_message(LOG_TEST, "=== %s Summary: %d passed, %d failed, %d skipped, %d errors ===",
                 module_name, pass, fail, skip, error);

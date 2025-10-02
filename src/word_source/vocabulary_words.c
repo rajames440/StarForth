@@ -15,13 +15,6 @@
 
  */
 
-/*
-                                 ***   StarForth   ***
-  vocabulary_words.c - FORTH-79 Standard and ANSI C99 ONLY
-  Last modified - 2025-08-12
-  CC0-1.0
-*/
-
 #include "include/vocabulary_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
@@ -96,7 +89,11 @@ static inline void vocab_sync_vm_vars(VM *vm) {
     vm_store_cell(vm, current_var_addr, (cell_t)(uintptr_t)current_vocab);
 }
 
-/* One-time init */
+/**
+ * @brief Initialize the FORTH vocabulary system
+ * @details Sets up FORTH as root vocabulary and allocates VM cells for CONTEXT/CURRENT
+ * @param vm Pointer to VM instance
+ */
 static void init_vocabulary_system(VM *vm) {
     static int initialized = 0;
     if (initialized) return;
@@ -195,6 +192,11 @@ static void vocabulary_select_runtime(VM *vm) {
 /* ===== Words ===== */
 
 /* VOCABULARY ( -- )  Create a new vocabulary; executing it selects itself as CONTEXT. */
+/**
+ * @brief VOCABULARY ( -- ) Create a new vocabulary
+ * @details Creates a vocabulary that when executed makes itself the CONTEXT
+ * @param vm Pointer to VM instance
+ */
 void vocabulary_word_vocabulary(VM *vm) {
     char name[64];
 
@@ -247,6 +249,11 @@ void vocabulary_word_vocabulary(VM *vm) {
 }
 
 /* DEFINITIONS ( -- )  CURRENT := CONTEXT */
+/**
+ * @brief DEFINITIONS ( -- ) Set CURRENT to CONTEXT
+ * @details Makes new words be defined in the CONTEXT vocabulary
+ * @param vm Pointer to VM instance
+ */
 void vocabulary_word_definitions(VM *vm) {
     init_vocabulary_system(vm);
     current_vocab = context_vocab;
@@ -255,18 +262,33 @@ void vocabulary_word_definitions(VM *vm) {
 }
 
 /* CONTEXT ( -- addr )  Return VM address of CONTEXT cell */
+/**
+ * @brief CONTEXT ( -- addr ) Get CONTEXT variable address
+ * @details Returns VM address of cell containing CONTEXT vocabulary pointer
+ * @param vm Pointer to VM instance
+ */
 void vocabulary_word_context(VM *vm) {
     init_vocabulary_system(vm);
     vm_push(vm, CELL(context_var_addr));
 }
 
 /* CURRENT ( -- addr )  Return VM address of CURRENT cell */
+/**
+ * @brief CURRENT ( -- addr ) Get CURRENT variable address
+ * @details Returns VM address of cell containing CURRENT vocabulary pointer
+ * @param vm Pointer to VM instance
+ */
 void vocabulary_word_current(VM *vm) {
     init_vocabulary_system(vm);
     vm_push(vm, CELL(current_var_addr));
 }
 
 /* FORTH ( -- )  Make FORTH the CONTEXT vocabulary (and nothing else) */
+/**
+ * @brief FORTH ( -- ) Select FORTH vocabulary
+ * @details Makes FORTH the CONTEXT vocabulary
+ * @param vm Pointer to VM instance
+ */
 void vocabulary_word_forth(VM *vm) {
     init_vocabulary_system(vm);
     context_vocab = forth_vocab;
@@ -275,6 +297,11 @@ void vocabulary_word_forth(VM *vm) {
 }
 
 /* (FIND) ( addr -- addr flag )  primitive finder on counted string at addr */
+/**
+ * @brief (FIND) ( addr -- addr flag ) Find word in dictionary
+ * @details Searches for counted string at addr in CONTEXT then FORTH vocabularies
+ * @param vm Pointer to VM instance
+ */
 void vocabulary_word_paren_find(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -312,6 +339,11 @@ void vocabulary_word_paren_find(VM *vm) {
 }
 
 /* ORDER ( -- )  Display search order (CONTEXT then FORTH) and CURRENT */
+/**
+ * @brief ORDER ( -- ) Display search order
+ * @details Shows CONTEXT and FORTH vocabularies plus CURRENT
+ * @param vm Pointer to VM instance
+ */
 void vocabulary_word_order(VM *vm) {
     init_vocabulary_system(vm);
 
@@ -338,11 +370,23 @@ void vocabulary_word_order(VM *vm) {
 }
 
 /* Vocabulary-aware lookup for the interpreter */
+/**
+ * @brief Find word in vocabulary-aware dictionary
+ * @details Searches CONTEXT then FORTH vocabularies
+ * @param vm Pointer to VM instance
+ * @param name Word name to find
+ * @param len Length of word name
+ * @return Pointer to dictionary entry if found, NULL if not found
+ */
 DictEntry *vm_vocabulary_find_word(VM *vm, const char *name, size_t len) {
     return vocab_find_word(vm, name, len);
 }
 
-/* Registration: ONLY standard words */
+/**
+ * @brief Register all FORTH-79 vocabulary words
+ * @details Registers VOCABULARY, DEFINITIONS, CONTEXT, CURRENT, FORTH, ORDER, and (FIND)
+ * @param vm Pointer to VM instance
+ */
 void register_vocabulary_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 vocabulary words...");
 

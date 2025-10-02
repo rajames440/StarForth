@@ -22,7 +22,12 @@
 #include <string.h>
 #include <stdio.h>
 
-/* ENTROPY@ ( addr -- n )  Get entropy count for word at dictionary address */
+/**
+ * @brief Get entropy count for word at dictionary address
+ *
+ * Stack effect: ( addr -- n )
+ * @param vm Pointer to the VM instance
+ */
 void starforth_word_entropy_fetch(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -43,7 +48,12 @@ void starforth_word_entropy_fetch(VM *vm) {
     log_message(LOG_DEBUG, "ENTROPY@: word entropy = %ld", (long) entry->entropy);
 }
 
-/* ENTROPY! ( n addr -- )  Set entropy count for word at dictionary address */
+/**
+ * @brief Set entropy count for word at dictionary address
+ *
+ * Stack effect: ( n addr -- )
+ * @param vm Pointer to the VM instance
+ */
 void starforth_word_entropy_store(VM *vm) {
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -65,7 +75,12 @@ void starforth_word_entropy_store(VM *vm) {
     log_message(LOG_DEBUG, "ENTROPY!: set word entropy to %ld", (long) value);
 }
 
-/* WORD-ENTROPY ( -- )  Display entropy stats for all words in dictionary */
+/**
+ * @brief Display entropy statistics for all words in dictionary
+ *
+ * Stack effect: ( -- )
+ * @param vm Pointer to the VM instance
+ */
 void starforth_word_word_entropy(VM *vm) {
     printf("Word Usage Statistics (Entropy Counts):\n");
     printf("=====================================\n");
@@ -89,7 +104,12 @@ void starforth_word_word_entropy(VM *vm) {
     }
 }
 
-/* RESET-ENTROPY ( -- )  Reset all entropy counters to zero */
+/**
+ * @brief Reset all entropy counters to zero
+ *
+ * Stack effect: ( -- )
+ * @param vm Pointer to the VM instance
+ */
 void starforth_word_reset_entropy(VM *vm) {
     int reset_count = 0;
 
@@ -104,7 +124,12 @@ void starforth_word_reset_entropy(VM *vm) {
     log_message(LOG_INFO, "RESET-ENTROPY: cleared %d word counters", reset_count);
 }
 
-/* TOP-WORDS ( n -- )  Display the N most frequently used words */
+/**
+ * @brief Display the N most frequently used words
+ *
+ * Stack effect: ( n -- )
+ * @param vm Pointer to the VM instance
+ */
 void starforth_word_top_words(VM *vm) {
     if (vm->dsp < 0) {
         vm->error = 1;
@@ -151,7 +176,12 @@ void starforth_word_top_words(VM *vm) {
     }
 }
 
-/* Registration function for StarForth vocabulary words */
+/**
+ * @brief Register StarForth vocabulary words with the VM
+ *
+ * Registers all StarForth-specific words and creates the STARFORTH vocabulary
+ * @param vm Pointer to the VM instance
+ */
 void register_starforth_words(VM *vm) {
     log_message(LOG_INFO, "Registering StarForth implementation vocabulary...");
 

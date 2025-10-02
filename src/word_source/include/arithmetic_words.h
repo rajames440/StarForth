@@ -38,6 +38,28 @@
  * STAR-SLASH ( n1 n2 n3 -- n4 )          Multiply n1*n2, divide by n3
  */
 
+/**
+ * @brief Registers all FORTH-79 arithmetic words with the virtual machine
+ *
+ * Registers the following words:
+ * - + (add)
+ * - - (subtract)
+ * - * (multiply)
+ * - / (divide)
+ * - MOD (modulo)
+ * - /MOD (divide with remainder)
+ * - NEGATE
+ * - ABS (absolute)
+ * - MIN
+ * - MAX
+ * - 1+ (increment)
+ * - 1- (decrement)
+ * - 2* (multiply by 2)
+ * - 2/ (divide by 2)
+ * - STAR-SLASH (multiply then divide)
+ *
+ * @param vm Pointer to the Forth virtual machine instance
+ */
 void register_arithmetic_words(VM * vm);
 
 #endif /* ARITHMETIC_WORDS_H */
