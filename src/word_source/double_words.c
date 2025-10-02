@@ -24,6 +24,7 @@
  * @brief Convert single number to double ( n -- d )
  *
  * Converts a single-precision number to double-precision format.
+ * Result is pushed as ( dlow dhigh ) with high cell on top.
  *
  * @param vm Pointer to the virtual machine state
  */
@@ -35,8 +36,8 @@ void double_word_s_to_d(VM *vm) {
 
     cell_t n = vm_pop(vm);
     cell_t dhigh = (n < 0) ? -1 : 0;
-    vm_push(vm, dhigh);
-    vm_push(vm, n);
+    vm_push(vm, n); // push low
+    vm_push(vm, dhigh); // push high
 }
 
 /* D+ ( d1 d2 -- d3 ) */
@@ -46,17 +47,25 @@ void double_word_d_plus(VM *vm) {
         return;
     }
 
-    cell_t d2low = vm_pop(vm);
+    // Stack layout: d1low d1high d2low d2high (top)
+    // Pop from top: d2high, d2low, d1high, d1low
     cell_t d2high = vm_pop(vm);
-    cell_t d1low = vm_pop(vm);
+    cell_t d2low = vm_pop(vm);
     cell_t d1high = vm_pop(vm);
+    cell_t d1low = vm_pop(vm);
 
-    cell_t result_low = d1low + d2low;
-    cell_t carry = (result_low < d1low) ? 1 : 0;
+    // Use unsigned arithmetic for carry detection
+    unsigned long ud1low = (unsigned long) d1low;
+    unsigned long ud2low = (unsigned long) d2low;
+    unsigned long uresult_low = ud1low + ud2low;
+
+    cell_t result_low = (cell_t) uresult_low;
+    cell_t carry = (uresult_low < ud1low) ? 1 : 0;
     cell_t result_high = d1high + d2high + carry;
 
-    vm_push(vm, result_high);
+    // Push result: low first, then high (so high is on top)
     vm_push(vm, result_low);
+    vm_push(vm, result_high);
 }
 
 /* D- ( d1 d2 -- d3 ) */
@@ -66,17 +75,25 @@ void double_word_d_minus(VM *vm) {
         return;
     }
 
-    cell_t d2low = vm_pop(vm);
+    // Stack layout: d1low d1high d2low d2high (top)
+    // Pop from top: d2high, d2low, d1high, d1low
     cell_t d2high = vm_pop(vm);
-    cell_t d1low = vm_pop(vm);
+    cell_t d2low = vm_pop(vm);
     cell_t d1high = vm_pop(vm);
+    cell_t d1low = vm_pop(vm);
 
-    cell_t result_low = d1low - d2low;
-    cell_t borrow = (d1low < d2low) ? 1 : 0;
+    // Use unsigned arithmetic for borrow detection
+    unsigned long ud1low = (unsigned long) d1low;
+    unsigned long ud2low = (unsigned long) d2low;
+    unsigned long uresult_low = ud1low - ud2low;
+
+    cell_t result_low = (cell_t) uresult_low;
+    cell_t borrow = (ud1low < ud2low) ? 1 : 0;
     cell_t result_high = d1high - d2high - borrow;
 
-    vm_push(vm, result_high);
+    // Push result: low first, then high (so high is on top)
     vm_push(vm, result_low);
+    vm_push(vm, result_high);
 }
 
 /* DNEGATE ( d1 -- d2 ) */
@@ -86,14 +103,16 @@ void double_word_dnegate(VM *vm) {
         return;
     }
 
-    cell_t dlow = vm_pop(vm);
+    // Stack layout: dlow dhigh (top)
     cell_t dhigh = vm_pop(vm);
+    cell_t dlow = vm_pop(vm);
 
-    dlow = ~dlow + 1;
-    dhigh = ~dhigh + (dlow == 0 ? 1 : 0);
+    // Negate: ~d + 1
+    unsigned long new_low = ~(unsigned long) dlow + 1;
+    cell_t new_dhigh = ~dhigh + (new_low == 0 ? 1 : 0);
 
-    vm_push(vm, dhigh);
-    vm_push(vm, dlow);
+    vm_push(vm, (cell_t) new_low);
+    vm_push(vm, new_dhigh);
 }
 
 /* DABS ( d1 -- d2 ) */
@@ -103,7 +122,8 @@ void double_word_dabs(VM *vm) {
         return;
     }
 
-    cell_t dhigh = vm->data_stack[vm->dsp - 1];
+    // High cell is on top of stack (dsp points to top)
+    cell_t dhigh = vm->data_stack[vm->dsp];
     if (dhigh < 0) {
         double_word_dnegate(vm);
     }
@@ -134,17 +154,17 @@ void double_word_dmax(VM *vm) {
         return;
     }
 
-    cell_t d2low = vm_pop(vm);
     cell_t d2high = vm_pop(vm);
-    cell_t d1low = vm_pop(vm);
+    cell_t d2low = vm_pop(vm);
     cell_t d1high = vm_pop(vm);
+    cell_t d1low = vm_pop(vm);
 
     if (d_compare(d1high, d1low, d2high, d2low) >= 0) {
-        vm_push(vm, d1high);
         vm_push(vm, d1low);
+        vm_push(vm, d1high);
     } else {
-        vm_push(vm, d2high);
         vm_push(vm, d2low);
+        vm_push(vm, d2high);
     }
 }
 
@@ -155,17 +175,17 @@ void double_word_dmin(VM *vm) {
         return;
     }
 
-    cell_t d2low = vm_pop(vm);
     cell_t d2high = vm_pop(vm);
-    cell_t d1low = vm_pop(vm);
+    cell_t d2low = vm_pop(vm);
     cell_t d1high = vm_pop(vm);
+    cell_t d1low = vm_pop(vm);
 
     if (d_compare(d1high, d1low, d2high, d2low) <= 0) {
-        vm_push(vm, d1high);
         vm_push(vm, d1low);
+        vm_push(vm, d1high);
     } else {
-        vm_push(vm, d2high);
         vm_push(vm, d2low);
+        vm_push(vm, d2high);
     }
 }
 
@@ -176,10 +196,10 @@ void double_word_d_less(VM *vm) {
         return;
     }
 
-    cell_t d2low = vm_pop(vm);
     cell_t d2high = vm_pop(vm);
-    cell_t d1low = vm_pop(vm);
+    cell_t d2low = vm_pop(vm);
     cell_t d1high = vm_pop(vm);
+    cell_t d1low = vm_pop(vm);
 
     int cmp = d_compare(d1high, d1low, d2high, d2low);
     vm_push(vm, (cmp < 0) ? -1 : 0);
@@ -192,10 +212,10 @@ void double_word_d_equals(VM *vm) {
         return;
     }
 
-    cell_t d2low = vm_pop(vm);
     cell_t d2high = vm_pop(vm);
-    cell_t d1low = vm_pop(vm);
+    cell_t d2low = vm_pop(vm);
     cell_t d1high = vm_pop(vm);
+    cell_t d1low = vm_pop(vm);
 
     int cmp = d_compare(d1high, d1low, d2high, d2low);
     vm_push(vm, (cmp == 0) ? -1 : 0);
@@ -219,10 +239,11 @@ void double_word_2dup(VM *vm) {
         return;
     }
 
-    cell_t dhigh = vm->data_stack[vm->dsp - 1];
-    cell_t dlow = vm->data_stack[vm->dsp];
-    vm_push(vm, dhigh);
+    // Stack: dlow dhigh (top)
+    cell_t dhigh = vm->data_stack[vm->dsp];
+    cell_t dlow = vm->data_stack[vm->dsp - 1];
     vm_push(vm, dlow);
+    vm_push(vm, dhigh);
 }
 
 /* 2SWAP ( d1 d2 -- d2 d1 ) */
@@ -232,15 +253,15 @@ void double_word_2swap(VM *vm) {
         return;
     }
 
-    cell_t d2low = vm_pop(vm);
     cell_t d2high = vm_pop(vm);
-    cell_t d1low = vm_pop(vm);
+    cell_t d2low = vm_pop(vm);
     cell_t d1high = vm_pop(vm);
+    cell_t d1low = vm_pop(vm);
 
-    vm_push(vm, d2high);
     vm_push(vm, d2low);
-    vm_push(vm, d1high);
+    vm_push(vm, d2high);
     vm_push(vm, d1low);
+    vm_push(vm, d1high);
 }
 
 /* 2OVER ( d1 d2 -- d1 d2 d1 ) */
@@ -250,10 +271,12 @@ void double_word_2over(VM *vm) {
         return;
     }
 
-    cell_t d1high = vm->data_stack[vm->dsp - 3];
-    cell_t d1low = vm->data_stack[vm->dsp - 2];
-    vm_push(vm, d1high);
+    // Stack: d1low d1high d2low d2high (top)
+    // Indices: dsp-3  dsp-2  dsp-1  dsp
+    cell_t d1low = vm->data_stack[vm->dsp - 3];
+    cell_t d1high = vm->data_stack[vm->dsp - 2];
     vm_push(vm, d1low);
+    vm_push(vm, d1high);
 }
 
 /* 2ROT ( d1 d2 d3 -- d2 d3 d1 ) */
@@ -263,19 +286,19 @@ void double_word_2rot(VM *vm) {
         return;
     }
 
-    cell_t d3low = vm_pop(vm);
     cell_t d3high = vm_pop(vm);
-    cell_t d2low = vm_pop(vm);
+    cell_t d3low = vm_pop(vm);
     cell_t d2high = vm_pop(vm);
-    cell_t d1low = vm_pop(vm);
+    cell_t d2low = vm_pop(vm);
     cell_t d1high = vm_pop(vm);
+    cell_t d1low = vm_pop(vm);
 
-    vm_push(vm, d2high);
     vm_push(vm, d2low);
-    vm_push(vm, d3high);
+    vm_push(vm, d2high);
     vm_push(vm, d3low);
-    vm_push(vm, d1high);
+    vm_push(vm, d3high);
     vm_push(vm, d1low);
+    vm_push(vm, d1high);
 }
 
 /* 2>R ( d -- ) ( R: -- d ) */
@@ -285,10 +308,10 @@ void double_word_2to_r(VM *vm) {
         return;
     }
 
-    cell_t dlow = vm_pop(vm);
     cell_t dhigh = vm_pop(vm);
-    vm->return_stack[++vm->rsp] = dhigh;
+    cell_t dlow = vm_pop(vm);
     vm->return_stack[++vm->rsp] = dlow;
+    vm->return_stack[++vm->rsp] = dhigh;
 }
 
 /* 2R> ( -- d ) ( R: d -- ) */
@@ -298,10 +321,10 @@ void double_word_2r_from(VM *vm) {
         return;
     }
 
-    cell_t dlow = vm->return_stack[vm->rsp--];
     cell_t dhigh = vm->return_stack[vm->rsp--];
-    vm_push(vm, dhigh);
+    cell_t dlow = vm->return_stack[vm->rsp--];
     vm_push(vm, dlow);
+    vm_push(vm, dhigh);
 }
 
 /* 2R@ ( -- d ) ( R: d -- d ) */
@@ -311,10 +334,10 @@ void double_word_2r_fetch(VM *vm) {
         return;
     }
 
-    cell_t dlow = vm->return_stack[vm->rsp];
-    cell_t dhigh = vm->return_stack[vm->rsp - 1];
-    vm_push(vm, dhigh);
+    cell_t dhigh = vm->return_stack[vm->rsp];
+    cell_t dlow = vm->return_stack[vm->rsp - 1];
     vm_push(vm, dlow);
+    vm_push(vm, dhigh);
 }
 
 /* D0= ( d -- flag ) */
@@ -324,8 +347,8 @@ void double_word_d_zero_equals(VM *vm) {
         return;
     }
 
-    cell_t dlow = vm_pop(vm);
     cell_t dhigh = vm_pop(vm);
+    cell_t dlow = vm_pop(vm);
     vm_push(vm, (dhigh == 0 && dlow == 0) ? -1 : 0);
 }
 
@@ -336,8 +359,8 @@ void double_word_d_zero_less(VM *vm) {
         return;
     }
 
-    vm_pop(vm); // dlow
     cell_t dhigh = vm_pop(vm);
+    vm_pop(vm); // dlow (unused, but must pop)
     vm_push(vm, (dhigh < 0) ? -1 : 0);
 }
 
@@ -348,14 +371,16 @@ void double_word_d_two_star(VM *vm) {
         return;
     }
 
-    cell_t dlow = vm_pop(vm);
     cell_t dhigh = vm_pop(vm);
+    cell_t dlow = vm_pop(vm);
 
-    cell_t new_dhigh = (dhigh << 1) | ((dlow < 0) ? 1 : 0);
-    cell_t new_dlow = dlow << 1;
+    // Left shift: new_low = dlow << 1, new_high = (dhigh << 1) | (carry from dlow)
+    unsigned long udlow = (unsigned long) dlow;
+    cell_t new_dlow = (cell_t)(udlow << 1);
+    cell_t new_dhigh = (dhigh << 1) | ((udlow >> 63) & 1);
 
-    vm_push(vm, new_dhigh);
     vm_push(vm, new_dlow);
+    vm_push(vm, new_dhigh);
 }
 
 /* D2/ ( d1 -- d2 ) */
@@ -365,14 +390,16 @@ void double_word_d_two_slash(VM *vm) {
         return;
     }
 
-    cell_t dlow = vm_pop(vm);
     cell_t dhigh = vm_pop(vm);
+    cell_t dlow = vm_pop(vm);
 
-    cell_t new_dlow = (dlow >> 1) | ((dhigh & 1) ? (1UL << (sizeof(cell_t) * 8 - 1)) : 0);
+    // Arithmetic right shift: preserve sign in high cell
     cell_t new_dhigh = dhigh >> 1;
+    unsigned long udlow = (unsigned long) dlow;
+    cell_t new_dlow = (cell_t)((udlow >> 1) | ((dhigh & 1) ? (1UL << 63) : 0));
 
-    vm_push(vm, new_dhigh);
     vm_push(vm, new_dlow);
+    vm_push(vm, new_dhigh);
 }
 
 /**

@@ -113,6 +113,7 @@ typedef struct VM {
     int dsp; /**< Data stack pointer */
     int rsp; /**< Return stack pointer */
     int exit_colon; /**< Exit flag for colon definitions */
+    int abort_requested; /**< ABORT flag for immediate termination */
     /** @} */
 
     /** @name Dictionary Management 

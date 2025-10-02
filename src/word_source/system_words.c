@@ -209,6 +209,7 @@ static void system_word_abort(VM *vm) {
     if (!vm) return;
     reset_vm_state(vm, 0);
     vm->error = 0;
+    vm->abort_requested = 1; /* Signal immediate termination */
 }
 
 /* (ABORT") runtime
