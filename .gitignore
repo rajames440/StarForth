@@ -4,3 +4,7 @@
 /bin/
 /docs/build/
 /docs/api/
+compile_commands.json
+/.clangd
+/scripts/generate-ide-files.sh
+/.vscode/
