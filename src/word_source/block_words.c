@@ -1,49 +1,30 @@
 /*
-
                                  ***   StarForth   ***
-  block_words.c - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/11/25, 10:06 AM
-  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+  block_words.c - FORTH-79 Block Words (Layer 3: Forth Interface)
+ Last modified - 10/02/25, 03:55 PM ET
+  Author: Robert A. James (rajames) - StarshipOS Forth Project.
 
- This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
-  To the extent possible under law, the author(s) have dedicated all copyright and related
-  and neighboring rights to this software to the public domain worldwide.
-  This software is distributed without any warranty.
-
-  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
-
-
- */
+  License: Creative Commons Zero v1.0 Universal
+  <http://creativecommons.org/publicdomain/zero/1.0/>
+*/
 
 #include "include/block_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include "../../include/vm.h"
+#include "../../include/block_subsystem.h"
 #include <string.h>
+#include <stdio.h>
 
 /* ----------------------------------------------------------------------
- * Model notes:
- * - A "block" is a contiguous BLOCK_SIZE region inside vm->memory.
- * - VM addresses are byte offsets (vaddr_t) into vm->memory.
- * - SCR is a VM cell that holds the "current screen" (block number).
- * - We track a simple dirty flag per block; persistence is a no-op for now.
+ * Architecture:
+ * - Layer 1: blkio (vtable abstraction)
+ * - Layer 2: block_subsystem (RAM 0-1023, disk 1024+, 4KB packing)
+ * - Layer 3: block_words (THIS FILE - Forth interface)
+ *
+ * All block I/O now goes through block_subsystem.h API.
+ * Block 0 is RESERVED for volume metadata.
  * ---------------------------------------------------------------------- */
-
-static uint8_t dirty_blocks[MAX_BLOCKS] = {0};
-
-/* --- small helpers ---------------------------------------------------- */
-
-static int block_in_range(cell_t blk) {
-    /* block 0 is invalid in tests; highest valid is MAX_BLOCKS-1 */
-    if (blk < 1) return 0;
-    if (blk >= (cell_t) MAX_BLOCKS) return 0;
-    return 1;
-}
-
-static vaddr_t block_to_addr(cell_t blk) {
-    /* blk is assumed valid (>=1) */
-    return (vaddr_t)((uint64_t) blk * (uint64_t) BLOCK_SIZE);
-}
 
 static void set_scr(VM *vm, cell_t blk) {
     if (!vm) return;
@@ -51,13 +32,13 @@ static void set_scr(VM *vm, cell_t blk) {
 }
 
 /* Optional utility surface (matches your header) */
-/** 
+/**
  * @brief Initializes the block system
  * @param vm Pointer to the VM instance
  */
 void init_block_system(VM *vm) {
     (void) vm;
-    memset(dirty_blocks, 0, sizeof(dirty_blocks));
+    /* Subsystem initialization happens in main.c via blk_subsys_init() */
 }
 
 /**
@@ -68,14 +49,13 @@ void init_block_system(VM *vm) {
  */
 unsigned char *get_block_buffer(VM *vm, int block_num) {
     if (!vm) return NULL;
-    cell_t blk = (cell_t) block_num;
-    if (!block_in_range(blk)) return NULL;
+    if (block_num == 0) return NULL; /* Block 0 reserved */
 
-    vaddr_t addr = block_to_addr(blk);
-    if (!vm_addr_ok(vm, addr, BLOCK_SIZE)) return NULL;
-
-    set_scr(vm, blk);
-    return (unsigned char *) vm_ptr(vm, addr);
+    uint8_t *buf = blk_get_buffer((uint32_t) block_num, 0); /* read-only */
+    if (buf) {
+        set_scr(vm, (cell_t) block_num);
+    }
+    return buf;
 }
 
 /**
@@ -86,17 +66,13 @@ unsigned char *get_block_buffer(VM *vm, int block_num) {
  */
 unsigned char *get_empty_buffer(VM *vm, int block_num) {
     if (!vm) return NULL;
-    cell_t blk = (cell_t) block_num;
-    if (!block_in_range(blk)) return NULL;
+    if (block_num == 0) return NULL; /* Block 0 reserved */
 
-    vaddr_t addr = block_to_addr(blk);
-    if (!vm_addr_ok(vm, addr, BLOCK_SIZE)) return NULL;
-
-    unsigned char *p = (unsigned char *) vm_ptr(vm, addr);
-    memset(p, 0, BLOCK_SIZE);
-    dirty_blocks[blk] = 1;
-    set_scr(vm, blk);
-    return p;
+    uint8_t *buf = blk_get_empty_buffer((uint32_t) block_num);
+    if (buf) {
+        set_scr(vm, (cell_t) block_num);
+    }
+    return buf;
 }
 
 /**
@@ -106,7 +82,9 @@ unsigned char *get_empty_buffer(VM *vm, int block_num) {
 void mark_buffer_dirty(VM *vm) {
     if (!vm) return;
     cell_t blk = vm_load_cell(vm, vm->scr_addr);
-    if (block_in_range(blk)) dirty_blocks[blk] = 1;
+    if (blk > 0) {
+        blk_update((uint32_t) blk);
+    }
 }
 
 /**
@@ -115,12 +93,7 @@ void mark_buffer_dirty(VM *vm) {
  */
 void save_all_buffers(VM *vm) {
     (void) vm;
-    for (int i = 1; i < (int) MAX_BLOCKS; ++i) {
-        if (dirty_blocks[i]) {
-            /* Persist here in the future; in-memory model clears the flag. */
-            dirty_blocks[i] = 0;
-        }
-    }
+    blk_flush(0); /* flush all */
 }
 
 /**
@@ -129,11 +102,13 @@ void save_all_buffers(VM *vm) {
  */
 void empty_all_buffers(VM *vm) {
     if (!vm) return;
-    for (int blk = USER_BLOCKS_START; blk < (int) MAX_BLOCKS; ++blk) {
-        vaddr_t addr = block_to_addr((cell_t) blk);
-        unsigned char *p = (unsigned char *) vm_ptr(vm, addr);
-        memset(p, 0, BLOCK_SIZE);
-        dirty_blocks[blk] = 0;
+    /* Zero blocks USER_BLOCKS_START through max available */
+    uint32_t total = blk_get_total_blocks();
+    for (uint32_t blk = USER_BLOCKS_START; blk < total; ++blk) {
+        uint8_t *buf = blk_get_buffer(blk, 1); /* writable */
+        if (buf) {
+            memset(buf, 0, BLOCK_SIZE);
+        }
     }
 }
 
@@ -146,19 +121,20 @@ void block_word_block(VM *vm) {
         return;
     }
     cell_t blk = vm_pop(vm);
-    if (!block_in_range(blk)) {
+    if (blk == 0 || !blk_is_valid((uint32_t) blk)) {
         vm->error = 1;
         return;
     }
 
-    vaddr_t addr = block_to_addr(blk);
-    if (!vm_addr_ok(vm, addr, BLOCK_SIZE)) {
+    uint8_t *buf = blk_get_buffer((uint32_t) blk, 0);
+    if (!buf) {
         vm->error = 1;
         return;
     }
 
     set_scr(vm, blk);
-    vm_push(vm, CELL(addr));
+    /* Return pointer as cell_t (blocks are external to VM memory now) */
+    vm_push(vm, (cell_t)(uintptr_t)buf);
 }
 
 /* BUFFER ( u -- addr ) : address of block u and mark as dirty */
@@ -168,33 +144,32 @@ void block_word_buffer(VM *vm) {
         return;
     }
     cell_t blk = vm_pop(vm);
-    if (!block_in_range(blk)) {
+    if (blk == 0 || !blk_is_valid((uint32_t) blk)) {
         vm->error = 1;
         return;
     }
 
-    vaddr_t addr = block_to_addr(blk);
-    if (!vm_addr_ok(vm, addr, BLOCK_SIZE)) {
+    uint8_t *buf = blk_get_buffer((uint32_t) blk, 1); /* writable */
+    if (!buf) {
         vm->error = 1;
         return;
     }
 
     set_scr(vm, blk);
-    dirty_blocks[blk] = 1;
-    vm_push(vm, CELL(addr));
+    vm_push(vm, (cell_t)(uintptr_t)buf);
 }
 
 /* UPDATE ( -- ) : mark current SCR block as dirty */
 void block_word_update(VM *vm) {
     cell_t blk = vm_load_cell(vm, vm->scr_addr);
-    if (!block_in_range(blk)) {
+    if (blk == 0 || !blk_is_valid((uint32_t) blk)) {
         vm->error = 1;
         return;
     }
-    dirty_blocks[blk] = 1;
+    blk_update((uint32_t) blk);
 }
 
-/* SAVE-BUFFERS ( -- ) : write dirty buffers (no-op -> clear flags) */
+/* SAVE-BUFFERS ( -- ) : write dirty buffers */
 void block_word_save_buffers(VM *vm) {
     save_all_buffers(vm);
 }
@@ -204,10 +179,10 @@ void block_word_empty_buffers(VM *vm) {
     empty_all_buffers(vm);
 }
 
-/* FLUSH ( -- ) : save all buffers and invalidate (no caching, just clear flags) */
+/* FLUSH ( -- ) : save all buffers and invalidate */
 void block_word_flush(VM *vm) {
     (void) vm;
-    save_all_buffers(vm);
+    blk_flush(0);
 }
 
 /* LOAD ( u -- ) : set SCR and (future: interpret block) */
@@ -217,13 +192,13 @@ void block_word_load(VM *vm) {
         return;
     }
     cell_t blk = vm_pop(vm);
-    if (!block_in_range(blk)) {
+    if (blk == 0 || !blk_is_valid((uint32_t) blk)) {
         vm->error = 1;
         return;
     }
 
-    vaddr_t addr = block_to_addr(blk);
-    if (!vm_addr_ok(vm, addr, BLOCK_SIZE)) {
+    uint8_t *buf = blk_get_buffer((uint32_t) blk, 0);
+    if (!buf) {
         vm->error = 1;
         return;
     }
@@ -241,29 +216,42 @@ void block_word_list(VM *vm) {
         return;
     }
     cell_t blk = vm_pop(vm);
-    if (!block_in_range(blk)) {
+    if (blk == 0 || !blk_is_valid((uint32_t) blk)) {
         vm->error = 1;
         return;
     }
 
-    vaddr_t addr = block_to_addr(blk);
-    if (!vm_addr_ok(vm, addr, BLOCK_SIZE)) {
+    uint8_t *buf = blk_get_buffer((uint32_t) blk, 0);
+    if (!buf) {
         vm->error = 1;
         return;
     }
 
     set_scr(vm, blk);
 
-    /* Print a short preview to logs. Tests currently don’t diff output. */
-    const uint8_t *p = vm_ptr(vm, addr);
-    size_t preview = 0;
-    char line[81];
-    while (preview < BLOCK_SIZE && preview < 80 && p[preview] && p[preview] != '\n' && p[preview] != '\r') {
-        line[preview] = (char) p[preview];
-        preview++;
+    /* Print formatted block output with line numbers */
+    printf("\nBlock %ld\n", (long) blk);
+
+    /* FORTH blocks are typically 16 lines of 64 characters */
+    for (int line = 0; line < 16; line++) {
+        printf("%02d: ", line);
+        for (int col = 0; col < 64; col++) {
+            int idx = line * 64 + col;
+            char ch = (char) buf[idx];
+            /* Print printable characters, show spaces as-is */
+            if (ch >= 32 && ch < 127) {
+                putchar(ch);
+            } else if (ch == 0) {
+                /* Null bytes shown as spaces for readability */
+                putchar(' ');
+            } else {
+                /* Non-printable shown as '.' */
+                putchar('.');
+            }
+        }
+        printf("\n");
     }
-    line[preview] = '\0';
-    log_message(LOG_DEBUG, "LIST %ld: \"%s\"%s", (long) blk, line, (preview == 80 ? "..." : ""));
+    printf("\n");
 }
 
 /* THRU ( u1 u2 -- ) : LOAD each block from u1..u2 inclusive */
@@ -280,7 +268,7 @@ void block_word_thru(VM *vm) {
         u1 = u2;
         u2 = t;
     }
-    if (!block_in_range(u1) || !block_in_range(u2)) {
+    if (u1 == 0 || !blk_is_valid((uint32_t) u1) || !blk_is_valid((uint32_t) u2)) {
         vm->error = 1;
         return;
     }

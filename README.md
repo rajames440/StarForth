@@ -16,7 +16,8 @@ with **no reliance on** `malloc`, `printf`, or glibc.
 * ⚡ **Inline assembly optimizations** for x86_64 and ARM64 (22% speedup on x86_64)
 * 🗂️ **Dictionary & registration** via `word_registry`
 * 🧩 **Modular word sources** (one category per file)
-* 🧱 **Block‑style memory model** (fileless today; persistence planned)
+* 💾 **Persistent block storage** - 3-layer architecture with FILE/RAM/L4Re backends
+* 🧱 **Block‑style memory model** - RAM blocks (1-1023) + Disk blocks (1024+)
 * 🧾 **64‑bit cells** by default (`cell_t`) with stack/logical/arithmetic/IO sets
 * 🧪 **REPL** and an in‑process test runner
 * 🧯 **No glibc**: suitable for tiny kernels and libc‑free targets
