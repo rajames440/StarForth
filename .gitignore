@@ -9,3 +9,4 @@ compile_commands.json
 /scripts/generate-ide-files.sh
 /.vscode/
 /disks/
+/build/generated/
