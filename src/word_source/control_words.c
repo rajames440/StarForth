@@ -368,6 +368,20 @@ static void control_forth_runtime_leave(VM *vm) {
     log_message(LOG_DEBUG, "LEAVE: flagged exit");
 }
 
+/* UNLOOP ( -- ) — discard loop parameters from return stack */
+static void control_forth_UNLOOP(VM *vm) {
+    if (vm->rsp < 2) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "UNLOOP: outside loop (return stack underflow)");
+        return;
+    }
+    /* Return stack layout: ..., limit (rsp-2), index (rsp-1), ip (rsp) */
+    /* Move IP from rsp down to rsp-2, then decrement rsp by 2 */
+    vm->return_stack[vm->rsp - 2] = vm->return_stack[vm->rsp];
+    vm->rsp -= 2;
+    log_message(LOG_DEBUG, "UNLOOP: removed loop parameters (limit, index)");
+}
+
 /* I ( -- i ) */
 static void control_forth_I(VM *vm) {
     if (vm->rsp < 2) {
@@ -784,9 +798,10 @@ void register_control_words(VM *vm) {
     register_word(vm, "LEAVE", control_forth_leave);
     vm_make_immediate(vm);
 
-    /* Loop indices & EXIT */
+    /* Loop indices, UNLOOP & EXIT */
     register_word(vm, "I", control_forth_I);
     register_word(vm, "J", control_forth_J);
+    register_word(vm, "UNLOOP", control_forth_UNLOOP);
     register_word(vm, "EXIT", control_forth_EXIT);
 
     log_message(LOG_INFO, "Registering FORTH-79 control flow words (two-stack VM)");
