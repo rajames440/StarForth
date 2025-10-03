@@ -103,22 +103,95 @@ turbo: banner
 	@echo "🚀 Building TURBO configuration (ASM only)..."
 	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DNDEBUG -flto" LDFLAGS="-flto -s" $(TARGET)
 
-# Profile-guided optimization - two-stage build
+# Profile-guided optimization - comprehensive three-stage build
 pgo: banner
 	@echo "📊 Building with Profile-Guided Optimization..."
-	@echo "   Stage 1: Instrumentation build..."
+	@echo "   Stage 1: Clean build environment..."
 	$(MAKE) clean
-	@rm -f build/*.gcda build/*/*.gcda build/*/*/*.gcda 2>/dev/null || true
-	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O2 -DUSE_ASM_OPT=1 -fprofile-generate" LDFLAGS="-fprofile-generate" $(TARGET)
-	@echo "   Stage 2: Running profiling workload..."
-	@./$(TARGET) --benchmark 1000 --log-none || true
-	@echo "   Stage 3: Optimized build with profile data..."
+	@rm -f *.gcda */*.gcda */*/*.gcda src/*.gcda src/*/*.gcda build/*.gcda 2>/dev/null || true
+	@rm -f *.gcno */*.gcno */*/*.gcno src/*.gcno src/*/*.gcno build/*.gcno 2>/dev/null || true
+	@echo "   Stage 2: Instrumentation build..."
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O2 -DUSE_ASM_OPT=1 -fprofile-generate" LDFLAGS="-fprofile-generate -lgcov" $(TARGET)
+	@echo "   Stage 3: Running comprehensive profiling workload..."
+	@echo "     (This exercises all code paths: tests, benchmarks, REPL, blocks, etc.)"
+	@./scripts/pgo-workload.sh $(TARGET)
+	@echo "   Stage 4: Collecting profile data..."
+	@find . -name "*.gcda" -type f | wc -l | xargs -I {} echo "     Found {} profile data files"
+	@echo "   Stage 5: Optimized build with profile data..."
 	$(MAKE) clean-obj
-	@rm -f build/*.gcno build/*/*.gcno build/*/*/*.gcno 2>/dev/null || true
+	@rm -f *.gcno */*.gcno */*/*.gcno src/*.gcno src/*/*.gcno build/*.gcno 2>/dev/null || true
 	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -fprofile-use -fprofile-correction -Wno-error=coverage-mismatch" LDFLAGS="-fprofile-use" $(TARGET)
-	@echo "   Cleaning up profile data..."
-	@rm -f src/*.gcda src/word_source/*.gcda build/*.gcda build/*/*.gcda build/*/*/*.gcda 2>/dev/null || true
+	@echo "   Stage 6: Cleaning up profile data..."
+	@rm -f *.gcda */*.gcda */*/*.gcda src/*.gcda src/*/*.gcda build/*.gcda 2>/dev/null || true
+	@rm -f *.gcno */*.gcno */*/*.gcno src/*.gcno src/*/*.gcno build/*.gcno 2>/dev/null || true
 	@echo "✓ PGO build complete!"
+	@echo ""
+	@echo "Compare performance with: make bench-compare"
+
+# Profile-guided optimization with perf analysis
+pgo-perf: banner
+	@echo "📊 Building with PGO + perf analysis..."
+	@if ! command -v perf &> /dev/null; then \
+		echo "Error: perf not found. Install with: sudo apt-get install linux-tools-generic"; \
+		exit 1; \
+	fi
+	@echo "   Stage 1: Clean build..."
+	$(MAKE) clean
+	@echo "   Stage 2: Building instrumented binary..."
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O2 -DUSE_ASM_OPT=1 -fprofile-generate -fno-omit-frame-pointer" LDFLAGS="-fprofile-generate -lgcov" $(TARGET)
+	@echo "   Stage 3: Running workload with perf profiling..."
+	@sudo perf record -g --call-graph dwarf -o pgo-perf.data -- ./scripts/pgo-workload.sh $(TARGET) 2>&1 | head -20
+	@echo "   Stage 4: Optimized build with profile data..."
+	$(MAKE) clean-obj
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -fprofile-use -fprofile-correction -fno-omit-frame-pointer -Wno-error=coverage-mismatch" LDFLAGS="-fprofile-use" $(TARGET)
+	@echo "   Stage 5: Analyzing perf data..."
+	@sudo perf report --stdio -i pgo-perf.data --sort comm,dso,symbol --percent-limit 1 | head -50
+	@echo ""
+	@echo "✓ PGO + perf build complete!"
+	@echo "  View detailed report: sudo perf report -i pgo-perf.data"
+	@echo "  View flamegraph: sudo perf script -i pgo-perf.data | ./scripts/flamegraph.pl > pgo-flame.svg"
+
+# Profile with valgrind callgrind for detailed analysis
+pgo-valgrind: banner
+	@echo "📊 Building with PGO + valgrind callgrind analysis..."
+	@if ! command -v valgrind &> /dev/null; then \
+		echo "Error: valgrind not found. Install with: sudo apt-get install valgrind"; \
+		exit 1; \
+	fi
+	@echo "   Stage 1: Clean build..."
+	$(MAKE) clean
+	@echo "   Stage 2: Building instrumented binary with debug symbols..."
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O2 -g -DUSE_ASM_OPT=1 -fprofile-generate" LDFLAGS="-fprofile-generate -lgcov" $(TARGET)
+	@echo "   Stage 3: Running workload with callgrind profiling..."
+	@echo "     (This will be slow - callgrind adds significant overhead)"
+	@valgrind --tool=callgrind --callgrind-out-file=pgo-callgrind.out --dump-instr=yes --collect-jumps=yes \
+		./$(TARGET) --benchmark 100 --log-none || true
+	@echo "   Stage 4: Optimized build with profile data..."
+	$(MAKE) clean-obj
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -g -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -fprofile-use -fprofile-correction -Wno-error=coverage-mismatch" LDFLAGS="-fprofile-use" $(TARGET)
+	@echo ""
+	@echo "✓ PGO + valgrind build complete!"
+	@echo "  View callgrind data: kcachegrind pgo-callgrind.out"
+	@echo "  Or text report: callgrind_annotate pgo-callgrind.out"
+
+# Benchmark comparison: regular vs PGO
+bench-compare: banner
+	@echo "🏁 Benchmark Comparison: Regular vs PGO"
+	@echo ""
+	@echo "Building regular optimized binary..."
+	@$(MAKE) clean > /dev/null 2>&1
+	@$(MAKE) release > /dev/null 2>&1
+	@echo "Running benchmark (10000 iterations)..."
+	@echo -n "  Regular build: "
+	@/usr/bin/time -f "%E elapsed, %U user" ./$(TARGET) --benchmark 10000 --log-none 2>&1 | tail -1
+	@echo ""
+	@echo "Building PGO optimized binary..."
+	@$(MAKE) pgo > /dev/null 2>&1
+	@echo "Running benchmark (10000 iterations)..."
+	@echo -n "  PGO build:     "
+	@/usr/bin/time -f "%E elapsed, %U user" ./$(TARGET) --benchmark 10000 --log-none 2>&1 | tail -1
+	@echo ""
+	@echo "✓ Comparison complete!"
 
 # ==============================================================================
 # RASPBERRY PI 4 TARGETS
@@ -364,7 +437,10 @@ help:
 	@echo "  fastest         - Maximum performance (ASM + direct threading + LTO)"
 	@echo "  fast            - Fast without LTO (easier debugging)"
 	@echo "  turbo           - Assembly optimizations only"
-	@echo "  pgo             - Profile-guided optimization (2-stage build)"
+	@echo "  pgo             - Profile-guided optimization (5-15% faster than fastest)"
+	@echo "  pgo-perf        - PGO + perf analysis (requires sudo, linux-tools)"
+	@echo "  pgo-valgrind    - PGO + callgrind profiling (requires valgrind)"
+	@echo "  bench-compare   - Compare regular vs PGO performance"
 	@echo ""
 	@echo "🥧 RASPBERRY PI 4:"
 	@echo "  rpi4            - Native build on Raspberry Pi 4"

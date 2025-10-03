@@ -162,7 +162,11 @@ make rpi4-fastest    # Maximum optimizations
 make turbo    # -O3 optimizations
 make fast     # ASM + direct threading
 make fastest  # ASM + direct threading + LTO
+make pgo      # Profile-guided optimization (5-15% faster than fastest)
 ```
+
+**For maximum performance**, use profile-guided optimization which analyzes runtime behavior to optimize hot paths.
+See [PGO Guide](PGO_GUIDE.md) for details.
 
 ### Output
 
