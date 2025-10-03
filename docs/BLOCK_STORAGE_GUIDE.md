@@ -8,15 +8,22 @@
 
 ## Overview
 
-StarForth implements a **3-layer block storage architecture** designed for persistent storage in embedded, microkernel,
-and traditional environments. The system provides 1024-byte Forth blocks with RAM caching and disk persistence.
+StarForth v1.1.0 implements a **3-layer block storage architecture v2** designed for persistent storage in embedded,
+microkernel,
+and traditional environments. The system provides 1024-byte Forth blocks with LBN→PBN mapping, external BAM, per-block
+metadata,
+and CRC64 integrity checking.
 
-### Key Features
+### Key Features (v2)
 
-- **Dual storage tiers**: RAM blocks (0-1023) and disk blocks (1024+)
-- **Persistent storage**: Block data survives across program restarts
-- **LRU caching**: Automatic cache management with dirty tracking
-- **4KB alignment**: Optimized for modern storage devices
+- **LBN→PBN mapping**: Logical Block Numbers (user view) map to Physical Block Numbers (internal)
+- **Reserved system ranges**: RAM PBN 0-31 and DISK PBN 1024-1055 hidden from users
+- **User-visible blocks**: LBN 0-991 (RAM volatile) + LBN 992+ (DISK persistent)
+- **External BAM**: Block Allocation Map in dedicated 4KB devblocks (1-bit per block)
+- **Per-block metadata**: 341 bytes (CRC64, timestamps, crypto fields, security, chains)
+- **CRC64 integrity**: ISO polynomial 0x42F0E1EBA9EA3693 for data validation
+- **LRU caching**: 8 slots (32KB total) with automatic dirty tracking
+- **4KB device packing**: 3× 1KB Forth blocks + 1KB metadata per 4KB sector
 - **Multi-backend support**: FILE and RAM backends included, L4Re-ready
 - **Hot-attach capability**: Multi-volume support for dynamic storage
 
@@ -69,33 +76,142 @@ FLUSH                      \ Write to disk
 └─────────────────────────────────────────┘
 ```
 
-### Block Numbering
+### v2 Block Numbering (LBN→PBN Mapping)
 
-| Range  | Storage | Purpose                 | Persistence |
-|--------|---------|-------------------------|-------------|
-| 0      | —       | **Reserved** (metadata) | N/A         |
-| 1-1023 | RAM     | Fast temporary storage  | No          |
-| 1024+  | Disk    | Persistent storage      | Yes         |
+**User View (Logical Block Numbers - LBN):**
 
-### Storage Layout
+| LBN Range | Storage | Purpose               | Persistence |
+|-----------|---------|-----------------------|-------------|
+| 0-991     | RAM     | Volatile fast storage | No          |
+| 992+      | DISK    | Persistent storage    | Yes         |
 
-**4KB Device Alignment:**
+**Internal View (Physical Block Numbers - PBN):**
 
-- 3× 1KB Forth blocks packed per 4KB device sector
-- Efficient for modern SSDs and flash storage
-- Metadata space: 1KB per 4KB sector (341 bytes × 3 blocks)
+| PBN Range | Storage | Purpose                 | User Visible |
+|-----------|---------|-------------------------|--------------|
+| 0-31      | RAM     | System reserved         | No           |
+| 32-1023   | RAM     | User blocks (LBN 0-991) | Yes          |
+| 1024-1055 | DISK    | System reserved         | No           |
+| 1056+     | DISK    | User blocks (LBN 992+)  | Yes          |
 
-**Example mapping:**
+**Key Points:**
+
+- **All user operations use LBNs** (logical block numbers)
+- System reserved ranges are hidden (RAM PBN 0-31, DISK PBN 1024-1055)
+- Transparent LBN→PBN mapping by block subsystem
+
+### v2 On-Disk Format
+
+**Device Block Layout (4 KiB devblocks):**
 
 ```
-Forth Block    Device Block    Offset
------------    ------------    ------
-1024           0               0
-1025           0               1024
-1026           0               2048
-1027           1               0
+devblock 0:       Volume Header (4 KiB)
+                  - magic: 0x53544652 "STFR"
+                  - version: 2
+                  - BAM location and size
+                  - capacity/allocation info
+                  - timestamps, label, etc.
+
+devblocks 1..B:   External BAM (4 KiB pages)
+                  - 1-bit allocation bitmap
+                  - 32768 bits per 4 KiB page
+                  - Tracks all Forth blocks
+
+devblocks (1+B)..:Payload (3× 1KB data + 1KB metadata)
+                  - 3× 1KB Forth blocks packed
+                  - 1KB metadata region (341 bytes × 3)
+```
+
+**Forth Block to Device Block Mapping:**
+
+```
+Logical (LBN)  →  Physical (PBN)  →  Device Block  →  Offset
+-----------       --------------       -----------      ------
+0              →  32 (RAM)         →  N/A              N/A (in memory)
+991            →  1023 (RAM)       →  N/A              N/A (in memory)
+992            →  1056 (DISK)      →  2 (if B=1)    →  0
+993            →  1057 (DISK)      →  2 (if B=1)    →  1024
+994            →  1058 (DISK)      →  2 (if B=1)    →  2048
+995            →  1059 (DISK)      →  3 (if B=1)    →  0
 ...
 ```
+
+### v2 Per-Block Metadata (341 bytes)
+
+Each Forth block has associated metadata stored in the 1KB metadata region:
+
+```c
+// Core integrity (16 bytes)
+uint64_t checksum;           // CRC64-ISO (poly: 0x42F0E1EBA9EA3693)
+uint64_t magic;              // 0x424C4B5F5354524B "BLK_STRK"
+
+// Timestamps (16 bytes)
+uint64_t created_time;
+uint64_t modified_time;
+
+// Block status (16 bytes)
+uint64_t flags;
+uint64_t write_count;
+
+// Content identification (32 bytes)
+uint64_t content_type;       // 0=empty, 1=source, 2=data, ...
+uint64_t encoding;           // 0=ASCII, 1=UTF-8, 2=binary, ...
+uint64_t content_length;     // Actual data length ≤ 1024
+uint64_t reserved1;
+
+// Cryptographic (64 bytes)
+uint64_t entropy[4];         // 256-bit entropy/random seed
+uint64_t hash[4];            // SHA-256 hash (optional)
+
+// Security & ownership (40 bytes)
+uint64_t owner_id;           // User/process ID
+uint64_t permissions;        // rwx-style permissions
+uint64_t acl_block;          // Block number containing ACL
+uint64_t signature[2];       // 128-bit signature
+
+// Link/chain support (32 bytes)
+uint64_t prev_block;         // Previous in chain (0=none)
+uint64_t next_block;         // Next in chain (0=none)
+uint64_t parent_block;       // Parent/index (0=none)
+uint64_t chain_length;       // Total blocks in chain
+
+// Application-specific (120 bytes)
+uint64_t app_data[15];       // 15× 64-bit app-defined fields
+
+uint8_t padding[5];          // Total 341 bytes
+```
+
+### External BAM (Block Allocation Map)
+
+**Design:**
+
+- 1-bit per Forth block stored in dedicated 4KB devblocks
+- 32768 bits (4096 blocks) per 4KB BAM page
+- Dynamic sizing: `B = ceil(3 * (total_devblocks - 1) / 32768)`
+- Stored externally (not inline) for space efficiency
+
+**Example:**
+
+- 500 MB disk image ≈ 122,000 4KB devblocks
+- Total payload devblocks after header = 121,999
+- Forth blocks storable = 3 × 121,999 = 365,997
+- BAM pages needed = ceil(365,997 / 32768) = 12 pages (48 KB)
+
+### CRC64 Integrity Checking
+
+All block writes include CRC64 checksum:
+
+```c
+// Computed on each UPDATE
+checksum = compute_crc64(block_data, 1024);
+
+// Verified on each BLOCK read (optional)
+if (meta.checksum != compute_crc64(block_data, 1024)) {
+    // Corruption detected
+}
+```
+
+**Polynomial:** ISO 0x42F0E1EBA9EA3693 (CRC64-ISO)
 
 ---
 

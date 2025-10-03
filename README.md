@@ -10,18 +10,22 @@ with **no reliance on** `malloc`, `printf`, or glibc.
 
 ---
 
-## 💡 Features (1.0.0)
+## 💡 Features (1.1.0)
 
 * 🧠 **Threaded VM** (direct vs. indirect depends on target)
 * ⚡ **Inline assembly optimizations** for x86_64 and ARM64 (22% speedup on x86_64)
 * 🗂️ **Dictionary & registration** via `word_registry`
 * 🧩 **Modular word sources** (one category per file)
-* 💾 **Persistent block storage** - 3-layer architecture with FILE/RAM/L4Re backends
-* 🧱 **Block‑style memory model** - RAM blocks (1-1023) + Disk blocks (1024+)
-* 🧾 **64‑bit cells** by default (`cell_t`) with stack/logical/arithmetic/IO sets
-* 🧪 **REPL** and an in‑process test runner
+* 💾 **Persistent block storage v2** - 3-layer architecture with FILE/RAM/L4Re backends
+  * LBN→PBN mapping with reserved system ranges (RAM 0-31, DISK 1024-1055 hidden)
+  * External BAM (Block Allocation Map) in dedicated 4KB pages
+  * Per-block metadata (341 bytes: CRC64, timestamps, crypto, security, chains)
+  * User-visible logical blocks: LBN 0-991 (RAM) + LBN 992+ (DISK persistent)
+* 🧱 **Block‑style memory model** - 992 RAM blocks + persistent disk blocks
+* 🧾 **64‑bit only architecture** - Native x86_64 and ARM64/AArch64
+* 🧪 **REPL** and an in‑process test runner (709 tests, 93% pass rate)
 * 🧯 **No glibc**: suitable for tiny kernels and libc‑free targets
-* 🏗️ **Multi-architecture**: Native x86_64, ARM64/AArch64 cross-compilation
+* 🏗️ **Multi-architecture**: x86_64 and ARM64 with cross-compilation support
 
 **Control flow implemented**
 
@@ -187,7 +191,7 @@ ok>
 
 ## 🧰 Usage / Command‑line options
 
-> These are the built‑in switches exposed by the 1.0.0 `main.c`.
+> These are the built‑in switches exposed by the 1.1.0 `main.c`.
 
 ```
 Usage: ./build/starforth [OPTIONS]
@@ -198,6 +202,10 @@ Options:
                     (automatically enables TEST logging if no log level set)
   --benchmark [N]   Run performance benchmarks (default: 1000 iterations)
                     (exits after benchmarking, does not start REPL)
+  --disk-img=PATH   Attach FILE-backed persistent block storage
+  --disk-ro         Mount block storage as read-only
+  --ram-disk        Use RAM-only block storage (no persistence)
+  --fbs             Use Forth Block Storage (devblock packing)
   --log-error       Set logging level to ERROR (only errors)
   --log-warn        Set logging level to WARN (warnings and errors)
   --log-info        Set logging level to INFO (default)
@@ -210,7 +218,8 @@ Examples:
   ./build/starforth                          # Start REPL with INFO logging
   ./build/starforth --run-tests              # Run tests with TEST logging, then start REPL
   ./build/starforth --benchmark              # Run benchmarks with 1000 iterations
-  ./build/starforth --benchmark 5000         # Run benchmarks with 5000 iterations
+  ./build/starforth --disk-img=mydisk.img    # Start with persistent block storage
+  ./build/starforth --ram-disk               # Start with RAM-only blocks
   ./build/starforth --log-debug --run-tests  # Run tests with DEBUG logging
 ```
 
@@ -279,10 +288,11 @@ See `src/test_runner/` for the harness and individual suites.
 
 ## 🔐 Roadmap
 
+* [x] ~~`SEE` word~~ - **COMPLETED** (v1.1.0)
+* [x] ~~Block I/O backend (persistence)~~ - **COMPLETED** (v1.1.0)
 * [ ] `UNLOOP` and **`EXIT` behaves as `UNLOOP EXIT`** inside loops
-* [ ] Dictionary inspector + `SEE`
-* [ ] Block I/O backend (persistence), snapshots, replay
 * [ ] Minimal ROMFS + boot path (L4Re target)
+* [ ] L4Re block storage backends (dataspace + IPC service)
 * [ ] Per‑word ACLs / vocabulary isolation
 * [ ] Sample programs (sieve, Mandelbrot, ANSI art)
 
@@ -306,6 +316,22 @@ Repo: [https://github.com/rajames440](https://github.com/rajames440)
 Proudly supervised by **Santino** 🐕. All commits are sniff‑tested.
 
 ---
+
+### Release 1.1.0 Notes
+
+**Block Storage v2 Release**
+
+Major features:
+
+- ✅ Persistent block storage with LBN→PBN mapping
+- ✅ External BAM (Block Allocation Map) in dedicated 4KB pages
+- ✅ Per-block metadata (341 bytes: CRC64, timestamps, crypto, security, chains)
+- ✅ FILE and RAM backends implemented
+- ✅ SEE word for decompiling definitions
+- ✅ 64-bit only architecture (x86_64, ARM64)
+
+User-visible blocks: LBN 0-991 (RAM volatile) + LBN 992+ (DISK persistent)
+Reserved ranges: RAM PBN 0-31 and DISK PBN 1024-1055 hidden from users
 
 ### Release 1.0.0 Notes (tagged)
 
