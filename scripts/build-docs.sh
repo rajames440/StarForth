@@ -103,12 +103,12 @@ md_to_docbook() {
 echo "Converting Markdown files to DocBook..."
 
 # User documentation
-md_to_docbook "$PROJECT_ROOT/README.md" "$GENERATED_DIR/intro-generated.xml" "Introduction"
-md_to_docbook "$PROJECT_ROOT/QUICKSTART.md" "$GENERATED_DIR/quickstart-generated.xml" "Quick Start"
-md_to_docbook "$PROJECT_ROOT/TESTING.md" "$GENERATED_DIR/testing-generated.xml" "Testing"
-md_to_docbook "$PROJECT_ROOT/CONTRIBUTING.md" "$GENERATED_DIR/contributing-generated.xml" "Contributing"
-md_to_docbook "$PROJECT_ROOT/SECURITY.md" "$GENERATED_DIR/security-generated.xml" "Security"
-md_to_docbook "$PROJECT_ROOT/CODE_OF_CONDUCT.md" "$GENERATED_DIR/coc-generated.xml" "Code of Conduct"
+md_to_docbook "$DOCS_DIR/README.md" "$GENERATED_DIR/intro-generated.xml" "Introduction"
+md_to_docbook "$DOCS_DIR/QUICKSTART.md" "$GENERATED_DIR/quickstart-generated.xml" "Quick Start"
+md_to_docbook "$DOCS_DIR/TESTING.md" "$GENERATED_DIR/testing-generated.xml" "Testing"
+md_to_docbook "$DOCS_DIR/CONTRIBUTING.md" "$GENERATED_DIR/contributing-generated.xml" "Contributing"
+md_to_docbook "$DOCS_DIR/SECURITY.md" "$GENERATED_DIR/security-generated.xml" "Security"
+md_to_docbook "$DOCS_DIR/CODE_OF_CONDUCT.md" "$GENERATED_DIR/coc-generated.xml" "Code of Conduct"
 
 # Developer documentation
 md_to_docbook "$DOCS_DIR/GAP_ANALYSIS.md" "$GENERATED_DIR/gap-analysis-generated.xml" "Gap Analysis"
