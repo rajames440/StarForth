@@ -583,18 +583,28 @@ static void dictionary_word_forget(VM *vm) {
         new_here = (vaddr_t) vm->dict_fence_here;
     }
 
+    /* Save target's link before freeing (needed for relinking) */
+    DictEntry *target_next = target->link;
+
     /* Free headers from latest down to and including target, stopping before fence */
     e = vm->latest;
-    while (e) {
+    while (e && e != vm->dict_fence_latest) {
         DictEntry *next = e->link;
+        int is_target = (e == target);
         free(e);
-        if (e == target) break;
-        if (e == vm->dict_fence_latest) break;
+        if (is_target) break;
         e = next;
     }
 
-    /* Relink latest; never past fence */
-    vm->latest = (target_prev ? target_prev : vm->dict_fence_latest);
+    /* Relink: if target_prev exists, point it past the freed chain */
+    if (target_prev) {
+        target_prev->link = target_next; /* Skip freed entries */
+        vm->latest = target_prev; /* Latest is now the entry before target */
+    } else {
+        /* No prev means target was latest - reset to fence */
+        vm->latest = vm->dict_fence_latest;
+    }
+
     vm->here = (size_t) new_here;
 
     log_message(LOG_DEBUG, "FORGET: forgot '%.*s'; HERE=%ld (fence HERE=%ld)",

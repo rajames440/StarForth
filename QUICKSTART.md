@@ -84,6 +84,24 @@ ARM64/AArch64.
     - No optimizations (-O0)
     - Full debug symbols (-g)
 
+## 🔧 INIT System
+
+StarForth automatically loads `./conf/init.4th` at startup, which contains foundational Forth definitions. This is completely automatic - just run starforth and it's ready to go!
+
+```bash
+./build/starforth
+# INIT runs automatically...
+ok> F              # Words from init.4th are immediately available
+```
+
+**What INIT does:**
+- Loads blocks from `./conf/init.4th`
+- Executes them (defines words)
+- Protects them from FORGET (dictionary fence)
+- Zeros blocks for your use
+
+📖 **[Full INIT Documentation →](docs/INIT_SYSTEM.md)**
+
 ## 🧪 Testing & Benchmarking
 
 ```bash
