@@ -1,6 +1,6 @@
 # StarForth Architecture
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Last Updated:** October 2025
 **Author:** Robert A. James
 
@@ -12,12 +12,13 @@
 2. [Design Philosophy](#design-philosophy)
 3. [Core Architecture](#core-architecture)
 4. [Memory Management](#memory-management)
-5. [Dictionary System](#dictionary-system)
-6. [Execution Model](#execution-model)
-7. [Optimization Strategies](#optimization-strategies)
-8. [Module Organization](#module-organization)
-9. [Platform Integration](#platform-integration)
-10. [Performance Characteristics](#performance-characteristics)
+5. [Block Storage System](#block-storage-system) ⭐ NEW
+6. [Dictionary System](#dictionary-system)
+7. [Execution Model](#execution-model)
+8. [Optimization Strategies](#optimization-strategies)
+9. [Module Organization](#module-organization)
+10. [Platform Integration](#platform-integration)
+11. [Performance Characteristics](#performance-characteristics)
 
 ---
 
@@ -256,22 +257,260 @@ cell_t vm_load_cell(struct VM *vm, vaddr_t addr);
 void vm_store_cell(struct VM *vm, vaddr_t addr, cell_t v);
 ```
 
-### Block System
+---
 
-The block system provides persistent storage with 1KB blocks:
+## Block Storage System
 
-```c
-// Block operations
-uint8_t *vm_block(VM *vm, int blk_num);  // Get block buffer
-void vm_update(VM *vm);                   // Mark block as modified
-void vm_flush(VM *vm);                    // Write modified blocks
+### Architecture Overview
+
+StarForth v1.1.0 features a **3-layer block storage architecture** with v2 on-disk format:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              Layer 3: Forth Words (block_words.c)       │
+│     BLOCK BUFFER UPDATE FLUSH LIST LOAD THRU SCR        │
+├─────────────────────────────────────────────────────────┤
+│          Layer 2: Block Subsystem (block_subsystem.c)   │
+│           LBN→PBN mapping, BAM, Metadata, Cache          │
+├─────────────────────────────────────────────────────────┤
+│          Layer 1: Block I/O (blkio.h + backends)        │
+│          FILE backend | RAM backend | L4Re backend      │
+└─────────────────────────────────────────────────────────┘
 ```
 
-**Block Buffer Management:**
+### Layer 1: Block I/O Backends
 
-- Double-buffered for safety
-- Lazy write-back on `UPDATE` + `FLUSH`
-- In-memory only (persistence planned for future)
+**Vtable-based abstraction** (`include/blkio.h`):
+
+```c
+typedef struct blkio_ops {
+    int (*read)(struct blkio_dev *dev, uint32_t lba, void *buf);
+    int (*write)(struct blkio_dev *dev, uint32_t lba, const void *buf);
+    int (*flush)(struct blkio_dev *dev);
+    int (*info)(struct blkio_dev *dev, blkio_info_t *info);
+} blkio_ops_t;
+```
+
+**Available backends:**
+
+- `blkio_file.c` (245 LOC) - FILE-backed persistent storage
+- `blkio_ram.c` (111 LOC) - RAM-only (testing)
+- `blkio_l4ds.c` (planned) - L4Re dataspace
+- `blkio_l4svc.c` (planned) - L4Re IPC service
+
+### Layer 2: Block Subsystem v2
+
+**LBN→PBN Mapping** (src/block_subsystem.c: 759 LOC):
+
+```
+Logical Block Numbers (LBN) - User View:
+┌──────────────────┬──────────────────────────────┐
+│ LBN 0-991        │ LBN 992+                     │
+│ RAM (volatile)   │ DISK (persistent)            │
+└──────────────────┴──────────────────────────────┘
+
+Physical Block Numbers (PBN) - Internal:
+┌──────────┬──────────────┬──────────┬──────────────┐
+│ RAM      │ RAM          │ DISK     │ DISK         │
+│ 0-31     │ 32-1023      │ 1024-    │ 1056+        │
+│ RESERVED │ USER (992)   │ 1055 RES │ USER         │
+└──────────┴──────────────┴──────────┴──────────────┘
+```
+
+**Reserved ranges hidden from users:**
+
+- RAM PBN 0-31 → System reserved (32 blocks)
+- DISK PBN 1024-1055 → System reserved (32 blocks)
+- User sees: LBN 0-991 (RAM) + LBN 992+ (DISK)
+
+**External BAM (Block Allocation Map):**
+
+- 1-bit bitmap stored in dedicated 4KB devblocks
+- 32768 bits per 4KB page
+- Dynamic sizing: `B = ceil(3 * (total_devblocks - 1) / 32768)`
+
+**v2 On-Disk Format:**
+
+```
+devblock 0:       Volume header (4 KiB)
+                  - magic: 0x53544652 "STFR"
+                  - version: 2
+                  - BAM location and size
+                  - capacity/allocation info
+
+devblocks 1..B:   BAM pages (4 KiB each)
+                  - 1 bit per Forth block
+                  - Tracks allocation state
+
+devblocks (1+B)..:Payload (3× 1KB data + 1KB metadata per 4KB)
+                  - 3× 1KB Forth blocks packed
+                  - 1KB metadata region (341 bytes per block)
+```
+
+**Volume Header (devblock 0):**
+
+```c
+typedef struct {
+    uint32_t magic;              // 0x53544652 "STFR"
+    uint32_t version;            // 2
+    uint32_t total_volumes;
+    uint64_t total_devblocks;    // 4 KiB units
+
+    // BAM placement
+    uint32_t bam_start;          // usually 1
+    uint32_t bam_devblocks;      // size of BAM
+    uint32_t devblock_base;      // first payload devblock
+
+    // Capacity
+    uint64_t tracked_blocks;     // 32768 * bam_devblocks
+    uint64_t total_blocks;       // min(tracked, 3*(total-1-B))
+    uint64_t free_blocks;
+
+    // Allocation hints
+    uint64_t first_free;
+    uint64_t last_allocated;
+
+    // Reserved ranges
+    uint32_t reserved_disk_lo;   // e.g., 32
+    uint32_t reserved_ram_lo;    // e.g., 32
+
+    // Optional
+    uint64_t created_time;
+    uint64_t mounted_time;
+    uint64_t hdr_crc;
+
+    uint8_t _pad[...];           // Total 4096 bytes
+} blk_volume_meta_t;
+```
+
+**Per-Block Metadata (341 bytes):**
+
+```c
+typedef struct {
+    // Core integrity (16 bytes)
+    uint64_t checksum;           // CRC64-ISO
+    uint64_t magic;              // 0x424C4B5F5354524B "BLK_STRK"
+
+    // Timestamps (16 bytes)
+    uint64_t created_time;
+    uint64_t modified_time;
+
+    // Block status (16 bytes)
+    uint64_t flags;
+    uint64_t write_count;
+
+    // Content identification (32 bytes)
+    uint64_t content_type;       // 0=empty, 1=source, 2=data
+    uint64_t encoding;           // 0=ASCII, 1=UTF-8, 2=binary
+    uint64_t content_length;     // Actual data length ≤ 1024
+    uint64_t reserved1;
+
+    // Cryptographic (64 bytes)
+    uint64_t entropy[4];         // 256-bit entropy
+    uint64_t hash[4];            // SHA-256 slot
+
+    // Security & ownership (40 bytes)
+    uint64_t owner_id;
+    uint64_t permissions;
+    uint64_t acl_block;
+    uint64_t signature[2];
+
+    // Link/chain support (32 bytes)
+    uint64_t prev_block;
+    uint64_t next_block;
+    uint64_t parent_block;
+    uint64_t chain_length;
+
+    // Application-specific (120 bytes)
+    uint64_t app_data[15];
+
+    uint8_t padding[5];          // Total 341 bytes
+} blk_meta_t;
+```
+
+**LRU Cache (8 slots, 32KB total):**
+
+```c
+typedef struct {
+    uint32_t devblock;           // 4 KiB unit
+    uint8_t data[4096];          // 3× 1KB data + 1KB meta
+    blk_meta_t meta[3];          // Decoded metadata
+    uint8_t valid;
+    uint8_t loaded;
+    uint8_t dirty;
+    uint8_t meta_dirty;
+} cache_slot_t;
+
+cache_slot_t cache[8];           // LRU cache
+```
+
+**CRC64 Integrity:**
+
+```c
+// ISO polynomial: 0x42F0E1EBA9EA3693
+static uint64_t compute_crc64(const uint8_t *data, size_t len);
+```
+
+### Layer 3: Forth Interface
+
+**Block words** (src/word_source/block_words.c):
+
+```forth
+BLOCK   ( n -- addr )     \ Get block buffer (LBN)
+BUFFER  ( n -- addr )     \ Get empty block buffer (LBN)
+UPDATE  ( -- )            \ Mark current block dirty
+FLUSH   ( -- )            \ Write dirty blocks to disk
+SAVE-BUFFERS ( -- )       \ Alias for FLUSH
+LIST    ( n -- )          \ Display block (16×64 format)
+LOAD    ( n -- )          \ Interpret block as Forth source
+THRU    ( n1 n2 -- )      \ Load blocks n1 through n2
+SCR     ( -- addr )       \ Screen number variable
+```
+
+**All operations use LBNs** (user-visible logical block numbers).
+
+### Persistence Example
+
+```bash
+# Create disk image
+qemu-img create -f raw mydisk.img 500M
+
+# Run with persistent storage
+./build/starforth --disk-img=mydisk.img
+
+# In REPL
+2048 BLOCK 1024 65 FILL UPDATE FLUSH   \ Fill with 'A'
+2048 LIST                               \ Display
+BYE
+
+# Restart - data persists
+./build/starforth --disk-img=mydisk.img
+2048 LIST                               \ Still shows 'A'
+```
+
+### Performance Characteristics
+
+- **Block read (cached):** ~100ns
+- **Block read (disk):** ~10-100μs
+- **FLUSH (8 blocks):** ~0.1-1ms
+- **LRU cache:** 32KB (8× 4KB slots)
+- **Metadata overhead:** 341 bytes per block
+- **Packing efficiency:** 3× 1KB Forth blocks per 4KB devblock
+
+### L4Re Integration Path
+
+```c
+// Future L4Re backends (architecture defined)
+int blkio_open_l4ds(blkio_dev_t *dev, l4re_ds_t dataspace, ...);
+int blkio_open_l4svc(blkio_dev_t *dev, l4_cap_idx_t service, ...);
+```
+
+**Benefits:**
+
+- Clean abstraction - backend-agnostic
+- Same Forth API regardless of backend
+- Metadata travels with blocks
+- CRC64 ensures integrity across all backends
 
 ---
 
