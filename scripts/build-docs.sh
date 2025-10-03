@@ -102,28 +102,52 @@ md_to_docbook() {
 
 echo "Converting Markdown files to DocBook..."
 
-# User documentation
+# ========== PART I: GETTING STARTED ==========
 md_to_docbook "$DOCS_DIR/README.md" "$GENERATED_DIR/intro-generated.xml" "Introduction"
 md_to_docbook "$DOCS_DIR/QUICKSTART.md" "$GENERATED_DIR/quickstart-generated.xml" "Quick Start"
+md_to_docbook "$DOCS_DIR/INIT_SYSTEM.md" "$GENERATED_DIR/init-system-generated.xml" "INIT System"
+md_to_docbook "$DOCS_DIR/INIT_TOOLS.md" "$GENERATED_DIR/init-tools-generated.xml" "INIT Tools"
+
+# ========== PART II: USER GUIDE ==========
+md_to_docbook "$DOCS_DIR/BLOCK_STORAGE_GUIDE.md" "$GENERATED_DIR/block-storage-generated.xml" "Block Storage"
+md_to_docbook "$DOCS_DIR/GAP_ANALYSIS.md" "$GENERATED_DIR/forth79-generated.xml" "FORTH-79 Standard"
 md_to_docbook "$DOCS_DIR/TESTING.md" "$GENERATED_DIR/testing-generated.xml" "Testing"
+
+# ========== PART III: BUILD SYSTEM ==========
+md_to_docbook "$DOCS_DIR/BUILD_OPTIONS.md" "$GENERATED_DIR/build-options-generated.xml" "Build Options"
+md_to_docbook "$DOCS_DIR/PGO_GUIDE.md" "$GENERATED_DIR/pgo-generated.xml" "PGO Guide"
+md_to_docbook "$DOCS_DIR/RASPBERRY_PI_BUILD.md" "$GENERATED_DIR/rpi-generated.xml" "Raspberry Pi Build"
+
+# ========== PART IV: PERFORMANCE OPTIMIZATION ==========
+md_to_docbook "$DOCS_DIR/ASM_OPTIMIZATIONS.md" "$GENERATED_DIR/asm-opt-generated.xml" "Assembly Optimizations Overview"
+md_to_docbook "$DOCS_DIR/ASM_OPTIMIZATIONS.md" "$GENERATED_DIR/x86-opt-generated.xml" "x86_64 Optimizations"
+md_to_docbook "$DOCS_DIR/ARM64_OPTIMIZATIONS.md" "$GENERATED_DIR/arm64-opt-generated.xml" "ARM64 Optimizations"
+md_to_docbook "$DOCS_DIR/ARM64_BUILD_SUCCESS.md" "$GENERATED_DIR/arm64-build-generated.xml" "ARM64 Build Validation"
+md_to_docbook "$DOCS_DIR/INLINE_ASM_COMPLETE.md" "$GENERATED_DIR/inline-asm-generated.xml" "Inline Assembly Details"
+
+# ========== PART V: ARCHITECTURE & INTERNALS ==========
+md_to_docbook "$DOCS_DIR/ARCHITECTURE.md" "$GENERATED_DIR/architecture-generated.xml" "Architecture"
+md_to_docbook "$DOCS_DIR/GAP_ANALYSIS.md" "$GENERATED_DIR/gap-analysis-generated.xml" "Gap Analysis"
+
+# ========== PART VI: PLATFORM INTEGRATION ==========
+md_to_docbook "$DOCS_DIR/L4RE_INTEGRATION.md" "$GENERATED_DIR/l4re-generated.xml" "L4Re Integration"
+md_to_docbook "$DOCS_DIR/L4RE_DICTIONARY_ALLOCATION.md" "$GENERATED_DIR/l4re-dict-generated.xml" "L4Re Dictionary Allocation"
+md_to_docbook "$DOCS_DIR/l_4_re_blkio_endpoints.md" "$GENERATED_DIR/l4re-blkio-generated.xml" "L4Re Block I/O"
+
+# ========== PART VII: DEVELOPER DOCUMENTATION ==========
 md_to_docbook "$DOCS_DIR/CONTRIBUTING.md" "$GENERATED_DIR/contributing-generated.xml" "Contributing"
+md_to_docbook "$DOCS_DIR/DOXYGEN_STYLE_GUIDE.md" "$GENERATED_DIR/doxygen-style-generated.xml" "Doxygen Style Guide"
+md_to_docbook "$DOCS_DIR/DOXYGEN_QUICK_REFERENCE.md" "$GENERATED_DIR/doxygen-qref-generated.xml" "Doxygen Quick Reference"
+md_to_docbook "$DOCS_DIR/DOCUMENTATION_SETUP_SUMMARY.md" "$GENERATED_DIR/doc-setup-generated.xml" "Documentation Setup"
+
+# ========== PART VIII: REFERENCE ==========
 md_to_docbook "$DOCS_DIR/SECURITY.md" "$GENERATED_DIR/security-generated.xml" "Security"
 md_to_docbook "$DOCS_DIR/CODE_OF_CONDUCT.md" "$GENERATED_DIR/coc-generated.xml" "Code of Conduct"
 
-# Developer documentation
-md_to_docbook "$DOCS_DIR/GAP_ANALYSIS.md" "$GENERATED_DIR/gap-analysis-generated.xml" "Gap Analysis"
-md_to_docbook "$DOCS_DIR/L4RE_INTEGRATION.md" "$GENERATED_DIR/l4re-generated.xml" "L4Re Integration"
-md_to_docbook "$DOCS_DIR/L4RE_DICTIONARY_ALLOCATION.md" "$GENERATED_DIR/l4re-dict-generated.xml" "L4Re Dictionary Allocation"
-md_to_docbook "$DOCS_DIR/RASPBERRY_PI_BUILD.md" "$GENERATED_DIR/rpi-generated.xml" "Raspberry Pi Build"
-
-# Optimization documentation
-md_to_docbook "$DOCS_DIR/ASM_OPTIMIZATIONS.md" "$GENERATED_DIR/x86-opt-generated.xml" "x86_64 Optimizations"
-md_to_docbook "$DOCS_DIR/ARM64_OPTIMIZATIONS.md" "$GENERATED_DIR/arm64-opt-generated.xml" "ARM64 Optimizations"
-
-# Doxygen documentation
-if [ -f "$DOCS_DIR/DOXYGEN_STYLE_GUIDE.md" ]; then
-    md_to_docbook "$DOCS_DIR/DOXYGEN_STYLE_GUIDE.md" "$GENERATED_DIR/doxygen-generated.xml" "Doxygen Style Guide"
-fi
+# ========== APPENDICES ==========
+md_to_docbook "$DOCS_DIR/ASM_OPTIMIZATION_STATUS.md" "$GENERATED_DIR/asm-opt-status-generated.xml" "ASM Optimization Status"
+md_to_docbook "$DOCS_DIR/ARM64_ASSEMBLY_REVIEW.md" "$GENERATED_DIR/arm64-review-generated.xml" "ARM64 Assembly Review"
+md_to_docbook "$DOCS_DIR/DOCUMENTATION_README.md" "$GENERATED_DIR/doc-readme-generated.xml" "Documentation README"
 
 # Create a simple architecture overview if not exists
 if [ ! -f "$DOCS_DIR/ARCHITECTURE.md" ]; then
