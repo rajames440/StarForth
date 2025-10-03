@@ -315,10 +315,13 @@ int main(int argc, char *argv[]) {
 
         /* Compute RAM geometry (used when using_file==0, or for RAM fallback default) */
         uint64_t ram_bytes_u64 = (uint64_t) ram_disk_mb * 1024ull * 1024ull;
-        if (fbs == 0) fbs = BLKIO_FORTH_BLOCK_SIZE; {
-            uint32_t ram_blocks = (uint32_t)(ram_bytes_u64 / (uint64_t) fbs);
-            g_ram_bytes = (size_t) ram_blocks * (size_t) fbs;
+
+        if (fbs == 0) {
+            fbs = BLKIO_FORTH_BLOCK_SIZE;
         }
+
+        uint32_t ram_blocks = (uint32_t)(ram_bytes_u64 / (uint64_t) fbs);
+        g_ram_bytes = (size_t) ram_blocks * (size_t) fbs;
 
         /* Allocate RAM backing iff we're NOT using a file */
         if (!using_file) {
@@ -473,6 +476,20 @@ int main(int argc, char *argv[]) {
 
     /* Start the REPL if not running tests that exit */
     if (!do_stress_tests && !do_integration_tests) {
+        /* Run INIT to load system initialization from init.4th */
+        log_message(LOG_INFO, "Running system initialization (INIT)...");
+        vm_interpret(&vm, "INIT");
+        if (vm.error) {
+            log_message(LOG_ERROR, "System initialization failed - cannot start REPL");
+            cleanup_and_exit();
+            return 1;
+        }
+
+        /* Set dictionary fence after INIT to protect foundational words from FORGET */
+        vm.dict_fence_latest = vm.latest;
+        vm.dict_fence_here = vm.here;
+        log_message(LOG_INFO, "Dictionary fence set - init words protected from FORGET");
+
         vm_repl(&vm);
     }
 

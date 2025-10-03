@@ -14,6 +14,7 @@ with **no reliance on** `malloc`, `printf`, or glibc.
 
 * 🧠 **Threaded VM** (direct vs. indirect depends on target)
 * ⚡ **Inline assembly optimizations** for x86_64 and ARM64 (22% speedup on x86_64)
+* 🔧 **Deterministic INIT system** - Loads `./conf/init.4th` at boot with dictionary fence protection
 * 🗂️ **Dictionary & registration** via `word_registry`
 * 🧩 **Modular word sources** (one category per file)
 * 💾 **Persistent block storage v2** - 3-layer architecture with FILE/RAM/L4Re backends
@@ -186,6 +187,48 @@ You should see:
 ```
 ok>
 ```
+
+At startup, StarForth automatically runs the **INIT system** which loads foundational definitions from
+`./conf/init.4th`. See [INIT System Documentation](docs/INIT_SYSTEM.md) for details.
+
+---
+
+## 🔧 INIT System
+
+StarForth features a deterministic initialization system that loads Forth definitions from `./conf/init.4th` at startup.
+This provides:
+
+* **Deterministic boot** - Same init.4th always produces same system state
+* **Protected dictionary** - Init words cannot be FORGOTten (dictionary fence)
+* **Clean separation** - Init blocks execute then vanish (zeroed for userspace)
+* **Platform agnostic** - Works with filesystem (Linux) and ROMFS (L4Re)
+
+### Quick Example
+
+`./conf/init.4th`:
+
+```forth
+Block 2048
+(- Large Letter F )
+: STAR   42 EMIT ;
+: STARS  0 DO STAR LOOP ;
+: MARGIN CR 30 SPACES ;
+: BLIP   MARGIN STAR ;
+: BAR    MARGIN 5 STARS ;
+: F      BAR BLIP BAR BLIP BLIP ;
+```
+
+At startup, INIT loads this block, executes it (defining STAR, STARS, etc.), then zeros the block for userspace use. The
+words remain in the dictionary, protected by a fence.
+
+### Key Features
+
+* **Block number remapping** - `2048 LOAD` automatically becomes `1 LOAD`
+* **Metadata comments** - `(-` marks blocks for tooling/documentation
+* **Automatic cleanup** - Blocks zeroed after execution
+* **Error handling** - System halts if init fails (safe boot)
+
+📖 **[Full INIT System Documentation →](docs/INIT_SYSTEM.md)**
 
 ---
 
