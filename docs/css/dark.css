@@ -1,0 +1,541 @@
+/* =========================================================================
+   StarForth Manual — Dark, High-Contrast DocBook Theme
+   -------------------------------------------------------------------------
+   • Global black background, zero gutters (NO WHITE ANYWHERE)
+   • .book centered at 75% width, 2px lime border, 15px radius
+   • Clean typography, tight TOC, nice code & tables
+   • Works against DocBook 4.x HTML output (xsltproc docbook-xsl)
+   • Drop at: docs/css/dark.css
+   ========================================================================= */
+
+/* ====== Color system ===================================================== */
+:root {
+    --bg: #000000; /* page canvas */
+    --bg-2: #0a0a0a; /* panels / sections */
+    --bg-3: #111111; /* tables/stripes/code */
+    --fg: #e6e6ea; /* primary text */
+    --muted: #bdbdbd; /* secondary text */
+    --accent: #39ff14; /* lime accent */
+    --frame: lime; /* frame border color */
+    --link: #80cbc4; /* links */
+    --link-visited: #b39ddb;
+    --code-bg: #0b0b0b;
+    --code-fg: #e6e6ea;
+    --border: #1f1f1f;
+    --border-2: #2a2a2a;
+}
+
+/* ====== Page reset / NO WHITE ANYWHERE ================================== */
+html, body {
+    background: var(--bg) !important;
+    color: var(--fg) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: 100% !important;
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+    background: var(--bg) !important;
+}
+
+/* Kill legacy DocBook inline attrs (yes, they still show up) */
+body[bgcolor], body[text], body[link], body[vlink], body[alink] {
+    background: var(--bg) !important;
+    color: var(--fg) !important;
+}
+
+/* ====== Main book frame ================================================== */
+div.book {
+    width: 75% !important;
+    margin: 2rem auto !important;
+    background: var(--bg) !important;
+    border: 2px solid var(--frame) !important;
+    border-radius: 15px !important;
+    padding: 2rem !important;
+    box-sizing: border-box;
+}
+
+/* Optional, subtle inner glow on wide screens */
+/*
+div.book {
+  box-shadow: inset 0 0 0 1px rgba(0,255,0,0.05), 0 20px 60px rgba(0,255,0,0.06);
+}
+*/
+
+/* Small screens: widen frame & reduce padding */
+@media (max-width: 1100px) {
+    div.book {
+        width: 90% !important;
+    }
+}
+
+@media (max-width: 720px) {
+    div.book {
+        width: 95% !important;
+        padding: 1.25rem !important;
+    }
+}
+
+/* ====== Global element defaults ========================================= */
+a, a:visited {
+    color: var(--link);
+    text-decoration: none;
+}
+
+a:hover, a:focus {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+a:visited {
+    color: var(--link-visited);
+}
+
+p, li, dd {
+    color: var(--fg);
+}
+
+strong, b {
+    color: #ffffff;
+}
+
+em, i {
+    color: #dddddd;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+    margin: 0.6em 0 0.35em;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: .25rem;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-2), transparent);
+    margin: 2rem 0;
+}
+
+/* ====== Structure panels ================================================= */
+div.part,
+div.chapter,
+div.section,
+div.sect1,
+div.sect2,
+div.sect3,
+div.sect4,
+div.titlepage,
+div.toc,
+div.index,
+div.appendix {
+    background: transparent !important; /* allow the black frame to read */
+    color: var(--fg) !important;
+}
+
+/* Title page & TOC centered */
+div.book > .titlepage,
+div.book > .toc {
+    width: 66%;
+    margin: 1.5rem auto 1.75rem;
+}
+
+/* Title page polish */
+div.book > .titlepage {
+    background: radial-gradient(900px 260px at 50% -10%, rgba(0, 255, 0, .06), transparent 60%),
+    linear-gradient(180deg, #0b0b0b, #000);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+}
+
+h1.title {
+    margin: 0 0 .25rem;
+    font-size: clamp(2.2rem, 3vw, 3rem);
+    color: #fff;
+    text-shadow: 0 0 18px rgba(0, 255, 0, .20);
+}
+
+h2.subtitle {
+    margin: .25rem 0 1.2rem;
+    color: #98ffa3;
+    font-weight: 600;
+}
+
+.titlepage .author,
+.titlepage .releaseinfo,
+.titlepage .copyright,
+.titlepage .pubdate,
+.titlepage .abstract {
+    color: #c9c9c9;
+}
+
+.titlepage .abstract .title {
+    display: none;
+}
+
+/* hide “Abstract” label */
+
+/* Chapters/sections look like subtle panels */
+div.chapter, div.sect1, div.sect2, div.sect3, div.sect4 {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    margin: 1rem 0 1.25rem;
+}
+
+div.chapter .titlepage h2.title,
+div.sect1 .titlepage h2.title,
+div.sect2 .titlepage h3.title,
+div.sect3 .titlepage h4.title {
+    color: #fff;
+    margin-top: .2rem;
+}
+
+div.chapter .titlepage .title::after,
+div.sect1 .titlepage .title::after {
+    content: "";
+    display: block;
+    height: 2px;
+    margin: .5rem 0 0;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: .7;
+}
+
+/* ====== TOC ============================================================= */
+div.toc {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+}
+
+div.toc > p > b {
+    color: #eeeeee;
+}
+
+dl.toc {
+    margin: 0;
+}
+
+dl.toc dt {
+    margin: .25rem 0;
+}
+
+dl.toc dd {
+    margin: 0 0 .35rem 1.1rem;
+}
+
+dl.toc .part > a::before {
+    content: "◆ ";
+    color: var(--accent);
+}
+
+dl.toc .chapter > a::before {
+    content: "▸ ";
+    color: #98ffa3;
+}
+
+dl.toc .sect1 > a::before {
+    content: "# ";
+    color: #9aa0a6;
+}
+
+/* Optional sticky TOC (comment out if you don’t want it) */
+/*
+@media (min-width: 1200px) {
+  div.toc {
+    position: sticky; top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+  }
+}
+*/
+
+/* ====== Lists =========================================================== */
+.itemizedlist ul {
+    margin: .25rem 0 .75rem 1.25rem;
+}
+
+.itemizedlist li {
+    margin: .2rem 0;
+}
+
+.orderedlist ol {
+    margin: .25rem 0 .75rem 1.25rem;
+}
+
+/* Definition style blocks */
+.variablelist, .glosslist, dl {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: .6rem .9rem;
+}
+
+.variablelist dt, dt {
+    color: #ffffff;
+}
+
+/* ====== Tables ========================================================== */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background: var(--bg-3) !important;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+thead th {
+    background: linear-gradient(180deg, #151515, #0f0f0f);
+    color: #fff;
+    font-weight: 600;
+    text-align: left;
+}
+
+th, td {
+    padding: .6rem .8rem;
+    border-bottom: 1px solid var(--border);
+}
+
+tbody tr:nth-child(2n) td {
+    background: #101010;
+}
+
+tbody tr:hover td {
+    background: #141414;
+}
+
+/* ====== Code / preformatted ============================================ */
+pre, code, tt {
+    background: var(--code-bg) !important;
+    color: var(--code-fg) !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+pre {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: .9rem 1rem;
+    overflow: auto;
+    margin: 1rem 0;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .02);
+}
+
+pre.programlisting {
+    position: relative;
+}
+
+pre.programlisting::before {
+    content: "CODE";
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font: 10px/1.1 ui-sans-serif, system-ui;
+    letter-spacing: .12em;
+    padding: .2rem .35rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: #9aa0a6;
+    background: #070707;
+}
+
+code, tt {
+    padding: .05rem .35rem;
+    border: 1px solid var(--border);
+    border-radius: .4rem;
+}
+
+/* ====== Blockquotes / callouts ========================================= */
+.blockquote, blockquote {
+    margin: 1rem 0;
+    padding: .9rem 1rem;
+    background: linear-gradient(180deg, #0b0b0b, #060606);
+    border-left: 3px solid var(--accent);
+    border-right: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--fg);
+}
+
+/* Admonitions (if present in output) */
+.note, .warning, .caution, .tip, .important {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: .8rem 1rem;
+    margin: 1rem 0;
+}
+
+.warning {
+    border-left-color: #ffb300;
+}
+
+.caution {
+    border-left-color: #ff7043;
+}
+
+.important {
+    border-left-color: #64b5f6;
+}
+
+.tip {
+    border-left-color: #66ffa6;
+}
+
+/* ====== Figures / images =============================================== */
+div.figure, div.informaltable, div.mediaobject {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: .6rem .8rem;
+    margin: 1rem 0;
+}
+
+div.figure img, .mediaobject img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 6px;
+}
+
+/* ====== KBD / UI elements ============================================== */
+kbd {
+    background: #0e0e0e;
+    color: #e5e7eb;
+    border: 1px solid #0b1220;
+    border-bottom-color: #060913;
+    padding: .14rem .4rem;
+    border-radius: 6px;
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05);
+    font: .85em ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New";
+}
+
+/* ====== Index / footnotes ============================================== */
+div.index, div.footnotes, .footnote, .footnoteref {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: .6rem .8rem;
+    margin: 1rem 0;
+}
+
+/* ====== Hard overrides for legacy white leaks ========================== */
+table, thead, tbody, tfoot, tr, th, td,
+pre, code, tt, blockquote {
+    background: inherit; /* keeps them dark because parents are dark */
+}
+
+
+/* ====== Amber CRT Code Blocks =========================================== */
+pre, code, tt {
+    background: #000000 !important;
+    color: #ffbf00 !important; /* Amber */
+    font-family: "IBM Plex Mono", "Courier New", Courier, monospace !important;
+    text-shadow: 0 0 4px rgba(255, 191, 0, 0.75),
+    0 0 12px rgba(255, 191, 0, 0.45),
+    0 0 20px rgba(255, 191, 0, 0.25); /* phosphor glow */
+}
+
+pre {
+    border: 1px solid #554400;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin: 1.25rem 0;
+    box-shadow: inset 0 0 6px rgba(255, 191, 0, 0.35),
+    0 0 20px rgba(255, 191, 0, 0.15);
+}
+
+pre.programlisting::before {
+    content: "★ AMBER ★";
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 0.6rem;
+    font-weight: bold;
+    letter-spacing: 0.15em;
+    color: #ffbf00;
+    text-shadow: 0 0 8px rgba(255, 191, 0, 0.75);
+    background: transparent;
+    border: 1px solid #554400;
+    border-radius: 999px;
+    padding: .15rem .4rem;
+}
+
+code, tt {
+    padding: .1rem .35rem;
+    border: 1px solid #554400;
+    border-radius: 5px;
+    background: #000000;
+}
+
+img {
+    background: transparent;
+}
+
+/* no white box behind images */
+
+/* ====== Scrollbars / selection ========================================= */
+::selection {
+    background: var(--accent);
+    color: #001400;
+}
+
+::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #090909;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2a2c33;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #353846;
+}
+
+/* ====== Print fallback (light ink usage but keeps layout) ============== */
+@media print {
+    html, body, :root {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    div.book {
+        width: 100% !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    a, a:visited {
+        color: #000 !important;
+        text-decoration: underline;
+    }
+
+    pre, code, tt {
+        background: #f6f6f6 !important;
+        color: #111 !important;
+    }
+
+    table {
+        background: #fff !important;
+    }
+}
