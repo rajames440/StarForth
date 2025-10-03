@@ -34,22 +34,22 @@
 
         <chapter id="introduction">
             <title>Introduction to StarForth</title>
-            <xi:include href="generated/intro-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/intro-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="quickstart">
             <title>Quick Start Guide</title>
-            <xi:include href="generated/quickstart-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/quickstart-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="init-system">
             <title>INIT System</title>
-            <xi:include href="generated/init-system-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/init-system-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="init-tools">
             <title>INIT Tools (Extract/Apply Workflow)</title>
-            <xi:include href="generated/init-tools-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/init-tools-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
     </part>
 
@@ -59,17 +59,17 @@
 
         <chapter id="block-storage">
             <title>Block Storage System</title>
-            <xi:include href="generated/block-storage-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/block-storage-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="forth79-standard">
             <title>FORTH-79 Standard Compliance</title>
-            <xi:include href="generated/forth79-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/forth79-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="testing">
             <title>Testing Guide</title>
-            <xi:include href="generated/testing-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/testing-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
     </part>
 
@@ -79,17 +79,17 @@
 
         <chapter id="build-options">
             <title>Build Options Reference</title>
-            <xi:include href="generated/build-options-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/build-options-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="pgo-guide">
             <title>Profile-Guided Optimization (PGO)</title>
-            <xi:include href="generated/pgo-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/pgo-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="raspberry-pi">
             <title>Raspberry Pi 4 Build Guide</title>
-            <xi:include href="generated/rpi-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/rpi-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
     </part>
 
@@ -99,27 +99,27 @@
 
         <chapter id="asm-optimizations-overview">
             <title>Assembly Optimizations Overview</title>
-            <xi:include href="generated/asm-opt-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/asm-opt-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="x86-64-optimizations">
             <title>x86_64 Assembly Optimizations</title>
-            <xi:include href="generated/x86-opt-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/x86-opt-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="arm64-optimizations">
             <title>ARM64 NEON Optimizations</title>
-            <xi:include href="generated/arm64-opt-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/arm64-opt-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="arm64-build-success">
             <title>ARM64 Build Validation</title>
-            <xi:include href="generated/arm64-build-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/arm64-build-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="inline-asm-complete">
             <title>Inline Assembly Implementation Details</title>
-            <xi:include href="generated/inline-asm-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/inline-asm-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
     </part>
 
@@ -129,12 +129,12 @@
 
         <chapter id="architecture">
             <title>System Architecture</title>
-            <xi:include href="generated/architecture-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/architecture-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="gap-analysis">
             <title>Gap Analysis &amp; Roadmap</title>
-            <xi:include href="generated/gap-analysis-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/gap-analysis-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
     </part>
 
@@ -144,17 +144,17 @@
 
         <chapter id="l4re-integration">
             <title>L4Re Microkernel Integration</title>
-            <xi:include href="generated/l4re-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/l4re-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="l4re-dict-alloc">
             <title>L4Re Dictionary Allocation Strategy</title>
-            <xi:include href="generated/l4re-dict-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/l4re-dict-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="l4re-blkio">
             <title>L4Re Block I/O Endpoints</title>
-            <xi:include href="generated/l4re-blkio-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/l4re-blkio-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
     </part>
 
@@ -164,22 +164,22 @@
 
         <chapter id="contributing">
             <title>Contributing to StarForth</title>
-            <xi:include href="generated/contributing-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/contributing-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="doxygen-style">
             <title>Doxygen Style Guide</title>
-            <xi:include href="generated/doxygen-style-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/doxygen-style-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="doxygen-quick-ref">
             <title>Doxygen Quick Reference</title>
-            <xi:include href="generated/doxygen-qref-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/doxygen-qref-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="documentation-setup">
             <title>Documentation System Setup</title>
-            <xi:include href="generated/doc-setup-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/doc-setup-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
     </part>
 
@@ -201,29 +201,29 @@
 
         <chapter id="security">
             <title>Security Considerations</title>
-            <xi:include href="generated/security-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/security-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
         <chapter id="code-of-conduct">
             <title>Code of Conduct</title>
-            <xi:include href="generated/coc-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <xi:include href="build/generated/coc-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
     </part>
 
     <!-- ========== APPENDICES ========== -->
     <appendix id="asm-opt-status">
         <title>Assembly Optimization Implementation Status</title>
-        <xi:include href="generated/asm-opt-status-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        <xi:include href="build/generated/asm-opt-status-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     </appendix>
 
     <appendix id="arm64-review">
         <title>ARM64 Assembly Implementation Review</title>
-        <xi:include href="generated/arm64-review-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        <xi:include href="build/generated/arm64-review-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     </appendix>
 
     <appendix id="doc-readme">
         <title>Documentation System README</title>
-        <xi:include href="generated/doc-readme-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        <xi:include href="build/generated/doc-readme-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     </appendix>
 
     <!-- Index -->
