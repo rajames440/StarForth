@@ -54,11 +54,16 @@ static int line_ptr(VM *vm, cell_t scr, cell_t line, unsigned char **out) {
     if (scr < 1 || scr >= (cell_t) MAX_BLOCKS) return 0;
     if (line < 0 || line > 15) return 0;
 
-    vaddr_t base = (vaddr_t)((uint64_t) scr * (uint64_t) BLOCK_SIZE);
-    vaddr_t addr = base + (vaddr_t)(line * 64);
-    if (!vm_addr_ok(vm, addr, 64)) return 0;
+    /* Use block subsystem to get block buffer */
+    extern uint8_t *blk_get_buffer(uint32_t block_num, int writable);
+    extern int blk_is_valid(uint32_t block_num);
 
-    *out = (unsigned char *) vm_ptr(vm, addr);
+    if (!blk_is_valid((uint32_t) scr)) return 0;
+
+    uint8_t *block = blk_get_buffer((uint32_t) scr, 1); /* writable for editing */
+    if (!block) return 0;
+
+    *out = block + (line * 64);
     return 1;
 }
 

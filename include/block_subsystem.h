@@ -1,22 +1,17 @@
 /*
                                  ***   StarForth   ***
-                      Block Subsystem - Layer 2: Mapping & Business Logic
-                      -------------------------------------------------------
+              Block Subsystem - Layer 2: Mapping & Business Logic (v2)
+              ---------------------------------------------------------
    Architecture:
      - Forth blocks 0-1023: RAM (fast, in-memory buffer cache)
      - Forth blocks 1024+:  Disk (persistent storage via blkio)
-     - Block 0: RESERVED for volume metadata (invalid for Forth use)
+     - Device devblock 0:   Volume header (4 KiB)
+     - Device devblocks 1..B: BAM (1-bit per 1 KiB Forth block), 4 KiB pages
+     - Device devblocks (1+B)..end: payload; each 4 KiB packs 3×1 KiB data + 1 KiB metadata
 
-   Physical Layout (4KB alignment for devices):
-     - 3× 1KB Forth blocks packed into each 4KB device block
-     - 1KB metadata (341 bytes × 3 blocks) per 4KB device block
-
-   Responsibilities:
-     - Attach blkio device from main.c
-     - Translate Forth block# → RAM or Disk backend
-     - Manage dirty tracking & flush
-     - Provide buffer access to block_words.c
-     - Support hot-attach (USB, cloud mounts, etc.)
+   blkio NOTE:
+     - blkio backends operate on 1 KiB units.
+     - One 4 KiB “devblock” == 4 consecutive 1 KiB blkio blocks.
 
    License: CC0-1.0 / Public Domain. No warranty.
 */
@@ -25,134 +20,177 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "vm.h"
+#include "blkio.h"  /* ensure struct blkio_dev is fully visible */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Forward declaration */
-struct blkio_dev;
+/* Core configuration constants */
+#define BLK_FORTH_SIZE        1024u   /* Forth block size */
+#define BLK_RAM_BLOCKS        1024u   /* RAM 0..1023 */
+#define BLK_DISK_START        1024u   /* Disk-backed Forth blocks start */
+#define BLK_DEVICE_SECTOR     4096u   /* Physical “devblock” size (4×1 KiB blkio units) */
+#define BLK_PACK_RATIO        3u      /* 3× 1 KiB data per 4 KiB devblock (plus 1 KiB metadata) */
+#define BLK_META_TOTAL        1024u   /* Last 1 KiB in a 4 KiB devblock is metadata */
+#define BLK_META_PER_BLOCK    341u    /* 341×3 ~= 1023, padded to 1024 */
 
-/* Configuration constants */
-#define BLK_FORTH_SIZE        1024u     /* Forth block size in bytes */
-#define BLK_RAM_BLOCKS        1024u     /* Blocks 0-1023 in RAM */
-#define BLK_DISK_START        1024u     /* Blocks 1024+ on disk */
-#define BLK_DEVICE_SECTOR     4096u     /* Physical device block size */
-#define BLK_PACK_RATIO        3u        /* 3× Forth blocks per device sector */
-#define BLK_META_PER_BLOCK    341u      /* Metadata bytes per Forth block */
-#define BLK_META_TOTAL        1024u     /* 341×3 = 1023, rounded to 1024 */
+/* Forth-friendly reserved ranges */
+#ifndef BLK_FORTH_SYS_RESERVED
+#define BLK_FORTH_SYS_RESERVED   33u  /* RAM 0..32 reserved */
+#endif
+#ifndef BLK_DISK_SYS_RESERVED
+#define BLK_DISK_SYS_RESERVED    32u  /* Disk 1024..1055 reserved (first N disk blocks) */
+#endif
 
-/* Volume metadata (block 0 reserved) */
+/* =========================
+ * On-disk volume header v2
+ * =========================
+ * Serialized into device devblock 0 (4 KiB = 4×1 KiB blkio blocks 0..3).
+ * BAM lives in external devblocks [bam_start .. bam_start+bam_devblocks-1] (each 4 KiB).
+ * All *_devblocks indices are in 4 KiB units.
+ */
 typedef struct {
+    /* Identification & versioning */
     uint32_t magic; /* 0x53544652 "STFR" */
-    uint32_t version; /* Format version */
-    uint32_t total_volumes; /* Number of attached volumes */
-    uint32_t flags; /* Volume flags */
-    char label[64]; /* Volume label */
-    uint8_t reserved[944]; /* Pad to 1024 bytes */
+    uint32_t version; /* 2 */
+
+    /* Administrative info */
+    uint32_t total_volumes;
+    uint32_t flags;
+    char label[64];
+
+    /* Physical device geometry (4 KiB devblocks) */
+    uint64_t total_devblocks; /* count of 4 KiB devblocks (blkio_info.total_blocks / 4) */
+
+    /* BAM placement (external 1-bit bitmap region, stored in 4 KiB pages) */
+    uint32_t bam_start; /* usually 1 */
+    uint32_t bam_devblocks; /* number of 4 KiB pages used by BAM */
+    uint32_t devblock_base; /* first payload devblock = bam_start + bam_devblocks */
+
+    /* Capacity modeling (Forth 1 KiB blocks tracked/usable) */
+    uint64_t tracked_blocks; /* 32768 * bam_devblocks (bits per 4 KiB page) */
+    uint64_t total_blocks; /* min(tracked, 3 * (total_devblocks - 1 - bam_devblocks)) */
+    uint64_t free_blocks;
+
+    /* Allocation hints */
+    uint64_t first_free; /* next free Forth block (>= 1024) */
+    uint64_t last_allocated;
+
+    /* Reserved low ranges */
+    uint32_t reserved_disk_lo; /* e.g., 32 blocks reserved at 1024.. */
+    uint32_t reserved_ram_lo; /* e.g., 33 blocks reserved at 0..32  */
+
+    /* Timestamps (optional) */
+    uint64_t created_time;
+    uint64_t mounted_time;
+
+    /* Optional integrity (unused yet) */
+    uint64_t hdr_crc;
+
+    /* Padding to keep header ≤ 4096 bytes */
+    uint8_t _pad[4096 - (
+                     4 + 4 + /* magic, version */
+                     4 + 4 + 64 + /* total_volumes, flags, label */
+                     8 + /* total_devblocks */
+                     4 + 4 + 4 + /* bam_start, bam_devblocks, devblock_base */
+                     8 + 8 + 8 + /* tracked_blocks, total_blocks, free_blocks */
+                     8 + 8 + /* first_free, last_allocated */
+                     4 + 4 + /* reserved ranges */
+                     8 + 8 + /* timestamps */
+                     8 /* hdr_crc */
+                 )];
 } blk_volume_meta_t;
 
-/* Block metadata (341 bytes per block in 4KB pack) */
+/* Per-1 KiB block metadata (packed into top 1 KiB region of each 4 KiB sector). */
 typedef struct {
-    uint32_t checksum; /* CRC32 of block data */
-    uint32_t timestamp; /* Last write timestamp */
-    uint32_t flags; /* Block flags */
-    uint8_t reserved[329]; /* Pad to 341 bytes */
+    /* Core integrity (16 bytes) */
+    uint64_t checksum; /* CRC64 of block data */
+    uint64_t magic; /* 0x424C4B5F5354524BULL "BLK_STRK" */
+
+    /* Timestamps (16 bytes) */
+    uint64_t created_time; /* Unix timestamp (creation) */
+    uint64_t modified_time; /* Unix timestamp (last write) */
+
+    /* Block status (16 bytes) */
+    uint64_t flags; /* Status flags */
+    uint64_t write_count; /* Number of writes (wear leveling) */
+
+    /* Content identification (32 bytes) */
+    uint64_t content_type; /* 0=empty, 1=source, 2=data, ... */
+    uint64_t encoding; /* 0=ASCII, 1=UTF-8, 2=binary, ... */
+    uint64_t content_length; /* Actual data length (≤ 1024) */
+    uint64_t reserved1; /* Alignment/future use */
+
+    /* Cryptographic (64 bytes) */
+    uint64_t entropy[4]; /* 256-bit entropy/random seed */
+    uint64_t hash[4]; /* SHA-256 (optional) */
+
+    /* Security & ownership (40 bytes) */
+    uint64_t owner_id; /* User/process ID */
+    uint64_t permissions; /* rwx-style permissions */
+    uint64_t acl_block; /* Block number containing ACL (0=none) */
+    uint64_t signature[2]; /* 128-bit signature */
+
+    /* Link/chain support (32 bytes) */
+    uint64_t prev_block; /* Previous in chain (0=none) */
+    uint64_t next_block; /* Next in chain (0=none) */
+    uint64_t parent_block; /* Parent/index (0=none) */
+    uint64_t chain_length; /* Total blocks in chain */
+
+    /* Application-specific (120 bytes) */
+    uint64_t app_data[15]; /* 15×64-bit app-defined fields */
+
+    /* Padding to reach 341-byte slice */
+    uint8_t padding[5];
 } blk_meta_t;
 
 /* Error codes */
 enum {
     BLK_OK = 0,
-    BLK_EINVAL = -1, /* Invalid block number or parameter */
-    BLK_ERANGE = -2, /* Block out of range */
-    BLK_EIO = -3, /* I/O error */
-    BLK_ENODEV = -4, /* No device attached */
-    BLK_ERESERVED = -5, /* Block 0 reserved for metadata */
-    BLK_EDIRTY = -6 /* Unflushed dirty blocks */
+    BLK_EINVAL = -1,
+    BLK_ERANGE = -2,
+    BLK_EIO = -3,
+    BLK_ENODEV = -4,
+    BLK_ERESERVED = -5,
+    BLK_EDIRTY = -6,
+    BLK_ENOMEM = -7
 };
 
-/**
- * @brief Initialize block subsystem (called once at startup)
- * @param vm Pointer to VM instance
- * @param ram_base Base pointer to RAM block storage (blocks 0-1023)
- * @param ram_size Size of RAM storage in bytes (should be 1024 * 1024)
- * @return BLK_OK on success, negative error code on failure
- */
+/* ===== Public API ===== */
 int blk_subsys_init(VM *vm, uint8_t *ram_base, size_t ram_size);
 
-/**
- * @brief Attach a block I/O device (called from main.c after blkio_factory_open)
- * @param dev Pointer to opened blkio device
- * @return BLK_OK on success, negative error code on failure
- */
 int blk_subsys_attach_device(struct blkio_dev *dev);
 
-/**
- * @brief Detach all block devices and cleanup
- * @return BLK_OK on success
- */
 int blk_subsys_shutdown(void);
 
-/**
- * @brief Get buffer pointer for a Forth block (read-only or read-write)
- * @param block_num Forth block number (1-1023 RAM, 1024+ disk)
- * @param writable If non-zero, mark block as dirty
- * @return Pointer to 1024-byte block buffer, or NULL on error
- *
- * Notes:
- *  - Block 0 returns NULL (reserved for metadata)
- *  - Blocks 1-1023: served from RAM
- *  - Blocks 1024+: loaded from disk via blkio, cached
- */
 uint8_t *blk_get_buffer(uint32_t block_num, int writable);
 
-/**
- * @brief Get empty (zeroed) buffer for a Forth block
- * @param block_num Forth block number
- * @return Pointer to zeroed 1024-byte buffer, or NULL on error
- */
 uint8_t *blk_get_empty_buffer(uint32_t block_num);
 
-/**
- * @brief Flush dirty blocks to disk
- * @param block_num If 0, flush all dirty blocks; else flush specific block
- * @return BLK_OK on success, negative error code on failure
- */
 int blk_flush(uint32_t block_num);
 
-/**
- * @brief Update block (mark as dirty, will flush on next blk_flush)
- * @param block_num Forth block number
- * @return BLK_OK on success
- */
 int blk_update(uint32_t block_num);
 
-/**
- * @brief Get volume metadata (block 0)
- * @param meta Output buffer for metadata
- * @return BLK_OK on success
- */
 int blk_get_volume_meta(blk_volume_meta_t *meta);
 
-/**
- * @brief Set volume metadata (block 0)
- * @param meta Metadata to write
- * @return BLK_OK on success
- */
 int blk_set_volume_meta(const blk_volume_meta_t *meta);
 
-/**
- * @brief Check if block is in valid range
- * @param block_num Block number to check
- * @return 1 if valid (>0), 0 if invalid
- */
 int blk_is_valid(uint32_t block_num);
 
-/**
- * @brief Get total number of available blocks
- * @return Total blocks (RAM + disk)
- */
 uint32_t blk_get_total_blocks(void);
+
+int blk_get_meta(uint32_t block_num, blk_meta_t *meta);
+
+int blk_set_meta(uint32_t block_num, const blk_meta_t *meta);
+
+int blk_is_allocated(uint32_t block_num);
+
+int blk_mark_allocated(uint32_t block_num);
+
+int blk_mark_free(uint32_t block_num);
+
+int blk_allocate(uint32_t * block_num);
 
 #ifdef __cplusplus
 } /* extern "C" */
