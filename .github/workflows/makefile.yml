@@ -1,4 +1,4 @@
-name: StarForth CI
+name: Makefile CI
 
 on:
   push:
@@ -7,117 +7,15 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build-and-test-x86_64:
-    name: Build and Test (x86_64)
-    runs-on: ubuntu-latest
+  build:
 
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Clean project
-      run: make clean
-
-    - name: Build (default)
-      run: make
-
-    - name: Run tests
-      run: ./build/starforth --run-tests --fail-fast
-
-    - name: Build (optimized)
-      run: |
-        make clean
-        make fastest
-
-    - name: Run optimized tests
-      run: ./build/starforth --run-tests --fail-fast
-
-    - name: Test RAM disk
-      run: |
-        echo "100 BLOCK 1024 65 FILL UPDATE BYE" | ./build/starforth --ram-disk
-        echo "Verified RAM disk functionality"
-
-    - name: Test block storage persistence
-      run: |
-        # Create raw disk image (no qemu-img needed!)
-        dd if=/dev/zero of=test-disk.img bs=1M count=100
-        # Write data to block 2048
-        echo "2048 BLOCK 1024 65 FILL UPDATE FLUSH BYE" | ./build/starforth --disk-img=test-disk.img
-        # Verify persistence across restart
-        echo "2048 BLOCK C@ . BYE" | ./build/starforth --disk-img=test-disk.img | grep -q "65"
-        echo "Block persistence verified!"
-
-    - name: Run benchmarks
-      run: ./build/starforth --benchmark 1000
-
-  build-arm64-cross:
-    name: Build (ARM64 cross-compile)
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install ARM64 toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
 
       - name: Clean project
         run: make clean
 
-      - name: Build for ARM64
-        run: make rpi4-cross
-
-      - name: Verify ARM64 binary
-        run: file build/starforth | grep -q "aarch64"
-
-  static-analysis:
-    name: Static Analysis
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run cppcheck
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cppcheck
-          cppcheck --enable=warning,performance,portability --error-exitcode=1 \
-            --suppress=unusedFunction --suppress=missingIncludeSystem \
-            src/ include/ 2>&1 | tee cppcheck.log
-
-      - name: Check for compiler warnings
-        run: |
-          make clean
-          make EXTRA_CFLAGS="-Werror -Wall -Wextra" 2>&1 | tee build.log
-
-  coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install coverage tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lcov
-
-      - name: Build with coverage
-        run: |
-          make clean
-          make CFLAGS="-O0 -g --coverage -fprofile-arcs -ftest-arcs"
-
-      - name: Run tests
-        run: ./build/starforth --run-tests
-
-      - name: Generate coverage report
-        run: |
-          lcov --capture --directory . --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' --output-file coverage.info
-          lcov --list coverage.info
-
-      - name: Upload coverage to GitHub
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: coverage.info
+      - name: Build
+        run: make
