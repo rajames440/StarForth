@@ -58,6 +58,20 @@ void starforth_word_reset_entropy(VM * vm);
  */
 void starforth_word_top_words(VM * vm);
 
+/**
+ * @brief Shebang-style comment for init.4th metadata
+ * @param vm Pointer to VM instance
+ * @stack ( -- )
+ */
+void starforth_word_paren_dash(VM * vm);
+
+/**
+ * @brief Initialize system from init.4th
+ * @param vm Pointer to VM instance
+ * @stack ( -- )
+ */
+void starforth_word_init(VM * vm);
+
 ///@}
 
 /**

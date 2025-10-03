@@ -38,6 +38,7 @@
 #include "word_source/include/block_words.h"
 #include "word_source/include/editor_words.h"
 #include "word_source/include/system_words.h"
+#include "word_source/include/starforth_words.h"
 
 /**
  * @brief Registers a single FORTH word in the virtual machine
@@ -83,6 +84,7 @@ void register_forth79_words(VM *vm) {
     register_editor_words(vm); /* Module 16: Line Editor */
     register_defining_words(vm); /* Module 17: Defining Words */
     register_control_words(vm); /* Module 18: Control Flow */
+    register_starforth_words(vm); /* Module 19: StarForth Implementation Extensions */
 
     log_message(LOG_INFO, "FORTH-79 Standard word set registration complete");
 }

@@ -205,8 +205,14 @@ void block_word_load(VM *vm) {
 
     set_scr(vm, blk);
 
-    /* Future: interpret the text in this block. TIB integration comes later.
-       For now, success with no output keeps tests happy. */
+    /* Interpret the block content as Forth source */
+    /* Block is 1024 bytes, null-terminate it for interpretation */
+    char block_text[1025];
+    memcpy(block_text, buf, 1024);
+    block_text[1024] = '\0';
+
+    /* Interpret the block content */
+    vm_interpret(vm, block_text);
 }
 
 /* LIST ( u -- ) : set SCR and (optionally) print the block */
@@ -285,6 +291,35 @@ void block_word_scr(VM *vm) {
     vm_push(vm, CELL(vm->scr_addr));
 }
 
+/* --> ( -- ) : continue interpretation on next sequential block */
+void block_word_next_block(VM *vm) {
+    cell_t current_scr = vm_load_cell(vm, vm->scr_addr);
+    cell_t next_blk = current_scr + 1;
+
+    if (next_blk == 0 || !blk_is_valid((uint32_t) next_blk)) {
+        vm->error = 1;
+        return;
+    }
+
+    /* Get the next block's content */
+    uint8_t *buf = blk_get_buffer((uint32_t) next_blk, 0);
+    if (!buf) {
+        vm->error = 1;
+        return;
+    }
+
+    /* Update SCR to next block */
+    set_scr(vm, next_blk);
+
+    /* Interpret the next block's content inline */
+    char block_text[1025];
+    memcpy(block_text, buf, 1024);
+    block_text[1024] = '\0';
+
+    /* Recursively interpret - this allows definitions to span blocks */
+    vm_interpret(vm, block_text);
+}
+
 /* --- Registration ----------------------------------------------------- */
 
 /**
@@ -302,4 +337,5 @@ void register_block_words(VM *vm) {
     register_word(vm, "LIST", block_word_list);
     register_word(vm, "THRU", block_word_thru);
     register_word(vm, "SCR", block_word_scr);
+    register_word(vm, "-->", block_word_next_block);
 }
