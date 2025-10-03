@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
-        "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+        "https://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 <book id="starforth-manual">
     <bookinfo>
         <title>StarForth Complete Manual</title>
-        <subtitle>FORTH-79 Standard Implementation for L4Re/StarshipOS</subtitle>
+        <subtitle>High-Performance FORTH-79 Implementation for Embedded &amp; Microkernel Systems</subtitle>
         <author>
             <firstname>Robert</firstname>
             <surname>James</surname>
@@ -16,19 +16,21 @@
             <year>2025</year>
             <holder>Public Domain (CC0)</holder>
         </copyright>
-        <releaseinfo>Version 1.0.0</releaseinfo>
+        <releaseinfo>Version 1.1.0</releaseinfo>
         <pubdate>October 2025</pubdate>
         <abstract>
             <para>
                 StarForth is a clean, efficient FORTH-79 standard implementation written in ANSI C99.
-                This manual provides complete documentation for users, developers, and system integrators.
+                This manual provides complete documentation for users, developers, and system integrators,
+                covering everything from quick start guides to advanced assembly optimizations and
+                profile-guided optimization techniques.
             </para>
         </abstract>
     </bookinfo>
 
-    <!-- Part I: User Documentation -->
-    <part id="user-guide">
-        <title>User Guide</title>
+    <!-- ========== PART I: GETTING STARTED ========== -->
+    <part id="getting-started">
+        <title>Getting Started</title>
 
         <chapter id="introduction">
             <title>Introduction to StarForth</title>
@@ -40,8 +42,28 @@
             <xi:include href="generated/quickstart-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
+        <chapter id="init-system">
+            <title>INIT System</title>
+            <xi:include href="generated/init-system-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
+        <chapter id="init-tools">
+            <title>INIT Tools (Extract/Apply Workflow)</title>
+            <xi:include href="generated/init-tools-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+    </part>
+
+    <!-- ========== PART II: USER GUIDE ========== -->
+    <part id="user-guide">
+        <title>User Guide</title>
+
+        <chapter id="block-storage">
+            <title>Block Storage System</title>
+            <xi:include href="generated/block-storage-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
         <chapter id="forth79-standard">
-            <title>FORTH-79 Standard Reference</title>
+            <title>FORTH-79 Standard Compliance</title>
             <xi:include href="generated/forth79-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
@@ -51,49 +73,34 @@
         </chapter>
     </part>
 
-    <!-- Part II: Developer Documentation -->
-    <part id="developer-guide">
-        <title>Developer Guide</title>
+    <!-- ========== PART III: BUILD SYSTEM ========== -->
+    <part id="build-guide">
+        <title>Build System &amp; Configuration</title>
 
-        <chapter id="architecture">
-            <title>Architecture Overview</title>
-            <xi:include href="generated/architecture-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        <chapter id="build-options">
+            <title>Build Options Reference</title>
+            <xi:include href="generated/build-options-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
 
-        <chapter id="gap-analysis">
-            <title>Gap Analysis &amp; Roadmap</title>
-            <xi:include href="generated/gap-analysis-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        <chapter id="pgo-guide">
+            <title>Profile-Guided Optimization (PGO)</title>
+            <xi:include href="generated/pgo-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
-
-        <chapter id="contributing">
-            <title>Contributing to StarForth</title>
-            <xi:include href="generated/contributing-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-        </chapter>
-    </part>
-
-    <!-- Part III: Platform-Specific Documentation -->
-    <part id="platform-guide">
-        <title>Platform Integration</title>
 
         <chapter id="raspberry-pi">
             <title>Raspberry Pi 4 Build Guide</title>
             <xi:include href="generated/rpi-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
-
-        <chapter id="l4re-integration">
-            <title>L4Re Microkernel Integration</title>
-            <xi:include href="generated/l4re-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-        </chapter>
-
-        <chapter id="l4re-dict-alloc">
-            <title>L4Re Dictionary Allocation Strategy</title>
-            <xi:include href="generated/l4re-dict-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-        </chapter>
     </part>
 
-    <!-- Part IV: Optimization Documentation -->
+    <!-- ========== PART IV: PERFORMANCE OPTIMIZATION ========== -->
     <part id="optimization-guide">
         <title>Performance Optimization</title>
+
+        <chapter id="asm-optimizations-overview">
+            <title>Assembly Optimizations Overview</title>
+            <xi:include href="generated/asm-opt-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
 
         <chapter id="x86-64-optimizations">
             <title>x86_64 Assembly Optimizations</title>
@@ -104,20 +111,92 @@
             <title>ARM64 NEON Optimizations</title>
             <xi:include href="generated/arm64-opt-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
         </chapter>
+
+        <chapter id="arm64-build-success">
+            <title>ARM64 Build Validation</title>
+            <xi:include href="generated/arm64-build-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
+        <chapter id="inline-asm-complete">
+            <title>Inline Assembly Implementation Details</title>
+            <xi:include href="generated/inline-asm-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
     </part>
 
-    <!-- Part V: Reference -->
+    <!-- ========== PART V: ARCHITECTURE & INTERNALS ========== -->
+    <part id="architecture-guide">
+        <title>Architecture &amp; Internals</title>
+
+        <chapter id="architecture">
+            <title>System Architecture</title>
+            <xi:include href="generated/architecture-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
+        <chapter id="gap-analysis">
+            <title>Gap Analysis &amp; Roadmap</title>
+            <xi:include href="generated/gap-analysis-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+    </part>
+
+    <!-- ========== PART VI: PLATFORM INTEGRATION ========== -->
+    <part id="platform-guide">
+        <title>Platform Integration</title>
+
+        <chapter id="l4re-integration">
+            <title>L4Re Microkernel Integration</title>
+            <xi:include href="generated/l4re-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
+        <chapter id="l4re-dict-alloc">
+            <title>L4Re Dictionary Allocation Strategy</title>
+            <xi:include href="generated/l4re-dict-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
+        <chapter id="l4re-blkio">
+            <title>L4Re Block I/O Endpoints</title>
+            <xi:include href="generated/l4re-blkio-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+    </part>
+
+    <!-- ========== PART VII: DEVELOPER DOCUMENTATION ========== -->
+    <part id="developer-guide">
+        <title>Developer Guide</title>
+
+        <chapter id="contributing">
+            <title>Contributing to StarForth</title>
+            <xi:include href="generated/contributing-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
+        <chapter id="doxygen-style">
+            <title>Doxygen Style Guide</title>
+            <xi:include href="generated/doxygen-style-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
+        <chapter id="doxygen-quick-ref">
+            <title>Doxygen Quick Reference</title>
+            <xi:include href="generated/doxygen-qref-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+
+        <chapter id="documentation-setup">
+            <title>Documentation System Setup</title>
+            <xi:include href="generated/doc-setup-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        </chapter>
+    </part>
+
+    <!-- ========== PART VIII: REFERENCE ========== -->
     <part id="reference">
         <title>Reference Material</title>
 
         <chapter id="api-reference">
             <title>API Reference (Doxygen)</title>
-            <xi:include href="generated/api-reference-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-        </chapter>
-
-        <chapter id="word-reference">
-            <title>Complete Word Reference</title>
-            <xi:include href="generated/words-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+            <para>
+                Complete API documentation is available in the HTML documentation at
+                <filename>docs/api/html/index.html</filename>. Build with <command>make docs-html</command>.
+            </para>
+            <para>
+                The API reference includes detailed documentation for all public functions, data structures,
+                and modules in the StarForth codebase.
+            </para>
         </chapter>
 
         <chapter id="security">
@@ -131,12 +210,23 @@
         </chapter>
     </part>
 
-    <!-- Appendices -->
-    <appendix id="doxygen-guide">
-        <title>Doxygen Documentation Guide</title>
-        <xi:include href="generated/doxygen-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <!-- ========== APPENDICES ========== -->
+    <appendix id="asm-opt-status">
+        <title>Assembly Optimization Implementation Status</title>
+        <xi:include href="generated/asm-opt-status-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     </appendix>
 
+    <appendix id="arm64-review">
+        <title>ARM64 Assembly Implementation Review</title>
+        <xi:include href="generated/arm64-review-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    </appendix>
+
+    <appendix id="doc-readme">
+        <title>Documentation System README</title>
+        <xi:include href="generated/doc-readme-generated.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    </appendix>
+
+    <!-- Index -->
     <index id="book-index">
         <title>Index</title>
     </index>
