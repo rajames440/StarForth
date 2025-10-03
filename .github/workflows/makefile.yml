@@ -14,11 +14,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y qemu-utils
-
     - name: Clean project
       run: make clean
 
@@ -36,14 +31,20 @@ jobs:
     - name: Run optimized tests
       run: ./build/starforth --run-tests --fail-fast
 
+    - name: Test RAM disk
+      run: |
+        echo "100 BLOCK 1024 65 FILL UPDATE BYE" | ./build/starforth --ram-disk
+        echo "Verified RAM disk functionality"
+
     - name: Test block storage persistence
       run: |
-        # Create disk image
-        qemu-img create -f raw test-disk.img 100M
-        # Write data
+        # Create raw disk image (no qemu-img needed!)
+        dd if=/dev/zero of=test-disk.img bs=1M count=100
+        # Write data to block 2048
         echo "2048 BLOCK 1024 65 FILL UPDATE FLUSH BYE" | ./build/starforth --disk-img=test-disk.img
-        # Verify persistence
+        # Verify persistence across restart
         echo "2048 BLOCK C@ . BYE" | ./build/starforth --disk-img=test-disk.img | grep -q "65"
+        echo "Block persistence verified!"
 
     - name: Run benchmarks
       run: ./build/starforth --benchmark 1000
