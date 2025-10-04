@@ -69,6 +69,7 @@ void run_editor_words_tests(VM * vm);
 void run_system_words_tests(VM * vm);
 void run_defining_words_tests(VM * vm);
 void run_control_words_tests(VM * vm);
+void run_starforth_words_tests(VM * vm);
 
 /**
  * @brief Enable benchmark mode for performance testing
@@ -113,5 +114,15 @@ void run_module_tests(VM *vm, const char *module_name);
  * @param word_name Name of the word to test
  */
 void run_word_tests(VM *vm, const char *word_name);
+
+/**
+ * @brief Run ultra-comprehensive break-me diagnostic suite
+ * @param vm Pointer to the VM instance
+ *
+ * Executes the most exhaustive test battery ever designed for StarForth,
+ * generates a detailed markdown report in docs/BREAK_ME_REPORT.md,
+ * and includes a surprise easter egg at the end.
+ */
+void run_break_me_tests(VM * vm);
 
 #endif /* TEST_RUNNER_H */

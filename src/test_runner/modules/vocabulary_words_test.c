@@ -25,19 +25,39 @@
 static WordTestSuite vocabulary_word_suites[] = {
     {
         "VOCABULARY", {
-            {"basic", "VOCABULARY TEST-VOC TEST-VOC DEFINITIONS", "Should create vocabulary", TEST_NORMAL, 0, 1},
+            /* Basic functionality */
+            {"basic", "VOCABULARY TEST-VOC1 TEST-VOC1 DEFINITIONS", "Should create vocabulary", TEST_NORMAL, 0, 1},
             {
-                "duplicate", "VOCABULARY TEST-VOC2 VOCABULARY TEST-VOC2", "Should handle duplicate", TEST_ERROR_CASE, 1,
+                "create_and_switch", "VOCABULARY MYVOC MYVOC DEFINITIONS CONTEXT @ . CR", "Should create and switch",
+                TEST_NORMAL, 0, 1
+            },
+
+            /* Word isolation */
+            {
+                "word_isolation", "VOCABULARY ISOLATED ISOLATED DEFINITIONS : ISOWORD 99 ; FORTH DEFINITIONS",
+                "Should create word in isolated vocab", TEST_NORMAL, 0, 1
+            },
+            {
+                "cross_vocab_access", "VOCABULARY V1 V1 DEFINITIONS : V1WORD 11 ; FORTH V1WORD . CR",
+                "Should access word across vocabs", TEST_NORMAL, 0, 1
+            },
+
+            /* Multiple vocabularies */
+            {
+                "multiple_vocabs", "VOCABULARY VA VOCABULARY VB VOCABULARY VC VA DEFINITIONS",
+                "Should create multiple vocabs", TEST_NORMAL, 0, 1
+            },
+
+            /* Error cases */
+            {
+                "duplicate", "VOCABULARY TESTVOC VOCABULARY TESTVOC", "Should handle duplicate", TEST_ERROR_CASE, 1,
                 1
             },
             {"empty_name", "VOCABULARY", "Should handle empty name", TEST_ERROR_CASE, 1, 1},
-            {
-                "memory_full", "VOCABULARY TEST-VOC3 VOCABULARY TEST-VOC4 VOCABULARY TEST-VOC5",
-                "Should tolerate multiple creations until memory is actually full", TEST_NORMAL, 0, 1
-            },
+
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
-        4
+        7
     },
 
     {

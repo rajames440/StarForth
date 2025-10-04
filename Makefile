@@ -489,4 +489,44 @@ help:
 	@echo "🌟 CURRENT PLATFORM: $(ARCH_NAME)"
 	@echo "════════════════════════════════════════════════════════════"
 
-.PHONY: all banner fastest fast turbo pgo rpi4 rpi4-cross rpi4-fastest minimal l4re profile performance debug bench benchmark test asm clean clean-obj help
+# Installation directories
+PREFIX ?= /usr/local
+BINDIR = $(PREFIX)/bin
+MANDIR = $(PREFIX)/share/man/man1
+INFODIR = $(PREFIX)/share/info
+DOCDIR = $(PREFIX)/share/doc/starforth
+CONFDIR = $(PREFIX)/etc/starforth
+
+# Installation targets
+install: build/starforth
+	@echo "📦 Installing StarForth to $(PREFIX)..."
+	@install -d $(BINDIR)
+	@install -m 755 build/starforth $(BINDIR)/starforth
+	@install -d $(CONFDIR)
+	@install -m 644 conf/init.4th $(CONFDIR)/init.4th
+	@install -d $(MANDIR)
+	@install -m 644 man/starforth.1 $(MANDIR)/starforth.1 2>/dev/null || true
+	@install -d $(INFODIR)
+	@install -m 644 docs/starforth.info $(INFODIR)/starforth.info 2>/dev/null || true
+	@install-info --info-dir=$(INFODIR) $(INFODIR)/starforth.info 2>/dev/null || true
+	@install -d $(DOCDIR)
+	@install -m 644 README.md $(DOCDIR)/
+	@install -m 644 QUICKSTART.md $(DOCDIR)/
+	@install -m 644 docs/*.md $(DOCDIR)/ 2>/dev/null || true
+	@echo "✅ Installation complete!"
+	@echo "   Binary: $(BINDIR)/starforth"
+	@echo "   Config: $(CONFDIR)/init.4th"
+	@echo "   Man page: $(MANDIR)/starforth.1"
+	@echo "   Docs: $(DOCDIR)/"
+
+uninstall:
+	@echo "🗑️  Uninstalling StarForth from $(PREFIX)..."
+	@rm -f $(BINDIR)/starforth
+	@rm -f $(MANDIR)/starforth.1
+	@install-info --delete --info-dir=$(INFODIR) $(INFODIR)/starforth.info 2>/dev/null || true
+	@rm -f $(INFODIR)/starforth.info
+	@rm -rf $(DOCDIR)
+	@rm -rf $(CONFDIR)
+	@echo "✅ Uninstall complete!"
+
+.PHONY: all banner fastest fast turbo pgo rpi4 rpi4-cross rpi4-fastest minimal l4re profile performance debug bench benchmark test asm clean clean-obj help install uninstall

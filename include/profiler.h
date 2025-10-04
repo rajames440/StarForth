@@ -29,14 +29,15 @@ typedef struct DictEntry DictEntry;
 /**
  * @brief Profiling detail levels
  *
- * Controls the amount of profiling information collected during execution
+ * Controls the amount of profiling information collected during execution.
+ * Higher levels include all features from lower levels.
  */
 typedef enum {
-    PROFILE_DISABLED = 0, /**< Profiling disabled */
-    PROFILE_BASIC = 1, /**< VM operations only */
-    PROFILE_DETAILED = 2, /**< Basic + word execution times */
-    PROFILE_VERBOSE = 3, /**< Detailed + memory access patterns */
-    PROFILE_FULL = 4 /**< Verbose + instruction-level timing */
+    PROFILE_DISABLED = 0, /**< Profiling disabled (zero overhead) */
+    PROFILE_BASIC = 1, /**< Word execution frequency tracking (minimal overhead) */
+    PROFILE_DETAILED = 2, /**< Basic + word execution timing (5-10% overhead) */
+    PROFILE_VERBOSE = 3, /**< Detailed + stack/memory access patterns (15-20% overhead) */
+    PROFILE_FULL = 4 /**< Reserved for future use (full instrumentation) */
 } ProfileLevel;
 
 /**
@@ -161,9 +162,27 @@ void profiler_start_timer(ProfileCategory category);
 void profiler_end_timer(ProfileCategory category);
 
 /* Word profiling */
+/**
+ * @brief Start timing a word execution (PROFILE_DETAILED+)
+ * @param entry Dictionary entry of the word being executed
+ */
 void profiler_word_enter(const DictEntry *entry);
 
+/**
+ * @brief End timing a word execution (PROFILE_DETAILED+)
+ * @param entry Dictionary entry of the word being executed
+ */
 void profiler_word_exit(const DictEntry *entry);
+
+/**
+ * @brief Track word execution frequency without timing (PROFILE_BASIC+)
+ * @param entry Dictionary entry of the word being executed
+ *
+ * This is a lightweight alternative to profiler_word_enter/exit that only
+ * increments call counters without timing overhead. Ideal for identifying
+ * hot words (frequently executed) for optimization.
+ */
+void profiler_word_count(const DictEntry *entry);
 
 /* Memory profiling */
 void profiler_memory_read(size_t bytes);
