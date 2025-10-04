@@ -1,382 +1,187 @@
-# StarForth
+![banner.png](banner.png)
 
-**StarForth** is a lightweight, modular, ANSI C–based Forth virtual machine designed for embedded, minimal OS, or
-experimental environments. It follows a classical Forth model but adds modern modularity through a rich set of
-word-source files and a clean internal API. StarForth targets environments without a traditional C library (e.g., L4Re),
-with **no reliance on** `malloc`, `printf`, or glibc.
+```
+   ███████╗████████╗ █████╗ ██████╗ ███████╗ ██████╗ ██████╗ ██████╗██╗  ██╗
+   ██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔═══██╗██╔══██╗═██╔══╝██║  ██║
+   ███████╗   ██║   ███████║██████╔╝█████╗  ██║   ██║██████╔╝ ██║   ███████║
+   ╚════██║   ██║   ██╔══██║██╔══██╗██╔══╝  ██║   ██║██╔══██╗ ██║   ██╔══██║
+   ███████║   ██║   ██║  ██║██║  ██║██     ╗╚██████╔╝██║  ██║ ██║   ██║  ██║
+   ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝ ╚═╝   ╚═╝  ╚═╝
+                   A Clean FORTH-79 VM for the Modern Age — Fast. Lean. Amber.
+```
 
-> **⚙️ Built from the ground up** for Forth‑79/83 semantics, vocabulary management, safety checks, and a block‑centric
-> future.
+# 🧠 **StarForth**
 
----
+### *Come see how I `stack up`* 🧱⚡
 
-## 💡 Features (1.1.0)
-
-* 🧠 **Threaded VM** (direct vs. indirect depends on target)
-* ⚡ **Inline assembly optimizations** for x86_64 and ARM64 (22% speedup on x86_64)
-* 🔧 **Deterministic INIT system** - Loads `./conf/init.4th` at boot with dictionary fence protection
-* 🗂️ **Dictionary & registration** via `word_registry`
-* 🧩 **Modular word sources** (one category per file)
-* 💾 **Persistent block storage v2** - 3-layer architecture with FILE/RAM/L4Re backends
-  * LBN→PBN mapping with reserved system ranges (RAM 0-31, DISK 1024-1055 hidden)
-  * External BAM (Block Allocation Map) in dedicated 4KB pages
-  * Per-block metadata (341 bytes: CRC64, timestamps, crypto, security, chains)
-  * User-visible logical blocks: LBN 0-991 (RAM) + LBN 992+ (DISK persistent)
-* 🧱 **Block‑style memory model** - 992 RAM blocks + persistent disk blocks
-* 🧾 **64‑bit only architecture** - Native x86_64 and ARM64/AArch64
-* 🧪 **REPL** and an in‑process test runner (709 tests, 93% pass rate)
-* 🧯 **No glibc**: suitable for tiny kernels and libc‑free targets
-* 🏗️ **Multi-architecture**: x86_64 and ARM64 with cross-compilation support
-
-**Control flow implemented**
-
-* `IF … ELSE … THEN` with forward‑patched `(0BRANCH)` and unmatched‑THEN checks
-* `BEGIN … WHILE … REPEAT`, plus `UNTIL` and `AGAIN` (byte‑relative branches)
-* `DO … LOOP` / `+LOOP` with indices `I` and `J`
-* `?DO` (conditional entry) with **(limit index --)** semantics
-* **`LEAVE`** compiled via a **separate leave‑site stack** (does not poison IF/ELSE/THEN state)
-
-**Runtime/compile‑time hygiene**
-
-* All branch offsets are **byte‑relative** to their literal cell
-* Return‑stack and data‑stack under/overflow checks with consistent logging
-* Loop parameter stack: `(limit, index, loop_start_ip)` with strict bounds
-* Compile‑time control‑flow (CF) stack tagged as `CF_BEGIN`, `CF_IF`, `CF_ELSE`, `CF_DO`, `CF_WHILE`
-* CF “epoch” reset across mode transitions to prevent stale frames between `:` and `;`
+> “Born in 1979. Rebuilt for 2025.
+> The fastest rat rod in Ohio — and maybe your next favorite VM.”
 
 ---
 
-## 🗂️ Project Structure
+## 🚀 **What is StarForth?**
 
-```text
-.
-├── build
-├── include
-│   ├── io.h
-│   ├── log.h
-│   ├── vm.h
-│   └── word_registry.h
-├── LICENSE
-├── Makefile
-├── README.md
-├── src
-│   ├── io.c
-│   ├── log.c
-│   ├── main.c
-│   ├── test_runner
-│   │   ├── include
-│   │   │   ├── test_common.h
-│   │   │   └── test_runner.h
-│   │   ├── modules
-│   │   │   ├── arithmetic_words_test.c
-│   │   │   ├── block_words_test.c
-│   │   │   ├── control_words_test.c
-│   │   │   ├── defining_words_tests.c
-│   │   │   ├── dictionary_manipulation_words_test.c
-│   │   │   ├── dictionary_words_test.c
-│   │   │   ├── double_words_test.c
-│   │   │   ├── editor_words_test.c
-│   │   │   ├── format_words_test.c
-│   │   │   ├── io_words_test.c
-│   │   │   ├── logical_words_test.c
-│   │   │   ├── memory_words_test.c
-│   │   │   ├── mixed_arithmetic_words_test.c
-│   │   │   ├── return_stack_words_test.c
-│   │   │   ├── stack_words_test.c
-│   │   │   ├── string_words_test.c
-│   │   │   ├── system_words_test.c
-│   │   │   └── vocabulary_words.c
-│   │   ├── test_common.c
-│   │   └── test_runner.c
-│   ├── vm.c
-│   ├── word_registry.c
-│   └── word_source
-│       ├── arithmetic_words.c
-│       ├── block_words.c
-│       ├── control_words.c
-│       ├── defining_words.c
-│       ├── dictionary_manipulation_words.c
-│       ├── dictionary_words.c
-│       ├── double_words.c
-│       ├── editor_words.c
-│       ├── format_words.c
-│       ├── include
-│       │   ├── arithmetic_words.h
-│       │   ├── block_words.h
-│       │   ├── control_words.h
-│       │   ├── defining_words.h
-│       │   ├── dictionary_manipulation_words.h
-│       │   ├── dictionary_words.h
-│       │   ├── double_words.h
-│       │   ├── editor_words.h
-│       │   ├── format_words.h
-│       │   ├── io_words.h
-│       │   ├── logical_words.h
-│       │   ├── memory_words.h
-│       │   ├── mixed_arithmetic_words.h
-│       │   ├── return_stack_words.h
-│       │   ├── stack_words.h
-│       │   ├── string_words.h
-│       │   ├── system_words.h
-│       │   └── vocabulary_words.h
-│       ├── io_words.c
-│       ├── logical_words.c
-│       ├── memory_words.c
-│       ├── mixed_arithmetic_words.c
-│       ├── return_stack_words.c
-│       ├── stack_words.c
-│       ├── string_words.c
-│       ├── system_words.c
-│       └── vocabulary_words.c
-└── TESTING.md
+**StarForth** is a clean, modern, **FORTH-79** implementation — written entirely in **strict ANSI C99**, designed for *
+*speed**, **predictability**, and **surgical control** over memory and execution.
+
+It’s the beating heart of [StarshipOS](https://github.com/starshipos) 🛸, but it’s also a **standalone, embeddable
+virtual machine**. You can run it on bare metal, inside L4Re, in QEMU, or integrate it into your own projects.
+
+StarForth isn’t bloated.
+StarForth isn’t cute.
+**StarForth is a goddamn precision engine.**
+
+---
+
+## 🧰 **Core Features**
+
+| Feature                           | Description                                                                                     |
+|-----------------------------------|-------------------------------------------------------------------------------------------------|
+| 🧱 **FORTH-79 Core**              | Full compliance with the Forth-79 standard, no compromises, no “toy” shortcuts.                 |
+| ⚡ **Direct-Threaded Interpreter** | 64-bit aligned, aggressively optimized for low-latency execution.                               |
+| 💾 **Block Storage Subsystem**    | Supports RAM-disk and disk-image backed storage. Works with NVMe, SATA, eMMC, and QEMU devices. |
+| 🧠 **Strict Pointer Discipline**  | `STRICT_PTR` mode enforces hard pointer safety checks — no sloppy segfault roulette.            |
+| 🌀 **Modular Word Dictionary**    | 18+ modules, from arithmetic to defining words, easily extendable.                              |
+| 🔬 **Entropy-Ready Internals**    | Hooks for runtime statistical profiling and ML-assisted memory placement.                       |
+| 💻 **Amber Glow**                 | Retro-inspired terminal aesthetics. When you see that amber code block, you know you’re home.   |
+
+---
+
+## 📂 **Repository Layout**
+
+```
+starforth/
+ ├─ src/               # Core VM and subsystems
+ ├─ include/           # Public headers (strict C99)
+ ├─ word_source/       # Modular word definitions (Forth-79 vocabulary)
+ ├─ tests/             # 675+ functional tests (fail-fast harness)
+ ├─ disks/             # Disk images for RAM/disk-backed experiments
+ └─ docs/              # Full DocBook + dark-themed HTML/PDF/EPUB manuals
 ```
 
 ---
 
-## 🚀 Building
-
-### Dependencies
-
-None. The project is ANSI **C99** and compiles with `gcc` out of the box.
-
-For ARM64 cross-compilation, install: `gcc-aarch64-linux-gnu`
-
-### Build Commands
-
-**Native build (auto-detects x86_64 or ARM64):**
-```bash
-make clean && make
-```
-
-**ARM64 cross-compile (from x86_64):**
+## ⚙️ **Building**
 
 ```bash
-make rpi4-cross      # Raspberry Pi 4 optimized
-make rpi4-fastest    # Maximum optimizations
+make clean
+make
 ```
 
-**Performance optimized builds:**
+Optional flags:
+
+* `STRICT_PTR=1` – enforce pointer safety
+* `USE_ASM_OPT=1` – enable architecture-specific assembler optimizations
+* `ARCH_X86_64=1` – target 64-bit x86 (default)
+* `ARCH_ARM64=1` – target ARM (experimental)
+
+Example:
 
 ```bash
-make turbo    # -O3 optimizations
-make fast     # ASM + direct threading
-make fastest  # ASM + direct threading + LTO
+make CFLAGS="-DSTRICT_PTR=1 -DUSE_ASM_OPT=1 -DARCH_X86_64=1 -O3" build/starforth
 ```
-
-### Output
-
-Build artifacts go into the `build/` directory.
-
-### Architecture Support
-
-- **x86_64**: Native compilation with inline assembly optimizations (22% faster)
-- **ARM64**: Cross-compilation supported (Raspberry Pi 4, Apple Silicon, AWS Graviton)
 
 ---
 
-## 🥪 Running
+## 🧪 **Testing**
 
-To launch the Forth VM REPL:
+We don’t play “maybe it works.”
+StarForth ships with a **full test harness**: 675+ tests covering arithmetic, stack ops, control structures, dictionary
+internals, block I/O, and more.
 
 ```bash
-./build/starforth
+make test
 ```
 
-You should see:
-
-```
-ok>
-```
-
-At startup, StarForth automatically runs the **INIT system** which loads foundational definitions from
-`./conf/init.4th`. See [INIT System Documentation](docs/INIT_SYSTEM.md) for details.
+Fail-fast. Log-rich. Deterministic.
 
 ---
 
-## 🔧 INIT System
+## 💾 **Running**
 
-StarForth features a deterministic initialization system that loads Forth definitions from `./conf/init.4th` at startup.
-This provides:
+You can run StarForth directly, with or without a backing disk image:
 
-* **Deterministic boot** - Same init.4th always produces same system state
-* **Protected dictionary** - Init words cannot be FORGOTten (dictionary fence)
-* **Clean separation** - Init blocks execute then vanish (zeroed for userspace)
-* **Platform agnostic** - Works with filesystem (Linux) and ROMFS (L4Re)
-
-### Quick Example
-
-`./conf/init.4th`:
-
-```forth
-Block 2048
-(- Large Letter F )
-: STAR   42 EMIT ;
-: STARS  0 DO STAR LOOP ;
-: MARGIN CR 30 SPACES ;
-: BLIP   MARGIN STAR ;
-: BAR    MARGIN 5 STARS ;
-: F      BAR BLIP BAR BLIP BLIP ;
+```bash
+./build/starforth --disk-img=disks/starforth-dev.img --ram-disk=10
 ```
 
-At startup, INIT loads this block, executes it (defining STAR, STARS, etc.), then zeros the block for userspace use. The
-words remain in the dictionary, protected by a fence.
-
-### Key Features
-
-* **Block number remapping** - `2048 LOAD` automatically becomes `1 LOAD`
-* **Metadata comments** - `(-` marks blocks for tooling/documentation
-* **Automatic cleanup** - Blocks zeroed after execution
-* **Error handling** - System halts if init fails (safe boot)
-
-📖 **[Full INIT System Documentation →](docs/INIT_SYSTEM.md)**
+If the disk image is missing, StarForth auto-allocates the RAM disk and bootstraps a clean block environment.
 
 ---
 
-## 🧰 Usage / Command‑line options
+## 📜 **Documentation**
 
-> These are the built‑in switches exposed by the 1.1.0 `main.c`.
+StarForth has **real documentation** built with DocBook 4.5 + Pandoc + Calibre, themed in glorious dark mode with amber
+retro terminals.
 
-```
-Usage: ./build/starforth [OPTIONS]
-StarForth - A lightweight Forth virtual machine
+Build all formats:
 
-Options:
-  --run-tests       Run the comprehensive test suite before starting REPL
-                    (automatically enables TEST logging if no log level set)
-  --benchmark [N]   Run performance benchmarks (default: 1000 iterations)
-                    (exits after benchmarking, does not start REPL)
-  --disk-img=PATH   Attach FILE-backed persistent block storage
-  --disk-ro         Mount block storage as read-only
-  --ram-disk        Use RAM-only block storage (no persistence)
-  --fbs             Use Forth Block Storage (devblock packing)
-  --log-error       Set logging level to ERROR (only errors)
-  --log-warn        Set logging level to WARN (warnings and errors)
-  --log-info        Set logging level to INFO (default)
-  --log-test        Set logging level to TEST (test results only)
-  --log-debug       Set logging level to DEBUG (all messages)
-  --fail-fast       Stop test suite immediately on first failure
-  --help, -h        Show this help message
-
-Examples:
-  ./build/starforth                          # Start REPL with INFO logging
-  ./build/starforth --run-tests              # Run tests with TEST logging, then start REPL
-  ./build/starforth --benchmark              # Run benchmarks with 1000 iterations
-  ./build/starforth --disk-img=mydisk.img    # Start with persistent block storage
-  ./build/starforth --ram-disk               # Start with RAM-only blocks
-  ./build/starforth --log-debug --run-tests  # Run tests with DEBUG logging
+```bash
+cd docs
+make
 ```
 
-**Notes**
+Outputs:
 
-* After `--run-tests`, the process **continues into the REPL** (same VM image).
-* `--fail-fast` aborts the suite on first failing test (non‑zero exit).
-* Exit codes: `0` (clean) • `1` (VM error or test failure) • `2` (bad CLI usage).
+* 📄 `build/starforth-manual.html`
+* 📘 `build/StarForth-Manual.epub`
+* 🖨️ `build/StarForth-Manual.pdf`
+* 📚 `build/StarForth-Manual.azw3` (Kindle-ready)
 
 ---
 
-## ⚗️ Quick smoke (copy/paste)
+## 🧠 **Why StarForth Exists**
 
-IF/ELSE:
+Modern VMs are obese.
+Scripting languages are bloated.
+Operating systems treat FORTH like a novelty.
 
-```
-: T1 IF 42 ELSE 24 THEN ;
--1 T1 . CR   \ -> 42
-0  T1 . CR   \ -> 24
-```
+StarForth is a **back-to-basics, forward-looking** response:
 
-Loops and indices:
+* Minimalism without masochism
+* Old-school stack discipline with modern performance
+* FORTH not as a gimmick — but as **the core architecture**
 
-```
-: T2 5 0 DO I . LOOP ;   T2 CR      \ -> 0 1 2 3 4
-: T3 10 0 DO I . 2 +LOOP ; T3 CR    \ -> 0 2 4 6 8
-```
-
-Conditional loop + LEAVE:
-
-```
-: T4 0 5 ?DO I DUP 2 = IF LEAVE THEN . LOOP ;  T4 CR
-\ -> 0 1
-```
-
-Descending with +LOOP:
-
-```
-: T5 0 10 DO I . -1 +LOOP ;  T5 CR
-\ -> 10 9 8 7 6 5 4 3 2 1 0
-```
+It’s retro, yes. But it’s *fast*, *tight*, and *built for today’s hardware*.
 
 ---
 
-## 📊 Tests
+## 🔥 **Come See How I `stack up`**
 
-* Control words and core mechanics: **green**.
-* Latest known run:
+StarForth is already integrated as the core VM for **StarshipOS**, where it will power a full fileless, event-driven
+operating system.
 
-    * **709 total** • **658 passed** • **0 failed** • **49 skipped** • **0 errors**
-    * REPL starts automatically (`ok>`)
+But you can use it independently for:
 
-See `src/test_runner/` for the harness and individual suites.
+* Embedded systems
+* Virtual machine experiments
+* Retro computing projects
+* Language runtime research
+* Microkernel services
 
----
-
-## 🔬 Implementation Notes
-
-* Strict **C99**. No C++isms.
-* Compile‑time CF stack handles IF/ELSE/THEN and BEGIN/WHILE/REPEAT.
-  `LEAVE` sites tracked on a separate side‑stack keyed to the current `DO`.
-* Runtime loop frames live on a dedicated small stack and are popped on `LEAVE`.
-* Branch offsets are byte‑relative; literals are cell‑aligned.
+This isn’t nostalgia — it’s **heritage with a V8 engine**.
 
 ---
 
-## 🔐 Roadmap
+## 🧑‍🚀 **Captain Bob**
 
-* [x] ~~`SEE` word~~ - **COMPLETED** (v1.1.0)
-* [x] ~~Block I/O backend (persistence)~~ - **COMPLETED** (v1.1.0)
-* [ ] `UNLOOP` and **`EXIT` behaves as `UNLOOP EXIT`** inside loops
-* [ ] Minimal ROMFS + boot path (L4Re target)
-* [ ] L4Re block storage backends (dataspace + IPC service)
-* [ ] Per‑word ACLs / vocabulary isolation
-* [ ] Sample programs (sieve, Mandelbrot, ANSI art)
+Built and maintained by **Captain Bob**, a systems engineer hacking since 1973.
+He doesn’t do Python dependency hell. He does **tight loops**, **inline assembly**, and **terminal glow**.
 
 ---
 
-## 🛡️ License
+## 🪪 **License**
 
-**CC0‑1.0 (No warranty).** See `LICENSE`.
-
----
-
-## 🧙‍♂️ Author
-
-**R. A. James (rajames)** — part of the StarshipOS stack.
-Repo: [https://github.com/rajames440](https://github.com/rajames440)
+**CC0 / Public Domain** —
+Take it. Fork it. Embed it. Burn rubber.
+Just don’t blame us when your VM goes supersonic.
 
 ---
 
-## 🐾 Mascot
+## 🌟 **StarForth — Where Retro Meets Relentless**
 
-Proudly supervised by **Santino** 🐕. All commits are sniff‑tested.
-
----
-
-### Release 1.1.0 Notes
-
-**Block Storage v2 Release**
-
-Major features:
-
-- ✅ Persistent block storage with LBN→PBN mapping
-- ✅ External BAM (Block Allocation Map) in dedicated 4KB pages
-- ✅ Per-block metadata (341 bytes: CRC64, timestamps, crypto, security, chains)
-- ✅ FILE and RAM backends implemented
-- ✅ SEE word for decompiling definitions
-- ✅ 64-bit only architecture (x86_64, ARM64)
-
-User-visible blocks: LBN 0-991 (RAM volatile) + LBN 992+ (DISK persistent)
-Reserved ranges: RAM PBN 0-31 and DISK PBN 1024-1055 hidden from users
-
-### Release 1.0.0 Notes (tagged)
-
-First stable cut: full control flow and loops, `?DO`, clean `LEAVE`, byte‑relative branches, verbose logs, and a living
-REPL. Tests green; ready for experiments, ports, and shenanigans.
+```
+╔═══════════════════════════════════════════╗
+║  STARFORTH: STACK-BASED VM, BUILT TO RUN  ║
+╚═══════════════════════════════════════════╝
+```
