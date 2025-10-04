@@ -45,13 +45,36 @@ static WordTestSuite stack_word_suites[] = {
 
     {
         "DROP", {
+            /* Basic functionality */
             {"basic", "5 7 DROP . CR", "Should print: 5", TEST_NORMAL, 0, 1},
-            {"zero", "42 0 DROP . CR", "Should print: 42", TEST_NORMAL, 0, 1},
-            {"single_item", "99 DROP DEPTH . CR", "Should print: 0", TEST_NORMAL, 0, 1},
+            {"zero", "42 0 DROP . CR", "Should drop zero, print 42", TEST_NORMAL, 0, 1},
+            {"negative", "10 -5 DROP . CR", "Should drop negative, print 10", TEST_NORMAL, 0, 1},
+
+            /* Multiple drops */
+            {"double_drop", "1 2 3 DROP DROP . CR", "Should print: 1", TEST_NORMAL, 0, 1},
+            {"triple_drop", "1 2 3 4 DROP DROP DROP . CR", "Should print: 1", TEST_NORMAL, 0, 1},
+            {"sequential", "5 DROP 6 DROP 7 . CR", "Should print: 7", TEST_NORMAL, 0, 1},
+
+            /* Stack depth effects */
+            {"single_item", "99 DROP DEPTH . CR", "Should empty stack, depth=0", TEST_NORMAL, 0, 1},
+            {"depth_change", "DEPTH 1 2 DROP DEPTH SWAP - . CR", "Should change depth by 1", TEST_NORMAL, 0, 1},
+            {"preserve_depth", "DEPTH 5 6 DROP DROP DEPTH = . CR", "Should preserve net depth", TEST_NORMAL, 0, 1},
+
+            /* Edge cases */
+            {"max_int", "2147483647 DROP DEPTH . CR", "Should drop max int", TEST_NORMAL, 0, 1},
+            {"min_int", "-2147483648 DROP DEPTH . CR", "Should drop min int", TEST_NORMAL, 0, 1},
+
+            /* Chaining with other operations */
+            {"with_dup", "5 DUP DROP . CR", "Should duplicate then drop", TEST_NORMAL, 0, 1},
+            {"with_swap", "1 2 SWAP DROP . CR", "Should swap then drop", TEST_NORMAL, 0, 1},
+            {"complex", "1 2 3 ROT DROP SWAP DROP . CR", "Should handle complex sequence", TEST_NORMAL, 0, 1},
+
+            /* Error case */
             {"empty_stack", "DROP", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
-        4
+        15
     },
 
     {

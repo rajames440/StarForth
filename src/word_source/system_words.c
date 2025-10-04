@@ -101,8 +101,7 @@ void system_word_warm(VM *vm) {
 /* BYE ( -- ) */
 void system_word_bye(VM *vm) {
     puts("Goodbye!");
-    vm_cleanup(vm);
-    exit(0);
+    vm->halted = 1; /* Signal the REPL to stop */
 }
 
 /* SAVE-SYSTEM ( -- ) : trivial snapshot of memory prefix */

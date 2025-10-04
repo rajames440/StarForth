@@ -258,6 +258,11 @@ void run_test_suite(VM *vm, const WordTestSuite *suite) {
     log_message(LOG_TEST, "Testing word: %s", suite->word_name);
     log_message(LOG_TEST, "------------------------");
 
+    /* Save dictionary state before test suite */
+    DictEntry *saved_latest;
+    size_t saved_here;
+    save_dict_state(vm, &saved_latest, &saved_here);
+
     int suite_pass = 0;
     int suite_fail = 0;
     int suite_skip = 0;
@@ -285,6 +290,9 @@ void run_test_suite(VM *vm, const WordTestSuite *suite) {
         }
     }
 
+    /* Restore dictionary state after test suite to remove test-created words */
+    restore_dict_state(vm, saved_latest, saved_here);
+
     global_test_stats.total_tests += suite->test_count;
     global_test_stats.total_pass += suite_pass;
     global_test_stats.total_fail += suite_fail;
@@ -307,4 +315,39 @@ void run_test_suite(VM *vm, const WordTestSuite *suite) {
 void print_module_summary(const char *module_name, int pass, int fail, int skip, int error) {
     log_message(LOG_TEST, "=== %s Summary: %d passed, %d failed, %d skipped, %d errors ===",
                 module_name, pass, fail, skip, error);
+}
+
+/* ---------- Dictionary State Management ---------- */
+
+/**
+ * @brief Saves current dictionary state before test execution
+ * @param vm Pointer to VM instance
+ * @param latest Pointer to store latest dictionary entry
+ * @param here Pointer to store HERE pointer
+ * @details Captures dictionary state so tests can be cleaned up after execution
+ */
+void save_dict_state(VM *vm, DictEntry **latest, size_t *here) {
+    *latest = vm->latest;
+    *here = vm->here;
+}
+
+/**
+ * @brief Restores dictionary state after test execution
+ * @param vm Pointer to VM instance
+ * @param latest Latest dictionary entry to restore
+ * @param here HERE pointer to restore
+ * @details Removes all words added during test by restoring dictionary pointers.
+ *          This prevents test pollution of the dictionary and ensures each test
+ *          starts with a clean slate.
+ */
+void restore_dict_state(VM *vm, DictEntry *latest, size_t here) {
+    /* Restore dictionary pointers to state before test */
+    vm->latest = latest;
+    vm->here = here;
+
+    /* NOTE: We don't free memory here because the dictionary uses a contiguous
+     * memory region. The memory is still allocated but unreachable. This is
+     * safe because tests run in a controlled environment and memory is reclaimed
+     * when the VM terminates. For long-running test suites, consider periodically
+     * reinitializing the VM. */
 }

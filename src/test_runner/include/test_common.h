@@ -149,6 +149,23 @@ void save_vm_state(VM *vm, int *dsp, int *rsp, int *error, vm_mode_t *mode);
  */
 void restore_vm_state(VM *vm, int dsp, int rsp, int error, vm_mode_t mode);
 
+/**
+ * @brief Saves dictionary state before test execution
+ * @param vm Pointer to VM instance
+ * @param latest Pointer to store latest dictionary entry
+ * @param here Pointer to store HERE pointer
+ */
+void save_dict_state(VM * vm, DictEntry * *latest, size_t * here);
+
+/**
+ * @brief Restores dictionary state after test execution
+ * @param vm Pointer to VM instance
+ * @param latest Latest dictionary entry to restore
+ * @param here HERE pointer to restore
+ * @details Removes all words added during test by restoring dictionary pointers
+ */
+void restore_dict_state(VM *vm, DictEntry *latest, size_t here);
+
 /** @} */
 
 #endif /* TEST_COMMON_H */

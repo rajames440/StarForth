@@ -421,6 +421,10 @@ void execute_colon_word(VM *vm) {
 
         /* Execute the word */
         vm->current_executing_entry = w;
+
+        /* Track word execution for profiling */
+        profiler_word_count(w);
+
         if (w && w->func) {
             w->func(vm);
         } else {
@@ -487,6 +491,10 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
 
         log_message(LOG_DEBUG, "EXECUTE: '%.*s'", (int) len, word_str);
         vm->current_executing_entry = entry;
+
+        /* Track word execution for profiling */
+        profiler_word_count(entry);
+
         if (entry->func) {
             entry->func(vm);
         } else {

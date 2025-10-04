@@ -79,6 +79,7 @@ static TestModule test_modules[] = {
     {"System Words", NULL, 0, run_system_words_tests}, /* Module 15 */
     {"Defining Words", NULL, 0, run_defining_words_tests}, /* Module 17 */
     {"Control Words", NULL, 0, run_control_words_tests}, /* Module 18 */
+    {"StarForth Words", NULL, 0, run_starforth_words_tests}, /* Module 19 */
     {NULL, NULL, 0, NULL} /* End marker */
 };
 
