@@ -186,6 +186,22 @@ void profiler_word_exit(const DictEntry *entry) {
     profiler_state.current_word = NULL;
 }
 
+/**
+ * @brief Track word execution frequency without timing overhead
+ * @param entry Dictionary entry being executed
+ *
+ * This is a lightweight alternative to profiler_word_enter/exit that only
+ * tracks execution counts without timing. Use for PROFILE_BASIC level.
+ */
+void profiler_word_count(const DictEntry *entry) {
+    if (!profiler_state.enabled || !entry) return;
+
+    WordStats *stats = get_word_stats(entry);
+    if (stats) {
+        stats->call_count++;
+    }
+}
+
 /* Increment counters */
 void profiler_inc_dict_lookup(void) {
     if (profiler_state.enabled && profiler_state.level >= PROFILE_BASIC) {
@@ -272,54 +288,59 @@ void profiler_generate_report(void) {
     }
 
     /* Word execution statistics */
-    if (profiler_state.level >= PROFILE_DETAILED && profiler_state.word_count > 0) {
-        printf("Top Words by Execution Time:\n");
-        printf("%-20s %10s %15s %12s %12s\n", "Word", "Calls", "Total (µs)", "Avg (ns)", "Max (ns)");
-        printf("--------------------------------------------------------------------------------\n");
+    if (profiler_state.word_count > 0) {
+        if (profiler_state.level >= PROFILE_DETAILED) {
+            /* Detailed mode: show timing info */
+            printf("Top Words by Execution Time:\n");
+            printf("%-20s %10s %15s %12s %12s\n", "Word", "Calls", "Total (µs)", "Avg (ns)", "Max (ns)");
+            printf("--------------------------------------------------------------------------------\n");
 
-        /* Sort by total time */
-        qsort(profiler_state.word_stats, profiler_state.word_count,
-              sizeof(WordStats), compare_by_time);
+            /* Sort by total time */
+            qsort(profiler_state.word_stats, profiler_state.word_count,
+                  sizeof(WordStats), compare_by_time);
 
-        /* Show top 20 */
-        size_t limit = profiler_state.word_count < 20 ? profiler_state.word_count : 20;
-        for (size_t i = 0; i < limit; i++) {
-            WordStats *s = &profiler_state.word_stats[i];
-            if (s->call_count > 0) {
-                uint64_t avg_ns = s->total_time_ns / s->call_count;
-                print_word_name_safe(s->entry);
-                /* Pad to 20 characters */
-                size_t name_len = s->entry ? s->entry->name_len : 0;
-                for (size_t j = name_len; j < 20; j++) putchar(' ');
-                printf(" %10lu %15.2f %12lu %12lu\n",
-                       (unsigned long) s->call_count,
-                       s->total_time_ns / 1000.0,
-                       (unsigned long) avg_ns,
-                       (unsigned long) s->max_time_ns);
+            /* Show top 20 */
+            size_t limit = profiler_state.word_count < 20 ? profiler_state.word_count : 20;
+            for (size_t i = 0; i < limit; i++) {
+                WordStats *s = &profiler_state.word_stats[i];
+                if (s->call_count > 0) {
+                    uint64_t avg_ns = s->total_time_ns / s->call_count;
+                    print_word_name_safe(s->entry);
+                    /* Pad to 20 characters */
+                    size_t name_len = s->entry ? s->entry->name_len : 0;
+                    for (size_t j = name_len; j < 20; j++) putchar(' ');
+                    printf(" %10lu %15.2f %12lu %12lu\n",
+                           (unsigned long) s->call_count,
+                           s->total_time_ns / 1000.0,
+                           (unsigned long) avg_ns,
+                           (unsigned long) s->max_time_ns);
+                }
             }
+            printf("\n");
         }
-        printf("\n");
 
-        /* Sort by call count and show hot words */
-        printf("Most Frequently Called Words:\n");
-        printf("%-20s %10s\n", "Word", "Calls");
-        printf("----------------------------------------\n");
+        /* Show frequency data for all levels >= BASIC */
+        if (profiler_state.level >= PROFILE_BASIC) {
+            printf("Most Frequently Called Words:\n");
+            printf("%-20s %10s\n", "Word", "Calls");
+            printf("----------------------------------------\n");
 
-        qsort(profiler_state.word_stats, profiler_state.word_count,
-              sizeof(WordStats), compare_by_calls);
+            qsort(profiler_state.word_stats, profiler_state.word_count,
+                  sizeof(WordStats), compare_by_calls);
 
-        limit = profiler_state.word_count < 15 ? profiler_state.word_count : 15;
-        for (size_t i = 0; i < limit; i++) {
-            WordStats *s = &profiler_state.word_stats[i];
-            if (s->call_count > 0) {
-                print_word_name_safe(s->entry);
-                /* Pad to 20 characters */
-                size_t name_len = s->entry ? s->entry->name_len : 0;
-                for (size_t j = name_len; j < 20; j++) putchar(' ');
-                printf(" %10lu\n", (unsigned long) s->call_count);
+            size_t limit = profiler_state.word_count < 15 ? profiler_state.word_count : 15;
+            for (size_t i = 0; i < limit; i++) {
+                WordStats *s = &profiler_state.word_stats[i];
+                if (s->call_count > 0) {
+                    print_word_name_safe(s->entry);
+                    /* Pad to 20 characters */
+                    size_t name_len = s->entry ? s->entry->name_len : 0;
+                    for (size_t j = name_len; j < 20; j++) putchar(' ');
+                    printf(" %10lu\n", (unsigned long) s->call_count);
+                }
             }
+            printf("\n");
         }
-        printf("\n");
     }
 
     printf("========================================\n\n");
@@ -364,16 +385,100 @@ void profiler_inc_loop_iter(void) {
 
 void profiler_print_summary(void) { profiler_generate_report(); }
 
+/**
+ * @brief Print hot word analysis with optimization recommendations
+ *
+ * Analyzes word execution frequency and provides actionable recommendations
+ * for performance optimization including:
+ * - Assembly optimization candidates
+ * - Inlining opportunities
+ * - Cache-friendly ordering
+ */
+void profiler_print_hotspots(void) {
+    if (!profiler_state.enabled || profiler_state.word_count == 0) {
+        printf("No profiling data available\n");
+        return;
+    }
+
+    printf("\n");
+    printf("========================================\n");
+    printf("     Hot Word Analysis & Optimization\n");
+    printf("========================================\n\n");
+
+    /* Sort by call frequency */
+    qsort(profiler_state.word_stats, profiler_state.word_count,
+          sizeof(WordStats), compare_by_calls);
+
+    /* Calculate total calls for percentage */
+    uint64_t total_calls = 0;
+    for (size_t i = 0; i < profiler_state.word_count; i++) {
+        total_calls += profiler_state.word_stats[i].call_count;
+    }
+
+    if (total_calls == 0) {
+        printf("No word executions recorded\n");
+        return;
+    }
+
+    printf("Top 25 Most Frequently Called Words:\n");
+    printf("%-20s %12s %10s  %s\n", "Word", "Calls", "% Total", "Optimization Suggestion");
+    printf("--------------------------------------------------------------------------------\n");
+
+    size_t limit = profiler_state.word_count < 25 ? profiler_state.word_count : 25;
+    for (size_t i = 0; i < limit; i++) {
+        WordStats *s = &profiler_state.word_stats[i];
+        if (s->call_count == 0) continue;
+
+        double pct = (s->call_count * 100.0) / total_calls;
+
+        /* Print word name */
+        print_word_name_safe(s->entry);
+        size_t name_len = s->entry ? s->entry->name_len : 0;
+        for (size_t j = name_len; j < 20; j++) putchar(' ');
+
+        printf(" %12lu %9.2f%%  ", (unsigned long) s->call_count, pct);
+
+        /* Provide optimization suggestions based on frequency */
+        if (pct >= 5.0) {
+            printf("⚡ HIGH PRIORITY: Inline assembly candidate");
+        } else if (pct >= 2.0) {
+            printf("🔥 Consider assembly optimization");
+        } else if (pct >= 1.0) {
+            printf("💡 Monitor for optimization");
+        } else if (pct >= 0.5) {
+            printf("📊 Profile for PGO");
+        } else {
+            printf("—");
+        }
+        printf("\n");
+    }
+
+    printf("\n");
+    printf("Summary:\n");
+    printf("  Total word executions: %lu\n", (unsigned long) total_calls);
+    printf("  Unique words tracked:  %lu\n", (unsigned long) profiler_state.word_count);
+
+    /* Calculate top 10 coverage */
+    uint64_t top10_calls = 0;
+    size_t top10_limit = profiler_state.word_count < 10 ? profiler_state.word_count : 10;
+    for (size_t i = 0; i < top10_limit; i++) {
+        top10_calls += profiler_state.word_stats[i].call_count;
+    }
+    double top10_pct = (top10_calls * 100.0) / total_calls;
+    printf("  Top 10 coverage:       %.1f%%\n", top10_pct);
+
+    printf("\n========================================\n\n");
+}
+
 void profiler_print_word_analysis(void) {
+    profiler_print_hotspots();
 }
 
 void profiler_print_memory_analysis(void) {
 }
 
-void profiler_print_hotspots(void) {
-}
-
 void profiler_analyze_performance(VM *vm) { (void) vm; }
 
 void profiler_suggest_optimizations(void) {
+    profiler_print_hotspots();
 }

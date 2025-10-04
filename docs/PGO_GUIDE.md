@@ -200,10 +200,11 @@ The profiling workload (`scripts/pgo-workload.sh`) exercises 7 major code paths:
 - Buffer management
 - (Runs if `disks/rajames-rajames-1.0.img` exists)
 
-#### 7. Profiler Integration
+#### 7. Word Frequency Profiling
 
-- Profiler overhead measurement
-- Nested profiling calls
+- Lightweight execution frequency tracking
+- Hot word identification for optimization
+- Zero-overhead call counting at PROFILE_BASIC level
 
 ### Customizing the Workload
 

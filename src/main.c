@@ -118,6 +118,8 @@ void print_usage(const char *program_name) {
     printf("  --run-tests       Run the comprehensive test suite before starting REPL\n");
     printf("  --stress-tests    Run stress tests (deep nesting, stack exhaustion, large definitions)\n");
     printf("  --integration     Run integration tests (complete Forth programs)\n");
+    printf("  --break-me        🔥 ULTRA-COMPREHENSIVE diagnostic mode - tests EVERYTHING,\n");
+    printf("                    generates detailed markdown report, includes easter egg surprise!\n");
     printf("  --benchmark [N]   Run performance benchmarks (default: 1000 iterations)\n");
     printf("                    (exits after benchmarking, does not start REPL)\n");
     printf("  --log-error       Set logging level to ERROR (only errors)\n");
@@ -184,6 +186,7 @@ int main(int argc, char *argv[]) {
     int run_benchmark = 0;
     int do_stress_tests = 0;
     int do_integration_tests = 0;
+    int do_break_me = 0;
     int benchmark_iterations = 1000;
 
     LogLevel log_level = LOG_INFO; /* Default logging level */
@@ -213,6 +216,8 @@ int main(int argc, char *argv[]) {
             do_stress_tests = 1;
         } else if (strcmp(argv[i], "--integration") == 0) {
             do_integration_tests = 1;
+        } else if (strcmp(argv[i], "--break-me") == 0) {
+            do_break_me = 1;
         } else if (strcmp(argv[i], "--benchmark") == 0) {
             run_benchmark = 1;
             if (i + 1 < argc && atoi(argv[i + 1]) > 0) {
@@ -472,6 +477,13 @@ int main(int argc, char *argv[]) {
     if (do_integration_tests) {
         run_integration_tests(&vm);
         log_message(LOG_INFO, "Integration tests complete.");
+    }
+
+    /* Handle --break-me mode */
+    if (do_break_me) {
+        run_break_me_tests(&vm);
+        cleanup_and_exit();
+        return 0;
     }
 
     /* Start the REPL if not running tests that exit */

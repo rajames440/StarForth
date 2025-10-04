@@ -13,6 +13,8 @@ provides a robust platform for extensibility and validation.
 * Differentiates between **normal**, **edge**, and **error** test cases
 * Supports skipped/unimplemented test markers
 * Preserves and restores VM state between tests
+* **Automatic dictionary cleanup** - removes test-created words after each suite
+* **Zero dictionary pollution** - each test suite starts with clean dictionary state
 * Detailed logging with result categories: PASS, FAIL, SKIP, ERROR
 
 ---
@@ -135,6 +137,50 @@ FINAL TEST SUMMARY:
 * `assert_vm_error(vm, should_have_error)`
 
 These can be expanded into deeper validation logic in future iterations.
+
+---
+
+## 🧹 Dictionary Cleanup System
+
+**NEW in 2025**: StarForth now features automatic dictionary cleanup to prevent test pollution!
+
+### How It Works
+
+Each test suite automatically:
+
+1. **Saves** dictionary state before running (captures `vm->latest` and `vm->here`)
+2. **Executes** all test cases (which may create temporary words)
+3. **Restores** dictionary state after completion (removes all test-created words)
+
+### Benefits
+
+✅ **Test Isolation** - Each suite starts with a clean dictionary
+✅ **No Pollution** - Test words don't leak into subsequent tests
+✅ **Memory Safety** - Unreachable memory is reclaimed at VM termination
+✅ **Reliability** - Tests can't interfere with each other
+
+### Implementation Details
+
+```c
+// In run_test_suite():
+DictEntry *saved_latest;
+size_t saved_here;
+save_dict_state(vm, &saved_latest, &saved_here);
+
+// ... run tests ...
+
+restore_dict_state(vm, saved_latest, saved_here);
+```
+
+This ensures that words like `TESTWORD`, `MYVOC`, `ISOWORD` created during testing are automatically cleaned up and
+won't pollute the global dictionary.
+
+### State Management Functions
+
+* `save_vm_state()` - Saves stack pointers, error state, mode
+* `restore_vm_state()` - Restores VM state and clears control flags
+* `save_dict_state()` - Saves dictionary pointers (NEW)
+* `restore_dict_state()` - Restores dictionary pointers (NEW)
 
 ---
 

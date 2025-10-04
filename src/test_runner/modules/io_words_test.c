@@ -172,13 +172,41 @@ static WordTestSuite io_word_suites[] = {
 
     {
         "WORD", {
+            /* Basic functionality */
             {"basic_parse", "BL WORD COUNT TYPE CR", "Should parse next word", TEST_NORMAL, 0, 0},
             {"delimiter_test", "44 WORD COUNT TYPE CR", "Should use comma delimiter", TEST_NORMAL, 0, 0},
-            {"empty_input", "BL WORD COUNT . CR", "Should handle empty", TEST_NORMAL, 0, 1},
+            {"empty_input", "BL WORD COUNT . CR", "Should handle empty input", TEST_NORMAL, 0, 1},
+
+            /* Different delimiters */
+            {"space_delim", "32 WORD DROP", "Should use space as delimiter", TEST_NORMAL, 0, 1},
+            {"newline_delim", "10 WORD DROP", "Should use newline as delimiter", TEST_NORMAL, 0, 1},
+            {"tab_delim", "9 WORD DROP", "Should use tab as delimiter", TEST_NORMAL, 0, 1},
+            {"comma_delim", "44 WORD DROP", "Should use comma as delimiter", TEST_NORMAL, 0, 1},
+
+            /* Leading delimiters */
+            {"skip_leading", "BL WORD DROP", "Should skip leading spaces", TEST_NORMAL, 0, 1},
+
+            /* Word length tests */
+            {"single_char", "BL WORD COUNT . CR", "Should parse single character", TEST_NORMAL, 0, 1},
+            {"long_word", "BL WORD COUNT 0 > . CR", "Should parse long word", TEST_NORMAL, 0, 1},
+
+            /* Edge cases */
+            {"zero_delim", "0 WORD DROP", "Should handle null delimiter", TEST_NORMAL, 0, 1},
+            {"high_ascii", "127 WORD DROP", "Should handle DEL delimiter", TEST_NORMAL, 0, 1},
+
+            /* Count-prefixed string */
+            {"count_format", "BL WORD C@ . CR", "Should have count byte", TEST_NORMAL, 0, 1},
+            {"count_value", "BL WORD COUNT SWAP DROP . CR", "Should return count", TEST_NORMAL, 0, 1},
+
+            /* Error cases */
             {"empty_stack", "WORD", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+
+            /* Consecutive delimiters */
+            {"multi_delim", "BL WORD DROP BL WORD DROP", "Should handle multiple parses", TEST_NORMAL, 0, 1},
+
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
-        4
+        17
     },
 
     /* Base conversion and formatting tests */

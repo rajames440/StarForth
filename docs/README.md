@@ -107,6 +107,24 @@ You can run StarForth directly, with or without a backing disk image:
 
 If the disk image is missing, StarForth auto-allocates the RAM disk and bootstraps a clean block environment.
 
+### 📊 **Profiling**
+
+StarForth includes a lightweight profiler for identifying optimization candidates:
+
+```bash
+# Profile word execution frequency
+./build/starforth --profile 1 --profile-report < your_script.fth
+
+# Run tests with profiling
+./build/starforth --profile 1 --profile-report --run-tests
+
+# Benchmark with profiling
+./build/starforth --profile 1 --profile-report --benchmark 10000
+```
+
+The profiler identifies hot words (frequently executed) that are candidates for assembly optimization. See
+`docs/PROFILER.md` for complete profiling guide.
+
 ---
 
 ## 📜 **Documentation**

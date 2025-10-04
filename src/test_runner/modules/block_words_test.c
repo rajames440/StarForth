@@ -31,6 +31,8 @@
  * - LOAD: Block interpretation
  * - LIST: Block display
  * - SCR: Current block number
+ * - THRU: Load block range
+ * - -->: Continue to next block
  */
 static WordTestSuite block_word_suites[] = {
     {
@@ -126,6 +128,40 @@ static WordTestSuite block_word_suites[] = {
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         3
+    },
+
+    {
+        "THRU", {
+            /* Basic functionality */
+            {"single_block", "1 1 THRU", "Should load single block (1-1)", TEST_NORMAL, 0, 1},
+            {"ascending", "1 3 THRU", "Should load blocks 1-3 in order", TEST_NORMAL, 0, 1},
+            {"descending", "3 1 THRU", "Should auto-swap and load 1-3", TEST_NORMAL, 0, 1},
+            {"same_block", "2 2 THRU", "Should load single block (2-2)", TEST_NORMAL, 0, 1},
+
+            /* Error cases - invalid block numbers */
+            {"zero_start", "0 3 THRU", "Should reject block 0 as start", TEST_ERROR_CASE, 1, 1},
+            {"zero_end", "1 0 THRU", "Should reject block 0 as end", TEST_ERROR_CASE, 1, 1},
+            {"both_zero", "0 0 THRU", "Should reject both blocks as 0", TEST_ERROR_CASE, 1, 1},
+            {"invalid_start", "9999 10000 THRU", "Should reject invalid start block", TEST_ERROR_CASE, 1, 1},
+            {"invalid_end", "1 9999 THRU", "Should reject invalid end block", TEST_ERROR_CASE, 1, 1},
+            {"both_invalid", "9998 9999 THRU", "Should reject both invalid blocks", TEST_ERROR_CASE, 1, 1},
+
+            /* Stack underflow */
+            {"empty_stack", "THRU", "Should cause stack underflow (no args)", TEST_ERROR_CASE, 1, 1},
+            {"one_arg", "1 THRU", "Should cause stack underflow (one arg)", TEST_ERROR_CASE, 1, 1},
+
+            /* Range tests */
+            {"small_range", "1 2 THRU", "Should load 2-block range", TEST_NORMAL, 0, 1},
+            {"medium_range", "1 5 THRU", "Should load 5-block range", TEST_NORMAL, 0, 1},
+
+            /* Edge cases */
+            {"negative_start", "-1 3 THRU", "Should handle negative start", TEST_ERROR_CASE, 1, 1},
+            {"negative_end", "1 -3 THRU", "Should handle negative end", TEST_ERROR_CASE, 1, 1},
+            {"both_negative", "-3 -1 THRU", "Should handle both negative", TEST_ERROR_CASE, 1, 1},
+
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        17
     },
 
     /* End marker */
