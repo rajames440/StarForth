@@ -111,22 +111,42 @@ If the disk image is missing, StarForth auto-allocates the RAM disk and bootstra
 
 ## 📜 **Documentation**
 
-StarForth has **real documentation** built with DocBook 4.5 + Pandoc + Calibre, themed in glorious dark mode with amber
-retro terminals.
+StarForth has **comprehensive documentation** built from LaTeX and HTML sources of authority, themed in glorious dark
+mode with amber CRT code blocks.
 
-Build all formats:
+### Build Complete Manual
+
+**LaTeX → PDF** (the gold standard):
 
 ```bash
-cd docs
-make
+make book
 ```
 
 Outputs:
 
-* 📄 `build/starforth-manual.html`
-* 📘 `build/StarForth-Manual.epub`
-* 🖨️ `build/StarForth-Manual.pdf`
-* 📚 `build/StarForth-Manual.azw3` (Kindle-ready)
+* 📝 `docs/build/latex/StarForth-Manual.tex` (editable LaTeX source)
+* 🖨️ `docs/build/StarForth-Manual-LaTeX.pdf` (comprehensive PDF)
+
+**HTML** (single-page + multi-page with dark.css):
+```bash
+make book-html
+```
+Outputs:
+
+* 📄 `docs/build/html/StarForth-Manual.html` (single-page scrollable)
+* 📚 `docs/build/html/book/index.html` (multi-page navigable)
+
+### What's Included
+
+Both formats contain **EVERYTHING**:
+
+* Doxygen API documentation (generated fresh)
+* Man pages (embedded)
+* GNU Info docs (referenced)
+* All markdown documentation (README first!)
+* Architecture, testing, gap analysis
+
+From these sources you can generate PDF, ePub, Mobi, DocBook, paper books, or any format you need!
 
 ---
 

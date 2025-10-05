@@ -380,15 +380,86 @@ docs-pdf: docs-html
 	@echo "📄 Generating PDF documentation..."
 	@cd docs/api/latex && $(MAKE) pdf > /dev/null 2>&1 && cp refman.pdf ../StarForth-API-Reference.pdf && echo "✓ PDF: docs/api/StarForth-API-Reference.pdf"
 
-# Generate complete manual book (DocBook → HTML/PDF) with API documentation
-book: docs-html
-	@echo "📖 Building StarForth Complete Manual with API Documentation..."
-	@./scripts/build-docs.sh
+# Generate complete manual book - THE COMPREHENSIVE BOOK
+# LaTeX is the PRIMARY source, PDF/DocBook/EPUB are generated from it
+# Includes: API docs (Doxygen), ABI specification, all reference material
+# Output formats: LaTeX (source), PDF, DocBook XML, EPUB
+book: info
+	@echo "═══════════════════════════════════════════════════════════════"
+	@echo "  📖 Building StarForth Complete Manual"
+	@echo "═══════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "Building comprehensive documentation including:"
+	@echo "  • Complete API Documentation (Doxygen LaTeX)"
+	@echo "  • ABI Specification"
+	@echo "  • README with banner (FIRST!)"
+	@echo "  • Installation Guide"
+	@echo "  • Testing Documentation"
+	@echo "  • Architecture Documentation"
+	@echo "  • Gap Analysis"
+	@echo "  • All Reference Material"
+	@echo ""
+	@echo "Output formats: LaTeX → PDF, DocBook, EPUB"
+	@echo ""
+	@./scripts/build-book-latex.sh
+	@echo ""
 
-# Generate book HTML only
+# Individual format targets for fine-grained control
+book-pdf: info
+	@echo "Building PDF only from existing LaTeX..."
+	@if [ -f docs/build/latex/StarForth-Manual.tex ]; then \
+		cd docs/build/latex && pdflatex -interaction=nonstopmode StarForth-Manual.tex; \
+		pdflatex -interaction=nonstopmode StarForth-Manual.tex; \
+		pdflatex -interaction=nonstopmode StarForth-Manual.tex; \
+		cp StarForth-Manual.pdf ../StarForth-Manual.pdf; \
+		echo "✓ PDF: docs/build/StarForth-Manual.pdf"; \
+	else \
+		echo "Error: Run 'make book' first to generate LaTeX source"; \
+		exit 1; \
+	fi
+
+book-docbook: info
+	@echo "Building DocBook XML only from existing LaTeX..."
+	@if [ -f docs/build/latex/StarForth-Manual.tex ]; then \
+		pandoc docs/build/latex/StarForth-Manual.tex \
+			-f latex -t docbook5 --standalone --toc \
+			-o docs/build/StarForth-Manual.xml; \
+		echo "✓ DocBook: docs/build/StarForth-Manual.xml"; \
+	else \
+		echo "Error: Run 'make book' first to generate LaTeX source"; \
+		exit 1; \
+	fi
+
+book-epub: info
+	@echo "Building EPUB only from existing LaTeX..."
+	@if [ -f docs/build/latex/StarForth-Manual.tex ]; then \
+		pandoc docs/build/latex/StarForth-Manual.tex \
+			-f latex -t epub3 --standalone --toc --toc-depth=3 \
+			--metadata title="StarForth Complete Manual" \
+			--metadata author="Robert A. James" \
+			--metadata lang="en" \
+			-o docs/build/StarForth-Manual.epub; \
+		echo "✓ EPUB: docs/build/StarForth-Manual.epub"; \
+	else \
+		echo "Error: Run 'make book' first to generate LaTeX source"; \
+		exit 1; \
+	fi
+
+# Generate complete HTML book (single-page + multi-page)
+# Both formats use your existing dark.css
 book-html:
-	@echo "📖 Building StarForth Manual (HTML)..."
-	@./scripts/build-docs.sh html
+	@echo "═══════════════════════════════════════════════════════════════"
+	@echo "  🌐 Building StarForth HTML Manual"
+	@echo "═══════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "Generating both single-page and multi-page HTML formats..."
+	@echo "Both use your existing dark.css styling!"
+	@echo ""
+	@./scripts/build-book-html.sh
+	@echo ""
+	@echo "✓ Single-page: docs/build/html/StarForth-Manual.html"
+	@echo "✓ Multi-page:  docs/build/html/book/index.html"
+	@echo ""
 
 # Open the complete manual
 book-open:
@@ -465,6 +536,10 @@ help:
 	@echo "  help            - Show this help"
 	@echo ""
 	@echo "📚 DOCUMENTATION:"
+	@echo "  book            - Generate complete manual (LaTeX → PDF, DocBook, EPUB)"
+	@echo "  book-pdf        - Generate PDF only from existing LaTeX"
+	@echo "  book-docbook    - Generate DocBook XML only from existing LaTeX"
+	@echo "  book-epub       - Generate EPUB only from existing LaTeX"
 	@echo "  docs            - Generate all documentation (HTML, PDF, AsciiDoc, MD)"
 	@echo "  docs-html       - Generate HTML documentation only"
 	@echo "  docs-pdf        - Generate PDF documentation"
@@ -489,8 +564,8 @@ help:
 	@echo "🌟 CURRENT PLATFORM: $(ARCH_NAME)"
 	@echo "════════════════════════════════════════════════════════════"
 
-# Installation directories
-PREFIX ?= /usr/local
+# Installation directories (defaults to local ./bin unless PREFIX is set)
+PREFIX ?= .
 BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man/man1
 INFODIR = $(PREFIX)/share/info
@@ -529,4 +604,46 @@ uninstall:
 	@rm -rf $(CONFDIR)
 	@echo "✅ Uninstall complete!"
 
-.PHONY: all banner fastest fast turbo pgo rpi4 rpi4-cross rpi4-fastest minimal l4re profile performance debug bench benchmark test asm clean clean-obj help install uninstall
+# Package building targets
+deb: build/starforth man/starforth.1
+	@echo "📦 Building Debian package..."
+	@if ! command -v dpkg-buildpackage >/dev/null 2>&1; then \
+		echo "Error: dpkg-buildpackage not found. Install with: sudo apt-get install dpkg-dev"; \
+		exit 1; \
+	fi
+	@dpkg-buildpackage -us -uc
+	@echo "✅ Debian package built: ../starforth_*.deb"
+
+rpm: build/starforth man/starforth.1
+	@echo "📦 Building RPM package..."
+	@if ! command -v rpmbuild >/dev/null 2>&1; then \
+		echo "Error: rpmbuild not found. Install with: sudo dnf install rpm-build"; \
+		exit 1; \
+	fi
+	@mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+	@tar czf ~/rpmbuild/SOURCES/starforth-$(VERSION).tar.gz \
+		--transform 's,^,starforth-$(VERSION)/,' \
+		--exclude=build --exclude=.git --exclude=debian \
+		.
+	@cp starforth.spec ~/rpmbuild/SPECS/
+	@rpmbuild -ba ~/rpmbuild/SPECS/starforth.spec
+	@echo "✅ RPM package built: ~/rpmbuild/RPMS/*/starforth-*.rpm"
+
+# Info documentation
+docs/starforth.info: docs/starforth.texi
+	@echo "📖 Building GNU info documentation..."
+	@if ! command -v makeinfo >/dev/null 2>&1; then \
+		echo "Warning: makeinfo not found. Install with: sudo apt-get install texinfo"; \
+		touch docs/starforth.info; \
+	else \
+		makeinfo docs/starforth.texi -o docs/starforth.info; \
+		echo "✅ Info documentation: docs/starforth.info"; \
+	fi
+
+info: docs/starforth.info
+
+# Combined package target
+package: deb rpm info
+	@echo "✅ All packages built successfully!"
+
+.PHONY: all banner fastest fast turbo pgo rpi4 rpi4-cross rpi4-fastest minimal l4re profile performance debug bench benchmark test asm clean clean-obj help install uninstall deb rpm info package

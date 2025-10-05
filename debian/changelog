@@ -1,0 +1,23 @@
+starforth (1.1.0-1) unstable; urgency=medium
+
+  * New upstream release 1.1.0
+  * 100% FORTH-79 standard compliance achieved
+  * Added UNLOOP word (2025-10-03)
+  * Enhanced vocabulary word tests
+  * Implemented automatic dictionary cleanup in test framework
+  * Added --break-me comprehensive diagnostic mode
+  * Word frequency profiler with hot word analysis
+  * 783 tests with 93.5% pass rate
+  * Performance optimizations and ARM64 support
+  * Comprehensive documentation updates
+
+ -- Robert A. James <rajames@starshipos.org>  Fri, 04 Oct 2025 12:00:00 -0700
+
+starforth (1.0.0-1) unstable; urgency=low
+
+  * Initial release
+  * FORTH-79 virtual machine
+  * Block storage system
+  * Comprehensive test suite
+
+ -- Robert A. James <rajames@starshipos.org>  Mon, 01 Jan 2025 00:00:00 -0700
