@@ -118,6 +118,7 @@ INPUT                  = include \
                          README.md \
                          docs/GAP_ANALYSIS.md \
                          docs/ARCHITECTURE.md \
+                         docs/ABI.md \
                          TESTING.md \
                          QUICKSTART.md
 INPUT_ENCODING         = UTF-8

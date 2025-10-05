@@ -1,0 +1,31 @@
+Source: starforth
+Section: devel
+Priority: optional
+Maintainer: Robert A. James <rajames@starshipos.org>
+Build-Depends: debhelper (>= 11), gcc (>= 7), make
+Standards-Version: 4.5.1
+Homepage: https://github.com/rajames/starforth
+Vcs-Git: https://github.com/rajames/starforth.git
+Vcs-Browser: https://github.com/rajames/starforth
+
+Package: starforth
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: High-performance FORTH-79 virtual machine
+ StarForth is a production-ready FORTH-79 virtual machine with modern
+ extensions, designed for embedded systems, operating system development,
+ and interactive programming.
+ .
+ Features:
+  * 100% FORTH-79 standard compliant
+  * High-performance direct-threaded VM
+  * Inline assembly optimizations (x86_64, ARM64)
+  * Profile-guided optimization support
+  * Comprehensive test suite (783 tests)
+  * Block storage system
+  * Word execution profiling
+  * Multi-architecture support
+ .
+ StarForth achieves 50-100 million operations/second on modern hardware
+ and includes advanced features like entropy tracking, automatic dictionary
+ cleanup in tests, and comprehensive debugging tools.

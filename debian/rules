@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE) fastest
+
+override_dh_auto_install:
+	$(MAKE) install PREFIX=$(CURDIR)/debian/starforth/usr
+
+override_dh_auto_test:
+	$(MAKE) test || true
+
+override_dh_auto_clean:
+	$(MAKE) clean || true
+	dh_clean
