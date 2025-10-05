@@ -10,3 +10,5 @@ compile_commands.json
 /.vscode/
 /disks/
 /build/generated/
+/docs/book/output/
+/docs/book/generated/

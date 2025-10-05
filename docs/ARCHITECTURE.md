@@ -1059,6 +1059,422 @@ make fastest
 
 ---
 
+## Error Handling Architecture
+
+StarForth employs a **dual error system** designed to separate VM-level fatal errors from subsystem-level recoverable
+errors. This architecture provides modularity while maintaining clear error semantics.
+
+### Primary Error System: VM-Level Errors
+
+The VM uses a simple **error flag** for fatal conditions that should halt execution:
+
+```c
+typedef struct {
+    int error;        // Error flag: 0 = OK, 1 = error
+    int halted;       // Halt flag: 0 = running, 1 = halted
+    // ... other VM fields
+} VM;
+```
+
+**Usage Pattern:**
+
+```c
+void some_forth_word(VM *vm) {
+    if (!vm) return;
+
+    /* Check preconditions */
+    if (vm->dsp < 0) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "WORD: stack underflow");
+        return;
+    }
+
+    /* Perform operation */
+    // ...
+}
+```
+
+**VM Error Characteristics:**
+
+- **Fatal:** Execution stops immediately
+- **Simple:** Single boolean flag (`vm->error = 1`)
+- **Propagated:** Checked by interpreter loop
+- **Logged:** Always accompanied by `log_message(LOG_ERROR, ...)`
+- **Scope:** Stack underflow/overflow, invalid memory access, compile errors
+
+**Examples:**
+
+```c
+// Stack underflow
+if (vm->dsp < 0) {
+    vm->error = 1;
+    log_message(LOG_ERROR, "DUP: stack underflow");
+    return;
+}
+
+// Stack overflow
+if (vm->dsp >= DATA_STACK_SIZE - 1) {
+    vm->error = 1;
+    log_message(LOG_ERROR, "PUSH: stack overflow");
+    return;
+}
+
+// Invalid memory address
+if (!vm_addr_ok(vm, addr)) {
+    vm->error = 1;
+    log_message(LOG_ERROR, "@: invalid address %lu", (unsigned long)addr);
+    return;
+}
+
+// Malloc failure (dictionary allocation)
+if (!entry) {
+    vm->error = 1;
+    log_message(LOG_ERROR, "CREATE: malloc failed for word '%s'", name);
+    return;
+}
+```
+
+### Secondary Error System: Block Subsystem Errors
+
+The **block subsystem** uses a separate error code system for I/O operations:
+
+```c
+/* Block subsystem error codes */
+#define BLK_SUCCESS       0   // Operation successful
+#define BLK_ERR_IO       -1   // I/O error (disk read/write failed)
+#define BLK_ERR_NOMEM    -2   // Out of memory (BAM allocation failed)
+#define BLK_ERR_INVAL    -3   // Invalid parameter (bad block number)
+#define BLK_ERR_NOTFOUND -4   // Block not found or unavailable
+#define BLK_ENODEV       -5   // No device available
+#define BLK_EINVAL       -6   // Invalid argument
+#define BLK_EIO          -7   // I/O error
+```
+
+**Usage Pattern:**
+
+```c
+int blk_init_disk(const char *path) {
+    /* Allocate BAM (Block Allocation Map) */
+    g.bam = (uint8_t *) calloc(1, bam_size);
+    if (!g.bam) {
+        log_message(LOG_ERROR, "blk_init_disk: BAM allocation failed (%zu bytes)", bam_size);
+        return BLK_ERR_NOMEM;
+    }
+
+    /* Read volume header */
+    int rc = blkio_read(dev, 0, header_buf);
+    if (rc != BLKIO_OK) {
+        log_message(LOG_ERROR, "blk_init_disk: failed to read volume header");
+        return BLK_ERR_IO;
+    }
+
+    return BLK_SUCCESS;
+}
+```
+
+**Block Error Characteristics:**
+
+- **Recoverable:** Caller can handle error and continue
+- **Detailed:** Specific error codes indicate failure type
+- **Return value:** Errors returned via function return codes
+- **Logged:** Critical errors logged with context
+- **Scope:** Block I/O, BAM operations, device management
+
+**Propagation to VM:**
+
+Block subsystem errors are converted to VM errors at the Forth word layer:
+
+```c
+static void forth_BLOCK(VM *vm) {
+    if (vm->dsp < 0) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "BLOCK: stack underflow");
+        return;
+    }
+
+    uint32_t blk_num = (uint32_t) vm->data_stack[vm->dsp--];
+    uint8_t *buf = blk_get_buffer(blk_num, 0);  // Returns NULL on error
+
+    if (!buf) {
+        vm->error = 1;  // Convert block error to VM error
+        log_message(LOG_ERROR, "BLOCK: failed to get buffer for block %u", blk_num);
+        return;
+    }
+
+    /* Push buffer address to stack */
+    vaddr_t addr = vm_buffer_to_vaddr(vm, buf);
+    vm->data_stack[++vm->dsp] = (cell_t)addr;
+}
+```
+
+### Design Rationale: Why Two Error Systems?
+
+#### 1. **Modularity**
+
+The block subsystem can be used independently of the VM:
+
+```c
+/* Standalone block usage (no VM required) */
+int init_storage(void) {
+    int rc = blk_init_disk("storage.img");
+    if (rc != BLK_SUCCESS) {
+        fprintf(stderr, "Storage init failed: %d\n", rc);
+        return -1;
+    }
+    return 0;
+}
+```
+
+#### 2. **Error Granularity**
+
+VM errors are binary (fatal/OK), while block errors distinguish:
+
+- I/O failures vs. allocation failures vs. invalid parameters
+- Transient errors (disk busy) vs. permanent errors (disk full)
+- Recoverable conditions (retry-able) vs. fatal conditions
+
+#### 3. **L4Re Compatibility**
+
+Block error codes map cleanly to L4Re IPC error codes:
+
+```c
+/* Future L4Re integration */
+int blkio_l4re_read(blkio_dev_t *dev, uint32_t block, uint8_t *buf) {
+    l4_msgtag_t tag = l4_ipc_call(dev->cap, ...);
+    if (l4_ipc_error(tag, l4_utcb())) {
+        return BLK_ERR_IO;  // Map L4 IPC error to block error
+    }
+    return BLK_SUCCESS;
+}
+```
+
+#### 4. **Separation of Concerns**
+
+| Error Type       | Scope             | Handler          | Recovery                      |
+|------------------|-------------------|------------------|-------------------------------|
+| **VM Errors**    | Forth interpreter | `vm->error` flag | Halt execution, reset REPL    |
+| **Block Errors** | I/O subsystem     | Return codes     | Retry, fallback, or propagate |
+
+### Error Logging Standards
+
+All error paths use `log.h` for consistent logging:
+
+```c
+#include "log.h"
+
+void some_function(VM *vm) {
+    if (error_condition) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "FUNCTION: description of error (context=%d)", context_info);
+        return;
+    }
+}
+```
+
+**Logging Levels:**
+
+```c
+typedef enum {
+    LOG_NONE = -1,   // Disable all logging
+    LOG_ERROR = 0,   // Error messages only
+    LOG_WARN,        // Warning and error messages
+    LOG_INFO,        // Informational, warning, and error messages
+    LOG_TEST,        // Test results and all previous levels
+    LOG_DEBUG        // Debug messages and all previous levels
+} LogLevel;
+```
+
+**Error Logging Best Practices:**
+
+1. **Always log context:**
+   ```c
+   log_message(LOG_ERROR, "ALLOT: invalid size %ld (max=%zu)", n, VM_MEMORY_SIZE);
+   ```
+
+2. **Include function/word name:**
+   ```c
+   log_message(LOG_ERROR, "CREATE: word name too long (%zu > %d)", len, WORD_NAME_MAX);
+   ```
+
+3. **Log before setting error flag:**
+   ```c
+   log_message(LOG_ERROR, "BLOCK: buffer allocation failed");
+   vm->error = 1;  // Set flag after logging
+   ```
+
+4. **Use appropriate severity:**
+   ```c
+   log_message(LOG_DEBUG, "ALLOT: allocated %ld bytes at 0x%lx", n, addr);  // OK
+   log_message(LOG_ERROR, "+!: address out of bounds");                     // Error
+   log_message(LOG_WARN, "FORGET: word '%s' not found", name);              // Warning
+   ```
+
+### Error Checking in Performance-Critical Code
+
+Stack operations use inline assembly and may skip logging for performance:
+
+```c
+#ifdef USE_ASM_OPT
+static inline void vm_push(VM *vm, cell_t value) {
+    __asm__ volatile (
+        "incl %0\n\t"
+        "movq %1, (%2,%0,8)\n\t"
+        : "+r" (vm->dsp)
+        : "r" (value), "r" (vm->data_stack)
+        : "memory"
+    );
+}
+#else
+static inline void vm_push(VM *vm, cell_t value) {
+    if (vm->dsp >= DATA_STACK_SIZE - 1) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "PUSH: stack overflow");
+        return;
+    }
+    vm->data_stack[++vm->dsp] = value;
+}
+#endif
+```
+
+**Optimization Trade-off:** Inline ASM skips bounds checking for maximum performance. Overflow would corrupt adjacent
+memory but is prevented by:
+
+1. **Large stack size** (1024 cells = 8KB)
+2. **Test coverage** catching overflow conditions
+3. **Stack depth monitoring** in DEBUG builds
+
+### Memory Allocation Error Handling
+
+All dynamic allocations check for NULL and log failures:
+
+```c
+/* Dictionary entry creation */
+DictEntry *entry = (DictEntry *) malloc(total);
+if (!entry) {
+    vm->error = 1;
+    log_message(LOG_ERROR, "vm_create_word: malloc failed for '%.*s' (%zu bytes)",
+                (int)len, name, total);
+    return NULL;
+}
+
+/* BAM allocation (block subsystem) */
+g.bam = (uint8_t *) calloc(1, bam_size);
+if (!g.bam) {
+    log_message(LOG_ERROR, "blk_init: BAM allocation failed (%zu bytes)", bam_size);
+    return BLK_ERR_NOMEM;  // Return error code, not VM error
+}
+
+/* INIT system file buffer */
+char *file_content = (char *) malloc(file_size + 1);
+if (!file_content) {
+    log_message(LOG_ERROR, "INIT: malloc failed for init.4th (%zu bytes)", file_size);
+    fclose(fp);
+    vm->error = 1;
+    vm->halted = 1;
+    return;
+}
+
+/* ... use buffer ... */
+
+free(file_content);  // Always freed on all code paths
+```
+
+**Cleanup Requirements:**
+
+1. **All `malloc()` must have corresponding `free()`**
+2. **Error paths must clean up before returning**
+3. **Use goto cleanup pattern for complex functions:**
+
+```c
+int complex_operation(VM *vm) {
+    char *buffer = NULL;
+    int *array = NULL;
+    int rc = 0;
+
+    buffer = malloc(size);
+    if (!buffer) {
+        log_message(LOG_ERROR, "malloc failed");
+        rc = -1;
+        goto cleanup;
+    }
+
+    array = calloc(count, sizeof(int));
+    if (!array) {
+        log_message(LOG_ERROR, "calloc failed");
+        rc = -1;
+        goto cleanup;
+    }
+
+    /* ... operations ... */
+
+cleanup:
+    free(array);
+    free(buffer);
+    return rc;
+}
+```
+
+### Error Recovery in REPL
+
+The REPL (Read-Eval-Print Loop) handles VM errors gracefully:
+
+```c
+void repl_loop(VM *vm) {
+    while (!vm->halted) {
+        printf("ok> ");
+        fgets(input_buffer, sizeof(input_buffer), stdin);
+
+        vm_interpret(vm, input_buffer);
+
+        if (vm->error) {
+            /* Error already logged by word implementation */
+            printf(" ERROR\n");
+
+            /* Reset error state but keep dictionary */
+            vm->error = 0;
+            vm->dsp = -1;      // Clear data stack
+            vm->rsp = -1;      // Clear return stack
+            vm->mode = MODE_INTERPRET;
+
+            continue;  // Continue REPL
+        }
+
+        printf(" ok\n");
+    }
+}
+```
+
+**Error Recovery Strategy:**
+
+1. **Log error** (done by word implementation)
+2. **Display "ERROR"** to user
+3. **Clear stacks** (prevent corruption)
+4. **Reset to interpret mode** (cancel any compilation)
+5. **Continue REPL** (don't exit)
+
+### Summary: Error System Guidelines
+
+| Situation                       | Error System           | Pattern                       |
+|---------------------------------|------------------------|-------------------------------|
+| **Stack underflow/overflow**    | VM error               | `vm->error = 1` + log         |
+| **Invalid memory address**      | VM error               | `vm->error = 1` + log         |
+| **Malloc failure (dictionary)** | VM error               | `vm->error = 1` + log         |
+| **Compile-time errors**         | VM error               | `vm->error = 1` + log         |
+| **Block I/O failure**           | Block error → VM error | Return code → `vm->error = 1` |
+| **BAM allocation failure**      | Block error code       | Return `BLK_ERR_NOMEM`        |
+| **Invalid block number**        | Block error code       | Return `BLK_ERR_INVAL`        |
+| **Device not ready**            | Block error code       | Return `BLK_ENODEV`           |
+
+**Key Principles:**
+
+1. **VM errors are fatal** - halt execution
+2. **Block errors are recoverable** - allow retry or fallback
+3. **Always log error context** - aid debugging
+4. **Clean up on error paths** - free allocated memory
+5. **Dual systems enable modularity** - block subsystem is reusable
+
+---
+
 ## Testing and Validation
 
 StarForth includes a comprehensive test suite with **707 test cases** covering:

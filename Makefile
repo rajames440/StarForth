@@ -381,85 +381,40 @@ docs-pdf: docs-html
 	@cd docs/api/latex && $(MAKE) pdf > /dev/null 2>&1 && cp refman.pdf ../StarForth-API-Reference.pdf && echo "✓ PDF: docs/api/StarForth-API-Reference.pdf"
 
 # Generate complete manual book - THE COMPREHENSIVE BOOK
-# LaTeX is the PRIMARY source, PDF/DocBook/EPUB are generated from it
-# Includes: API docs (Doxygen), ABI specification, all reference material
-# Output formats: LaTeX (source), PDF, DocBook XML, EPUB
+# LaTeX is the PRIMARY source, PDF/EPUB/HTML/AsciiDoc are all generated from it
+# Includes: Markdown docs + Doxygen API docs integrated into one unified LaTeX document
+# Output formats: LaTeX → PDF, EPUB, HTML (multi-page), AsciiDoc
 book: info
 	@echo "═══════════════════════════════════════════════════════════════"
 	@echo "  📖 Building StarForth Complete Manual"
 	@echo "═══════════════════════════════════════════════════════════════"
 	@echo ""
 	@echo "Building comprehensive documentation including:"
+	@echo "  • All Markdown Documentation (27 files)"
 	@echo "  • Complete API Documentation (Doxygen LaTeX)"
-	@echo "  • ABI Specification"
-	@echo "  • README with banner (FIRST!)"
-	@echo "  • Installation Guide"
-	@echo "  • Testing Documentation"
-	@echo "  • Architecture Documentation"
-	@echo "  • Gap Analysis"
-	@echo "  • All Reference Material"
+	@echo "  • Integrated into unified LaTeX document"
 	@echo ""
-	@echo "Output formats: LaTeX → PDF, DocBook, EPUB"
+	@echo "Output formats: PDF, EPUB, HTML (multi-page), AsciiDoc"
 	@echo ""
-	@./scripts/build-book-latex.sh
+	@cd docs/book && ./build-book.sh all
 	@echo ""
 
 # Individual format targets for fine-grained control
 book-pdf: info
-	@echo "Building PDF only from existing LaTeX..."
-	@if [ -f docs/build/latex/StarForth-Manual.tex ]; then \
-		cd docs/build/latex && pdflatex -interaction=nonstopmode StarForth-Manual.tex; \
-		pdflatex -interaction=nonstopmode StarForth-Manual.tex; \
-		pdflatex -interaction=nonstopmode StarForth-Manual.tex; \
-		cp StarForth-Manual.pdf ../StarForth-Manual.pdf; \
-		echo "✓ PDF: docs/build/StarForth-Manual.pdf"; \
-	else \
-		echo "Error: Run 'make book' first to generate LaTeX source"; \
-		exit 1; \
-	fi
+	@echo "Building PDF only..."
+	@cd docs/book && ./build-book.sh pdf
 
-book-docbook: info
-	@echo "Building DocBook XML only from existing LaTeX..."
-	@if [ -f docs/build/latex/StarForth-Manual.tex ]; then \
-		pandoc docs/build/latex/StarForth-Manual.tex \
-			-f latex -t docbook5 --standalone --toc \
-			-o docs/build/StarForth-Manual.xml; \
-		echo "✓ DocBook: docs/build/StarForth-Manual.xml"; \
-	else \
-		echo "Error: Run 'make book' first to generate LaTeX source"; \
-		exit 1; \
-	fi
+book-html: info
+	@echo "Building HTML (multi-page) only..."
+	@cd docs/book && ./build-book.sh html
 
 book-epub: info
-	@echo "Building EPUB only from existing LaTeX..."
-	@if [ -f docs/build/latex/StarForth-Manual.tex ]; then \
-		pandoc docs/build/latex/StarForth-Manual.tex \
-			-f latex -t epub3 --standalone --toc --toc-depth=3 \
-			--metadata title="StarForth Complete Manual" \
-			--metadata author="Robert A. James" \
-			--metadata lang="en" \
-			-o docs/build/StarForth-Manual.epub; \
-		echo "✓ EPUB: docs/build/StarForth-Manual.epub"; \
-	else \
-		echo "Error: Run 'make book' first to generate LaTeX source"; \
-		exit 1; \
-	fi
+	@echo "Building EPUB only..."
+	@cd docs/book && ./build-book.sh epub
 
-# Generate complete HTML book (single-page + multi-page)
-# Both formats use your existing dark.css
-book-html:
-	@echo "═══════════════════════════════════════════════════════════════"
-	@echo "  🌐 Building StarForth HTML Manual"
-	@echo "═══════════════════════════════════════════════════════════════"
-	@echo ""
-	@echo "Generating both single-page and multi-page HTML formats..."
-	@echo "Both use your existing dark.css styling!"
-	@echo ""
-	@./scripts/build-book-html.sh
-	@echo ""
-	@echo "✓ Single-page: docs/build/html/StarForth-Manual.html"
-	@echo "✓ Multi-page:  docs/build/html/book/index.html"
-	@echo ""
+book-asciidoc: info
+	@echo "Building AsciiDoc only..."
+	@cd docs/book && ./build-book.sh asciidoc
 
 # Open the complete manual
 book-open:
