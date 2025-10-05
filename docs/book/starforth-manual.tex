@@ -1,0 +1,766 @@
+% StarForth Complete Manual
+% Master LaTeX Document - Auto-generated from Markdown + Doxygen
+% DO NOT EDIT MANUALLY - Edit source files and run 'make book'
+
+\documentclass[11pt,twoside,openright]{book}
+
+% ========== Packages ==========
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{verbatim}
+\usepackage{fancyvrb}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage[normalem]{ulem}
+\usepackage{etoc}
+
+% ========== Page Geometry ==========
+\geometry{
+    letterpaper,
+    top=1in,
+    bottom=1in,
+    left=1.25in,
+    right=1.25in,
+    headheight=15pt
+}
+
+% ========== Colors ==========
+\definecolor{terminalgreen}{RGB}{0,255,0}
+\definecolor{terminalamber}{RGB}{255,176,0}
+\definecolor{darkbg}{RGB}{20,20,20}
+\definecolor{codebg}{RGB}{40,40,40}
+\definecolor{linkblue}{RGB}{79,153,255}
+\definecolor{commentgray}{RGB}{128,128,128}
+\definecolor{keywordorange}{RGB}{255,128,0}
+
+% ========== Hyperref Setup ==========
+\hypersetup{
+    colorlinks=true,
+    linkcolor=linkblue,
+    filecolor=linkblue,
+    urlcolor=linkblue,
+    citecolor=linkblue,
+    pdftitle={StarForth Complete Manual},
+    pdfauthor={Robert A. James},
+    pdfsubject={FORTH-79 Virtual Machine Implementation},
+    pdfkeywords={FORTH, StarForth, VM, L4Re, Embedded Systems},
+    bookmarksnumbered=true,
+    bookmarksopen=true,
+    pdfstartview=FitH
+}
+
+% ========== Code Listings ==========
+\lstdefinestyle{forth}{
+    language=C,
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small\color{terminalamber},
+    keywordstyle=\color{keywordorange}\bfseries,
+    commentstyle=\color{commentgray}\itshape,
+    stringstyle=\color{terminalgreen},
+    numberstyle=\tiny\color{commentgray},
+    breaklines=true,
+    breakatwhitespace=true,
+    showstringspaces=false,
+    numbers=left,
+    numbersep=8pt,
+    tabsize=4,
+    frame=single,
+    frameround=tttt,
+    rulecolor=\color{linkblue},
+    xleftmargin=0.75cm,
+    xrightmargin=0.25cm
+}
+
+\lstdefinestyle{c}{
+    language=C,
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small\color{white},
+    keywordstyle=\color{keywordorange}\bfseries,
+    commentstyle=\color{commentgray}\itshape,
+    stringstyle=\color{terminalgreen},
+    numberstyle=\tiny\color{commentgray},
+    breaklines=true,
+    breakatwhitespace=true,
+    showstringspaces=false,
+    numbers=left,
+    numbersep=8pt,
+    tabsize=4,
+    frame=single,
+    frameround=tttt,
+    rulecolor=\color{linkblue},
+    xleftmargin=0.75cm,
+    xrightmargin=0.25cm,
+    morekeywords={cell_t, vaddr_t, VM, DictEntry, word_func_t, uint64_t, uint8_t, size_t}
+}
+
+\lstdefinestyle{terminal}{
+    backgroundcolor=\color{darkbg},
+    basicstyle=\ttfamily\small\color{terminalamber},
+    breaklines=true,
+    showstringspaces=false,
+    frame=single,
+    frameround=tttt,
+    rulecolor=\color{terminalgreen},
+    xleftmargin=0.75cm,
+    xrightmargin=0.25cm
+}
+
+\lstset{style=c}
+
+% ========== Headers and Footers ==========
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\leftmark}
+\fancyhead[RO]{\rightmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ========== Chapter Styling ==========
+\titleformat{\chapter}[display]
+{\normalfont\huge\bfseries}
+{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{0pt}{40pt}
+
+% ========== Title Page ==========
+\title{
+    \Huge\textbf{StarForth}\\
+    \LARGE Complete Technical Manual\\
+    \vspace{0.5cm}
+    \large FORTH-79 Virtual Machine Implementation\\
+    \vspace{0.3cm}
+    \normalsize Version 2.0.0
+}
+\author{
+    Robert A. James\\
+    \small StarshipOS Forth Project\\
+    \small\url{rajames440@gmail.com}
+}
+\date{\today}
+
+% ========== Document Begin ==========
+\begin{document}
+
+    \frontmatter
+
+% Title page
+    \maketitle
+
+% Copyright page
+    \newpage
+    \thispagestyle{empty}
+    \vspace*{\fill}
+    \begin{center}
+        \textbf{StarForth Complete Manual}\\
+        Copyright \copyright\ 2025 Robert A. James\\
+        StarshipOS Forth Project
+
+        \vspace{1cm}
+
+        This work is released into the public domain under the\\
+        Creative Commons Zero v1.0 Universal license.
+
+        To the extent possible under law, the author(s) have dedicated\\
+        all copyright and related and neighboring rights to this software\\
+        to the public domain worldwide.
+
+        This software is distributed without any warranty.
+
+        \vspace{0.5cm}
+
+        See \url{http://creativecommons.org/publicdomain/zero/1.0/}\\
+        for more information.
+
+        \vspace{1cm}
+
+        \textbf{Document Build Information}\\
+        Generated: \today\\
+        Build System: LaTeX + Pandoc + Doxygen\\
+        Source: Markdown + Doxygen XML
+
+    \end{center}
+    \vspace*{\fill}
+
+% Table of Contents
+    \tableofcontents
+    \listoffigures
+    \listoftables
+    \lstlistoflistings
+
+% Preface
+
+
+    \chapter{Preface}
+
+    This manual is the complete technical documentation for StarForth, a FORTH-79
+    compliant virtual machine implementation designed for embedded systems,
+    microkernel environments (L4Re), and minimal OS targets.
+
+
+    \section{Document Organization}
+
+    This manual is organized into the following parts:
+
+    \begin{description}
+        \item[Part I: Introduction] Quick start guide, overview, and architecture
+        \item[Part II: User Guide] Building, testing, and using StarForth
+        \item[Part III: Developer Guide] Adding words, extending the VM, porting
+        \item[Part IV: Technical Reference] Complete API documentation (Doxygen)
+        \item[Part V: Appendices] Build options, security, contributing guidelines
+    \end{description}
+
+
+    \section{Who Should Read This}
+
+    \begin{itemize}
+        \item \textbf{Users:} Start with Part I (Introduction) and Part II (User Guide)
+        \item \textbf{Developers:} Read Part III (Developer Guide) and Part IV (API Reference)
+        \item \textbf{Porters:} Focus on Architecture and Platform Integration chapters
+        \item \textbf{Security Auditors:} See Security and Testing chapters
+    \end{itemize}
+
+
+    \section{Conventions Used}
+
+    \begin{itemize}
+        \item \texttt{Monospaced text} indicates code, commands, or file paths
+        \item \textbf{Bold text} emphasizes important concepts
+        \item \textit{Italic text} introduces new terminology
+        \item Stack effects shown as: \texttt{( before -- after )}
+    \end{itemize}
+
+    \mainmatter
+
+% ========== PART I: INTRODUCTION ==========
+
+
+    \part{Introduction}
+
+% README (converted from Markdown)
+
+
+    \chapter{Overview}
+    \label{chap:overview}
+    \input{generated/README.tex}
+
+% QUICKSTART
+
+
+    \chapter{Quick Start Guide}
+    \label{chap:quickstart}
+    \input{generated/QUICKSTART.tex}
+
+% ARCHITECTURE
+
+
+    \chapter{Architecture}
+    \label{chap:architecture}
+    \input{generated/ARCHITECTURE.tex}
+
+% ABI
+
+
+    \chapter{Application Binary Interface}
+    \label{chap:abi}
+    \input{generated/ABI.tex}
+
+% ========== PART II: USER GUIDE ==========
+
+
+    \part{User Guide}
+
+% BUILD_OPTIONS
+
+
+    \chapter{Building StarForth}
+    \label{chap:building}
+    \input{generated/BUILD_OPTIONS.tex}
+
+% TESTING
+
+
+    \chapter{Testing}
+    \label{chap:testing}
+    \input{generated/TESTING.tex}
+
+% BLOCK_STORAGE_GUIDE
+
+
+    \chapter{Block Storage System}
+    \label{chap:block-storage}
+    \input{generated/BLOCK_STORAGE_GUIDE.tex}
+
+% INIT_SYSTEM
+
+
+    \chapter{Initialization System}
+    \label{chap:init-system}
+    \input{generated/INIT_SYSTEM.tex}
+
+% INIT_TOOLS
+
+
+    \chapter{Initialization Tools}
+    \label{chap:init-tools}
+    \input{generated/INIT_TOOLS.tex}
+
+% PROFILER
+
+
+    \chapter{Performance Profiling}
+    \label{chap:profiler}
+    \input{generated/PROFILER.tex}
+
+% PGO_GUIDE
+
+
+    \chapter{Profile-Guided Optimization}
+    \label{chap:pgo}
+    \input{generated/PGO_GUIDE.tex}
+
+% ========== PART III: DEVELOPER GUIDE ==========
+
+
+    \part{Developer Guide}
+
+% WORD_DEVELOPMENT
+
+
+    \chapter{Word Development Guide}
+    \label{chap:word-development}
+    \input{generated/WORD_DEVELOPMENT.tex}
+
+% DOXYGEN_STYLE_GUIDE
+
+
+    \chapter{API Documentation Standards}
+    \label{chap:doxygen-style}
+    \input{generated/DOXYGEN_STYLE_GUIDE.tex}
+
+% ASM_OPTIMIZATIONS
+
+
+    \chapter{x86-64 Assembly Optimizations}
+    \label{chap:asm-x86}
+    \input{generated/ASM_OPTIMIZATIONS.tex}
+
+% ARM64_OPTIMIZATIONS
+
+
+    \chapter{ARM64 Assembly Optimizations}
+    \label{chap:asm-arm64}
+    \input{generated/ARM64_OPTIMIZATIONS.tex}
+
+% RASPBERRY_PI_BUILD
+
+
+    \chapter{Raspberry Pi Build Guide}
+    \label{chap:raspberry-pi}
+    \input{generated/RASPBERRY_PI_BUILD.tex}
+
+% L4RE_INTEGRATION
+
+
+    \chapter{L4Re Integration}
+    \label{chap:l4re}
+    \input{generated/L4RE_INTEGRATION.tex}
+
+% L4RE_DICTIONARY_ALLOCATION
+
+
+    \chapter{L4Re Dictionary Allocation}
+    \label{chap:l4re-dict}
+    \input{generated/L4RE_DICTIONARY_ALLOCATION.tex}
+
+% ========== PART IV: API REFERENCE (DOXYGEN) ==========
+
+
+    \part{API Reference}
+
+
+    \chapter{Introduction to API Reference}
+
+    This part contains the complete API documentation automatically generated
+    from source code comments using Doxygen. All functions, structures, and
+    macros are documented with their parameters, return values, and usage examples.
+
+% Include ALL Doxygen-generated content (255 files)
+% Note: We skip refman.tex itself (it's a complete document) and include only the content
+    \graphicspath{{doxygen/latex/}}  % Set path for Doxygen images
+
+% ALL DOXYGEN CONTENT BELOW (auto-extracted from refman.tex)
+% Skip index (contains Unicode art), md_* files (duplicates of our markdown), and README
+% \input{doxygen/latex/index}
+% \input{doxygen/latex/md_docs_2GAP__ANALYSIS}
+% \input{doxygen/latex/md_docs_2ARCHITECTURE}
+% \input{doxygen/latex/md_docs_2ABI}
+% \input{doxygen/latex/README_8md}
+    \input{doxygen/latex/topics}
+    \input{doxygen/latex/annotated}
+    \input{doxygen/latex/files}
+    \input{doxygen/latex/group__arch__detect}
+    \input{doxygen/latex/group__unified__api}
+    \input{doxygen/latex/group__runtime__detect}
+    \input{doxygen/latex/group__build__info}
+    \input{doxygen/latex/group__vm__input}
+    \input{doxygen/latex/group__stack__ops}
+    \input{doxygen/latex/group__primitives}
+    \input{doxygen/latex/group__cf}
+    \input{doxygen/latex/group__runtime}
+    \input{doxygen/latex/group__control__words}
+    \input{doxygen/latex/group__DefiningWords}
+    \input{doxygen/latex/group__dictionary__words}
+    \input{doxygen/latex/group__dictionary}
+    \input{doxygen/latex/group__editor__words}
+    \input{doxygen/latex/group__logical__ops}
+    \input{doxygen/latex/group__memory__ops}
+    \input{doxygen/latex/group__ReturnStackOps}
+    \input{doxygen/latex/group__system__words}
+    \input{doxygen/latex/group__vocabulary}
+    \input{doxygen/latex/structblk__meta__t}
+    \input{doxygen/latex/structblk__volume__meta__t}
+    \input{doxygen/latex/structblkcfg__t}
+    \input{doxygen/latex/structblkio__dev}
+    \input{doxygen/latex/structblkio__file__state__t}
+    \input{doxygen/latex/structblkio__info__t}
+    \input{doxygen/latex/structblkio__params__t}
+    \input{doxygen/latex/structblkio__ram__state__t}
+    \input{doxygen/latex/structblkio__vtable__t}
+    \input{doxygen/latex/structBlockBuffer}
+    \input{doxygen/latex/structcache__slot__t}
+    \input{doxygen/latex/structcf__item__t}
+    \input{doxygen/latex/structDictEntry}
+    \input{doxygen/latex/structMemoryProfile}
+    \input{doxygen/latex/structModuleBenchmark}
+    \input{doxygen/latex/structProfiler}
+    \input{doxygen/latex/structProfileScope}
+    \input{doxygen/latex/structProfileTimer}
+    \input{doxygen/latex/structTestCase}
+    \input{doxygen/latex/structTestModule}
+    \input{doxygen/latex/structTestStats}
+    \input{doxygen/latex/structVM}
+    \input{doxygen/latex/structWordProfile}
+    \input{doxygen/latex/structWordStats}
+    \input{doxygen/latex/structWordTestSuite}
+% Skip duplicate markdown files (already included from pandoc conversion)
+% \input{doxygen/latex/ABI_8md}
+% \input{doxygen/latex/ARCHITECTURE_8md}
+% \input{doxygen/latex/GAP__ANALYSIS_8md}
+    \input{doxygen/latex/arch__detect_8h}
+    \input{doxygen/latex/arch__detect_8h_source}
+    \input{doxygen/latex/blkcfg_8h}
+    \input{doxygen/latex/blkcfg_8h_source}
+    \input{doxygen/latex/blkio_8h}
+    \input{doxygen/latex/blkio_8h_source}
+    \input{doxygen/latex/blkio__factory_8h}
+    \input{doxygen/latex/blkio__factory_8h_source}
+    \input{doxygen/latex/block__subsystem_8h}
+    \input{doxygen/latex/block__subsystem_8h_source}
+    \input{doxygen/latex/dictionary__management_8h}
+    \input{doxygen/latex/dictionary__management_8h_source}
+    \input{doxygen/latex/io_8h}
+    \input{doxygen/latex/io_8h_source}
+    \input{doxygen/latex/log_8h}
+    \input{doxygen/latex/log_8h_source}
+    \input{doxygen/latex/memory__management_8h}
+    \input{doxygen/latex/memory__management_8h_source}
+    \input{doxygen/latex/profiler_8h}
+    \input{doxygen/latex/profiler_8h_source}
+    \input{doxygen/latex/repl_8h}
+    \input{doxygen/latex/repl_8h_source}
+    \input{doxygen/latex/stack__management_8h}
+    \input{doxygen/latex/stack__management_8h_source}
+    \input{doxygen/latex/vm_8h}
+    \input{doxygen/latex/vm_8h_source}
+    \input{doxygen/latex/vm__api_8h}
+    \input{doxygen/latex/vm__api_8h_source}
+    \input{doxygen/latex/vm__asm__opt_8h}
+    \input{doxygen/latex/vm__asm__opt_8h_source}
+    \input{doxygen/latex/vm__asm__opt__arm64_8h}
+    \input{doxygen/latex/vm__asm__opt__arm64_8h_source}
+    \input{doxygen/latex/vm__debug_8h}
+    \input{doxygen/latex/vm__debug_8h_source}
+    \input{doxygen/latex/vm__inner__interp__arm64_8h}
+    \input{doxygen/latex/vm__inner__interp__arm64_8h_source}
+    \input{doxygen/latex/vm__inner__interp__asm_8h}
+    \input{doxygen/latex/vm__inner__interp__asm_8h_source}
+    \input{doxygen/latex/word__registry_8h}
+    \input{doxygen/latex/word__registry_8h_source}
+% \input{doxygen/latex/README_8md} (duplicate - already commented)
+    \input{doxygen/latex/blkio__factory_8c}
+    \input{doxygen/latex/blkio__factory_8c_source}
+    \input{doxygen/latex/blkio__file_8c}
+    \input{doxygen/latex/blkio__file_8c_source}
+    \input{doxygen/latex/blkio__ram_8c}
+    \input{doxygen/latex/blkio__ram_8c_source}
+    \input{doxygen/latex/block__subsystem_8c}
+    \input{doxygen/latex/block__subsystem_8c_source}
+    \input{doxygen/latex/dictionary__management_8c}
+    \input{doxygen/latex/dictionary__management_8c_source}
+    \input{doxygen/latex/io_8c}
+    \input{doxygen/latex/io_8c_source}
+    \input{doxygen/latex/log_8c}
+    \input{doxygen/latex/log_8c_source}
+    \input{doxygen/latex/main_8c}
+    \input{doxygen/latex/main_8c_source}
+    \input{doxygen/latex/memory__management_8c}
+    \input{doxygen/latex/memory__management_8c_source}
+    \input{doxygen/latex/profiler_8c}
+    \input{doxygen/latex/profiler_8c_source}
+    \input{doxygen/latex/repl_8c}
+    \input{doxygen/latex/repl_8c_source}
+    \input{doxygen/latex/stack__management_8c}
+    \input{doxygen/latex/stack__management_8c_source}
+    \input{doxygen/latex/test__common_8h}
+    \input{doxygen/latex/test__common_8h_source}
+    \input{doxygen/latex/test__runner_8h}
+    \input{doxygen/latex/test__runner_8h_source}
+    \input{doxygen/latex/arithmetic__words__test_8c}
+    \input{doxygen/latex/arithmetic__words__test_8c_source}
+    \input{doxygen/latex/block__words__test_8c}
+    \input{doxygen/latex/block__words__test_8c_source}
+    \input{doxygen/latex/break__me__tests_8c}
+    \input{doxygen/latex/break__me__tests_8c_source}
+    \input{doxygen/latex/compute__benchmark_8c}
+    \input{doxygen/latex/compute__benchmark_8c_source}
+    \input{doxygen/latex/control__words__test_8c}
+    \input{doxygen/latex/control__words__test_8c_source}
+    \input{doxygen/latex/defining__words__tests_8c}
+    \input{doxygen/latex/defining__words__tests_8c_source}
+    \input{doxygen/latex/dictionary__manipulation__words__test_8c}
+    \input{doxygen/latex/dictionary__manipulation__words__test_8c_source}
+    \input{doxygen/latex/dictionary__words__test_8c}
+    \input{doxygen/latex/dictionary__words__test_8c_source}
+    \input{doxygen/latex/double__words__test_8c}
+    \input{doxygen/latex/double__words__test_8c_source}
+    \input{doxygen/latex/format__words__test_8c}
+    \input{doxygen/latex/format__words__test_8c_source}
+    \input{doxygen/latex/integration__tests_8c}
+    \input{doxygen/latex/integration__tests_8c_source}
+    \input{doxygen/latex/io__words__test_8c}
+    \input{doxygen/latex/io__words__test_8c_source}
+    \input{doxygen/latex/logical__words__test_8c}
+    \input{doxygen/latex/logical__words__test_8c_source}
+    \input{doxygen/latex/memory__words__test_8c}
+    \input{doxygen/latex/memory__words__test_8c_source}
+    \input{doxygen/latex/mixed__arithmetic__words__test_8c}
+    \input{doxygen/latex/mixed__arithmetic__words__test_8c_source}
+    \input{doxygen/latex/return__stack__words__test_8c}
+    \input{doxygen/latex/return__stack__words__test_8c_source}
+    \input{doxygen/latex/stack__words__test_8c}
+    \input{doxygen/latex/stack__words__test_8c_source}
+    \input{doxygen/latex/starforth__words__test_8c}
+    \input{doxygen/latex/starforth__words__test_8c_source}
+    \input{doxygen/latex/stress__tests_8c}
+    \input{doxygen/latex/stress__tests_8c_source}
+    \input{doxygen/latex/string__words__test_8c}
+    \input{doxygen/latex/string__words__test_8c_source}
+    \input{doxygen/latex/system__words__test_8c}
+    \input{doxygen/latex/system__words__test_8c_source}
+    \input{doxygen/latex/vocabulary__words__test_8c}
+    \input{doxygen/latex/vocabulary__words__test_8c_source}
+    \input{doxygen/latex/test__common_8c}
+    \input{doxygen/latex/test__common_8c_source}
+    \input{doxygen/latex/test__runner_8c}
+    \input{doxygen/latex/test__runner_8c_source}
+    \input{doxygen/latex/vm_8c}
+    \input{doxygen/latex/vm_8c_source}
+    \input{doxygen/latex/vm__api_8c}
+    \input{doxygen/latex/vm__api_8c_source}
+    \input{doxygen/latex/vm__debug_8c}
+    \input{doxygen/latex/vm__debug_8c_source}
+    \input{doxygen/latex/word__registry_8c}
+    \input{doxygen/latex/word__registry_8c_source}
+    \input{doxygen/latex/arithmetic__words_8c}
+    \input{doxygen/latex/arithmetic__words_8c_source}
+    \input{doxygen/latex/block__words_8c}
+    \input{doxygen/latex/block__words_8c_source}
+    \input{doxygen/latex/control__words_8c}
+    \input{doxygen/latex/control__words_8c_source}
+    \input{doxygen/latex/defining__words_8c}
+    \input{doxygen/latex/defining__words_8c_source}
+    \input{doxygen/latex/dictionary__manipulation__words_8c}
+    \input{doxygen/latex/dictionary__manipulation__words_8c_source}
+    \input{doxygen/latex/dictionary__words_8c}
+    \input{doxygen/latex/dictionary__words_8c_source}
+    \input{doxygen/latex/double__words_8c}
+    \input{doxygen/latex/double__words_8c_source}
+    \input{doxygen/latex/editor__words_8c}
+    \input{doxygen/latex/editor__words_8c_source}
+    \input{doxygen/latex/format__words_8c}
+    \input{doxygen/latex/format__words_8c_source}
+    \input{doxygen/latex/arithmetic__words_8h}
+    \input{doxygen/latex/arithmetic__words_8h_source}
+    \input{doxygen/latex/block__words_8h}
+    \input{doxygen/latex/block__words_8h_source}
+    \input{doxygen/latex/control__words_8h}
+    \input{doxygen/latex/control__words_8h_source}
+    \input{doxygen/latex/defining__words_8h}
+    \input{doxygen/latex/defining__words_8h_source}
+    \input{doxygen/latex/dictionary__manipulation__words_8h}
+    \input{doxygen/latex/dictionary__manipulation__words_8h_source}
+    \input{doxygen/latex/dictionary__words_8h}
+    \input{doxygen/latex/dictionary__words_8h_source}
+    \input{doxygen/latex/double__words_8h}
+    \input{doxygen/latex/double__words_8h_source}
+    \input{doxygen/latex/editor__words_8h}
+    \input{doxygen/latex/editor__words_8h_source}
+    \input{doxygen/latex/format__words_8h}
+    \input{doxygen/latex/format__words_8h_source}
+    \input{doxygen/latex/io__words_8h}
+    \input{doxygen/latex/io__words_8h_source}
+    \input{doxygen/latex/logical__words_8h}
+    \input{doxygen/latex/logical__words_8h_source}
+    \input{doxygen/latex/memory__words_8h}
+    \input{doxygen/latex/memory__words_8h_source}
+    \input{doxygen/latex/mixed__arithmetic__words_8h}
+    \input{doxygen/latex/mixed__arithmetic__words_8h_source}
+    \input{doxygen/latex/return__stack__words_8h}
+    \input{doxygen/latex/return__stack__words_8h_source}
+    \input{doxygen/latex/stack__words_8h}
+    \input{doxygen/latex/stack__words_8h_source}
+    \input{doxygen/latex/starforth__words_8h}
+    \input{doxygen/latex/starforth__words_8h_source}
+    \input{doxygen/latex/string__words_8h}
+    \input{doxygen/latex/string__words_8h_source}
+    \input{doxygen/latex/system__words_8h}
+    \input{doxygen/latex/system__words_8h_source}
+    \input{doxygen/latex/vocabulary__words_8h}
+    \input{doxygen/latex/vocabulary__words_8h_source}
+    \input{doxygen/latex/io__words_8c}
+    \input{doxygen/latex/io__words_8c_source}
+    \input{doxygen/latex/logical__words_8c}
+    \input{doxygen/latex/logical__words_8c_source}
+    \input{doxygen/latex/memory__words_8c}
+    \input{doxygen/latex/memory__words_8c_source}
+    \input{doxygen/latex/mixed__arithmetic__words_8c}
+    \input{doxygen/latex/mixed__arithmetic__words_8c_source}
+    \input{doxygen/latex/return__stack__words_8c}
+    \input{doxygen/latex/return__stack__words_8c_source}
+    \input{doxygen/latex/stack__words_8c}
+    \input{doxygen/latex/stack__words_8c_source}
+    \input{doxygen/latex/starforth__words_8c}
+    \input{doxygen/latex/starforth__words_8c_source}
+    \input{doxygen/latex/string__words_8c}
+    \input{doxygen/latex/string__words_8c_source}
+    \input{doxygen/latex/system__words_8c}
+    \input{doxygen/latex/system__words_8c_source}
+    \input{doxygen/latex/vocabulary__words_8c}
+    \input{doxygen/latex/vocabulary__words_8c_source}
+
+% ========== PART V: APPENDICES ==========
+
+
+    \part{Appendices}
+
+    \appendix
+
+% SECURITY
+
+
+    \chapter{Security Model}
+    \label{app:security}
+    \input{generated/SECURITY.tex}
+
+% CONTRIBUTING
+
+
+    \chapter{Contributing Guidelines}
+    \label{app:contributing}
+    \input{generated/CONTRIBUTING.tex}
+
+% CODE_OF_CONDUCT
+
+
+    \chapter{Code of Conduct}
+    \label{app:code-of-conduct}
+    \input{generated/CODE_OF_CONDUCT.tex}
+
+% GAP_ANALYSIS
+
+
+    \chapter{Gap Analysis}
+    \label{app:gap-analysis}
+    \input{generated/GAP_ANALYSIS.tex}
+
+% Status reports
+
+
+    \chapter{Build and Optimization Status}
+    \label{app:build-status}
+
+
+    \section{ASM Optimization Status}
+    \input{generated/ASM_OPTIMIZATION_STATUS.tex}
+
+
+    \section{ARM64 Build Success}
+    \input{generated/ARM64_BUILD_SUCCESS.tex}
+
+
+    \section{ARM64 Assembly Review}
+    \input{generated/ARM64_ASSEMBLY_REVIEW.tex}
+
+
+    \section{Inline ASM Complete}
+    \input{generated/INLINE_ASM_COMPLETE.tex}
+
+
+    \section{Break Me Report}
+    \input{generated/BREAK_ME_REPORT.tex}
+
+% ========== Back Matter ==========
+    \backmatter
+
+
+    \chapter{Index}
+% Index would go here if we add indexing commands throughout
+
+
+    \chapter{Bibliography}
+
+    \begin{thebibliography}{99}
+
+        \bibitem{forth79}
+        FORTH-79 Standard,
+        \textit{FORTH Standards Team},
+        1979.
+        \url{http://forth.sourceforge.net/standard/fst79/}
+
+        \bibitem{forth83}
+        FORTH-83 Standard,
+        \textit{FORTH Standards Team},
+        1983.
+
+        \bibitem{ansi-forth}
+        ANS FORTH Standard (X3.215-1994),
+        \textit{Technical Committee X3J14},
+        1994.
+
+        \bibitem{l4re}
+        L4Re Operating System Framework,
+        \textit{Technische Universität Dresden},
+        \url{https://l4re.org/}
+
+        \bibitem{starshipos}
+        StarshipOS Project,
+        \textit{Robert A. James},
+        \url{https://github.com/rajames/StarForth}
+
+    \end{thebibliography}
+
+\end{document}
