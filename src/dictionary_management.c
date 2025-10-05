@@ -197,7 +197,11 @@ DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
  */
 DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func) {
     if (!vm || !name || len == 0 || len > WORD_NAME_MAX) {
-        if (vm) vm->error = 1;
+        if (vm) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "vm_create_word: invalid parameters (vm=%p, name=%p, len=%zu, max=%d)",
+                        (void *) vm, (const void *) name, len, WORD_NAME_MAX);
+        }
         return NULL;
     }
 
@@ -210,6 +214,8 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     DictEntry *entry = (DictEntry *) malloc(total);
     if (!entry) {
         vm->error = 1;
+        log_message(LOG_ERROR, "vm_create_word: malloc failed for '%.*s' (%zu bytes)",
+                    (int) len, name, total);
         return NULL;
     }
 
@@ -286,7 +292,10 @@ void vm_hide_word(VM *vm) {
 
 void vm_smudge_word(VM *vm) {
     if (!vm || !vm->latest) {
-        if (vm) vm->error = 1;
+        if (vm) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "vm_smudge_word: invalid vm or no latest word");
+        }
         return;
     }
     vm->latest->flags ^= WORD_SMUDGED;
@@ -294,7 +303,10 @@ void vm_smudge_word(VM *vm) {
 
 void vm_pin_entropy(VM *vm) {
     if (!vm || !vm->latest) {
-        if (vm) vm->error = 1;
+        if (vm) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "vm_pin_entropy: invalid vm or no latest word");
+        }
         return;
     }
     vm->latest->flags |= WORD_PINNED;
@@ -302,7 +314,10 @@ void vm_pin_entropy(VM *vm) {
 
 void vm_unpin_entropy(VM *vm) {
     if (!vm || !vm->latest) {
-        if (vm) vm->error = 1;
+        if (vm) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "vm_unpin_entropy: invalid vm or no latest word");
+        }
         return;
     }
     vm->latest->flags &= ~WORD_PINNED;
