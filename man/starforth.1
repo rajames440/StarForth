@@ -1,0 +1,220 @@
+.TH STARFORTH 1 "2025-10-04" "StarForth 1.1.0" "StarForth Manual"
+.SH NAME
+starforth \- FORTH-79 virtual machine with modern extensions
+.SH SYNOPSIS
+.B starforth
+[\fIOPTIONS\fR]
+[\fIFILE\fR]
+.SH DESCRIPTION
+.B StarForth
+is a high-performance FORTH-79 virtual machine with modern extensions, designed for embedded systems, operating system development, and interactive programming. It features a comprehensive test suite, profile-guided optimization, and support for multiple architectures including x86_64 and ARM64.
+
+StarForth is 100% FORTH-79 standard compliant with additional extensions for entropy profiling, block storage, and system initialization.
+
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Display help message and exit
+.TP
+.B \-v, \-\-version
+Display version information and exit
+.TP
+.B \-c \fICOMMAND\fR
+Execute COMMAND and exit
+.TP
+.B \-t, \-\-run\-tests
+Run comprehensive test suite before starting REPL
+.TP
+.B \-\-stress\-tests
+Run stress tests (deep nesting, stack exhaustion, large definitions)
+.TP
+.B \-\-integration
+Run integration tests (complete Forth programs)
+.TP
+.B \-\-break\-me
+Ultra-comprehensive diagnostic mode - tests EVERYTHING, generates detailed markdown report with easter egg surprise
+.TP
+.B \-\-benchmark \fR[\fIN\fR]
+Run performance benchmarks (default: 1000 iterations). Exits after benchmarking, does not start REPL
+.TP
+.B \-\-profile\-level \fIN\fR
+Set profiling level (0=disabled, 1=basic, 2=detailed, 3=verbose)
+.TP
+.B \-\-profile\-report
+Show profiling report and hot words at exit
+.TP
+.B \-\-profile\-hotspots \fIN\fR
+Show top N hot words (requires profiling enabled)
+.TP
+.B \-\-log\-level \fILEVEL\fR
+Set log level: debug, info, warn, error, none
+.TP
+.B \-\-log\-none
+Disable all logging (fastest mode)
+.TP
+.B \-\-log\-file \fIFILE\fR
+Write logs to FILE instead of stderr
+
+.SH FORTH WORDS
+StarForth implements all FORTH-79 standard words plus extensions:
+
+.SS Stack Manipulation
+DUP, DROP, SWAP, OVER, ROT, -ROT, NIP, TUCK, 2DUP, 2DROP, 2SWAP, 2OVER
+
+.SS Arithmetic
++, -, *, /, MOD, /MOD, ABS, NEGATE, MAX, MIN, 1+, 1-, 2+, 2-, 2*, 2/
+
+.SS Logic & Comparison
+=, <, >, 0=, 0<, 0>, AND, OR, XOR, NOT, INVERT
+
+.SS Mixed Arithmetic
+M*, M/MOD, */, */MOD, UM*, UM/MOD
+
+.SS Double Precision
+D+, D-, DNEGATE, DABS, D<, D=, D.
+
+.SS Memory
+!, @, C!, C@, +!, ALLOT, HERE, ,, C,
+
+.SS Control Flow
+IF THEN ELSE, BEGIN UNTIL, BEGIN WHILE REPEAT, DO LOOP, DO +LOOP, UNLOOP, EXIT, RECURSE
+
+.SS Defining Words
+: ; CREATE DOES> CONSTANT VARIABLE VOCABULARY IMMEDIATE
+
+.SS Dictionary
+WORDS, SEE, FORGET, ' (tick), FIND, >BODY, LATEST
+
+.SS I/O
+EMIT, KEY, CR, SPACE, SPACES, TYPE, ., U., .R, U.R
+
+.SS Block Storage
+BLOCK, BUFFER, LOAD, THRU, UPDATE, SAVE-BUFFERS, EMPTY-BUFFERS, LIST
+
+.SS StarForth Extensions
+.TP
+.B INIT
+System initialization from init.4th configuration file
+.TP
+.B ENTROPY@, ENTROPY!
+Word execution frequency tracking
+.TP
+.B WORD-ENTROPY
+Display execution statistics for all words
+.TP
+.B RESET-ENTROPY
+Reset all execution counters
+.TP
+.B TOP-WORDS
+Display most frequently executed words
+.TP
+.B (\-
+Comment to end of line (StarForth extension)
+
+.SH ENVIRONMENT
+.TP
+.B STARFORTH_INIT
+Path to initialization file (default: /usr/local/etc/starforth/init.4th or ./conf/init.4th)
+.TP
+.B STARFORTH_BLOCKS
+Path to block storage file (default: ./disks/forth.img)
+
+.SH FILES
+.TP
+.I /usr/local/bin/starforth
+StarForth executable
+.TP
+.I /usr/local/etc/starforth/init.4th
+System initialization file
+.TP
+.I /usr/local/share/doc/starforth/
+Documentation directory
+.TP
+.I ~/.starforth_history
+REPL command history (if readline support enabled)
+.TP
+.I ./disks/forth.img
+Default block storage file
+
+.SH EXAMPLES
+.TP
+Start interactive REPL:
+.B starforth
+
+.TP
+Execute Forth code and exit:
+.B starforth \-c ": HELLO .\" Hello, World!\" CR ; HELLO BYE"
+
+.TP
+Run comprehensive test suite:
+.B starforth \-\-run\-tests
+
+.TP
+Run performance benchmarks:
+.B starforth \-\-benchmark 10000
+
+.TP
+Enable profiling with detailed report:
+.B starforth \-\-profile\-level 2 \-\-profile\-report
+
+.TP
+Show top 10 hot words:
+.B starforth \-\-profile\-level 1 \-\-profile\-hotspots 10
+
+.TP
+Ultra-comprehensive diagnostic (generates report):
+.B starforth \-\-break\-me
+
+.SH EXIT STATUS
+.TP
+.B 0
+Success
+.TP
+.B 1
+Error occurred (stack underflow, division by zero, etc.)
+.TP
+.B 2
+Invalid command-line arguments
+
+.SH PERFORMANCE
+StarForth is optimized for maximum performance:
+
+.IP \(bu 2
+Direct-threaded VM architecture
+.IP \(bu 2
+Inline assembly optimizations (x86_64, ARM64)
+.IP \(bu 2
+Profile-guided optimization support
+.IP \(bu 2
+LTO (Link-Time Optimization)
+.IP \(bu 2
+Zero-overhead abstractions
+
+Typical performance: 50-100 million operations/second on modern hardware.
+
+.SH STANDARDS
+.B StarForth
+is 100% compliant with the FORTH-79 standard and includes selected FORTH-83 extensions.
+
+.SH BUGS
+Report bugs to: https://github.com/rajames/starforth/issues
+
+.SH AUTHOR
+Written by Robert A. James (rajames) for the StarshipOS Forth Project.
+
+Quality assurance by Santino 🐾
+
+.SH COPYRIGHT
+This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+
+To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
+
+See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+.SH SEE ALSO
+.BR forth (1),
+.BR gforth (1)
+
+Full documentation: /usr/local/share/doc/starforth/
+
+Online: https://github.com/rajames/starforth

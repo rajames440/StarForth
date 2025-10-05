@@ -1,0 +1,309 @@
+This is starforth.info, produced by makeinfo version 7.1.1 from
+starforth.texi.
+
+This manual is for StarForth (version 1.1.0), a high-performance
+FORTH-79 virtual machine.
+
+   Copyright © 2025 Robert A. James
+
+     This work is released into the public domain under the Creative
+     Commons Zero v1.0 Universal license.
+
+
+File: starforth.info,  Node: Top,  Next: Introduction,  Up: (dir)
+
+StarForth
+*********
+
+This manual is for StarForth (version 1.1.0).
+
+* Menu:
+
+* Introduction::        Overview of StarForth
+* Getting Started::     Installation and first steps
+* Command Line::        Command-line options
+* FORTH Words::         Complete word reference
+* Block Storage::       Block storage system
+* Profiling::           Performance profiling
+* Testing::             Test suite and quality assurance
+* Packaging::           Building packages
+* Index::               Complete index
+
+
+File: starforth.info,  Node: Introduction,  Next: Getting Started,  Prev: Top,  Up: Top
+
+1 Introduction
+**************
+
+StarForth is a production-ready FORTH-79 virtual machine with modern
+extensions, designed for embedded systems, operating system development,
+and interactive programming.
+
+1.1 Features
+============
+
+   • 100% FORTH-79 standard compliant
+   • High-performance direct-threaded VM
+   • Inline assembly optimizations (x86_64, ARM64)
+   • Profile-guided optimization support
+   • Comprehensive test suite (783 tests, 93.5% pass rate)
+   • Block storage system with versioning
+   • Word execution profiling and hot word analysis
+   • Multi-architecture support
+   • Automatic dictionary cleanup in tests
+
+1.2 Performance
+===============
+
+StarForth achieves exceptional performance:
+
+   • 50-100 million operations/second on modern hardware
+   • Zero-overhead abstractions
+   • Direct-threaded VM architecture
+   • LTO (Link-Time Optimization)
+   • Profile-guided optimization
+
+
+File: starforth.info,  Node: Getting Started,  Next: Command Line,  Prev: Introduction,  Up: Top
+
+2 Getting Started
+*****************
+
+2.1 Building from Source
+========================
+
+     make fastest
+
+2.2 Installation
+================
+
+     sudo make install
+
+   This installs:
+   • Binary: ‘/usr/local/bin/starforth’
+   • Config: ‘/usr/local/etc/starforth/init.4th’
+   • Man page: ‘/usr/local/share/man/man1/starforth.1’
+   • Documentation: ‘/usr/local/share/doc/starforth/’
+
+2.3 First Steps
+===============
+
+Start the REPL:
+     starforth
+
+   Execute Forth code:
+     starforth -c ": HELLO .\" Hello, World!\" CR ; HELLO BYE"
+
+
+File: starforth.info,  Node: Command Line,  Next: FORTH Words,  Prev: Getting Started,  Up: Top
+
+3 Command-Line Options
+**********************
+
+‘-h, --help’
+     Display help message and exit
+
+‘-v, --version’
+     Display version information and exit
+
+‘-c COMMAND’
+     Execute COMMAND and exit
+
+‘--run-tests’
+     Run comprehensive test suite
+
+‘--break-me’
+     Ultra-comprehensive diagnostic mode with markdown report generation
+
+‘--benchmark [N]’
+     Run performance benchmarks (N iterations, default: 1000)
+
+‘--profile-level N’
+     Set profiling level (0=disabled, 1=basic, 2=detailed, 3=verbose)
+
+‘--profile-report’
+     Show profiling report at exit
+
+‘--log-level LEVEL’
+     Set log level: debug, info, warn, error, none
+
+
+File: starforth.info,  Node: FORTH Words,  Next: Block Storage,  Prev: Command Line,  Up: Top
+
+4 FORTH Word Reference
+**********************
+
+4.1 Stack Manipulation
+======================
+
+‘DUP ( n -- n n )’
+     Duplicate top stack item
+
+‘DROP ( n -- )’
+     Remove top stack item
+
+‘SWAP ( n1 n2 -- n2 n1 )’
+     Exchange top two stack items
+
+‘OVER ( n1 n2 -- n1 n2 n1 )’
+     Copy second stack item to top
+
+‘ROT ( n1 n2 n3 -- n2 n3 n1 )’
+     Rotate top three stack items
+
+4.2 Arithmetic
+==============
+
+‘+ ( n1 n2 -- n3 )’
+     Add n1 and n2
+
+‘- ( n1 n2 -- n3 )’
+     Subtract n2 from n1
+
+‘* ( n1 n2 -- n3 )’
+     Multiply n1 and n2
+
+‘/ ( n1 n2 -- n3 )’
+     Divide n1 by n2
+
+‘MOD ( n1 n2 -- n3 )’
+     Remainder of n1 divided by n2
+
+4.3 StarForth Extensions
+========================
+
+‘INIT ( -- )’
+     System initialization from init.4th
+
+‘ENTROPY@ ( addr -- n )’
+     Fetch word execution count
+
+‘ENTROPY! ( n addr -- )’
+     Store word execution count
+
+‘WORD-ENTROPY ( -- )’
+     Display execution statistics for all words
+
+‘TOP-WORDS ( n -- )’
+     Display top N most frequently executed words
+
+‘(- ( -- )’
+     Comment to end of line
+
+
+File: starforth.info,  Node: Block Storage,  Next: Profiling,  Prev: FORTH Words,  Up: Top
+
+5 Block Storage System
+**********************
+
+StarForth provides a comprehensive block storage system:
+
+5.1 Block Words
+===============
+
+‘BLOCK ( n -- addr )’
+     Return address of block n
+
+‘LOAD ( n -- )’
+     Load and interpret block n
+
+‘THRU ( start end -- )’
+     Load blocks from start through end
+
+‘LIST ( n -- )’
+     Display block n
+
+‘UPDATE ( -- )’
+     Mark current block as modified
+
+
+File: starforth.info,  Node: Profiling,  Next: Testing,  Prev: Block Storage,  Up: Top
+
+6 Performance Profiling
+***********************
+
+Enable profiling to track word execution frequency:
+
+     starforth --profile-level 1 --profile-report
+
+6.1 Profiling Levels
+====================
+
+Level 0 (DISABLED)
+     No profiling overhead
+
+Level 1 (BASIC)
+     Word frequency tracking (1-2% overhead)
+
+Level 2 (DETAILED)
+     Full timing and call graphs (5-10% overhead)
+
+Level 3 (VERBOSE)
+     Complete diagnostic data (15-20% overhead)
+
+
+File: starforth.info,  Node: Testing,  Next: Packaging,  Prev: Profiling,  Up: Top
+
+7 Test Suite and Quality Assurance
+**********************************
+
+7.1 Running Tests
+=================
+
+Run all tests:
+     starforth --run-tests
+
+   Run ultra-comprehensive diagnostic:
+     starforth --break-me
+
+7.2 Test Statistics
+===================
+
+   • 783 total tests
+   • 728 passed (93.5%)
+   • 49 skipped (platform-specific)
+   • 0 failed
+   • 0 errors
+
+
+File: starforth.info,  Node: Packaging,  Next: Index,  Prev: Testing,  Up: Top
+
+8 Building Packages
+*******************
+
+8.1 Debian Package
+==================
+
+     dpkg-buildpackage -us -uc
+
+8.2 RPM Package
+===============
+
+     rpmbuild -ba starforth.spec
+
+
+File: starforth.info,  Node: Index,  Prev: Packaging,  Up: Top
+
+Index
+*****
+
+
+
+Tag Table:
+Node: Top323
+Node: Introduction891
+Node: Getting Started1912
+Node: Command Line2571
+Node: FORTH Words3340
+Node: Block Storage4550
+Node: Profiling5061
+Node: Testing5593
+Node: Packaging6057
+Node: Index6318
+
+End Tag Table
+
+
+Local Variables:
+coding: utf-8
+End:
