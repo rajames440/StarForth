@@ -12,6 +12,7 @@
 #include "vm_debug.h"
 #include "log.h"
 #include "profiler.h"
+#include "platform_time.h"
 #include "test_runner/include/test_runner.h"
 #include "test_runner/include/test_common.h"  /* brings in extern int fail_fast; */
 
@@ -200,6 +201,9 @@ int main(int argc, char *argv[]) {
     uint32_t fbs = BLKIO_FORTH_BLOCK_SIZE;
     /* default fallback per instruction: **1 MB** */
     uint32_t ram_disk_mb = 1;
+
+    /* Initialize platform time subsystem FIRST */
+    sf_time_init();
 
     /* Register cleanup function to run on exit */
     atexit(cleanup_and_exit);
