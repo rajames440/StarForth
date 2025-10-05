@@ -16,6 +16,7 @@
  */
 
 #include "../include/log.h"
+#include "../include/platform_time.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
@@ -86,9 +87,9 @@ LogLevel log_get_level(void) {
  * @param size Size of the output buffer
  */
 static void get_timestamp(char *buffer, size_t size) {
-    time_t now = time(NULL);
-    struct tm *tm_info = localtime(&now);
-    strftime(buffer, size, "%H:%M:%S", tm_info);
+    /* Use platform abstraction for timestamps */
+    sf_time_ns_t now = sf_realtime_ns();
+    sf_format_timestamp(now, buffer, 1); /* 24-hour format */
 }
 
 /* Generic logger */

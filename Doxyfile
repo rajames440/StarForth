@@ -116,11 +116,7 @@ INPUT                  = include \
                          src/word_source \
                          src/test_runner \
                          README.md \
-                         docs/GAP_ANALYSIS.md \
-                         docs/ARCHITECTURE.md \
-                         docs/ABI.md \
-                         TESTING.md \
-                         QUICKSTART.md
+                         docs
 INPUT_ENCODING         = UTF-8
 INPUT_FILE_ENCODING    =
 FILE_PATTERNS          = *.h \

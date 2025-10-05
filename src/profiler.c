@@ -14,6 +14,7 @@
 
 #define _POSIX_C_SOURCE 199309L
 #include "../include/profiler.h"
+#include "../include/platform_time.h"
 #include "../include/vm.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,9 +63,8 @@ void *g_profiler = &profiler_state;
  * @return Current time in nanoseconds from monotonic clock
  */
 static uint64_t get_time_ns(void) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t) ts.tv_sec * 1000000000ULL + (uint64_t) ts.tv_nsec;
+    /* Use platform abstraction for monotonic time */
+    return sf_monotonic_ns();
 }
 
 /**

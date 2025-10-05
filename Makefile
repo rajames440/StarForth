@@ -49,12 +49,17 @@ ifdef MINIMAL
 CFLAGS += -DSTARFORTH_MINIMAL=1 -nostdlib -ffreestanding
 LDFLAGS += -nostdlib
 PLATFORM_SRC = src/platform/starforth_minimal.c
+else ifdef L4RE
+# L4Re/StarshipOS build (sets __l4__ define)
+CFLAGS += -D__l4__=1
+PLATFORM_TIME_SRC = src/platform/l4re/time.c src/platform/platform_init.c
 else
-PLATFORM_SRC =
+# Default: Linux/POSIX build
+PLATFORM_TIME_SRC = src/platform/linux/time.c src/platform/platform_init.c
 endif
 
 # Source files
-SRC = $(wildcard src/*.c src/word_source/*.c src/test_runner/*.c src/test_runner/modules/*.c) $(PLATFORM_SRC)
+SRC = $(wildcard src/*.c src/word_source/*.c src/test_runner/*.c src/test_runner/modules/*.c) $(PLATFORM_SRC) $(PLATFORM_TIME_SRC)
 OBJ = $(patsubst src/%.c,build/%.o,$(SRC))
 ASM_FILES = $(patsubst src/%.c,build/%.s,$(SRC))
 TARGET = build/starforth
@@ -296,6 +301,8 @@ endif
 build:
 	@mkdir -p build
 	@mkdir -p build/platform
+	@mkdir -p build/platform/linux
+	@mkdir -p build/platform/l4re
 	@mkdir -p build/word_source
 	@mkdir -p build/test_runner
 	@mkdir -p build/test_runner/modules
