@@ -337,6 +337,15 @@ benchmark: $(TARGET)
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════"
 
+# Quick smoke check
+smoke: $(TARGET)
+	@echo ""
+	@echo "🚦 Running smoke test (1 2 + .)"
+	@out=$$(printf '1 2 + . BYE\n' | ./$(TARGET) --log-none); \
+	printf '%s\n' "$$out"; \
+	echo "$$out" | grep -q '^ok> 3 Goodbye!' || (echo "Smoke test failed" >&2; exit 1)
+	@echo "✓ Smoke test passed"
+
 # Run tests
 test: $(TARGET)
 	@echo "🧪 Running test suite..."
