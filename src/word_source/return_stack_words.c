@@ -84,11 +84,7 @@ static void return_stack_word_r_fetch(VM *vm) {
  */
 void register_return_stack_words(VM *vm) {
     if (!vm) return;
-    log_message(LOG_INFO, "Registering FORTH-79 return stack words...");
     register_word(vm, ">R", return_stack_word_to_r);
     register_word(vm, "R>", return_stack_word_r_from);
     register_word(vm, "R@", return_stack_word_r_fetch);
-
-    /* FORTH-79 forbids direct stack addressing; RP! / RP@ are deliberately omitted. */
-    log_message(LOG_INFO, "Return stack words registered (no RP!/RP@; FORTH-79 compliant).");
 }

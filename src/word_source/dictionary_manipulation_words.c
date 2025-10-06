@@ -453,7 +453,6 @@ static void dictionary_m_word_hidden(VM *vm) {
  * @details Registers standard FORTH-79 dictionary manipulation words
  */
 void register_dictionary_manipulation_words(VM *vm) {
-    log_message(LOG_INFO, "Registering dictionary manipulation words...");
 
     /* Register all dictionary manipulation words */
     register_word(vm, "[", dictionary_m_word_left_bracket);
@@ -474,6 +473,4 @@ void register_dictionary_manipulation_words(VM *vm) {
     register_word(vm, "INTERPRET", dictionary_m_word_interpret);
     register_word(vm, "FIND", dictionary_m_word_find);
     register_word(vm, "'", dictionary_m_word_tick);
-
-    log_message(LOG_INFO, "Note: These are low-level words for dictionary introspection");
 }

@@ -312,8 +312,6 @@ static void stack_word_roll(VM *vm) {
  * @details Registers all FORTH-79 standard stack operation words with the word registry.
  */
 void register_stack_words(VM *vm) {
-    log_message(LOG_INFO, "Registering FORTH-79 stack operation words...");
-
     register_word(vm, "DROP", stack_word_drop);
     register_word(vm, "DUP", stack_word_dup);
     register_word(vm, "?DUP", stack_word_question_dup);
@@ -324,6 +322,4 @@ void register_stack_words(VM *vm) {
     register_word(vm, "DEPTH", stack_word_depth);
     register_word(vm, "PICK", stack_word_pick);
     register_word(vm, "ROLL", stack_word_roll);
-
-    log_message(LOG_INFO, "Stack operation words registered successfully");
 }

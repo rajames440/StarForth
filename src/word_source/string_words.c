@@ -971,8 +971,6 @@ static void string_word_blank(VM *vm) {
 
 /* FORTH-79 String Word Registration */
 void register_string_words(VM *vm) {
-    log_message(LOG_INFO, "Registering string & text processing words...");
-
     register_word(vm, "COUNT", string_word_count);
     register_word(vm, "EXPECT", string_word_expect);
     register_word(vm, "SPAN", string_word_span);

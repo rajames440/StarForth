@@ -413,6 +413,4 @@ void register_arithmetic_words(VM *vm) {
     register_word(vm, "NEGATE", arithmetic_word_negate);
     register_word(vm, "MIN", arithmetic_word_min);
     register_word(vm, "MAX", arithmetic_word_max);
-
-    log_message(LOG_INFO, "Arithmetic words registered successfully");
 }

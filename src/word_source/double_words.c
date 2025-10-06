@@ -412,8 +412,6 @@ void double_word_d_two_slash(VM *vm) {
  * @note This function must be called during VM initialization.
  */
 void register_double_words(VM *vm) {
-    log_message(LOG_INFO, "Registering double number words...");
-
     register_word(vm, "S>D", double_word_s_to_d);
     register_word(vm, "D+", double_word_d_plus);
     register_word(vm, "D-", double_word_d_minus);
@@ -435,6 +433,4 @@ void register_double_words(VM *vm) {
     register_word(vm, "D0<", double_word_d_zero_less);
     register_word(vm, "D2*", double_word_d_two_star);
     register_word(vm, "D2/", double_word_d_two_slash);
-
-    log_message(LOG_INFO, "Double number words registered and tested");
 }

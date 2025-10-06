@@ -455,8 +455,6 @@ void format_word_dump(VM *vm) {
  * @param vm Pointer to the virtual machine instance
  */
 void register_format_words(VM *vm) {
-    log_message(LOG_INFO, "Registering formatting & conversion words...");
-
     register_word(vm, ".", format_word_dot);
     register_word(vm, ".R", format_word_dot_r);
     register_word(vm, "U.", format_word_u_dot);
@@ -478,6 +476,4 @@ void register_format_words(VM *vm) {
     register_word(vm, "DECIMAL", format_word_decimal);
     register_word(vm, "HEX", format_word_hex);
     register_word(vm, "OCTAL", format_word_octal);
-
-    log_message(LOG_INFO, "Formatting & conversion words registered");
 }
