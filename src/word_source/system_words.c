@@ -415,8 +415,6 @@ void set_forth_79_compliance(int enabled) { forth_79_standard = enabled; }
 
 /* ──────────────────── System Word Registration ─────────────────────── */
 void register_system_words(VM *vm) {
-    log_message(LOG_INFO, "Registering system & environment words...");
-
     /* Comments */
     register_word(vm, "(", forth_paren);
     vm_make_immediate(vm); /* '(' is IMMEDIATE */
@@ -444,6 +442,4 @@ void register_system_words(VM *vm) {
     /* Immediate */
     register_word(vm, "ABORT\"", system_word_abort_quote);
     vm_make_immediate(vm); /* ABORT" is IMMEDIATE */
-
-    log_message(LOG_INFO, "System words registered.");
 }

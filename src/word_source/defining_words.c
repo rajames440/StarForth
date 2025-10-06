@@ -663,7 +663,6 @@ static void defining_word_immediate(VM *vm) {
  * @param vm Pointer to the VM context
  */
 void register_defining_words(VM *vm) {
-    log_message(LOG_INFO, "Registering defining words...");
 
     /* Core colon pair — both IMMEDIATE */
     register_word(vm, ":", defining_word_colon);
@@ -705,6 +704,4 @@ void register_defining_words(VM *vm) {
     register_word(vm, "does_rt", defining_runtime_does_rt); /* internal helper */
     register_word(vm, "DOES>", defining_word_does);
     vm_make_immediate(vm);
-
-    log_message(LOG_INFO, "Defining words registered.");
 }

@@ -388,8 +388,6 @@ DictEntry *vm_vocabulary_find_word(VM *vm, const char *name, size_t len) {
  * @param vm Pointer to VM instance
  */
 void register_vocabulary_words(VM *vm) {
-    log_message(LOG_INFO, "Registering FORTH-79 vocabulary words...");
-
     register_word(vm, "VOCABULARY", vocabulary_word_vocabulary);
     register_word(vm, "DEFINITIONS", vocabulary_word_definitions);
     register_word(vm, "CONTEXT", vocabulary_word_context);
@@ -397,7 +395,5 @@ void register_vocabulary_words(VM *vm) {
     register_word(vm, "FORTH", vocabulary_word_forth);
     register_word(vm, "ORDER", vocabulary_word_order);
     register_word(vm, "(FIND)", vocabulary_word_paren_find);
-
     init_vocabulary_system(vm);
-    log_message(LOG_INFO, "FORTH-79 vocabulary registered");
 }

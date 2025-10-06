@@ -303,8 +303,6 @@ void logical_word_zero_not_equal(VM *vm) {
  * and constant words (TRUE, FALSE) with the virtual machine.
  */
 void register_logical_words(VM *vm) {
-    log_message(LOG_INFO, "Registering FORTH-79 logical and comparison words...");
-
     /* Bitwise operations */
     register_word(vm, "AND", logical_word_and);
     register_word(vm, "OR", logical_word_or);
@@ -333,6 +331,4 @@ void register_logical_words(VM *vm) {
     /* Constants */
     register_word(vm, "TRUE", logical_word_true);
     register_word(vm, "FALSE", logical_word_false);
-
-    log_message(LOG_INFO, "Logical and comparison words registered successfully");
 }

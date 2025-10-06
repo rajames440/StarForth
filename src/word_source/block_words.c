@@ -10,7 +10,6 @@
 
 #include "include/block_words.h"
 #include "../../include/word_registry.h"
-#include "../../include/log.h"
 #include "../../include/vm.h"
 #include "../../include/block_subsystem.h"
 #include <string.h>
