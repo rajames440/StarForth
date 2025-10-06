@@ -122,8 +122,6 @@ void starforth_word_reset_entropy(VM *vm) {
         }
     }
 
-    printf("Reset entropy counters for %d words\n", reset_count);
-    log_message(LOG_INFO, "RESET-ENTROPY: cleared %d word counters", reset_count);
 }
 
 /**
@@ -502,8 +500,6 @@ void starforth_word_init(VM *vm) {
  * @param vm Pointer to the VM instance
  */
 void register_starforth_words(VM *vm) {
-    log_message(LOG_INFO, "Registering StarForth implementation vocabulary...");
-
     register_word(vm, "ENTROPY@", starforth_word_entropy_fetch);
     register_word(vm, "ENTROPY!", starforth_word_entropy_store);
     register_word(vm, "WORD-ENTROPY", starforth_word_word_entropy);
@@ -528,6 +524,4 @@ void register_starforth_words(VM *vm) {
 
     /* Return to FORTH vocabulary */
     vm_interpret(vm, "FORTH DEFINITIONS");
-
-    log_message(LOG_INFO, "StarForth implementation vocabulary registered");
 }

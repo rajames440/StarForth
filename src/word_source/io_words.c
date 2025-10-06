@@ -153,8 +153,6 @@ static void io_word_spaces(VM *vm) {
  * @details Registers all FORTH-79 I/O and terminal words with the virtual machine
  */
 void register_io_words(VM *vm) {
-    log_message(LOG_INFO, "Registering FORTH-79 I/O & terminal words...");
-
     register_word(vm, "EMIT", io_word_emit);
     register_word(vm, "CR", io_word_cr);
     register_word(vm, "KEY", io_word_key);
@@ -162,6 +160,4 @@ void register_io_words(VM *vm) {
     register_word(vm, "TYPE", io_word_type);
     register_word(vm, "SPACE", io_word_space);
     register_word(vm, "SPACES", io_word_spaces);
-
-    log_message(LOG_INFO, "I/O & terminal words registered successfully");
 }

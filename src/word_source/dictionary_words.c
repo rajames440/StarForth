@@ -179,7 +179,6 @@ void dictionary_word_latest(VM *vm) {
 
 /* Registration */
 void register_dictionary_words(VM *vm) {
-    log_message(LOG_INFO, "Registering dictionary & compilation words...");
     register_word(vm, "HERE", dictionary_word_here);
     register_word(vm, "ALLOT", dictionary_word_allot);
     register_word(vm, ",", dictionary_word_comma);
@@ -189,5 +188,4 @@ void register_dictionary_words(VM *vm) {
     register_word(vm, "SP!", dictionary_word_sp_store);
     register_word(vm, "SP@", dictionary_word_sp_fetch);
     register_word(vm, "LATEST", dictionary_word_latest);
-    log_message(LOG_INFO, "Dictionary & compilation words registered and tested");
 }

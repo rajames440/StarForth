@@ -223,8 +223,6 @@ void mixed_math_word_star_slash_mod(VM *vm) {
 
 /* FORTH-79 Mixed Arithmetic Word Registration */
 void register_mixed_arithmetic_words(VM *vm) {
-    log_message(LOG_INFO, "Registering mixed arithmetic words...");
-
     register_word(vm, "M+", mixed_math_word_m_plus);
     register_word(vm, "M-", mixed_math_word_m_minus);
     register_word(vm, "M*", mixed_math_word_m_star);
@@ -233,6 +231,4 @@ void register_mixed_arithmetic_words(VM *vm) {
     register_word(vm, "/MOD", mixed_math_word_slash_mod);
     register_word(vm, "*/", mixed_math_word_star_slash);
     register_word(vm, "*/MOD", mixed_math_word_star_slash_mod);
-
-    log_message(LOG_INFO, "Mixed arithmetic words registered and tested");
 }

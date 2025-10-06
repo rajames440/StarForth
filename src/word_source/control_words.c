@@ -803,6 +803,4 @@ void register_control_words(VM *vm) {
     register_word(vm, "J", control_forth_J);
     register_word(vm, "UNLOOP", control_forth_UNLOOP);
     register_word(vm, "EXIT", control_forth_EXIT);
-
-    log_message(LOG_INFO, "Registering FORTH-79 control flow words (two-stack VM)");
 }
