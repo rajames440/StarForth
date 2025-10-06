@@ -61,6 +61,54 @@ starforth/
 
 ---
 
+## 🧱 **Architecture Overview**
+
+```text
+            +-------------------+       +---------------------------+
+            |  Command-Line UX  |       |  Test Runner / Benchmarks |
+            |  (REPL & CLI)     |       |  (src/test_runner)        |
+            +---------+---------+       +---------------+-----------+
+                      |                                 |
+                      v                                 v
+            +-------------------+       +---------------------------+
+            |   VM Front Door   |       |   Word Registry & Loader  |
+            |   (src/main.c)    |       |   (word_source/*)         |
+            +---------+---------+       +---------------+-----------+
+                      |                                 |
+                      v                                 v
+            +-----------------------------------------------+
+            |            Core VM Engine (src/vm.c)          |
+            |  • Data/return stacks     • Dictionary state   |
+            |  • Interpreter & compiler • Numeric base       |
+            +-------------------+---------------------------+
+                                |
+                                v
++-------------------------------+-------------------------------------+
+| Memory & Block Subsystems                                         |
+| • Dictionary allocator (memory_management.c)                       |
+| • Block I/O factory (blkio_*.c)                                    |
+| • Logical→physical mapper (block_subsystem.c)                      |
++-------------------------------+-------------------------------------+
+                                |
+                                v
+                    +-------------------------------+
+                    | Platform Glue (src/platform/) |
+                    | • POSIX timers / minimal init |
+                    | • Optional L4Re bindings      |
+                    +-------------------------------+
+```
+
+**Onboarding Flow**
+
+- Start at `src/main.c` to see VM setup, CLI flags, and how the test harness attaches.
+- Inspect `src/vm.c` for execution lifecycle; it links directly to the word registry declared in `word_registry.h`.
+- Follow calls into `memory_management.c` and `block_subsystem.c` to understand how dictionary space and blocks are
+  managed.
+- Review `src/platform/linux/` for host integration and `src/test_runner/` to learn how modules exercise words
+  end-to-end.
+
+---
+
 ## ⚙️ **Building**
 
 ```bash
@@ -81,6 +129,17 @@ Example:
 make CFLAGS="-DSTRICT_PTR=1 -DUSE_ASM_OPT=1 -DARCH_X86_64=1 -O3" build/starforth
 ```
 
+### Portable Build Tips
+
+- Override `CFLAGS` with `-O0 -g -static` removed (`make CFLAGS="$(BASE_CFLAGS) -O2" LDFLAGS=""`) when targeting glibc
+  variants that dislike static linking.
+- Use `make STRICT_PTR=0` only when porting; restore the default once platform issues are resolved to keep bounds checks
+  active.
+- Cross-compiles should set `CC` and append architecture defines rather than editing the Makefile, e.g.
+  `make CC=clang CFLAGS="$(BASE_CFLAGS) -target armv7a-none-eabi"`.
+- For non-GNU linkers, pass a clean `LDFLAGS="-L/path/to/lib"` to avoid `-fuse-linker-plugin`; add `USE_ASM_OPT=0`
+  temporarily if inline assembly is unsupported.
+
 ---
 
 ## 🧪 **Testing**
@@ -94,6 +153,14 @@ make test
 ```
 
 Fail-fast. Log-rich. Deterministic.
+
+Need a sub-second sanity check? Run:
+
+```bash
+make smoke
+```
+
+This pipes `1 2 + .` through the VM with logging disabled and verifies the output is `3`.
 
 ---
 
