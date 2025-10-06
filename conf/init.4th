@@ -12,8 +12,20 @@ Block 3000
 : E      BAR BLIP BAR BLIP BAR ;
 
 Block 3001
-(- Add Me to init.4th )
-E F CR
+(-
+ ***
+
+
+
+
+
+
+
+
+
+
+
+)
 
 
 
