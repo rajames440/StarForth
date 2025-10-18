@@ -12,3 +12,4 @@ compile_commands.json
 /build/generated/
 /docs/book/output/
 /docs/book/generated/
+/debian/
