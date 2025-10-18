@@ -1,109 +1,101 @@
 #!/usr/bin/env bash
-# =====================================================================
+# ============================================================
 #  Quark Integrator: StarForth → StarshipOS
-#  One-file-at-a-time copy with blacklist/whitelist/quarantine.
-#  FIXES:
-#   - Proper blacklist regex application
-#   - Whitelist glob patterns (include/**, src/**, …)
-#   - Correct DEST root: StarshipOS/starforth/server/
-#   - Auto-generate merge list and pre-filter maint/ + Makefile*
-# =====================================================================
+#  Atomic, validated, file-by-file synchronization.
+#  Captain Bob edition — precision surgery, no bullshit.
+# ============================================================
 
 set -euo pipefail
 
-# Enable useful pattern matching for whitelist
-shopt -s globstar nullglob extglob
-
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# DEST root is the StarshipOS *server* subtree
-STARSHIP_ROOT="${STARSHIP_ROOT:-$HOME/CLionProjects/StarshipOS}"
-TARGET="$STARSHIP_ROOT/starforth/server"
-
+TARGET="${STARSHIPOS_ROOT:-$HOME/CLionProjects/StarshipOS}"
 MAINT="$ROOT/maint"
 QUAR="$MAINT/quarantine"
 
-WHITELIST="$MAINT/whitelist.txt"     # glob patterns (e.g., include/**)
-BLACKLIST="$MAINT/blacklist.txt"     # regex patterns
-MERGEFILES="$MAINT/mergefiles.txt"   # relative file paths per commit/push
+WHITELIST="$MAINT/bridge.whitelist"
+BLACKLIST="$MAINT/bridge.blacklist"
+MERGEFILES="$MAINT/mergefiles.txt"
 
-# Colors
+# ANSI colors
 RESET="\033[0m"
 BLACK_ON_WHITE="\033[30;47m"
 GREEN="\033[1;32m"
 ORANGE="\033[38;5;208m"
 
-echo -e "\n🛸 Quark sez: commencing atomic file handoff (StarForth → StarshipOS)...\n"
+echo -e "\n🛰️  Quark webhook engaged — StarForth → StarshipOS handoff beginning...\n"
+
 mkdir -p "$QUAR"
 
-# ---------------------------------------------------------------------
-# Generate merge list if missing or empty
-# ---------------------------------------------------------------------
+# --- Mapping function ---
+map_path() {
+  local f="$1"
+  case "$f" in
+    include/*) echo "l4/pkg/starforth/server/$f" ;;
+    src/*)     echo "l4/pkg/starforth/server/$f" ;;
+    conf/*)    echo "l4/pkg/starforth/server/$f" ;;
+    *)         echo "l4/pkg/starforth/server/$f" ;;
+  esac
+}
+
+# --- Safe copy enforcement ---
+safe_copy() {
+  local src="$1"
+  local rel="$2"
+  local mapped
+  mapped=$(map_path "$rel")
+  local dest="$TARGET/$mapped"
+  local dest_dir
+  dest_dir=$(dirname "$dest")
+
+  # allow only inside legitimate subtree
+  if [[ "$dest" == "$TARGET/l4/pkg/starforth/server/"* ]]; then
+    if [[ -d "$dest_dir" && -f "$src" ]]; then
+      cp -f --remove-destination "$src" "$dest"
+    else
+      echo -e "${ORANGE}[Quarantining unsafe directory]${RESET} $rel"
+      mkdir -p "$QUAR/$(dirname "$rel")"
+      cp -f "$src" "$QUAR/$rel"
+    fi
+  else
+    echo -e "${ORANGE}[Quarantining outside target scope]${RESET} $rel"
+    mkdir -p "$QUAR/$(dirname "$rel")"
+    cp -f "$src" "$QUAR/$rel"
+  fi
+}
+
+# --- Main loop ---
 if [[ ! -s "$MERGEFILES" ]]; then
-  echo "[INFO] Generating merge list from last commit..."
-  (cd "$ROOT" && git diff --name-only HEAD~1) > "$MERGEFILES" || true
+  echo "[WARN] No $MERGEFILES file. Nothing to sync."
+  exit 0
 fi
 
-# Normalize and pre-filter: strip leading "./", drop maint/ and Makefile* up front
-# (so maint changes like maint/integrator.sh never enter the loop)
-TMP_LIST="$(mktemp)"
-sed -E 's|^\./||' "$MERGEFILES" \
-  | grep -Ev '^(maint/|Makefile($|[.].*))' \
-  | sed '/^\s*$/d' > "$TMP_LIST"
-mv "$TMP_LIST" "$MERGEFILES"
-
-# Helpers --------------------------------------------------------------
-is_blacklisted() {
-  local f="$1"
-  [[ -f "$BLACKLIST" ]] && grep -Eq -f "$BLACKLIST" <<< "$f"
-}
-
-is_whitelisted() {
-  local f="$1"
-  [[ -f "$WHITELIST" ]] || return 1
-  # Iterate whitelist patterns (globs). Empty lines / comments ignored.
-  while IFS= read -r pat; do
-    [[ -z "$pat" || "$pat" =~ ^\s*# ]] && continue
-    # Match using shell glob semantics
-    if [[ "$f" == $pat ]]; then
-      return 0
-    fi
-  done < "$WHITELIST"
-  return 1
-}
-
-# Main loop ------------------------------------------------------------
 while IFS= read -r FILE; do
   [[ -z "$FILE" ]] && continue
 
-  SRC="$ROOT/$FILE"
-  DEST="$TARGET/$FILE"
-  QDST="$QUAR/$FILE"
-
-  # Skip if source file no longer exists (e.g., deletions)
-  [[ -f "$SRC" ]] || continue
-
-  if is_blacklisted "$FILE"; then
+  if grep -qxF "$FILE" "$BLACKLIST"; then
     echo -e "${BLACK_ON_WHITE}[skipping]${RESET} $FILE"
     continue
 
-  elif is_whitelisted "$FILE"; then
+  elif grep -qxF "$FILE" "$WHITELIST"; then
     echo -e "${GREEN}[Copying...]${RESET} $FILE"
-    mkdir -p "$(dirname "$DEST")"
-    cp -f "$SRC" "$DEST"
-    continue
+    safe_copy "$ROOT/$FILE" "$FILE"
 
   else
     echo -e "${ORANGE}[Quarantining...]${RESET} $FILE"
-    mkdir -p "$(dirname "$QDST")"
-    cp -f "$SRC" "$QDST"
+    mkdir -p "$QUAR/$(dirname "$FILE")"
+    cp -f "$ROOT/$FILE" "$QUAR/$FILE"
   fi
 done < "$MERGEFILES"
 
-# Summary --------------------------------------------------------------
+# --- Refresh index on the receiving repo ---
+if [[ -d "$TARGET/.git" ]]; then
+  (cd "$TARGET" && git update-index --really-refresh >/dev/null 2>&1 || true)
+fi
+
 echo -e "\n🧾 First Officer’s Report:"
 echo "  • Target:     $TARGET"
 echo "  • Quarantine: $QUAR"
-echo "  • Merge list: $(wc -l < "$MERGEFILES" 2>/dev/null || echo 0) files processed"
+echo "  • Merge list: $(wc -l < "$MERGEFILES") files processed"
 echo
 echo "Awaiting Cappy’s signature: Captain Bob ✍️"
-echo "------------------------------------------------------------------"
+echo
