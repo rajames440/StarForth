@@ -1,6 +1,6 @@
 /*
 
-                                 ***   StarForth   ***
+                                 ***   Fuck You   ***
   vm.h - FORTH-79 Standard and ANSI C99 ONLY
  Last modified - 8/15/25, 10:41 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
