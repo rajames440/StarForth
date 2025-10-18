@@ -1,5 +1,5 @@
 /*
-
+LOG this MOFO
                                  ***   StarForth   ***
   log.h - FORTH-79 Standard and ANSI C99 ONLY
  Last modified - 8/15/25, 10:18 AM
