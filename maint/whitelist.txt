@@ -1,0 +1,13 @@
+# StarForth → StarshipOS whitelist (globs)
+include/**
+src/**
+conf/**
+scripts/**
+tools/**
+README.md
+LICENSE
+Doxyfile
+AGENTS.md
+INSTALL.md
+starforth.spec
+docs/**
