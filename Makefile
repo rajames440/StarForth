@@ -1,3 +1,5 @@
+# FOO bar BAZ
+
 STRICT_PTR ?= 1
 CC = gcc
 
