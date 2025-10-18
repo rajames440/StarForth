@@ -13,3 +13,5 @@ compile_commands.json
 /docs/book/output/
 /docs/book/generated/
 /debian/
+/me/
+/maint/integrator.log
