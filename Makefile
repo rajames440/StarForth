@@ -1,3 +1,4 @@
+# TEST ME
 STRICT_PTR ?= 1
 CC = gcc
 
