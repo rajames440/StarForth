@@ -1,6 +1,5 @@
 /*
-
-                                 ***   Fuck You   ***
+                                 ***   Fuck You!   ***
   vm.h - FORTH-79 Standard and ANSI C99 ONLY
  Last modified - 8/15/25, 10:41 AM
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
@@ -9,11 +8,9 @@
   To the extent possible under law, the author(s) have dedicated all copyright and related
   and neighboring rights to this software to the public domain worldwide.
   This software is distributed without any warranty.
-
+========================================================================================================================
   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
-
   vm.h
-
  */
 
 #ifndef VM_H
