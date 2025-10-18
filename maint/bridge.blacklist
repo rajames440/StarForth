@@ -1,0 +1,2 @@
+# Always exclude any Makefile variants
+(^|/)?Makefile($|[.].*)
