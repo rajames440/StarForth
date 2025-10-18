@@ -1,4 +1,4 @@
-# TEST ME
+# TEST ME I never make it to StarshipOS
 STRICT_PTR ?= 1
 CC = gcc
 
