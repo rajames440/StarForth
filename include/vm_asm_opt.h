@@ -77,7 +77,7 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
 
         "2:\n\t"
         : [dsp]"+m"(vm->dsp),
-        [err]"=r"(error)
+        [err]"=&r"(error)
         : [val]"r"(value),
         [stack]"r"(vm->data_stack)
         : "rax", "cc", "memory"
@@ -127,8 +127,8 @@ static inline cell_t vm_pop_asm(VM *vm) {
 
         "2:\n\t"
         : [dsp]"+m"(vm->dsp),
-        [val]"=r"(value),
-        [err]"=r"(error)
+        [val]"=&r"(value),
+        [err]"=&r"(error)
         : [stack]"r"(vm->data_stack)
         : "rax", "cc", "memory"
     );
@@ -164,7 +164,7 @@ static inline void vm_rpush_asm(VM *vm, cell_t value) {
         "movl    $1, %[err]\n\t"
         "2:\n\t"
         : [rsp]"+m"(vm->rsp),
-        [err]"=r"(error)
+        [err]"=&r"(error)
         : [val]"r"(value),
         [stack]"r"(vm->return_stack)
         : "rax", "cc", "memory"
@@ -201,8 +201,8 @@ static inline cell_t vm_rpop_asm(VM *vm) {
         "movq    %%rax, %[val]\n\t"
         "2:\n\t"
         : [rsp]"+m"(vm->rsp),
-        [val]"=r"(value),
-        [err]"=r"(error)
+        [val]"=&r"(value),
+        [err]"=&r"(error)
         : [stack]"r"(vm->return_stack)
         : "rax", "cc", "memory"
     );

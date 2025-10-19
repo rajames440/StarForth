@@ -1,205 +1,55 @@
-![assetts/banner.png](banner.png)
+# StarForth Documentation Index
 
-```
-   ███████╗████████╗ █████╗ ██████╗ ███████╗ ██████╗ ██████╗ ██████╗██╗  ██╗
-   ██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔═══██╗██╔══██╗═██╔══╝██║  ██║
-   ███████╗   ██║   ███████║██████╔╝█████╗  ██║   ██║██████╔╝ ██║   ███████║
-   ╚════██║   ██║   ██╔══██║██╔══██╗██╔══╝  ██║   ██║██╔══██╗ ██║   ██╔══██║
-   ███████║   ██║   ██║  ██║██║  ██║██╗     ╚██████╔╝██║  ██║ ██║   ██║  ██║
-   ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═╝   ╚═╝  ╚═╝
-                   A Clean FORTH-79 VM for the Modern Age — Fast. Lean. Amber.
-```
+Jump to the guide you need using the links below.
 
-# 🧠 **StarForth**
+## Getting Started
 
-### *Come see how I `stack up`* 🧱⚡
+- [Repository Overview](../README.md) – Feature tour, project goals, and directory layout.
+- [Quick Start Guide](QUICKSTART.md) – Build/test recipes and day-one workflows.
+- [Installation Guide](INSTALL.md) – Platform-specific setup and prerequisites.
 
-> “Born in 1979. Rebuilt for 2025.
-> The fastest rat rod in Ohio — and maybe your next favorite VM.”
+## Build & Tooling
 
----
+- [Build Options Reference](BUILD_OPTIONS.md) – Make targets, flags, and configuration knobs.
+- [PGO Guide](PGO_GUIDE.md) – Profile-guided optimisation pipeline and verification steps.
+- [Init Tools](INIT_TOOLS.md) – Utilities for managing `conf/init.4th` and block images.
+- [Documentation System](DOCUMENTATION_README.md) – Generating API docs and publishing outputs.
 
-## 🚀 **What is StarForth?**
+## Architecture & Internals
 
-**StarForth** is a clean, modern, **FORTH-79** implementation — written entirely in **strict ANSI C99**, designed for *
-*speed**, **predictability**, and **surgical control** over memory and execution.
+- [Architecture Deep Dive](ARCHITECTURE.md) – VM layout, execution model, and subsystems.
+- [ABI Reference](ABI.md) – Calling conventions and binary interfaces.
+- [Init System](INIT_SYSTEM.md) – Boot-time block loading and dictionary fencing.
+- [Block Storage Guide](BLOCK_STORAGE_GUIDE.md) – Design and tuning of the block I/O stack.
 
-It’s the beating heart of [StarshipOS](https://github.com/starshipos) 🛸, but it’s also a **standalone, embeddable
-virtual machine**. You can run it on bare metal, inside L4Re, in QEMU, or integrate it into your own projects.
+## Platform Integration
 
-StarForth isn’t bloated.
-StarForth isn’t cute.
-**StarForth is a goddamn precision engine.**
+- [Platform Abstraction Layer](PLATFORM_ABSTRACTION.md) – Host glue responsibilities and APIs.
+- [Platform Build Guide](PLATFORM_BUILD_GUIDE.md) – Cross-compilation matrix and toolchains.
+- [L4Re Integration Guides](L4RE_INTEGRATION.md) – Kernel porting notes with supporting
+  docs: [Dictionary Allocation](L4RE_DICTIONARY_ALLOCATION.md) and [Block I/O Endpoints](l_4_re_blkio_endpoints.md).
+- [Raspberry Pi Build](RASPBERRY_PI_BUILD.md) – ARM64 bring-up and validation checklist.
 
----
+## Performance & Profiling
 
-## 🧰 **Core Features**
+- [x86_64 Assembly Optimisations](ASM_OPTIMIZATIONS.md) – Fast paths and integration guidance.
+- [ARM64 Assembly Strategy](ARM64_OPTIMIZATIONS.md) – Architecture notes and tuning tips.
+- [Profiler Guide](PROFILER.md) – Runtime profiling workflow and report formats.
 
-| Feature                           | Description                                                                                     |
-|-----------------------------------|-------------------------------------------------------------------------------------------------|
-| 🧱 **FORTH-79 Core**              | Full compliance with the Forth-79 standard, no compromises, no “toy” shortcuts.                 |
-| ⚡ **Direct-Threaded Interpreter** | 64-bit aligned, aggressively optimized for low-latency execution.                               |
-| 💾 **Block Storage Subsystem**    | Supports RAM-disk and disk-image backed storage. Works with NVMe, SATA, eMMC, and QEMU devices. |
-| 🧠 **Strict Pointer Discipline**  | `STRICT_PTR` mode enforces hard pointer safety checks — no sloppy segfault roulette.            |
-| 🌀 **Modular Word Dictionary**    | 18+ modules, from arithmetic to defining words, easily extendable.                              |
-| 🔬 **Entropy-Ready Internals**    | Hooks for runtime statistical profiling and ML-assisted memory placement.                       |
-| 💻 **Amber Glow**                 | Retro-inspired terminal aesthetics. When you see that amber code block, you know you’re home.   |
+## Testing & Quality
 
----
+- [Test Suite Guide](TESTING.md) – Harness structure, conventions, and extension points.
+- [Break-Me Report](BREAK_ME_REPORT.md) – Snapshot from the exhaustive stress suite.
+- [Gap Analysis](GAP_ANALYSIS.md) – Current coverage, remaining work, and quality grades.
 
-## 📂 **Repository Layout**
+## Contribution Guidelines
 
-```
-starforth/
- ├─ src/               # Core VM and subsystems
- ├─ include/           # Public headers (strict C99)
- ├─ word_source/       # Modular word definitions (Forth-79 vocabulary)
- ├─ tests/             # 675+ functional tests (fail-fast harness)
- ├─ disks/             # Disk images for RAM/disk-backed experiments
- └─ docs/              # Full DocBook + dark-themed HTML/PDF/EPUB manuals
-```
+- [Contributing Guide](CONTRIBUTING.md) – Workflow expectations and review checklist.
+- [Code of Conduct](CODE_OF_CONDUCT.md) – Community standards.
+- [Word Development Guide](WORD_DEVELOPMENT.md) – Adding new words to the dictionary.
+- [Doxygen Style Guide](DOXYGEN_STYLE_GUIDE.md) & [Quick Reference](DOXYGEN_QUICK_REFERENCE.md) – Documentation
+  standards for public APIs.
 
 ---
 
-## ⚙️ **Building**
-
-```bash
-make clean
-make
-```
-
-Optional flags:
-
-* `STRICT_PTR=1` – enforce pointer safety
-* `USE_ASM_OPT=1` – enable architecture-specific assembler optimizations
-* `ARCH_X86_64=1` – target 64-bit x86 (default)
-* `ARCH_ARM64=1` – target ARM (experimental)
-
-Example:
-
-```bash
-make CFLAGS="-DSTRICT_PTR=1 -DUSE_ASM_OPT=1 -DARCH_X86_64=1 -O3" build/starforth
-```
-
----
-
-## 🧪 **Testing**
-
-We don’t play “maybe it works.”
-StarForth ships with a **full test harness**: 675+ tests covering arithmetic, stack ops, control structures, dictionary
-internals, block I/O, and more.
-
-```bash
-make test
-```
-
-Fail-fast. Log-rich. Deterministic.
-
----
-
-## 💾 **Running**
-
-You can run StarForth directly, with or without a backing disk image:
-
-```bash
-./build/starforth --disk-img=disks/starforth-dev.img --ram-disk=10
-```
-
-If the disk image is missing, StarForth auto-allocates the RAM disk and bootstraps a clean block environment.
-
-### 📊 **Profiling**
-
-StarForth includes a lightweight profiler for identifying optimization candidates:
-
-```bash
-# Profile word execution frequency
-./build/starforth --profile 1 --profile-report < your_script.fth
-
-# Run tests with profiling
-./build/starforth --profile 1 --profile-report --run-tests
-
-# Benchmark with profiling
-./build/starforth --profile 1 --profile-report --benchmark 10000
-```
-
-The profiler identifies hot words (frequently executed) that are candidates for assembly optimization. See
-`docs/PROFILER.md` for complete profiling guide.
-
----
-
-## 📜 **Documentation**
-
-StarForth has **real documentation** built with DocBook 4.5 + Pandoc + Calibre, themed in glorious dark mode with amber
-retro terminals.
-
-Build all formats:
-
-```bash
-cd docs
-make
-```
-
-Outputs:
-
-* 📄 `build/starforth-manual.html`
-* 📘 `build/StarForth-Manual.epub`
-* 🖨️ `build/StarForth-Manual.pdf`
-* 📚 `build/StarForth-Manual.azw3` (Kindle-ready)
-
----
-
-## 🧠 **Why StarForth Exists**
-
-Modern VMs are obese.
-Scripting languages are bloated.
-Operating systems treat FORTH like a novelty.
-
-StarForth is a **back-to-basics, forward-looking** response:
-
-* Minimalism without masochism
-* Old-school stack discipline with modern performance
-* FORTH not as a gimmick — but as **the core architecture**
-
-It’s retro, yes. But it’s *fast*, *tight*, and *built for today’s hardware*.
-
----
-
-## 🔥 **Come See How I `stack up`**
-
-StarForth is already integrated as the core VM for **StarshipOS**, where it will power a full fileless, event-driven
-operating system.
-
-But you can use it independently for:
-
-* Embedded systems
-* Virtual machine experiments
-* Retro computing projects
-* Language runtime research
-* Microkernel services
-
-This isn’t nostalgia — it’s **heritage with a V8 engine**.
-
----
-
-## 🧑‍🚀 **Captain Bob**
-
-Built and maintained by **Captain Bob**, a systems engineer hacking since 1973.
-He doesn’t do Python dependency hell. He does **tight loops**, **inline assembly**, and **terminal glow**.
-
----
-
-## 🪪 **License**
-
-**CC0 / Public Domain** —
-Take it. Fork it. Embed it. Burn rubber.
-Just don’t blame us when your VM goes supersonic.
-
----
-
-## 🌟 **StarForth — Where Retro Meets Relentless**
-
-```
-╔═══════════════════════════════════════════╗
-║  STARFORTH: STACK-BASED VM, BUILT TO RUN  ║
-╚═══════════════════════════════════════════╝
-```
+Need something else? Run `rg --files docs` for the full inventory.
