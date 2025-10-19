@@ -1,0 +1,54 @@
+% Custom Unicode helpers for StarForth Doxygen LaTeX output.
+% This keeps pdflatex happy when README and other guides use box drawing
+% characters and emoji for branding flair. We rely on plain TeX primitives so
+% the file can be injected before \documentclass.
+
+% Box drawing / banner glyphs
+\catcode`\█=\active \def█{\vrule width 0.75em height 0.75em depth 0pt}
+\catcode`\═=\active \def═{\vrule width 0.75em height 0.1em depth 0pt}
+\catcode`\─=\active \def─{\vrule width 0.75em height 0.08em depth 0pt}
+\catcode`\│=\active \def│{\vrule width 0.08em height 0.75em depth 0pt}
+\catcode`\║=\active \def║{\vrule width 0.12em height 0.75em depth 0pt}
+\catcode`\╔=\active \def╔{+}
+\catcode`\╗=\active \def╗{+}
+\catcode`\╚=\active \def╚{+}
+\catcode`\╝=\active \def╝{+}
+\catcode`\└=\active \def└{+}
+\catcode`\├=\active \def├{|}
+
+% Typography helpers
+\catcode`\–=\active \def–{--}
+\catcode`\—=\active \def—{---}
+\catcode`\’=\active \def’{'}
+\catcode`\“=\active \def“{``}
+\catcode`\”=\active \def”{''}
+\catcode`\•=\active \def•{*}
+\catcode`\→=\active \def→{->}
+
+% Emoji fallbacks (render as short text tags)
+\catcode`\⚙=\active \def⚙{[gear]}
+\catcode`\⚡=\active \def⚡{[zap]}
+\catcode`\🌀=\active \def🌀{[cyclone]}
+\catcode`\🌟=\active \def🌟{[star]}
+\catcode`\💻=\active \def💻{[laptop]}
+\catcode`\💾=\active \def💾{[floppy]}
+\catcode`\📂=\active \def📂{[folder]}
+\catcode`\📄=\active \def📄{[page]}
+\catcode`\📚=\active \def📚{[books]}
+\catcode`\📜=\active \def📜{[scroll]}
+\catcode`\📝=\active \def📝{[memo]}
+\catcode`\🔥=\active \def🔥{[fire]}
+\catcode`\🔬=\active \def🔬{[scope]}
+\catcode`\🖨=\active \def🖨{[printer]}
+\catcode`\🚀=\active \def🚀{[rocket]}
+\catcode`\🛸=\active \def🛸{[ufo]}
+\catcode`\🧑=\active \def🧑{[person]}
+\catcode`\🧠=\active \def🧠{[brain]}
+\catcode`\🧪=\active \def🧪{[lab]}
+\catcode`\🧰=\active \def🧰{[toolbox]}
+\catcode`\🧱=\active \def🧱{[brick]}
+\catcode`\🪪=\active \def🪪{[id]}
+
+% Invisible control characters and variation selectors
+\catcode`\️=\active \def️{}
+\catcode`\‍=\active \def‍{}
