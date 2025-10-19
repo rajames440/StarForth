@@ -385,7 +385,7 @@ make docs-open
 - **Full Style Guide:** `docs/DOXYGEN_STYLE_GUIDE.md`
 - **Example Header:** `docs/examples/doxygen_example.h`
 - **User Guide:** `docs/DOCUMENTATION_README.md`
-- **Setup Summary:** `docs/DOCUMENTATION_SETUP_SUMMARY.md`
+- **Documentation Overview:** `docs/DOCUMENTATION_README.md`
 - **Doxygen Manual:** https://www.doxygen.nl/manual/
 
 ## Time Estimates
