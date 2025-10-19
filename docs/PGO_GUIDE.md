@@ -1,3 +1,4 @@
+# QUARANTiNE ME MOTHERFUCKER
 # StarForth Profile-Guided Optimization (PGO) Guide
 
 **Complete guide to building the fastest possible StarForth binary using profile-guided optimization**

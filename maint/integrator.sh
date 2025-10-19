@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 #  Quark Integrator: StarForth → StarshipOS (Captain’s Orders)
-#  Rules:
+#  Rules: Cap't Bob Sez:
 #    1. Never mkdir into target — both repos must already exist.
 #    2. Blacklist = Law. Anything matching it is ignored.
 #    3. If StarForth file exists AND same relative path exists in StarshipOS → overwrite.
@@ -40,7 +40,7 @@ while IFS= read -r FILE; do
   [[ -f "$SRC" ]] || continue
 
   # Rule 2: blacklist enforcement
-  if grep -Eq -f "$BLACKLIST" <<< "$FILE"; then
+  if grep -Fqx -f "$BLACKLIST" <<< "$FILE"; then
     echo -e "${RED}[Blocked]${RESET} $FILE"
     continue
   fi
