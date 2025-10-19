@@ -1,0 +1,117 @@
+# SHARED_CLAUDE.md
+
+## Cross-Project Communication & Notes
+
+**Purpose**: This file serves as a shared notepad between Claude instances working on StarForth and StarshipOS projects,
+as well as Captain Bob's mental notes.
+
+**Instructions for Claude instances**:
+
+- Always tag your entries with `[Claude@StarForth]` or `[Claude@StarshipOS]`
+- Include date/timestamp for context
+- This file syncs bidirectionally via the integrator scripts
+- Check this file at the start of each session for updates from the other side
+
+---
+
+## Active Notes & Communication
+
+### [Claude@StarForth] 2025-10-19 09:30
+
+**Integration System Status**:
+
+- ✅ StarForth→StarshipOS integrator: PRODUCTION READY
+- ⏳ StarshipOS→StarForth integrator: Ready for testing (at `StarForth/sf_integrator.sh`, needs to be moved to
+  `StarshipOS/maint/integrator.sh`)
+- Both scripts have critical fixes applied (regex blacklist, empty line filtering)
+- See `maint/INTEGRATION_NOTES.md` for complete test methodology
+
+**Action Required (StarshipOS side)**:
+
+1. Move `StarForth/sf_integrator.sh` to `StarshipOS/maint/integrator.sh`
+2. Apply 5-phase test methodology from INTEGRATION_NOTES.md
+3. Update this file when testing is complete
+
+---
+
+## StarForth Observations & Architecture Notes
+
+### [Claude@StarForth] 2025-10-19 09:30
+
+**Codebase Structure**:
+
+- Clean separation of concerns with well-organized `include/` directory
+- `vm.h` and `log.h` appear to be core infrastructure
+- Blacklist reveals intentional exclusion of maint machinery and build artifacts
+- Project uses pre-push git hooks for automatic sync
+
+**Build System**:
+
+- Makefile-based build (blacklisted from sync)
+- Designed to work in both Linux (native) and L4Re environments
+- L4Re version lives at: `StarshipOS/l4/pkg/starforth/server/`
+- Path transformation: StarForth root ↔ StarshipOS `l4/pkg/starforth/server/`
+
+**Integration Strategy**:
+
+- **Problem solved**: L4Re's rigid build system prevents out-of-tree builds and monorepo approaches
+- **Solution**: Bidirectional sync between two independent repos
+- Each repo maintains its native structure (L4Re happy, Linux happy)
+- Quarantine system prevents accidental file creation in unexpected locations
+
+**Key Design Decisions**:
+
+- Files are ONLY overwritten if they already exist at the destination (Rule 3)
+- New files go to quarantine for manual review (Rule 4)
+- Blacklist protects repo-specific files (Makefiles, maint/, Control files, etc.)
+- Auto-generation from `git diff HEAD~1` enables webhook mode
+
+**Development Workflow**:
+
+- Work in either StarForth (Linux) or StarshipOS (L4Re)
+- Git pre-push hook triggers integrator
+- Changes sync automatically with safety checks
+- Enables seamless cross-platform development and debugging
+
+---
+
+## Technical Discoveries
+
+### [Claude@StarForth] 2025-10-19 09:30
+
+**Critical Bug Found & Fixed**:
+
+- `blacklist.txt` contained `...` pattern (line 12)
+- In regex, `...` matches any 3 characters → blocked EVERYTHING
+- Removed to restore proper filtering
+- Check StarshipOS blacklist for similar issues
+
+**Blacklist Pattern Examples**:
+
+```
+(^|/)?Makefile($|[.].*)     # Blocks Makefile, Makefile.inc, etc.
+(^|/)?maint($|/)            # Blocks entire maint/ directory
+(^|/)?Control($|/)          # Blocks L4Re Control files
+(^|/)?LICENSE\.spdx$        # Blocks SPDX license files
+```
+
+---
+
+## Captain's Mental Notes
+
+### 2025-10-19
+
+- Spent 5 days debugging this integration system (since last Thursday)
+- Tried monorepo approach first - L4Re won't cooperate
+- This bidirectional sync solution is working perfectly
+- Goal: 100% certainty that both platforms stay in sync for seamless development
+
+---
+
+## Future Observations
+
+*[Both Claude instances: Add your observations, discoveries, and notes below]*
+
+---
+
+**Last Updated**: 2025-10-19 09:30 by [Claude@StarForth]
