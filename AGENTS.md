@@ -2,46 +2,45 @@
 
 ## Project Structure & Module Organization
 
-- `src/` houses the VM core, with `platform/` providing time/OS glue and `test_runner/` hosting the in-process harness.
-- `include/` holds public headers shared between VM code and tests so both build cleanly under `-Werror`.
-- `src/word_source/` is the modular FORTH vocabulary; mirror the `*_words.c` naming when adding new word families.
-- `src/test_runner/modules/` contains companion suites; ensure each file exports `run_*_tests` and is referenced in
-  `test_runner.c`.
-- `docs/` (manuals), `scripts/` (automation), and `disks/` (sample images) stay versioned; `build/` is disposable
-  output.
+- `src/` hosts the VM core; `platform/` and `test_runner/` cover host glue plus the in-process harness.
+- `word_source/` (and matching headers) carries FORTH words—keep the `<domain>_words.*` naming when extending.
+- `include/` is the public boundary; stash private helpers in `src/` to avoid leaking symbols.
+- `docs/`, `scripts/`, and `maint/` hold manuals and automation; `disks/` + `conf/init.4th` seed block images, while
+  `build/` stays disposable.
 
 ## Build, Test, and Development Commands
 
-- `make` produces `build/starforth` with the optimized defaults (STRICT_PTR=1 and assembly fast paths).
-- `make debug` compiles a `-O0 -g` binary for stepping through the VM.
-- `make test` or `./build/starforth -t` runs the modular harness with fail-fast logging.
-- `./build/starforth --disk-img=disks/starforth-dev.img --ram-disk=10` boots the REPL against the dev image.
-- `make fastest` followed by `./build/starforth --benchmark 1000 --log-none` captures throughput regressions.
+- `make fastest` builds the release binary with LTO, assembly fast paths, and `STRICT_PTR=1` checks.
+- `make debug` yields a `-O0 -g` target; prefer `make clean` before switching modes.
+- `make test` runs the harness; use `./build/starforth --run-tests` when a binary already exists.
+- `make benchmark` or `./build/starforth --benchmark 1000 --log-none` records performance, and `scripts/update-init.sh`
+  refreshes `conf/init.4th` from `disks/`.
 
 ## Coding Style & Naming Conventions
 
-- Stick to ANSI C99, four-space indentation, and braces aligned with the function signature (
-  `static void cleanup(void) {`).
-- Use `snake_case` for identifiers, reserve `UPPER_SNAKE` for macros/constants, and suffix new word files as
-  `<area>_words.c`.
-- Document exported APIs with focused `/** */` blocks; keep internal comments brief and context-driven.
-- Limit header exposure to what callers need, and ensure new code passes the default `-Wall -Werror` build with
-  `STRICT_PTR` enabled.
+- Stick to ANSI C99, four-space indentation, and same-line braces (`static VM *init_vm(void) {`).
+- Use `snake_case` for symbols, reserve `g_` for module statics, and keep macros uppercase.
+- Hide new behavior behind flags (`STRICT_PTR`, `USE_ASM_OPT`) and document additions in headers.
+- Keep exported APIs covered by concise `/** ... */` comments, rely on light `//` notes inside, and maintain a
+  warning-clean build (`-Wall -Wextra -Werror`).
 
 ## Testing Guidelines
 
-- Add coverage in the matching `src/test_runner/modules/<area>_test.c` file using the existing `WordTestSuite`
-  scaffolding.
-- Register new runners inside `test_runner.c`’s `test_modules[]` array to include them in the suite.
-- Name scenarios with lowercase underscores (e.g., `"max_int"`) and keep expectation strings concise for log clarity.
-- Run `make test` before every PR; record `./build/starforth --benchmark 1000 --log-none` when touching
-  performance-sensitive code.
+- Add suites in `src/test_runner/modules/` with a `run_<area>_tests` entry and hook them in `test_runner.c`.
+- Give cases lowercase IDs and reuse helpers from `test_common.c`.
+- Run `make test` before every push and record benchmarks when touching hot paths.
+- For a smoke check, run `./build/starforth --disk-img=disks/starforth-dev.img --ram-disk=10 --run-tests`.
 
 ## Commit & Pull Request Guidelines
 
-- Follow the house style: optional leading emoji + imperative summary + em dash detail (
-  `✨ Add block cache — tighten flush path`), ≤72 characters.
-- Keep commits focused and use body paragraphs for rationale, config changes, or rollout notes.
-- PRs should explain purpose, list verification commands, and link related issues or documentation updates.
-- Flag compatibility or configuration changes (platform flags, STRICT_PTR tweaks) and attach artifacts when docs or
-  assets change.
+- Summaries follow the sentence-style seen in history (`StarForth->StarshipOS fast and easy port integration utility.`);
+  stay under 72 characters.
+- Use bodies for rationale, flags, and rollout steps; keep commits focused.
+- PRs should note purpose, verification commands, and any init/disk/doc updates.
+- Loop in subsystem maintainers early and surface open questions for quick review.
+
+## Security & Configuration Tips
+
+- Treat `disks/` contents as shared fixtures—clone before experimenting and avoid direct edits.
+- Regenerate `conf/init.4th` and tool binaries via the scripts instead of tweaking generated files.
+- When touching `src/platform/`, mirror the cleanup patterns in `src/main.c:cleanup_blkio` to keep ownership explicit.
