@@ -35,12 +35,17 @@ void vm_repl(VM *vm) {
 
     char input[256];
     while (!vm->halted && !vm->error) {
-        printf("ok> ");
+        printf("\033[36mok>\033[0m \033[92m");
         fflush(stdout);
 
         if (!fgets(input, sizeof(input), stdin)) {
+            printf("\033[0m");
+            fflush(stdout);
             break;
         }
+
+        printf("\033[0m");
+        fflush(stdout);
 
         vm_interpret(vm, input);
 
