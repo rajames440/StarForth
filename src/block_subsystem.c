@@ -23,11 +23,11 @@
 #include "../include/blkio.h"              /* ensure struct blkio_dev is visible */
 #include "../include/block_subsystem.h"
 #include "../include/log.h"
+#include "../include/platform_time.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <time.h>
 
 /* ===== compile-time config ===== */
 #ifndef BLK_FORTH_SYS_RESERVED
@@ -64,7 +64,7 @@ static inline uint64_t compute_crc64(const uint8_t *data, size_t len) {
     if (!crc64_inited) crc64_init();
     uint64_t crc = 0xFFFFFFFFFFFFFFFFULL;
     for (size_t i = 0; i < len; i++) {
-        uint8_t idx = (uint8_t) (crc ^ data[i]);
+        uint8_t idx = (uint8_t)(crc ^ data[i]);
         crc = crc64_table[idx] ^ (crc >> 8);
     }
     return crc ^ 0xFFFFFFFFFFFFFFFFULL;
@@ -72,7 +72,7 @@ static inline uint64_t compute_crc64(const uint8_t *data, size_t len) {
 
 /* ===== bitset helpers for external BAM ===== */
 static inline int bam_test(const uint8_t *bm, uint64_t idx) { return (bm[idx >> 3] >> (idx & 7)) & 1; }
-static inline void bam_set(uint8_t *bm, uint64_t idx) { bm[idx >> 3] |= (uint8_t) (1u << (idx & 7)); }
+static inline void bam_set(uint8_t *bm, uint64_t idx) { bm[idx >> 3] |= (uint8_t)(1u << (idx & 7)); }
 static inline void bam_clr(uint8_t *bm, uint64_t idx) { bm[idx >> 3] &= (uint8_t) ~(1u << (idx & 7)); }
 
 /* ===== cache slot ===== */
@@ -333,6 +333,24 @@ static inline uint32_t lbn_to_pbn(uint32_t lbn) {
     }
 }
 
+/* ===== timestamp helper ===== */
+/**
+ * @brief Get current timestamp with RTC fallback to monotonic clock
+ *
+ * Uses real-time clock (wall-clock) if available, otherwise falls back
+ * to monotonic clock. This ensures timestamps work on both POSIX and L4Re
+ * platforms, even when RTC capability is unavailable.
+ *
+ * @return Nanoseconds since epoch (realtime) or boot (monotonic fallback)
+ */
+static inline uint64_t blk_get_timestamp(void) {
+    if (sf_has_rtc()) {
+        return sf_realtime_ns();
+    } else {
+        return sf_monotonic_ns();
+    }
+}
+
 /* ===== init / attach / shutdown ===== */
 int blk_subsys_init(VM *vm, uint8_t *ram_base, size_t ram_size) {
     if (!vm || !ram_base || ram_size < (BLK_RAM_BLOCKS * BLK_FORTH_SIZE)) return BLK_EINVAL;
@@ -386,6 +404,9 @@ fresh_format:
     g.vol_meta.reserved_disk_lo = BLK_DISK_SYS_RESERVED;
     strncpy(g.vol_meta.label, "StarForth Volume", sizeof(g.vol_meta.label) - 1);
 
+    /* Set volume creation timestamp */
+    g.vol_meta.created_time = blk_get_timestamp();
+
     g.vol_meta.total_devblocks = (uint64_t) udiv_floor(g.total_blkio_blocks_1k, 4);
     g.vol_meta.bam_start = 1;
     g.vol_meta.bam_devblocks = choose_B(g.vol_meta.total_devblocks);
@@ -421,7 +442,8 @@ fresh_format:
 
     /* compute logical total */
     uint64_t disk_user = (g.vol_meta.total_blocks > BLK_DISK_SYS_RESERVED)
-                             ? (g.vol_meta.total_blocks - BLK_DISK_SYS_RESERVED) : 0;
+                             ? (g.vol_meta.total_blocks - BLK_DISK_SYS_RESERVED)
+                             : 0;
     g.total_user_lbn = (uint64_t) g.ram_user + disk_user;
 
     return BLK_OK;
@@ -442,6 +464,10 @@ int blk_subsys_attach_device(struct blkio_dev *dev) {
 
     int rc = blk_format_or_load_v2();
     if (rc != BLK_OK) return rc;
+
+    /* Set volume mounted timestamp */
+    g.vol_meta.mounted_time = blk_get_timestamp();
+    g.vol_meta_dirty = 1;
 
     log_message(LOG_INFO,
                 "blk: hdr '%s' v2: total_devblocks(4k)=%llu, bam_devblocks=%u, devblock_base=%u, tracked=%llu, total_blocks=%llu, free=%llu",
@@ -468,7 +494,9 @@ int blk_subsys_shutdown(void) {
         g.vol_meta_dirty = 0;
     }
 
-    if (g.bam) { free(g.bam); g.bam = NULL;
+    if (g.bam) {
+        free(g.bam);
+        g.bam = NULL;
         g.bam_bytes = 0;
         g.bam_dirty = 0;
     }
@@ -541,7 +569,14 @@ int blk_update(uint32_t block_num /* LBN */) {
     uint8_t *blk = s->data + pack * BLK_FORTH_SIZE;
     uint64_t crc = compute_crc64(blk, BLK_FORTH_SIZE);
     s->meta[pack].checksum = crc;
-    if (s->meta[pack].magic == 0) s->meta[pack].magic = 0x424C4B5F5354524BULL;
+
+    /* Set timestamps: created_time on first write, modified_time always */
+    uint64_t now = blk_get_timestamp();
+    if (s->meta[pack].magic == 0) {
+        s->meta[pack].magic = 0x424C4B5F5354524BULL;
+        s->meta[pack].created_time = now;
+    }
+    s->meta[pack].modified_time = now;
 
     s->meta_dirty = 1;
     s->dirty = 1;
@@ -579,7 +614,7 @@ int blk_flush(uint32_t block_num /* LBN or 0 for all */) {
         uint32_t pbn = BLK_DISK_START + BLK_DISK_SYS_RESERVED + (block_num - g.ram_user);
         uint32_t dev4k = fblock_to_devblock(pbn);
 
-        for (int i = 0;i<DISK_CACHE_SLOTS;i++){
+        for (int i = 0; i < DISK_CACHE_SLOTS; i++) {
             cache_slot_t *c = &g.cache[i];
             if (c->valid && c->devblock == dev4k && (c->dirty || c->meta_dirty)) {
                 int rc = cache_writeback(c);
@@ -744,7 +779,7 @@ int blk_set_meta(uint32_t block_num /* LBN */, const blk_meta_t *meta) {
     if (!g.disk_dev) return BLK_ENODEV;
     uint32_t pbn = BLK_DISK_START + BLK_DISK_SYS_RESERVED + (block_num - g.ram_user);
     uint32_t dev4k = fblock_to_devblock(pbn);
-    uint32_t pack  = fblock_pack_offset(pbn);
+    uint32_t pack = fblock_pack_offset(pbn);
     cache_slot_t *s = cache_load_devblock(dev4k);
     if (!s) return BLK_EIO;
     s->meta[pack] = *meta;
@@ -754,6 +789,9 @@ int blk_set_meta(uint32_t block_num /* LBN */, const blk_meta_t *meta) {
 
 /* ===== weak hook (for main.c) ===== */
 #if defined(__GNUC__) || defined(__clang__)
-__attribute__((weak))
+__attribute__ ((weak))
 #endif
-void blk_layer_attach_device(struct blkio_dev *dev){ (void)dev; blk_subsys_attach_device(dev); }
+void blk_layer_attach_device(struct blkio_dev *dev) {
+    (void) dev;
+    blk_subsys_attach_device(dev);
+}
