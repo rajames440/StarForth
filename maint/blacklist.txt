@@ -9,4 +9,3 @@
 # but harmless to leave here.)
 (^|/)?Control($|/)
 (^|/)?LICENSE\.spdx$
-...

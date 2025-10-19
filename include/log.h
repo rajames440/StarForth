@@ -1,5 +1,5 @@
 /*
-LOG this MOFO
+
                                  ***   StarForth   ***
   log.h - FORTH-79 Standard and ANSI C99 ONLY
  Last modified - 8/15/25, 10:18 AM
@@ -17,6 +17,9 @@ LOG this MOFO
 
 #ifndef LOG_H
 #define LOG_H
+
+/* Forward declaration */
+struct VM;
 
 
 /**
@@ -72,5 +75,11 @@ void log_message(LogLevel level, const char *fmt, ...);
  * @param result Result of the test execution
  */
 void log_test_result(const char *word_name, TestResult result);
+
+/**
+ * @brief Set the VM instance for persistent logging
+ * @param vm VM instance to use for persistent logging (NULL to disable)
+ */
+void log_set_vm(struct VM *vm);
 
 #endif /* LOG_H */
