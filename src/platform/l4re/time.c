@@ -1,8 +1,7 @@
 /*
  * StarForth Platform Time - L4Re/StarshipOS Backend
  *
- * TODO: Implements platform time abstraction using L4Re RTC server and KIP clock.
- * This is a STUB implementation that will be completed during L4Re integration.
+ * Implements platform time abstraction using L4Re RTC server and KIP clock.
  *
  * License: CC0-1.0 / Public Domain
  */
@@ -14,58 +13,95 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-/* TODO: L4Re RTC capability (obtained at init) */
-/* static L4::Cap<L4rtc::Rtc> rtc_cap = L4::Cap<L4rtc::Rtc>::Invalid; */
-/* static l4_uint64_t rtc_offset = 0;  // nanoseconds from 1970 to boot */
-/* static int rtc_available = 0; */
+/* L4Re headers */
+#include <l4/sys/kip.h>
+#include <l4/re/env.h>
+#include <l4/rtc/rtc>
 
-/* L4Re implementation stubs - TO BE IMPLEMENTED */
+/* L4Re RTC capability (obtained at init) */
+static L4::Cap<L4rtc::Rtc> rtc_cap = L4::Cap<L4rtc::Rtc>::Invalid;
+static l4_uint64_t rtc_offset = 0; /* nanoseconds from 1970 to boot */
+static int rtc_available = 0;
+
+/* L4Re implementation */
 
 static sf_time_ns_t l4re_get_monotonic_ns(void) {
-    /* TODO: Use L4Re KIP clock: l4_kip_clock_ns(l4re_kip()) */
-    fprintf(stderr, "FATAL: L4Re backend not implemented yet - l4re_get_monotonic_ns()\n");
-    fprintf(stderr, "TODO: Implement using l4_kip_clock_ns(l4re_kip())\n");
-    fprintf(stderr, "See: l4/pkg/rtc/lib/client/librtc.cc for reference\n");
-    exit(1);
+    /* Use L4Re KIP clock: monotonic time since boot */
+    l4_kernel_info_t *kip = l4re_kip();
+    if (!kip) {
+        return 0; /* Fallback if KIP unavailable */
+    }
+    return l4_kip_clock_ns(kip);
 }
 
 static sf_time_ns_t l4re_get_realtime_ns(void) {
-    /* TODO: Use RTC server offset + KIP clock */
-    /* return rtc_offset + l4_kip_clock_ns(l4re_kip()); */
-    fprintf(stderr, "FATAL: L4Re backend not implemented yet - l4re_get_realtime_ns()\n");
-    fprintf(stderr, "TODO: Implement using rtc_offset + l4_kip_clock_ns(l4re_kip())\n");
-    fprintf(stderr, "See: l4/pkg/rtc/lib/libc_backend/gettime.cc for reference\n");
-    exit(1);
+    /* Use RTC server offset + KIP clock for wall-clock time */
+    if (!rtc_available) {
+        /* No RTC: return monotonic time (better than nothing) */
+        return l4re_get_monotonic_ns();
+    }
+
+    /* Real-time = RTC offset (ns since epoch to boot) + KIP clock (ns since boot) */
+    l4_kernel_info_t *kip = l4re_kip();
+    if (!kip) {
+        return rtc_offset; /* Fallback to RTC offset only */
+    }
+
+    return rtc_offset + l4_kip_clock_ns(kip);
 }
 
 static int l4re_set_realtime_ns(sf_time_ns_t ns_since_epoch) {
-    (void) ns_since_epoch;
-    /* TODO: Set RTC offset via IPC */
-    /* rtc_cap->set_timer_offset(new_offset); */
-    fprintf(stderr, "FATAL: L4Re backend not implemented yet - l4re_set_realtime_ns()\n");
-    fprintf(stderr, "TODO: Implement using rtc_cap->set_timer_offset()\n");
-    fprintf(stderr, "See: l4/pkg/rtc/include/rtc for RTC API\n");
-    exit(1);
+    if (!rtc_available || !rtc_cap.is_valid()) {
+        return -1; /* No RTC capability */
+    }
+
+    /* Calculate new offset: desired epoch time - current KIP clock */
+    l4_kernel_info_t *kip = l4re_kip();
+    if (!kip) {
+        return -1;
+    }
+
+    l4_uint64_t kip_ns = l4_kip_clock_ns(kip);
+    l4_uint64_t new_offset = ns_since_epoch - kip_ns;
+
+    /* Set RTC offset via IPC */
+    long ret = rtc_cap->set_timer_offset(new_offset);
+    if (ret < 0) {
+        return -1;
+    }
+
+    /* Update cached offset */
+    rtc_offset = new_offset;
+    return 0;
 }
 
 static int l4re_format_timestamp(sf_time_ns_t ns_since_epoch, char *buf, int format_24h) {
-    (void) format_24h;
-    if (!buf)
+    if (!buf) {
         return -1;
+    }
 
-    /* TODO: Use libc localtime/strftime - these should work in L4Re libc */
-    /* For now, just show raw nanoseconds */
-    snprintf(buf, SF_TIME_STAMP_SIZE, "TODO:%llu", (unsigned long long) ns_since_epoch);
-    fprintf(stderr, "WARNING: L4Re timestamp formatting not implemented yet\n");
-    fprintf(stderr, "TODO: Implement using localtime() + strftime() from L4Re libc\n");
-    return 0; /* Don't fatal here - timestamps not critical */
+    /* Convert nanoseconds to seconds for libc time functions */
+    time_t seconds = (time_t)(ns_since_epoch / 1000000000ULL);
+
+    /* Use L4Re libc localtime + strftime */
+    struct tm *tm_info = localtime(&seconds);
+    if (!tm_info) {
+        /* Fallback: show raw seconds */
+        snprintf(buf, SF_TIME_STAMP_SIZE, "%llu", (unsigned long long) seconds);
+        return -1;
+    }
+
+    /* Format timestamp based on 24h preference */
+    const char *format = format_24h ? "%Y-%m-%d %H:%M:%S" : "%Y-%m-%d %I:%M:%S %p";
+    size_t ret = strftime(buf, SF_TIME_STAMP_SIZE, format, tm_info);
+
+    return (ret > 0) ? 0 : -1;
 }
 
 static int l4re_has_rtc(void) {
-    /* TODO: Check if RTC capability is valid */
-    /* return rtc_available; */
-    return 0; /* Assume no RTC until implemented */
+    return rtc_available;
 }
 
 /* L4Re backend vtable */
@@ -79,34 +115,63 @@ const sf_time_backend_t sf_time_backend_l4re = {
 
 /* L4Re-specific initialization (called by sf_time_init) */
 void sf_time_init_l4re(void) {
-    /* TODO: Get RTC capability from L4Re environment */
-    /* rtc_cap = L4Re::Env::env()->get_cap<L4rtc::Rtc>("rtc"); */
-    /* rtc_cap->get_timer_offset(&rtc_offset); */
+    fprintf(stderr, "[L4Re Time] Initializing L4Re time backend...\n");
 
-    fprintf(stderr, "==============================================\n");
-    fprintf(stderr, "L4Re Platform Time Backend - STUB VERSION\n");
-    fprintf(stderr, "==============================================\n");
-    fprintf(stderr, "WARNING: This is a stub implementation!\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "TODO List for L4Re Integration:\n");
-    fprintf(stderr, "  1. Add #include <l4/re/env.h>\n");
-    fprintf(stderr, "  2. Add #include <l4/sys/kip.h>\n");
-    fprintf(stderr, "  3. Add #include <l4/rtc/rtc>\n");
-    fprintf(stderr, "  4. Get RTC capability: L4Re::Env::env()->get_cap<L4rtc::Rtc>(\"rtc\")\n");
-    fprintf(stderr, "  5. Query offset: rtc_cap->get_timer_offset(&rtc_offset)\n");
-    fprintf(stderr, "  6. Implement monotonic: l4_kip_clock_ns(l4re_kip())\n");
-    fprintf(stderr, "  7. Implement realtime: rtc_offset + l4_kip_clock_ns(l4re_kip())\n");
-    fprintf(stderr, "  8. Add librtc to REQUIRES_LIBS in Makefile\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Reference implementations:\n");
-    fprintf(stderr, "  - l4/pkg/rtc/lib/client/librtc.cc\n");
-    fprintf(stderr, "  - l4/pkg/rtc/lib/libc_backend/gettime.cc\n");
-    fprintf(stderr, "  - l4/pkg/rtc/include/rtc\n");
-    fprintf(stderr, "==============================================\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "NOTE: Attempting to use time functions will cause exit(1)\n");
-    fprintf(stderr, "      until proper L4Re implementation is completed.\n");
-    fprintf(stderr, "\n");
+    /* Try to get RTC capability from L4Re environment */
+    rtc_cap = L4Re::Env::env()->get_cap<L4rtc::Rtc>("rtc");
+
+    if (!rtc_cap.is_valid()) {
+        fprintf(stderr, "[L4Re Time] WARNING: RTC capability not available\n");
+        fprintf(stderr, "[L4Re Time] Falling back to monotonic-only mode\n");
+        fprintf(stderr, "[L4Re Time] Real-time will use KIP clock (time since boot)\n");
+        rtc_available = 0;
+        rtc_offset = 0;
+        return;
+    }
+
+    /* RTC capability acquired successfully */
+    fprintf(stderr, "[L4Re Time] RTC capability acquired\n");
+
+    /* Query the RTC timer offset (nanoseconds from epoch to boot) */
+    long ret = rtc_cap->get_timer_offset(&rtc_offset);
+
+    if (ret < 0) {
+        fprintf(stderr, "[L4Re Time] ERROR: Failed to get RTC timer offset (ret=%ld)\n", ret);
+        fprintf(stderr, "[L4Re Time] RTC may not be initialized or running\n");
+        fprintf(stderr, "[L4Re Time] Setting offset to 0 (will show time since boot as epoch)\n");
+        rtc_available = 0;
+        rtc_offset = 0;
+        return;
+    }
+
+    /* Success! */
+    rtc_available = 1;
+    fprintf(stderr, "[L4Re Time] RTC offset retrieved: %llu ns since epoch\n",
+            (unsigned long long) rtc_offset);
+
+    /* Convert offset to a readable date for verification */
+    time_t boot_time_sec = (time_t)(rtc_offset / 1000000000ULL);
+    struct tm *boot_tm = gmtime(&boot_time_sec);
+    if (boot_tm) {
+        char boot_str[64];
+        strftime(boot_str, sizeof(boot_str), "%Y-%m-%d %H:%M:%S UTC", boot_tm);
+        fprintf(stderr, "[L4Re Time] System boot time: %s\n", boot_str);
+    }
+
+    /* Display current time */
+    l4_kernel_info_t *kip = l4re_kip();
+    if (kip) {
+        l4_uint64_t now_ns = rtc_offset + l4_kip_clock_ns(kip);
+        time_t now_sec = (time_t)(now_ns / 1000000000ULL);
+        struct tm *now_tm = gmtime(&now_sec);
+        if (now_tm) {
+            char now_str[64];
+            strftime(now_str, sizeof(now_str), "%Y-%m-%d %H:%M:%S UTC", now_tm);
+            fprintf(stderr, "[L4Re Time] Current time: %s\n", now_str);
+        }
+    }
+
+    fprintf(stderr, "[L4Re Time] Initialization complete\n");
 }
 
 #else

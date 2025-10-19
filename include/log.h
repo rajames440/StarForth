@@ -18,6 +18,11 @@
 #ifndef LOG_H
 #define LOG_H
 
+/* Maximum log line size for persistent logging */
+#ifndef LOG_LINE_MAX
+#define LOG_LINE_MAX 256
+#endif
+
 /* Forward declaration */
 struct VM;
 

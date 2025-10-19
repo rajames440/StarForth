@@ -97,26 +97,52 @@ generate_api_pdf() {
 
     cd "${REPO_ROOT}"
     doxygen Doxyfile >/dev/null 2>&1 || true
+    local docbook_dir="${REPO_ROOT}/docs/api/docbook"
+    local expanded_docbook="${BOOK_DIR}/api-docbook-expanded.xml"
+    local sanitized_docbook="${BOOK_DIR}/api-docbook-sanitized.xml"
+    local api_pdf="${BOOK_DIR}/03-Documentation-and-API.pdf"
+    rm -f "$api_pdf"
 
-    # Try LaTeX → PDF conversion
-    if [[ -d docs/api/latex ]]; then
-        log "Converting LaTeX documentation to PDF..."
-        cd docs/api/latex
-        if command -v pdflatex >/dev/null 2>&1; then
-            make pdf >/dev/null 2>&1 || true
-            if [[ -f refman.pdf ]]; then
-                cp refman.pdf "${BOOK_DIR}/01-API-Documentation.pdf"
-                success "API documentation PDF created"
-                return 0
+    if [[ -d "$docbook_dir" ]] && command -v xmllint >/dev/null 2>&1 \
+        && command -v python3 >/dev/null 2>&1 && command -v pandoc >/dev/null 2>&1; then
+        log "Converting DocBook export to PDF..."
+
+        if xmllint --xinclude "$docbook_dir/index.xml" > "$expanded_docbook" 2>/dev/null; then
+            if python3 - "$expanded_docbook" "$sanitized_docbook" <<'PY'
+from pathlib import Path
+import sys
+expanded, sanitized = map(Path, sys.argv[1:3])
+text = expanded.read_text(encoding="utf-8", errors="ignore")
+sanitized.write_bytes(text.encode("ascii", "ignore"))
+PY
+            then
+                pandoc -f docbook "$sanitized_docbook" \
+                    -o "$api_pdf" \
+                    --pdf-engine=pdflatex \
+                    --toc \
+                    --toc-depth=2 \
+                    --variable geometry:margin=1in \
+                    2>/dev/null || true
+            else
+                warn "Unicode sanitization failed for DocBook conversion"
             fi
+        else
+            warn "xmllint failed to resolve DocBook includes"
         fi
+
+        rm -f "$expanded_docbook" "$sanitized_docbook" 2>/dev/null || true
+
+        if [[ -f "$api_pdf" ]] && [[ -s "$api_pdf" ]]; then
+            success "Documentation & API PDF created"
+            return 0
+        fi
+    else
+        warn "DocBook conversion prerequisites missing (xmllint/python3/pandoc)"
     fi
 
-    # Fallback: Convert HTML to PDF using pandoc
     if [[ -d "${REPO_ROOT}/docs/api/html" ]]; then
         log "Converting HTML API docs to PDF (fallback)..."
 
-        # Create a simple title page for API docs
         cat > "${BOOK_DIR}/api-title.md" <<EOF
 ---
 title: "StarForth API Documentation"
@@ -131,12 +157,12 @@ This section contains the complete API documentation generated from the source c
 EOF
 
         pandoc "${BOOK_DIR}/api-title.md" \
-            -o "${BOOK_DIR}/01-API-Documentation.pdf" \
+            -o "$api_pdf" \
             --pdf-engine=pdflatex \
             --variable geometry:margin=1in 2>/dev/null || true
 
-        if [[ -f "${BOOK_DIR}/01-API-Documentation.pdf" ]]; then
-            success "API documentation PDF created (from title page)"
+        if [[ -f "$api_pdf" ]]; then
+            success "Documentation & API PDF created (fallback title page)"
             return 0
         fi
     fi
@@ -190,172 +216,6 @@ generate_man_pdf() {
     fi
 
     warn "Could not generate man page PDF"
-    return 1
-}
-
-# Generate GNU Info documentation PDF
-generate_info_pdf() {
-    log "Generating GNU Info documentation PDF..."
-
-    local TEXI_FILE="${DOCS_DIR}/starforth.texi"
-    if [[ ! -f "$TEXI_FILE" ]]; then
-        warn "Texinfo source not found: $TEXI_FILE"
-        return 1
-    fi
-
-    cd "${DOCS_DIR}"
-
-    # Try texi2pdf (best option)
-    if command -v texi2pdf >/dev/null 2>&1; then
-        texi2pdf --quiet -o "${BOOK_DIR}/03-Info-Documentation.pdf" starforth.texi >/dev/null 2>&1
-        if [[ -f "${BOOK_DIR}/03-Info-Documentation.pdf" ]]; then
-            success "Info documentation PDF created (texi2pdf)"
-            return 0
-        fi
-    fi
-
-    # Fallback: Convert to HTML then PDF
-    if command -v makeinfo >/dev/null 2>&1; then
-        log "Trying makeinfo → HTML → PDF conversion..."
-        makeinfo --html --no-split starforth.texi -o "${BUILD_DIR}/info.html" 2>/dev/null
-
-        if [[ -f "${BUILD_DIR}/info.html" ]] && command -v pandoc >/dev/null 2>&1; then
-            pandoc "${BUILD_DIR}/info.html" \
-                -o "${BOOK_DIR}/03-Info-Documentation.pdf" \
-                --pdf-engine=pdflatex 2>/dev/null || true
-
-            if [[ -f "${BOOK_DIR}/03-Info-Documentation.pdf" ]]; then
-                success "Info documentation PDF created (HTML conversion)"
-                return 0
-            fi
-        fi
-    fi
-
-    warn "Could not generate info documentation PDF"
-    return 1
-}
-
-# Generate markdown documentation PDF
-generate_markdown_pdf() {
-    log "Generating markdown documentation PDF..."
-
-    cd "${REPO_ROOT}"
-
-    # Copy banner image to book directory so it can be embedded in PDF
-    if [[ -f "${REPO_ROOT}/banner.png" ]]; then
-        cp "${REPO_ROOT}/banner.png" "${BOOK_DIR}/" 2>/dev/null || true
-    fi
-    if [[ -f "${REPO_ROOT}/docs/assets/banner.png" ]]; then
-        mkdir -p "${BOOK_DIR}/assets"
-        cp "${REPO_ROOT}/docs/assets/banner.png" "${BOOK_DIR}/assets/" 2>/dev/null || true
-    fi
-
-    # Create comprehensive markdown compilation
-    cat > "${BOOK_DIR}/markdown-docs.md" <<EOF
----
-title: "StarForth Documentation"
-subtitle: "Complete Guide and Reference Manual"
-author: "Robert A. James"
-date: "$DATE"
-version: "$VERSION"
----
-
-EOF
-
-    # Add key markdown files in logical order
-    # README MUST BE FIRST!
-    local MD_FILES=(
-        "README.md"
-        "INSTALL.md"
-        "docs/TESTING.md"
-        "docs/PROFILING.md"
-        "docs/PERFORMANCE.md"
-        "docs/ARCHITECTURE.md"
-        "docs/GAP_ANALYSIS.md"
-        "docs/BREAK_ME_REPORT.md"
-    )
-
-    for md_file in "${MD_FILES[@]}"; do
-        if [[ -f "$md_file" ]]; then
-            log "  Adding: $md_file"
-            echo "" >> "${BOOK_DIR}/markdown-docs.md"
-            echo "\\newpage" >> "${BOOK_DIR}/markdown-docs.md"
-            echo "" >> "${BOOK_DIR}/markdown-docs.md"
-            echo "# $(basename "$md_file" .md)" >> "${BOOK_DIR}/markdown-docs.md"
-            echo "" >> "${BOOK_DIR}/markdown-docs.md"
-            cat "$md_file" >> "${BOOK_DIR}/markdown-docs.md"
-        fi
-    done
-
-    # Convert to PDF (try multiple methods)
-    # Method 1: Full featured with TOC
-    pandoc "${BOOK_DIR}/markdown-docs.md" \
-        -o "${BOOK_DIR}/04-Documentation.pdf" \
-        --pdf-engine=pdflatex \
-        --toc \
-        --toc-depth=2 \
-        --number-sections \
-        --variable geometry:margin=1in \
-        --variable fontsize:11pt \
-        --variable documentclass:article \
-        2>/dev/null && {
-            if [[ -f "${BOOK_DIR}/04-Documentation.pdf" ]] && [[ -s "${BOOK_DIR}/04-Documentation.pdf" ]]; then
-                success "Markdown documentation PDF created (full featured)"
-                return 0
-            fi
-        }
-
-    # Method 2: Simple conversion without TOC
-    warn "Full featured PDF failed, trying simpler conversion..."
-    pandoc "${BOOK_DIR}/markdown-docs.md" \
-        -o "${BOOK_DIR}/04-Documentation.pdf" \
-        --pdf-engine=pdflatex \
-        --variable geometry:margin=1in \
-        2>/dev/null && {
-            if [[ -f "${BOOK_DIR}/04-Documentation.pdf" ]] && [[ -s "${BOOK_DIR}/04-Documentation.pdf" ]]; then
-                success "Markdown documentation PDF created (simple)"
-                return 0
-            fi
-        }
-
-    # Method 3: Direct PDF generation (no LaTeX)
-    warn "LaTeX PDF failed, trying direct PDF..."
-    pandoc "${BOOK_DIR}/markdown-docs.md" \
-        -o "${BOOK_DIR}/04-Documentation.pdf" \
-        2>/dev/null && {
-            if [[ -f "${BOOK_DIR}/04-Documentation.pdf" ]] && [[ -s "${BOOK_DIR}/04-Documentation.pdf" ]]; then
-                success "Markdown documentation PDF created (direct)"
-                return 0
-            fi
-        }
-
-    # If all else fails, create a simple placeholder
-    warn "Could not generate full markdown PDF, creating placeholder..."
-    cat > "${BOOK_DIR}/markdown-placeholder.md" <<EOF
----
-title: "StarForth Documentation"
-subtitle: "See individual markdown files in docs/"
-author: "Robert A. James"
----
-
-# Documentation Files
-
-The following documentation files are available in the StarForth repository:
-
-$(for f in "${MD_FILES[@]}"; do [[ -f "$f" ]] && echo "- $f"; done)
-
-Please refer to these files in the source repository for complete documentation.
-EOF
-
-    pandoc "${BOOK_DIR}/markdown-placeholder.md" \
-        -o "${BOOK_DIR}/04-Documentation.pdf" 2>/dev/null || true
-
-    if [[ -f "${BOOK_DIR}/04-Documentation.pdf" ]] && [[ -s "${BOOK_DIR}/04-Documentation.pdf" ]]; then
-        warn "Using placeholder documentation PDF"
-        return 0
-    fi
-
-    warn "Could not generate markdown documentation PDF"
     return 1
 }
 
@@ -465,7 +325,7 @@ merge_pdfs() {
 
     # Find all PDFs in order
     local pdf_files=()
-    for pdf in 00-Title-Page.pdf 01-API-Documentation.pdf 02-Man-Pages.pdf 03-Info-Documentation.pdf 04-Documentation.pdf; do
+    for pdf in 00-Title-Page.pdf 02-Man-Pages.pdf 03-Documentation-and-API.pdf; do
         if [[ -f "$pdf" ]]; then
             pdf_files+=("$pdf")
             log "  Including: $pdf"
@@ -530,10 +390,8 @@ main() {
     echo ""
 
     generate_title_page
-    generate_api_pdf
     generate_man_pdf
-    generate_info_pdf
-    generate_markdown_pdf
+    generate_api_pdf
 
     echo ""
 
