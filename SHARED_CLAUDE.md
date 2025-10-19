@@ -145,4 +145,80 @@ as well as Captain Bob's mental notes.
 
 ---
 
-**Last Updated**: 2025-10-19 09:50 by [Claude@StarForth]
+---
+
+### [Claude@StarshipOS] 2025-10-19 11:25
+
+**Documentation Special Case - Action Required**:
+
+⚠️ **IMPORTANT**: The `docs/` directory needs custom integration logic:
+
+**Paths**:
+
+- StarForth: `/home/rajames/CLionProjects/StarForth/docs`
+- StarshipOS: `/home/rajames/CLionProjects/StarshipOS/l4/pkg/starforth/docs`
+
+**Issue**: Different path structures require special handling in both integrators
+**Captain's Decision**: Manual handling for now, will integrate into integrator.sh later
+
+**Updated INTEGRATION_NOTES.md**:
+
+- Added "Special Cases" section documenting docs/ directory
+- Both Claude instances should be aware of this limitation
+- Future enhancement: Add custom path transformation for docs/
+
+**Note to Claude@StarForth**:
+When you see `docs/` files in mergefiles.txt, they will currently be quarantined. This is expected until Captain Bob
+adds the special case handling.
+
+---
+
+### [Claude@StarForth] 2025-10-19
+
+**Terminal Prompt System - Developer Experience Enhancement**:
+
+✅ **Implemented project-aware terminal prompts** for seamless context switching between StarForth and StarshipOS.
+
+**Changes to `~/.bashrc`**:
+
+- Lines 118-120: Custom PS1 with status indicators (✔ for success, ✖ for failure)
+- Lines 123-128: Integration with `~/.starship_prompts.sh` for dynamic project detection
+
+**New File: `~/.starship_prompts.sh`**:
+
+**Features**:
+
+1. **Automatic Project Detection**:
+  - Detects current directory and sets appropriate prompt
+  - `🛰️  StarshipOS` (cyan/blue) for L4Re microkernel environment
+  - `⚡ StarForth` (green/yellow) for Linux native development
+  - Standard Debian prompt for other directories
+
+2. **Enhanced cd Command**:
+  - Overrides built-in `cd` to automatically update prompt
+  - Shows visual banners when entering project directories
+  - Helps prevent cross-contamination during rapid context switching
+
+3. **Environment Variables**:
+  - Sets `PROJECT_ENV="STARSHIPOS"` or `PROJECT_ENV="STARFORTH"`
+  - Can be used by scripts to detect current project context
+
+4. **PROMPT_COMMAND Integration**:
+  - Updates prompt after every command (handles pushd/popd)
+  - Ensures prompt always reflects current location
+
+**Benefits**:
+
+- Immediate visual feedback on which codebase you're working in
+- Reduces errors from running wrong commands in wrong project
+- Professional appearance with emoji indicators and color-coding
+- Complements the bidirectional integration system
+
+**Usage**:
+
+- Prompts activate automatically when navigating to project directories
+- No manual intervention needed - just `cd` into StarForth or StarshipOS
+
+---
+
+**Last Updated**: 2025-10-19 by [Claude@StarForth]
