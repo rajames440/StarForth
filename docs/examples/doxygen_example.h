@@ -1,31 +1,20 @@
-/**
- * @file doxygen_example.h
- * @brief Example header file showing Doxygen documentation style
- *
- * @details
- * This file demonstrates how to properly document C code using Doxygen/Javadoc
- * style comments for the StarForth project. Use this as a template when adding
- * documentation to existing headers.
- *
- * ## Documentation Goals
- * - Make API clear and easy to understand
- * - Provide usage examples for complex functions
- * - Document pre/post conditions and edge cases
- * - Cross-reference related functions
- *
- * ## Quick Reference
- * - File docs: `@file`, `@brief`, `@details`, `@author`
- * - Function docs: `@brief`, `@param`, `@return`, `@details`
- * - Examples: `@code ... @endcode`
- * - Cross-refs: `@see function_name`
- * - Warnings: `@warning`, `@note`, `@bug`, `@todo`
- *
- * @author R. A. James (rajames) - StarshipOS Forth Project
- * @date 2025-10-01
- * @version 1.0.0
- * @copyright CC0-1.0 (Public Domain)
- *
- * @see docs/DOXYGEN_STYLE_GUIDE.md
+/*
+                                  ***   StarForth   ***
+
+  doxygen_example.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-23T10:55:24.614-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/docs/examples/doxygen_example.h
  */
 
 #ifndef DOXYGEN_EXAMPLE_H

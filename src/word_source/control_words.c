@@ -1,20 +1,20 @@
-/**
- * @file control_words.c
- * @brief FORTH-79 Standard control flow implementation using ANSI C99
- * @details Provides control flow words and runtime support for the StarForth interpreter
- *
- * Design notes (FORTH-79 compliance):
- * - Exactly TWO stacks at runtime: parameter (data) and return.
- * - Loop parameters (index, limit) are stored on the RETURN STACK beneath IP.
- *   RS layout within a DO…LOOP (top on right):
- *     …, limit_outer, index_outer, ip_outer, limit_inner, index_inner, ip_inner
- *   I  -> RS[-1] (current index)
- *   J  -> RS[-3] (outer index)   <-- matches code below
- * - Compile-time: forward/backpatch via a small CF (control-flow) stack.
- * - Runtime branch words mutate the IP at top of RS.
- *
- * @copyright StarForth project contributors
- * @license CC0-1.0
+/*
+                                  ***   StarForth   ***
+
+  control_words.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-23T10:54:00.848-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/src/word_source/control_words.c
  */
 
 #include "include/control_words.h"

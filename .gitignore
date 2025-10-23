@@ -1,17 +1,49 @@
-/.idea
-/build/
+# StarshipOS Build Artifacts
+/fiasco/build/*
+/l4/conf/starforth
 
-/bin/
+# Documentation Build
 /docs/build/
-/docs/api/
-compile_commands.json
-/.clangd
-/scripts/generate-ide-files.sh
-/.vscode/
+/docs/templates/static/
+/l4/pkg/starforth/server/doc/
+
+# Runtime Artifacts
 /disks/
-/build/generated/
-/docs/book/output/
-/docs/book/generated/
-/debian/
-/me/
-/maint/integrator.log
+/dox/datadump.zip
+*.img
+*.iso
+
+# IDE Files
+/.idea/
+/.vscode/
+/.claude/
+*.swp
+*.swo
+*~
+
+# Generated Files
+compile_commands.json
+maint/mergefiles.txt
+
+# Development Notes
+/thoughts.txt
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/compile_commands.events.json
+/AGENTS.md
+/CLAUDE.md
+/StarshipOS_Roadmap.md
+/l4/build/
+/.clangd
+/fiasco/build/*
+/L4/build/*
