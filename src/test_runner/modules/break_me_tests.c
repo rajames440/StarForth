@@ -1,12 +1,20 @@
-/**
- * @file break_me_tests.c
- * @brief ULTRA-COMPREHENSIVE STARFORTH DIAGNOSTIC & STRESS TEST SUITE
- *
- * The --break-me flag unleashes an exhaustive battery of tests and generates
- * a detailed markdown report suitable for inclusion in the StarForth Book.
- *
- * Copyright (c) 2025 Robert A. James - StarshipOS Forth Project
- * Released under Creative Commons Zero v1.0 Universal
+/*
+                                  ***   StarForth   ***
+
+  break_me_tests.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-23T10:54:00.510-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/src/test_runner/modules/break_me_tests.c
  */
 
 #include <stdio.h>

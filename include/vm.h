@@ -1,20 +1,20 @@
 /*
-========================================================================================================================
-||                                                 ***   StarForth   ***                                              ||
-========================================================================================================================
-  vm.h - FORTH-79 Standard and ANSI C99 ONLY
- Last modified - 8/15/25, 10:41 AM
+                                  ***   StarForth   ***
+
+  vm.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-23T10:55:24.706-04
+
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
-========================================================================================================================
- This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
   To the extent possible under law, the author(s) have dedicated all copyright and related
   and neighboring rights to this software to the public domain worldwide.
   This software is distributed without any warranty.
-========================================================================================================================
+
   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
-  vm.h
-========================================================================================================================
-  IF you open this in StarshipOS at /home/rajames/CLionProjects/StarshipOS/l4/pkg/starforth/server/include we're good!
+
+  /home/rajames/CLionProjects/StarForth/include/vm.h
  */
 
 #ifndef VM_H
@@ -75,12 +75,43 @@ static inline cell_t CELL(vaddr_t a) { return (cell_t) (int64_t) a; }
 #define DICTIONARY_MEMORY_SIZE (DICTIONARY_BLOCKS * BLOCK_SIZE)
 #define USER_BLOCKS_START DICTIONARY_BLOCKS             /* User blocks start at block 2048 */
 
+/* Persistent log configuration */
+#define LOG_LINE_MAX 64                                 /* Each log line is 64 bytes */
+#define LOG_LINES_PER_BLOCK (BLOCK_SIZE / LOG_LINE_MAX) /* 16 lines per 1KB block */
+#define LOG_BLOCKS_START 3072                           /* Log starts at block 3072 */
+#define LOG_BLOCKS_END 5120                             /* Log ends at block 5120 (exclusive) */
+#define LOG_BLOCKS (LOG_BLOCKS_END - LOG_BLOCKS_START)  /* 2048 blocks (2MB) for logs */
+#define LOG_LAYER1_MAX_LINES (LOG_BLOCKS * LOG_LINES_PER_BLOCK) /* 32768 max lines */
+
 /* Word flags */
 #define WORD_IMMEDIATE  0x80    /* Word executes immediately even in compile mode */
 #define WORD_HIDDEN     0x40    /* Word is hidden from dictionary searches */
 #define WORD_SMUDGED    0x20    /* Word is smudged (being defined) - FORTH-79 */
 #define WORD_COMPILED   0x10    /* Word is user-compiled (not built-in) */
 #define WORD_PINNED     0x08    /* Word's entropy is pinned (cannot decay to zero) */
+
+/* ACL (Access Control List) defaults - stub implementation */
+#define ACL_USER_DEFAULT 0x01   /* Default access: users can execute and compile */
+
+/* Physics model constants - stub implementation */
+#define SPIN_IDLE        0      /* Particle spin state: idle */
+#define CHARGE_NEUTRAL   0      /* Particle charge state: neutral */
+
+/* Physics properties structure - stub implementation for elementary particle model */
+typedef struct {
+    uint32_t observations;          /* Number of times word has been observed/executed */
+    uint32_t entropy_reciprocal;    /* Reciprocal of entropy (higher = colder/less used) */
+    uint64_t last_observed_ns;      /* Timestamp of last observation in nanoseconds */
+    uint32_t decay_rate;            /* Rate at which word decays when unused */
+    uint32_t mass;                  /* Memory footprint of the word */
+    uint32_t momentum;              /* Execution momentum */
+    uint8_t spin;                   /* Particle spin state */
+    uint8_t charge;                 /* Particle charge state */
+    uint8_t superposition;          /* Superposition state */
+    uint8_t heat_index;             /* Heat index (usage intensity) */
+    void *topics;                   /* Topic subscriptions (NULL for now) */
+    uint32_t topic_count;           /* Number of topic subscriptions */
+} DictPhysics;
 
 /* Dictionary entry - enhanced for FORTH-79 compatibility */
 typedef struct DictEntry {
@@ -89,6 +120,8 @@ typedef struct DictEntry {
     uint8_t flags; /* Word flags */
     uint8_t name_len; /* Length of name */
     cell_t entropy; /* Usage counter - incremented on each execution */
+    uint8_t acl_default; /* Access control list default permissions - stub */
+    DictPhysics physics; /* Physics properties for elementary particle model */
     char name[]; /* Variable-length name + optional code */
 } DictEntry;
 

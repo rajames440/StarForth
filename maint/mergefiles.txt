@@ -1,7 +1,9 @@
+.gitignore
 Makefile
-include/log.h
+Makefile.arm64
+hashnode_banner.png
+l4/pkg/starforth/server/include/vm.h
 maint/INTEGRATION_NOTES.md
-maint/blacklist.txt
 maint/integrator.sh
 maint/mergefiles.txt
-maint/whitelist.txt
+maint/quarantine/hashnode_banner.png
