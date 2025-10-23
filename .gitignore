@@ -45,7 +45,6 @@ Thumbs.db
 /StarshipOS_Roadmap.md
 /l4/build/
 /.clangd
-/fiasco/build/*
 /L4/build/*
 /build/platform/linux/time.o
 /build/platform/platform_init.o
@@ -1798,3 +1797,4 @@ Thumbs.db
 /docs/api/xml/structProfiler.xml
 /docs/api/xml/structsf__time__backend__t.xml
 /docs/api/xml/vm_8h.xml
+/docs/api/
