@@ -7,7 +7,7 @@
    ╚════██║   ██║   ██╔══██║██╔══██╗██╔══╝  ██║   ██║██╔══██╗ ██║   ██╔══██║
    ███████║   ██║   ██║  ██║██║  ██║██╗     ╚██████╔╝██║  ██║ ██║   ██║  ██║
    ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═╝   ╚═╝  ╚═╝
-                   A Clean FORTH-79 VM for the Modern Age — Fast. Lean. Amber.
+                   A Clean FORTH-79 VM for the Modern Age — Fast. Lean. Better machine.
 ```
 
 # 🧠 **StarForth**
@@ -27,9 +27,25 @@
 It’s the beating heart of [StarshipOS](https://github.com/starshipos) 🛸, but it’s also a **standalone, embeddable
 virtual machine**. You can run it on bare metal, inside L4Re, in QEMU, or integrate it into your own projects.
 
-StarForth isn’t bloated.
-StarForth isn’t cute.
+StarForth isn't bloated.
+StarForth isn't cute.
 **StarForth is a goddamn precision engine.**
+
+---
+
+## ✅ **Governance & Validation**
+
+StarForth is governed and validated through the [StarForth Governance Repository](https://github.com/rajames440/StarForth-Governance):
+
+- **FORTH-79 Compliance:** 675+ test suite validates 100% standard compliance
+- **ANSI C99:** Strict compilation with zero warnings
+- **Portability:** Proven across Linux, L4Re/Fiasco.OC, seL4, and embedded systems
+- **Component Independence:** Platform abstraction layer enables use in multiple hypervisors
+
+See [StarshipOS Governance](https://github.com/rajames440/StarshipOS-Governance) for how StarForth integrates across three phases:
+- **Phase 1 (NOW):** L4Re/Fiasco.OC foundation
+- **Phase 2 (COMING):** seL4 formally-verified microkernel
+- **Phase 3 (FUTURE):** Standalone microkernel/OS environment
 
 ---
 
