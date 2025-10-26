@@ -4,7 +4,7 @@
   -
   -  starforth.tag- FORTH-79 Standard and ANSI C99 ONLY
   -  Modified by - rajames
-  -  Last modified - 2025-10-26T09:28:03.889-04
+  -  Last modified - 2025-10-26T09:39:09.656-04
   -
   -  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
   -
