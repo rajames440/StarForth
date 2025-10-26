@@ -1,0 +1,73 @@
+════════════════════════════════════════════════════════════
+   ⚡ Building the Fastest Forth in the West! ⚡
+════════════════════════════════════════════════════════════
+  Target: x86_64
+
+  CC  src/blkio_factory.c
+  CC  src/blkio_file.c
+  CC  src/blkio_ram.c
+  CC  src/block_subsystem.c
+  CC  src/dictionary_management.c
+  CC  src/io.c
+  CC  src/log.c
+  CC  src/main.c
+  CC  src/memory_management.c
+  CC  src/profiler.c
+  CC  src/repl.c
+  CC  src/stack_management.c
+  CC  src/vm_api.c
+  CC  src/vm.c
+  CC  src/vm_debug.c
+  CC  src/word_registry.c
+  CC  src/word_source/arithmetic_words.c
+  CC  src/word_source/block_words.c
+  CC  src/word_source/control_words.c
+  CC  src/word_source/defining_words.c
+  CC  src/word_source/dictionary_manipulation_words.c
+  CC  src/word_source/dictionary_words.c
+  CC  src/word_source/double_words.c
+  CC  src/word_source/editor_words.c
+  CC  src/word_source/format_words.c
+  CC  src/word_source/io_words.c
+  CC  src/word_source/logical_words.c
+  CC  src/word_source/memory_words.c
+  CC  src/word_source/mixed_arithmetic_words.c
+  CC  src/word_source/return_stack_words.c
+  CC  src/word_source/stack_words.c
+  CC  src/word_source/starforth_words.c
+  CC  src/word_source/string_words.c
+  CC  src/word_source/system_words.c
+  CC  src/word_source/vocabulary_words.c
+  CC  src/test_runner/test_common.c
+  CC  src/test_runner/test_runner.c
+  CC  src/test_runner/modules/arithmetic_words_test.c
+  CC  src/test_runner/modules/block_words_test.c
+  CC  src/test_runner/modules/break_me_tests.c
+  CC  src/test_runner/modules/compute_benchmark.c
+  CC  src/test_runner/modules/control_words_test.c
+  CC  src/test_runner/modules/defining_words_tests.c
+  CC  src/test_runner/modules/dictionary_manipulation_words_test.c
+  CC  src/test_runner/modules/dictionary_words_test.c
+  CC  src/test_runner/modules/double_words_test.c
+  CC  src/test_runner/modules/format_words_test.c
+  CC  src/test_runner/modules/integration_tests.c
+  CC  src/test_runner/modules/io_words_test.c
+  CC  src/test_runner/modules/logical_words_test.c
+  CC  src/test_runner/modules/memory_words_test.c
+  CC  src/test_runner/modules/mixed_arithmetic_words_test.c
+  CC  src/test_runner/modules/return_stack_words_test.c
+  CC  src/test_runner/modules/stack_words_test.c
+  CC  src/test_runner/modules/starforth_words_test.c
+  CC  src/test_runner/modules/stress_tests.c
+  CC  src/test_runner/modules/string_words_test.c
+  CC  src/test_runner/modules/system_words_test.c
+  CC  src/test_runner/modules/vocabulary_words_test.c
+  CC  src/platform/linux/time.c
+  CC  src/platform/platform_init.c
+🔗 Linking build/starforth...
+gcc -std=c99 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include -DSTRICT_PTR=1 -O2 -march=native -flto=auto -fuse-linker-plugin -DNDEBUG -DUSE_ASM_OPT=1 -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-strict-aliasing -Wl,--gc-sections -s -flto=auto -fuse-linker-plugin -static -o build/starforth build/blkio_factory.o build/blkio_file.o build/blkio_ram.o build/block_subsystem.o build/dictionary_management.o build/io.o build/log.o build/main.o build/memory_management.o build/profiler.o build/repl.o build/stack_management.o build/vm_api.o build/vm.o build/vm_debug.o build/word_registry.o build/word_source/arithmetic_words.o build/word_source/block_words.o build/word_source/control_words.o build/word_source/defining_words.o build/word_source/dictionary_manipulation_words.o build/word_source/dictionary_words.o build/word_source/double_words.o build/word_source/editor_words.o build/word_source/format_words.o build/word_source/io_words.o build/word_source/logical_words.o build/word_source/memory_words.o build/word_source/mixed_arithmetic_words.o build/word_source/return_stack_words.o build/word_source/stack_words.o build/word_source/starforth_words.o build/word_source/string_words.o build/word_source/system_words.o build/word_source/vocabulary_words.o build/test_runner/test_common.o build/test_runner/test_runner.o build/test_runner/modules/arithmetic_words_test.o build/test_runner/modules/block_words_test.o build/test_runner/modules/break_me_tests.o build/test_runner/modules/compute_benchmark.o build/test_runner/modules/control_words_test.o build/test_runner/modules/defining_words_tests.o build/test_runner/modules/dictionary_manipulation_words_test.o build/test_runner/modules/dictionary_words_test.o build/test_runner/modules/double_words_test.o build/test_runner/modules/format_words_test.o build/test_runner/modules/integration_tests.o build/test_runner/modules/io_words_test.o build/test_runner/modules/logical_words_test.o build/test_runner/modules/memory_words_test.o build/test_runner/modules/mixed_arithmetic_words_test.o build/test_runner/modules/return_stack_words_test.o build/test_runner/modules/stack_words_test.o build/test_runner/modules/starforth_words_test.o build/test_runner/modules/stress_tests.o build/test_runner/modules/string_words_test.o build/test_runner/modules/system_words_test.o build/test_runner/modules/vocabulary_words_test.o build/platform/linux/time.o build/platform/platform_init.o
+
+✓ Build complete: build/starforth
+  Architecture: x86_64
+  Optimizations: Enabled
+  Direct Threading: Disabled

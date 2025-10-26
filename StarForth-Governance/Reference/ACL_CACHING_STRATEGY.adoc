@@ -1,0 +1,449 @@
+////
+StarForth ACL Caching Strategy
+
+Document Metadata:
+- Document ID: starforth-governance/acl-caching-strategy
+- Version: 1.0.0
+- Created: 2025-10-25
+- Purpose: Detail the ACL caching mechanism for performance optimization
+- Scope: Compile-time resolution, runtime cache, revocation
+- Status: ARCHITECTURE DESIGN
+////
+
+= StarForth ACL Caching Strategy
+
+**Version:** 1.0.0
+**Status:** Architecture Design
+**Last Updated:** October 25, 2025
+
+---
+
+== Executive Summary
+
+StarForth uses a **two-phase ACL resolution strategy** to eliminate per-call overhead:
+
+1. **Compile-Time:** Resolve word ACLs using least-permissive inheritance
+2. **Runtime:** Cache the grant/deny decision per (VM, WORD) pair
+
+Result: **Zero overhead for hot paths** + **correct by construction**.
+
+---
+
+== Problem Statement
+
+### Naive Approach: Runtime ACL Checks
+
+Every word call checks ACL:
+```
+: FOO 66 EMIT ;
+
+When VM-1 calls FOO:
+1. Check: Is VM-1 in ACL(FOO)?
+2. If YES: Execute FOO
+3. If NO: Raise exception
+```
+
+**Cost:** ACL evaluation on EVERY call = significant overhead
+
+---
+
+### Solution: Compile-Time + Cache
+
+Calculate ACL once when word is defined, cache the decision at runtime.
+
+---
+
+## Part 1: Compile-Time ACL Resolution
+
+### Concept
+
+When a word is **defined**, determine what it can access based on its **constituent words**.
+
+### Algorithm
+
+```
+When : FOO <word-list> ; is compiled:
+
+1. Scan word-list for all immediate word calls
+   Example: : FOO 66 EMIT ;
+   Constituents: 66 (literal, no ACL), EMIT (word with ACL)
+
+2. For each constituent word W:
+   Get ACL(W) = which VMs can execute W
+
+3. Calculate FOO's ACL = intersection of all constituent ACLs
+   ACL(FOO) = ACL(EMIT)
+   (because FOO is limited by its most restrictive constituent)
+
+4. Declare ACL(FOO) with inherited permissions:
+   FOO can be called by: [same VMs as EMIT]
+```
+
+### Example 1: Simple Word
+
+```forth
+: INCREMENT ( n -- n+1 )
+  1 + ;
+
+Constituents: 1 (literal), + (arithmetic)
+ACL(+) = [VM-1, VM-2, VM-3]
+Result: ACL(INCREMENT) = [VM-1, VM-2, VM-3]
+```
+
+### Example 2: Composite Word (Least-Permissive)
+
+```forth
+: SAFE-WRITE ( value -- )
+  LOCK WRITE UNLOCK ;
+
+ACL(LOCK) = [Root, VM-1]
+ACL(WRITE) = [Root, VM-1, VM-2]
+ACL(UNLOCK) = [Root, VM-1]
+
+Result: ACL(SAFE-WRITE) = intersection = [Root, VM-1]
+(More restrictive than WRITE alone)
+```
+
+### Example 3: Declared vs. Inherited ACL
+
+```forth
+: SPECIALIZED-WRITE ( value -- )
+  [ACL: Root only]
+  SAFE-WRITE ;
+
+Declared: [Root]
+SAFE-WRITE inherited: [Root, VM-1]
+Result: ACL(SPECIALIZED-WRITE) = intersection = [Root]
+(Uses declared, ignoring inherited permission)
+```
+
+---
+
+## Part 2: Runtime Cache
+
+### Cache Structure
+
+```
+ACL Cache: Per-VM, Per-Word Decision Table
+
+[VM-1, EMIT]    → GRANT (cached)
+[VM-1, FORK]    → DENY  (cached)
+[VM-2, EMIT]    → GRANT (cached)
+[VM-2, FORK]    → DENY  (cached)
+...
+```
+
+**Size:** O(num_vms × num_words) = bounded by fixed limits
+
+### Cache Lookup Algorithm
+
+```
+When VM-X calls WORD-Y:
+
+1. Check cache: [VM-X, WORD-Y] → ?
+2. Cache hit: decision is valid (not expired)
+   → Execute without ACL evaluation
+3. Cache miss or expired:
+   → Evaluate ACL: Is VM-X in ACL(WORD-Y)?
+   → Update cache: [VM-X, WORD-Y] → GRANT/DENY
+   → Execute or raise exception
+```
+
+### Cache Invalidation
+
+**Timeout-based (Revocation Window):**
+- Each cache entry has TTL (time-to-live)
+- Default: 10ms (adjustable)
+- After TTL expires: re-check ACL on next call
+- Guarantees: revocation seen within window
+
+**Event-based (Explicit Revocation):**
+- Root VM revokes VM-X capability
+- Root VM invalidates all cache entries for [VM-X, *]
+- Next call: cache miss, re-check ACL
+
+---
+
+## Part 3: Correctness Guarantees
+
+### Theorem 1: Compile-Time Correctness
+
+**Claim:** If word FOO is compiled with ACL resolution, FOO's ACL accurately reflects its capabilities.
+
+**Proof sketch:**
+- Least-permissive intersection ensures FOO cannot exceed constituent capabilities
+- If FOO calls EMIT (which is restricted to [Root, VM-1]), FOO inherits that restriction
+- Static analysis at compile time catches violations
+
+### Theorem 2: Cache Soundness
+
+**Claim:** Cache decisions are correct and revocation-safe.
+
+**Proof sketch:**
+- Cache hit: Decision hasn't expired, so ACL hasn't changed
+- Cache miss: Force re-check, ensuring fresh decision
+- Timeout: Guarantees revocation visible within TTL
+
+### Theorem 3: No Bypass
+
+**Claim:** No VM can bypass ACL checks.
+
+**Proof sketch:**
+- All word invocations go through EXECUTE function
+- EXECUTE always checks (cache or live) before execution
+- No other execution path exists
+
+---
+
+## Part 4: Performance Analysis
+
+### Cost Breakdown
+
+**Without Cache (naive):**
+```
+Per word call:
+  - ACL lookup: O(log N) where N = size of ACL
+  - ACL comparison: O(M) where M = VM count
+  - Total: O(log N + M) per call
+  - For 1000 calls/second: significant overhead
+```
+
+**With Cache:**
+```
+Per word call (cache hit):
+  - Hash lookup: O(1)
+  - Total: O(1) per call
+  - 1000 calls/second: negligible overhead
+
+Per word call (cache miss, ~0.1% of calls):
+  - Full ACL evaluation: O(log N + M)
+  - Update cache: O(1)
+  - Total: same as naive, but rare
+```
+
+**Expected Performance:**
+- Hot paths: Zero overhead (cached)
+- Revocation window: ~10ms typical
+- Memory cost: ~1KB per 1000 VMs × 100 words
+
+---
+
+## Part 5: Implementation Details
+
+### Compile-Time Phase (in Word Compiler)
+
+```c
+// Pseudocode for word compilation
+void compile_word(const char *name, WordList *constituents) {
+    ACL *acl = calculate_acl(constituents);
+
+    // Declare word with computed ACL
+    Word *word = create_word(name, acl);
+
+    // Store in dictionary
+    add_to_dictionary(word);
+}
+
+ACL* calculate_acl(WordList *constituents) {
+    ACL *result = ACL_FULL;  // Start with all VMs
+
+    for each word W in constituents {
+        if (W->is_protected) {
+            result = intersect(result, W->acl);
+        }
+    }
+    return result;
+}
+```
+
+### Runtime Cache (in Word Executor)
+
+```c
+// Pseudocode for word execution with cache
+void execute_word(VM *vm, Word *word) {
+    CacheKey key = make_key(vm->id, word->id);
+    CacheEntry *entry = cache_lookup(key);
+
+    if (entry && !entry_expired(entry)) {
+        // Cache hit
+        if (entry->decision == DENY) {
+            raise_exception("ACL denied");
+        }
+        // else: execute word
+    } else {
+        // Cache miss: evaluate ACL
+        bool allowed = vm_in_acl(vm, word->acl);
+        cache_update(key, allowed);
+
+        if (!allowed) {
+            raise_exception("ACL denied");
+        }
+    }
+
+    // Execute word
+    word->execute(vm);
+}
+```
+
+### Cache Structure
+
+```c
+typedef struct {
+    uint32_t vm_id;
+    uint32_t word_id;
+    bool decision;  // GRANT or DENY
+    uint64_t timestamp;
+    uint64_t ttl_ms;
+} CacheEntry;
+
+typedef struct {
+    HashMap *entries;  // key: (vm_id, word_id), value: CacheEntry
+    uint64_t ttl_ms;   // default: 10ms
+} ACLCache;
+```
+
+---
+
+## Part 6: Validation Requirements
+
+### Compile-Time Validation
+
+**T2-5A: ACL Calculation Correctness**
+
+Test that compile-time ACL resolution is correct:
+
+```
+Test: Compile `: FOO EMIT ;`
+Expected: ACL(FOO) = ACL(EMIT)
+
+Test: Compile `: BAR LOCK WRITE UNLOCK ;`
+Expected: ACL(BAR) = intersection(ACL(LOCK), ACL(WRITE), ACL(UNLOCK))
+
+Test: Compile `: OVERRIDE [ACL: Root] WRITE ;`
+Expected: ACL(OVERRIDE) = [Root] (ignores WRITE's broader ACL)
+```
+
+**Validation Method:** Static analysis + unit tests
+
+---
+
+### Runtime Cache Validation
+
+**T2-5B: Cache Lookup Correctness**
+
+Test that cache behaves correctly:
+
+```
+Test: Cache hit - decision cached and valid
+Expected: No ACL re-evaluation
+
+Test: Cache miss - decision not in cache
+Expected: ACL evaluated, cache updated
+
+Test: Cache expiration - TTL elapsed
+Expected: ACL re-evaluated even if in cache
+```
+
+**Validation Method:** Instrumented tests with cache monitoring
+
+---
+
+**T2-5C: Revocation Enforcement**
+
+Test that revocation is effective:
+
+```
+Test: VM-1 grants access to WRITE initially (cache hit)
+Test: Root revokes VM-1 capability
+Test: VM-1 calls WRITE again (cache invalidated)
+Expected: Cache miss, ACL re-check, exception raised
+```
+
+**Validation Method:** Integration tests with capability changes
+
+---
+
+**T2-5D: Performance Validation**
+
+Test that cache provides expected speedup:
+
+```
+Test: 10,000 calls to same word from same VM
+Measurement: Time for first call (cache miss) vs. subsequent calls (cache hits)
+Expected: Cache hit latency < cache miss latency by >10x
+
+Test: Cache overhead with 100 VMs, 1000 words
+Measurement: Memory used by cache structure
+Expected: <1MB
+```
+
+**Validation Method:** Performance benchmarks + profiling
+
+---
+
+### Formal Verification (Phase 3)
+
+**T3-5: Cache Correctness Proof**
+
+Isabelle/HOL theorems:
+
+```
+Theorem CACHE_SOUND:
+  If cache entry [vm, word] → decision is valid (not expired),
+  Then decision matches current ACL evaluation
+
+Theorem CACHE_COMPLETE:
+  If VM-X calls WORD-Y and decision changes (revocation),
+  Then cache entry expires within TTL and decision re-checked
+
+Theorem NO_BYPASS_VIA_CACHE:
+  No VM can bypass ACL by manipulating cache entries
+```
+
+---
+
+## Part 7: Configuration
+
+### Tunable Parameters
+
+| Parameter | Default | Rationale |
+|-----------|---------|-----------|
+| `CACHE_TTL_MS` | 10ms | Balance: short enough for quick revocation, long enough for performance |
+| `CACHE_MAX_ENTRIES` | 100K | Limit memory usage for large VM counts |
+| `CACHE_EVICTION_POLICY` | LRU | Evict least-recently-used if cache full |
+
+### Configuration Example
+
+```
+# /etc/starforth/acl-cache.conf
+cache_ttl_ms = 10          # Revocation window
+cache_max_entries = 100000 # Max entries
+cache_eviction = lru       # Eviction policy when full
+cache_stats_enabled = true # Enable cache metrics
+```
+
+---
+
+## Part 8: Related Documents
+
+* `ACL_AND_ISOLATION_FRAMEWORK.adoc` — High-level ACL model
+* `VALIDATION_ENGINEERING_PLAN.adoc` (Tier II) — Cache validation tests
+* `LAYER_3_FORMAL_ASSURANCE_STUBS.adoc` — Formal proofs (Phase 3)
+
+---
+
+## Document History
+
+[cols="^1,^2,2,<4"]
+|===
+| Version | Date | Author | Change Summary
+
+| 1.0.0
+| 2025-10-25
+| rajames
+| Created ACL Caching Strategy document with compile-time + cache design
+|===
+
+---
+
+**StarForth:** Zero-overhead security through compile-time resolution and intelligent caching.

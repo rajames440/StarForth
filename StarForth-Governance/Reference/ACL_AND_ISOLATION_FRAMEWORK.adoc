@@ -1,0 +1,499 @@
+////
+StarForth ACL and Isolation Framework
+
+Document Metadata:
+- Document ID: starforth-governance/acl-isolation-framework
+- Version: 1.0.0
+- Created: 2025-10-25
+- Purpose: Define how ACL-guarded words and dictionary isolation work in StarForth
+- Scope: Current architecture + future kernel architecture
+- Status: ARCHITECTURE FRAMEWORK
+////
+
+= StarForth ACL and Isolation Framework
+
+**Version:** 1.0.0
+**Status:** Architecture Framework
+**Last Updated:** October 25, 2025
+
+---
+
+== Executive Summary
+
+StarForth implements a **capability-based access control model where every FORTH word is guarded by an Access Control List (ACL).**
+
+This document defines:
+1. **Current state:** How word calls work now (no guards yet)
+2. **Future state:** How word calls will be guarded in kernel phase
+3. **Validation requirements:** What must be proven correct
+
+---
+
+== The Problem with Traditional Kernels
+
+Traditional operating systems use **coarse-grained access control:**
+
+[source,text]
+----
+User Process A              Kernel
+    ↓                         ↓
+  Ring 3                    Ring 0
+    │                         │
+    ├─ Can access:          ├─ Can access:
+    │  - Own memory         │  - All memory
+    │  - Granted files      │  - All devices
+    │  - Granted sockets    │  - All I/O
+    └─ Cannot access:       └─ No restrictions
+       - Other memory
+       - Ungrantted devices
+----
+
+**Problem:** Access control decisions are made infrequently (system calls) and coarsely (entire regions). A compromised process has broad capabilities.
+
+---
+
+== StarForth's Approach: Fine-Grained Capability-Based Access Control
+
+StarForth uses **fine-grained access control at the function level:**
+
+[source,text]
+----
+StarForth Application VM       Root VM (Mama FORTH)
+       ↓                               ↓
+  Application                    System Services
+  Dictionary                      Capabilities
+    ├─ WORD-A (can call)          ├─ Storage capability
+    ├─ WORD-B (can call)          ├─ Message broker capability
+    ├─ WORD-C (forbidden)         ├─ Scheduler capability
+    └─ WORD-D (can call)          └─ ...
+         │
+         │ Every word call checks:
+         │ "Does this task have capability to call this word?"
+         │
+    Access control happens INSIDE the word invocation,
+    not at kernel boundary (no system call overhead)
+----
+
+**Advantage:**
+- No system call overhead for capability checks
+- Isolated VMs can call words without context switching
+- Arbitrary VM code cannot do more than its ACL permits
+- Compiler can inline ACL checks (static overhead at compile time)
+
+---
+
+== Core Concepts
+
+=== 1. Dictionary: A VM's Private Code Namespace
+
+Each StarForth VM has its own **dictionary** — a list of FORTH word definitions.
+
+**Example:**
+
+[source,forth]
+----
+\ Application VM 1 Dictionary
+: INCREMENT ( n -- n+1 )
+  1 + ;
+
+: DECREMENT ( n -- n-1 )
+  1 - ;
+
+: FORK-PROCESS
+  ... system call ...
+  ;
+
+: READ-OTHER-VM-MEMORY
+  ... violation ...
+  ;
+----
+
+**Key property:** Application VMs contain ONLY words they're allowed to execute. Forbidden words don't exist in their dictionary at all.
+
+**Isolation mechanism:** Dictionary separation == code-level isolation.
+
+=== 2. Root VM (Mama FORTH): System Services
+
+The **Root VM** is special. It:
+- Has access to the full physical dictionary
+- Governs resource allocation
+- Implements the scheduler (physics-informed)
+- Implements the pub/sub message broker
+- Validates all inter-VM word calls
+
+**Example Root VM services:**
+
+[source,forth]
+----
+\ Root VM Dictionary (complete physical system)
+
+: ALLOCATE-BLOCK ( -- block-addr )
+  \ Allocates a block to an application VM
+  \ Enforces quotas, prevents over-allocation
+  ;
+
+: SPAWN-VM ( dict-addr -- vm-id )
+  \ Creates a new application VM
+  \ Initializes with provided dictionary
+  ;
+
+: SCHEDULE
+  \ Physics-informed scheduler
+  \ Fair distribution of CPU time
+  ;
+
+: PUBLISH ( topic message -- )
+  \ Pub/Sub message broker
+  \ Routes messages between VMs
+  ;
+
+: SUBSCRIBE ( topic vm-id -- )
+  \ Application VM subscribes to topic
+  ;
+----
+
+---
+
+=== 3. ACL: Who Can Call What?
+
+**Access Control List** on each word: Defines which VMs can invoke it.
+
+**Examples:**
+
+[source,text]
+----
+Word: INCREMENT
+  Accessible by: [VM-1, VM-2, VM-3]
+  Effect: Add 1 to TOS
+
+Word: DECREMENT
+  Accessible by: [VM-1, VM-2]
+  Effect: Subtract 1 from TOS
+
+Word: READ-BLOCK
+  Accessible by: [Root VM, VM-1]
+  Effect: Read block from storage
+
+Word: WRITE-SYSTEM-CONFIG
+  Accessible by: [Root VM only]
+  Effect: Modify system configuration
+----
+
+**Enforcement mechanism:**
+
+When VM-2 calls DECREMENT:
+[source,text]
+----
+1. VM-2 executes: DECREMENT
+2. Kernel checks: Is VM-2 in ACL for DECREMENT?
+3. If YES: Execute word
+4. If NO: Raise exception (capability not granted)
+----
+
+---
+
+== Current State: No ACL Guards (Yet)
+
+**Today in Phase 1/2:** StarForth runs as a single VM (or isolated VMs on L4Re/seL4).
+
+There are NO ACL checks because:
+1. **L4Re/seL4 isolation:** Memory protection and capability model handled by microkernel
+2. **Dictionary separation:** Each VM has its own code, so forbidden words don't exist
+
+**Example:**
+
+[source,text]
+----
+Mama FORTH        Application VM        Application VM
+(Root)            (specialized dict)    (specialized dict)
+  │                    │                     │
+  ├─ INCREMENT         ├─ INCREMENT          ├─ DECREMENT
+  ├─ DECREMENT         ├─ LOOP-LOGIC         ├─ LOOP-LOGIC
+  ├─ FORK-PROCESS      └─ ...                └─ ...
+  ├─ ALLOCATE-BLOCK
+  ├─ READ-DISK
+  └─ ...
+
+   No word duplication. Each VM has ONLY its allowed words.
+   Cross-VM calls routed through pub/sub (message-based).
+----
+
+**Validation challenge:** Prove that dictionary separation prevents unauthorized access.
+
+---
+
+== Future State: ACL-Guarded Kernel (Phase 3)
+
+When StarForth becomes the kernel, ACL checks become explicit:
+
+[source,text]
+----
+Mama FORTH                All Words (physical dictionary)
+(Root)              ┌─────────────────────────────┐
+  │                 │ Every word has an ACL       │
+  │                 │                             │
+  ├─ INCREMENT ←────┼─ ACL: [Root, App1, App2]  │
+  ├─ DECREMENT ←────┼─ ACL: [Root, App1]        │
+  ├─ FORK-PROCESS ←─┼─ ACL: [Root only]         │
+  ├─ ALLOCATE ←─────┼─ ACL: [Root only]         │
+  └─ ...            └─────────────────────────────┘
+       │
+       ├─ App1 calls DECREMENT
+       │  Kernel checks: App1 in ACL? YES → Execute
+       │
+       ├─ App2 calls FORK-PROCESS
+       │  Kernel checks: App2 in ACL? NO → Exception
+       │
+       └─ All word calls validated
+
+   Single physical dictionary with runtime ACL checks.
+   More flexible than dictionary separation.
+   Requires formal proof of ACL enforcement correctness.
+----
+
+**Advantage:** Can hotpatch words without recompiling VMs.
+**Disadvantage:** Runtime overhead (ACL check on every word call) — but negligible if inlined.
+
+=== ACL Caching Strategy (Performance Optimization)
+
+To eliminate per-call overhead while maintaining security:
+
+**Compile-Time ACL Resolution:**
+- When `: FOO 66 EMIT ;` is defined, resolve FOO's ACL at compile time
+- FOO inherits the **least-permissive** ACL of all words it calls
+- Example: FOO calls EMIT → FOO's ACL = intersection of FOO's declared ACL ∩ EMIT's ACL
+- Result: FOO can only do what its constituents allow
+
+**Runtime Cache:**
+- Cache the grant/deny decision per (VM, WORD) pair
+- Cache timeout: periodic re-check (revocation window)
+- On cache hit: Execute word without ACL evaluation
+- On cache miss: Evaluate ACL, update cache, execute
+
+**Benefits:**
+- ✓ Zero runtime overhead for hot paths (cached executions)
+- ✓ Correct by construction (ACLs pre-computed)
+- ✓ Natural composability (inherit permissions)
+- ✓ Revocation-safe (timeout forces re-check)
+
+**See:** `ACL_CACHING_STRATEGY.adoc` for complete design details.
+
+---
+
+== Validation Requirements
+
+=== Current (Phase 1-2): Prove Dictionary Separation Works
+
+**Question:** Does dictionary separation prevent cross-VM unauthorized access?
+
+**Validation approach:**
+1. Document dictionary construction algorithm
+2. Prove that forbidden words are not loaded into application VM dictionaries
+3. Test that application VM cannot call words outside its dictionary
+4. Verify message-based inter-VM communication is the only cross-VM mechanism
+
+**Evidence needed:**
+- Dictionary initialization specification
+- Code review of dictionary loading
+- Test suite for dictionary isolation
+- Architecture documentation
+
+**Artifacts:**
+- `DICTIONARY_INITIALIZATION_SPEC.adoc` — How dictionaries are built
+- Test cases: `test_dictionary_isolation.c` — Verify isolation
+- Security architecture review — Dictionary separation guarantees
+
+---
+
+=== Future (Phase 3): Prove ACL Enforcement Works
+
+**Question:** Can we PROVE that the ACL check on every word call is correct and complete?
+
+**Validation approach:**
+1. Formalize ACL model in Isabelle/HOL
+2. Define word call semantics
+3. Prove: "If VM V calls word W, and V not in ACL(W), then exception is raised"
+4. Prove: "No VM can bypass ACL checks"
+5. Prove: "No word definition can modify ACLs"
+
+**Key theorems to prove:**
+
+[source,text]
+----
+Theorem ACL_ENFORCEMENT_CORRECTNESS:
+  ∀ VM, ∀ WORD, ∀ STATE:
+    Execute(VM, WORD, STATE)
+    ⇒ (VM ∈ ACL(WORD)) ∨ Exception
+
+Theorem ACL_IMMUTABILITY:
+  ∀ WORD, ∀ VM, ∀ CODE:
+    WORD(CODE) cannot modify ACL(WORD)
+
+Theorem CROSS_VM_ISOLATION:
+  ∀ VM-A, ∀ VM-B (VM-A ≠ VM-B):
+    VM-A cannot read/modify VM-B state
+    except through pub/sub messages
+----
+
+**Evidence needed:**
+- Isabelle/HOL formal specification
+- Machine-checked proofs
+- Completeness proof (all word calls covered)
+- Executable code extraction from proofs
+
+**Artifacts:**
+- `ACL_FORMAL_SPEC.thy` — Isabelle/HOL ACL model
+- `ACL_ENFORCEMENT_PROOF.thy` — Main correctness proof
+- `CROSS_VM_ISOLATION_PROOF.thy` — Isolation guarantee proof
+
+---
+
+== Specific Validation Patterns
+
+=== Pattern 1: Word Definition Analysis
+
+**Pattern:** Ensure NO word definition can modify ACLs
+
+**Current validation (Phase 1-2):**
+- Code review: Search for ACL modification functions
+- Test: Attempt to modify ACL from application VM (should fail)
+
+**Future validation (Phase 3):**
+- Proof: ACL is immutable once initialized
+- Proof: Word definition cannot create backdoors
+
+---
+
+=== Pattern 2: Message Broker Semantics
+
+**Pattern:** Pub/Sub messages are the ONLY inter-VM communication
+
+**Current validation:**
+- Architecture diagram showing pub/sub as isolation boundary
+- Test suite for message delivery
+- Code review: No direct memory access between VMs
+
+**Future validation:**
+- Formal spec of message ordering (FIFO per topic)
+- Proof: Messages delivered in order
+- Proof: Message tampering detected
+
+---
+
+=== Pattern 3: Dictionary Isolation
+
+**Pattern:** Each VM sees ONLY its authorized words
+
+**Current validation:**
+- Dictionary construction algorithm documented
+- Code review of dictionary loading
+- Test: Application VM cannot find unauthorized words
+- Test: FIND returns not-found for protected words
+
+**Future validation:**
+- Proof: Dictionary is complete (all authorized words present)
+- Proof: Dictionary is minimal (no extra words)
+- Proof: Dictionary cannot be dynamically modified
+
+---
+
+=== Pattern 4: Capability Propagation
+
+**Pattern:** Capabilities cannot leak from one VM to another
+
+**Current validation:**
+- Architecture review: No capability data structures in code
+- Code review: No capability references in pub/sub messages
+
+**Future validation:**
+- Proof: Capabilities are opaque (cannot be forged)
+- Proof: Capability format cannot be guessed
+- Proof: Revoked capabilities cannot be used
+
+---
+
+== Standards Alignment
+
+[cols="2,2"]
+|===
+| Validation Aspect | Relevant Standard
+
+| Dictionary isolation
+| ISO/IEC 27034 (Application Security)
+
+| ACL enforcement
+| Common Criteria (CC) / ISO/IEC 15408
+
+| Message broker semantics
+| ISO/IEC 25010 (Quality - Reliability)
+
+| Formal proofs
+| Isabelle/HOL community standards
+
+| Secure coding (Phase 1-2)
+| MISRA C:2023, SEI CERT C
+
+|===
+
+---
+
+== Current Artifacts and Gaps
+
+=== Existing Artifacts
+
+- ✓ `FORTH-79_COMPLIANCE_MATRIX.adoc` — Word semantics
+- ✓ 675+ test suite — General functionality
+- ✓ Code review in git history — Design evolution
+- ✓ Architecture documentation (in StarshipOS repo)
+
+=== Missing Artifacts (Layer 1-2)
+
+- ○ `DICTIONARY_INITIALIZATION_SPEC.adoc` — Dictionary algorithm
+- ○ `ACL_PATTERN_DOCUMENTATION.adoc` — ACL design patterns
+- ○ Test suite for dictionary isolation
+- ○ Security architecture review document
+- ○ Message broker specification
+
+=== Future Artifacts (Layer 3)
+
+- ○ `ACL_FORMAL_SPEC.thy` — Isabelle/HOL formal model
+- ○ `ACL_ENFORCEMENT_PROOF.thy` — Correctness proof
+- ○ `ISOLATION_GUARANTEE_PROOF.thy` — Safety proof
+- ○ `PUBSUB_SEMANTICS_PROOF.thy` — Message reliability proof
+
+---
+
+== Roadmap
+
+**v1.0 (now):** Document current dictionary separation architecture
+
+**v2.0 (with seL4 port):** Prove integration with seL4 capability model
+
+**v3.0+ (kernel phase):** Isabelle/HOL formal proofs of ACL enforcement
+
+---
+
+== Related Documents
+
+* `CAPABILITY_KERNEL_FRAMEWORK.adoc` — Three-layer validation model
+* `FORTH-79_COMPLIANCE_MATRIX.adoc` — Word semantics and testing
+* `GOVERNANCE.md` — Repository governance
+* StarForth source code — Actual implementation (~/CLionProjects/StarForth)
+
+---
+
+== Document History
+
+[cols="^1,^2,2,<4"]
+|===
+| Version | Date | Author | Change Summary
+
+| 1.0.0
+| 2025-10-25
+| rajames
+| Created ACL and isolation framework for capability-based design
+|===
+
+---
+
+**StarForth:** Capabilities at every word. Security by design.

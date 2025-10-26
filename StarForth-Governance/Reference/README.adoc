@@ -1,0 +1,21 @@
+= StarForth Governance - Reference Documents
+
+**Status:** Archived architectural reference materials
+
+These documents were created during the design phase and informed the development of the Validation framework.
+
+They are kept for reference and context, but the **authoritative validation framework** is in the `Validation/` directory.
+
+== Contents
+
+* `CAPABILITY_KERNEL_FRAMEWORK.adoc` — Original 3-layer, 3-phase validation model definition
+* `ACL_AND_ISOLATION_FRAMEWORK.adoc` — Capability-based access control architecture
+* `LAYER_3_FORMAL_ASSURANCE_STUBS.adoc` — Placeholder structure for Phase 3 formal verification
+* `FOUNDATION_REQUIREMENTS_TIER_I.adoc` — Initial Tier I requirements (superseded by Validation framework)
+* `RELIABILITY_QUALITY_REQUIREMENTS_TIER_II.adoc` — Initial Tier II requirements (superseded by Validation framework)
+* `VALIDATION_REQUIREMENTS_LAYER_1_2.adoc` — Combined requirements (superseded by Validation framework)
+
+== Active Framework
+
+**See `../Validation/` directory for the complete, current validation framework.**
+

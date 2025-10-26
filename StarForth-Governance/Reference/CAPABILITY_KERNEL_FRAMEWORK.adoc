@@ -1,0 +1,466 @@
+////
+StarForth Capability-Based Kernel Validation Framework
+
+Document Metadata:
+- Document ID: starforth-governance/capability-kernel-framework
+- Version: 1.0.0
+- Created: 2025-10-25
+- Purpose: Define validation framework for StarForth as capability-based microkernel
+- Scope: Current VM validation + future kernel validation architecture
+- Status: GOVERNANCE FRAMEWORK
+////
+
+= StarForth Capability-Based Kernel Validation Framework
+
+**Version:** 1.0.0
+**Status:** Governance Framework
+**Last Updated:** October 25, 2025
+
+---
+
+== Vision: From VM to Microkernel
+
+StarForth evolves through three architectural phases:
+
+[cols="2,2,2,2"]
+|===
+| Phase | Foundation | Architecture | StarForth Role
+
+| **Phase 1 (NOW)**
+| L4Re/Fiasco.OC
+| Microkernel + L4Re + StarForth VM
+| FORTH-79 interpreter (application layer)
+
+| **Phase 2 (COMING)**
+| seL4 (formally verified)
+| Formally-verified microkernel + StarForth VM
+| FORTH-79 interpreter (application layer)
+
+| **Phase 3 (FUTURE)**
+| StarForth
+| StarForth becomes the microkernel
+| Capability-based kernel with Isabelle/HOL proofs
+
+|===
+
+This governance framework validates StarForth across ALL three phases by:
+
+1. **Layers 1-2 (NOW):** Validate StarForth as a capability-ready VM
+2. **Layer 3 (FUTURE):** Define architecture for kernel-level formal proofs
+
+---
+
+== The Capability-Based Architecture
+
+StarForth's distinguishing innovation: **Every FORTH word is a capability-guarded function**.
+
+=== Design Principles
+
+**Access Control at Function Level (not page level):**
+- Traditional kernels: Memory isolation via MMU/pages
+- StarForth kernel: Access control via ACL-guarded word definitions
+- Each word call validates: `caller has capability to execute(word)`
+
+**Dictionary-Based Isolation:**
+- Each StarForth VM has its own specialized dictionary
+- Root VM governs physical resources + scheduler + pub/sub
+- Child VMs see logical abstractions (logical block addresses, message queues)
+- Cross-VM function calls: Routed through capabilities, not direct access
+
+**Deterministic Execution:**
+- Physics-informed scheduling (not priority-based)
+- Pub/sub message broker (ordered, reliable delivery)
+- Essential for formal verification (Isabelle/HOL)
+
+=== System Architecture
+
+[source,text]
+----
+┌─────────────────────────────────────────┐
+│     Application VMs (specialized dicts) │
+│  Each has isolated FORTH word namespace │
+└──────────────┬──────────────────────────┘
+               │ ACL-guarded word calls
+               ↓
+┌─────────────────────────────────────────┐
+│   Root VM (Mama FORTH)                  │
+│  - Physics-informed scheduler           │
+│  - Pub/Sub message broker               │
+│  - Resource governor (capabilities)     │
+│  - Block storage manager                │
+└──────────────┬──────────────────────────┘
+               │ (currently runs on L4Re/Fiasco.OC)
+               ↓
+┌─────────────────────────────────────────┐
+│  L4Re/Fiasco.OC or seL4                 │
+│  (Phase 1/2: external microkernel)      │
+│  (Phase 3: native, verified separately) │
+└─────────────────────────────────────────┘
+----
+
+---
+
+== Three-Layer Validation Framework
+
+The validation framework scales from component (VM) to system (kernel) assurance:
+
+=== Layer 1: Foundation (Software Engineering Rigor)
+
+**What it validates:**
+- FORTH-79 semantic correctness (what the VM does)
+- Deterministic behavior (required for formal proofs)
+- Requirements traceability (what the code does vs. specification)
+- Test coverage (all code paths tested)
+- Code organization (no hidden dependencies)
+
+**Standards covered:**
+- ISO/IEC/IEEE 12207 (Software Lifecycle)
+- ISO/IEC 25010 (Quality Model)
+- IEEE 730 (QA Plan)
+- IEEE 1012 (V&V Plan)
+- ISO/IEC/IEEE 29119 (Testing)
+
+**Key documents:**
+- `FORTH-79_COMPLIANCE_MATRIX.adoc` - Semantic correctness
+- Requirements Traceability Matrix (RTM) - Spec → Code mapping
+- Test Plan and Results - Test coverage metrics
+- Architecture Documentation - Design decisions
+
+**Realistic for v1.0:** YES
+- 675+ existing test suite covers FORTH-79 core
+- Code is already modular (19 word modules)
+- Just needs documentation and traceability
+
+**Validation Question:** Does StarForth implement FORTH-79 correctly and completely?
+
+---
+
+=== Layer 2: Reliability & Quality (Defensive Design)
+
+**What it validates:**
+- Code quality (measurable defect susceptibility)
+- Secure coding (no injection, buffer overflow, uninitialized access)
+- Memory safety (fixed arena, no malloc/free)
+- Fault isolation (failures don't cascade)
+- Capability readiness (code is structured for ACL guards)
+
+**Standards covered:**
+- ISO/IEC 5055 (Source Code Quality)
+- MISRA C:2023 (Safer C subset)
+- SEI CERT C (Secure Coding)
+- NIST SSDF (Secure Software Development)
+- NIST CSF 2.0 (Governance Framework)
+
+**Key documents:**
+- Static Code Analysis Report (SonarQube, Clang analyzer baseline)
+- MISRA C:2023 Compliance Report
+- CERT C Guidelines Checklist
+- Security Architecture Review
+- ACL Pattern Documentation (how words will be guarded in kernel)
+
+**Realistic for v1.0:** YES
+- Code is already defensive (no malloc, fixed memory, bounds checking)
+- Just needs automated analysis and documentation
+
+**Validation Question:** Is StarForth robust, secure, and architecturally ready for capability-based access control?
+
+---
+
+=== Layer 3: Advanced Assurance (Formal Verification & Kernel Guarantees)
+
+**What it validates (future):**
+- ACL enforcement correctness (theorem proofs in Isabelle/HOL)
+- Word composition safety (arbitrary word sequences are safe)
+- Scheduler correctness (physics-informed algorithm is sound)
+- Isolation guarantees (dictionary separation prevents leaks)
+- Pub/Sub reliability (message ordering, delivery guarantees)
+
+**Standards/Approaches:**
+- Isabelle/HOL (theorem proving)
+- seL4 formal verification methodology
+- Coq/Isabelle for kernel proofs
+- CompCert verified compiler (C → binary trust)
+
+**Key documents (STUBS - future work):**
+- `ACL_ENFORCEMENT_THEOREMS.adoc` - Word access control proofs
+- `WORD_COMPOSITION_SAFETY.adoc` - Arbitrary word sequence safety
+- `SCHEDULER_CORRECTNESS.adoc` - Physics algorithm soundness
+- `ISOLATION_GUARANTEES.adoc` - Dictionary isolation proofs
+- `PUBSUB_RELIABILITY_SPEC.adoc` - Message broker specification
+
+**Realistic for v1.0:** NO
+- Requires formal verification infrastructure setup
+- Requires Isabelle/HOL theorem proofs (research effort)
+- Depends on Phase 3 implementation (StarForth as kernel)
+
+**Timeline:** v2.0 (seL4 port) + v3.0+ (full kernel validation)
+
+**Validation Question:** Can we mathematically PROVE that no word can violate ACLs? That arbitrary word sequences are safe?
+
+---
+
+== Standards Mapping to Layers
+
+[cols="2,1,1,1"]
+|===
+| Standard | Layer 1 | Layer 2 | Layer 3
+
+| ISO/IEC/IEEE 12207 (Lifecycle)
+| ✓ Core
+| ✓ Extended
+| ✓ Kernel phase
+
+| ISO/IEC 25010 (Quality Model)
+| ✓ Core
+| ✓ Core
+| ✓ Reference
+
+| IEEE 730 (QA Plan)
+| ✓ Core
+| ✓ Extended
+| ✓ Kernel phase
+
+| IEEE 1012 (V&V)
+| ✓ Core
+| ✓ Core
+| ✓ Formal methods
+
+| ISO/IEC 5055 (Code Quality)
+| ○ Reference
+| ✓ Core
+| ✓ Reference
+
+| MISRA C:2023
+| ○ Reference
+| ✓ Core
+| ✓ Reference
+
+| SEI CERT C
+| ○ Reference
+| ✓ Core
+| ✓ Reference
+
+| NIST SSDF
+| ○ Reference
+| ✓ Core
+| ✓ Extended
+
+| IEC 61508 (Functional Safety)
+| ○ Reference
+| ○ Reference
+| ✓ If safety-critical
+
+| Isabelle/HOL (Formal Proof)
+| ○ Reference
+| ○ Reference
+| ✓ Core
+
+| seL4 Methodology
+| ○ Reference
+| ○ Reference
+| ✓ Reference
+
+|===
+
+Legend: ✓ = Core (must-have) | ○ = Reference (informational)
+
+---
+
+== Validation Questions by Layer
+
+=== Layer 1: Correctness
+
+1. **Is StarForth FORTH-79 semantically correct?**
+   - Evidence: 675+ test suite with standard mapping
+   - Status: ✓ Complete
+
+2. **Does every line of code trace to a requirement or test?**
+   - Evidence: Requirements Traceability Matrix
+   - Status: ○ Needs documentation
+
+3. **Is all code testable?**
+   - Evidence: Test harness runs all code paths
+   - Status: ○ Needs coverage metrics
+
+4. **Is execution deterministic?**
+   - Evidence: Same input → same output, always
+   - Status: ✓ By design (no malloc, no time-dependent code)
+
+=== Layer 2: Robustness
+
+1. **Does StarForth have measurable code quality?**
+   - Evidence: SonarQube/Clang static analysis with baseline metrics
+   - Status: ○ Needs baseline run
+
+2. **Does StarForth follow secure coding practices?**
+   - Evidence: MISRA C:2023 + CERT C guidelines checklist
+   - Status: ○ Needs compliance documentation
+
+3. **Is StarForth memory-safe?**
+   - Evidence: Fixed 5MB arena, no malloc/free, bounds checking
+   - Status: ✓ By design
+
+4. **Can words be guarded by ACLs?**
+   - Evidence: Architecture analysis showing word call pattern
+   - Status: ○ Needs design documentation
+
+=== Layer 3: Formal Assurance
+
+1. **Can we PROVE that no word violates ACLs?**
+   - Evidence: Isabelle/HOL theorem + machine-checked proof
+   - Status: ○ Not yet started
+
+2. **Can we PROVE that arbitrary word sequences are safe?**
+   - Evidence: Word composition rules formalized + proven
+   - Status: ○ Not yet started
+
+3. **Can we PROVE the scheduler is correct?**
+   - Evidence: Physics algorithm formalized in temporal logic
+   - Status: ○ Not yet started
+
+4. **Can we PROVE the pub/sub broker is reliable?**
+   - Evidence: Message ordering and delivery theorems + proofs
+   - Status: ○ Not yet started
+
+---
+
+== Current Status by Layer
+
+[cols="1,2,2"]
+|===
+| Layer | Status | Next Steps
+
+| **Layer 1: Foundation**
+| 70% Complete
+| - Finish RTM (requirements traceability)
+- Document test methodology
+- Create validation plan document
+
+| **Layer 2: Quality**
+| 30% Complete
+| - Run static analysis baseline
+- Document MISRA/CERT compliance
+- Create security architecture review
+- Document ACL guard patterns
+
+| **Layer 3: Formal Assurance**
+| 5% Complete (stub framework only)
+| - Formalize ACL enforcement theorems
+- Define word composition rules
+- Specify scheduler algorithm
+- Set up Isabelle/HOL infrastructure
+
+|===
+
+---
+
+== Roadmap: From VM to Kernel
+
+=== v1.0: Capability-Ready VM (Layers 1-2)
+
+**What we're proving:** StarForth is a correct, robust, secure FORTH-79 VM that is architecturally ready to become a kernel.
+
+**Scope:** Complete Layer 1 + Layer 2 documentation
+**Key deliverables:**
+- Requirements Traceability Matrix (RTM)
+- Static code analysis baseline report
+- MISRA C:2023 compliance documentation
+- CERT C secure coding checklist
+- Architecture review (ACL-ready design)
+- Security properties documentation
+
+**Target:** Within 3-6 months
+
+=== v2.0: seL4 Port (Layers 1-2 Extended)
+
+**What we're proving:** StarForth on seL4 inherits formal verification guarantees from seL4 platform.
+
+**Scope:** Complete Layer 1-2 + seL4 integration documentation
+**Key deliverables:**
+- StarForth + seL4 capability model documentation
+- Integration test suite
+- Performance characterization
+- seL4 formal property verification (inherited)
+
+**Target:** Phase 2 (2026)
+
+=== v3.0+: StarForth as Microkernel (Layers 1-3)
+
+**What we're proving:** StarForth's kernel implementation is formally verified correct.
+
+**Scope:** Complete Layer 3 formalization + Isabelle/HOL proofs
+**Key deliverables:**
+- ACL enforcement correctness proof
+- Word composition safety theorem + proof
+- Scheduler correctness theorem + proof
+- Isolation guarantee proof
+- Pub/sub reliability proof
+- Complete kernel formal specification
+
+**Target:** Phase 3 (2026+)
+
+---
+
+== What "Compliance" Means at Each Layer
+
+=== Layer 1 Compliance
+
+**Claim:** "StarForth is FORTH-79 standard compliant"
+
+**What this means:** Every word in FORTH-79 spec is correctly implemented with proven test coverage.
+
+**What this does NOT mean:** StarForth is "certified" by anyone. No external certification needed.
+
+**Evidence:** 675+ test suite + standard mapping document
+
+---
+
+=== Layer 2 Compliance
+
+**Claim:** "StarForth follows professional secure coding and quality standards"
+
+**What this means:** Code quality is measurable, passes static analysis, follows MISRA/CERT, has no known security issues.
+
+**What this does NOT mean:** StarForth is "secure" against all attacks. Security is contextual to how it's deployed.
+
+**Evidence:** SonarQube report + MISRA/CERT checklist + security architecture review
+
+---
+
+=== Layer 3 Compliance (Future)
+
+**Claim:** "StarForth kernel is formally verified correct in Isabelle/HOL"
+
+**What this means:** Mathematical proofs demonstrate ACL enforcement, isolation, scheduler soundness, etc.
+
+**What this does NOT mean:** Hardware is correct, compiler is correct, or assumptions are perfect. Just the kernel software logic.
+
+**Evidence:** Isabelle/HOL theorem repository + machine-checked proofs
+
+---
+
+== Related Documents
+
+* `GOVERNANCE.md` - Repository governance and maintenance policies
+* `FORTH-79_COMPLIANCE_MATRIX.adoc` - Standard compliance proof (Layer 1)
+* `ACL_AND_ISOLATION_FRAMEWORK.adoc` - Capability architecture documentation (Layer 2)
+* `VALIDATION_REQUIREMENTS_LAYER_1_2.adoc` - Specific Layer 1-2 requirements (planned)
+* `FORMAL_VERIFICATION_ROADMAP.adoc` - Layer 3 planning (planned)
+
+---
+
+== Document History
+
+[cols="^1,^2,2,<4"]
+|===
+| Version | Date | Author | Change Summary
+
+| 1.0.0
+| 2025-10-25
+| rajames
+| Created 3-layer validation framework for capability-based microkernel
+|===
+
+---
+
+**StarForth:** From VM to Microkernel. Validated. Verifiable. Visionary.

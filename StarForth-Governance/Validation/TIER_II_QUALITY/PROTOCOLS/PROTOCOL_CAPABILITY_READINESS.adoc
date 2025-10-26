@@ -1,0 +1,236 @@
+////
+StarForth Tier II Capability Readiness Validation Protocol
+
+Document Metadata:
+- Document ID: starforth-governance/protocol-capability-readiness
+- Version: 1.0.0
+- Created: 2025-10-25
+- Purpose: Verify architectural readiness for capability-based ACL guards
+- Scope: Word call patterns, dictionary security, ACL integration points
+- Status: GOVERNANCE FRAMEWORK
+////
+
+= StarForth Tier II: Capability Readiness Validation Protocol
+
+**Document ID:** starforth-governance/protocol-capability-readiness
+**Version:** 1.0.0
+**Date:** 2025-10-25
+**Status:** Ready for Execution
+
+---
+
+== Protocol Overview
+
+This protocol validates that StarForth architecture is ready for Phase 3 capability-based kernel integration with ACL guards.
+
+**Success Criteria:**
+- Word call pattern specification complete
+- Dictionary security analysis complete
+- ACL integration points identified
+- Capability architecture documented
+- No architectural barriers to ACL integration
+
+---
+
+== Phase 1: Word Call Pattern Analysis
+
+=== 1.1 Execution Path Documentation
+
+Document in WORD_CALL_PATTERN_SPECIFICATION.adoc:
+
+**How Words Are Called:**
+1. Word name parsed from input
+2. Dictionary lookup via linked list
+3. DictEntry returned (contains function pointer)
+4. Word function executed with VM pointer
+5. Word modifies VM state (stack, memory)
+
+=== 1.2 Function Signature
+
+All words follow identical pattern:
+```c
+void word_name(struct VM *vm)
+{
+    // Pop arguments from vm->data_stack
+    // Perform operation
+    // Push results back to vm->data_stack
+}
+```
+
+=== 1.3 ACL Integration Points
+
+Identify where ACL checks will be inserted:
+- [ ] At word lookup (before EXECUTE)
+- [ ] During function entry (in word_execute)
+- [ ] On memory access (in vm_load_cell)
+- [ ] On dictionary modification (in ALLOT)
+
+Document each integration point with:
+- Location in code (file:line)
+- Current behavior
+- How ACL check will be performed
+- Expected behavior with ACL
+
+---
+
+== Phase 2: Dictionary Security Analysis
+
+=== 2.1 Dictionary Structure
+
+Document in DICTIONARY_SECURITY_ANALYSIS.adoc:
+
+**Current Structure:**
+```c
+struct DictEntry {
+    struct DictEntry *link;     // Linked list chain
+    const char *name;            // Word name
+    size_t name_len;             // Name length
+    uint16_t flags;              // IMMEDIATE, etc.
+    void (*func)(struct VM *);   // Execution function
+    void *body;                  // Data for CREATE/DOES>
+    size_t body_size;            // Body size in bytes
+}
+```
+
+=== 2.2 Security Properties
+
+**Current Guarantees:**
+- [ ] Words cannot be overwritten (immutable once defined)
+- [ ] FORGET fence prevents system word removal
+- [ ] Dictionary linked list is singly-linked (no reverse pointers)
+- [ ] Word lookup is deterministic (fixed order)
+
+=== 2.3 ACL Readiness
+
+Required for ACL integration:
+- [ ] Add capability field to DictEntry (optional)
+- [ ] Add owner UID to DictEntry (optional)
+- [ ] Ensure word function pointers are read-only
+- [ ] Document which system words cannot be deleted
+
+---
+
+== Phase 3: ACL Integration Points
+
+=== 3.1 Identify All Integration Points
+
+Create ACL_INTEGRATION_POINTS.adoc listing:
+
+[cols="1,2,2,2"]
+|===
+| Location | Current Code | ACL Check Needed | Impact
+
+| vm_execute_word() | No permission check | Check capability before EXECUTE | Word access control
+| vm_load_cell() | No bounds check on access | Check memory capability | Memory read ACL
+| vm_store_cell() | No bounds check | Check memory capability | Memory write ACL
+| allot/here | No owner check | Check allocation capability | Dictionary modification
+| (etc...) | | |
+|===
+
+=== 3.2 Capability Model Design
+
+Document capability model:
+- **Capability ID:** Unique identifier for each VM or word group
+- **Access Level:** Read, Write, Execute, Admin
+- **Scope:** Per-word, per-memory-region, or global
+- **Delegation:** Can capabilities be transferred?
+- **Revocation:** How are capabilities revoked?
+
+---
+
+== Phase 4: Architectural Modifications for Phase 3
+
+=== 4.1 Required Changes
+
+Identify minimal changes needed:
+- Add capability field to VM struct
+- Add capability field to DictEntry (optional)
+- Add ACL_CHECK macro before word execution
+- Document capability semantics
+
+=== 4.2 Backward Compatibility
+
+- [ ] Changes do not affect Tier I core words
+- [ ] Test suite still passes without ACL enabled
+- [ ] Optional ACL feature (compile flag)
+- [ ] Can be enabled/disabled at build time
+
+---
+
+== Phase 5: Documentation
+
+Generate supporting documents:
+
+**WORD_CALL_PATTERN_SPECIFICATION.adoc:**
+- Execution flow diagram
+- Function signatures
+- Stack effects
+- Word categories (stack, arithmetic, dictionary, etc.)
+
+**DICTIONARY_SECURITY_ANALYSIS.adoc:**
+- Dictionary structure
+- Security properties
+- FORGET fence behavior
+- Word immutability guarantees
+
+**ACL_INTEGRATION_POINTS.adoc:**
+- List of all integration points
+- Current behavior vs. ACL behavior
+- Risk assessment
+- Implementation roadmap
+
+---
+
+== Success Criteria
+
+✓ PASS when all of the following are true:
+- [ ] Word call pattern documented
+- [ ] Dictionary security analyzed
+- [ ] ACL integration points identified
+- [ ] Architectural changes minimal/non-breaking
+- [ ] No barriers to ACL integration found
+- [ ] All specifications complete and signed
+
+✗ FAIL if:
+- [ ] Architecture prevents ACL integration
+- [ ] Required changes are too invasive
+- [ ] Security vulnerabilities in design
+- [ ] Specifications incomplete
+
+---
+
+== Document History
+
+[cols="^1,^2,2,<4"]
+|===
+| Version | Date | Author | Change Summary
+
+| 1.0.0
+| 2025-10-25
+| Validation Engineer
+| Created capability readiness validation protocol
+|===
+
+---
+
+== Document Approval & Signature
+
+[cols="2,2,1"]
+|===
+| Role | Name/Title | Signature
+
+| **Author/Maintainer**
+| Robert A. James
+|
+
+| **Date Approved**
+| 25 October, 2025
+| _______________
+
+| **PGP Fingerprint**
+| 497CF5C0D295A7E8065C5D9A9CD3FBE66B5E2AE4
+|
+
+|===
+
+**Archive Location:** ~/StarForth-Governance/Validation/TIER_II_QUALITY/PROTOCOLS/

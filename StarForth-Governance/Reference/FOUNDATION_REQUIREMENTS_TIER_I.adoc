@@ -1,0 +1,378 @@
+////
+StarForth Tier I Foundation Requirements
+
+Document Metadata:
+- Document ID: starforth-governance/foundation-requirements-tier-i
+- Version: 1.0.0
+- Created: 2025-10-25
+- Purpose: Specify Tier I (Foundation) validation artifacts needed for Layer 1 compliance
+- Scope: What must be delivered for v1.0 release - Foundation layer only
+- Status: REQUIREMENTS SPECIFICATION
+////
+
+= StarForth Tier I: Foundation Requirements
+
+**Version:** 1.0.0
+**Status:** Requirements Specification
+**Last Updated:** October 25, 2025
+
+---
+
+== Purpose
+
+This document specifies EXACTLY what validation artifacts must exist for StarForth to claim Tier I (Foundation) compliance.
+
+**For each requirement:**
+1. **What it validates** — The specific concern
+2. **How to prove it** — Evidence needed
+3. **Artifacts required** — Documents, tests, reports
+4. **Acceptance criteria** — What "done" means
+5. **Status today** — What exists vs. what's missing
+
+---
+
+== Tier I: Foundation Requirements
+
+=== Requirement T1-1: FORTH-79 Standard Compliance
+
+**What it validates:** StarForth correctly implements every FORTH-79 core word.
+
+**Standards reference:**
+- FORTH-79 official specification
+- ISO/IEC/IEEE 12207 (Lifecycle) — Requirement traceability
+- ISO/IEC 25010 (Quality Model) — Functional correctness
+
+**How to prove it:**
+- Every FORTH-79 core word is implemented
+- Every implementation matches the specification
+- Every word is tested
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `FORTH-79_COMPLIANCE_MATRIX.adoc`
+| Maps each FORTH-79 word to:
+  - Implementation location (module + function)
+  - Test IDs that validate it
+  - Any deviations from spec (should be none)
+| ✓ Exists
+
+| `WORD_INVENTORY.adoc`
+| List of all 70 FORTH-79 core words with:
+  - Word name
+  - Stack effect (input/output)
+  - Implementation status
+  - Test coverage count
+| ○ Needs update
+
+| Test suite results report
+| 675+ tests pass on all platforms:
+  - Linux x86_64
+  - Linux ARM64
+  - Fiasco.OC
+  - seL4
+| ✓ Runs on commit
+
+| Test methodology document
+| Describes how tests are run:
+  - Test harness architecture
+  - How compliance is validated
+  - What "pass" means
+  - Edge cases covered
+| ○ Needs documentation
+
+|===
+
+**Acceptance criteria:**
+- [ ] `FORTH-79_COMPLIANCE_MATRIX.adoc` reviewed and complete
+- [ ] Every word has at least 1 functional test
+- [ ] Every word has edge case tests
+- [ ] 675+ tests pass on all platforms before release
+- [ ] Test results logged per release
+
+---
+
+=== Requirement T1-2: Requirements Traceability Matrix (RTM)
+
+**What it validates:** Every line of code traces back to a requirement or test.
+
+**Standards reference:**
+- IEEE 730 (SQA Plan)
+- IEEE 1012 (V&V)
+- IEEE 829 (Test documentation)
+
+**How to prove it:**
+- For every source file: What requirement does it implement?
+- For every function: What test validates it?
+- For every code change: What spec change triggered it?
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `REQUIREMENTS_SPECIFICATION.adoc`
+| Formal specification of StarForth:
+  - What is StarForth? (FORTH-79 VM)
+  - What are its core requirements? (70 core words)
+  - What are quality requirements? (determinism, memory safety, portability)
+  - Each requirement tagged with unique ID (REQ-xxx)
+| ○ Needs creation
+
+| Requirements Traceability Matrix
+| Table mapping:
+  - REQ-xxx → Implementation modules
+  - REQ-xxx → Test cases
+  - REQ-xxx → Architecture docs
+  - Example: REQ-FORTH-79-COMPLIANCE → (arith_words.c, stack_ops.c, ...) → (FORTH79-TEST-ADD, FORTH79-TEST-SUB, ...)
+| ○ Needs creation
+
+| Code-to-requirement map
+| For each source module, document:
+  - Which requirements it implements
+  - Key functions (why they exist)
+  - Dependencies on other modules
+| ○ Needs creation
+
+| Git commit log analysis
+| For key commits, link to:
+  - Requirements being implemented
+  - Tests being added
+  - Standards being addressed
+  - Result: visible in git history
+| ✓ Exists (in git history)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Every core word requirement traced to test
+- [ ] Every test traced to requirement
+- [ ] Every major function has documented purpose
+- [ ] RTM shows 100% coverage
+- [ ] No "orphan" tests (tests for nothing)
+- [ ] No "orphan" requirements (requirements with no test)
+
+---
+
+=== Requirement T1-3: Architecture and Design Documentation
+
+**What it validates:** Design decisions are documented and justified.
+
+**Standards reference:**
+- IEEE 1016 (Software Design)
+- ISO/IEC/IEEE 42010 (Architecture description)
+
+**How to prove it:**
+- Key architectural decisions are documented
+- Rationale for each decision is explained
+- Tradeoffs are considered
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `ARCHITECTURE_OVERVIEW.adoc`
+| High-level architecture:
+  - What is the overall design?
+  - Why 19 modules? What does each do?
+  - How do modules interact?
+  - Data flow and control flow
+  - Performance considerations
+| ○ Needs creation
+
+| `DESIGN_DECISIONS.adoc`
+| For major decisions, document:
+  - What was the decision?
+  - What were the alternatives?
+  - Why was this choice made?
+  - What are the tradeoffs?
+
+  Examples:
+  - Why fixed 5MB arena instead of malloc?
+  - Why direct-threaded interpreter?
+  - Why 19 semantic modules?
+  - Why dictionary-based isolation?
+| ○ Needs creation
+
+| `WORD_MODULE_CATALOG.adoc`
+| For each of 19 modules:
+  - Module name
+  - Purpose
+  - Words it implements
+  - Key algorithms
+  - Dependencies
+  - Test coverage
+| ○ Needs creation
+
+| `PLATFORM_ABSTRACTION_LAYER.adoc`
+| How StarForth handles multiple platforms:
+  - Linux/POSIX layer
+  - Fiasco.OC/L4Re layer
+  - seL4 layer (future)
+  - Minimal layer (no OS)
+  - Platform-specific code
+| ○ Needs creation
+
+| `MEMORY_MANAGEMENT_SPEC.adoc`
+| Document memory model:
+  - Fixed 5MB arena layout
+  - Dictionary space
+  - Data stack
+  - Return stack
+  - Block storage
+  - Memory safety guarantees
+| ✓ Exists (in comments, needs formalization)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Architecture overview document complete
+- [ ] All 19 modules documented
+- [ ] Major design decisions recorded
+- [ ] Rationale clear for each decision
+- [ ] Tradeoffs explicitly discussed
+- [ ] Diagrams support text description
+
+---
+
+=== Requirement T1-4: Test Plan and Methodology
+
+**What it validates:** Tests are systematic and comprehensive.
+
+**Standards reference:**
+- IEEE 829 (Test documentation)
+- ISO/IEC/IEEE 29119 (Software testing)
+
+**How to prove it:**
+- Test plan is documented
+- Test cases trace to requirements
+- Test coverage metrics are measured
+- Tests are reproducible
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `TEST_PLAN.adoc`
+| Describes testing strategy:
+  - What are we testing? (FORTH-79 compliance)
+  - How will we test it? (unit + integration + stress)
+  - What's the acceptance criterion? (100% core words pass)
+  - How are tests organized? (by module, by standard)
+  - How are tests run? (continuous integration, release gates)
+| ○ Needs creation
+
+| `TEST_CASE_SPECIFICATION.adoc`
+| For each test category, document:
+  - Test ID (e.g., FORTH79-TEST-ADD)
+  - What it tests (e.g., "Addition word: X Y + = X+Y")
+  - Test inputs
+  - Expected outputs
+  - Edge cases covered
+  - How it validates spec
+| ○ Needs creation
+
+| Test coverage report
+| Metrics:
+  - % of code lines executed by tests
+  - % of branches covered
+  - % of functions tested
+  - % of words with tests
+| ○ Needs generation
+
+| Test results archive
+| For each release:
+  - All 675+ tests pass
+  - All platforms tested
+  - Date and git commit hash
+  - Any failures logged with root cause
+| ○ Needs setup
+
+| Continuous integration logs
+| GitHub Actions or equivalent:
+  - Tests run on every commit
+  - Results logged and visible
+  - Failures block merge
+| ✓ Exists (via Makefile + CI)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Test plan documented
+- [ ] All test cases specified (test ID, purpose, inputs/outputs)
+- [ ] Code coverage >90%
+- [ ] All platforms tested before release
+- [ ] Test results reproducible
+- [ ] No flaky tests
+
+---
+
+== Tier I Validation Checklist for v1.0 Release
+
+- [ ] `FORTH-79_COMPLIANCE_MATRIX.adoc` complete
+- [ ] `WORD_INVENTORY.adoc` complete
+- [ ] 675+ tests pass on all platforms
+- [ ] Test methodology documented
+- [ ] `REQUIREMENTS_SPECIFICATION.adoc` complete
+- [ ] Requirements Traceability Matrix complete
+- [ ] `ARCHITECTURE_OVERVIEW.adoc` complete
+- [ ] `DESIGN_DECISIONS.adoc` complete
+- [ ] 19 modules documented
+- [ ] `TEST_PLAN.adoc` complete
+- [ ] Test coverage report generated
+- [ ] Test results archived for release
+
+---
+
+== Priority and Sequence
+
+**Phase A (Weeks 1-2):** Documentation
+- Requirements spec
+- Architecture overview
+- Test plan
+- Design decisions
+
+**Phase B (Week 3):** Analysis
+- RTM creation
+- Module catalog
+- Platform abstraction layer
+
+**Phase C (Week 4):** Validation
+- Code coverage metrics
+- Test results documentation
+- Acceptance sign-off
+
+---
+
+== Related Documents
+
+* `RELIABILITY_QUALITY_REQUIREMENTS_TIER_II.adoc` — Tier II quality requirements
+* `CAPABILITY_KERNEL_FRAMEWORK.adoc` — Three-tier validation model
+* `FORTH-79_COMPLIANCE_MATRIX.adoc` — Word compliance
+* `GOVERNANCE.md` — Repository governance
+
+---
+
+== Document History
+
+[cols="^1,^2,2,<4"]
+|===
+| Version | Date | Author | Change Summary
+
+| 1.0.0
+| 2025-10-25
+| rajames
+| Created Tier I Foundation Requirements for v1.0
+|===
+
+---
+
+**StarForth:** Foundation Complete. Ready for Tier II.
