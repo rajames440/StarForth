@@ -2,9 +2,9 @@
 #
 #                                  ***   StarForth   ***
 #
-#  profile.sh- FORTH-79 Standard and ANSI C99 ONLY
+#  perf-profile.sh- FORTH-79 Standard and ANSI C99 ONLY
 #  Modified by - rajames
-#  Last modified - 2025-10-23T10:55:24.955-04
+#  Last modified - 2025-10-26T16:05:12.213-04
 #
 #  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 #
@@ -15,7 +15,7 @@
 #
 #  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 #
-#  /home/rajames/CLionProjects/StarForth/scripts/profile.sh
+#  /home/rajames/CLionProjects/StarForth/scripts/perf-profile.sh
 #
 
 # StarForth perf → REPORT.txt (symbols, no script args)

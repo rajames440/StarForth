@@ -203,3 +203,9 @@ Other important documentation.
 * Project Repository: link:../[Root]
 * StarForth Governance: link:../StarForth-Governance/[Governance Subtree]
 * Archives: link:../archives/[Documentation Archives]
+* API Documentation: link:appendix/index.adoc[Auto-generated API Reference]
+
+== Appendix I - StarForth API
+
+* API Documentation: link:appendix/index.adoc[Auto-generated API Reference]
+
