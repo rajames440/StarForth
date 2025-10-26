@@ -1,8 +1,0 @@
-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
-
-protocol=https
-host=github.com
-username=rajames440
-password=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
-
-git ls-remote https://github.com/rajames440/StarForth.git
