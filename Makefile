@@ -359,7 +359,6 @@ test: $(TARGET)
 clean:
 	@echo "🧹 Cleaning build artifacts..."
 	@rm -rfv build/*
-	@rm -rfv docs/build/*
 	@rm -f src/*.gcda src/word_source/*.gcda src/*.gcno src/word_source/*.gcno
 	@echo "✓ Clean complete"
 
@@ -377,99 +376,6 @@ asm: banner
 	@echo "✓ Assembly files generated in build/"
 	@echo "  Example: less build/stack_management.s"
 
-# ==============================================================================
-# DOCUMENTATION GENERATION
-# ==============================================================================
-
-# Generate all documentation formats
-docs: book
-	@echo "📚 Generating comprehensive API documentation..."
-	@./scripts/generate_docs.sh
-
-# Generate HTML documentation only (fast)
-docs-html:
-	@echo "📚 Generating HTML API documentation..."
-	@doxygen Doxyfile 2>&1 | grep -v "warning:" || true
-	@echo "✓ HTML documentation generated in docs/api/html/"
-
-# Generate PDF documentation (requires pdflatex)
-docs-pdf: docs-html
-	@echo "📄 Generating PDF documentation..."
-	@cd docs/api/latex && $(MAKE) pdf > /dev/null 2>&1 && cp refman.pdf ../StarForth-API-Reference.pdf && echo "✓ PDF: docs/api/StarForth-API-Reference.pdf"
-
-# Generate complete manual book - THE COMPREHENSIVE BOOK
-# LaTeX is the PRIMARY source, PDF/EPUB/HTML/AsciiDoc are all generated from it
-# Includes: Markdown docs + Doxygen API docs integrated into one unified LaTeX document
-# Output formats: LaTeX → PDF, EPUB, HTML (multi-page), AsciiDoc
-book: info
-	@if [ ! -d docs/book ]; then \
-		echo "⚠️  Skipping book build: docs/book/ not present"; \
-	else \
-		echo "═══════════════════════════════════════════════════════════════"; \
-		echo "  📖 Building StarForth Complete Manual"; \
-		echo "═══════════════════════════════════════════════════════════════"; \
-		echo ""; \
-		echo "Building comprehensive documentation including:"; \
-		echo "  • All Markdown Documentation (27 files)"; \
-		echo "  • Complete API Documentation (Doxygen LaTeX)"; \
-		echo "  • Integrated into unified LaTeX document"; \
-		echo ""; \
-		echo "Output formats: PDF, EPUB, HTML (multi-page), AsciiDoc"; \
-		echo ""; \
-		cd docs/book && ./build-book.sh all; \
-		echo ""; \
-	fi
-
-# Individual format targets for fine-grained control
-book-pdf: info
-	@echo "Building PDF only..."
-	@cd docs/book && ./build-book.sh pdf
-
-book-html: info
-	@echo "Building HTML (multi-page) only..."
-	@cd docs/book && ./build-book.sh html
-
-book-epub: info
-	@echo "Building EPUB only..."
-	@cd docs/book && ./build-book.sh epub
-
-book-asciidoc: info
-	@echo "Building AsciiDoc only..."
-	@cd docs/book && ./build-book.sh asciidoc
-
-# Open the complete manual
-book-open:
-	@echo "🌐 Opening StarForth Manual..."
-	@if [ -f docs/build/starforth-manual.html ]; then \
-		if command -v xdg-open > /dev/null; then \
-			xdg-open docs/build/starforth-manual.html; \
-		elif command -v open > /dev/null; then \
-			open docs/build/starforth-manual.html; \
-		else \
-			echo "Please open docs/build/starforth-manual.html"; \
-		fi; \
-	else \
-		echo "Manual not built yet. Run 'make book' first."; \
-	fi
-
-# Open documentation in browser
-docs-open: docs-html
-	@echo "🌐 Opening documentation in browser..."
-	@if command -v xdg-open > /dev/null; then \
-		xdg-open docs/api/html/index.html; \
-	elif command -v open > /dev/null; then \
-		open docs/api/html/index.html; \
-	elif command -v start > /dev/null; then \
-		start docs/api/html/index.html; \
-	else \
-		echo "Please open docs/api/html/index.html in your browser"; \
-	fi
-
-# Clean documentation
-docs-clean:
-	@echo "🧹 Cleaning documentation artifacts..."
-	@rm -rf docs/api
-	@echo "✓ Documentation cleaned"
 
 # ==============================================================================
 # HELP
@@ -510,17 +416,6 @@ help:
 	@echo "  asm             - Generate assembly output"
 	@echo "  clean           - Remove build artifacts"
 	@echo "  help            - Show this help"
-	@echo ""
-	@echo "📚 DOCUMENTATION:"
-	@echo "  book            - Generate complete manual (LaTeX → PDF, DocBook, EPUB)"
-	@echo "  book-pdf        - Generate PDF only from existing LaTeX"
-	@echo "  book-docbook    - Generate DocBook XML only from existing LaTeX"
-	@echo "  book-epub       - Generate EPUB only from existing LaTeX"
-	@echo "  docs            - Generate all documentation (HTML, PDF, AsciiDoc, MD)"
-	@echo "  docs-html       - Generate HTML documentation only"
-	@echo "  docs-pdf        - Generate PDF documentation"
-	@echo "  docs-open       - Open HTML documentation in browser"
-	@echo "  docs-clean      - Clean documentation artifacts"
 	@echo ""
 	@echo "⚙️  CONFIGURATION:"
 	@echo "  CC              - Compiler (default: gcc)"

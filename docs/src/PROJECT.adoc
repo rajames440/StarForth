@@ -1,0 +1,83 @@
+== StarForth Project Context
+:toc: left
+:toc-title: Contents
+:toclevels: 3
+xref:./README.adoc[← Back to Documentation Index]
+
+
+
+=== Project Overview
+
+StarForth is a Forth-based operating system being developed for both
+Linux (native) and L4Re microkernel platforms. This repository contains
+the Linux/native version.
+
+=== Critical: Read Shared Context First
+
+*IMPORTANT*: At the start of EVERY session, read
+`+/home/rajames/CLionProjects/StarForth/SHARED_CLAUDE.md+` to get the
+latest cross-project updates and context from both StarForth and
+StarshipOS Claude instances.
+
+=== Identity & Tagging
+
+* You are working in the *StarForth* repository
+* Always tag your entries in SHARED_CLAUDE.md as `+[Claude@StarForth]+`
+* Include date/timestamp: `+[Claude@StarForth] YYYY-MM-DD HH:MM+`
+* Check for updates from `+[Claude@StarshipOS]+` in SHARED_CLAUDE.md
+
+=== Repository Structure
+
+* *Location*: `+/home/rajames/CLionProjects/StarForth+`
+* *Sister Project*: StarshipOS at
+`+/home/rajames/CLionProjects/StarshipOS+`
+* *Sync Destination*: `+StarshipOS/l4/pkg/starforth/server/+`
+
+=== Integration System
+
+This project uses bidirectional sync with StarshipOS via
+`+maint/integrator.sh+`:
+
+* *Direction*: StarForth → StarshipOS
+* *Trigger*: Git pre-push hook
+* *Documentation*: See `+maint/INTEGRATION_NOTES.md+` for complete
+methodology
+* *Shared Notes*: `+SHARED_CLAUDE.md+` syncs between both projects
+
+==== The 4 Rules (Cap’t Bob Sez)
+
+[arabic]
+. Never mkdir into target — both repos must already exist
+. Blacklist = Law — anything matching it is ignored
+. If file exists at same relative path in destination → overwrite
+(green)
+. If file doesn’t exist → quarantine for review (orange)
+
+=== Key Files
+
+* `+maint/integrator.sh+` - Sync script (StarForth → StarshipOS)
+* `+maint/blacklist.txt+` - Files to never sync
+* `+maint/mergefiles.txt+` - Files to sync (or auto-generated from git
+diff)
+* `+maint/INTEGRATION_NOTES.md+` - Complete test methodology and bug
+history
+* `+SHARED_CLAUDE.md+` - Cross-project communication hub
+
+=== Development Notes
+
+* L4Re’s build system is rigid - no out-of-tree builds possible
+* This is why we use bidirectional sync instead of monorepo
+* Each repo maintains its native structure
+* Quarantine system prevents accidental file creation
+
+=== Session Startup Checklist
+
+[arabic]
+. ✅ Read `+SHARED_CLAUDE.md+` for latest updates
+. Check for any action items from `+[Claude@StarshipOS]+`
+. Review git status if working on integration tasks
+. Update `+SHARED_CLAUDE.md+` when you make significant discoveries
+
+'''''
+
+_Last Updated: 2025-10-19 by Captain Bob_
