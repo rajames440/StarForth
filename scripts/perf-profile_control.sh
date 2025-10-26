@@ -2,9 +2,9 @@
 #
 #                                  ***   StarForth   ***
 #
-#  profile_control.sh- FORTH-79 Standard and ANSI C99 ONLY
+#  perf-profile_control.sh- FORTH-79 Standard and ANSI C99 ONLY
 #  Modified by - rajames
-#  Last modified - 2025-10-23T10:55:25.162-04
+#  Last modified - 2025-10-26T16:05:12.221-04
 #
 #  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 #
@@ -15,7 +15,7 @@
 #
 #  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 #
-#  /home/rajames/CLionProjects/StarForth/scripts/profile_control.sh
+#  /home/rajames/CLionProjects/StarForth/scripts/perf-profile_control.sh
 #
 
 # profile_control.sh - Target Control Words performance bottleneck

@@ -449,7 +449,7 @@ Wrote block 2048 (1024/1024 bytes used, padded 0)
 
 *Automatic:*
 
-Scripts (`+update-init.sh+`, `+apply-init.sh+`) check timestamps and
+Scripts (`+4th-update-init.sh+`, `+4th-apply-init.sh+`) check timestamps and
 rebuild if source is newer than binary.
 
 *Manual:*

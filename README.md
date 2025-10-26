@@ -33,6 +33,34 @@ StarForth isn't cute.
 
 ---
 
+## 🚀 **Getting Started**
+
+### 📚 **Complete Documentation**
+
+**[Read the Full Documentation →](docs/src/README.adoc)**
+
+Our comprehensive documentation covers everything from quick-start guides to deep architecture dives:
+
+- **Quick Start & Installation** – Build StarForth on Linux, L4Re, Raspberry Pi, and more
+- **Architecture Deep-Dive** – Understand the VM internals, block storage, and word system
+- **API Reference** – Auto-generated from Doxygen with navigation to all source files
+- **Building & Testing** – Detailed guides for PGO, cross-compilation, and optimization
+- **Platform Integration** – L4Re, seL4, and platform abstraction layer documentation
+
+### 🤝 **Contributing**
+
+Want to improve StarForth? **[Start Here →](CONTRIBUTE.md)**
+
+Our contribution guide covers:
+
+- How to set up your development environment
+- Code standards and review process
+- Architecture and design principles
+- Testing requirements and workflows
+- How to report issues effectively
+
+---
+
 ## ✅ **Governance & Validation**
 
 StarForth is governed and validated through the [StarForth Governance Repository](https://github.com/rajames440/StarForth-Governance):
@@ -72,8 +100,12 @@ starforth/
  ├─ word_source/       # Modular word definitions (Forth-79 vocabulary)
  ├─ tests/             # 675+ functional tests (fail-fast harness)
  ├─ disks/             # Disk images for RAM/disk-backed experiments
- └─ docs/              # Full DocBook + dark-themed HTML/PDF/EPUB manuals
+ ├─ docs/              # Full AsciiDoc + LaTeX documentation
+ └─ StarForth-Governance/ # [READ-ONLY] Governance policies (submodule)
 ```
+
+**⚠️ Note on StarForth-Governance:** This is a read-only git submodule. Only maintainers can modify governance files. If
+you need to propose governance changes, create a GitHub issue. See [CONTRIBUTE.md](CONTRIBUTE.md) for details.
 
 ---
 

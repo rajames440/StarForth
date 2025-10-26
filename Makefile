@@ -522,4 +522,42 @@ info: docs/starforth.info
 package: deb rpm info
 	@echo "✅ All packages built successfully!"
 
-.PHONY: all banner fastest fast turbo pgo rpi4 rpi4-cross rpi4-fastest minimal l4re profile performance debug bench benchmark test asm clean clean-obj help install uninstall deb rpm info package
+# ==============================================================================
+# 📚 DOCUMENTATION TARGETS
+# ==============================================================================
+
+# Generate API documentation (Doxygen XML → AsciiDoc)
+api-docs:
+	@echo "📚 Generating API documentation from Doxygen..."
+	@if [ ! -f scripts/generate-doxygen-appendix.sh ]; then \
+		echo "Error: scripts/generate-doxygen-appendix.sh not found"; \
+		exit 1; \
+	fi
+	@./scripts/generate-doxygen-appendix.sh
+	@echo "✅ API documentation generated: docs/src/appendix/"
+
+# Convert all AsciiDoc to LaTeX
+latex:
+	@echo "📄 Converting AsciiDoc to LaTeX..."
+	@if [ ! -f scripts/asciidoc-to-latex.sh ]; then \
+		echo "Error: scripts/asciidoc-to-latex.sh not found"; \
+		exit 1; \
+	fi
+	@./scripts/asciidoc-to-latex.sh
+	@echo "✅ LaTeX files generated: docs/latex/"
+
+# Generate all documentation
+docs: api-docs latex
+	@echo "✅ All documentation generated!"
+	@echo ""
+	@echo "📂 Documentation locations:"
+	@echo "  • API docs: docs/src/appendix/"
+	@echo "  • LaTeX:    docs/latex/"
+
+# Clean documentation
+clean-docs:
+	@echo "🗑️  Cleaning generated documentation..."
+	@rm -rf docs/src/appendix/ docs/latex/
+	@echo "✅ Documentation cleaned"
+
+.PHONY: all banner fastest fast turbo pgo rpi4 rpi4-cross rpi4-fastest minimal l4re profile performance debug bench benchmark test asm clean clean-obj help install uninstall deb rpm info package api-docs latex docs clean-docs

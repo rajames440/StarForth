@@ -5,6 +5,10 @@
 # Never include local maint machinery
 (^|/)?maint($|/)
 
+# Repo-specific files (each repo maintains its own)
+(^|/)?\.gitignore$
+(^|/)?\.github($|/)
+
 # (Starship-specific assets blacklist only matters in reverse direction,
 # but harmless to leave here.)
 (^|/)?Control($|/)

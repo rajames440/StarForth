@@ -2,9 +2,9 @@
 #
 #                                  ***   StarForth   ***
 #
-#  apply-init.sh- FORTH-79 Standard and ANSI C99 ONLY
+#  4th-apply-init.sh- FORTH-79 Standard and ANSI C99 ONLY
 #  Modified by - rajames
-#  Last modified - 2025-10-23T10:55:25.012-04
+#  Last modified - 2025-10-26T16:05:12.115-04
 #
 #  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 #
@@ -15,7 +15,7 @@
 #
 #  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 #
-#  /home/rajames/CLionProjects/StarForth/scripts/apply-init.sh
+#  /home/rajames/CLionProjects/StarForth/scripts/4th-apply-init.sh
 #
 
 # scripts/apply-init.sh — interactive wrapper for tools/apply-init
