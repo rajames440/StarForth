@@ -24,7 +24,7 @@
 **StarForth** is a clean, modern, **FORTH-79** implementation — written entirely in **strict ANSI C99**, designed for *
 *speed**, **predictability**, and **surgical control** over memory and execution.
 
-It’s the beating heart of [StarshipOS](https://github.com/starshipos) 🛸, but it’s also a **standalone, embeddable
+It’s the beating heart of [StarshipOS](https://github.com/rajames440/StarshipOS) 🛸, but it’s also a **standalone, embeddable
 virtual machine**. You can run it on bare metal, inside L4Re, in QEMU, or integrate it into your own projects.
 
 StarForth isn’t bloated.
