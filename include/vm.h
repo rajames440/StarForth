@@ -3,7 +3,7 @@
 
   vm.h- FORTH-79 Standard and ANSI C99 ONLY
   Modified by - rajames
-  Last modified - 2025-10-23T10:55:24.706-04
+  Last modified - 2025-10-26T09:28:04.038-04
 
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
@@ -99,18 +99,18 @@ static inline cell_t CELL(vaddr_t a) { return (cell_t) (int64_t) a; }
 
 /* Physics properties structure - stub implementation for elementary particle model */
 typedef struct {
-    uint32_t observations;          /* Number of times word has been observed/executed */
-    uint32_t entropy_reciprocal;    /* Reciprocal of entropy (higher = colder/less used) */
-    uint64_t last_observed_ns;      /* Timestamp of last observation in nanoseconds */
-    uint32_t decay_rate;            /* Rate at which word decays when unused */
-    uint32_t mass;                  /* Memory footprint of the word */
-    uint32_t momentum;              /* Execution momentum */
-    uint8_t spin;                   /* Particle spin state */
-    uint8_t charge;                 /* Particle charge state */
-    uint8_t superposition;          /* Superposition state */
-    uint8_t heat_index;             /* Heat index (usage intensity) */
-    void *topics;                   /* Topic subscriptions (NULL for now) */
-    uint32_t topic_count;           /* Number of topic subscriptions */
+    uint32_t observations; /* Number of times word has been observed/executed */
+    uint32_t entropy_reciprocal; /* Reciprocal of entropy (higher = colder/less used) */
+    uint64_t last_observed_ns; /* Timestamp of last observation in nanoseconds */
+    uint32_t decay_rate; /* Rate at which word decays when unused */
+    uint32_t mass; /* Memory footprint of the word */
+    uint32_t momentum; /* Execution momentum */
+    uint8_t spin; /* Particle spin state */
+    uint8_t charge; /* Particle charge state */
+    uint8_t superposition; /* Superposition state */
+    uint8_t heat_index; /* Heat index (usage intensity) */
+    void *topics; /* Topic subscriptions (NULL for now) */
+    uint32_t topic_count; /* Number of topic subscriptions */
 } DictPhysics;
 
 /* Dictionary entry - enhanced for FORTH-79 compatibility */
