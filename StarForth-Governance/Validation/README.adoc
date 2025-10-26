@@ -1,0 +1,311 @@
+////
+StarForth Validation Framework - Directory Structure Guide
+
+Document Metadata:
+- Document ID: starforth-governance/validation-framework-overview
+- Version: 1.0.0
+- Created: 2025-10-25
+- Purpose: Explain the organization and structure of the validation framework
+- Status: GUIDE
+////
+
+= StarForth Validation Framework Structure
+
+**Version:** 1.0.0
+**Status:** Active Guide
+**Last Updated:** October 25, 2025
+
+---
+
+== Overview
+
+This directory contains the complete StarForth Validation Framework organized by Tier (Foundation, Reliability/Quality, Formal Assurance).
+
+Each tier follows a consistent structure:
+1. **Overview** — What the tier is and why it exists
+2. **Acceptance Criteria** — Specific requirements for the tier
+3. **Validation Engineering Plan** — How work will be done (increments)
+4. **Protocols** — Detailed procedures for each validation activity
+5. **Test Results** — Evidence that protocols were followed
+6. **Final Report** — Certification that tier is complete
+
+---
+
+== Directory Structure
+
+[source,text]
+----
+Validation/
+│
+├── OVERVIEW/
+│   ├── README.adoc (this file)
+│   ├── GOVERNANCE_STRATEGY.adoc
+│   ├── VALIDATION_ROADMAP.adoc
+│   ├── ACCEPTANCE_CRITERIA_ALL_TIERS.adoc
+│   └── STANDARDS_REFERENCE.adoc
+│
+├── TIER_I_FOUNDATION/
+│   ├── TIER_I_OVERVIEW.adoc
+│   ├── TIER_I_ACCEPTANCE_CRITERIA.adoc
+│   ├── VALIDATION_ENGINEERING_PLAN.adoc
+│   ├── PROTOCOLS/
+│   │   ├── PROTOCOL_FORTH79_COMPLIANCE.adoc
+│   │   ├── PROTOCOL_REQUIREMENTS_TRACEABILITY.adoc
+│   │   ├── PROTOCOL_ARCHITECTURE_DOCUMENTATION.adoc
+│   │   └── PROTOCOL_TEST_METHODOLOGY.adoc
+│   ├── TEST_RESULTS/
+│   │   └── TEST_RESULTS_LOG.adoc
+│   └── FINAL_REPORT_TIER_I.adoc
+│
+├── TIER_II_QUALITY/
+│   ├── TIER_II_OVERVIEW.adoc
+│   ├── TIER_II_ACCEPTANCE_CRITERIA.adoc
+│   ├── VALIDATION_ENGINEERING_PLAN.adoc
+│   ├── PROTOCOLS/
+│   │   ├── PROTOCOL_CODE_QUALITY_ANALYSIS.adoc
+│   │   ├── PROTOCOL_SECURE_CODING_STANDARDS.adoc
+│   │   ├── PROTOCOL_MEMORY_SAFETY.adoc
+│   │   ├── PROTOCOL_DETERMINISTIC_EXECUTION.adoc
+│   │   └── PROTOCOL_CAPABILITY_READINESS.adoc
+│   ├── TEST_RESULTS/
+│   │   └── TEST_RESULTS_LOG.adoc
+│   └── FINAL_REPORT_TIER_II.adoc
+│
+├── TIER_III_FORMAL/
+│   ├── TIER_III_OVERVIEW.adoc
+│   ├── TIER_III_ACCEPTANCE_CRITERIA.adoc
+│   ├── VALIDATION_ENGINEERING_PLAN.adoc
+│   ├── PROTOCOLS/
+│   └── FINAL_REPORT_TIER_III.adoc
+│
+└── SHARED/
+    ├── CORRECTION_AND_REMEDIATION_PROCEDURE.adoc
+    ├── DEFICIENCY_LOG.adoc
+    └── METRICS_TRACKING.adoc
+----
+
+---
+
+== How to Use This Framework
+
+=== For Strategic Understanding
+
+Start here:
+1. Read: `OVERVIEW/GOVERNANCE_STRATEGY.adoc` — Why we're doing validation
+2. Read: `OVERVIEW/VALIDATION_ROADMAP.adoc` — What we'll do and when
+3. Read: `OVERVIEW/STANDARDS_REFERENCE.adoc` — What standards apply
+
+=== For Each Tier
+
+Follow this sequence:
+1. **Understand the tier:**
+   - Read: `TIER_X_OVERVIEW.adoc` — What is Tier X?
+   - Read: `TIER_X_ACCEPTANCE_CRITERIA.adoc` — What "done" looks like
+
+2. **Plan the work:**
+   - Read: `VALIDATION_ENGINEERING_PLAN.adoc` — How we'll do it (increments)
+
+3. **Execute the work:**
+   - For each protocol:
+     - Read the `PROTOCOL_*.adoc` — Detailed procedure
+     - Follow the steps
+     - Log results in `TEST_RESULTS/TEST_RESULTS_LOG.adoc`
+     - If deficiencies: Log in `SHARED/DEFICIENCY_LOG.adoc`
+
+4. **Verify completion:**
+   - Update `METRICS_TRACKING.adoc` — Progress dashboard
+   - When all protocols pass → Create `FINAL_REPORT_TIER_X.adoc`
+
+=== For Remediation
+
+If a deficiency is found:
+1. Log it: `SHARED/DEFICIENCY_LOG.adoc`
+2. Follow: `SHARED/CORRECTION_AND_REMEDIATION_PROCEDURE.adoc`
+3. Test correction
+4. Close deficiency
+
+---
+
+== Tier Descriptions
+
+=== Tier I: Foundation
+
+**Purpose:** Validates that StarForth correctly implements FORTH-79 and is properly documented.
+
+**Standards:** ISO/IEC 12207, 25010, IEEE 730, 1012
+
+**Acceptance:** All 4 protocols pass, all tests pass, all documentation complete
+
+**Timeline:** 4 weeks (estimated)
+
+---
+
+=== Tier II: Reliability & Quality
+
+**Purpose:** Validates that StarForth is robust, secure, and architecturally ready for capability-based kernel.
+
+**Standards:** ISO/IEC 5055, MISRA C, CERT C, NIST SSDF
+
+**Acceptance:** All 5 protocols pass, quality baselines meet thresholds
+
+**Timeline:** 5 weeks (estimated)
+
+---
+
+=== Tier III: Formal Assurance
+
+**Purpose:** Validates that StarForth kernel proofs are mathematically sound (future).
+
+**Standards:** Isabelle/HOL, seL4 methodology
+
+**Acceptance:** All theorems proven and machine-checked
+
+**Timeline:** Phase 3 (2026+)
+
+---
+
+== Key Principles
+
+=== Traceability
+
+Everything is traceable:
+- Requirements → Tests → Results → Deficiencies → Corrections
+
+=== Incremental Validation
+
+Each tier builds on the previous:
+- Tier I: Is it correct?
+- Tier II: Is it robust?
+- Tier III: Can we prove it?
+
+=== Evidence-Based
+
+No hand-waving. Every claim backed by:
+- Test results
+- Code analysis
+- Documentation
+- Measurements
+
+=== Deficiency Management
+
+Deficiencies are:
+- Logged immediately
+- Assigned severity
+- Assigned owner and deadline
+- Tracked to closure
+
+---
+
+== Quick Reference: What Each Document Does
+
+[cols="2,3"]
+|===
+| Document | Purpose
+
+| `GOVERNANCE_STRATEGY.adoc`
+| High-level why: What are we trying to achieve with validation?
+
+| `VALIDATION_ROADMAP.adoc`
+| Timeline and sequence: When will each tier be completed?
+
+| `ACCEPTANCE_CRITERIA_ALL_TIERS.adoc`
+| General rules: What's the validation philosophy across all tiers?
+
+| `STANDARDS_REFERENCE.adoc`
+| Standards mapping: Which standards apply to which tier?
+
+| `TIER_X_OVERVIEW.adoc`
+| Tier charter: What is Tier X validating specifically?
+
+| `TIER_X_ACCEPTANCE_CRITERIA.adoc`
+| Tier pass/fail: What are the specific acceptance rules for Tier X?
+
+| `VALIDATION_ENGINEERING_PLAN.adoc`
+| Work breakdown: What are the specific tasks and sequence?
+
+| `PROTOCOL_*.adoc`
+| Procedure: Step-by-step how to perform one validation activity
+
+| `TEST_RESULTS_LOG.adoc`
+| Evidence: What was tested, what were the results?
+
+| `FINAL_REPORT_TIER_X.adoc`
+| Certification: This tier is complete and passes acceptance
+
+| `CORRECTION_AND_REMEDIATION_PROCEDURE.adoc`
+| Deficiency resolution: How to fix non-conformances
+
+| `DEFICIENCY_LOG.adoc`
+| Issues tracking: What deficiencies exist and their status
+
+| `METRICS_TRACKING.adoc`
+| Dashboard: What's our progress across all tiers?
+
+|===
+
+---
+
+== Getting Started
+
+**Next step:** Read `OVERVIEW/GOVERNANCE_STRATEGY.adoc`
+
+This defines the overall approach, then you can drill down to individual tiers.
+
+---
+
+== Document History
+
+[cols="^1,^2,2,<4"]
+|===
+| Version | Date | Author | Change Summary
+
+| 1.0.0
+| 2025-10-25
+| rajames
+| Created validation framework directory structure and guide
+|===
+
+---
+
+== Document Approval & Signature
+
+[cols="2,2,1"]
+|===
+| Role | Name/Title | Signature
+
+| **Author/Maintainer**
+| Robert A. James
+|
+
+| **Date Approved**
+| 25 October, 2025
+| _______________
+
+| **PGP Fingerprint**
+| 497CF5C0D295A7E8065C5D9A9CD3FBE66B5E2AE4
+|
+
+|===
+
+**PGP Signature Block:**
+```
+-----BEGIN PGP SIGNATURE-----
+
+[Your PGP signature here - generated via: gpg --clearsign README.adoc]
+
+-----END PGP SIGNATURE-----
+```
+
+**To Sign This Document:**
+```bash
+gpg --clearsign README.adoc
+# This creates README.adoc.asc (signed version)
+```
+
+**To Verify Signature:**
+```bash
+gpg --verify README.adoc.asc
+```
+
+
+**StarForth:** Organized. Traceable. Validated.

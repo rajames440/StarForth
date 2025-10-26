@@ -1,0 +1,472 @@
+////
+StarForth Tier II Reliability and Quality Requirements
+
+Document Metadata:
+- Document ID: starforth-governance/reliability-quality-requirements-tier-ii
+- Version: 1.0.0
+- Created: 2025-10-25
+- Purpose: Specify Tier II (Reliability & Quality) validation artifacts needed for Layer 2 compliance
+- Scope: What must be delivered for v1.0 release - Reliability & Quality layer
+- Status: REQUIREMENTS SPECIFICATION
+////
+
+= StarForth Tier II: Reliability & Quality Requirements
+
+**Version:** 1.0.0
+**Status:** Requirements Specification
+**Last Updated:** October 25, 2025
+
+---
+
+== Purpose
+
+This document specifies EXACTLY what validation artifacts must exist for StarForth to claim Tier II (Reliability & Quality) compliance.
+
+**For each requirement:**
+1. **What it validates** — The specific concern
+2. **How to prove it** — Evidence needed
+3. **Artifacts required** — Documents, tests, reports
+4. **Acceptance criteria** — What "done" means
+5. **Status today** — What exists vs. what's missing
+
+---
+
+== Tier II: Reliability & Quality Requirements
+
+=== Requirement T2-1: Code Quality Baseline
+
+**What it validates:** Code quality is measurable and acceptable.
+
+**Standards reference:**
+- ISO/IEC 5055 (Source Code Quality)
+- NIST SSDF (Secure Software Development)
+
+**How to prove it:**
+- Static analysis tools identify defects
+- Quality metrics are measured
+- Baseline is established and tracked
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| Static analysis baseline report
+| Run tools on codebase:
+  - SonarQube (or similar)
+  - Clang Static Analyzer
+  - Coverity (if available)
+  - Report metrics:
+    - Total lines of code
+    - Critical issues
+    - High issues
+    - Medium issues
+    - Low issues
+    - Code duplications
+    - Cyclomatic complexity
+| ○ Needs baseline run
+
+| Code quality dashboard
+| Track over time:
+  - Is quality improving?
+  - Are new issues being introduced?
+  - Which modules are weak?
+| ○ Needs setup
+
+| Quality thresholds
+| Define acceptable levels:
+  - Max critical issues: 0
+  - Max high issues: <5
+  - Code duplication: <5%
+  - Avg cyclomatic complexity: <10
+| ○ Needs definition
+
+| Quality improvement plan
+| If any thresholds exceeded:
+  - What will be fixed?
+  - Why are they acceptable for v1.0?
+  - When will they be addressed?
+| ○ Needs creation
+
+|===
+
+**Acceptance criteria:**
+- [ ] Static analysis baseline established
+- [ ] Quality metrics documented
+- [ ] No critical issues
+- [ ] High issues <5 (or exceptions documented)
+- [ ] Quality dashboard shows trends
+
+---
+
+=== Requirement T2-2: Secure Coding Standards Compliance
+
+**What it validates:** Code follows secure coding practices.
+
+**Standards reference:**
+- MISRA C:2023
+- SEI CERT C
+- CWE Top 25
+- OWASP Top 10 (for interpreters)
+
+**How to prove it:**
+- Code is reviewed against standards
+- Violations are documented with justification
+- Common vulnerabilities are absent
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `MISRA_C_COMPLIANCE_CHECKLIST.adoc`
+| For each MISRA rule:
+  - Rule number and name
+  - Is it applicable to StarForth?
+  - Compliant? (YES / NO with exception)
+  - Evidence or exception rationale
+
+  Focus rules:
+  - R4.1: Pointer type conversions
+  - R18.1: Array subscript bounds
+  - R20.1: malloc/free (not used)
+  - R21.3: Standard library (libc optional)
+| ○ Needs checklist
+
+| `CERT_C_COMPLIANCE_CHECKLIST.adoc`
+| For critical CERT rules:
+  - Rule ID (ARR, FIO, MEM, etc.)
+  - Does rule apply?
+  - Compliant? (YES / NO with reason)
+
+  Focus rules:
+  - ARR (Array bounds)
+  - FIO (File I/O)
+  - MEM (Memory allocation) — N/A due to fixed arena
+  - INT (Integer overflow)
+  - STR (String handling)
+| ○ Needs checklist
+
+| Security code review report
+| Manual review for:
+  - Buffer overflows
+  - Integer overflows
+  - Uninitialized variables
+  - Injection attacks
+  - Race conditions (if concurrent)
+  - Timing attacks (not applicable)
+
+  Method: Static analysis + manual spot-check
+| ○ Needs completion
+
+| `VULNERABILITY_ANALYSIS.adoc`
+| For each CWE Top 25:
+  - CWE ID
+  - Is it relevant to interpreters?
+  - Is StarForth vulnerable?
+  - Mitigation (if any)
+
+  Examples:
+  - CWE-119: Buffer overflow (mitigation: fixed arena)
+  - CWE-125: Buffer over-read (mitigation: bounds check)
+  - CWE-191: Integer underflow (mitigation: validated inputs)
+| ○ Needs analysis
+
+|===
+
+**Acceptance criteria:**
+- [ ] MISRA C checklist complete with exceptions justified
+- [ ] CERT C checklist complete
+- [ ] Code review completed for critical areas
+- [ ] CWE Top 25 analyzed
+- [ ] All vulnerabilities documented with mitigations
+
+---
+
+=== Requirement T2-3: Memory Safety Validation
+
+**What it validates:** Memory is safe (no corruption, access violations).
+
+**Standards reference:**
+- MISRA C (pointer rules)
+- CERT C (memory safety)
+- ISO/IEC 5055
+
+**How to prove it:**
+- Fixed memory arena eliminates malloc issues
+- Bounds checking prevents buffer overflows
+- Stack depth limits prevent stack overflow
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `MEMORY_SAFETY_SPECIFICATION.adoc`
+| Document safety model:
+  - Fixed 5MB arena (no malloc)
+  - Stack bounds (1024 cells)
+  - Return stack bounds (1024 cells)
+  - Dictionary size limits
+  - Word definition size limits
+  - Proof that no overflows possible
+| ○ Needs creation
+
+| Memory bounds test suite
+| Tests for:
+  - Maximum stack depth (1024)
+  - Return stack depth (1024)
+  - Dictionary overflow (attempt to add word larger than remaining space)
+  - Address bounds (all addresses in arena)
+  - Cell alignment (all cells 64-bit aligned)
+| ○ Needs test cases
+
+| Unsafe pointer analysis
+| Identify all unsafe operations:
+  - Explicit casts (type punning)
+  - Pointer arithmetic
+  - Dereferencing without bounds check
+  - For each: Is it justified?
+| ○ Needs analysis
+
+| Fuzzing report
+| Run fuzzer on word interpreter:
+  - Generate random word sequences
+  - Run for 1M+ iterations
+  - No crashes or memory errors
+  - Reports any issues found
+| ○ Needs setup
+
+| AddressSanitizer / MSAN logs
+| Compile with sanitizers enabled:
+  - -fsanitize=address (buffer overflow)
+  - -fsanitize=memory (uninitialized read)
+  - Run full test suite
+  - Zero errors reported
+| ✓ Possible (needs automation)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Memory safety spec documented
+- [ ] Fixed arena size justified
+- [ ] Stack depth limits documented
+- [ ] Bounds tests pass
+- [ ] No memory errors in AddressSanitizer run
+- [ ] Unsafe operations documented with justification
+
+---
+
+=== Requirement T2-4: Deterministic Execution
+
+**What it validates:** Execution is deterministic (same input = same output, always).
+
+**Standards reference:**
+- Essential for formal verification
+- Required for reproducible testing
+
+**How to prove it:**
+- No time-dependent code
+- No uninitialized variables
+- No malloc/free randomness
+- No hardware timing side-effects
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `DETERMINISM_SPECIFICATION.adoc`
+| Document what makes StarForth deterministic:
+  - No calls to time(), random(), etc.
+  - Fixed memory layout
+  - Defined stack order
+  - Defined word order in dictionary
+  - No concurrency (single-threaded per VM)
+  - Proof: No source of non-determinism
+| ○ Needs creation
+
+| Determinism test suite
+| Run identical test sequences 100x:
+  - Same inputs
+  - Same environment
+  - Verify output identical each time
+  - If any difference: failure
+| ○ Needs test cases
+
+| Code audit
+| Search codebase for:
+  - time() calls
+  - random() calls
+  - getenv() calls
+  - gettimeofday() calls
+  - uninitialized variables
+  - Any non-deterministic source
+  - Result: zero found (or justified exceptions)
+| ✓ Partially done (needs documentation)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Determinism specification complete
+- [ ] Code audit shows no time-dependence
+- [ ] 100x identical test runs all match
+- [ ] No randomness in core interpreter
+
+---
+
+=== Requirement T2-5: Capability-Ready Architecture
+
+**What it validates:** Code is architecturally ready for ACL guards (Phase 3).
+
+**Standards reference:**
+- Preparation for formal proofs
+- ACL and Isolation Framework
+
+**How to prove it:**
+- Word call pattern is consistent
+- Dictionary isolation is clear
+- No backdoors or privilege escalation
+- ACL enforcement points are identifiable
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `WORD_CALL_PATTERN_SPECIFICATION.adoc`
+| Document how words are called:
+  - Execution model (direct-threaded)
+  - Word lookup (FIND function)
+  - Word invocation (EXECUTE function)
+  - Stack manipulation
+  - Return address handling
+  - Where ACL check would go (future)
+| ○ Needs creation
+
+| `DICTIONARY_SECURITY_ANALYSIS.adoc`
+| Analyze dictionary for:
+  - Can words modify their own definitions?
+  - Can words modify ACLs? (future property)
+  - Can words access hidden words?
+  - Cross-module visibility analysis
+  - Proof that dictionary separation works
+| ○ Needs creation
+
+| Privilege escalation test suite
+| Tests attempting to:
+  - Modify core word definitions (fail)
+  - Access memory outside arena (fail)
+  - Call undefined words (fail)
+  - Create infinite loops (detected)
+  - Stack overflow (detected)
+  - Any escape attempt (fail)
+| ○ Needs test cases
+
+| Module dependency analysis
+| Document:
+  - Which modules depend on which?
+  - Circular dependencies? (should be none)
+  - Hidden coupling? (identify and document)
+  - Access control boundaries (where would ACLs go?)
+| ○ Needs analysis
+
+| `ACL_INTEGRATION_POINTS.adoc`
+| Identify where ACL checks will go:
+  - Function FIND (word lookup)
+  - Function EXECUTE (word invocation)
+  - Any message passing (inter-VM calls)
+  - Proof that these points are sufficient
+| ○ Needs creation
+
+|===
+
+**Acceptance criteria:**
+- [ ] Word call pattern documented
+- [ ] Dictionary security analyzed
+- [ ] No privilege escalation possible
+- [ ] Module dependencies clear
+- [ ] ACL integration points identified
+- [ ] Capability readiness confirmed
+
+---
+
+== Tier II Validation Checklist for v1.0 Release
+
+- [ ] Static analysis baseline established
+- [ ] No critical issues
+- [ ] High issues <5 or exceptions documented
+- [ ] `MISRA_C_COMPLIANCE_CHECKLIST.adoc` complete
+- [ ] `CERT_C_COMPLIANCE_CHECKLIST.adoc` complete
+- [ ] Security code review completed
+- [ ] `VULNERABILITY_ANALYSIS.adoc` complete
+- [ ] `MEMORY_SAFETY_SPECIFICATION.adoc` complete
+- [ ] Memory bounds tests pass
+- [ ] AddressSanitizer run: zero errors
+- [ ] `DETERMINISM_SPECIFICATION.adoc` complete
+- [ ] Determinism tests pass (100x identical runs)
+- [ ] `WORD_CALL_PATTERN_SPECIFICATION.adoc` complete
+- [ ] `DICTIONARY_SECURITY_ANALYSIS.adoc` complete
+- [ ] Privilege escalation tests pass
+- [ ] `ACL_INTEGRATION_POINTS.adoc` complete
+
+---
+
+== Priority and Sequence
+
+**Phase 1 (Week 1):** Static Analysis
+- SonarQube / Clang analysis baseline
+- Quality metrics documentation
+- Quality thresholds definition
+
+**Phase 2 (Weeks 2-3):** Secure Coding
+- MISRA C checklist
+- CERT C checklist
+- Vulnerability analysis
+- Security code review
+
+**Phase 3 (Week 4):** Memory & Determinism
+- Memory safety specification
+- Memory bounds tests
+- AddressSanitizer automation
+- Determinism specification
+- Determinism test suite
+
+**Phase 4 (Week 5):** Capability Readiness
+- Word call pattern documentation
+- Dictionary security analysis
+- Module dependency analysis
+- ACL integration points
+- Privilege escalation tests
+
+---
+
+== Related Documents
+
+* `FOUNDATION_REQUIREMENTS_TIER_I.adoc` — Tier I Foundation requirements
+* `CAPABILITY_KERNEL_FRAMEWORK.adoc` — Three-tier validation model
+* `ACL_AND_ISOLATION_FRAMEWORK.adoc` — Capability architecture
+* `GOVERNANCE.md` — Repository governance
+
+---
+
+== Document History
+
+[cols="^1,^2,2,<4"]
+|===
+| Version | Date | Author | Change Summary
+
+| 1.0.0
+| 2025-10-25
+| rajames
+| Created Tier II Reliability & Quality Requirements for v1.0
+|===
+
+---
+
+**StarForth:** Robust. Secure. Ready for production.

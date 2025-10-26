@@ -1,0 +1,778 @@
+////
+StarForth Layer 1-2 Validation Requirements
+
+Document Metadata:
+- Document ID: starforth-governance/validation-requirements-layer-1-2
+- Version: 1.0.0
+- Created: 2025-10-25
+- Purpose: Specify exact validation artifacts needed for Layer 1-2 compliance
+- Scope: What must be delivered for v1.0 release
+- Status: REQUIREMENTS SPECIFICATION
+////
+
+= StarForth Layer 1-2 Validation Requirements
+
+**Version:** 1.0.0
+**Status:** Requirements Specification
+**Last Updated:** October 25, 2025
+
+---
+
+== Purpose
+
+This document specifies EXACTLY what validation artifacts must exist for StarForth to claim Layer 1-2 compliance (Foundation + Reliability).
+
+**For each requirement:**
+1. **What it validates** — The specific concern
+2. **How to prove it** — Evidence needed
+3. **Artifacts required** — Documents, tests, reports
+4. **Acceptance criteria** — What "done" means
+5. **Status today** — What exists vs. what's missing
+
+---
+
+== Layer 1: Foundation Requirements
+
+=== Requirement L1-1: FORTH-79 Standard Compliance
+
+**What it validates:** StarForth correctly implements every FORTH-79 core word.
+
+**Standards reference:**
+- FORTH-79 official specification
+- ISO/IEC/IEEE 12207 (Lifecycle) — Requirement traceability
+- ISO/IEC 25010 (Quality Model) — Functional correctness
+
+**How to prove it:**
+- Every FORTH-79 core word is implemented
+- Every implementation matches the specification
+- Every word is tested
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `FORTH-79_COMPLIANCE_MATRIX.adoc`
+| Maps each FORTH-79 word to:
+  - Implementation location (module + function)
+  - Test IDs that validate it
+  - Any deviations from spec (should be none)
+| ✓ Exists
+
+| `WORD_INVENTORY.adoc`
+| List of all 70 FORTH-79 core words with:
+  - Word name
+  - Stack effect (input/output)
+  - Implementation status
+  - Test coverage count
+| ○ Needs update
+
+| Test suite results report
+| 675+ tests pass on all platforms:
+  - Linux x86_64
+  - Linux ARM64
+  - Fiasco.OC
+  - seL4
+| ✓ Runs on commit
+
+| Test methodology document
+| Describes how tests are run:
+  - Test harness architecture
+  - How compliance is validated
+  - What "pass" means
+  - Edge cases covered
+| ○ Needs documentation
+
+|===
+
+**Acceptance criteria:**
+- [ ] `FORTH-79_COMPLIANCE_MATRIX.adoc` reviewed and complete
+- [ ] Every word has at least 1 functional test
+- [ ] Every word has edge case tests
+- [ ] 675+ tests pass on all platforms before release
+- [ ] Test results logged per release
+
+---
+
+=== Requirement L1-2: Requirements Traceability Matrix (RTM)
+
+**What it validates:** Every line of code traces back to a requirement or test.
+
+**Standards reference:**
+- IEEE 730 (SQA Plan)
+- IEEE 1012 (V&V)
+- IEEE 829 (Test documentation)
+
+**How to prove it:**
+- For every source file: What requirement does it implement?
+- For every function: What test validates it?
+- For every code change: What spec change triggered it?
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `REQUIREMENTS_SPECIFICATION.adoc`
+| Formal specification of StarForth:
+  - What is StarForth? (FORTH-79 VM)
+  - What are its core requirements? (70 core words)
+  - What are quality requirements? (determinism, memory safety, portability)
+  - Each requirement tagged with unique ID (REQ-xxx)
+| ○ Needs creation
+
+| Requirements Traceability Matrix
+| Table mapping:
+  - REQ-xxx → Implementation modules
+  - REQ-xxx → Test cases
+  - REQ-xxx → Architecture docs
+  - Example: REQ-FORTH-79-COMPLIANCE → (arith_words.c, stack_ops.c, ...) → (FORTH79-TEST-ADD, FORTH79-TEST-SUB, ...)
+| ○ Needs creation
+
+| Code-to-requirement map
+| For each source module, document:
+  - Which requirements it implements
+  - Key functions (why they exist)
+  - Dependencies on other modules
+| ○ Needs creation
+
+| Git commit log analysis
+| For key commits, link to:
+  - Requirements being implemented
+  - Tests being added
+  - Standards being addressed
+| ✓ Exists (in git history)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Every core word requirement traced to test
+- [ ] Every test traced to requirement
+- [ ] Every major function has documented purpose
+- [ ] RTM shows 100% coverage
+- [ ] No "orphan" tests (tests for nothing)
+- [ ] No "orphan" requirements (requirements with no test)
+
+---
+
+=== Requirement L1-3: Architecture and Design Documentation
+
+**What it validates:** Design decisions are documented and justified.
+
+**Standards reference:**
+- IEEE 1016 (Software Design)
+- ISO/IEC/IEEE 42010 (Architecture description)
+
+**How to prove it:**
+- Key architectural decisions are documented
+- Rationale for each decision is explained
+- Tradeoffs are considered
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `ARCHITECTURE_OVERVIEW.adoc`
+| High-level architecture:
+  - What is the overall design?
+  - Why 19 modules? What does each do?
+  - How do modules interact?
+  - Data flow and control flow
+  - Performance considerations
+| ○ Needs creation
+
+| `DESIGN_DECISIONS.adoc`
+| For major decisions, document:
+  - What was the decision?
+  - What were the alternatives?
+  - Why was this choice made?
+  - What are the tradeoffs?
+
+  Examples:
+  - Why fixed 5MB arena instead of malloc?
+  - Why direct-threaded interpreter?
+  - Why 19 semantic modules?
+  - Why dictionary-based isolation?
+| ○ Needs creation
+
+| `WORD_MODULE_CATALOG.adoc`
+| For each of 19 modules:
+  - Module name
+  - Purpose
+  - Words it implements
+  - Key algorithms
+  - Dependencies
+  - Test coverage
+| ○ Needs creation
+
+| `PLATFORM_ABSTRACTION_LAYER.adoc`
+| How StarForth handles multiple platforms:
+  - Linux/POSIX layer
+  - Fiasco.OC/L4Re layer
+  - seL4 layer (future)
+  - Minimal layer (no OS)
+  - Platform-specific code
+| ○ Needs creation
+
+| `MEMORY_MANAGEMENT_SPEC.adoc`
+| Document memory model:
+  - Fixed 5MB arena layout
+  - Dictionary space
+  - Data stack
+  - Return stack
+  - Block storage
+  - Memory safety guarantees
+| ✓ Exists (in comments, needs formalization)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Architecture overview document complete
+- [ ] All 19 modules documented
+- [ ] Major design decisions recorded
+- [ ] Rationale clear for each decision
+- [ ] Tradeoffs explicitly discussed
+- [ ] Diagrams support text description
+
+---
+
+=== Requirement L1-4: Test Plan and Methodology
+
+**What it validates:** Tests are systematic and comprehensive.
+
+**Standards reference:**
+- IEEE 829 (Test documentation)
+- ISO/IEC/IEEE 29119 (Software testing)
+
+**How to prove it:**
+- Test plan is documented
+- Test cases trace to requirements
+- Test coverage metrics are measured
+- Tests are reproducible
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `TEST_PLAN.adoc`
+| Describes testing strategy:
+  - What are we testing? (FORTH-79 compliance)
+  - How will we test it? (unit + integration + stress)
+  - What's the acceptance criterion? (100% core words pass)
+  - How are tests organized? (by module, by standard)
+  - How are tests run? (continuous integration, release gates)
+| ○ Needs creation
+
+| `TEST_CASE_SPECIFICATION.adoc`
+| For each test category, document:
+  - Test ID (e.g., FORTH79-TEST-ADD)
+  - What it tests (e.g., "Addition word: X Y + = X+Y")
+  - Test inputs
+  - Expected outputs
+  - Edge cases covered
+  - How it validates spec
+| ○ Needs creation
+
+| Test coverage report
+| Metrics:
+  - % of code lines executed by tests
+  - % of branches covered
+  - % of functions tested
+  - % of words with tests
+| ○ Needs generation
+
+| Test results archive
+| For each release:
+  - All 675+ tests pass
+  - All platforms tested
+  - Date and git commit hash
+  - Any failures logged with root cause
+| ○ Needs setup
+
+| Continuous integration logs
+| GitHub Actions or equivalent:
+  - Tests run on every commit
+  - Results logged and visible
+  - Failures block merge
+| ✓ Exists (via Makefile + CI)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Test plan documented
+- [ ] All test cases specified (test ID, purpose, inputs/outputs)
+- [ ] Code coverage >90%
+- [ ] All platforms tested before release
+- [ ] Test results reproducible
+- [ ] No flaky tests
+
+---
+
+== Layer 2: Reliability & Quality Requirements
+
+=== Requirement L2-1: Code Quality Baseline
+
+**What it validates:** Code quality is measurable and acceptable.
+
+**Standards reference:**
+- ISO/IEC 5055 (Source Code Quality)
+- NIST SSDF (Secure Software Development)
+
+**How to prove it:**
+- Static analysis tools identify defects
+- Quality metrics are measured
+- Baseline is established and tracked
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| Static analysis baseline report
+| Run tools on codebase:
+  - SonarQube (or similar)
+  - Clang Static Analyzer
+  - Coverity (if available)
+  - Report metrics:
+    - Total lines of code
+    - Critical issues
+    - High issues
+    - Medium issues
+    - Low issues
+    - Code duplications
+    - Cyclomatic complexity
+| ○ Needs baseline run
+
+| Code quality dashboard
+| Track over time:
+  - Is quality improving?
+  - Are new issues being introduced?
+  - Which modules are weak?
+| ○ Needs setup
+
+| Quality thresholds
+| Define acceptable levels:
+  - Max critical issues: 0
+  - Max high issues: <5
+  - Code duplication: <5%
+  - Avg cyclomatic complexity: <10
+| ○ Needs definition
+
+| Quality improvement plan
+| If any thresholds exceeded:
+  - What will be fixed?
+  - Why are they acceptable for v1.0?
+  - When will they be addressed?
+| ○ Needs creation
+
+|===
+
+**Acceptance criteria:**
+- [ ] Static analysis baseline established
+- [ ] Quality metrics documented
+- [ ] No critical issues
+- [ ] High issues <5 (or exceptions documented)
+- [ ] Quality dashboard shows trends
+
+---
+
+=== Requirement L2-2: Secure Coding Standards Compliance
+
+**What it validates:** Code follows secure coding practices.
+
+**Standards reference:**
+- MISRA C:2023
+- SEI CERT C
+- CWE Top 25
+- OWASP Top 10 (for interpreters)
+
+**How to prove it:**
+- Code is reviewed against standards
+- Violations are documented with justification
+- Common vulnerabilities are absent
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `MISRA_C_COMPLIANCE_CHECKLIST.adoc`
+| For each MISRA rule:
+  - Rule number and name
+  - Is it applicable to StarForth?
+  - Compliant? (YES / NO with exception)
+  - Evidence or exception rationale
+
+  Focus rules:
+  - R4.1: Pointer type conversions
+  - R18.1: Array subscript bounds
+  - R20.1: malloc/free (not used)
+  - R21.3: Standard library (libc optional)
+| ○ Needs checklist
+
+| `CERT_C_COMPLIANCE_CHECKLIST.adoc`
+| For critical CERT rules:
+  - Rule ID (ARR, FIO, MEM, etc.)
+  - Does rule apply?
+  - Compliant? (YES / NO with reason)
+
+  Focus rules:
+  - ARR (Array bounds)
+  - FIO (File I/O)
+  - MEM (Memory allocation) — N/A due to fixed arena
+  - INT (Integer overflow)
+  - STR (String handling)
+| ○ Needs checklist
+
+| Security code review report
+| Manual review for:
+  - Buffer overflows
+  - Integer overflows
+  - Uninitialized variables
+  - Injection attacks
+  - Race conditions (if concurrent)
+  - Timing attacks (not applicable)
+
+  Method: Static analysis + manual spot-check
+| ○ Needs completion
+
+| `VULNERABILITY_ANALYSIS.adoc`
+| For each CWE Top 25:
+  - CWE ID
+  - Is it relevant to interpreters?
+  - Is StarForth vulnerable?
+  - Mitigation (if any)
+
+  Examples:
+  - CWE-119: Buffer overflow (mitigation: fixed arena)
+  - CWE-125: Buffer over-read (mitigation: bounds check)
+  - CWE-191: Integer underflow (mitigation: validated inputs)
+| ○ Needs analysis
+
+|===
+
+**Acceptance criteria:**
+- [ ] MISRA C checklist complete with exceptions justified
+- [ ] CERT C checklist complete
+- [ ] Code review completed for critical areas
+- [ ] CWE Top 25 analyzed
+- [ ] All vulnerabilities documented with mitigations
+
+---
+
+=== Requirement L2-3: Memory Safety Validation
+
+**What it validates:** Memory is safe (no corruption, access violations).
+
+**Standards reference:**
+- MISRA C (pointer rules)
+- CERT C (memory safety)
+- ISO/IEC 5055
+
+**How to prove it:**
+- Fixed memory arena eliminates malloc issues
+- Bounds checking prevents buffer overflows
+- Stack depth limits prevent stack overflow
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `MEMORY_SAFETY_SPECIFICATION.adoc`
+| Document safety model:
+  - Fixed 5MB arena (no malloc)
+  - Stack bounds (1024 cells)
+  - Return stack bounds (1024 cells)
+  - Dictionary size limits
+  - Word definition size limits
+  - Proof that no overflows possible
+| ○ Needs creation
+
+| Memory bounds test suite
+| Tests for:
+  - Maximum stack depth (1024)
+  - Return stack depth (1024)
+  - Dictionary overflow (attempt to add word larger than remaining space)
+  - Address bounds (all addresses in arena)
+  - Cell alignment (all cells 64-bit aligned)
+| ○ Needs test cases
+
+| Unsafe pointer analysis
+| Identify all unsafe operations:
+  - Explicit casts (type punning)
+  - Pointer arithmetic
+  - Dereferencing without bounds check
+  - For each: Is it justified?
+| ○ Needs analysis
+
+| Fuzzing report
+| Run fuzzer on word interpreter:
+  - Generate random word sequences
+  - Run for 1M+ iterations
+  - No crashes or memory errors
+  - Reports any issues found
+| ○ Needs setup
+
+| AddressSanitizer / MSAN logs
+| Compile with sanitizers enabled:
+  - -fsanitize=address (buffer overflow)
+  - -fsanitize=memory (uninitialized read)
+  - Run full test suite
+  - Zero errors reported
+| ✓ Possible (needs automation)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Memory safety spec documented
+- [ ] Fixed arena size justified
+- [ ] Stack depth limits documented
+- [ ] Bounds tests pass
+- [ ] No memory errors in AddressSanitizer run
+- [ ] Unsafe operations documented with justification
+
+---
+
+=== Requirement L2-4: Deterministic Execution
+
+**What it validates:** Execution is deterministic (same input = same output, always).
+
+**Standards reference:**
+- Essential for formal verification
+- Required for reproducible testing
+
+**How to prove it:**
+- No time-dependent code
+- No uninitialized variables
+- No malloc/free randomness
+- No hardware timing side-effects
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `DETERMINISM_SPECIFICATION.adoc`
+| Document what makes StarForth deterministic:
+  - No calls to time(), random(), etc.
+  - Fixed memory layout
+  - Defined stack order
+  - Defined word order in dictionary
+  - No concurrency (single-threaded per VM)
+  - Proof: No source of non-determinism
+| ○ Needs creation
+
+| Determinism test suite
+| Run identical test sequences 100x:
+  - Same inputs
+  - Same environment
+  - Verify output identical each time
+  - If any difference: failure
+| ○ Needs test cases
+
+| Code audit
+| Search codebase for:
+  - time() calls
+  - random() calls
+  - getenv() calls
+  - gettimeofday() calls
+  - uninitialized variables
+  - Any non-deterministic source
+  - Result: zero found (or justified exceptions)
+| ✓ Partially done (needs documentation)
+
+|===
+
+**Acceptance criteria:**
+- [ ] Determinism specification complete
+- [ ] Code audit shows no time-dependence
+- [ ] 100x identical test runs all match
+- [ ] No randomness in core interpreter
+
+---
+
+=== Requirement L2-5: Capability-Ready Architecture
+
+**What it validates:** Code is architecturally ready for ACL guards (Phase 3).
+
+**Standards reference:**
+- Preparation for formal proofs
+- ACL and Isolation Framework
+
+**How to prove it:**
+- Word call pattern is consistent
+- Dictionary isolation is clear
+- No backdoors or privilege escalation
+- ACL enforcement points are identifiable
+
+**Artifacts required:**
+
+[cols="2,3,1"]
+|===
+| Artifact | Description | Status
+
+| `WORD_CALL_PATTERN_SPECIFICATION.adoc`
+| Document how words are called:
+  - Execution model (direct-threaded)
+  - Word lookup (FIND function)
+  - Word invocation (EXECUTE function)
+  - Stack manipulation
+  - Return address handling
+  - Where ACL check would go (future)
+| ○ Needs creation
+
+| `DICTIONARY_SECURITY_ANALYSIS.adoc`
+| Analyze dictionary for:
+  - Can words modify their own definitions?
+  - Can words modify ACLs? (future property)
+  - Can words access hidden words?
+  - Cross-module visibility analysis
+  - Proof that dictionary separation works
+| ○ Needs creation
+
+| Privilege escalation test suite
+| Tests attempting to:
+  - Modify core word definitions (fail)
+  - Access memory outside arena (fail)
+  - Call undefined words (fail)
+  - Create infinite loops (detected)
+  - Stack overflow (detected)
+  - Any escape attempt (fail)
+| ○ Needs test cases
+
+| Module dependency analysis
+| Document:
+  - Which modules depend on which?
+  - Circular dependencies? (should be none)
+  - Hidden coupling? (identify and document)
+  - Access control boundaries (where would ACLs go?)
+| ○ Needs analysis
+
+| `ACL_INTEGRATION_POINTS.adoc`
+| Identify where ACL checks will go:
+  - Function FIND (word lookup)
+  - Function EXECUTE (word invocation)
+  - Any message passing (inter-VM calls)
+  - Proof that these points are sufficient
+| ○ Needs creation
+
+|===
+
+**Acceptance criteria:**
+- [ ] Word call pattern documented
+- [ ] Dictionary security analyzed
+- [ ] No privilege escalation possible
+- [ ] Module dependencies clear
+- [ ] ACL integration points identified
+- [ ] Capability readiness confirmed
+
+---
+
+== Validation Checklist for v1.0 Release
+
+=== Layer 1 Checklist
+
+- [ ] `FORTH-79_COMPLIANCE_MATRIX.adoc` complete
+- [ ] `WORD_INVENTORY.adoc` complete
+- [ ] 675+ tests pass on all platforms
+- [ ] Test methodology documented
+- [ ] `REQUIREMENTS_SPECIFICATION.adoc` complete
+- [ ] Requirements Traceability Matrix complete
+- [ ] `ARCHITECTURE_OVERVIEW.adoc` complete
+- [ ] `DESIGN_DECISIONS.adoc` complete
+- [ ] 19 modules documented
+- [ ] `TEST_PLAN.adoc` complete
+- [ ] Test coverage report generated
+- [ ] Test results archived for release
+
+=== Layer 2 Checklist
+
+- [ ] Static analysis baseline established
+- [ ] No critical issues
+- [ ] High issues <5 or exceptions documented
+- [ ] `MISRA_C_COMPLIANCE_CHECKLIST.adoc` complete
+- [ ] `CERT_C_COMPLIANCE_CHECKLIST.adoc` complete
+- [ ] Security code review completed
+- [ ] `VULNERABILITY_ANALYSIS.adoc` complete
+- [ ] `MEMORY_SAFETY_SPECIFICATION.adoc` complete
+- [ ] Memory bounds tests pass
+- [ ] AddressSanitizer run: zero errors
+- [ ] `DETERMINISM_SPECIFICATION.adoc` complete
+- [ ] Determinism tests pass (100x identical runs)
+- [ ] `WORD_CALL_PATTERN_SPECIFICATION.adoc` complete
+- [ ] `DICTIONARY_SECURITY_ANALYSIS.adoc` complete
+- [ ] Privilege escalation tests pass
+- [ ] `ACL_INTEGRATION_POINTS.adoc` complete
+
+=== Governance Checklist
+
+- [ ] `CAPABILITY_KERNEL_FRAMEWORK.adoc` approved
+- [ ] `ACL_AND_ISOLATION_FRAMEWORK.adoc` approved
+- [ ] Layer 3 stubs defined (TBD placeholders)
+- [ ] Standards mapping complete
+- [ ] Maintenance procedures documented
+
+---
+
+== Priority and Sequence
+
+**Phase A (Weeks 1-2):** Documentation
+- Requirements spec
+- Architecture overview
+- Test plan
+- Design decisions
+
+**Phase B (Weeks 3-4):** Analysis
+- RTM creation
+- Static code analysis baseline
+- Security code review
+- Memory safety analysis
+
+**Phase C (Weeks 5-6):** Validation
+- MISRA/CERT checklists
+- Determinism tests
+- Privilege escalation tests
+- Module analysis
+
+**Phase D (Week 7):** Governance
+- Review all documents
+- Establish acceptance
+- Archive for release
+
+---
+
+== Related Documents
+
+* `CAPABILITY_KERNEL_FRAMEWORK.adoc` — Three-layer model
+* `ACL_AND_ISOLATION_FRAMEWORK.adoc` — Capability architecture
+* `FORTH-79_COMPLIANCE_MATRIX.adoc` — Word compliance
+* `GOVERNANCE.md` — Repository governance
+
+---
+
+== Document History
+
+[cols="^1,^2,2,<4"]
+|===
+| Version | Date | Author | Change Summary
+
+| 1.0.0
+| 2025-10-25
+| rajames
+| Created Layer 1-2 validation requirements for v1.0
+|===
+
+---
+
+**StarForth:** Validated. Documented. Ready.

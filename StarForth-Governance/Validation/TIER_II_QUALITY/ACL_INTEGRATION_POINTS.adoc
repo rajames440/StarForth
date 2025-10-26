@@ -1,0 +1,255 @@
+////
+StarForth ACL Integration Points Analysis
+
+Document Metadata:
+- Document ID: starforth-governance/acl-integration-points
+- Version: 1.0.0
+- Purpose: Identify all points where ACL checks will be integrated in Phase III
+- Status: READY FOR PHASE III
+////
+
+= StarForth ACL Integration Points
+
+**Document ID:** starforth-governance/acl-integration-points
+**Version:** 2.0.0
+**Date:** 2025-10-25
+
+**Architecture:** Vocabulary-based scoping with selective capability enforcement at system service boundaries. Every word carries a capability field; most are null (zero-cost enforcement).
+
+---
+
+== Integration Point 1: Word Execution with Selective ACL (vm_execute_word)
+
+### Location
+`src/vm.c:vm_execute_word()` (line TBD)
+
+### DictEntry Structure
+```c
+typedef struct {
+    const char *name;
+    void (*func)(struct VM *vm);
+    capability_t required_capability;  // NULL for most words (zero cost)
+} DictEntry;
+```
+
+### Current Code
+```c
+DictEntry *word = find_word(vm, name);
+if (word) {
+    word->func(vm);  // Direct execution
+}
+```
+
+### Phase III Addition (Optimized)
+```c
+DictEntry *word = find_word(vm, name);
+if (word) {
+    // FAST PATH: Most words have null capability (single pointer check)
+    if (!word->required_capability || check_vm_capability(vm, word->required_capability)) {
+        word->func(vm);
+    } else {
+        vm_error(vm, "ACL_DENIED");
+    }
+}
+```
+
+### Capability Assignment Strategy
+- **Base vocabulary words** (before fence): `required_capability = NULL`
+- **Per-VM payload words** (after fence): `required_capability = NULL`
+- **System service words** (scheduler, memory manager, pub/sub): `required_capability = specific_cap`
+
+### Required Changes
+- [ ] Add `capability_t required_capability` field to DictEntry
+- [ ] Add fast NULL check in vm_execute_word
+- [ ] Set capabilities on system service words only
+- [ ] Validate capabilities during INIT payload load
+
+### Risk: MINIMAL
+- Hot path impact: Single pointer check (NULL == fast-path)
+- Non-breaking change (all words default to unrestricted)
+- Deterministic: Capabilities set at definition time
+- Determinism maintained: Vocabulary-based scoping ensures consistent visibility
+
+---
+
+== Integration Point 2: Scheduler Access (SCHEDULER words)
+
+### Location
+`src/word_source/system_words.c:word_schedule()`, etc. (lines TBD)
+
+### Purpose
+Scheduler controls time-slicing and task switching—must be restricted to authorized VMs only.
+
+### Example: Schedule Request
+```c
+void word_schedule_request(struct VM *vm)
+{
+    // SYSTEM SERVICE: Only certain VMs can request scheduling
+    if (!word->required_capability || check_vm_capability(vm, SCHEDULE_REQUEST)) {
+        // ... request scheduler service ...
+    } else {
+        vm_error(vm, "ACL_DENIED");
+    }
+}
+```
+
+### Required Changes
+- [ ] Define SCHEDULE_REQUEST capability
+- [ ] Define SCHEDULE_QUERY capability
+- [ ] Mark scheduler words with appropriate capabilities
+- [ ] Assign capabilities to authorized VMs during INIT
+
+### Risk: CRITICAL
+- Indeterminate system resource
+- Runtime access control required
+- Affects VM isolation and fairness
+
+---
+
+== Integration Point 3: Memory Manager Access (MEMORY_ALLOC words)
+
+### Location
+`src/word_source/memory_words.c:word_malloc()`, `word_free()`, etc. (lines TBD)
+
+### Purpose
+Memory manager controls shared heap allocation—must be restricted to authorized VMs only.
+
+### Example: Memory Allocation
+```c
+void word_malloc(struct VM *vm)
+{
+    // SYSTEM SERVICE: Only certain VMs can allocate from shared heap
+    if (!word->required_capability || check_vm_capability(vm, MEMORY_ALLOC)) {
+        // ... request memory from manager ...
+    } else {
+        vm_error(vm, "ACL_DENIED");
+    }
+}
+```
+
+### Required Changes
+- [ ] Define MEMORY_ALLOC capability
+- [ ] Define MEMORY_FREE capability
+- [ ] Mark memory manager words with appropriate capabilities
+- [ ] Assign capabilities during INIT based on VM role
+
+### Risk: CRITICAL
+- Indeterminate system resource
+- Runtime access control required
+- Affects VM memory guarantees
+
+---
+
+== Integration Point 4: Pub/Sub Events (EVENT words)
+
+### Location
+`src/word_source/pubsub_words.c:word_publish()`, `word_subscribe()`, etc. (lines TBD)
+
+### Purpose
+Pub/Sub backbone provides async event distribution—must be restricted by event topic and VM authorization.
+
+### Example: Event Publishing
+```c
+void word_publish(struct VM *vm)
+{
+    // SYSTEM SERVICE: Only certain VMs can publish to certain topics
+    if (!word->required_capability || check_vm_capability(vm, PUBSUB_PUBLISH)) {
+        // ... publish event to topic ...
+    } else {
+        vm_error(vm, "ACL_DENIED");
+    }
+}
+```
+
+### Required Changes
+- [ ] Define PUBSUB_PUBLISH capability
+- [ ] Define PUBSUB_SUBSCRIBE capability
+- [ ] Mark pub/sub words with appropriate capabilities
+- [ ] Support topic-based ACL (which topics can a VM access?)
+
+### Risk: CRITICAL
+- Indeterminate system resource
+- Runtime access control required
+- Affects inter-VM communication patterns
+
+---
+
+== Summary: ACL Integration Points
+
+[cols="1,2,1,1"]
+|===
+| Point | Location | Type | Risk Level
+
+| Word execution gate | vm_execute_word | Fast path check | MINIMAL
+| Scheduler access | SCHEDULE_* words | System service | CRITICAL
+| Memory manager access | MALLOC/FREE words | System service | CRITICAL
+| Pub/Sub access | PUBLISH/SUBSCRIBE | System service | CRITICAL
+|===
+
+**Key Design Principle:** Word execution checks are uniform but *mostly fast* (NULL = skip immediately). Only system service words carry actual capabilities.
+
+---
+
+== Implementation Plan (Phase III)
+
+**Phase 1: Foundation (Week 1)**
+1. [ ] Add `capability_t required_capability` field to DictEntry
+2. [ ] Implement fast NULL check in vm_execute_word
+3. [ ] Define capability enumeration (SCHEDULE_REQUEST, MEMORY_ALLOC, PUBSUB_PUBLISH, etc.)
+4. [ ] Create check_vm_capability function
+
+**Phase 2: System Services (Week 2)**
+5. [ ] Mark scheduler words with SCHEDULE_* capabilities
+6. [ ] Mark memory manager words with MEMORY_* capabilities
+7. [ ] Mark pub/sub words with PUBSUB_* capabilities
+8. [ ] Implement capability assignment during INIT
+
+**Phase 3: Validation (Week 3)**
+9. [ ] Test ACL enforcement on system services
+10. [ ] Verify determinism (capabilities static after INIT)
+11. [ ] Performance testing (NULL-path overhead)
+12. [ ] Documentation of capability model
+
+**Estimated Time:** 3 weeks for full implementation + testing
+
+---
+
+== Approval
+
+**All integration points identified:** ✓ YES
+
+**Implementation plan feasible:** ✓ YES
+
+**No architectural barriers:** ✓ YES
+
+**Integration Points Summary:**
+- Word execution gate (vm_execute_word): Identified, minimal risk ✓
+- Scheduler access (SCHEDULE_* words): Identified, critical service ✓
+- Memory manager access (MALLOC/FREE): Identified, critical service ✓
+- Pub/Sub events (PUBLISH/SUBSCRIBE): Identified, critical service ✓
+- Fast-path optimization: NULL check for unrestricted words ✓
+- Implementation feasible: 3-week estimate ✓
+
+---
+
+## Document Approval & Signature
+
+[cols="2,2,1"]
+|===
+| Role | Name/Title | Signature
+
+| **Author/Maintainer**
+| Robert A. James
+|
+
+| **Date Approved**
+| 25 October, 2025
+| _______________
+
+| **PGP Fingerprint**
+| 497CF5C0D295A7E8065C5D9A9CD3FBE66B5E2AE4
+|
+
+|===
+
+**Archive Location:** ~/StarForth-Governance/Validation/TIER_II_QUALITY/
