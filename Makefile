@@ -233,7 +233,7 @@ rpi4-fastest: banner
 minimal:
 	$(MAKE) MINIMAL=1
 
-l4re:
+fake-l4re:
 	$(MAKE) MINIMAL=1 CC=l4-gcc CFLAGS="$(BASE_CFLAGS) -DL4RE_TARGET=1"
 
 profile:
