@@ -1,0 +1,6 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="notice" value="                                 ***   &amp;#36;project.name   ***&#10;                                 &#10; &amp;#36;file.fileName- FORTH-79 Standard and ANSI C99 ONLY&#10; Modified by - &amp;#36;username&#10; Last modified - &amp;#36;today.format(&quot;yyyy-MM-dd'T'HH:mm:ss.SSSX&quot;)&#10; &#10; Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.&#10;&#10; This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.&#10; To the extent possible under law, the author(s) have dedicated all copyright and related&#10; and neighboring rights to this software to the public domain worldwide.&#10; This software is distributed without any warranty.&#10;&#10; See &lt;http://creativecommons.org/publicdomain/zero/1.0/&gt; for more information.&#10;  &#10; &amp;#36;file.pathName" />
+    <option name="myName" value="StarForth" />
+  </copyright>
+</component>
