@@ -146,3 +146,4 @@ Isabelle will capture the formal state machine, invariants, and IPC handshake pr
 - Draft initial Isabelle models for the physics state machine and observation window invariants.
 - Specify HOLA’s shared-memory schema and command protocol that matches the plan above.
 - Something else I can't recall.
+I just remembered, we should generate some formal docs for the Governance Repository too.
