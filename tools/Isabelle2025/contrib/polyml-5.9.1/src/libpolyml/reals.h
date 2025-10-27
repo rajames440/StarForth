@@ -1,24 +1,21 @@
 /*
-    Title:  reals.h
+                                  ***   StarForth   ***
 
-    Copyright (c) 2000
-        Cambridge University Technical Services Limited
-    Further development Copyright David C.J. Matthews 2015
+  reals.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:04.499-04
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License version 2.1 as published by the Free Software Foundation.
-    
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-    
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-*/
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/polyml-5.9.1/src/libpolyml/reals.h
+ */
 
 #ifndef _REALS_H
 
@@ -32,7 +29,6 @@ extern double real_arg(Handle x); // Also used in "foreign.cpp"
 extern Handle real_result(TaskData *mdTaskData, double x); // Also used in "foreign.cpp"
 
 extern int getrounding();
-
 extern int setrounding(int rounding);
 
 #define POLY_ROUND_TONEAREST    0

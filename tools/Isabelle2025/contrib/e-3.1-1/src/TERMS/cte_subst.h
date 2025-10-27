@@ -1,27 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-  File  : cte_subst.h
+  cte_subst.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.467-04
 
-  Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Definitions for substitutions. Substitutions are really represented
-  by term cells with bindings. The substitution type is only a
-  disguised stack keeping track of the bound variables for
-  backtracking.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 1998-2017 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-  Changes
-
-  Created: Thu Mar  5 00:22:28 MET 1998
-
-  -----------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/TERMS/cte_subst.h
+ */
 
 #ifndef CTE_SUBST
 
@@ -36,7 +30,7 @@
 /*---------------------------------------------------------------------*/
 
 typedef PStackCell SubstCell;
-typedef PStack_p Subst_p;
+typedef PStack_p   Subst_p;
 
 /*---------------------------------------------------------------------*/
 /*                Exported Functions and Variables                     */
@@ -50,33 +44,25 @@ typedef PStack_p Subst_p;
 #define SubstIsEmpty(subst) PStackEmpty(subst)
 
 static inline PStackPointer SubstAddBinding(Subst_p subst, Term_p var, Term_p bind);
-
-bool SubstBacktrackSingle(Subst_p subst);
-
-int SubstBacktrackToPos(Subst_p subst, PStackPointer pos);
-
-int SubstBacktrack(Subst_p subst);
+bool          SubstBacktrackSingle(Subst_p subst);
+int           SubstBacktrackToPos(Subst_p subst, PStackPointer pos);
+int           SubstBacktrack(Subst_p subst);
 
 PStackPointer SubstNormTerm(Term_p term, Subst_p subst, VarBank_p vars, Sig_p sig);
 
-bool SubstBindingPrint(FILE *out, Term_p var, Sig_p sig, DerefType deref);
-
-long SubstPrint(FILE *out, Subst_p subst, Sig_p sig, DerefType deref);
-
-bool SubstIsRenaming(Subst_p subt);
-
-bool SubstHasHOBinding(Subst_p subt);
+bool          SubstBindingPrint(FILE* out, Term_p var, Sig_p sig, DerefType deref);
+long          SubstPrint(FILE* out, Subst_p subst, Sig_p sig, DerefType deref);
+bool          SubstIsRenaming(Subst_p subt);
+bool          SubstHasHOBinding(Subst_p subt);
 
 PStackPointer SubstBindAppVar(Subst_p subst, Term_p var,
                               Term_p term, int up_to,
                               TB_p bank);
 
-void SubstBacktrackSkolem(Subst_p subst);
-
-void SubstSkolemizeTerm(Term_p term, Subst_p subst, Sig_p sig);
-
-void SubstCompleteInstance(Subst_p subst, Term_p term,
-                           Term_p default_binding);
+void          SubstBacktrackSkolem(Subst_p subst);
+void          SubstSkolemizeTerm(Term_p term, Subst_p subst, Sig_p sig);
+void          SubstCompleteInstance(Subst_p subst, Term_p term,
+                                    Term_p default_binding);
 
 
 /*-----------------------------------------------------------------------
@@ -94,25 +80,26 @@ void SubstCompleteInstance(Subst_p subst, Term_p term,
 //
 /----------------------------------------------------------------------*/
 
-PStackPointer SubstAddBinding(Subst_p subst, Term_p var, Term_p bind) {
-    PStackPointer ret = PStackGetSP(subst);
+PStackPointer SubstAddBinding(Subst_p subst, Term_p var, Term_p bind)
+{
+   PStackPointer ret = PStackGetSP(subst);
 
-    assert(subst);
-    assert(var);
-    assert(bind);
-    assert(TermIsFreeVar(var));
-    assert(!(var->binding));
-    //assert(problemType == PROBLEM_HO || !TermCellQueryProp(bind, TPPredPos)
-    //      || bind->f_code == SIG_TRUE_CODE || bind->f_code == SIG_FALSE_CODE); // Skolem symbols also
-    assert(var->type);
-    assert(bind->type);
-    assert(var->type == bind->type);
+   assert(subst);
+   assert(var);
+   assert(bind);
+   assert(TermIsFreeVar(var));
+   assert(!(var->binding));
+   //assert(problemType == PROBLEM_HO || !TermCellQueryProp(bind, TPPredPos)
+   //      || bind->f_code == SIG_TRUE_CODE || bind->f_code == SIG_FALSE_CODE); // Skolem symbols also
+   assert(var->type);
+   assert(bind->type);
+   assert(var->type == bind->type);
 
-    /* printf("# %ld <- %ld \n", var->f_code, bind->f_code); */
-    var->binding = bind;
-    PStackPushP(subst, var);
+   /* printf("# %ld <- %ld \n", var->f_code, bind->f_code); */
+   var->binding = bind;
+   PStackPushP(subst, var);
 
-    return ret;
+   return ret;
 }
 
 #endif

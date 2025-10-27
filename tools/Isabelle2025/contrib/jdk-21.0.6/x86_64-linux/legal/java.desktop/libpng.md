@@ -1,7 +1,6 @@
 ## libpng v1.6.43
 
 ### libpng License
-
 <pre>
 
 COPYRIGHT NOTICE, DISCLAIMER, and LICENSE
@@ -151,7 +150,6 @@ jurisdiction where common-law trademark is recognized.
 </pre>
 
 ### AUTHORS File Information
-
 ```
 PNG REFERENCE LIBRARY AUTHORS
 =============================

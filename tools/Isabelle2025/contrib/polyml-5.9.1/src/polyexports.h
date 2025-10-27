@@ -1,21 +1,21 @@
 /*
-    Title:  polyexports.h 
+                                  ***   StarForth   ***
 
-    Copyright (c) 2006, 2011, 2015, 2019 David C.J. Matthews
+  polyexports.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:04.156-04
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License version 2.1 as published by the Free Software Foundation.
-    
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-    
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/polyml-5.9.1/src/polyexports.h
+ */
 
 /*
 This header contains the structures used in saved state created by "export".
@@ -51,11 +51,11 @@ This header contains the structures used in saved state created by "export".
 
 // There are several entries 
 typedef struct _memTableEntry {
-    void *mtCurrentAddr; // The address of the area of memory
-    void *mtOriginalAddr; // The original address, for saved states and 32-in-64.
-    uintptr_t mtLength; // The length in bytes of the area
-    unsigned mtFlags; // Flags describing the area.
-    unsigned mtIndex; // An index to identify permanent spaces.
+    void *mtCurrentAddr;             // The address of the area of memory
+    void *mtOriginalAddr;            // The original address, for saved states and 32-in-64.
+    uintptr_t mtLength;              // The length in bytes of the area
+    unsigned mtFlags;               // Flags describing the area.
+    unsigned mtIndex;               // An index to identify permanent spaces.
 } memoryTableEntry;
 
 #define MTF_WRITEABLE         0x00000001  // The area is writeable by ML code
@@ -64,15 +64,15 @@ typedef struct _memTableEntry {
 #define MTF_BYTES             0x00000008  // Contains only byte data and no addresses
 
 typedef struct _exportDescription {
-    unsigned structLength; // The length of this structure
-    unsigned memTableSize; // The size of each entry in the memory table
-    unsigned memTableEntries; // The number of entries in the memory table
-    memoryTableEntry *memTable; // Pointer to the memory table.
-    void *rootFunction; // Points to the start-up function
-    time_t timeStamp; // Creation time stamp
-    unsigned architecture; // Machine architecture
-    unsigned rtsVersion; // Run-time system version
-    void *originalBaseAddr; // Original base address (32-in-64 only)
+    unsigned structLength;         // The length of this structure
+    unsigned memTableSize;         // The size of each entry in the memory table
+    unsigned memTableEntries;      // The number of entries in the memory table
+    memoryTableEntry *memTable;    // Pointer to the memory table.
+    void *rootFunction;            // Points to the start-up function
+    time_t timeStamp;              // Creation time stamp
+    unsigned architecture;         // Machine architecture
+    unsigned rtsVersion;           // Run-time system version
+    void *originalBaseAddr;        // Original base address (32-in-64 only)
 } exportDescription;
 
 extern exportDescription poly_exports;
@@ -89,7 +89,7 @@ extern "C" {
 #   define POLYLIB_API            __declspec (dllexport)
 #  endif
 # elif defined _MSC_VER
-// Visual C - POLYLIB_EXPORTS is defined in the library project settings
+    // Visual C - POLYLIB_EXPORTS is defined in the library project settings
 #  ifdef POLYLIB_EXPORTS
 #   define POLYLIB_API             __declspec (dllexport)
 #  else
@@ -102,7 +102,7 @@ extern "C" {
 # endif
 
 extern POLYLIB_API int PolyWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                                   LPSTR lpCmdLine, int nCmdShow, exportDescription *exports);
+                    LPSTR lpCmdLine, int nCmdShow, exportDescription *exports);
 #else
 int polymain(int argc, char *argv[], exportDescription *exports);
 #endif

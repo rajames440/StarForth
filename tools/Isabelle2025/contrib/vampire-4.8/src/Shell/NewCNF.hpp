@@ -1,11 +1,20 @@
 /*
- * This file is part of the source code of the software program
- * Vampire. It is protected by applicable
- * copyright laws.
- *
- * This source code is distributed under the licence found here
- * https://vprover.github.io/license.html
- * and in the source directory
+                                  ***   StarForth   ***
+
+  NewCNF.hpp- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:03.897-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/vampire-4.8/src/Shell/NewCNF.hpp
  */
 /**
  * @file NewCNF.hpp
@@ -43,38 +52,37 @@
 #endif
 
 namespace Kernel {
-    class Formula;
-    class FormulaUnit;
-    class Clause;
-    class Unit;
-    class Literal;
+  class Formula;
+  class FormulaUnit;
+  class Clause;
+  class Unit;
+  class Literal;
 };
 
 #include <list>
 
 namespace Shell {
-    /**
+
+/**
  * Class implementing the NewCNF transformation.
  * @since 19/11/2015 Manchester
  */
-    class NewCNF {
-    public:
-        NewCNF(unsigned namingThreshold)
-            : _namingThreshold(namingThreshold), _iteInliningThreshold((unsigned) ceil(log2(namingThreshold))),
-              _collectedVarSorts(false), _maxVar(0), _forInduction(false) {
-        }
+class NewCNF
+{
+public:
+  NewCNF(unsigned namingThreshold)
+    : _namingThreshold(namingThreshold), _iteInliningThreshold((unsigned)ceil(log2(namingThreshold))),
+      _collectedVarSorts(false), _maxVar(0),_forInduction(false) {}
 
-        void clausify(FormulaUnit *unit, Stack<Clause *> &output);
+  void clausify(FormulaUnit* unit, Stack<Clause*>& output);
+  void setForInduction(){ _forInduction=true; }
+private:
+  unsigned _namingThreshold;
+  unsigned _iteInliningThreshold;
 
-        void setForInduction() { _forInduction = true; }
+  FormulaUnit* _beingClausified;
 
-    private:
-        unsigned _namingThreshold;
-        unsigned _iteInliningThreshold;
-
-        FormulaUnit *_beingClausified;
-
-        /**
+  /**
    * Queue of formulas to process.
    *
    * Although queue sounds reasonable, the algorithm works with any order of the elements here.
@@ -83,147 +91,138 @@ namespace Shell {
    * However, not merging distinct occurrences of a single subformula
    * from the input does not compromise correctness.
    */
-        Deque<Formula *> _queue;
+  Deque<Formula*> _queue;
 
-        typedef pair<unsigned, Term *> Binding;
-        // used for skolem bindings of the form <existential variable z, corresponding Skolem term f_z(U,V,...) >
+  typedef pair<unsigned, Term*> Binding; // used for skolem bindings of the form <existential variable z, corresponding Skolem term f_z(U,V,...) >
 
-        typedef List<Binding> BindingList;
+  typedef List<Binding> BindingList;
 
-        // all allocations of shared BindingLists should go via BindingStore so that they get destroyed in the end
-        struct BindingStore {
-            void pushAndRemember(Binding b, BindingList * &lst) {
-                lst = new BindingList(b, lst);
-                _stored.push(lst);
-            }
+  // all allocations of shared BindingLists should go via BindingStore so that they get destroyed in the end
+  struct BindingStore {
+    void pushAndRemember(Binding b, BindingList* &lst) {
+      lst = new BindingList(b,lst);
+      _stored.push(lst);
+    }
+    void pushAndRememberWhileApplying(Binding b, BindingList* &lst);
+    ~BindingStore() {
+      Stack<BindingList*>::Iterator it(_stored);
+      while(it.hasNext()) {
+        BindingList* cell = it.next();
+        delete cell;
+      }
+    }
+  private:
+    Stack<BindingList*> _stored;
+  };
 
-            void pushAndRememberWhileApplying(Binding b, BindingList * &lst);
+  BindingStore _bindingStore;
+  BindingStore _foolBindingStore;
 
-            ~BindingStore() {
-                Stack<BindingList *>::Iterator it(_stored);
-                while (it.hasNext()) {
-                    BindingList *cell = it.next();
-                    delete cell;
-                }
-            }
+  struct BindingGetVarFunctor
+  {
+    unsigned operator()(const Binding& b) { return b.first; }
+  };
 
-        private:
-            Stack<BindingList *> _stored;
-        };
+  #define SIGN bool
+  #define POSITIVE true
+  #define NEGATIVE false
+  #define OPPOSITE(sign) (!(sign))
 
-        BindingStore _bindingStore;
-        BindingStore _foolBindingStore;
+  #define SIDE unsigned
+  #define LEFT 0u
+  #define RIGHT 1u
 
-        struct BindingGetVarFunctor {
-            unsigned operator()(const Binding &b) { return b.first; }
-        };
+  // generalized literal
+  typedef pair<Formula*, SIGN> GenLit;
+  typedef pair<Literal*, List<GenLit>*> LPair;
 
-#define SIGN bool
-#define POSITIVE true
-#define NEGATIVE false
-#define OPPOSITE(sign) (!(sign))
+  inline static Formula* &formula(GenLit &gl) {
+    return gl.first;
+  }
+  inline static SIGN &sign(GenLit &gl) {
+    return gl.second;
+  }
 
-#define SIDE unsigned
-#define LEFT 0u
-#define RIGHT 1u
+  // generalized clause
+  struct GenClause {
+    CLASS_NAME(NewCNF::GenClause);
+    USE_ALLOCATOR(NewCNF::GenClause);
 
-        // generalized literal
-        typedef pair<Formula *, SIGN> GenLit;
-        typedef pair<Literal *, List<GenLit> *> LPair;
+    GenClause(unsigned size, BindingList* bindings, BindingList* foolBindings)
+      : valid(true), bindings(bindings), foolBindings(foolBindings), _literals(size), _size(0) {}
 
-        inline static Formula * &formula(GenLit &gl) {
-            return gl.first;
-        }
+    bool valid; // used for lazy deletion from Occurrences(s); see below
 
-        inline static SIGN &sign(GenLit &gl) {
-            return gl.second;
-        }
+    BindingList* bindings; // the list is not owned by the GenClause (they will shallow-copied and shared)
+    BindingList* foolBindings;
+    // we could/should carry bindings on the GenLits-level; but GenClause seems sufficient as long as we are rectified
 
-        // generalized clause
-        struct GenClause {
-            CLASS_NAME(NewCNF::GenClause);
+    DArray<GenLit> _literals; // TODO: remove the extra indirection and allocate inside GenClause
+    unsigned _size;
 
-            USE_ALLOCATOR(NewCNF::GenClause);
+    struct Iterator {
+      Iterator(DArray<GenLit>::Iterator iter, unsigned left) : _iter(iter), _left(left) {}
 
-            GenClause(unsigned size, BindingList *bindings, BindingList *foolBindings)
-                : valid(true), bindings(bindings), foolBindings(foolBindings), _literals(size), _size(0) {
-            }
+      bool hasNext() {
+        if (_left == 0) return false;
+        return _iter.hasNext();
+      }
 
-            bool valid; // used for lazy deletion from Occurrences(s); see below
+      GenLit next() {
+        _left--;
+        return _iter.next();
+      }
 
-            BindingList *bindings; // the list is not owned by the GenClause (they will shallow-copied and shared)
-            BindingList *foolBindings;
-            // we could/should carry bindings on the GenLits-level; but GenClause seems sufficient as long as we are rectified
+      private:
+        DArray<GenLit>::Iterator _iter;
+        unsigned _left;
+    };
 
-            DArray<GenLit> _literals; // TODO: remove the extra indirection and allocate inside GenClause
-            unsigned _size;
+    Iterator genLiterals() {
+      return Iterator(DArray<GenLit>::Iterator(_literals), _size);
+    }
 
-            struct Iterator {
-                Iterator(DArray<GenLit>::Iterator iter, unsigned left) : _iter(iter), _left(left) {
-                }
+    unsigned size() {
+      return _size;
+    }
 
-                bool hasNext() {
-                    if (_left == 0) return false;
-                    return _iter.hasNext();
-                }
+    // Position of a gen literal in _genClauses
+    list<SmartPtr<GenClause>,STLAllocator<SmartPtr<GenClause>>>::iterator iter;
 
-                GenLit next() {
-                    _left--;
-                    return _iter.next();
-                }
+    vstring toString() {
+      vstring res = "GC("+Int::toString(size())+")";
+      if (!valid) {
+        res += " [INVALID]";
+      }
+      Iterator gls = genLiterals();
+      while (gls.hasNext()) {
+        GenLit gl = gls.next();
+        res += (sign(gl) == POSITIVE ? " {T} " : " {F} ") + formula(gl)->toString();
+      }
+      BindingList::Iterator bIt(bindings);
+      while(bIt.hasNext()) {
+        Binding b = bIt.next();
+        res += " | X"+Int::toString(b.first)+" --> "+b.second->toString();
+      }
+      BindingList::Iterator fbit(foolBindings);
+      while(fbit.hasNext()) {
+        Binding b = fbit.next();
+        res += " | X"+Int::toString(b.first)+" ---> "+b.second->toString();
+      }
 
-            private:
-                DArray<GenLit>::Iterator _iter;
-                unsigned _left;
-            };
+      return res;
+    }
+  };
 
-            Iterator genLiterals() {
-                return Iterator(DArray<GenLit>::Iterator(_literals), _size);
-            }
+  typedef SmartPtr<GenClause> SPGenClause;
 
-            unsigned size() {
-                return _size;
-            }
+  void toClauses(SPGenClause gc, Stack<Clause*>& output);
+  bool mapSubstitution(List<GenLit>* gc, Substitution subst, bool onlyFormulaLevel, List<GenLit>* &output);
+  Clause* toClause(SPGenClause gc);
 
-            // Position of a gen literal in _genClauses
-            list<SmartPtr<GenClause>, STLAllocator<SmartPtr<GenClause> > >::iterator iter;
+  typedef list<SPGenClause,STLAllocator<SPGenClause>> GenClauses;
 
-            vstring toString() {
-                vstring res = "GC(" + Int::toString(size()) + ")";
-                if (!valid) {
-                    res += " [INVALID]";
-                }
-                Iterator gls = genLiterals();
-                while (gls.hasNext()) {
-                    GenLit gl = gls.next();
-                    res += (sign(gl) == POSITIVE ? " {T} " : " {F} ") + formula(gl)->toString();
-                }
-                BindingList::Iterator bIt(bindings);
-                while (bIt.hasNext()) {
-                    Binding b = bIt.next();
-                    res += " | X" + Int::toString(b.first) + " --> " + b.second->toString();
-                }
-                BindingList::Iterator fbit(foolBindings);
-                while (fbit.hasNext()) {
-                    Binding b = fbit.next();
-                    res += " | X" + Int::toString(b.first) + " ---> " + b.second->toString();
-                }
-
-                return res;
-            }
-        };
-
-        typedef SmartPtr<GenClause> SPGenClause;
-
-        void toClauses(SPGenClause gc, Stack<Clause *> &output);
-
-        bool mapSubstitution(List<GenLit> *gc, Substitution subst, bool onlyFormulaLevel, List<GenLit> * &output);
-
-        Clause *toClause(SPGenClause gc);
-
-        typedef list<SPGenClause, STLAllocator<SPGenClause> > GenClauses;
-
-        /**
+  /**
    * pushLiteral is responsible for tautology elimination. Whenever it sees two
    * generalised literals with the opposite signs, the entire generalised clause
    * is discarded. Whenever it sees more than one occurrence of a generalised
@@ -237,14 +236,13 @@ namespace Shell {
    * without it popping the first occurrence of a formula will invalidate the
    * entire generalised clause, and other occurrences will never be seen.
    */
-        DHMap<Literal *, SIGN> _literalsCache;
-        DHMap<Formula *, SIGN> _formulasCache;
+  DHMap<Literal*, SIGN> _literalsCache;
+  DHMap<Formula*, SIGN> _formulasCache;
+  inline void pushLiteral(SPGenClause gc, GenLit gl) {
+    CALL("NewCNF::pushLiteral");
 
-        inline void pushLiteral(SPGenClause gc, GenLit gl) {
-            CALL("NewCNF::pushLiteral");
-
-            if (formula(gl)->connective() == LITERAL) {
-                /**
+    if (formula(gl)->connective() == LITERAL) {
+      /**
        * A generalised literal that is atomic have two signs, the one assigned
        * to the proper literal, and the one assigned to the generalised literal.
        *
@@ -252,62 +250,60 @@ namespace Shell {
        * with the positive sign. Hence, proper literals with negative sign are
        * replaces with their complements.
        */
-                Literal *l = formula(gl)->literal();
-                if (l->shared() && ((SIGN) l->polarity() != POSITIVE)) {
-                    Literal *cl = Literal::complementaryLiteral(l);
-                    gl = GenLit(new AtomicFormula(cl), OPPOSITE(sign(gl)));
-                }
-            } else if (formula(gl)->connective() == NOT) {
-                gl = GenLit(formula(gl)->uarg(), OPPOSITE(sign(gl)));
-            }
+      Literal* l = formula(gl)->literal();
+      if (l->shared() && ((SIGN)l->polarity() != POSITIVE)) {
+        Literal* cl = Literal::complementaryLiteral(l);
+        gl = GenLit(new AtomicFormula(cl), OPPOSITE(sign(gl)));
+      }
+    } else if (formula(gl)->connective() == NOT) {
+      gl = GenLit(formula(gl)->uarg(), OPPOSITE(sign(gl)));
+    }
 
-            Formula *f = formula(gl);
+    Formula* f = formula(gl);
 
-            if (f->connective() == LITERAL && f->literal()->shared()) {
-                Literal *l = f->literal();
-                if (l->shared() && !_literalsCache.insert(l, sign(gl))) {
-                    if (sign(gl) != _literalsCache.get(l)) {
-                        gc->valid = false;
-                    } else {
-                        LOG2("Found duplicate literal", l->toString());
-                        return;
-                    }
-                }
-            } else if (!_formulasCache.insert(f, sign(gl))) {
-                if (sign(gl) != _formulasCache.get(f)) {
-                    gc->valid = false;
-                } else {
-                    LOG2("Found duplicate formula", f->toString());
-                    return;
-                }
-            }
-
-            gc->_literals[gc->_size++] = gl;
+    if (f->connective() == LITERAL && f->literal()->shared()) {
+      Literal* l = f->literal();
+      if (l->shared() && !_literalsCache.insert(l, sign(gl))) {
+        if (sign(gl) != _literalsCache.get(l)) {
+          gc->valid = false;
+        } else {
+          LOG2("Found duplicate literal", l->toString());
+          return;
         }
+      }
+    } else if (!_formulasCache.insert(f, sign(gl))) {
+      if (sign(gl) != _formulasCache.get(f)) {
+        gc->valid = false;
+      } else {
+        LOG2("Found duplicate formula", f->toString());
+        return;
+      }
+    }
 
-        /**
+    gc->_literals[gc->_size++] = gl;
+  }
+
+  /**
    * Collection of the current set of generalized clauses.
    * (It is a doubly-linked list for constant time deletion.)
    */
-        GenClauses _genClauses;
+  GenClauses _genClauses;
 
-        struct Occurrence {
-            CLASS_NAME(NewCNF::Occurrence);
+  struct Occurrence {
+    CLASS_NAME(NewCNF::Occurrence);
+    USE_ALLOCATOR(NewCNF::Occurrence);
 
-            USE_ALLOCATOR(NewCNF::Occurrence);
+    SPGenClause gc;
+    unsigned position;
 
-            SPGenClause gc;
-            unsigned position;
+    Occurrence(SPGenClause gc, unsigned position) : gc(gc), position(position) {}
 
-            Occurrence(SPGenClause gc, unsigned position) : gc(gc), position(position) {
-            }
+    inline SIGN sign() {
+      return gc->_literals[position].second;
+    }
+  };
 
-            inline SIGN sign() {
-                return gc->_literals[position].second;
-            }
-        };
-
-        /**
+  /**
    * Occurrences represents a list of occurrences in valid generalised clauses.
    * Occurrences is used instead of an obvious List<Occurrence> because it
    * maintains a (1) convenient (2) constant time size() method.
@@ -327,374 +323,353 @@ namespace Shell {
    *       calls Occurrences::decrement() of every list of occurrences that has
    *       an occurrence in this newly invalid generalised clause
    */
-        class Occurrences {
-        private:
-            List<Occurrence> *_occurrences;
-            unsigned _size;
+  class Occurrences {
+  private:
+    List<Occurrence>* _occurrences;
+    unsigned _size;
 
-        public:
-            CLASS_NAME(NewCNF::Occurrences);
+  public:
+    CLASS_NAME(NewCNF::Occurrences);
+    USE_ALLOCATOR(NewCNF::Occurrences);
 
-            USE_ALLOCATOR(NewCNF::Occurrences);
+    Occurrences() : _occurrences(nullptr), _size(0) {}
 
-            Occurrences() : _occurrences(nullptr), _size(0) {
-            }
+    unsigned size() { return _size; }
 
-            unsigned size() { return _size; }
+    inline void add(Occurrence occ) {
+      List<Occurrence>::push(occ, _occurrences);
+      _size++;
+    }
 
-            inline void add(Occurrence occ) {
-                List<Occurrence>::push(occ, _occurrences);
-                _size++;
-            }
+    inline void append(Occurrences occs) {
+      _occurrences = List<Occurrence>::concat(_occurrences, occs._occurrences);
+      _size += occs.size();
+    }
 
-            inline void append(Occurrences occs) {
-                _occurrences = List<Occurrence>::concat(_occurrences, occs._occurrences);
-                _size += occs.size();
-            }
-
-            bool isNonEmpty() {
-                while (true) {
-                    if (List<Occurrence>::isEmpty(_occurrences)) {
-                        ASS_EQ(_size, 0);
-                        return false;
-                    }
-                    if (!_occurrences->head().gc->valid) {
-                        List<Occurrence>::pop(_occurrences);
-                    } else {
-                        ASS_G(_size, 0);
-                        return true;
-                    }
-                }
-            }
-
-            void decrement() {
-                ASS_G(_size, 0);
-                _size--;
-            }
-
-            Occurrence pop() {
-                ASS(isNonEmpty());
-                Occurrence occ = List<Occurrence>::pop(_occurrences);
-                ASS(occ.gc->valid);
-                _size--;
-                ASS_GE(_size, 0);
-                return occ;
-            }
-
-            void replaceBy(Formula *f) {
-                CALL("Occurrences::replaceBy");
-
-                Occurrences::Iterator occit(*this);
-
-                bool negateOccurrenceSign = false;
-                if (f->connective() == LITERAL) {
-                    Literal *l = f->literal();
-                    if (l->shared() && ((SIGN) l->polarity() != POSITIVE)) {
-                        f = new AtomicFormula(Literal::complementaryLiteral(l));
-                        negateOccurrenceSign = true;
-                    }
-                }
-
-                while (occit.hasNext()) {
-                    Occurrence occ = occit.next();
-                    GenLit &gl = occ.gc->_literals[occ.position];
-                    formula(gl) = f;
-                    if (negateOccurrenceSign) {
-                        sign(gl) = OPPOSITE(sign(gl));
-                    }
-                }
-            }
-
-            void invert() {
-                CALL("Occurrences::invert");
-
-                Occurrences::Iterator occit(*this);
-                while (occit.hasNext()) {
-                    Occurrence occ = occit.next();
-                    GenLit &gl = occ.gc->_literals[occ.position];
-                    sign(gl) = OPPOSITE(sign(gl));
-                }
-            }
-
-            class Iterator {
-            public:
-                Iterator(Occurrences &occurrences) : _iterator(
-                    List<Occurrence>::DelIterator(occurrences._occurrences)) {
-                }
-
-                inline bool hasNext() {
-                    while (_iterator.hasNext()) {
-                        Occurrence occ = _iterator.next();
-                        if (!occ.gc->valid) {
-                            _iterator.del();
-                            continue;
-                        }
-                        _current = SmartPtr<Occurrence>(new Occurrence(occ.gc, occ.position));
-                        return true;
-                    }
-                    return false;
-                }
-
-                Occurrence next() {
-                    return *_current;
-                }
-
-            private:
-                List<Occurrence>::DelIterator _iterator;
-                SmartPtr<Occurrence> _current;
-            };
-        };
-
-        SPGenClause makeGenClause(List<GenLit> *gls, BindingList *bindings, BindingList *foolBindings) {
-            SPGenClause gc = SPGenClause(new GenClause(List<GenLit>::length(gls), bindings, foolBindings));
-
-            ASS(_literalsCache.isEmpty());
-            ASS(_formulasCache.isEmpty());
-
-            List<GenLit>::Iterator glit(gls);
-            while (glit.hasNext()) {
-                pushLiteral(gc, glit.next());
-            }
-
-            _literalsCache.reset();
-            _formulasCache.reset();
-
-            return gc;
+    bool isNonEmpty() {
+      while (true) {
+        if (List<Occurrence>::isEmpty(_occurrences)) {
+          ASS_EQ(_size, 0);
+          return false;
         }
-
-        void introduceGenClause(List<GenLit> *gls, BindingList *bindings, BindingList *foolBindings) {
-            SPGenClause gc = makeGenClause(gls, bindings, foolBindings);
-
-            if (gc->size() != List<GenLit>::length(gls)) {
-                LOG4("Eliminated", List<GenLit>::length(gls) - gc->size(), "duplicate literal(s) from", gc->toString());
-            }
-
-            if (gc->valid) {
-                _genClauses.push_front(gc);
-                gc->iter = _genClauses.begin();
-
-                GenClause::Iterator igl = gc->genLiterals();
-                unsigned position = 0;
-                while (igl.hasNext()) {
-                    GenLit gl = igl.next();
-                    Occurrences *occurrences = _occurrences.findPtr(formula(gl));
-                    if (occurrences) {
-                        occurrences->add(Occurrence(gc, position));
-                    }
-                    position++;
-                }
-            } else {
-                LOG2(gc->toString(), "is eliminated as it contains a tautology");
-            }
+        if (!_occurrences->head().gc->valid) {
+          List<Occurrence>::pop(_occurrences);
+        } else {
+          ASS_G(_size, 0);
+          return true;
         }
+      }
+    }
 
-        void introduceGenClause(GenLit gl, BindingList *bindings = BindingList::empty(),
-                                BindingList *foolBindings = BindingList::empty()) {
-            introduceGenClause(new List<GenLit>(gl), bindings, foolBindings);
+    void decrement() {
+      ASS_G(_size, 0);
+      _size--;
+    }
+
+    Occurrence pop() {
+      ASS(isNonEmpty());
+      Occurrence occ = List<Occurrence>::pop(_occurrences);
+      ASS(occ.gc->valid);
+      _size--;
+      ASS_GE(_size, 0);
+      return occ;
+    }
+
+    void replaceBy(Formula* f) {
+      CALL("Occurrences::replaceBy");
+
+      Occurrences::Iterator occit(*this);
+
+      bool negateOccurrenceSign = false;
+      if (f->connective() == LITERAL) {
+        Literal* l = f->literal();
+        if (l->shared() && ((SIGN)l->polarity() != POSITIVE)) {
+          f = new AtomicFormula(Literal::complementaryLiteral(l));
+          negateOccurrenceSign = true;
         }
+      }
 
-        void introduceGenClause(GenLit gl0, GenLit gl1, BindingList *bindings = BindingList::empty(),
-                                BindingList *foolBindings = BindingList::empty()) {
-            introduceGenClause(new List<GenLit>(gl0, new List<GenLit>(gl1)), bindings, foolBindings);
+      while (occit.hasNext()) {
+        Occurrence occ = occit.next();
+        GenLit& gl = occ.gc->_literals[occ.position];
+        formula(gl) = f;
+        if (negateOccurrenceSign) {
+          sign(gl) = OPPOSITE(sign(gl));
         }
+      }
+    }
 
-        void introduceExtendedGenClause(Occurrence occ, List<GenLit> *gls) {
-            CALL("NewCNF::introduceExtendedGenClause(Occurrence, List<GenLit>*)");
+    void invert() {
+      CALL("Occurrences::invert");
 
-            SPGenClause gc = occ.gc;
-            unsigned position = occ.position;
+      Occurrences::Iterator occit(*this);
+      while (occit.hasNext()) {
+        Occurrence occ = occit.next();
+        GenLit& gl = occ.gc->_literals[occ.position];
+        sign(gl) = OPPOSITE(sign(gl));
+      }
+    }
 
-            unsigned size = gc->size() + List<GenLit>::length(gls) - 1;
-            SPGenClause newGc = SPGenClause(new GenClause(size, gc->bindings, gc->foolBindings));
+    class Iterator {
+    public:
+      Iterator(Occurrences &occurrences): _iterator(List<Occurrence>::DelIterator(occurrences._occurrences)) {}
 
-            ASS(_literalsCache.isEmpty());
-            ASS(_formulasCache.isEmpty());
-
-            GenClause::Iterator gcit = gc->genLiterals();
-            unsigned i = 0;
-            while (gcit.hasNext()) {
-                GenLit gl = gcit.next();
-                if (i == position) {
-                    List<GenLit>::Iterator glit(gls);
-                    while (glit.hasNext()) {
-                        pushLiteral(newGc, glit.next());
-                    }
-                } else {
-                    pushLiteral(newGc, gl);
-                }
-                i++;
-            }
-
-            _literalsCache.reset();
-            _formulasCache.reset();
-
-            if (newGc->size() != size) {
-                LOG4("Eliminated", size - newGc->size(), "duplicate literal(s) from", newGc->toString());
-            }
-
-            if (newGc->valid) {
-                _genClauses.push_front(newGc);
-                newGc->iter = _genClauses.begin();
-
-                GenClause::Iterator igl = newGc->genLiterals();
-                unsigned position = 0;
-                while (igl.hasNext()) {
-                    GenLit gl = igl.next();
-                    Occurrences *occurrences = _occurrences.findPtr(formula(gl));
-                    if (occurrences) {
-                        occurrences->add(Occurrence(newGc, position));
-                    }
-                    position++;
-                }
-            } else {
-                LOG2(newGc->toString(), "is eliminated as it contains a tautology");
-            }
+      inline bool hasNext() {
+        while (_iterator.hasNext()) {
+          Occurrence occ = _iterator.next();
+          if (!occ.gc->valid) {
+            _iterator.del();
+            continue;
+          }
+          _current = SmartPtr<Occurrence>(new Occurrence(occ.gc, occ.position));
+          return true;
         }
+        return false;
+      }
+      Occurrence next() {
+        return *_current;
+      }
+    private:
+      List<Occurrence>::DelIterator _iterator;
+      SmartPtr<Occurrence> _current;
+    };
+  };
 
-        void removeGenLit(Occurrence occ) {
-            introduceExtendedGenClause(occ, List<GenLit>::empty());
+  SPGenClause makeGenClause(List<GenLit>* gls, BindingList* bindings, BindingList* foolBindings) {
+    SPGenClause gc = SPGenClause(new GenClause(List<GenLit>::length(gls), bindings, foolBindings));
+
+    ASS(_literalsCache.isEmpty());
+    ASS(_formulasCache.isEmpty());
+
+    List<GenLit>::Iterator glit(gls);
+    while (glit.hasNext()) {
+      pushLiteral(gc, glit.next());
+    }
+
+    _literalsCache.reset();
+    _formulasCache.reset();
+
+    return gc;
+  }
+
+  void introduceGenClause(List<GenLit>* gls, BindingList* bindings, BindingList* foolBindings) {
+    SPGenClause gc = makeGenClause(gls, bindings, foolBindings);
+
+    if (gc->size() != List<GenLit>::length(gls)) {
+      LOG4("Eliminated", List<GenLit>::length(gls) - gc->size(), "duplicate literal(s) from", gc->toString());
+    }
+
+    if (gc->valid) {
+      _genClauses.push_front(gc);
+      gc->iter = _genClauses.begin();
+
+      GenClause::Iterator igl = gc->genLiterals();
+      unsigned position = 0;
+      while (igl.hasNext()) {
+        GenLit gl = igl.next();
+        Occurrences* occurrences = _occurrences.findPtr(formula(gl));
+        if (occurrences) {
+          occurrences->add(Occurrence(gc, position));
         }
+        position++;
+      }
+    } else {
+      LOG2(gc->toString(), "is eliminated as it contains a tautology");
+    }
+  }
 
-        void introduceExtendedGenClause(Occurrence occ, GenLit replacement) {
-            // CHECK: leaking below?
-            introduceExtendedGenClause(occ, new List<GenLit>(replacement));
+  void introduceGenClause(GenLit gl, BindingList* bindings=BindingList::empty(), BindingList* foolBindings=BindingList::empty()) {
+    introduceGenClause(new List<GenLit>(gl), bindings, foolBindings);
+  }
+
+  void introduceGenClause(GenLit gl0, GenLit gl1, BindingList* bindings=BindingList::empty(), BindingList* foolBindings=BindingList::empty()) {
+    introduceGenClause(new List<GenLit>(gl0, new List<GenLit>(gl1)), bindings, foolBindings);
+  }
+
+  void introduceExtendedGenClause(Occurrence occ, List<GenLit>* gls) {
+    CALL("NewCNF::introduceExtendedGenClause(Occurrence, List<GenLit>*)");
+
+    SPGenClause gc = occ.gc;
+    unsigned position = occ.position;
+
+    unsigned size = gc->size() + List<GenLit>::length(gls) - 1;
+    SPGenClause newGc = SPGenClause(new GenClause(size, gc->bindings, gc->foolBindings));
+
+    ASS(_literalsCache.isEmpty());
+    ASS(_formulasCache.isEmpty());
+
+    GenClause::Iterator gcit = gc->genLiterals();
+    unsigned i = 0;
+    while (gcit.hasNext()) {
+      GenLit gl = gcit.next();
+      if (i == position) {
+        List<GenLit>::Iterator glit(gls);
+        while (glit.hasNext()) {
+          pushLiteral(newGc, glit.next());
         }
+      } else {
+        pushLiteral(newGc, gl);
+      }
+      i++;
+    }
 
-        void introduceExtendedGenClause(Occurrence occ, GenLit replacement, GenLit extension) {
-            // CHECK: leaking below?
-            introduceExtendedGenClause(occ, new List<GenLit>(replacement, new List<GenLit>(extension)));
+    _literalsCache.reset();
+    _formulasCache.reset();
+
+    if (newGc->size() != size) {
+      LOG4("Eliminated", size - newGc->size(), "duplicate literal(s) from", newGc->toString());
+    }
+
+    if (newGc->valid) {
+      _genClauses.push_front(newGc);
+      newGc->iter = _genClauses.begin();
+
+      GenClause::Iterator igl = newGc->genLiterals();
+      unsigned position = 0;
+      while (igl.hasNext()) {
+        GenLit gl = igl.next();
+        Occurrences* occurrences = _occurrences.findPtr(formula(gl));
+        if (occurrences) {
+          occurrences->add(Occurrence(newGc, position));
         }
+        position++;
+      }
+    } else {
+      LOG2(newGc->toString(), "is eliminated as it contains a tautology");
+    }
+  }
 
-        Occurrence pop(Occurrences &occurrences) {
-            CALL("NewCNF::pop");
+  void removeGenLit(Occurrence occ) {
+    introduceExtendedGenClause(occ, List<GenLit>::empty());
+  }
 
-            Occurrence occ = occurrences.pop();
-            occ.gc->valid = false;
-            _genClauses.erase(occ.gc->iter);
+  void introduceExtendedGenClause(Occurrence occ, GenLit replacement) {
+    // CHECK: leaking below?
+    introduceExtendedGenClause(occ, new List<GenLit>(replacement));
+  }
 
-            GenClause::Iterator glit = occ.gc->genLiterals();
-            while (glit.hasNext()) {
-                GenLit gl = glit.next();
-                Formula *f = formula(gl);
+  void introduceExtendedGenClause(Occurrence occ, GenLit replacement, GenLit extension) {
+    // CHECK: leaking below?
+    introduceExtendedGenClause(occ, new List<GenLit>(replacement, new List<GenLit>(extension)));
+  }
 
-                if (f->connective() == LITERAL && f->literal()->shared()) continue;
+  Occurrence pop(Occurrences &occurrences) {
+    CALL("NewCNF::pop");
 
-                Occurrences *fOccurrences = _occurrences.findPtr(f);
-                if (fOccurrences) {
-                    fOccurrences->decrement();
-                }
-            }
+    Occurrence occ = occurrences.pop();
+    occ.gc->valid = false;
+    _genClauses.erase(occ.gc->iter);
 
-            return occ;
-        }
+    GenClause::Iterator glit = occ.gc->genLiterals();
+    while (glit.hasNext()) {
+      GenLit gl = glit.next();
+      Formula* f = formula(gl);
 
-        DHMap<Formula *, Occurrences> _occurrences;
+      if (f->connective() == LITERAL && f->literal()->shared()) continue;
 
-        /** map var --> sort */
-        DHMap<unsigned, TermList> _varSorts;
-        bool _collectedVarSorts;
-        unsigned _maxVar;
+      Occurrences* fOccurrences = _occurrences.findPtr(f);
+      if (fOccurrences) {
+        fOccurrences->decrement();
+      }
+    }
 
-        void ensureHavingVarSorts();
+    return occ;
+  }
 
-        Term *createSkolemTerm(unsigned var, VarSet *free, Formula *reuse);
+  DHMap<Formula*, Occurrences> _occurrences;
 
-        bool _forInduction;
+  /** map var --> sort */
+  DHMap<unsigned,TermList> _varSorts;
+  bool _collectedVarSorts;
+  unsigned _maxVar;
 
-        // caching of free variables for subformulas
-        DHMap<Formula *, VarSet *> _freeVars;
+  void ensureHavingVarSorts();
 
-        VarSet *freeVars(Formula *g);
+  Term* createSkolemTerm(unsigned var, VarSet* free, Formula *reuse);
 
-        // two level caching scheme for quantifier bindings
-        // reset after skolemizing a particular subformula
-        DHMap<BindingList *, BindingList *> _skolemsByBindings;
-        DHMap<VarSet *, BindingList *> _skolemsByFreeVars;
+  bool _forInduction;
 
-        DHMap<BindingList *, BindingList *> _foolSkolemsByBindings;
-        DHMap<VarSet *, BindingList *> _foolSkolemsByFreeVars;
+  // caching of free variables for subformulas
+  DHMap<Formula*,VarSet*> _freeVars;
+  VarSet* freeVars(Formula* g);
 
-        // caching binding substitutions for the final phase of GenClause -> Clause transformation
-        // this saves time, because bindings are potentially shared
-        DHMap<BindingList *, Substitution *> _substitutionsByBindings;
+  // two level caching scheme for quantifier bindings
+  // reset after skolemizing a particular subformula
+  DHMap<BindingList*,BindingList*> _skolemsByBindings;
+  DHMap<VarSet*,BindingList*>      _skolemsByFreeVars;
 
-        // do not provide definitions for names we've already seen (when -dr on)
-        DHSet<Literal *> _already_seen[2];
+  DHMap<BindingList*,BindingList*> _foolSkolemsByBindings;
+  DHMap<VarSet*,BindingList*>      _foolSkolemsByFreeVars;
 
-        void skolemise(QuantifiedFormula *g, BindingList * &bindings, BindingList *&foolBindings);
+  // caching binding substitutions for the final phase of GenClause -> Clause transformation
+  // this saves time, because bindings are potentially shared
+  DHMap<BindingList*,Substitution*> _substitutionsByBindings;
 
-        Literal *createNamingLiteral(Formula *g, VList *free);
+  // do not provide definitions for names we've already seen (when -dr on)
+  DHSet<Literal *> _already_seen[2];
 
-        void nameSubformula(Formula *g, Occurrences &occurrences);
+  void skolemise(QuantifiedFormula* g, BindingList* &bindings, BindingList*& foolBindings);
 
-        void enqueue(Formula *formula, Occurrences occurrences = Occurrences()) {
-            if ((formula->connective() == LITERAL) && formula->literal()->shared()) return;
+  Literal* createNamingLiteral(Formula* g, VList* free);
+  void nameSubformula(Formula* g, Occurrences &occurrences);
 
-            if (formula->connective() == NOT) {
-                /**
+  void enqueue(Formula* formula, Occurrences occurrences = Occurrences()) {
+    if ((formula->connective() == LITERAL) && formula->literal()->shared()) return;
+
+    if (formula->connective() == NOT) {
+      /**
        * Formulas are always stored without negations in genclauses,
        * therefore it is safe to drop the negation before queueing,
        * all the occurrences of the formula won't have it either
        */
-                formula = formula->uarg();
-                ASS_REP(formula->connective() != LITERAL, formula->toString());
+      formula = formula->uarg();
+      ASS_REP(formula->connective() != LITERAL, formula->toString());
 
-                occurrences.invert();
-            }
+      occurrences.invert();
+    }
 
-            if (_occurrences.find(formula)) {
-                Occurrences oldOccurrences;
-                _occurrences.pop(formula, oldOccurrences);
-                occurrences.append(oldOccurrences);
-            } else {
-                _queue.push_back(formula);
-            }
-            ALWAYS(_occurrences.insert(formula, occurrences));
-        }
+    if (_occurrences.find(formula)) {
+      Occurrences oldOccurrences;
+      _occurrences.pop(formula, oldOccurrences);
+      occurrences.append(oldOccurrences);
+    } else {
+      _queue.push_back(formula);
+    }
+    ALWAYS(_occurrences.insert(formula, occurrences));
+  }
 
-        void dequeue(Formula * &formula, Occurrences &occurrences) {
-            formula = _queue.pop_front();
-            ALWAYS(_occurrences.pop(formula, occurrences));
-        }
+  void dequeue(Formula* &formula, Occurrences &occurrences) {
+    formula = _queue.pop_front();
+    ALWAYS(_occurrences.pop(formula,occurrences));
+  }
 
-        void process(Formula *g, Occurrences &occurrences);
+  void process(Formula* g, Occurrences &occurrences);
+  void process(JunctionFormula* g, Occurrences &occurrences);
+  void process(BinaryFormula* g, Occurrences &occurrences);
+  void process(QuantifiedFormula* g, Occurrences &occurrences);
 
-        void process(JunctionFormula *g, Occurrences &occurrences);
+  void processBoolterm(TermList ts, Occurrences &occurrences);
+  void process(Literal* l, Occurrences &occurrences);
+  void processConstant(bool constant, Occurrences &occurrences);
+  void processBoolVar(SIGN sign, unsigned var, Occurrences &occurrences);
+  void processITE(Formula* condition, Formula* thenBranch, Formula* elseBranch, Occurrences &occurrences);
+  void processMatch(Term::SpecialTermData* sd, Term* term, Occurrences &occurrences);
+  void processLet(Term::SpecialTermData* sd, TermList contents, Occurrences &occurrences);
+  TermList eliminateLet(Term::SpecialTermData *sd, TermList contents);
 
-        void process(BinaryFormula *g, Occurrences &occurrences);
+  TermList nameLetBinding(unsigned symbol, VList *bindingVariables, TermList binding, TermList contents);
+  TermList inlineLetBinding(unsigned symbol, VList *bindingVariables, TermList binding, TermList contents);
 
-        void process(QuantifiedFormula *g, Occurrences &occurrences);
+  TermList findITEs(TermList ts, Stack<unsigned> &variables, Stack<Formula*> &conditions,
+                    Stack<TermList> &thenBranches, Stack<TermList> &elseBranches,
+                    Stack<unsigned> &matchVariables, Stack<List<Formula*>*> &matchConditions,
+                    Stack<List<TermList>*> &matchBranches);
 
-        void processBoolterm(TermList ts, Occurrences &occurrences);
+  unsigned createFreshVariable(TermList sort);
+  void createFreshVariableRenaming(unsigned oldVar, unsigned freshVar);
 
-        void process(Literal *l, Occurrences &occurrences);
+  bool shouldInlineITE(unsigned iteCounter);
+}; // class NewCNF
 
-        void processConstant(bool constant, Occurrences &occurrences);
-
-        void processBoolVar(SIGN sign, unsigned var, Occurrences &occurrences);
-
-        void processITE(Formula *condition, Formula *thenBranch, Formula *elseBranch, Occurrences &occurrences);
-
-        void processMatch(Term::SpecialTermData *sd, Term *term, Occurrences &occurrences);
-
-        void processLet(Term::SpecialTermData *sd, TermList contents, Occurrences &occurrences);
-
-        TermList eliminateLet(Term::SpecialTermData *sd, TermList contents);
-
-        TermList nameLetBinding(unsigned symbol, VList *bindingVariables, TermList binding, TermList contents);
-
-        TermList inlineLetBinding(unsigned symbol, VList *bindingVariables, TermList binding, TermList contents);
-
-        TermList findITEs(TermList ts, Stack<unsigned> &variables, Stack<Formula *> &conditions,
-                          Stack<TermList> &thenBranches, Stack<TermList> &elseBranches,
-                          Stack<unsigned> &matchVariables, Stack<List<Formula *> *> &matchConditions,
-                          Stack<List<TermList> *> &matchBranches);
-
-        unsigned createFreshVariable(TermList sort);
-
-        void createFreshVariableRenaming(unsigned oldVar, unsigned freshVar);
-
-        bool shouldInlineITE(unsigned iteCounter);
-    }; // class NewCNF
 }
 #endif

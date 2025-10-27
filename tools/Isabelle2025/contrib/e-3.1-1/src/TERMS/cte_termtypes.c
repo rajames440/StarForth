@@ -1,25 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-  File  : cte_termtypes.c
+  cte_termtypes.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.510-04
 
-  Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Declarations for the basic term type and primitive functions, mainly
-  on single term cells. This module mostly provides only
-  infrastructure for higher level modules.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-
-  Copyright 1998, 1999 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-  Created: Tue Feb 24 02:17:11 MET 1998 - Split  from cte_terms.c
-
------------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/TERMS/cte_termtypes.c
+ */
 
 #include "cte_termtypes.h"
 #include "cte_termbanks.h"
@@ -52,14 +48,15 @@
 //
 /----------------------------------------------------------------------*/
 
-static __inline__ void register_new_cache(Term_p app_var, Term_p bound_to) {
-    assert(TermIsAppliedFreeVar(app_var));
-    assert(app_var->args[0]->binding);
+static __inline__ void register_new_cache(Term_p app_var, Term_p bound_to)
+{
+   assert(TermIsAppliedFreeVar(app_var));
+   assert(app_var->args[0]->binding);
 
-    app_var->binding = app_var->args[0]->binding;
-    TermSetCache(app_var, bound_to);
+   app_var->binding = app_var->args[0]->binding;
+   TermSetCache(app_var, bound_to);
 
-    TermCellSetProp(TermGetCache(app_var), TPIsDerefedAppVar);
+   TermCellSetProp(TermGetCache(app_var), TPIsDerefedAppVar);
 }
 
 /*-----------------------------------------------------------------------
@@ -76,14 +73,17 @@ static __inline__ void register_new_cache(Term_p app_var, Term_p bound_to) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p insert_deref(Term_p deref_cache, TB_p bank) {
-    for (int i = 0; i < deref_cache->arity; i++) {
-        if (!TermIsFreeVar(deref_cache->args[i]) && !TermIsShared(deref_cache->args[i])) {
-            deref_cache->args[i] = TBInsertIgnoreVar(bank, deref_cache->args[i], DEREF_NEVER);
-        }
-    }
+Term_p insert_deref(Term_p deref_cache, TB_p bank)
+{
+   for(int i=0; i<deref_cache->arity; i++)
+   {
+      if(!TermIsFreeVar(deref_cache->args[i]) && !TermIsShared(deref_cache->args[i]))
+      {
+         deref_cache->args[i] = TBInsertIgnoreVar(bank, deref_cache->args[i], DEREF_NEVER);
+      }
+   }
 
-    return TBTermTopInsert(bank, deref_cache);
+   return TBTermTopInsert(bank, deref_cache);
 }
 
 
@@ -100,12 +100,13 @@ Term_p insert_deref(Term_p deref_cache, TB_p bank) {
 //
 /----------------------------------------------------------------------*/
 
-void clear_stale_cache(Term_p app_var) {
-    assert(TermIsAppliedFreeVar(app_var));
-    assert(!BINDING_FRESH(app_var));
+void clear_stale_cache(Term_p app_var)
+{
+   assert(TermIsAppliedFreeVar(app_var));
+   assert(!BINDING_FRESH(app_var));
 
-    TermSetCache(app_var, NULL);
-    app_var->binding = NULL;
+   TermSetCache(app_var, NULL);
+   app_var->binding = NULL;
 }
 
 
@@ -122,54 +123,67 @@ void clear_stale_cache(Term_p app_var) {
 //
 /----------------------------------------------------------------------*/
 
-__inline__ Term_p applied_var_deref(Term_p orig) {
-    assert(TermIsAppliedFreeVar(orig));
-    assert(orig->arity > 1);
-    assert(orig->args[0]->binding || TermGetCache(orig));
+__inline__ Term_p applied_var_deref(Term_p orig)
+{
+   assert(TermIsAppliedFreeVar(orig));
+   assert(orig->arity > 1);
+   assert(orig->args[0]->binding || TermGetCache(orig));
 
-    Term_p res;
+   Term_p res;
 
-    if (BINDING_FRESH(orig)) {
-        assert(TermCellQueryProp(TermGetCache(orig), TPIsDerefedAppVar));
-        res = TermGetCache(orig);
-    } else {
-        clear_stale_cache(orig);
+   if(BINDING_FRESH(orig))
+   {
+      assert(TermCellQueryProp(TermGetCache(orig), TPIsDerefedAppVar));
+      res = TermGetCache(orig);
+   }
+   else
+   {
+      clear_stale_cache(orig);
 
-        if (orig->args[0]->binding) {
-            if (TermIsAnyVar(orig->args[0]->binding) || TermIsLambda(orig->args[0]->binding)) {
-                res = TermTopAlloc(orig->f_code, orig->arity);
-                res->properties = orig->properties & (TPPredPos);
-                res->type = orig->type;
-                res->args[0] = orig->args[0]->binding;
-                for (int i = 1; i < orig->arity; i++) {
-                    res->args[i] = orig->args[i];
-                }
-            } else {
-                Term_p bound = orig->args[0]->binding;
-                int arity = bound->arity + orig->arity - 1;
+      if(orig->args[0]->binding)
+      {
+         if(TermIsAnyVar(orig->args[0]->binding) || TermIsLambda(orig->args[0]->binding))
+         {
+            res = TermTopAlloc(orig->f_code, orig->arity);
+            res->properties = orig->properties & (TPPredPos);
+            res->type = orig->type;
+            res->args[0] = orig->args[0]->binding;
+            for(int i=1; i<orig->arity; i++)
+            {
+               res->args[i] = orig->args[i];
+            }
+         }
+         else
+         {
+            Term_p bound = orig->args[0]->binding;
+            int arity = bound->arity + orig->arity-1;
 
-                res = TermTopAlloc(bound->f_code, arity);
+            res = TermTopAlloc(bound->f_code, arity);
 
-                res->type = orig->type; // derefing keeps the types
-                res->properties = bound->properties & (TPPredPos);
+            res->type = orig->type; // derefing keeps the types
+            res->properties = bound->properties & (TPPredPos);
 
-                assert(!res->binding || res->f_code < 0 /* if bound -> then variable */);
+            assert(!res->binding || res->f_code < 0 /* if bound -> then variable */);
 
-                for (int i = 0; i < bound->arity; i++) {
-                    res->args[i] = bound->args[i];
-                }
-
-                for (int i = 0; i < orig->arity - 1; i++) {
-                    res->args[bound->arity + i] = orig->args[i + 1];
-                }
+            for(int i=0; i<bound->arity; i++)
+            {
+               res->args[i] = bound->args[i];
             }
 
-            register_new_cache(orig, (res = insert_deref(res, TermGetBank(orig))));
-        } else {
-            res = orig;
-        }
-    }
-    return res;
+            for(int i=0; i<orig->arity-1; i++)
+            {
+               res->args[bound->arity + i] = orig->args[i + 1];
+            }
+         }
+
+         register_new_cache(orig, (res = insert_deref(res, TermGetBank(orig))));
+      }
+      else
+      {
+         res = orig;
+      }
+   }
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -185,18 +199,22 @@ __inline__ Term_p applied_var_deref(Term_p orig) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermFindUnownedSubterm(Term_p term) {
-    Term_p res;
+Term_p TermFindUnownedSubterm(Term_p term)
+{
+   Term_p res;
 
-    if (!term->owner_bank) {
-        return term;
-    }
-    for (int i = 0; i < term->arity; i++) {
-        if ((res = TermFindUnownedSubterm(term->args[i]))) {
-            return res;
-        }
-    }
-    return NULL;
+   if(!term->owner_bank)
+   {
+      return term;
+   }
+   for(int i=0; i<term->arity; i++)
+   {
+      if((res = TermFindUnownedSubterm(term->args[i])))
+      {
+         return res;
+      }
+   }
+   return NULL;
 }
 
 
@@ -213,12 +231,14 @@ Term_p TermFindUnownedSubterm(Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-void DBGTermCheckUnownedSubtermReal(FILE *out, Term_p t, char *location) {
-    if (TermFindUnownedSubterm(t)) {
-        fprintf(out, "# UnknownSubterm(%s): ", location);
-        TermPrint(stdout, t, t->owner_bank->sig, DEREF_NEVER);
-        fprintf(stdout, "\n");
-    }
+void DBGTermCheckUnownedSubtermReal(FILE* out, Term_p t, char* location)
+{
+   if(TermFindUnownedSubterm(t))
+   {
+      fprintf(out, "# UnknownSubterm(%s): ", location);
+      TermPrint(stdout, t, t->owner_bank->sig, DEREF_NEVER);
+      fprintf(stdout, "\n");
+   }
 }
 
 #endif
@@ -241,9 +261,10 @@ void DBGTermCheckUnownedSubtermReal(FILE *out, Term_p t, char *location) {
 //
 /----------------------------------------------------------------------*/
 
-void TermTopFree(Term_p junk) {
-    assert(junk);
-    TermCellFree(junk, junk->arity);
+void TermTopFree(Term_p junk)
+{
+   assert(junk);
+   TermCellFree(junk, junk->arity);
 }
 
 /*-----------------------------------------------------------------------
@@ -259,20 +280,24 @@ void TermTopFree(Term_p junk) {
 //
 /----------------------------------------------------------------------*/
 
-void TermFree(Term_p junk) {
-    assert(junk);
-    if (!TermIsAnyVar(junk)) {
-        assert(!TermCellQueryProp(junk, TPIsShared));
-        if (junk->arity) {
-            int i;
+void TermFree(Term_p junk)
+{
+   assert(junk);
+   if(!TermIsAnyVar(junk))
+   {
+      assert(!TermCellQueryProp(junk, TPIsShared));
+      if(junk->arity)
+      {
+         int i;
 
-            for (i = 0; i < junk->arity; i++) {
-                TermFree(junk->args[i]);
-            }
-        }
+         for(i=0; i<junk->arity; i++)
+         {
+            TermFree(junk->args[i]);
+         }
+      }
 
-        TermTopFree(junk);
-    }
+      TermTopFree(junk);
+   }
 }
 
 
@@ -290,52 +315,62 @@ void TermFree(Term_p junk) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermAllocNewSkolem(Sig_p sig, PStack_p variables, Type_p ret_type) {
-    PStackPointer arity = PStackGetSP(variables), i;
-    Term_p handle = NULL;
+Term_p TermAllocNewSkolem(Sig_p sig, PStack_p variables, Type_p ret_type)
+{
+   PStackPointer arity = PStackGetSP(variables), i;
+   Term_p handle = NULL;
 
-    Type_p *type_args;
-    Type_p type;
+   Type_p *type_args;
+   Type_p type;
 
-    if (!ret_type) {
-        ret_type = SigDefaultSort(sig);
-    }
+   if(!ret_type)
+   {
+      ret_type = SigDefaultSort(sig);
+   }
 
-    // declare type
-    if (arity) {
-        handle = TermDefaultCellArityAlloc(arity);
+   // declare type
+   if(arity)
+   {
+      handle = TermDefaultCellArityAlloc(arity);
 
-        type_args = TypeArgArrayAlloc(arity + 1);
-        for (i = 0; i < arity; i++) {
-            handle->args[i] = PStackElementP(variables, i);
-            type_args[i] = handle->args[i]->type;
-            assert(type_args[i]);
-        }
-        type_args[arity] = ret_type;
+      type_args = TypeArgArrayAlloc(arity+1);
+      for(i=0; i<arity; i++)
+      {
+         handle->args[i] = PStackElementP(variables, i);
+         type_args[i] = handle->args[i]->type;
+         assert(type_args[i]);
+      }
+      type_args[arity] = ret_type;
 
-        type = AllocArrowType(arity + 1, type_args);
-        Type_p flattened = FlattenType(type);
-        if (flattened != type) {
-            TypeFree(type);
-        }
-        type = flattened;
-    } else {
-        handle = TermDefaultCellAlloc();
-        type = FlattenType(ret_type);
-    }
+      type = AllocArrowType(arity+1, type_args);
+      Type_p flattened = FlattenType(type);
+      if(flattened != type)
+      {
+         TypeFree(type);
+      }
+      type = flattened;
+   }
+   else
+   {
+      handle = TermDefaultCellAlloc();
+      type = FlattenType(ret_type);
+   }
 
-    type = TypeBankInsertTypeShared(sig->type_bank, type);
+   type = TypeBankInsertTypeShared(sig->type_bank, type);
 
-    if (!TypeIsPredicate(type)) {
-        handle->f_code = SigGetNewSkolemCode(sig, PStackGetSP(variables));
-    } else {
-        handle->f_code = SigGetNewPredicateCode(sig, PStackGetSP(variables));
-    }
+   if(!TypeIsPredicate(type))
+   {
+      handle->f_code = SigGetNewSkolemCode(sig, PStackGetSP(variables));
+   }
+   else
+   {
+      handle->f_code = SigGetNewPredicateCode(sig, PStackGetSP(variables));
+   }
 
-    SigDeclareType(sig, handle->f_code, type);
-    handle->type = ret_type;
+   SigDeclareType(sig, handle->f_code, type);
+   handle->type = ret_type;
 
-    return handle;
+   return handle;
 }
 
 
@@ -353,25 +388,28 @@ Term_p TermAllocNewSkolem(Sig_p sig, PStack_p variables, Type_p ret_type) {
 //
 /----------------------------------------------------------------------*/
 
-void TermSetProp(Term_p term, DerefType deref, TermProperties prop) {
-    assert(deref != DEREF_ONCE);
-    PStack_p stack = PStackAlloc();
-    int i;
+void TermSetProp(Term_p term, DerefType deref, TermProperties prop)
+{
+   assert(deref != DEREF_ONCE);
+   PStack_p stack = PStackAlloc();
+   int i;
 
-    PStackPushP(stack, term);
-    PStackPushInt(stack, deref);
+   PStackPushP(stack, term);
+   PStackPushInt(stack, deref);
 
-    while (!PStackEmpty(stack)) {
-        deref = PStackPopInt(stack);
-        term = PStackPopP(stack);
-        term = TermDeref(term, &deref);
-        TermCellSetProp(term, prop);
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-            PStackPushInt(stack, deref);
-        }
-    }
-    PStackFree(stack);
+   while(!PStackEmpty(stack))
+   {
+      deref = PStackPopInt(stack);
+      term  = PStackPopP(stack);
+      term  = TermDeref(term, &deref);
+      TermCellSetProp(term, prop);
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+         PStackPushInt(stack, deref);
+      }
+   }
+   PStackFree(stack);
 }
 
 
@@ -389,29 +427,33 @@ void TermSetProp(Term_p term, DerefType deref, TermProperties prop) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermSearchProp(Term_p term, DerefType deref, TermProperties prop) {
-    PStack_p stack = PStackAlloc();
-    int i;
-    bool res = false;
+bool TermSearchProp(Term_p term, DerefType deref, TermProperties prop)
+{
+   PStack_p stack = PStackAlloc();
+   int i;
+   bool res = false;
 
-    PStackPushP(stack, term);
-    PStackPushInt(stack, deref);
+   PStackPushP(stack, term);
+   PStackPushInt(stack, deref);
 
-    while (!PStackEmpty(stack)) {
-        deref = PStackPopInt(stack);
-        term = PStackPopP(stack);
-        term = TermDeref(term, &deref);
-        if (TermCellQueryProp(term, prop)) {
-            res = true;
-            break;
-        }
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-            PStackPushInt(stack, deref);
-        }
-    }
-    PStackFree(stack);
-    return res;
+   while(!PStackEmpty(stack))
+   {
+      deref = PStackPopInt(stack);
+      term  = PStackPopP(stack);
+      term  = TermDeref(term, &deref);
+      if(TermCellQueryProp(term, prop))
+      {
+         res = true;
+         break;
+      }
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+         PStackPushInt(stack, deref);
+      }
+   }
+   PStackFree(stack);
+   return res;
 }
 
 
@@ -430,30 +472,34 @@ bool TermSearchProp(Term_p term, DerefType deref, TermProperties prop) {
 /----------------------------------------------------------------------*/
 
 bool TermVerifyProp(Term_p term, DerefType deref, TermProperties prop,
-                    TermProperties expected) {
-    assert(deref != DEREF_ONCE);
-    PStack_p stack = PStackAlloc();
-    int i;
-    bool res = true;
+                    TermProperties expected)
+{
+   assert(deref != DEREF_ONCE);
+   PStack_p stack = PStackAlloc();
+   int i;
+   bool res = true;
 
-    PStackPushP(stack, term);
-    PStackPushInt(stack, deref);
+   PStackPushP(stack, term);
+   PStackPushInt(stack, deref);
 
-    while (!PStackEmpty(stack)) {
-        deref = PStackPopInt(stack);
-        term = PStackPopP(stack);
-        term = TermDeref(term, &deref);
-        if (TermCellGiveProps(term, prop) != expected) {
-            res = false;
-            break;
-        }
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-            PStackPushInt(stack, deref);
-        }
-    }
-    PStackFree(stack);
-    return res;
+   while(!PStackEmpty(stack))
+   {
+      deref = PStackPopInt(stack);
+      term  = PStackPopP(stack);
+      term  = TermDeref(term, &deref);
+      if(TermCellGiveProps(term, prop)!=expected)
+      {
+         res = false;
+         break;
+      }
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+         PStackPushInt(stack, deref);
+      }
+   }
+   PStackFree(stack);
+   return res;
 }
 
 
@@ -470,25 +516,28 @@ bool TermVerifyProp(Term_p term, DerefType deref, TermProperties prop,
 //
 /----------------------------------------------------------------------*/
 
-void TermDelProp(Term_p term, DerefType deref, TermProperties prop) {
-    assert(deref != DEREF_ONCE);
-    PStack_p stack = PStackAlloc();
-    int i;
+void TermDelProp(Term_p term, DerefType deref, TermProperties prop)
+{
+   assert(deref != DEREF_ONCE);
+   PStack_p stack = PStackAlloc();
+   int i;
 
-    PStackPushP(stack, term);
-    PStackPushInt(stack, deref);
+   PStackPushP(stack, term);
+   PStackPushInt(stack, deref);
 
-    while (!PStackEmpty(stack)) {
-        deref = PStackPopInt(stack);
-        term = PStackPopP(stack);
-        term = TermDeref(term, &deref);
-        TermCellDelProp(term, prop);
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-            PStackPushInt(stack, deref);
-        }
-    }
-    PStackFree(stack);
+   while(!PStackEmpty(stack))
+   {
+      deref = PStackPopInt(stack);
+      term  = PStackPopP(stack);
+      term  = TermDeref(term, &deref);
+      TermCellDelProp(term, prop);
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+         PStackPushInt(stack, deref);
+      }
+   }
+   PStackFree(stack);
 }
 
 
@@ -504,21 +553,26 @@ void TermDelProp(Term_p term, DerefType deref, TermProperties prop) {
 //
 /----------------------------------------------------------------------*/
 
-void TermDelPropOpt(Term_p term, TermProperties prop) {
-    PStack_p stack = PStackAlloc();
-    int i;
+void TermDelPropOpt(Term_p term, TermProperties prop)
+{
+   PStack_p stack = PStackAlloc();
+   int i;
 
-    PStackPushP(stack, term);
+   PStackPushP(stack, term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        TermCellDelProp(term, prop);
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-        }
-    }
-    PStackFree(stack);
+   while(!PStackEmpty(stack))
+   {
+      term  = PStackPopP(stack);
+      TermCellDelProp(term, prop);
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+      }
+   }
+   PStackFree(stack);
 }
+
+
 
 
 /*-----------------------------------------------------------------------
@@ -534,27 +588,31 @@ void TermDelPropOpt(Term_p term, TermProperties prop) {
 //
 /----------------------------------------------------------------------*/
 
-void TermVarSetProp(Term_p term, DerefType deref, TermProperties prop) {
-    assert(deref != DEREF_ONCE);
-    PStack_p stack = PStackAlloc();
-    int i;
+void TermVarSetProp(Term_p term, DerefType deref, TermProperties prop)
+{
+   assert(deref != DEREF_ONCE);
+   PStack_p stack = PStackAlloc();
+   int i;
 
-    PStackPushP(stack, term);
-    PStackPushInt(stack, deref);
+   PStackPushP(stack, term);
+   PStackPushInt(stack, deref);
 
-    while (!PStackEmpty(stack)) {
-        deref = PStackPopInt(stack);
-        term = PStackPopP(stack);
-        term = TermDeref(term, &deref);
-        if (TermIsFreeVar(term)) {
-            TermCellSetProp(term, prop);
-        }
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-            PStackPushInt(stack, deref);
-        }
-    }
-    PStackFree(stack);
+   while(!PStackEmpty(stack))
+   {
+      deref = PStackPopInt(stack);
+      term  = PStackPopP(stack);
+      term  = TermDeref(term, &deref);
+      if(TermIsFreeVar(term))
+      {
+         TermCellSetProp(term, prop);
+      }
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+         PStackPushInt(stack, deref);
+      }
+   }
+   PStackFree(stack);
 }
 
 
@@ -571,28 +629,33 @@ void TermVarSetProp(Term_p term, DerefType deref, TermProperties prop) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermHasInterpretedSymbol(Term_p term) {
-    PStack_p stack = PStackAlloc();
-    int i;
-    bool res = false;
+bool TermHasInterpretedSymbol(Term_p term)
+{
+   PStack_p stack = PStackAlloc();
+   int i;
+   bool res = false;
 
-    PStackPushP(stack, term);
+   PStackPushP(stack, term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        /* printf("#Fcode: %ld  Sort: %d\n", term->f_code, term->sort); */
-        if (SortIsInterpreted(term->type->f_code)) {
-            res = true;
-            break;
-        }
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-        }
-    }
-    PStackFree(stack);
+   while(!PStackEmpty(stack))
+   {
+      term  = PStackPopP(stack);
+      /* printf("#Fcode: %ld  Sort: %d\n", term->f_code, term->sort); */
+      if(SortIsInterpreted(term->type->f_code))
+      {
+         res = true;
+         break;
+      }
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+      }
+   }
+   PStackFree(stack);
 
-    return res;
+   return res;
 }
+
 
 
 /*-----------------------------------------------------------------------
@@ -609,30 +672,34 @@ bool TermHasInterpretedSymbol(Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermVarSearchProp(Term_p term, DerefType deref, TermProperties prop) {
-    assert(deref != DEREF_ONCE);
-    PStack_p stack = PStackAlloc();
-    int i;
-    bool res = false;
+bool TermVarSearchProp(Term_p term, DerefType deref, TermProperties prop)
+{
+   assert(deref != DEREF_ONCE);
+   PStack_p stack = PStackAlloc();
+   int i;
+   bool res = false;
 
-    PStackPushP(stack, term);
-    PStackPushInt(stack, deref);
+   PStackPushP(stack, term);
+   PStackPushInt(stack, deref);
 
-    while (!PStackEmpty(stack)) {
-        deref = PStackPopInt(stack);
-        term = PStackPopP(stack);
-        term = TermDeref(term, &deref);
-        if (TermIsFreeVar(term) && TermCellQueryProp(term, prop)) {
-            res = true;
-            break;
-        }
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-            PStackPushInt(stack, deref);
-        }
-    }
-    PStackFree(stack);
-    return res;
+   while(!PStackEmpty(stack))
+   {
+      deref = PStackPopInt(stack);
+      term  = PStackPopP(stack);
+      term  = TermDeref(term, &deref);
+      if(TermIsFreeVar(term) && TermCellQueryProp(term, prop))
+      {
+         res = true;
+         break;
+      }
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+         PStackPushInt(stack, deref);
+      }
+   }
+   PStackFree(stack);
+   return res;
 }
 
 
@@ -649,27 +716,31 @@ bool TermVarSearchProp(Term_p term, DerefType deref, TermProperties prop) {
 //
 /----------------------------------------------------------------------*/
 
-void TermVarDelProp(Term_p term, DerefType deref, TermProperties prop) {
-    assert(deref != DEREF_ONCE);
-    PStack_p stack = PStackAlloc();
-    int i;
+void TermVarDelProp(Term_p term, DerefType deref, TermProperties prop)
+{
+   assert(deref != DEREF_ONCE);
+   PStack_p stack = PStackAlloc();
+   int i;
 
-    PStackPushP(stack, term);
-    PStackPushInt(stack, deref);
+   PStackPushP(stack, term);
+   PStackPushInt(stack, deref);
 
-    while (!PStackEmpty(stack)) {
-        deref = PStackPopInt(stack);
-        term = PStackPopP(stack);
-        term = TermDeref(term, &deref);
-        if (TermIsFreeVar(term)) {
-            TermCellDelProp(term, prop);
-        }
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-            PStackPushInt(stack, deref);
-        }
-    }
-    PStackFree(stack);
+   while(!PStackEmpty(stack))
+   {
+      deref = PStackPopInt(stack);
+      term  = PStackPopP(stack);
+      term  = TermDeref(term, &deref);
+      if(TermIsFreeVar(term))
+      {
+         TermCellDelProp(term, prop);
+      }
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+         PStackPushInt(stack, deref);
+      }
+   }
+   PStackFree(stack);
 }
 
 
@@ -685,14 +756,16 @@ void TermVarDelProp(Term_p term, DerefType deref, TermProperties prop) {
 //
 /----------------------------------------------------------------------*/
 
-void TermStackSetProps(PStack_p stack, TermProperties prop) {
-    PStackPointer i;
-    Term_p term;
+void TermStackSetProps(PStack_p stack, TermProperties prop)
+{
+   PStackPointer i;
+   Term_p term;
 
-    for (i = 0; i < PStackGetSP(stack); i++) {
-        term = PStackElementP(stack, i);
-        TermCellSetProp(term, prop);
-    }
+   for(i=0; i<PStackGetSP(stack); i++)
+   {
+      term = PStackElementP(stack, i);
+      TermCellSetProp(term, prop);
+   }
 }
 
 
@@ -708,14 +781,16 @@ void TermStackSetProps(PStack_p stack, TermProperties prop) {
 //
 /----------------------------------------------------------------------*/
 
-void TermStackDelProps(PStack_p stack, TermProperties prop) {
-    PStackPointer i;
-    Term_p term;
+void TermStackDelProps(PStack_p stack, TermProperties prop)
+{
+   PStackPointer i;
+   Term_p term;
 
-    for (i = 0; i < PStackGetSP(stack); i++) {
-        term = PStackElementP(stack, i);
-        TermCellDelProp(term, prop);
-    }
+   for(i=0; i<PStackGetSP(stack); i++)
+   {
+      term = PStackElementP(stack, i);
+      TermCellDelProp(term, prop);
+   }
 }
 
 /*-----------------------------------------------------------------------
@@ -730,28 +805,35 @@ void TermStackDelProps(PStack_p stack, TermProperties prop) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermIsPrefix(Term_p cand, Term_p term) {
-    assert(problemType == PROBLEM_HO);
-    bool res = false;
-    int i;
-    if (cand) {
-        /* cand can be null if it was binding field of non-bound var,
+bool TermIsPrefix(Term_p cand, Term_p term)
+{
+   assert(problemType == PROBLEM_HO);
+   bool res = false;
+   int  i;
+   if(cand)
+   {
+      /* cand can be null if it was binding field of non-bound var,
          which is common use case for this function  */
 
-        if (TermIsAnyVar(cand)) {
-            return TermIsAnyVar(term) ? cand == term : (TermIsPhonyApp(term) ? cand == term->args[0] : false);
-        }
+      if(TermIsAnyVar(cand))
+      {
+         return TermIsAnyVar(term) ? cand == term :
+                  (TermIsPhonyApp(term) ? cand == term->args[0] : false);
+      }
 
-        if (cand->arity <= term->arity && cand->f_code == term->f_code) {
-            for (i = 0; i < cand->arity; i++) {
-                if (cand->args[i] != term->args[i]) {
-                    break;
-                }
+      if(cand->arity <= term->arity && cand->f_code == term->f_code)
+      {
+         for(i=0; i<cand->arity; i++)
+         {
+            if(cand->args[i] != term->args[i])
+            {
+               break;
             }
-            res = i == cand->arity;
-        }
-    }
-    return res;
+         }
+         res = i == cand->arity;
+      }
+   }
+   return res;
 }
 
 
@@ -769,47 +851,47 @@ bool TermIsPrefix(Term_p cand, Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-__inline__ Term_p MakeRewrittenTerm(Term_p orig, Term_pnew,
+__inline__ Term_p MakeRewrittenTerm(Term_p orig, Term_p new,
                                     int remaining_orig,
-                                    struct tbcell *bank) {
-    if (remaining_orig) {
-        assert(problemType == PROBLEM_HO);
-        Term_p new_term;
-        if (TermIsFreeVar(new)) {
-            new_term = TermTopAlloc(SIG_PHONY_APP_CODE, remaining_orig + 1);
-            new_term->args[0] = new;
-        } else {
-            new_term = TermTopAlloc(new->f_code, new->arity + remaining_orig);
-        }
+                                    struct tbcell* bank)
+{
+   if(remaining_orig)
+   {
+      assert(problemType == PROBLEM_HO);
+      Term_p new_term;
+      if(TermIsFreeVar(new))
+      {
+         new_term = TermTopAlloc(SIG_PHONY_APP_CODE, remaining_orig+1);
+         new_term->args[0] = new;
+      }
+      else
+      {
+         new_term = TermTopAlloc(new->f_code, new->arity + remaining_orig);
+      }
 
-        new_term->type = orig->type; // no type inference after this step
-        new_term->properties = orig->properties & (TPPredPos);
+      new_term->type = orig->type; // no type inference after this step
+      new_term->properties = orig->properties & (TPPredPos);
 
-        for (int i = 0; i < new
-        ->
-        arity;
-        i++
-        ) {
-            new_term->args[i] = new
-            ->
-            args[i];
-        }
-        for (int i = orig->arity - remaining_orig, j = TermIsFreeVar(new) ? 1 : 0;
-             i < orig->arity;
-             i++, j++) {
-            new_term->args[j + new->arity
-            ]
-            =
-            orig->args[i];
-        }
+      for(int i=0; i < new->arity; i++)
+      {
+         new_term->args[i] = new->args[i];
+      }
+      for(int i=orig->arity - remaining_orig, j=TermIsFreeVar(new) ? 1 : 0;
+          i < orig->arity;
+          i++, j++)
+      {
+         new_term->args[j + new->arity] = orig->args[i];
+      }
 
-        TermSetBank(new_term, bank);
+      TermSetBank(new_term, bank);
 
-        return LambdaNormalizeDB(bank, new_term);
-    } else {
-        TermSetBank(new, bank);
-        return LambdaNormalizeDB(bank, new); // If no args are remaining -- the situation is the same as in FO case
-    }
+      return LambdaNormalizeDB(bank, new_term);
+   }
+   else
+   {
+      TermSetBank(new, bank);
+      return LambdaNormalizeDB(bank, new); // If no args are remaining -- the situation is the same as in FO case
+   }
 }
 #endif
 

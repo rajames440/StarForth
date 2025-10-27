@@ -1,27 +1,21 @@
 /*
-    Title:      Multi-Threaded Garbage Collector
+                                  ***   StarForth   ***
 
-    Copyright (c) 2010-12, 2019, 2020 David C. J. Matthews
+  gc.cpp- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:03.144-04
 
-    Based on the original garbage collector code
-        Copyright 2000-2008
-        Cambridge University Technical Services Limited
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/polyml-5.9.1/src/libpolyml/gc.cpp
+ */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #elif defined(_WIN32)
@@ -99,7 +93,8 @@ bool convertedWeak = false;
     Updated DCJM 12/06/12
 
 */
-static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
+static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate)
+{
     gHeapSizeParameters.RecordAtStartOfMajorGC();
     gHeapSizeParameters.RecordGCTime(HeapSizeParameters::GCTimeStart);
     globalStats.incCount(PSC_GC_FULLGC);
@@ -117,14 +112,15 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
         gMem.ReportHeapSizes("Full GC (before)");
 
     // Data sharing pass.
-    if (gHeapSizeParameters.PerformSharingPass()) {
+    if (gHeapSizeParameters.PerformSharingPass())
+    {
         globalStats.incCount(PSC_GC_SHARING);
         GCSharingPhase();
     }
 
     gcProgressBeginMajorGC(); // The GC sharing phase is treated separately
 
-    /*
+/*
  * There is a really weird bug somewhere.  An extra bit may be set in the bitmap during
  * the mark phase.  It seems to be related to heavy swapping activity.  Duplicating the
  * bitmap causes it to occur only in one copy and write-protecting the bitmap apart from
@@ -133,13 +129,15 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
  * is to check the number of bits set in the bitmap and repeat the mark phase if it does
  * not match.
  */
-
-    for (unsigned p = 3; p > 0; p--) {
-        for (std::vector<LocalMemSpace *>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++) {
+    
+    for (unsigned p = 3; p > 0; p--)
+    {
+        for(std::vector<LocalMemSpace*>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++)
+        {
             LocalMemSpace *lSpace = *i;
-            ASSERT(lSpace->top >= lSpace->upperAllocPtr);
-            ASSERT(lSpace->upperAllocPtr >= lSpace->lowerAllocPtr);
-            ASSERT(lSpace->lowerAllocPtr >= lSpace->bottom);
+            ASSERT (lSpace->top >= lSpace->upperAllocPtr);
+            ASSERT (lSpace->upperAllocPtr >= lSpace->lowerAllocPtr);
+            ASSERT (lSpace->lowerAllocPtr >= lSpace->bottom);
             // Set upper and lower limits of weak refs.
             lSpace->highestWeak = lSpace->bottom;
             lSpace->lowestWeak = lSpace->top;
@@ -147,11 +145,12 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
             // Put dummy objects in the unused space.  This allows
             // us to scan over the whole of the space.
             gMem.FillUnusedSpace(lSpace->lowerAllocPtr,
-                                 lSpace->upperAllocPtr - lSpace->lowerAllocPtr);
+                lSpace->upperAllocPtr-lSpace->lowerAllocPtr);
         }
 
         // Set limits of weak refs.
-        for (std::vector<PermanentMemSpace *>::iterator i = gMem.pSpaces.begin(); i < gMem.pSpaces.end(); i++) {
+        for (std::vector<PermanentMemSpace*>::iterator i = gMem.pSpaces.begin(); i < gMem.pSpaces.end(); i++)
+        {
             PermanentMemSpace *pSpace = *i;
             pSpace->highestWeak = pSpace->bottom;
             pSpace->lowestWeak = pSpace->top;
@@ -159,31 +158,35 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
 
         /* Mark phase */
         GCMarkPhase();
-
+        
         uintptr_t bitCount = 0, markCount = 0;
-
-        for (std::vector<LocalMemSpace *>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++) {
-            LocalMemSpace *lSpace = *i;
+        
+        for (std::vector<LocalMemSpace*>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++)
+        {
+            LocalMemSpace *lSpace = *i; 
             markCount += lSpace->i_marked + lSpace->m_marked;
             bitCount += lSpace->bitmap.CountSetBits(lSpace->spaceSize());
         }
-
+        
         if (markCount == bitCount)
             break;
-        else {
+        else
+        {
             // Report an error.  If this happens again we crash.
             Log("GC: Count error mark count %lu, bitCount %lu\n", markCount, bitCount);
-            if (p == 1) {
+            if (p == 1)
+            {
                 ASSERT(markCount == bitCount);
             }
         }
     }
-    for (std::vector<LocalMemSpace *>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++) {
+    for(std::vector<LocalMemSpace*>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++)
+    {
         LocalMemSpace *lSpace = *i;
         // Reset the allocation pointers.  They will be set to the
         // limits of the retained data.
 #ifdef POLYML32IN64
-        lSpace->lowerAllocPtr = lSpace->bottom + 1; // Must be odd-word aligned
+        lSpace->lowerAllocPtr = lSpace->bottom+1; // Must be odd-word aligned
         lSpace->lowerAllocPtr[-1] = PolyWord::FromUnsigned(0);
 #else
         lSpace->lowerAllocPtr = lSpace->bottom;
@@ -191,12 +194,12 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
         lSpace->upperAllocPtr = lSpace->top;
     }
 
-    gcProgressSetPercent(25);
+	gcProgressSetPercent(25);
 
     if (debugOptions & DEBUG_GC) Log("GC: Check weak refs\n");
     /* Detect unreferenced streams, windows etc. */
     GCheckWeakRefs();
-    gcProgressSetPercent(50);
+	gcProgressSetPercent(50);
 
     // Check that the heap is not overfull.  We make sure the marked
     // mutable and immutable data is no more than 90% of the
@@ -204,11 +207,13 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
     {
         uintptr_t iMarked = 0, mMarked = 0;
         uintptr_t iSpace = 0, mSpace = 0;
-        for (std::vector<LocalMemSpace *>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++) {
+        for (std::vector<LocalMemSpace*>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++)
+        {
             LocalMemSpace *lSpace = *i;
             iMarked += lSpace->i_marked;
             mMarked += lSpace->m_marked;
-            if (!lSpace->allocationSpace) {
+            if (! lSpace->allocationSpace)
+            {
                 if (lSpace->isMutable)
                     mSpace += lSpace->spaceSize();
                 else
@@ -216,9 +221,9 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
             }
         }
         // Add space if necessary and possible.
-        while (iMarked > iSpace - iSpace / 10 && gHeapSizeParameters.AddSpaceBeforeCopyPhase(false) != 0)
+        while (iMarked > iSpace - iSpace/10 && gHeapSizeParameters.AddSpaceBeforeCopyPhase(false) != 0)
             iSpace += gMem.DefaultSpaceSize();
-        while (mMarked > mSpace - mSpace / 10 && gHeapSizeParameters.AddSpaceBeforeCopyPhase(true) != 0)
+        while (mMarked > mSpace - mSpace/10 && gHeapSizeParameters.AddSpaceBeforeCopyPhase(true) != 0)
             mSpace += gMem.DefaultSpaceSize();
     }
 
@@ -226,15 +231,18 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
     GCCopyPhase();
 
     gHeapSizeParameters.RecordGCTime(HeapSizeParameters::GCTimeIntermediate, "Copy");
-    gcProgressSetPercent(75);
+	gcProgressSetPercent(75);
 
     // Update Phase.
     if (debugOptions & DEBUG_GC) Log("GC: Update\n");
     GCUpdatePhase();
 
-    gHeapSizeParameters.RecordGCTime(HeapSizeParameters::GCTimeIntermediate, "Update"); {
+    gHeapSizeParameters.RecordGCTime(HeapSizeParameters::GCTimeIntermediate, "Update");
+
+    {
         uintptr_t iUpdated = 0, mUpdated = 0, iMarked = 0, mMarked = 0;
-        for (std::vector<LocalMemSpace *>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++) {
+        for(std::vector<LocalMemSpace*>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++)
+        {
             LocalMemSpace *lSpace = *i;
             iMarked += lSpace->i_marked;
             mMarked += lSpace->m_marked;
@@ -249,12 +257,14 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
     // Delete empty spaces.
     gMem.RemoveEmptyLocals();
 
-    if (debugOptions & DEBUG_GC_ENHANCED) {
-        for (std::vector<LocalMemSpace *>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++) {
+    if (debugOptions & DEBUG_GC_ENHANCED)
+    {
+        for(std::vector<LocalMemSpace*>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++)
+        {
             LocalMemSpace *lSpace = *i;
             Log("GC: %s space %p %" PRI_SIZET " free in %" PRI_SIZET " words %2.1f%% full\n", lSpace->spaceTypeString(),
                 lSpace, lSpace->freeSpace(), lSpace->spaceSize(),
-                ((float) lSpace->allocatedSpace()) * 100 / (float) lSpace->spaceSize());
+                ((float)lSpace->allocatedSpace()) * 100 / (float)lSpace->spaceSize());
         }
     }
 
@@ -264,26 +274,29 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
     globalStats.setSize(PSS_ALLOCATION, 0);
     globalStats.setSize(PSS_ALLOCATION_FREE, 0);
 
-    for (std::vector<LocalMemSpace *>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++) {
+    for (std::vector<LocalMemSpace*>::iterator i = gMem.lSpaces.begin(); i < gMem.lSpaces.end(); i++)
+    {
         LocalMemSpace *space = *i;
         uintptr_t free = space->freeSpace();
-        globalStats.incSize(PSS_AFTER_LAST_GC, free * sizeof(PolyWord));
-        globalStats.incSize(PSS_AFTER_LAST_FULLGC, free * sizeof(PolyWord));
-        if (space->allocationSpace) {
+        globalStats.incSize(PSS_AFTER_LAST_GC, free*sizeof(PolyWord));
+        globalStats.incSize(PSS_AFTER_LAST_FULLGC, free*sizeof(PolyWord));
+        if (space->allocationSpace)
+        {
             if (space->allocatedSpace() > space->freeSpace()) // It's more than half full
                 gMem.ConvertAllocationSpaceToLocal(space);
-            else {
-                globalStats.incSize(PSS_ALLOCATION, free * sizeof(PolyWord));
-                globalStats.incSize(PSS_ALLOCATION_FREE, free * sizeof(PolyWord));
+            else
+            {
+                globalStats.incSize(PSS_ALLOCATION, free*sizeof(PolyWord));
+                globalStats.incSize(PSS_ALLOCATION_FREE, free*sizeof(PolyWord));
             }
         }
 #ifdef FILL_UNUSED_MEMORY
-        memset(space->bottom, 0xaa, (char *) space->upperAllocPtr - (char *) space->bottom);
+        memset(space->bottom, 0xaa, (char*)space->upperAllocPtr - (char*)space->bottom);
 #endif
         if (debugOptions & DEBUG_GC_ENHANCED)
             Log("GC: %s space %p %" PRI_SIZET " free in %" PRI_SIZET " words %2.1f%% full\n", space->spaceTypeString(),
                 space, space->freeSpace(), space->spaceSize(),
-                ((float) space->allocatedSpace()) * 100 / (float) space->spaceSize());
+                ((float)space->allocatedSpace()) * 100 / (float)space->spaceSize());
     }
 
     // End of garbage collection
@@ -296,7 +309,8 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
     bool haveSpace = gMem.CheckForAllocation(wordsRequiredToAllocate);
 
     // Invariant: the bitmaps are completely clean.
-    if (debugOptions & DEBUG_GC) {
+    if (debugOptions & DEBUG_GC)
+    {
         if (haveSpace)
             Log("GC: Completed successfully\n");
         else Log("GC: Completed with insufficient space\n");
@@ -305,8 +319,8 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
     if (debugOptions & DEBUG_HEAPSIZE)
         gMem.ReportHeapSizes("Full GC (after)");
 
-    //    if (profileMode == kProfileLiveData || profileMode == kProfileLiveMutables)
-    //        printprofile();
+//    if (profileMode == kProfileLiveData || profileMode == kProfileLiveMutables)
+//        printprofile();
 
     CheckMemory();
 
@@ -318,42 +332,45 @@ static bool doGC(const POLYUNSIGNED wordsRequiredToAllocate) {
 // Fills in the defaults and attempts to allocate the heap.  If the heap size
 // is too large it allocates as much as it can.  The default heap size is half the
 // physical memory.
-void CreateHeap() {
+void CreateHeap()
+{
     // Create an initial allocation space.
     if (gMem.CreateAllocationSpace(gMem.DefaultSpaceSize()) == 0)
         Exit("Insufficient memory to allocate the heap");
 
     // Create the task farm if required
-    if (userOptions.gcthreads != 1) {
-        if (!gTaskFarm.Initialise(userOptions.gcthreads, 100))
+    if (userOptions.gcthreads != 1)
+    {
+        if (! gTaskFarm.Initialise(userOptions.gcthreads, 100))
             Crash("Unable to initialise the GC task farm");
     }
     // Set up the stacks for the mark phase.
     initialiseMarkerTables();
 }
 
-class FullGCRequest : public MainThreadRequest {
+class FullGCRequest: public MainThreadRequest
+{
 public:
-    FullGCRequest() : MainThreadRequest(MTP_GCPHASEMARK) {
-    }
-
-    virtual void Perform() {
-        doGC(0);
+    FullGCRequest(): MainThreadRequest(MTP_GCPHASEMARK) {}
+    virtual void Perform()
+    {
+        doGC (0);
     }
 };
 
-class QuickGCRequest : public MainThreadRequest {
+class QuickGCRequest: public MainThreadRequest
+{
 public:
-    QuickGCRequest(POLYUNSIGNED words) : MainThreadRequest(MTP_GCPHASEMARK), wordsRequired(words) {
-    }
+    QuickGCRequest(POLYUNSIGNED words): MainThreadRequest(MTP_GCPHASEMARK), wordsRequired(words) {}
 
-    virtual void Perform() {
+    virtual void Perform()
+    {
         result =
 #ifndef DEBUG_ONLY_FULL_GC
-                // If DEBUG_ONLY_FULL_GC is defined then we skip the partial GC.
-                RunQuickGC(wordsRequired) ||
+// If DEBUG_ONLY_FULL_GC is defined then we skip the partial GC.
+            RunQuickGC(wordsRequired) ||
 #endif
-                doGC(wordsRequired);
+            doGC (wordsRequired);
     }
 
     bool result;
@@ -362,7 +379,8 @@ public:
 
 // Perform a full garbage collection.  This is called either from ML via the full_gc RTS call
 // or from various RTS functions such as open_file to try to recover dropped file handles.
-void FullGC(TaskData *taskData) {
+void FullGC(TaskData *taskData)
+{
     FullGCRequest request;
     processes->MakeRootRequest(taskData, &request);
 
@@ -374,7 +392,8 @@ void FullGC(TaskData *taskData) {
 }
 
 // This is the normal call when memory is exhausted and we need to garbage collect.
-bool QuickGC(TaskData *taskData, POLYUNSIGNED wordsRequiredToAllocate) {
+bool QuickGC(TaskData *taskData, POLYUNSIGNED wordsRequiredToAllocate)
+{
     QuickGCRequest request(wordsRequiredToAllocate);
     processes->MakeRootRequest(taskData, &request);
 
@@ -385,19 +404,22 @@ bool QuickGC(TaskData *taskData, POLYUNSIGNED wordsRequiredToAllocate) {
 }
 
 // Called in RunShareData.  This is called as a root function
-void FullGCForShareCommonData(void) {
+void FullGCForShareCommonData(void)
+{
     doGC(0);
 }
 
 // RTS module for the GC.  Only used for ForkChild.
-class GarbageCollectModule : public RtsModule {
+class GarbageCollectModule : public RtsModule
+{
 public:
     virtual void ForkChild(void);
 };
 
 // Set single threaded mode. This is only used in a child process after
 // Posix fork in case there is a GC before the exec.
-void GarbageCollectModule::ForkChild(void) {
+void GarbageCollectModule::ForkChild(void)
+{
     gpTaskFarm->SetSingleThreaded();
     initialiseMarkerTables();
 }

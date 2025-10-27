@@ -1,25 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-File  : cco_proc_ctrl.c
+  cco_proc_ctrl.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.156-04
 
-Author: Stephan Schulz (schulz@eprover.org)
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Code for process control.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 2010 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-Changes
-
-<1> Wed Jul 14 15:54:29 BST 2010
-    New
-
------------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/CONTROL/cco_proc_ctrl.c
+ */
 
 #include "cco_proc_ctrl.h"
 
@@ -28,15 +24,15 @@ Changes
 /*                        Global Variables                             */
 /*---------------------------------------------------------------------*/
 
-char *PRResultTable[] =
+char* PRResultTable[] =
 {
-    NULL,
-    SZS_THEOREM_STR,
-    SZS_UNSAT_STR,
-    SZS_SATSTR_STR,
-    SZS_COUNTERSAT_STR,
-    SZS_FAILURE_STR,
-    SZS_GAVEUP_STR
+   NULL,
+   SZS_THEOREM_STR,
+   SZS_UNSAT_STR,
+   SZS_SATSTR_STR,
+   SZS_COUNTERSAT_STR,
+   SZS_FAILURE_STR,
+   SZS_GAVEUP_STR
 };
 
 
@@ -48,6 +44,7 @@ char *PRResultTable[] =
 /*---------------------------------------------------------------------*/
 /*                         Internal Functions                          */
 /*---------------------------------------------------------------------*/
+
 
 
 /*---------------------------------------------------------------------*/
@@ -67,19 +64,20 @@ char *PRResultTable[] =
 //
 /----------------------------------------------------------------------*/
 
-EPCtrl_p EPCtrlAlloc(char *name) {
-    EPCtrl_p ctrl = EPCtrlCellAlloc();
+EPCtrl_p EPCtrlAlloc(char *name)
+{
+   EPCtrl_p ctrl = EPCtrlCellAlloc();
 
-    ctrl->pid = 0;
-    ctrl->pipe = NULL;
-    ctrl->input_file = 0;
-    ctrl->name = SecureStrdup(name);
-    ctrl->start_time = 0;
-    ctrl->prob_time = 0;
-    ctrl->result = PRNoResult;
-    ctrl->output = DStrAlloc();
+   ctrl->pid        = 0;
+   ctrl->pipe       = NULL;
+   ctrl->input_file = 0;
+   ctrl->name       = SecureStrdup(name);
+   ctrl->start_time = 0;
+   ctrl->prob_time  = 0;
+   ctrl->result     = PRNoResult;
+   ctrl->output     = DStrAlloc();
 
-    return ctrl;
+   return ctrl;
 }
 
 
@@ -95,16 +93,22 @@ EPCtrl_p EPCtrlAlloc(char *name) {
 //
 /----------------------------------------------------------------------*/
 
-void EPCtrlFree(EPCtrl_p junk) {
-    if (junk->input_file) {
-        FREE(junk->input_file);
-    }
-    if (junk->name) {
-        FREE(junk->name);
-    }
-    DStrFree(junk->output);
-    EPCtrlCellFree(junk);
+void EPCtrlFree(EPCtrl_p junk)
+{
+   if(junk->input_file)
+   {
+      FREE(junk->input_file);
+   }
+   if(junk->name)
+   {
+      FREE(junk->name);
+   }
+   DStrFree(junk->output);
+   EPCtrlCellFree(junk);
 }
+
+
+
 
 
 /*-----------------------------------------------------------------------
@@ -119,21 +123,26 @@ void EPCtrlFree(EPCtrl_p junk) {
 //
 /----------------------------------------------------------------------*/
 
-void EPCtrlCleanup(EPCtrl_p ctrl, bool delete_file) {
-    if (ctrl->pid) {
-        kill(ctrl->pid, SIGTERM);
-        ctrl->pid = 0;
-    }
-    if (ctrl->pipe) {
-        pclose(ctrl->pipe);
-        ctrl->pipe = NULL;
-    }
-    if (delete_file && ctrl->input_file) {
-        TempFileRemove(ctrl->input_file);
-        FREE(ctrl->input_file);
-        ctrl->input_file = NULL;
-    }
+void EPCtrlCleanup(EPCtrl_p ctrl, bool delete_file)
+{
+   if(ctrl->pid)
+   {
+      kill(ctrl->pid, SIGTERM);
+      ctrl->pid = 0;
+   }
+   if(ctrl->pipe)
+   {
+      pclose(ctrl->pipe);
+      ctrl->pipe = NULL;
+   }
+   if(delete_file && ctrl->input_file)
+   {
+      TempFileRemove(ctrl->input_file);
+      FREE(ctrl->input_file);
+      ctrl->input_file = NULL;
+   }
 }
+
 
 
 /*-----------------------------------------------------------------------
@@ -151,11 +160,13 @@ void EPCtrlCleanup(EPCtrl_p ctrl, bool delete_file) {
 //
 /----------------------------------------------------------------------*/
 
-EPCtrl_p ECtrlCreate(char *prover, char *name,
-                     char *extra_options,
-                     long cpu_limit, char *file) {
-    return ECtrlCreateGeneric(prover, name, E_OPTIONS, extra_options, cpu_limit, file);
+EPCtrl_p ECtrlCreate(char* prover, char* name,
+                     char* extra_options,
+                     long cpu_limit, char* file)
+{
+   return ECtrlCreateGeneric(prover, name, E_OPTIONS, extra_options, cpu_limit, file);
 }
+
 
 
 /*-----------------------------------------------------------------------
@@ -173,57 +184,65 @@ EPCtrl_p ECtrlCreate(char *prover, char *name,
 //
 /----------------------------------------------------------------------*/
 
-EPCtrl_p ECtrlCreateGeneric(char *prover, char *name,
-                            char *options, char *extra_options,
-                            long cpu_limit, char *file) {
-    DStr_p cmd = DStrAlloc();
-    EPCtrl_p res;
-    char line[180];
-    char *ret;
+EPCtrl_p ECtrlCreateGeneric(char* prover, char* name,
+                            char* options, char* extra_options,
+                            long cpu_limit, char* file)
+{
+   DStr_p   cmd = DStrAlloc();
+   EPCtrl_p res;
+   char     line[180];
+   char*    ret;
 
-    DStr_p procname = DStrAlloc();
-    DStrAppendStr(procname, name);
-    DStrAppendStr(procname, " => ");
-    DStrAppendStr(procname, options);
-    res = EPCtrlAlloc(DStrView(procname));
-    DStrFree(procname);
+   DStr_p procname = DStrAlloc();
+   DStrAppendStr(procname, name);
+   DStrAppendStr(procname, " => ");
+   DStrAppendStr(procname, options);
+   res = EPCtrlAlloc(DStrView(procname));
+   DStrFree(procname);
 
-    DStrAppendStr(cmd, prover);
-    DStrAppendStr(cmd, E_OPTIONS_BASE);
-    DStrAppendStr(cmd, options);
-    DStrAppendStr(cmd, " ");
-    DStrAppendStr(cmd, extra_options);
-    DStrAppendStr(cmd, " --cpu-limit=");
-    DStrAppendInt(cmd, cpu_limit);
-    DStrAppendStr(cmd, " ");
-    DStrAppendStr(cmd, file);
-    //printf("# Command: %s\n", DStrView(cmd));
+   DStrAppendStr(cmd, prover);
+   DStrAppendStr(cmd, E_OPTIONS_BASE);
+   DStrAppendStr(cmd, options);
+   DStrAppendStr(cmd, " ");
+   DStrAppendStr(cmd, extra_options);
+   DStrAppendStr(cmd, " --cpu-limit=");
+   DStrAppendInt(cmd, cpu_limit);
+   DStrAppendStr(cmd, " ");
+   DStrAppendStr(cmd, file);
+   //printf("# Command: %s\n", DStrView(cmd));
 
-    res->prob_time = cpu_limit;
-    res->start_time = GetSecTime();
-    res->input_file = file;
-    //printf("# Executing: %s\n", DStrView(cmd));
-    res->pipe = popen(DStrView(cmd), "r");
-    if (!res->pipe) {
-        TmpErrno = errno;
-        SysError("Cannot start eprover subprocess", SYS_ERROR);
-    }
-    res->fileno = fileno(res->pipe);
-    ret = fgets(line, 180, res->pipe);
-    if (!ret || ferror(res->pipe)) {
-        Error("Cannot read eprover PID line", OTHER_ERROR);
-    }
-    // fprintf(GlobalOut, "# Line = %s", line);
-    if (!strstr(line, "# Pid: ")) {
-        Error("Cannot get eprover PID", OTHER_ERROR);
-    }
-    res->pid = atoi(line + 7);
-    DStrAppendStr(res->output, line);
+   res->prob_time  = cpu_limit;
+   res->start_time = GetSecTime();
+   res->input_file = file;
+   //printf("# Executing: %s\n", DStrView(cmd));
+   res->pipe = popen(DStrView(cmd), "r");
+   if(!res->pipe)
+   {
+      TmpErrno = errno;
+      SysError("Cannot start eprover subprocess", SYS_ERROR);
+   }
+   res->fileno = fileno(res->pipe);
+   ret = fgets(line, 180, res->pipe);
+   if(!ret || ferror(res->pipe))
+   {
+      Error("Cannot read eprover PID line", OTHER_ERROR);
+   }
+   // fprintf(GlobalOut, "# Line = %s", line);
+   if(!strstr(line, "# Pid: "))
+   {
+      Error("Cannot get eprover PID", OTHER_ERROR);
+   }
+   res->pid = atoi(line+7);
+   DStrAppendStr(res->output, line);
 
-    DStrFree(cmd);
-    //printf("# eprover subprocess started\n");
-    return res;
+   DStrFree(cmd);
+   //printf("# eprover subprocess started\n");
+   return res;
 }
+
+
+
+
 
 
 /*-----------------------------------------------------------------------
@@ -240,32 +259,46 @@ EPCtrl_p ECtrlCreateGeneric(char *prover, char *name,
 //
 /----------------------------------------------------------------------*/
 
-bool EPCtrlGetResult(EPCtrl_p ctrl, char *buffer, long buf_size) {
-    char *l;
+bool EPCtrlGetResult(EPCtrl_p ctrl, char* buffer, long buf_size)
+{
+   char* l;
 
-    l = fgets(buffer, buf_size, ctrl->pipe);
+   l=fgets(buffer, buf_size, ctrl->pipe);
 
-    if (l) {
-        DStrAppendStr(ctrl->output, l);
+   if(l)
+   {
+      DStrAppendStr(ctrl->output, l);
 
-        if (strstr(buffer, SZS_THEOREM_STR)) {
-            ctrl->result = PRTheorem;
-        } else if (strstr(buffer, SZS_CONTRAAX_STR)) {
-            ctrl->result = PRTheorem;
-        } else if (strstr(buffer, SZS_UNSAT_STR)) {
-            ctrl->result = PRUnsatisfiable;
-        } else if (strstr(buffer, SZS_SATSTR_STR)) {
-            ctrl->result = PRSatisfiable;
-        } else if (strstr(buffer, SZS_COUNTERSAT_STR)) {
-            ctrl->result = PRCounterSatisfiable;
-        }
-        return false;
-    } else {
-        if (ctrl->result == PRNoResult) {
-            ctrl->result = PRFailure;
-        }
-        return true;
-    }
+      if(strstr(buffer, SZS_THEOREM_STR))
+      {
+         ctrl->result = PRTheorem;
+      }
+      else if(strstr(buffer, SZS_CONTRAAX_STR))
+      {
+         ctrl->result = PRTheorem;
+      }
+      else if(strstr(buffer, SZS_UNSAT_STR))
+      {
+         ctrl->result = PRUnsatisfiable;
+      }
+      else if(strstr(buffer, SZS_SATSTR_STR))
+      {
+         ctrl->result = PRSatisfiable;
+      }
+      else if(strstr(buffer, SZS_COUNTERSAT_STR))
+      {
+         ctrl->result = PRCounterSatisfiable;
+      }
+      return false;
+   }
+   else
+   {
+      if(ctrl->result == PRNoResult)
+      {
+         ctrl->result = PRFailure;
+      }
+      return true;
+   }
 }
 
 
@@ -281,12 +314,13 @@ bool EPCtrlGetResult(EPCtrl_p ctrl, char *buffer, long buf_size) {
 //
 /----------------------------------------------------------------------*/
 
-EPCtrlSet_p EPCtrlSetAlloc(void) {
-    EPCtrlSet_p handle = EPCtrlSetCellAlloc();
+EPCtrlSet_p EPCtrlSetAlloc(void)
+{
+   EPCtrlSet_p handle = EPCtrlSetCellAlloc();
 
-    handle->procs = NULL;
+   handle->procs     = NULL;
 
-    return handle;
+   return handle;
 }
 
 
@@ -303,16 +337,18 @@ EPCtrlSet_p EPCtrlSetAlloc(void) {
 //
 /----------------------------------------------------------------------*/
 
-void EPCtrlSetFree(EPCtrlSet_p junk, bool delete_files) {
-    NumTree_p cell;
+void EPCtrlSetFree(EPCtrlSet_p junk, bool delete_files)
+{
+   NumTree_p cell;
 
-    while (junk->procs) {
-        cell = NumTreeExtractRoot(&(junk->procs));
-        EPCtrlCleanup(cell->val1.p_val, delete_files);
-        EPCtrlFree(cell->val1.p_val);
-        NumTreeCellFree(cell);
-    }
-    EPCtrlSetCellFree(junk);
+   while(junk->procs)
+   {
+      cell = NumTreeExtractRoot(&(junk->procs));
+      EPCtrlCleanup(cell->val1.p_val, delete_files);
+      EPCtrlFree(cell->val1.p_val);
+      NumTreeCellFree(cell);
+   }
+   EPCtrlSetCellFree(junk);
 }
 
 
@@ -328,11 +364,12 @@ void EPCtrlSetFree(EPCtrlSet_p junk, bool delete_files) {
 //
 /----------------------------------------------------------------------*/
 
-void EPCtrlSetAddProc(EPCtrlSet_p set, EPCtrl_p proc) {
-    IntOrP tmp;
+void EPCtrlSetAddProc(EPCtrlSet_p set, EPCtrl_p proc)
+{
+   IntOrP tmp;
 
-    tmp.p_val = proc;
-    NumTreeStore(&(set->procs), proc->fileno, tmp, tmp);
+   tmp.p_val = proc;
+   NumTreeStore(&(set->procs), proc->fileno, tmp, tmp);
 }
 
 
@@ -348,15 +385,17 @@ void EPCtrlSetAddProc(EPCtrlSet_p set, EPCtrl_p proc) {
 //
 /----------------------------------------------------------------------*/
 
-EPCtrl_p EPCtrlSetFindProc(EPCtrlSet_p set, int fd) {
-    NumTree_p cell;
+EPCtrl_p EPCtrlSetFindProc(EPCtrlSet_p set, int fd)
+{
+   NumTree_p cell;
 
-    cell = NumTreeFind(&(set->procs), fd);
+   cell = NumTreeFind(&(set->procs), fd);
 
-    if (cell) {
-        return cell->val1.p_val;
-    }
-    return NULL;
+   if(cell)
+   {
+      return cell->val1.p_val;
+   }
+   return NULL;
 }
 
 
@@ -372,15 +411,17 @@ EPCtrl_p EPCtrlSetFindProc(EPCtrlSet_p set, int fd) {
 //
 /----------------------------------------------------------------------*/
 
-void EPCtrlSetDeleteProc(EPCtrlSet_p set, EPCtrl_p proc, bool delete_file) {
-    NumTree_p cell;
+void EPCtrlSetDeleteProc(EPCtrlSet_p set, EPCtrl_p proc, bool delete_file)
+{
+   NumTree_p cell;
 
-    cell = NumTreeExtractEntry(&(set->procs), proc->fileno);
-    if (cell) {
-        EPCtrlCleanup(cell->val1.p_val, delete_file);
-        EPCtrlFree(cell->val1.p_val);
-        NumTreeCellFree(cell);
-    }
+   cell = NumTreeExtractEntry(&(set->procs), proc->fileno);
+   if(cell)
+   {
+      EPCtrlCleanup(cell->val1.p_val, delete_file);
+      EPCtrlFree(cell->val1.p_val);
+      NumTreeCellFree(cell);
+   }
 }
 
 
@@ -397,21 +438,23 @@ void EPCtrlSetDeleteProc(EPCtrlSet_p set, EPCtrl_p proc, bool delete_file) {
 //
 /----------------------------------------------------------------------*/
 
-int EPCtrlSetFDSet(EPCtrlSet_p set, fd_set *rd_fds) {
-    PStack_p trav_stack;
-    int maxfd = 0;
-    EPCtrl_p handle;
-    NumTree_p cell;
+int EPCtrlSetFDSet(EPCtrlSet_p set, fd_set *rd_fds)
+{
+   PStack_p trav_stack;
+   int maxfd = 0;
+   EPCtrl_p handle;
+   NumTree_p cell;
 
-    trav_stack = NumTreeTraverseInit(set->procs);
-    while ((cell = NumTreeTraverseNext(trav_stack))) {
-        handle = cell->val1.p_val;
-        FD_SET(handle->fileno, rd_fds);
-        maxfd = handle->fileno;
-    }
-    NumTreeTraverseExit(trav_stack);
+   trav_stack = NumTreeTraverseInit(set->procs);
+   while((cell = NumTreeTraverseNext(trav_stack)))
+   {
+      handle = cell->val1.p_val;
+      FD_SET(handle->fileno, rd_fds);
+      maxfd = handle->fileno;
+   }
+   NumTreeTraverseExit(trav_stack);
 
-    return maxfd;
+   return maxfd;
 }
 
 
@@ -427,54 +470,60 @@ int EPCtrlSetFDSet(EPCtrlSet_p set, fd_set *rd_fds) {
 //
 /----------------------------------------------------------------------*/
 
-EPCtrl_p EPCtrlSetGetResult(EPCtrlSet_p set, bool delete_files) {
-    bool eof;
-    fd_set readfds, writefds, errorfds;
-    int maxfd = 0, i;
-    EPCtrl_p handle, res = NULL;
-    struct timeval waittime;
-    int sel_success;
+EPCtrl_p EPCtrlSetGetResult(EPCtrlSet_p set, bool delete_files)
+{
+   bool eof;
+   fd_set readfds, writefds, errorfds;
+   int maxfd = 0,i;
+   EPCtrl_p handle, res = NULL;
+   struct timeval waittime;
+   int sel_success;
 
-    FD_ZERO(&readfds);
-    FD_ZERO(&writefds);
-    FD_ZERO(&errorfds);
-    waittime.tv_sec = 0;
-    waittime.tv_usec = 500000;
+   FD_ZERO(&readfds);
+   FD_ZERO(&writefds);
+   FD_ZERO(&errorfds);
+   waittime.tv_sec  = 0;
+   waittime.tv_usec = 500000;
 
-    maxfd = EPCtrlSetFDSet(set, &readfds);
+   maxfd = EPCtrlSetFDSet(set, &readfds);
 
-    sel_success = select(maxfd + 1, &readfds, &writefds, &errorfds, &waittime);
+   sel_success = select(maxfd+1, &readfds, &writefds, &errorfds, &waittime);
 
-    if (sel_success != -1) {
-        for (i = 0; i <= maxfd; i++) {
-            if (FD_ISSET(i, &readfds)) {
-                handle = EPCtrlSetFindProc(set, i);
-                eof = EPCtrlGetResult(handle, set->buffer, EPCTRL_BUFSIZE);
-                if (eof) {
-                    switch (handle->result) {
-                        case PRNoResult:
-                            break;
-                        case PRTheorem:
-                        case PRUnsatisfiable:
-                            res = handle;
-                            break;
-                        case PRSatisfiable:
-                        case PRCounterSatisfiable:
-                        case PRFailure:
-                            /* Process terminates, but no proof found -> Remove it*/
-                            fprintf(GlobalOut, "# No proof found by %s\n",
-                                    handle->name);
+   if(sel_success !=-1)
+   {
+      for(i=0; i<=maxfd; i++)
+      {
+         if(FD_ISSET(i, &readfds))
+         {
+            handle = EPCtrlSetFindProc(set, i);
+            eof = EPCtrlGetResult(handle, set->buffer, EPCTRL_BUFSIZE);
+            if(eof)
+            {
+               switch(handle->result)
+               {
+               case PRNoResult:
+                     break;
+               case PRTheorem:
+               case PRUnsatisfiable:
+                     res = handle;
+                     break;
+               case PRSatisfiable:
+               case PRCounterSatisfiable:
+               case PRFailure:
+                     /* Process terminates, but no proof found -> Remove it*/
+                     fprintf(GlobalOut, "# No proof found by %s\n",
+                             handle->name);
 
-                            EPCtrlSetDeleteProc(set, handle, delete_files);
-                            break;
-                        default:
-                            assert(false && "Impossible ProverResult");
-                    }
-                }
+                     EPCtrlSetDeleteProc(set, handle, delete_files);
+                     break;
+               default:
+                     assert(false && "Impossible ProverResult");
+               }
             }
-        }
-    }
-    return res;
+         }
+      }
+   }
+   return res;
 }
 
 

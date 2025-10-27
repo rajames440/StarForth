@@ -1,23 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-  File  : cte_termfunc.c
+  cte_termfunc.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.489-04
 
-  Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Most of the user-level functionality for unshared terms.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 1998-2021 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-
-  Created: Wed Feb 25 16:50:36 MET 1998 (Ripped from cte_terms.c)
-
------------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/TERMS/cte_termfunc.c
+ */
 
 
 #include "cte_termfunc.h"
@@ -32,13 +30,13 @@
 /*                        Global Variables                             */
 /*---------------------------------------------------------------------*/
 
-bool TermPrintLists = true;
-bool TermPrintTypes = false;
+bool      TermPrintLists = true;
+bool      TermPrintTypes = false;
 
 /*---------------------------------------------------------------------*/
 /*                      Forward Declarations                           */
 /*---------------------------------------------------------------------*/
-void do_fool_print(FILE *out, Sig_p sig, TFormula_p form, int depth);
+void do_fool_print(FILE* out, Sig_p sig, TFormula_p form, int depth);
 
 /*---------------------------------------------------------------------*/
 /*                         Internal Functions                          */
@@ -58,23 +56,26 @@ void do_fool_print(FILE *out, Sig_p sig, TFormula_p form, int depth);
 //
 /----------------------------------------------------------------------*/
 
-static void print_cons_list(FILE *out, Term_p list, Sig_p sig, DerefType deref) {
-    assert(SigSupportLists);
-    putc('[', out);
-    if (list->f_code == SIG_CONS_CODE) {
-        assert(list->args);
-        TermPrint(out, list->args[0], sig, deref);
-        list = list->args[1];
-        while (list->f_code == SIG_CONS_CODE) {
-            putc(',', out);
-            /* putc(' ', out); */
-            assert(list->args);
-            TermPrint(out, list->args[0], sig, deref);
-            list = list->args[1];
-        }
-        assert(list->f_code == SIG_NIL_CODE);
-    }
-    putc(']', out);
+static void print_cons_list(FILE* out, Term_p list, Sig_p sig, DerefType deref)
+{
+   assert(SigSupportLists);
+   putc('[', out);
+   if(list->f_code == SIG_CONS_CODE)
+   {
+      assert(list->args);
+      TermPrint(out, list->args[0], sig, deref);
+      list = list->args[1];
+      while(list->f_code == SIG_CONS_CODE)
+      {
+         putc(',', out);
+         /* putc(' ', out); */
+         assert(list->args);
+         TermPrint(out, list->args[0], sig, deref);
+         list = list->args[1];
+      }
+      assert(list->f_code == SIG_NIL_CODE);
+   }
+   putc(']', out);
 }
 
 
@@ -90,38 +91,42 @@ static void print_cons_list(FILE *out, Term_p list, Sig_p sig, DerefType deref) 
 //
 /----------------------------------------------------------------------*/
 
-static Term_p parse_cons_list(Scanner_p in, Sig_p sig, VarBank_p vars) {
-    Term_p handle;
-    Term_p current;
+static Term_p parse_cons_list(Scanner_p in, Sig_p sig, VarBank_p vars)
+{
+   Term_p handle;
+   Term_p current;
 
-    assert(SigSupportLists);
+   assert(SigSupportLists);
 
-    AcceptInpTok(in, OpenSquare);
+   AcceptInpTok(in, OpenSquare);
 
-    handle = TermDefaultCellArityAlloc(2);
-    current = handle;
+   handle = TermDefaultCellArityAlloc(2);
+   current = handle;
 
-    if (!TestInpTok(in, CloseSquare)) {
-        current->f_code = SIG_CONS_CODE;
-        current->type = SigDefaultSort(sig);
-        current->args[0] = TermParse(in, sig, vars);
-        current->args[1] = TermDefaultCellArityAlloc(2);
-        current = current->args[1];
+   if(!TestInpTok(in, CloseSquare))
+   {
 
-        while (TestInpTok(in, Comma)) {
-            NextToken(in);
-            current->f_code = SIG_CONS_CODE;
-            current->type = SigDefaultSort(sig);
-            current->args[0] = TermParse(in, sig, vars);
-            TermCellDelProp(current->args[0], TPTopPos);
-            current->args[1] = TermDefaultCellArityAlloc(2);
-            current = current->args[1];
-        }
-    }
-    AcceptInpTok(in, CloseSquare);
-    current->f_code = SIG_NIL_CODE;
+      current->f_code = SIG_CONS_CODE;
+      current->type = SigDefaultSort(sig);
+      current->args[0] = TermParse(in, sig, vars);
+      current->args[1] = TermDefaultCellArityAlloc(2);
+      current = current->args[1];
 
-    return handle;
+      while(TestInpTok(in, Comma))
+      {
+         NextToken(in);
+         current->f_code = SIG_CONS_CODE;
+         current->type = SigDefaultSort(sig);
+         current->args[0] = TermParse(in, sig, vars);
+         TermCellDelProp(current->args[0], TPTopPos);
+         current->args[1] = TermDefaultCellArityAlloc(2);
+         current = current->args[1];
+      }
+   }
+   AcceptInpTok(in, CloseSquare);
+   current->f_code = SIG_NIL_CODE;
+
+   return handle;
 }
 
 /*-----------------------------------------------------------------------
@@ -139,25 +144,29 @@ static Term_p parse_cons_list(Scanner_p in, Sig_p sig, VarBank_p vars) {
 /----------------------------------------------------------------------*/
 
 static Term_p term_check_consistency_rek(Term_p term, PTree_p *branch,
-                                         DerefType deref) {
-    int i;
-    Term_p res = NULL;
+                                         DerefType deref)
+{
+   int      i;
+   Term_p   res = NULL;
 
-    const int limit = DEREF_LIMIT(term, deref);
-    term = TermDeref(term, &deref);
-    putc('.', stdout);
+   const int limit = DEREF_LIMIT(term, deref);
+   term = TermDeref(term, &deref);
+   putc('.', stdout);
 
-    if (!PTreeStore(branch, term)) {
-        return term;
-    }
-    for (i = 0; i < term->arity; i++) {
-        if ((res = term_check_consistency_rek(term->args[i], branch,
-                                              CONVERT_DEREF(i, limit, deref)))) {
-            break;
-        }
-    }
-    PTreeDeleteEntry(branch, term);
-    return res;
+   if(!PTreeStore(branch, term))
+   {
+      return term;
+   }
+   for(i=0; i<term->arity; i++)
+   {
+      if((res = term_check_consistency_rek(term->args[i], branch,
+                                           CONVERT_DEREF(i, limit, deref))))
+      {
+         break;
+      }
+   }
+   PTreeDeleteEntry(branch, term);
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -173,9 +182,10 @@ static Term_p term_check_consistency_rek(Term_p term, PTree_p *branch,
 //
 /----------------------------------------------------------------------*/
 
-Term_p discard_last(Term_p term) {
-    assert(ARG_NUM(term));
-    return TermCreatePrefix(term, ARG_NUM(term) - 1);
+Term_p discard_last(Term_p term)
+{
+   assert(ARG_NUM(term));
+   return TermCreatePrefix(term, ARG_NUM(term)-1);
 }
 
 /*-----------------------------------------------------------------------
@@ -190,39 +200,45 @@ Term_p discard_last(Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-NumTree_p create_var_renaming_de_bruin(VarBank_p vars, Term_p term) {
-    int i;
-    NumTree_p node;
-    NumTree_p root;
-    PStack_p open;
-    long fresh_var_code;
+NumTree_p create_var_renaming_de_bruin(VarBank_p vars, Term_p term)
+{
+   int i;
+   NumTree_p node;
+   NumTree_p root;
+   PStack_p open;
+   long fresh_var_code;
 
-    open = PStackAlloc();
-    fresh_var_code = -2;
-    root = NULL;
+   open = PStackAlloc();
+   fresh_var_code = -2;
+   root = NULL;
 
-    PStackPushP(open, term);
-    while (!PStackEmpty(open)) {
-        term = PStackPopP(open);
-        if (TermIsFreeVar(term)) {
-            if (!NumTreeFind(&root, term->f_code)) {
-                node = NumTreeCellAllocEmpty();
-                node->key = term->f_code;
-                node->val1.p_val = VarBankVarAssertAlloc(vars, fresh_var_code, term->type);
-                //node->val1.p_val = VarBankVarAssertAlloc(vars, fresh_var_code, STIndividuals);
-                fresh_var_code -= 2;
+   PStackPushP(open, term);
+   while(!PStackEmpty(open))
+   {
+      term = PStackPopP(open);
+      if(TermIsFreeVar(term))
+      {
+         if (!NumTreeFind(&root, term->f_code)) {
+            node = NumTreeCellAllocEmpty();
+            node->key = term->f_code;
+            node->val1.p_val = VarBankVarAssertAlloc(vars, fresh_var_code, term->type);
+            //node->val1.p_val = VarBankVarAssertAlloc(vars, fresh_var_code, STIndividuals);
+            fresh_var_code -= 2;
 
-                NumTreeInsert(&root, node);
-            }
-        } else {
-            for (i = 0; i < term->arity; i++) {
-                PStackPushP(open, term->args[term->arity - 1 - i]);
-            }
-        }
-    }
-    PStackFree(open);
+            NumTreeInsert(&root, node);
+         }
+      }
+      else
+      {
+         for(i=0; i<term->arity; i++)
+         {
+            PStackPushP(open, term->args[term->arity-1-i]);
+         }
+      }
+   }
+   PStackFree(open);
 
-    return root;
+   return root;
 }
 
 /*-----------------------------------------------------------------------
@@ -236,47 +252,56 @@ NumTree_p create_var_renaming_de_bruin(VarBank_p vars, Term_p term) {
 // Side Effects    : Output
 //
 /----------------------------------------------------------------------*/
-void print_let(FILE *out, Term_p term, Sig_p sig, DerefType deref) {
-    fputs("$let(", out);
-    long n_decls = term->arity - 1;
+void print_let(FILE* out, Term_p term, Sig_p sig, DerefType deref)
+{
+   fputs("$let(", out);
+   long n_decls = term->arity - 1;
 
-    if (n_decls > 1) {
-        fputs("[", out);
-    }
-    for (int i = 0; i < n_decls; i++) {
-        assert(term->args[i]->f_code == sig->eqn_code);
-        FunCode id = term->args[i]->args[0]->f_code;
-        fputs(SigFindName(sig, id), out);
-        fputs(" : ", out);
-        TypePrintTSTP(out, sig->type_bank, SigGetType(sig, id));
-        if (i != n_decls - 1) {
-            fputs(", ", out);
-        }
-    }
+   if(n_decls > 1)
+   {
+      fputs("[", out);
+   }
+   for(int i=0; i<n_decls; i++)
+   {
+      assert(term->args[i]->f_code == sig->eqn_code);
+      FunCode id = term->args[i]->args[0]->f_code;
+      fputs(SigFindName(sig, id), out);
+      fputs( " : ", out);
+      TypePrintTSTP(out, sig->type_bank, SigGetType(sig, id));
+      if(i!=n_decls-1)
+      {
+         fputs( ", ", out);
+      }
+   }
 
-    if (n_decls > 1) {
-        fputs("]", out);
-    }
-    fputs(", ", out);
+   if(n_decls > 1)
+   {
+      fputs("]", out);
+   }
+   fputs(", ", out);
 
-    if (n_decls > 1) {
-        fputs("[", out);
-    }
-    for (int i = 0; i < n_decls; i++) {
-        TermPrintFO(out, term->args[i]->args[0], sig, deref);
-        fputs(" := ", out);
-        TermPrintFO(out, term->args[i]->args[1], sig, deref);
-        if (i != n_decls - 1) {
-            fputs(", ", out);
-        }
-    }
-    if (n_decls > 1) {
-        fputs("]", out);
-    }
+   if(n_decls > 1)
+   {
+      fputs("[", out);
+   }
+   for(int i=0; i<n_decls; i++)
+   {
+      TermPrintFO(out, term->args[i]->args[0], sig, deref);
+      fputs(" := ", out);
+      TermPrintFO(out, term->args[i]->args[1], sig, deref);
+      if(i!=n_decls-1)
+      {
+         fputs( ", ", out);
+      }
+   }
+   if(n_decls > 1)
+   {
+      fputs("]", out);
+   }
 
-    fputs(", ", out);
-    TermPrintFO(out, term->args[n_decls], sig, deref);
-    fputs(")", out);
+   fputs(", ", out);
+   TermPrintFO(out, term->args[n_decls], sig, deref);
+   fputs(")", out);
 }
 
 
@@ -291,22 +316,29 @@ void print_let(FILE *out, Term_p term, Sig_p sig, DerefType deref) {
 // Side Effects    : Output
 //
 /----------------------------------------------------------------------*/
-bool do_is_db_closed(Term_p t, long depth) {
-    if (!TermHasDBSubterm(t)) {
-        return true;
-    }
-    if (TermIsDBVar(t)) {
-        return t->f_code < depth;
-    }
-    if (TermIsLambda(t)) {
-        return do_is_db_closed(t->args[1], depth + 1);
-    } else {
-        bool closed = true;
-        for (long i = 0; closed && i < t->arity; i++) {
-            closed = closed && do_is_db_closed(t->args[i], depth);
-        }
-        return closed;
-    }
+bool do_is_db_closed(Term_p t,  long depth)
+{
+   if(!TermHasDBSubterm(t))
+   {
+      return true;
+   }
+   if(TermIsDBVar(t))
+   {
+      return t->f_code < depth;
+   }
+   if(TermIsLambda(t))
+   {
+      return do_is_db_closed(t->args[1], depth+1);
+   }
+   else
+   {
+      bool closed = true;
+      for(long i=0; closed && i<t->arity; i++)
+      {
+         closed = closed && do_is_db_closed(t->args[i], depth);
+      }
+      return closed;
+   }
 }
 
 /*-----------------------------------------------------------------------
@@ -320,80 +352,105 @@ bool do_is_db_closed(Term_p t, long depth) {
 // Side Effects    : Output
 //
 /----------------------------------------------------------------------*/
-void do_ho_print(FILE *out, TFormula_p term, Sig_p sig, DerefType deref, int depth) {
-    if (problemType == PROBLEM_FO) {
-        TermPrintFO(out, term, sig, deref);
-        return;
-    }
+void do_ho_print(FILE* out, TFormula_p term, Sig_p sig, DerefType deref, int depth)
+{
+   if (problemType == PROBLEM_FO)
+   {
+      TermPrintFO(out, term, sig, deref);
+      return;
+   }
 
-    assert(term);
-    assert(sig || TermIsFreeVar(term));
+   assert(term);
+   assert(sig||TermIsFreeVar(term));
 
-    const int limit = DEREF_LIMIT(term, deref);
-    term = TermDeref(term, &deref);
+   const int limit = DEREF_LIMIT(term, deref);
+   term = TermDeref(term, &deref);
 
-    if ((!TermIsAnyVar(term) &&
-         !(TFormulaIsQuantified(sig, term) && term->arity == 1) &&
-         ((SigIsLogicalSymbol(sig, term->f_code) && TypeIsBool(term->type)) ||
-          TermIsLambda(term)) &&
-         term->f_code != SIG_TRUE_CODE &&
-         term->f_code != SIG_FALSE_CODE)) {
-        do_fool_print(out, sig, term, depth);
-        return;
-    }
-    if (term->f_code == SIG_ITE_CODE) {
-        assert(term->arity == 3);
-        fprintf(out, "$ite(");
-        do_ho_print(out, term->args[0], sig, deref, depth);
-        fprintf(out, ", ");
-        do_ho_print(out, term->args[1], sig, deref, depth);
-        fprintf(out, ", ");
-        do_ho_print(out, term->args[2], sig, deref, depth);
-        fprintf(out, ")");
-        return;
-    }
+   if((!TermIsAnyVar(term) &&
+       !(TFormulaIsQuantified(sig, term) && term->arity == 1) &&
+      ((SigIsLogicalSymbol(sig, term->f_code) && TypeIsBool(term->type)) ||
+      TermIsLambda(term)) &&
+      term->f_code != SIG_TRUE_CODE &&
+      term->f_code != SIG_FALSE_CODE))
+   {
+      do_fool_print(out, sig, term, depth);
+      return;
+   }
+   if(term->f_code == SIG_ITE_CODE)
+   {
+      assert(term->arity==3);
+      fprintf(out, "$ite(");
+      do_ho_print(out, term->args[0], sig, deref, depth);
+      fprintf(out, ", ");
+      do_ho_print(out, term->args[1], sig, deref, depth);
+      fprintf(out, ", ");
+      do_ho_print(out, term->args[2], sig, deref, depth);
+      fprintf(out, ")");
+      return;
+   }
 
 
-    if (TermIsDBVar(term)) {
-        fprintf(out, "Z%d", depth - (int) term->f_code - 1);
-    } else if (!TermIsTopLevelAnyVar(term)) {
-        if (TermIsPhonyApp(term)) {
-            if (TermIsLambda(term->args[0])) {
-                fputs("( ", out);
-            }
-            do_ho_print(out, term->args[0], sig, deref, depth);
-            if (TermIsLambda(term->args[0])) {
-                fputs(" )", out);
-            }
-        } else {
-            fputs(SigFindName(sig, term->f_code), out);
-        }
-    } else {
-        Term_p var = TermIsAnyVar(term) ? term : term->args[0];
-        if (TermIsFreeVar(var)) {
-            VarPrint(out, var->f_code);
-        } else {
-            fprintf(out, "Z%d", depth - (int) var->f_code - 1);
-        }
-    }
+   if(TermIsDBVar(term))
+   {
+      fprintf(out, "Z%d", depth - (int)term->f_code - 1);
+   }
+   else if(!TermIsTopLevelAnyVar(term))
+   {
+      if(TermIsPhonyApp(term))
+      {
+         if(TermIsLambda(term->args[0]))
+         {
+            fputs("( ", out);
+         }
+         do_ho_print(out, term->args[0], sig, deref, depth);
+         if(TermIsLambda(term->args[0]))
+         {
+            fputs(" )", out);
+         }
+      }
+      else
+      {
+         fputs(SigFindName(sig, term->f_code), out);
+      }
+   }
+   else
+   {
+      Term_p var = TermIsAnyVar(term) ? term : term->args[0];
+      if (TermIsFreeVar(var))
+      {
+         VarPrint(out, var->f_code);
+      }
+      else
+      {
+         fprintf(out, "Z%d", depth - (int)var->f_code - 1);
+      }
 
-    for (int i = TermIsPhonyApp(term) ? 1 : 0; i < term->arity; ++i) {
-        fputs(" @ ", out);
-        DerefType c_deref = CONVERT_DEREF(i, limit, deref);
-        if (term->args[i]->arity ||
-            (c_deref != DEREF_NEVER &&
-             term->args[i]->binding && term->args[i]->binding->arity)) {
-            fputs("(", out);
-            if (TypeIsBool(term->args[i]->type)) {
-                do_fool_print(out, sig, term->args[i], depth);
-            } else {
-                do_ho_print(out, term->args[i], sig, c_deref, depth);
-            }
-            fputs(")", out);
-        } else {
+   }
+
+   for(int i = TermIsPhonyApp(term) ? 1 : 0; i < term->arity; ++i)
+   {
+      fputs(" @ ", out);
+      DerefType c_deref = CONVERT_DEREF(i, limit, deref);
+      if(term->args[i]->arity ||
+         (c_deref != DEREF_NEVER &&
+          term->args[i]->binding && term->args[i]->binding->arity))
+      {
+         fputs("(", out);
+         if(TypeIsBool(term->args[i]->type))
+         {
+            do_fool_print(out, sig, term->args[i], depth);
+         }
+         else
+         {
             do_ho_print(out, term->args[i], sig, c_deref, depth);
-        }
-    }
+         }
+         fputs(")", out);
+      }
+      else
+      {
+         do_ho_print(out, term->args[i], sig, c_deref, depth);
+      }
+   }
 }
 
 /*-----------------------------------------------------------------------
@@ -407,109 +464,157 @@ void do_ho_print(FILE *out, TFormula_p term, Sig_p sig, DerefType deref, int dep
 // Side Effects    : Output
 //
 /----------------------------------------------------------------------*/
-void do_fool_print(FILE *out, Sig_p sig, TFormula_p form, int depth) {
-    assert(form);
+void do_fool_print(FILE* out, Sig_p sig, TFormula_p form, int depth)
+{
+   assert(form);
 
-    if (TermIsDBVar(form)) {
-        fprintf(out, "Z%d", depth - (int) form->f_code - 1);
-    } else if ((form->f_code == sig->eqn_code || form->f_code == sig->neqn_code)
-               && TypeIsBool(form->type)) {
-        if (form->args[1]->f_code == SIG_TRUE_CODE) {
-            if (form->f_code == sig->neqn_code) {
-                fputs("~", out);
-            }
-            PRINT_HO_PAREN(out, '(');
-            do_ho_print(out, form->args[0], sig, DEREF_NEVER, depth);
-            PRINT_HO_PAREN(out, ')');
-        } else {
-            PRINT_HO_PAREN(out, '(');
-            PRINT_HO_PAREN(out, '(');
-            do_ho_print(out, form->args[0], sig, DEREF_NEVER, depth);
-            PRINT_HO_PAREN(out, ')');
-            if (form->f_code == sig->neqn_code) {
-                fputc('!', out);
-            }
-            fputc('=', out);
-            PRINT_HO_PAREN(out, '(');
-            do_ho_print(out, form->args[1], sig, DEREF_NEVER, depth);
-            PRINT_HO_PAREN(out, ')');
-            PRINT_HO_PAREN(out, ')');
-        }
-    } else if ((form->f_code == sig->qex_code || form->f_code == sig->qall_code ||
-                TermIsLambda(form)) && form->arity == 2) {
-        FunCode quantifier = form->f_code;
-        if (form->f_code == sig->qex_code) {
-            fputs("?[", out);
-        } else if (form->f_code == sig->qall_code) {
-            fputs("![", out);
-        } else {
-            fputs("^[", out);
-        }
+   if(TermIsDBVar(form))
+   {
+      fprintf(out, "Z%d", depth - (int)form->f_code - 1);
+   }
+   else if((form->f_code == sig->eqn_code || form->f_code == sig->neqn_code)
+           && TypeIsBool(form->type))
+   {
+      if(form->args[1]->f_code == SIG_TRUE_CODE)
+      {
+         if(form->f_code == sig->neqn_code)
+         {
+           fputs("~", out);
+         }
+         PRINT_HO_PAREN(out, '(');
+         do_ho_print(out, form->args[0], sig, DEREF_NEVER, depth);
+         PRINT_HO_PAREN(out, ')');
+      }
+      else
+      {
+         PRINT_HO_PAREN(out, '(');
+         PRINT_HO_PAREN(out, '(');
+         do_ho_print(out, form->args[0], sig, DEREF_NEVER, depth);
+         PRINT_HO_PAREN(out, ')');
+         if(form->f_code == sig->neqn_code)
+         {
+            fputc('!', out);
+         }
+         fputc('=', out);
+         PRINT_HO_PAREN(out, '(');
+         do_ho_print(out, form->args[1], sig, DEREF_NEVER, depth);
+         PRINT_HO_PAREN(out, ')');
+         PRINT_HO_PAREN(out, ')');
+      }
 
-        if (form->f_code == SIG_DB_LAMBDA_CODE) {
+   }
+   else if((form->f_code == sig->qex_code || form->f_code == sig->qall_code ||
+           TermIsLambda(form)) && form->arity == 2)
+   {
+      FunCode quantifier = form->f_code;
+      if(form->f_code == sig->qex_code)
+      {
+         fputs("?[", out);
+      }
+      else if (form->f_code == sig->qall_code)
+      {
+         fputs("![", out);
+      }
+      else
+      {
+         fputs("^[", out);
+      }
+
+      if(form->f_code == SIG_DB_LAMBDA_CODE)
+      {
+         fprintf(out, "Z%d", depth);
+         fprintf(out, "/* %ld */", form->args[1]->f_code);
+         depth++;
+      }
+      else
+      {
+         do_ho_print(out, form->args[0], sig, DEREF_NEVER, depth);
+      }
+
+      if(problemType == PROBLEM_HO || !TypeIsIndividual(form->args[0]->type))
+      {
+         fputs(":", out);
+         TypePrintTSTP(out, sig->type_bank, form->args[0]->type);
+      }
+      while(form->args[1]->f_code == quantifier)
+      {
+         form = form->args[1];
+         fputs(", ", out);
+         if(form->f_code == SIG_DB_LAMBDA_CODE)
+         {
             fprintf(out, "Z%d", depth);
-            fprintf(out, "/* %ld */", form->args[1]->f_code);
             depth++;
-        } else {
+         }
+         else
+         {
             do_ho_print(out, form->args[0], sig, DEREF_NEVER, depth);
-        }
-
-        if (problemType == PROBLEM_HO || !TypeIsIndividual(form->args[0]->type)) {
+         }
+         if(problemType == PROBLEM_HO || !TypeIsIndividual(form->args[0]->type))
+         {
             fputs(":", out);
             TypePrintTSTP(out, sig->type_bank, form->args[0]->type);
-        }
-        while (form->args[1]->f_code == quantifier) {
-            form = form->args[1];
-            fputs(", ", out);
-            if (form->f_code == SIG_DB_LAMBDA_CODE) {
-                fprintf(out, "Z%d", depth);
-                depth++;
-            } else {
-                do_ho_print(out, form->args[0], sig, DEREF_NEVER, depth);
-            }
-            if (problemType == PROBLEM_HO || !TypeIsIndividual(form->args[0]->type)) {
-                fputs(":", out);
-                TypePrintTSTP(out, sig->type_bank, form->args[0]->type);
-            }
-        }
-        fputs("]:(", out);
-        do_fool_print(out, sig, form->args[1], depth);
-        fputs(")", out);
-    } else if (form->f_code == sig->not_code) {
-        assert(form->f_code == sig->not_code);
-        fputs("~(", out);
-        do_fool_print(out, sig, form->args[0], depth);
-        fputs(")", out);
-    } else {
-        char *oprep = "XXX";
-        // does not print or chain now
-        if (!TermIsFreeVar(form) && SigQueryFuncProp(sig, form->f_code, FPFOFOp) && form->arity == 2) {
-            fputs("(", out);
-            do_fool_print(out, sig, form->args[0], depth);
-            if (form->f_code == sig->and_code) {
-                oprep = "&";
-            } else if (form->f_code == sig->or_code) {
-                oprep = "|";
-            } else if (form->f_code == sig->impl_code) {
-                oprep = "=>";
-            } else if (form->f_code == sig->equiv_code) {
-                oprep = "<=>";
-            } else if (form->f_code == sig->nand_code) {
-                oprep = "~&";
-            } else if (form->f_code == sig->nor_code) {
-                oprep = "~|";
-            } else if (form->f_code == sig->bimpl_code) {
-                oprep = "<=";
-            } else if (form->f_code == sig->xor_code) {
-                oprep = "<~>";
-            }
-            fputs(oprep, out);
-            do_fool_print(out, sig, form->args[1], depth);
-            fputs(")", out);
-        } else {
-            do_ho_print(out, form, sig, DEREF_NEVER, depth);
-        }
-    }
+         }
+      }
+      fputs("]:(", out);
+      do_fool_print(out, sig, form->args[1], depth);
+      fputs(")", out);
+   }
+   else if(form->f_code == sig->not_code)
+   {
+      assert(form->f_code == sig->not_code);
+      fputs("~(", out);
+      do_fool_print(out, sig, form->args[0], depth);
+      fputs(")", out);
+   }
+   else
+   {
+      char* oprep = "XXX";
+      // does not print or chain now
+      if(!TermIsFreeVar(form) && SigQueryFuncProp(sig, form->f_code, FPFOFOp) && form->arity == 2)
+      {
+         fputs("(", out);
+         do_fool_print(out, sig, form->args[0], depth);
+         if(form->f_code == sig->and_code)
+         {
+            oprep = "&";
+         }
+         else if(form->f_code == sig->or_code)
+         {
+            oprep = "|";
+         }
+         else if(form->f_code == sig->impl_code)
+         {
+            oprep = "=>";
+         }
+         else if(form->f_code == sig->equiv_code)
+         {
+            oprep = "<=>";
+         }
+         else if(form->f_code == sig->nand_code)
+         {
+            oprep = "~&";
+         }
+         else if(form->f_code == sig->nor_code)
+         {
+         oprep = "~|";
+         }
+         else if(form->f_code == sig->bimpl_code)
+         {
+            oprep = "<=";
+         }
+         else if(form->f_code == sig->xor_code)
+         {
+            oprep = "<~>";
+         }
+         fputs(oprep, out);
+         do_fool_print(out, sig, form->args[1], depth);
+         fputs(")", out);
+      }
+      else
+      {
+         do_ho_print(out, form, sig, DEREF_NEVER, depth);
+      }
+   }
 }
 
 /*---------------------------------------------------------------------*/
@@ -529,15 +634,17 @@ void do_fool_print(FILE *out, Sig_p sig, TFormula_p form, int depth) {
 //
 /----------------------------------------------------------------------*/
 
-void VarPrint(FILE *out, FunCode var) {
-    char id;
-    assert(var < 0);
+void VarPrint(FILE* out, FunCode var)
+{
+   char id;
+   assert(var<0);
 
-    id = 'X';
-    if (var % 2) {
-        id = 'Y';
-    }
-    fprintf(out, "%c%ld", id, -((var - 1) / 2));
+   id = 'X';
+   if(var%2)
+   {
+      id = 'Y';
+   }
+   fprintf(out, "%c%ld", id, -((var-1)/2));
 }
 
 
@@ -552,46 +659,57 @@ void VarPrint(FILE *out, FunCode var) {
 // Side Effects    : Output
 //
 /----------------------------------------------------------------------*/
-void TermPrintFO(FILE *out, Term_p term, Sig_p sig, DerefType deref) {
-    assert(term);
-    assert(sig || TermIsFreeVar(term));
-    // no need to change derefs here -- FOL
+void TermPrintFO(FILE* out, Term_p term, Sig_p sig, DerefType deref)
+{
+   assert(term);
+   assert(sig||TermIsFreeVar(term));
+   // no need to change derefs here -- FOL
 
-    term = TermDeref(term, &deref);
+   term = TermDeref(term, &deref);
 
-    if (term->f_code == SIG_LET_CODE) {
-        print_let(out, term, sig, deref);
-        return;
-    }
-    if (!TermIsFreeVar(term) &&
-        SigIsLogicalSymbol(sig, term->f_code) &&
-        term->f_code != SIG_TRUE_CODE &&
-        term->f_code != SIG_FALSE_CODE) {
-        TermFOOLPrint(out, sig, term);
-        return;
-    }
+   if(term->f_code == SIG_LET_CODE)
+   {
+      print_let(out, term, sig, deref);
+      return;
+   }
+   if(!TermIsFreeVar(term) &&
+      SigIsLogicalSymbol(sig, term->f_code) &&
+      term->f_code != SIG_TRUE_CODE &&
+      term->f_code != SIG_FALSE_CODE)
+   {
+      TermFOOLPrint(out, sig, term);
+      return;
+   }
 
-    if (SigSupportLists && TermPrintLists &&
-    ((term->f_code == SIG_NIL_CODE) ||
-     (term->f_code == SIG_CONS_CODE))) {
-        print_cons_list(out, term, sig, deref);
-    } else {
-        if (TermIsFreeVar(term)) {
-            VarPrint(out, term->f_code);
-        } else {
-            fputs(SigFindName(sig, term->f_code), out);
-            // fprintf(out, "(%ld)", term->f_code);
-            if (!TermIsConst(term)) {
-                assert(term->args);
-                TermPrintArgList(out, term->args, term->arity, sig, deref);
-            }
-        }
-    }
+   if(SigSupportLists && TermPrintLists &&
+      ((term->f_code == SIG_NIL_CODE)||
+       (term->f_code == SIG_CONS_CODE)))
+   {
+      print_cons_list(out, term, sig, deref);
+   }
+   else
+   {
+      if(TermIsFreeVar(term))
+      {
+         VarPrint(out, term->f_code);
+      }
+      else
+      {
+         fputs(SigFindName(sig, term->f_code), out);
+         // fprintf(out, "(%ld)", term->f_code);
+         if(!TermIsConst(term))
+         {
+            assert(term->args);
+            TermPrintArgList(out, term->args, term->arity, sig, deref);
+         }
+      }
+   }
 
-    if (TermPrintTypes) {
-        fputc(':', out);
-        TypePrintTSTP(out, sig->type_bank, term->type);
-    }
+   if(TermPrintTypes)
+   {
+      fputc(':', out);
+      TypePrintTSTP(out, sig->type_bank, term->type);
+   }
 }
 
 
@@ -612,8 +730,9 @@ void TermPrintFO(FILE *out, Term_p term, Sig_p sig, DerefType deref) {
 //
 /----------------------------------------------------------------------*/
 
-void TermPrintHO(FILE *out, Term_p term, Sig_p sig, DerefType deref) {
-    do_ho_print(out, term, sig, deref, 0);
+void TermPrintHO(FILE* out, Term_p term, Sig_p sig, DerefType deref)
+{
+   do_ho_print(out, term, sig, deref, 0);
 }
 
 
@@ -630,34 +749,41 @@ void TermPrintHO(FILE *out, Term_p term, Sig_p sig, DerefType deref) {
 //
 /----------------------------------------------------------------------*/
 
-void TermPrintDbgHO(FILE *out, Term_p term, Sig_p sig, DerefType deref) {
-    assert(term);
-    assert(sig || TermIsFreeVar(term));
+void TermPrintDbgHO(FILE* out, Term_p term, Sig_p sig, DerefType deref)
+{
+   assert(term);
+   assert(sig||TermIsFreeVar(term));
 
-    const int limit = DEREF_LIMIT(term, deref);
-    term = TermDeref(term, &deref);
+   const int limit = DEREF_LIMIT(term, deref);
+   term = TermDeref(term, &deref);
 
-    if (TermIsDBVar(term)) {
-        // assert(term->arity == 0);
-        fprintf(out, "db(%ld)", term->f_code);
-    } else if (!TermIsFreeVar(term)) {
-        fputs(SigFindName(sig, term->f_code), out);
-    } else {
-        VarPrint(out, (TermIsFreeVar(term) ? term : term->args[0])->f_code);
-        // fputs(" : ", out);
-        // TypePrintTSTP(stderr, sig->type_bank, (TermIsFreeVar(term) ? term : term->args[0])->type);
-    }
+   if(TermIsDBVar(term))
+   {
+      // assert(term->arity == 0);
+      fprintf(out, "db(%ld)", term->f_code);
+   }
+   else if(!TermIsFreeVar(term))
+   {
+      fputs(SigFindName(sig, term->f_code), out);
+   }
+   else
+   {
+      VarPrint(out, (TermIsFreeVar(term) ? term : term->args[0])->f_code);
+      // fputs(" : ", out);
+      // TypePrintTSTP(stderr, sig->type_bank, (TermIsFreeVar(term) ? term : term->args[0])->type);
+   }
 
 
-    for (int i = 0; i < term->arity; ++i) { 
+   for(int i = 0; i < term->arity; ++i)
+   {
 #ifdef PRINT_AT
-fputs (" @ ", out);
+      fputs(" @ ", out);
 #else
-fputs (" ", out);
+      fputs(" ", out);
 #endif
-DerefType c_deref = CONVERT_DEREF(i, limit, deref);
-      if(term->args [i]->arity||
-(c_deref!= DEREF_NEVER &&term->args [i]->binding &&term->args [i]->binding->arity))
+      DerefType c_deref = CONVERT_DEREF(i, limit, deref);
+      if(term->args[i]->arity ||
+         (c_deref != DEREF_NEVER && term->args[i]->binding && term->args[i]->binding->arity))
       {
          fputs("(", out);
          TermPrintDbgHO(out, term->args[i], sig, c_deref);
@@ -686,22 +812,25 @@ DerefType c_deref = CONVERT_DEREF(i, limit, deref);
 //
 /----------------------------------------------------------------------*/
 
-void TermPrintArgList(FILE *out, Term_p *args, int arity, Sig_p sig,
-                      DerefType deref) {
-    int i;
+void TermPrintArgList(FILE* out, Term_p *args, int arity, Sig_p sig,
+                      DerefType deref)
+{
+   int i;
 
-    assert(arity >= 1);
-    putc('(', out);
+   assert(arity>=1);
+   putc('(', out);
 
-    TermPrintFO(out, args[0], sig, deref);
+   TermPrintFO(out, args[0], sig, deref);
 
-    for (i = 1; i < arity; i++) {
-        putc(',', out);
-        /* putc(' ', out); */
-        TermPrintFO(out, args[i], sig, deref);
-    }
-    putc(')', out);
+   for(i=1; i<arity; i++)
+   {
+      putc(',', out);
+      /* putc(' ', out); */
+      TermPrintFO(out, args[i], sig, deref);
+   }
+   putc(')', out);
 }
+
 
 
 /*-----------------------------------------------------------------------
@@ -717,32 +846,38 @@ void TermPrintArgList(FILE *out, Term_p *args, int arity, Sig_p sig,
 //
 /----------------------------------------------------------------------*/
 
-void TermPrintSimple(FILE *out, Term_p term, Sig_p sig) {
-    assert(term);
-    assert(sig || TermIsAnyVar(term));
-    // no need to change derefs here -- FOL
+void TermPrintSimple(FILE* out, Term_p term, Sig_p sig)
+{
+   assert(term);
+   assert(sig||TermIsAnyVar(term));
+   // no need to change derefs here -- FOL
 
-    if (TermIsFreeVar(term)) {
-        VarPrint(out, term->f_code);
-    } else {
-        fputs(SigFindName(sig, term->f_code), out);
-        if (!TermIsConst(term)) {
-            assert(term->args);
-            int i;
+   if(TermIsFreeVar(term))
+   {
+      VarPrint(out, term->f_code);
+   }
+   else
+   {
+      fputs(SigFindName(sig, term->f_code), out);
+      if(!TermIsConst(term))
+      {
+         assert(term->args);
+         int i;
 
-            assert(term->arity >= 1);
-            putc('(', out);
+         assert(term->arity>=1);
+         putc('(', out);
 
-            TermPrintSimple(out, term->args[0], sig);
+         TermPrintSimple(out, term->args[0], sig);
 
-            for (i = 1; i < term->arity; i++) {
-                putc(',', out);
-                /* putc(' ', out); */
-                TermPrintSimple(out, term->args[i], sig);
-            }
-            putc(')', out);
-        }
-    }
+         for(i=1; i<term->arity; i++)
+         {
+            putc(',', out);
+            /* putc(' ', out); */
+            TermPrintSimple(out, term->args[i], sig);
+         }
+         putc(')', out);
+      }
+   }
 }
 
 /*-----------------------------------------------------------------------
@@ -757,18 +892,22 @@ void TermPrintSimple(FILE *out, Term_p term, Sig_p sig) {
 //
 ----------------------------------------------------------------------*/
 
-bool TermIsFlat(Term_p t) {
-    int i;
+bool TermIsFlat(Term_p t)
+{
+   int i;
 
-    if (TermIsConst(t) || TermIsFreeVar(t)) {
-        return true;
-    }
-    for (i = 0; i < t->arity; i++) {
-        if (!TermIsConst(t->args[i]) && !TermIsFreeVar(t->args[i])) {
-            return false;
-        }
-    }
-    return true;
+   if(TermIsConst(t) || TermIsFreeVar(t))
+   {
+      return true;
+   }
+   for(i=0; i<t->arity; i++)
+   {
+      if(!TermIsConst(t->args[i]) && !TermIsFreeVar(t->args[i]))
+      {
+         return false;
+      }
+   }
+   return true;
 }
 
 /*-----------------------------------------------------------------------
@@ -785,55 +924,71 @@ bool TermIsFlat(Term_p t) {
 //
 /----------------------------------------------------------------------*/
 
-void TermPrettyPrintSimple(FILE *out, Term_p term, Sig_p sig, int level) {
-    int i;
-    assert(term);
-    assert(sig || TermIsAnyVar(term));
-    // no need to change derefs here -- FOL
+void TermPrettyPrintSimple(FILE* out, Term_p term, Sig_p sig, int level)
+{
+   int i;
+   assert(term);
+   assert(sig||TermIsAnyVar(term));
+   // no need to change derefs here -- FOL
 
-    for (i = 0; i < level; i++) {
-        fputs("  ", out);
-    }
+   for(i=0; i<level; i++)
+   {
+      fputs("  ", out);
+   }
 
-    TypePrintTSTP(out, sig->type_bank, term->type);
-    fprintf(out, ":");
-    if (TermIsFreeVar(term)) {
-        VarPrint(out, term->f_code);
-        fputs(":", out);
-        TypePrintTSTP(out, sig->type_bank, term->type);
-    } else {
-        fputs(SigFindName(sig, term->f_code), out);
-        if (term->arity) {
-            //assert(term->args);
-            assert(term->arity >= 1);
-            if (TermIsFlat(term)) {
-                fputc('(', out);
+   TypePrintTSTP(out, sig->type_bank, term->type);
+   fprintf(out, ":");
+   if(TermIsFreeVar(term))
+   {
+      VarPrint(out, term->f_code);
+      fputs(":", out);
+      TypePrintTSTP(out, sig->type_bank, term->type);
 
-                TermPrettyPrintSimple(out, term->args[0], sig, 0);
+   }
+   else
+   {
+      fputs(SigFindName(sig, term->f_code), out);
+      if(term->arity)
+      {
+         //assert(term->args);
+         assert(term->arity>=1);
+         if(TermIsFlat(term))
+         {
+            fputc('(', out);
 
-                for (i = 1; i < term->arity; i++) {
-                    fputc(',', out);
-                    TermPrettyPrintSimple(out, term->args[i], sig, 0);
-                }
-                fputc(')', out);
-            } else {
-                fputs("(\n", out);
+            TermPrettyPrintSimple(out, term->args[0], sig, 0);
 
-                TermPrettyPrintSimple(out, term->args[0], sig, level + 1);
-
-                for (i = 1; i < term->arity; i++) {
-                    fputs(",\n", out);
-                    TermPrettyPrintSimple(out, term->args[i], sig, level + 1);
-                }
-                fputc('\n', out);
-                for (i = 0; i < level; i++) {
-                    fputs("  ", out);
-                }
-                putc(')', out);
+            for(i=1; i<term->arity; i++)
+            {
+               fputc(',', out);
+               TermPrettyPrintSimple(out, term->args[i], sig, 0);
             }
-        }
-    }
+            fputc(')', out);
+         }
+         else
+         {
+            fputs("(\n", out);
+
+            TermPrettyPrintSimple(out, term->args[0], sig, level+1);
+
+            for(i=1; i<term->arity; i++)
+            {
+               fputs(",\n", out);
+               TermPrettyPrintSimple(out, term->args[i], sig, level+1);
+            }
+            fputc('\n', out);
+            for(i=0; i<level; i++)
+            {
+               fputs("  ", out);
+            }
+            putc(')', out);
+         }
+      }
+   }
 }
+
+
+
 
 
 /*-----------------------------------------------------------------------
@@ -860,20 +1015,22 @@ void TermPrettyPrintSimple(FILE *out, Term_p term, Sig_p sig, int level) {
 //
 /----------------------------------------------------------------------*/
 
-FuncSymbType TermParseOperator(Scanner_p in, DStr_p id) {
-    FuncSymbType res = FuncSymbParse(in, id);
+FuncSymbType TermParseOperator(Scanner_p in, DStr_p id)
+{
+   FuncSymbType res = FuncSymbParse(in, id);
 
 #ifndef STRICT_TPTP
-    if ((isupper(DStrView(id)[0])
-         ||
-         (DStrView(id)[0] == '_'))
-        &&
-        TestInpTok(in, OpenBracket)) {
-        res = FSIdentFreeFun;
-    }
+   if((isupper(DStrView(id)[0])
+       ||
+       (DStrView(id)[0] == '_'))
+      &&
+      TestInpTok(in,OpenBracket))
+   {
+      res = FSIdentFreeFun;
+   }
 #endif
 
-    return res;
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -889,32 +1046,34 @@ FuncSymbType TermParseOperator(Scanner_p in, DStr_p id) {
 //
 /----------------------------------------------------------------------*/
 
-FunCode TermSigInsert(Sig_p sig, const char *name, int arity, bool
-                      special_id, FuncSymbType type) {
-    FunCode res;
+FunCode TermSigInsert(Sig_p sig, const char* name, int arity, bool
+                      special_id, FuncSymbType type)
+{
+   FunCode res;
 
-    res = SigInsertId(sig, name, arity, special_id);
-    switch (type) {
-        case FSIdentInt:
-            SigSetFuncProp(sig, res, FPIsInteger);
-            break;
-        case FSIdentFloat:
-            SigSetFuncProp(sig, res, FPIsFloat);
-            break;
-        case FSIdentRational:
-            SigSetFuncProp(sig, res, FPIsRational);
-            break;
-        case FSIdentObject:
-            SigSetFuncProp(sig, res, FPIsObject);
-            break;
-        case FSIdentInterpreted:
-            SigSetFuncProp(sig, res, FPInterpreted);
-            break;
-        default:
-            /* Nothing */
-            break;
-    }
-    return res;
+   res = SigInsertId(sig, name, arity, special_id);
+   switch(type)
+   {
+   case FSIdentInt:
+         SigSetFuncProp(sig, res, FPIsInteger);
+         break;
+   case FSIdentFloat:
+         SigSetFuncProp(sig, res, FPIsFloat);
+         break;
+   case FSIdentRational:
+         SigSetFuncProp(sig, res, FPIsRational);
+         break;
+   case FSIdentObject:
+         SigSetFuncProp(sig, res, FPIsObject);
+         break;
+   case FSIdentInterpreted:
+         SigSetFuncProp(sig, res, FPInterpreted);
+         break;
+   default:
+         /* Nothing */
+         break;
+   }
+   return res;
 }
 
 
@@ -931,76 +1090,92 @@ FunCode TermSigInsert(Sig_p sig, const char *name, int arity, bool
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermParse(Scanner_p in, Sig_p sig, VarBank_p vars) {
-    Term_p handle;
-    DStr_p id;
-    FuncSymbType id_type;
-    DStr_p source_name, errpos;
-    Type_p type;
-    long line, column;
-    StreamType type_stream;
+Term_p TermParse(Scanner_p in, Sig_p sig, VarBank_p vars)
+{
+   Term_p        handle;
+   DStr_p        id;
+   FuncSymbType id_type;
+   DStr_p        source_name, errpos;
+   Type_p        type;
+   long          line, column;
+   StreamType    type_stream;
 
-    if (SigSupportLists &&TestInpTok(in, OpenSquare)) {
-        handle = parse_cons_list(in, sig, vars);
-    } else {
-        id = DStrAlloc();
-        line = AktToken(in)->line;
-        column = AktToken(in)->column;
-        source_name = DStrGetRef(AktToken(in)->source);
-        type_stream = AktToken(in)->stream_type;
+   if(SigSupportLists && TestInpTok(in, OpenSquare))
+   {
+      handle =  parse_cons_list(in, sig, vars);
+   }
+   else
+   {
+      id = DStrAlloc();
+      line = AktToken(in)->line;
+      column = AktToken(in)->column;
+      source_name = DStrGetRef(AktToken(in)->source);
+      type_stream = AktToken(in)->stream_type;
 
-        if ((id_type = TermParseOperator(in, id)) == FSIdentVar) {
-            /* A variable may be annotated with a type */
-            if (TestInpTok(in, Colon)) {
-                AcceptInpTok(in, Colon);
-                type = TypeBankParseType(in, vars->sort_table);
-                handle = VarBankExtNameAssertAllocSort(vars,
-                                                       DStrView(id), type);
-            } else {
-                handle = VarBankExtNameAssertAlloc(vars, DStrView(id));
+      if((id_type = TermParseOperator(in, id))==FSIdentVar)
+      {
+         /* A variable may be annotated with a type */
+         if(TestInpTok(in, Colon))
+         {
+            AcceptInpTok(in, Colon);
+            type = TypeBankParseType(in, vars->sort_table);
+            handle = VarBankExtNameAssertAllocSort(vars,
+                                                   DStrView(id), type);
+         }
+         else
+         {
+            handle = VarBankExtNameAssertAlloc(vars, DStrView(id));
+         }
+      }
+      else
+      {
+         handle = NULL;
+
+         if(TestInpTok(in, OpenBracket))
+         {
+            if((id_type == FSIdentInt)
+               &&(sig->distinct_props & FPIsInteger))
+            {
+               AktTokenError(in,
+                             "Number cannot have argument list (consider --free-numbers)",
+                             false);
             }
-        } else {
-            handle = NULL;
-
-            if (TestInpTok(in, OpenBracket)) {
-                if ((id_type == FSIdentInt)
-                    && (sig->distinct_props & FPIsInteger)) {
-                    AktTokenError(in,
-                                  "Number cannot have argument list (consider --free-numbers)",
-                                  false);
-                }
-                if ((id_type == FSIdentObject)
-                    && (sig->distinct_props & FPIsObject)) {
-                    AktTokenError(in,
-                                  "Object cannot have argument list (consider --free-objects)",
-                                  false);
-                }
-
-                handle = TermParseArgList(in, sig, vars);
-            } else {
-                handle->arity = 0;
+            if((id_type == FSIdentObject)
+               &&(sig->distinct_props & FPIsObject))
+            {
+               AktTokenError(in,
+                             "Object cannot have argument list (consider --free-objects)",
+                             false);
             }
-            handle->f_code = TermSigInsert(sig, DStrView(id),
-                                           handle->arity, false, id_type);
-            if (!handle->f_code) {
-                errpos = DStrAlloc();
 
-                DStrAppendStr(errpos, PosRep(type_stream, source_name, line, column));
-                DStrAppendChar(errpos, ' ');
-                DStrAppendStr(errpos, DStrView(id));
-                DStrAppendStr(errpos, " used with arity ");
-                DStrAppendInt(errpos, (long) handle->arity);
-                DStrAppendStr(errpos, " but registered with arity ");
-                DStrAppendInt(errpos,
-                              (long) SigFindArity(sig, SigFindFCode(sig, DStrView(id))));
-                Error(DStrView(errpos), SYNTAX_ERROR);
-                DStrFree(errpos);
-            }
-        }
-        DStrReleaseRef(source_name);
-        DStrFree(id);
-    }
-    return handle;
+            handle = TermParseArgList(in, sig, vars);
+         }
+         else
+         {
+            handle->arity = 0;
+         }
+         handle->f_code = TermSigInsert(sig, DStrView(id),
+                                        handle->arity, false, id_type);
+         if(!handle->f_code)
+         {
+            errpos = DStrAlloc();
+
+            DStrAppendStr(errpos, PosRep(type_stream, source_name, line, column));
+            DStrAppendChar(errpos, ' ');
+            DStrAppendStr(errpos, DStrView(id));
+            DStrAppendStr(errpos, " used with arity ");
+            DStrAppendInt(errpos, (long)handle->arity);
+            DStrAppendStr(errpos, " but registered with arity ");
+            DStrAppendInt(errpos,
+                          (long)SigFindArity(sig, SigFindFCode(sig, DStrView(id))));
+            Error(DStrView(errpos), SYNTAX_ERROR);
+            DStrFree(errpos);
+         }
+      }
+      DStrReleaseRef(source_name);
+      DStrFree(id);
+   }
+   return handle;
 }
 
 
@@ -1023,38 +1198,42 @@ Term_p TermParse(Scanner_p in, Sig_p sig, VarBank_p vars) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermParseArgList(Scanner_p in, Sig_p sig, VarBank_p vars) {
-    Term_p tmp;
-    Term_p result;
-    PStackPointer i, arity;
-    PStack_p args;
+Term_p TermParseArgList(Scanner_p in, Sig_p sig, VarBank_p vars)
+{
+   Term_p   tmp;
+   Term_p result;
+   PStackPointer i, arity;
+   PStack_p args;
 
-    AcceptInpTok(in, OpenBracket);
-    if (TestInpTok(in, CloseBracket)) {
-        NextToken(in);
-        result = TermDefaultCellAlloc();
+   AcceptInpTok(in, OpenBracket);
+   if(TestInpTok(in, CloseBracket))
+   {
+      NextToken(in);
+      result = TermDefaultCellAlloc();
 
-        return result;
-    }
-    args = PStackAlloc();
-    tmp = TermParse(in, sig, vars);
-    PStackPushP(args, tmp);
+      return result;
+   }
+   args = PStackAlloc();
+   tmp = TermParse(in, sig, vars);
+   PStackPushP(args, tmp);
 
-    while (TestInpTok(in, Comma)) {
-        NextToken(in);
-        tmp = TermParse(in, sig, vars);
-        PStackPushP(args, tmp);
-    }
-    AcceptInpTok(in, CloseBracket);
-    arity = PStackGetSP(args);
-    result = TermDefaultCellArityAlloc(arity);
+   while(TestInpTok(in, Comma))
+   {
+      NextToken(in);
+      tmp = TermParse(in, sig, vars);
+      PStackPushP(args, tmp);
+   }
+   AcceptInpTok(in, CloseBracket);
+   arity = PStackGetSP(args);
+   result = TermDefaultCellArityAlloc(arity);
 
-    for (i = 0; i < arity; i++) {
-        result->args[i] = PStackElementP(args, i);
-    }
-    PStackFree(args);
+   for(i=0;i<arity;i++)
+   {
+      result->args[i] = PStackElementP(args,i);
+   }
+   PStackFree(args);
 
-    return result;
+   return result;
 }
 
 
@@ -1073,35 +1252,45 @@ Term_p TermParseArgList(Scanner_p in, Sig_p sig, VarBank_p vars) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermCopy(Term_p source, VarBank_p vars, DBVarBank_p dbvars, DerefType deref) {
-    Term_p handle;
-    int i;
+Term_p TermCopy(Term_p source, VarBank_p vars, DBVarBank_p dbvars, DerefType deref)
+{
+   Term_p handle;
+   int i;
 
-    assert(source);
+   assert(source);
 
-    const int limit = DEREF_LIMIT(source, deref);
-    source = TermDeref(source, &deref);
+   const int limit = DEREF_LIMIT(source, deref);
+   source = TermDeref(source, &deref);
 
-    if (TermIsFreeVar(source)) {
-        handle = VarBankVarAssertAlloc(vars, source->f_code, source->type);
-    } else if (TermIsDBVar(source)) {
-        if (!dbvars) {
-            handle = source;
-        } else {
-            handle = _RequestDBVar(dbvars, source->type, source->f_code);
-            TermSetBank(handle, vars->term_bank);
-        }
-    } else {
-        handle = TermTopCopyWithoutArgs(source);
+   if(TermIsFreeVar(source))
+   {
+      handle = VarBankVarAssertAlloc(vars, source->f_code, source->type);
+   }
+   else if (TermIsDBVar(source))
+   {
+      if(!dbvars)
+      {
+         handle = source;
+      }
+      else
+      {
+         handle = _RequestDBVar(dbvars, source->type, source->f_code);
+         TermSetBank(handle, vars->term_bank);
+      }
+   }
+   else
+   {
+      handle = TermTopCopyWithoutArgs(source);
 
-        for (i = 0; i < handle->arity; i++) {
-            handle->args[i] = TermCopy(source->args[i], vars, dbvars,
-                                       CONVERT_DEREF(i, limit, deref));
-        }
-    }
+      for(i=0; i<handle->arity; i++)
+      {
+         handle->args[i] = TermCopy(source->args[i], vars, dbvars,
+                                    CONVERT_DEREF(i, limit, deref));
+      }
+   }
 
-    TermSetBank(handle, TermGetBank(source));
-    return handle;
+   TermSetBank(handle, TermGetBank(source));
+   return handle;
 }
 
 
@@ -1121,28 +1310,30 @@ Term_p TermCopy(Term_p source, VarBank_p vars, DBVarBank_p dbvars, DerefType der
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermCopyKeepVars(Term_p source, DerefType deref) {
-    Term_p handle;
-    int i;
+Term_p TermCopyKeepVars(Term_p source, DerefType deref)
+{
+   Term_p handle;
+   int i;
 
-    assert(source);
+   assert(source);
 
-    const int limit = DEREF_LIMIT(source, deref);
-    source = TermDeref(source, &deref);
+   const int limit = DEREF_LIMIT(source, deref);
+   source = TermDeref(source, &deref);
 
-    if (TermIsAnyVar(source)) {
-        return source;
-    }
+   if(TermIsAnyVar(source))
+   {
+      return source;
+   }
 
-    handle = TermTopCopy(source);
+   handle = TermTopCopy(source);
 
-    for (i = 0; i < handle->arity; i++) /* Hack: Loop will not be entered if
+   for(i=0; i<handle->arity; i++) /* Hack: Loop will not be entered if
                                      arity = 0 */
-    {
-        handle->args[i] = TermCopyKeepVars(handle->args[i],
-                                           CONVERT_DEREF(i, limit, deref));
-    }
-    return handle;
+   {
+      handle->args[i] = TermCopyKeepVars(handle->args[i],
+                                         CONVERT_DEREF(i, limit, deref));
+   }
+   return handle;
 }
 
 
@@ -1159,8 +1350,9 @@ Term_p TermCopyKeepVars(Term_p source, DerefType deref) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermStructEqual(Term_p t1, Term_p t2) {
-    return TermStructEqualDeref(t1, t2, DEREF_ALWAYS, DEREF_ALWAYS);
+bool TermStructEqual(Term_p t1, Term_p t2)
+{
+   return TermStructEqualDeref(t1, t2, DEREF_ALWAYS, DEREF_ALWAYS);
 }
 
 
@@ -1178,38 +1370,45 @@ bool TermStructEqual(Term_p t1, Term_p t2) {
 /----------------------------------------------------------------------*/
 
 
-bool TermStructEqualNoDeref(Term_p t1, Term_p t2) {
-    if (t1 == t2) {
-        return true;
-    }
+bool TermStructEqualNoDeref(Term_p t1, Term_p t2)
+{
+   if(t1==t2)
+   {
+      return true;
+   }
 
-    if (TermIsDBVar(t1) != TermIsDBVar(t2)) {
-        return false;
-    }
+   if(TermIsDBVar(t1) != TermIsDBVar(t2))
+   {
+      return false;
+   }
 
-    if (t1->f_code != t2->f_code) {
-        return false;
-    }
+   if(t1->f_code != t2->f_code)
+   {
+      return false;
+   }
 
-    if (t1->type != t2->type) {
-        // in HO case, it is posible for term
-        // to have same head but different arities.
-        // in that case the type must be different.
-        assert(problemType == PROBLEM_HO);
-        assert(TermIsPhonyApp(t1) || TermIsDBVar(t1) || TermIsLambda(t1) || t1->arity != t2->arity);
-        return false;
-    }
+   if(t1->type != t2->type)
+   {
+      // in HO case, it is posible for term
+      // to have same head but different arities.
+      // in that case the type must be different.
+      assert(problemType == PROBLEM_HO);
+      assert(TermIsPhonyApp(t1) || TermIsDBVar(t1) ||  TermIsLambda(t1) || t1->arity != t2->arity);
+      return false;
+   }
 
-    //old asserts
-    assert(problemType == PROBLEM_HO || t1->type == t2->type);
-    assert(problemType == PROBLEM_HO || t1->arity == t2->arity);
+   //old asserts
+   assert(problemType == PROBLEM_HO || t1->type == t2->type);
+   assert(problemType == PROBLEM_HO || t1->arity == t2->arity);
 
-    for (int i = 0; i < t1->arity; i++) {
-        if (!TermStructEqualNoDeref(t1->args[i], t2->args[i])) {
-            return false;
-        }
-    }
-    return true;
+   for(int i=0; i<t1->arity; i++)
+   {
+      if(!TermStructEqualNoDeref(t1->args[i], t2->args[i]))
+      {
+         return false;
+      }
+   }
+   return true;
 }
 
 /*-----------------------------------------------------------------------
@@ -1228,85 +1427,105 @@ bool TermStructEqualNoDeref(Term_p t1, Term_p t2) {
 
 // to make sure that we terminate, we do not eta-expand the variables
 // and constants.
-bool TermStructEqualDeref(Term_p t1, Term_p t2, DerefType deref_1, DerefType deref_2) {
-    int limit_1 = DEREF_LIMIT(t1, deref_1);
-    int limit_2 = DEREF_LIMIT(t2, deref_2);
+bool TermStructEqualDeref(Term_p t1, Term_p t2, DerefType deref_1, DerefType deref_2)
+{
 
-    TB_p bank = TermGetBank(t1) ? TermGetBank(t1) : TermGetBank(t2);
+   int limit_1 = DEREF_LIMIT(t1, deref_1);
+   int limit_2 = DEREF_LIMIT(t2, deref_2);
 
-    if (problemType == PROBLEM_HO) {
-        if (deref_1 == DEREF_ALWAYS) {
-            t1 = WHNF_deref(t1);
-        } else {
-            t1 =
-                    deref_1 == DEREF_ONCE
-                        ? (TermIsFreeVar(t1) ? t1->binding : TBInsertInstantiatedDeref(bank, t1, deref_1))
-                        : t1;
-            t1 = BetaNormalizeDB(bank, t1);
-            limit_1 = INT_MAX;
-            deref_1 = DEREF_NEVER;
-        }
-    } else {
-        t1 = TermDeref(t1, &deref_1);
-    }
+   TB_p bank = TermGetBank(t1) ? TermGetBank(t1) : TermGetBank(t2);
 
-    if (problemType == PROBLEM_HO) {
-        if (deref_2 == DEREF_ALWAYS) {
-            t2 = WHNF_deref(t2);
-        } else {
-            t2 =
-                    deref_2 == DEREF_ONCE
-                        ? (TermIsFreeVar(t2) ? t2->binding : TBInsertInstantiatedDeref(bank, t2, deref_2))
-                        : t2;
-            t2 = BetaNormalizeDB(bank, t2);
-            limit_2 = INT_MAX;
-            deref_2 = DEREF_NEVER;
-        }
-    } else {
-        t2 = TermDeref(t2, &deref_2);
-    }
+   if(problemType == PROBLEM_HO)
+   {
+      if(deref_1 == DEREF_ALWAYS)
+      {
+         t1 = WHNF_deref(t1);
+      }
+      else
+      {
+         t1 =
+            deref_1 == DEREF_ONCE ?
+               (TermIsFreeVar(t1) ? t1->binding : TBInsertInstantiatedDeref(bank, t1, deref_1)) : t1;
+         t1 = BetaNormalizeDB(bank, t1);
+         limit_1 = INT_MAX;
+         deref_1 = DEREF_NEVER;
+      }
+   }
+   else
+   {
+      t1 = TermDeref(t1, &deref_1);
+   }
 
-    if (t1->type != t2->type) {
-        return false;
-    }
-    PruneLambdaPrefix(bank, &t1, &t2);
+   if(problemType == PROBLEM_HO)
+   {
+      if(deref_2 == DEREF_ALWAYS)
+      {
+         t2 = WHNF_deref(t2);
+      }
+      else
+      {
+         t2 =
+            deref_2 == DEREF_ONCE ?
+               (TermIsFreeVar(t2) ? t2->binding : TBInsertInstantiatedDeref(bank, t2, deref_2)) : t2;
+         t2 = BetaNormalizeDB(bank, t2);
+         limit_2 = INT_MAX;
+         deref_2 = DEREF_NEVER;
+      }
+   }
+   else
+   {
+      t2 = TermDeref(t2, &deref_2);
+   }
 
-    if (deref_1 == DEREF_NEVER && deref_2 == DEREF_NEVER) {
-        return t1 == t2;
-    }
+   if(t1->type != t2->type)
+   {
+      return false;
+   }
+   PruneLambdaPrefix(bank, &t1, &t2);
 
-    if ((t1 == t2) && (deref_1 == deref_2)) {
-        return true;
-    }
+   if(deref_1 == DEREF_NEVER && deref_2 == DEREF_NEVER)
+   {
+      return t1 == t2;
+   }
 
-    if (TermIsDBVar(t1) != TermIsDBVar(t2)) {
-        return false;
-    }
+   if((t1==t2) && (deref_1==deref_2))
+   {
+      return true;
+   }
 
-    if (t1->f_code != t2->f_code) {
-        return false;
-    }
+   if(TermIsDBVar(t1) != TermIsDBVar(t2))
+   {
+      return false;
+   }
 
-    if (t1->type != t2->type) {
-        // in HO case, it is posible for term
-        // to have same head but different arities.
-        // in that case the type must be different.
-        assert(problemType == PROBLEM_HO);
-        assert(TermIsPhonyApp(t1) || TermIsLambda(t1) || t1->arity != t2->arity);
-        return false;
-    }
+   if(t1->f_code != t2->f_code)
+   {
+      return false;
+   }
 
-    //old asserts
-    assert(problemType == PROBLEM_HO || t1->type == t2->type);
-    assert(problemType == PROBLEM_HO || t1->arity == t2->arity);
-    for (int i = TermIsLambda(t1) ? 1 : 0; i < t1->arity; i++) {
-        if (!TermStructEqualDeref(t1->args[i], t2->args[i],
-                                  CONVERT_DEREF(i, limit_1, deref_1),
-                                  CONVERT_DEREF(i, limit_2, deref_2))) {
-            return false;
-        }
-    }
-    return true;
+   if(t1->type != t2->type)
+   {
+      // in HO case, it is posible for term
+      // to have same head but different arities.
+      // in that case the type must be different.
+      assert(problemType == PROBLEM_HO);
+      assert(TermIsPhonyApp(t1) || TermIsLambda(t1) || t1->arity != t2->arity);
+      return false;
+   }
+
+   //old asserts
+   assert(problemType == PROBLEM_HO || t1->type == t2->type);
+   assert(problemType == PROBLEM_HO || t1->arity == t2->arity);
+   for(int i=TermIsLambda(t1) ? 1 : 0; i<t1->arity; i++)
+   {
+      if(!TermStructEqualDeref(t1->args[i], t2->args[i],
+                               CONVERT_DEREF(i, limit_1, deref_1),
+                               CONVERT_DEREF(i, limit_2, deref_2)))
+      {
+         return false;
+      }
+   }
+   return true;
 }
 
 /*-----------------------------------------------------------------------
@@ -1324,40 +1543,49 @@ bool TermStructEqualDeref(Term_p t1, Term_p t2, DerefType deref_1, DerefType der
 /----------------------------------------------------------------------*/
 
 bool TermStructPrefixEqual(Term_p l, Term_p r, DerefType d_l, DerefType d_r,
-                           int remaining, Sig_p sig) {
-    bool res = true;
-    if (remaining == 0) {
-        res = TermStructEqualDeref(l, r, d_l, d_r);
-    } else {
-        const int limit_l = DEREF_LIMIT(l, d_l);
-        const int limit_r = DEREF_LIMIT(r, d_r);
-        l = TermDeref(l, &d_l);
-        r = TermDeref(r, &d_r);
+                           int remaining, Sig_p sig)
+{
+   bool res = true;
+   if(remaining == 0)
+   {
+      res = TermStructEqualDeref(l, r, d_l, d_r);
+   }
+   else
+   {
+      const int limit_l = DEREF_LIMIT(l, d_l);
+      const int limit_r = DEREF_LIMIT(r, d_r);
+      l = TermDeref(l, &d_l);
+      r = TermDeref(r, &d_r);
 
-        if (TermIsAppliedAnyVar(r) && (r->arity - remaining == 1)) {
-            // f-code comparisons would fail without this hack.
-            r = r->args[0];
-        }
+      if(TermIsAppliedAnyVar(r) && (r->arity - remaining == 1))
+      {
+         // f-code comparisons would fail without this hack.
+         r = r->args[0];
+      }
 
-        if (l->f_code != r->f_code || (!TermIsAnyVar(r) && r->arity < remaining)) {
-            res = false;
-        } else {
-            assert((TermIsAnyVar(l) && TermIsAnyVar(r)) || l->arity == r->arity - remaining);
+      if(l->f_code != r->f_code || (!TermIsAnyVar(r) && r->arity < remaining))
+      {
+         res = false;
+      }
+      else
+      {
+         assert((TermIsAnyVar(l) && TermIsAnyVar(r)) || l->arity == r->arity-remaining);
 
-            for (int i = 0; i < l->arity; i++) {
-                if (!TermStructEqualDeref(l->args[i], r->args[i],
-                                          CONVERT_DEREF(i, limit_l, d_l),
-                                          CONVERT_DEREF(i, limit_r, d_r))) {
-                    res = false;
-                    break;
-                }
+         for(int i=0; i<l->arity; i++)
+         {
+            if(!TermStructEqualDeref(l->args[i], r->args[i],
+                                      CONVERT_DEREF(i, limit_l, d_l),
+                                      CONVERT_DEREF(i, limit_r, d_r)))
+            {
+               res = false;
+               break;
             }
-        }
-    }
+         }
+      }
+   }
 
-    return res;
+   return res;
 }
-
 /*-----------------------------------------------------------------------
 //
 // Function: TermStructWeightCompare()
@@ -1372,64 +1600,74 @@ bool TermStructPrefixEqual(Term_p l, Term_p r, DerefType d_l, DerefType d_r,
 //
 /----------------------------------------------------------------------*/
 
-long TermStructWeightCompare(Term_p t1, Term_p t2) {
-    assert(t1);
-    assert(t2);
+long TermStructWeightCompare(Term_p t1, Term_p t2)
+{
+   assert(t1);
+   assert(t2);
 
-    if (t1->f_code == SIG_TRUE_CODE) {
-        assert(t1->arity == 0);
-        if (t2->f_code == SIG_TRUE_CODE) {
-            assert(t2->arity == 0);
-            return 0;
-        }
-        return -1;
-    }
+   if(t1->f_code == SIG_TRUE_CODE)
+   {
+      assert(t1->arity == 0);
+      if(t2->f_code == SIG_TRUE_CODE)
+      {
+         assert(t2->arity == 0);
+         return 0;
+      }
+      return -1;
+   }
 
-    if (t2->f_code == SIG_TRUE_CODE) {
-        assert(t2->arity == 0);
-        return 1;
-    }
+   if(t2->f_code == SIG_TRUE_CODE)
+   {
+      assert(t2->arity == 0);
+      return 1;
+   }
 
-    long res = TermStandardWeight(t1) - TermStandardWeight(t2);
-    if (res) {
-        return res;
-    }
+   long res = TermStandardWeight(t1) - TermStandardWeight(t2);
+   if(res)
+   {
+      return res;
+   }
 
-    if (TermIsFreeVar(t1)) {
-        /* Then t2 also is a variable due to equal weights! */
-        assert(problemType == PROBLEM_HO || TermIsFreeVar(t2));
-        return TypesCmp(t1->type, t2->type);
-    }
+   if(TermIsFreeVar(t1))
+   { /* Then t2 also is a variable due to equal weights! */
+      assert(problemType == PROBLEM_HO || TermIsFreeVar(t2));
+      return TypesCmp(t1->type, t2->type);
+   }
 
-    // DB var is smaller than fcode
-    res = CMP(!TermIsDBVar(t1), !TermIsDBVar(t2));
-    if (res) {
-        return res;
-    }
+   // DB var is smaller than fcode
+   res = CMP(!TermIsDBVar(t1), !TermIsDBVar(t2));
+   if(res)
+   {
+      return res;
+   }
 
-    if (TermIsDBVar(t1)) {
-        assert(TermIsDBVar(t2));
-        return TypesCmp(t1->type, t2->type);
-    }
+   if(TermIsDBVar(t1))
+   {
+      assert(TermIsDBVar(t2));
+      return TypesCmp(t1->type, t2->type);
+   }
 
 
-    res = t1->arity - t2->arity;
-    if (res) {
-        return res;
-    }
+   res = t1->arity - t2->arity;
+   if(res)
+   {
+      return res;
+   }
 
-    //This is a non-valid assert... check with Stephan
-    //  (reason: compares terms from different equations.)
-    //assert(t1->type == t2->type);
-    assert(t1->arity == t2->arity);
-    for (int i = 0; i < t1->arity; i++) {
-        res = TermStructWeightCompare(t1->args[i], t2->args[i]);
-        if (res) {
-            return res;
-        }
-    }
+   //This is a non-valid assert... check with Stephan
+   //  (reason: compares terms from different equations.)
+   //assert(t1->type == t2->type);
+   assert(t1->arity == t2->arity);
+   for(int i=0; i<t1->arity; i++)
+   {
+      res = TermStructWeightCompare(t1->args[i], t2->args[i]);
+      if(res)
+      {
+         return res;
+      }
+   }
 
-    return 0;
+   return 0;
 }
 
 
@@ -1445,33 +1683,38 @@ long TermStructWeightCompare(Term_p t1, Term_p t2) {
 //
 /----------------------------------------------------------------------*/
 
-long TermLexCompare(Term_p t1, Term_p t2) {
-    int i;
+long TermLexCompare(Term_p t1, Term_p t2)
+{
+   int i;
 
-    long res = t1->f_code - t2->f_code;
-    if (res) {
-        return res;
-    }
+   long res = t1->f_code - t2->f_code;
+   if(res)
+   {
+      return res;
+   }
 
-    if (t1->arity != t2->arity) {
-        // in HO case, it is posible for term
-        // to have same head but different arities.
-        // in that case the type must be different.
-        assert(problemType == PROBLEM_HO);
-        assert(t1->type != t2->type);
-        return t1->arity - t2->arity; //asume length-lexicographic
-    }
+   if(t1->arity != t2->arity)
+   {
+      // in HO case, it is posible for term
+      // to have same head but different arities.
+      // in that case the type must be different.
+      assert(problemType == PROBLEM_HO);
+      assert(t1->type != t2->type);
+      return t1->arity - t2->arity; //asume length-lexicographic
+   }
 
-    //old asserts
-    assert(problemType == PROBLEM_HO || t1->type == t2->type);
-    assert(problemType == PROBLEM_HO || t1->arity == t2->arity);
-    for (i = 0; i < t1->arity; i++) {
-        res = TermLexCompare(t1->args[i], t2->args[i]);
-        if (res) {
-            return res;
-        }
-    }
-    return res;
+   //old asserts
+   assert(problemType == PROBLEM_HO || t1->type == t2->type);
+   assert(problemType == PROBLEM_HO || t1->arity == t2->arity);
+   for(i=0; i<t1->arity; i++)
+   {
+      res = TermLexCompare(t1->args[i], t2->args[i]);
+      if(res)
+      {
+         return res;
+      }
+   }
+   return res;
 }
 
 
@@ -1487,21 +1730,25 @@ long TermLexCompare(Term_p t1, Term_p t2) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermIsSubterm(Term_p super, Term_p test, DerefType deref) {
-    int i;
+bool TermIsSubterm(Term_p super, Term_p test, DerefType deref)
+{
+   int i;
 
-    const int limit = DEREF_LIMIT(super, deref);
-    super = TermDeref(super, &deref);
+   const int limit = DEREF_LIMIT(super, deref);
+   super = TermDeref(super, &deref);
 
-    if (super == test) {
-        return true;
-    }
-    for (i = 0; i < super->arity; i++) {
-        if (TermIsSubterm(super->args[i], test, CONVERT_DEREF(i, limit, deref))) {
-            return true;
-        }
-    }
-    return false;
+   if(super == test)
+   {
+      return true;
+   }
+   for(i=0; i<super->arity; i++)
+   {
+      if(TermIsSubterm(super->args[i], test, CONVERT_DEREF(i, limit, deref)))
+      {
+         return true;
+      }
+   }
+   return false;
 }
 
 
@@ -1521,19 +1768,23 @@ bool TermIsSubterm(Term_p super, Term_p test, DerefType deref) {
 /----------------------------------------------------------------------*/
 
 bool TermIsSubtermDeref(Term_p super, Term_p test, DerefType
-                        deref_super, DerefType deref_test) {
-    int i;
+                        deref_super, DerefType deref_test)
+{
+   int i;
 
-    super = TermDeref(super, &deref_super);
-    if (TermStructEqualDeref(super, test, deref_super, deref_test)) {
-        return true;
-    }
-    for (i = 0; i < super->arity; i++) {
-        if (TermIsSubtermDeref(super->args[i], test, deref_super, deref_test)) {
-            return true;
-        }
-    }
-    return false;
+   super = TermDeref(super, &deref_super);
+   if(TermStructEqualDeref(super, test, deref_super, deref_test))
+   {
+      return true;
+   }
+   for(i=0; i<super->arity; i++)
+   {
+      if(TermIsSubtermDeref(super->args[i], test, deref_super, deref_test))
+      {
+         return true;
+      }
+   }
+   return false;
 }
 
 
@@ -1550,23 +1801,28 @@ bool TermIsSubtermDeref(Term_p super, Term_p test, DerefType
 //
 /----------------------------------------------------------------------*/
 
-long TermWeightCompute(Term_p term, long vweight, long fweight) {
-    long res = 0;
+long TermWeightCompute(Term_p term, long vweight, long fweight)
+{
+   long res = 0;
 
-    if (TermIsFreeVar(term) ||
-        (TermIsAppliedFreeVar(term) && NormalizePatternAppVar(TermGetBank(term), term))) {
-        // if variable is of the form X xn where xn are bound variables -->
-        // then it is counted as a simple variable
-        res += vweight;
-    } else {
-        // lambdas (and corresponding bound var) are ignored.
-        res += fweight * ((TermIsPhonyApp(term) || TermIsDBLambda(term)) ? 0 : 1);
-        for (int i = (TermIsDBLambda(term) ? 1 : 0); i < term->arity; i++) {
-            res += TermWeight(term->args[i], vweight, fweight);
-        }
-    }
+   if(TermIsFreeVar(term) ||
+     (TermIsAppliedFreeVar(term) && NormalizePatternAppVar(TermGetBank(term), term)))
+   {
+      // if variable is of the form X xn where xn are bound variables -->
+      // then it is counted as a simple variable
+      res += vweight;
+   }
+   else
+   {
+      // lambdas (and corresponding bound var) are ignored.
+      res += fweight*((TermIsPhonyApp(term) || TermIsDBLambda(term)) ? 0 : 1);
+      for(int i=(TermIsDBLambda(term)?1:0); i<term->arity; i++)
+      {
+         res += TermWeight(term->args[i], vweight, fweight);
+      }
+   }
 
-    return res;
+   return res;
 }
 
 
@@ -1585,38 +1841,56 @@ long TermWeightCompute(Term_p term, long vweight, long fweight) {
 
 long TermFsumWeight(Term_p term, long vweight, long flimit,
                     long *fweights, long default_fweight,
-                    long *typefreqs) {
-    long res = 0;
+                    long* typefreqs)
+{
+   long res = 0;
 
-    if (TermIsFreeVar(term)) {
-        res += vweight;
-    } else {
-        if (term->f_code < flimit) {
-            if (!TermIsPhonyApp(term)) {
-                res += TermIsDBVar(term) ? default_fweight : fweights[term->f_code];
-            } else {
-                assert(problemType == PROBLEM_HO);
-                if (typefreqs && typefreqs[term->args[0]->type->type_uid]) {
-                    assert(typefreqs[term->args[0]->type->type_uid] > 0);
-                    res += typefreqs[term->args[0]->type->type_uid];
-                }
+   if(TermIsFreeVar(term))
+   {
+      res += vweight;
+   }
+   else
+   {
+      if(term->f_code < flimit)
+      {
+         if(!TermIsPhonyApp(term))
+         {
+            res += TermIsDBVar(term) ? default_fweight : fweights[term->f_code];
+         }
+         else
+         {
+            assert(problemType == PROBLEM_HO);
+            if(typefreqs && typefreqs[term->args[0]->type->type_uid])
+            {
+               assert(typefreqs[term->args[0]->type->type_uid] > 0);
+               res += typefreqs[term->args[0]->type->type_uid];
             }
-        } else {
-            if (!TermIsPhonyApp(term)) {
-                res += default_fweight;
-            } else {
-                assert(problemType == PROBLEM_HO);
-            }
-        }
+         }
+      }
+      else
+      {
+         if(!TermIsPhonyApp(term))
+         {
+            res += default_fweight;
+         }
+         else
+         {
+            assert(problemType == PROBLEM_HO);
+         }
 
-        for (int i = 0; i < term->arity; i++) {
-            res += TermFsumWeight(term->args[i], vweight, flimit, fweights, default_fweight,
-                                  typefreqs);
-        }
-    }
+      }
 
-    return res;
+      for(int i = 0; i < term->arity; i++)
+      {
+         res += TermFsumWeight(term->args[i], vweight, flimit, fweights, default_fweight,
+                               typefreqs);
+      }
+   }
+
+   return res;
+
 }
+
 
 
 /*-----------------------------------------------------------------------
@@ -1634,39 +1908,48 @@ long TermFsumWeight(Term_p term, long vweight, long flimit,
 /----------------------------------------------------------------------*/
 
 long TermNonLinearWeight(Term_p term, long vlweight, long vweight,
-                         long fweight) {
-    long res = 0;
-    PStack_p stack = PStackAlloc();
-    Term_p handle;
+                         long fweight)
+{
+   long     res = 0;
+   PStack_p stack = PStackAlloc();
+   Term_p   handle;
 
-    assert(term);
+   assert(term);
 
-    TermDelProp(term, DEREF_NEVER, TPOpFlag);
+   TermDelProp(term, DEREF_NEVER, TPOpFlag);
 
-    PStackPushP(stack, term);
+   PStackPushP(stack, term);
 
-    while (!PStackEmpty(stack)) {
-        handle = PStackPopP(stack);
-        if (TermIsFreeVar(handle)) {
-            if (TermCellQueryProp(handle, TPOpFlag)) {
-                res += vweight;
-            } else {
-                TermCellSetProp(handle, TPOpFlag);
-                res += vlweight;
-            }
-        } else {
-            int i;
+   while(!PStackEmpty(stack))
+   {
+      handle = PStackPopP(stack);
+      if(TermIsFreeVar(handle))
+      {
+         if(TermCellQueryProp(handle, TPOpFlag))
+         {
+            res += vweight;
+         }
+         else
+         {
+            TermCellSetProp(handle, TPOpFlag);
+            res += vlweight;
+         }
+      }
+      else
+      {
+         int i;
 
-            res += fweight * (TermIsPhonyApp(handle) ? 0 : 1);
+         res += fweight * (TermIsPhonyApp(handle) ? 0 : 1);
 
-            for (i = 0; i < handle->arity; i++) {
-                PStackPushP(stack, handle->args[i]);
-            }
-        }
-    }
-    PStackFree(stack);
+         for(i=0; i<handle->arity; i++)
+         {
+            PStackPushP(stack, handle->args[i]);
+         }
+      }
+   }
+   PStackFree(stack);
 
-    return res;
+   return res;
 }
 
 
@@ -1684,37 +1967,48 @@ long TermNonLinearWeight(Term_p term, long vlweight, long vweight,
 /----------------------------------------------------------------------*/
 
 long TermSymTypeWeight(Term_p term, long vweight, long fweight, long
-                       cweight, long pweight) {
-    long res = 0;
-    PStack_p stack = PStackAlloc();
-    Term_p handle;
+                       cweight, long pweight)
+{
+   long     res = 0;
+   PStack_p stack = PStackAlloc();
+   Term_p   handle;
 
-    assert(term);
+   assert(term);
 
-    PStackPushP(stack, term);
+   PStackPushP(stack, term);
 
-    while (!PStackEmpty(stack)) {
-        handle = PStackPopP(stack);
-        if (TermIsFreeVar(handle)) {
-            res += vweight;
-        } else {
-            int i;
+   while(!PStackEmpty(stack))
+   {
+      handle = PStackPopP(stack);
+      if(TermIsFreeVar(handle))
+      {
+         res += vweight;
+      }
+      else
+      {
+         int i;
 
-            if (TermCellQueryProp(handle, TPPredPos)) {
-                res += pweight;
-            } else if (handle->arity == 0) {
-                res += cweight;
-            } else {
-                res += fweight * (TermIsPhonyApp(handle) ? 0 : 1);
-            }
-            for (i = 0; i < handle->arity; i++) {
-                PStackPushP(stack, handle->args[i]);
-            }
-        }
-    }
-    PStackFree(stack);
+         if(TermCellQueryProp(handle,TPPredPos))
+         {
+            res += pweight;
+         }
+         else if(handle->arity==0)
+         {
+            res += cweight;
+         }
+         else
+         {
+            res += fweight * (TermIsPhonyApp(handle) ? 0 : 1);
+         }
+         for(i=0; i<handle->arity; i++)
+         {
+            PStackPushP(stack, handle->args[i]);
+         }
+      }
+   }
+   PStackFree(stack);
 
-    return res;
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -1729,15 +2023,17 @@ long TermSymTypeWeight(Term_p term, long vweight, long fweight, long
 //
 /----------------------------------------------------------------------*/
 
-long TermDepth(Term_p term) {
-    long maxdepth = 0, ldepth;
-    int i;
+long TermDepth(Term_p term)
+{
+   long maxdepth = 0, ldepth;
+   int  i;
 
-    for (i = 0; i < term->arity; i++) {
-        ldepth = TermDepth(term->args[i]);
-        maxdepth = MAX(maxdepth, ldepth);
-    }
-    return maxdepth + 1;
+   for(i=0; i<term->arity; i++)
+   {
+      ldepth = TermDepth(term->args[i]);
+      maxdepth = MAX(maxdepth, ldepth);
+   }
+   return maxdepth+1;
 }
 
 /*-----------------------------------------------------------------------
@@ -1752,30 +2048,37 @@ long TermDepth(Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermIsDefTerm(Term_p term, int min_arity) {
-    int i;
+bool TermIsDefTerm(Term_p term, int min_arity)
+{
+   int i;
 
-    assert(term);
+   assert(term);
 
-    if (TermIsAnyVar(term) || TermIsPhonyApp(term) || TermIsLambda(term)) {
-        return false;
-    }
-    if (term->arity < min_arity) {
-        return false;
-    }
-    if (TermStandardWeight(term) != (DEFAULT_FWEIGHT + term->arity * DEFAULT_VWEIGHT)) {
-        return false;
-    }
-    for (i = 0; i < term->arity; i++) {
-        TermCellDelProp(term->args[i], TPOpFlag);
-    }
-    for (i = 0; i < term->arity; i++) {
-        if (!TermIsFreeVar(term->args[i]) || TermCellQueryProp(term->args[i], TPOpFlag)) {
-            return false;
-        }
-        TermCellSetProp(term->args[i], TPOpFlag);
-    }
-    return true;
+   if(TermIsAnyVar(term) || TermIsPhonyApp(term) || TermIsLambda(term))
+   {
+      return false;
+   }
+   if(term->arity<min_arity)
+   {
+      return false;
+   }
+   if(TermStandardWeight(term)!=(DEFAULT_FWEIGHT+term->arity*DEFAULT_VWEIGHT))
+   {
+      return false;
+   }
+   for(i=0; i<term->arity; i++)
+   {
+      TermCellDelProp(term->args[i], TPOpFlag);
+   }
+   for(i=0; i<term->arity; i++)
+   {
+      if(!TermIsFreeVar(term->args[i]) || TermCellQueryProp(term->args[i], TPOpFlag))
+      {
+         return false;
+      }
+      TermCellSetProp(term->args[i], TPOpFlag);
+   }
+   return true;
 }
 
 
@@ -1792,24 +2095,29 @@ bool TermIsDefTerm(Term_p term, int min_arity) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermHasFCode(Term_p term, FunCode f) {
-    int i;
+bool TermHasFCode(Term_p term, FunCode f)
+{
+   int i;
 
-    assert(term);
+   assert(term);
 
-    if (TermIsDBVar(term)) {
-        return false;
-    }
+   if(TermIsDBVar(term))
+   {
+      return false;
+   }
 
-    if (term->f_code == f) {
-        return true;
-    }
-    for (i = 0; i < term->arity; i++) {
-        if (TermHasFCode(term->args[i], f)) {
-            return true;
-        }
-    }
-    return false;
+   if(term->f_code == f)
+   {
+      return true;
+   }
+   for(i=0; i<term->arity; i++)
+   {
+      if(TermHasFCode(term->args[i], f))
+      {
+         return true;
+      }
+   }
+   return false;
 }
 
 /*-----------------------------------------------------------------------
@@ -1825,23 +2133,30 @@ bool TermHasFCode(Term_p term, FunCode f) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermHasUnboundVariables(Term_p term) {
-    bool res = false;
+bool TermHasUnboundVariables(Term_p term)
+{
+   bool res = false;
 
-    if (TermIsFreeVar(term)) {
-        if (!term->binding) {
+   if(TermIsFreeVar(term))
+   {
+      if(!term->binding)
+      {
+         res = true;
+      }
+   }
+   else
+   {
+      for(int i=0; i < term->arity; i++)
+      {
+         if(TermHasUnboundVariables(term->args[i]))
+         {
             res = true;
-        }
-    } else {
-        for (int i = 0; i < term->arity; i++) {
-            if (TermHasUnboundVariables(term->args[i])) {
-                res = true;
-                break;
-            }
-        }
-    }
+            break;
+         }
+      }
+   }
 
-    return res;
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -1857,21 +2172,27 @@ bool TermHasUnboundVariables(Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermIsGroundCompute(Term_p term) {
-    bool res = true;
+bool TermIsGroundCompute(Term_p term)
+{
+   bool res = true;
 
-    if (TermIsFreeVar(term)) {
-        res = false;
-    } else {
-        for (int i = 0; i < term->arity; i++) {
-            if (!TermIsGroundCompute(term->args[i])) {
-                res = false;
-                break;
-            }
-        }
-    }
+   if(TermIsFreeVar(term))
+   {
+      res = false;
+   }
+   else
+   {
+      for(int i=0; i < term->arity; i++)
+      {
+         if(!TermIsGroundCompute(term->args[i]))
+         {
+            res = false;
+            break;
+         }
+      }
+   }
 
-    return res;
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -1887,22 +2208,28 @@ bool TermIsGroundCompute(Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-FunCode TermFindMaxVarCode(Term_p term) {
-    int i;
-    long res, tmp;
+FunCode TermFindMaxVarCode(Term_p term)
+{
+   int i;
+   long res, tmp;
 
-    if (TermIsFreeVar(term)) {
-        return term->f_code;
-    } else {
-        res = 0;
-        if (!TermIsGround(term)) {
-            for (i = 0; i < term->arity; i++) {
-                tmp = TermFindMaxVarCode(term->args[i]);
-                res = MIN(res, tmp);
-            }
-        }
-    }
-    return res;
+   if(TermIsFreeVar(term))
+   {
+      return term->f_code;
+   }
+   else
+   {
+      res = 0;
+      if(!TermIsGround(term))
+      {
+         for(i=0; i<term->arity; i++)
+         {
+            tmp = TermFindMaxVarCode(term->args[i]);
+            res = MIN(res, tmp);
+         }
+      }
+   }
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -1918,28 +2245,34 @@ FunCode TermFindMaxVarCode(Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermFindIteSubterm(Term_p t, TermPos_p pos) {
-    assert(t);
-    PStackPushP(pos, t);
-    bool found = false;
+bool TermFindIteSubterm(Term_p t, TermPos_p pos)
+{
+   assert(t);
+   PStackPushP(pos, t);
+   bool found = false;
 
-    for (long i = 0; !TermIsLambda(t) && !found && i < t->arity; i++) {
-        PStackPushInt(pos, i);
-        found = found ||
-                (t->args[i]->f_code == SIG_ITE_CODE) ||
-                TermFindIteSubterm(t->args[i], pos);
-        if (!found) {
-            PStackDiscardTop(pos);
-        }
-    }
+   for(long i=0; !TermIsLambda(t) && !found && i<t->arity; i++)
+   {
+      PStackPushInt(pos, i);
+      found = found ||
+              (t->args[i]->f_code == SIG_ITE_CODE) ||
+              TermFindIteSubterm(t->args[i], pos);
+      if(!found)
+      {
+         PStackDiscardTop(pos);
+      }
+   }
 
-    if (!found) {
-        // did not find formula subterm
-        PStackDiscardTop(pos);
-        return false;
-    } else {
-        return true;
-    }
+   if(!found)
+   {
+      // did not find formula subterm
+      PStackDiscardTop(pos);
+      return false;
+   }
+   else
+   {
+      return true;
+   }
 }
 
 /*-----------------------------------------------------------------------
@@ -1956,34 +2289,41 @@ bool TermFindIteSubterm(Term_p t, TermPos_p pos) {
 //
 /----------------------------------------------------------------------*/
 
-FunCode VarBankCheckBindings(FILE *out, VarBank_p bank, Sig_p sig) {
-    Term_p term;
-    long res = 0;
-    int i;
+FunCode VarBankCheckBindings(FILE* out, VarBank_p bank, Sig_p sig)
+{
+   Term_p    term;
+   long      res = 0;
+   int       i;
 
-    fprintf(out, "#  VarBankCheckBindings() started...\n");
-    for (i = 1; i < PDArraySize(bank->variables); i++) {
-        term = PDArrayElementP(bank->variables, i);
-        if (term) {
-            assert(TermIsFreeVar(term));
-            if (term->binding) {
-                res++;
-                if (sig) {
-                    fprintf(out, "# %ld: ", term->f_code);
-                    TermPrint(out, term, sig, DEREF_NEVER);
-                    fprintf(out, " <--- ");
-                    TermPrint(out, term, sig, DEREF_ONCE);
-                    fprintf(out, "\n");
-                } else {
-                    fprintf(out, "# Var%ld <---- %p\n",
-                            term->f_code,
-                            (void *) term->binding);
-                }
+   fprintf(out, "#  VarBankCheckBindings() started...\n");
+   for(i=1; i<PDArraySize(bank->variables); i++)
+   {
+      term = PDArrayElementP(bank->variables, i);
+      if(term)
+      {
+         assert(TermIsFreeVar(term));
+         if(term->binding)
+         {
+            res++;
+            if(sig)
+            {
+               fprintf(out, "# %ld: ", term->f_code);
+               TermPrint(out, term, sig, DEREF_NEVER);
+               fprintf(out, " <--- ");
+               TermPrint(out, term, sig, DEREF_ONCE);
+               fprintf(out, "\n");
             }
-        }
-    }
-    fprintf(out, "#  ...VarBankCheckBindings() completed\n");
-    return res;
+            else
+            {
+               fprintf(out, "# Var%ld <---- %p\n",
+                       term->f_code,
+                       (void*)term->binding);
+            }
+         }
+      }
+   }
+   fprintf(out, "#  ...VarBankCheckBindings() completed\n");
+   return res;
 }
 
 
@@ -2000,30 +2340,35 @@ FunCode VarBankCheckBindings(FILE *out, VarBank_p bank, Sig_p sig) {
 //
 /----------------------------------------------------------------------*/
 
-void TermAddSymbolDistributionLimited(Term_p term, long *dist_array, long limit) {
-    PStack_p stack = PStackAlloc();
-    assert(term);
+void TermAddSymbolDistributionLimited(Term_p term, long *dist_array, long limit)
+{
+   PStack_p stack = PStackAlloc();
+   assert(term);
 
-    PStackPushP(stack, term);
+   PStackPushP(stack, term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        assert(term);
+   while(!PStackEmpty(stack))
+   {
+      term = PStackPopP(stack);
+      assert(term);
 
-        if (!TermIsAnyVar(term)) {
-            int i;
+      if(!TermIsAnyVar(term))
+      {
+         int i;
 
-            assert(term->f_code > 0);
-            if (term->f_code < limit) {
-                dist_array[term->f_code]++;
-            }
-            for (i = 0; i < term->arity; i++) {
-                assert(term->args);
-                PStackPushP(stack, term->args[i]);
-            }
-        }
-    }
-    PStackFree(stack);
+         assert(term->f_code > 0);
+         if(term->f_code < limit)
+         {
+            dist_array[term->f_code]++;
+         }
+         for(i=0; i<term->arity; i++)
+         {
+            assert(term->args);
+            PStackPushP(stack, term->args[i]);
+         }
+      }
+   }
+   PStackFree(stack);
 }
 
 /*-----------------------------------------------------------------------
@@ -2039,30 +2384,33 @@ void TermAddSymbolDistributionLimited(Term_p term, long *dist_array, long limit)
 //
 /----------------------------------------------------------------------*/
 
-void TermAddTypeDistribution(Term_p term, Sig_p sig, long *type_arr) {
-    PStack_p stack = PStackAlloc();
-    Type_p ty = NULL;
-    assert(term);
-    assert(sig);
+void  TermAddTypeDistribution(Term_p term, Sig_p sig, long* type_arr)
+{
+   PStack_p stack = PStackAlloc();
+   Type_p ty = NULL;
+   assert(term);
+   assert(sig);
 
-    PStackPushP(stack, term);
+   PStackPushP(stack, term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        assert(term);
-        ty = GetHeadType(sig, term);
-        if (ty) // some polymorphic symbols have no type
-        {
-            type_arr[ty->type_uid]++;
-        }
+   while(!PStackEmpty(stack))
+   {
+      term = PStackPopP(stack);
+      assert(term);
+      ty = GetHeadType(sig, term);
+      if(ty) // some polymorphic symbols have no type
+      {
+         type_arr[ty->type_uid]++;
+      }
 
 
-        int i;
-        for (i = TermIsPhonyApp(term) ? 1 : 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-        }
-    }
-    PStackFree(stack);
+      int i;
+      for(i=TermIsPhonyApp(term) ? 1 : 0; i<term->arity; i++)
+      {
+         PStackPushP(stack, term->args[i]);
+      }
+   }
+   PStackFree(stack);
 }
 
 /*-----------------------------------------------------------------------
@@ -2079,32 +2427,37 @@ void TermAddTypeDistribution(Term_p term, Sig_p sig, long *type_arr) {
 /----------------------------------------------------------------------*/
 
 void TermAddSymbolDistExist(Term_p term, long *dist_array,
-                            PStack_p exists) {
-    PStack_p stack = PStackAlloc();
-    assert(term);
+                            PStack_p exists)
+{
+   PStack_p stack = PStackAlloc();
+   assert(term);
 
-    PStackPushP(stack, term);
+   PStackPushP(stack, term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        assert(term);
+   while(!PStackEmpty(stack))
+   {
+      term = PStackPopP(stack);
+      assert(term);
 
-        if (!TermIsAnyVar(term)) {
-            int i;
+      if(!TermIsAnyVar(term))
+      {
+         int i;
 
-            assert(term->f_code > 0);
-            if (!dist_array[term->f_code] && !TermIsPhonyApp(term) && !TermIsLambda(term)) {
-                PStackPushInt(exists, term->f_code);
-            }
-            dist_array[term->f_code] += (TermIsPhonyApp(term) || TermIsLambda(term)) ? 0 : 1;
+         assert(term->f_code > 0);
+         if(!dist_array[term->f_code] && !TermIsPhonyApp(term) && !TermIsLambda(term))
+         {
+            PStackPushInt(exists, term->f_code);
+         }
+         dist_array[term->f_code] += (TermIsPhonyApp(term) || TermIsLambda(term)) ? 0 : 1;
 
-            for (i = 0; i < term->arity; i++) {
-                assert(term->args);
-                PStackPushP(stack, term->args[i]);
-            }
-        }
-    }
-    PStackFree(stack);
+         for(i=0; i<term->arity; i++)
+         {
+            assert(term->args);
+            PStackPushP(stack, term->args[i]);
+         }
+      }
+   }
+   PStackFree(stack);
 }
 
 
@@ -2125,24 +2478,30 @@ void TermAddSymbolDistExist(Term_p term, long *dist_array,
 /----------------------------------------------------------------------*/
 
 void TermAddSymbolFeaturesLimited(Term_p term, long depth,
-                                  long *freq_array, long *depth_array,
-                                  long limit) {
-    if (!TermIsAnyVar(term)) {
-        int i;
+                                  long *freq_array, long* depth_array,
+                                  long limit)
+{
+   if(!TermIsAnyVar(term))
+   {
+      int i;
 
-        if (term->f_code < limit && !TermIsPhonyApp(term)) {
-            freq_array[term->f_code]++;
-            depth_array[term->f_code] = MAX(depth, depth_array[term->f_code]);
-        } else {
-            freq_array[0] += TermIsPhonyApp(term) ? 0 : 1;
-            depth_array[0] = MAX(depth, depth_array[0]);
-        }
-        for (i = 0; i < term->arity; i++) {
-            TermAddSymbolFeaturesLimited(term->args[i], depth + 1,
-                                         freq_array, depth_array,
-                                         limit);
-        }
-    }
+      if(term->f_code < limit && !TermIsPhonyApp(term))
+      {
+         freq_array[term->f_code]++;
+         depth_array[term->f_code] = MAX(depth, depth_array[term->f_code]);
+      }
+      else
+      {
+         freq_array[0] += TermIsPhonyApp(term) ? 0 : 1;
+         depth_array[0] = MAX(depth, depth_array[0]);
+      }
+      for(i=0; i<term->arity; i++)
+      {
+         TermAddSymbolFeaturesLimited(term->args[i], depth + 1,
+                                      freq_array, depth_array,
+                                      limit);
+      }
+   }
 }
 
 
@@ -2166,24 +2525,29 @@ void TermAddSymbolFeaturesLimited(Term_p term, long depth,
 /----------------------------------------------------------------------*/
 
 void TermAddSymbolFeatures(Term_p term, PStack_p mod_stack, long depth,
-                           long *feature_array, long offset) {
-    if (!TermIsAnyVar(term)) {
-        int i;
-        if (!TermIsPhonyApp(term)) {
-            long findex = 4 * term->f_code + offset;
+                           long *feature_array, long offset)
+{
+   if(!TermIsAnyVar(term))
+   {
+      int i;
+      if(!TermIsPhonyApp(term))
+      {
+         long findex = 4*term->f_code+offset;
 
-            if (feature_array[findex] == 0) {
-                PStackPushInt(mod_stack, findex);
-            }
+         if(feature_array[findex] == 0)
+         {
+            PStackPushInt(mod_stack, findex);
+         }
 
-            feature_array[findex]++;
-            feature_array[findex + 1] = MAX(depth, feature_array[findex + 1]);
-        }
-        for (i = 0; i < term->arity; i++) {
-            TermAddSymbolFeatures(term->args[i], mod_stack, depth + 1,
-                                  feature_array, offset);
-        }
-    }
+         feature_array[findex]++;
+         feature_array[findex+1] = MAX(depth, feature_array[findex+1]);
+      }
+      for(i=0; i<term->arity; i++)
+      {
+         TermAddSymbolFeatures(term->args[i], mod_stack, depth + 1,
+                               feature_array, offset);
+      }
+   }
 }
 
 
@@ -2199,18 +2563,22 @@ void TermAddSymbolFeatures(Term_p term, PStack_p mod_stack, long depth,
 //
 /----------------------------------------------------------------------*/
 
-void TermComputeFunctionRanks(Term_p term, long *rank_array, long *count) {
-    int i;
+void TermComputeFunctionRanks(Term_p term, long *rank_array, long *count)
+{
+   int i;
 
-    if (TermIsAnyVar(term)) {
-        return;
-    }
-    for (i = 0; i < term->arity; i++) {
-        TermComputeFunctionRanks(term->args[i], rank_array, count);
-    }
-    if (!rank_array[term->f_code] && !TermIsPhonyApp(term)) {
-        rank_array[term->f_code] = (*count)++;
-    }
+   if(TermIsAnyVar(term))
+   {
+      return;
+   }
+   for(i=0; i < term->arity; i++)
+   {
+      TermComputeFunctionRanks(term->args[i], rank_array, count);
+   }
+   if(!rank_array[term->f_code] && !TermIsPhonyApp(term))
+   {
+      rank_array[term->f_code] = (*count)++;
+   }
 }
 
 
@@ -2228,29 +2596,36 @@ void TermComputeFunctionRanks(Term_p term, long *rank_array, long *count) {
 /----------------------------------------------------------------------*/
 
 long TermCollectPropVariables(Term_p term, PTree_p *tree,
-                              TermProperties prop) {
-    long res = 0;
-    PStack_p stack = PStackAlloc();
-    int i;
+                              TermProperties prop)
+{
+   long res = 0;
+   PStack_p stack = PStackAlloc();
+   int      i;
 
-    PStackPushP(stack, term);
+   PStackPushP(stack,term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        if (TermIsFreeVar(term) &&
-            TermCellQueryProp(term, prop)) {
-            if (PTreeStore(tree, term)) {
-                res++;
-            }
-        } else {
-            for (i = 0; i < term->arity; i++) {
-                PStackPushP(stack, term->args[i]);
-            }
-        }
-    }
-    PStackFree(stack);
+   while(!PStackEmpty(stack))
+   {
+      term = PStackPopP(stack);
+      if(TermIsFreeVar(term) &&
+         TermCellQueryProp(term,prop))
+      {
+         if(PTreeStore(tree, term))
+         {
+            res++;
+         }
+      }
+      else
+      {
+         for(i=0; i<term->arity; i++)
+         {
+            PStackPushP(stack,term->args[i]);
+         }
+      }
+   }
+   PStackFree(stack);
 
-    return res;
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -2266,30 +2641,38 @@ long TermCollectPropVariables(Term_p term, PTree_p *tree,
 //
 /----------------------------------------------------------------------*/
 
-long TermCollectVariables(Term_p term, PTree_p *tree) {
-    long res = 0;
-    PStack_p stack = PStackAlloc();
-    int i;
+long TermCollectVariables(Term_p term, PTree_p *tree)
+{
+   long res = 0;
+   PStack_p stack = PStackAlloc();
+   int      i;
 
-    PStackPushP(stack, term);
+   PStackPushP(stack,term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        if (TermIsFreeVar(term)) {
-            if (PTreeStore(tree, term)) {
-                res++;
+   while(!PStackEmpty(stack))
+   {
+      term = PStackPopP(stack);
+      if(TermIsFreeVar(term))
+      {
+         if(PTreeStore(tree, term))
+         {
+            res++;
+         }
+      }
+      else
+      {
+         for(i=0; i<term->arity; i++)
+         {
+            if(!TermIsGround(term->args[i]))
+            {
+               PStackPushP(stack,term->args[i]);
             }
-        } else {
-            for (i = 0; i < term->arity; i++) {
-                if (!TermIsGround(term->args[i])) {
-                    PStackPushP(stack, term->args[i]);
-                }
-            }
-        }
-    }
-    PStackFree(stack);
+         }
+      }
+   }
+   PStackFree(stack);
 
-    return res;
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -2305,30 +2688,37 @@ long TermCollectVariables(Term_p term, PTree_p *tree) {
 //
 /----------------------------------------------------------------------*/
 
-long TermCollectFCodes(Term_p term, NumTree_p *tree) {
-    long res = 0;
-    PStack_p stack = PStackAlloc();
-    int i;
-    IntOrP dummy;
+long TermCollectFCodes(Term_p term, NumTree_p *tree)
+{
+   long res = 0;
+   PStack_p stack = PStackAlloc();
+   int      i;
+   IntOrP   dummy;
 
-    dummy.i_val = 0;
-    PStackPushP(stack, term);
+   dummy.i_val = 0;
+   PStackPushP(stack,term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        if (term->f_code > 0) {
-            if (NumTreeStore(tree, term->f_code, dummy, dummy)) {
-                res++;
-            }
-        }
-        for (i = 0; i < term->arity; i++) {
-            PStackPushP(stack, term->args[i]);
-        }
-    }
-    PStackFree(stack);
+   while(!PStackEmpty(stack))
+   {
+      term = PStackPopP(stack);
+      if(term->f_code > 0)
+      {
+         if(NumTreeStore(tree, term->f_code, dummy, dummy))
+         {
+            res++;
+         }
+      }
+      for(i=0; i<term->arity; i++)
+      {
+         PStackPushP(stack,term->args[i]);
+      }
+   }
+   PStackFree(stack);
 
-    return res;
+   return res;
 }
+
+
 
 
 /*-----------------------------------------------------------------------
@@ -2346,29 +2736,36 @@ long TermCollectFCodes(Term_p term, NumTree_p *tree) {
 //
 /----------------------------------------------------------------------*/
 
-long TermCollectGroundTerms(Term_p term, PTree_p *result, bool top_only) {
-    PStack_p stack = PStackAlloc();
-    long count = 0;
-    int i;
+long TermCollectGroundTerms(Term_p term, PTree_p *result, bool top_only)
+{
+   PStack_p stack = PStackAlloc();
+   long count = 0;
+   int i;
 
-    PStackPushP(stack, term);
+   PStackPushP(stack, term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        if (!TermIsFreeVar(term)) {
-            if (TermIsGround(term)) {
-                if (!TermIsConst(term) && PTreeStore(result, term)) {
-                    count++;
-                }
+   while(!PStackEmpty(stack))
+   {
+      term = PStackPopP(stack);
+      if(!TermIsFreeVar(term))
+      {
+         if(TermIsGround(term))
+         {
+            if(!TermIsConst(term) && PTreeStore(result, term))
+            {
+               count++;
             }
-            if (!TermIsGround(term) || !top_only) {
-                for (i = 0; i < term->arity; i++) {
-                    PStackPushP(stack, term->args[i]);
-                }
+         }
+         if(!TermIsGround(term) || !top_only)
+         {
+            for(i=0; i<term->arity; i++)
+            {
+               PStackPushP(stack, term->args[i]);
             }
-        }
-    }
-    return count;
+         }
+      }
+   }
+   return count;
 }
 
 
@@ -2386,30 +2783,36 @@ long TermCollectGroundTerms(Term_p term, PTree_p *result, bool top_only) {
 //
 /----------------------------------------------------------------------*/
 
-long TermAddFunOcc(Term_p term, PDArray_p f_occur, PStack_p res_stack) {
-    long res = 0;
-    PStack_p stack = PStackAlloc();
-    int i;
+long TermAddFunOcc(Term_p term, PDArray_p f_occur, PStack_p res_stack)
+{
+   long res = 0;
+   PStack_p stack = PStackAlloc();
+   int      i;
 
-    PStackPushP(stack, term);
+   PStackPushP(stack,term);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        if (!TermIsAnyVar(term)) {
-            if (!TermIsPhonyApp(term) && !PDArrayElementInt(f_occur, term->f_code)) {
-                res++;
-                PStackPushInt(res_stack, term->f_code);
-                PDArrayAssignInt(f_occur, term->f_code, 1);
-            }
-            for (i = 0; i < term->arity; i++) {
-                PStackPushP(stack, term->args[i]);
-            }
-        }
-    }
-    PStackFree(stack);
+   while(!PStackEmpty(stack))
+   {
+      term = PStackPopP(stack);
+      if(!TermIsAnyVar(term))
+      {
+         if(!TermIsPhonyApp(term) && !PDArrayElementInt(f_occur, term->f_code))
+         {
+            res++;
+            PStackPushInt(res_stack, term->f_code);
+            PDArrayAssignInt(f_occur, term->f_code, 1);
+         }
+         for(i=0; i<term->arity; i++)
+         {
+            PStackPushP(stack,term->args[i]);
+         }
+      }
+   }
+   PStackFree(stack);
 
-    return res;
+   return res;
 }
+
 
 
 /*-----------------------------------------------------------------------
@@ -2424,19 +2827,25 @@ long TermAddFunOcc(Term_p term, PDArray_p f_occur, PStack_p res_stack) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermArrayNoDuplicates(Term_p *args, long size) {
-    if (size <= 1) {
-        return true;
-    } else {
-        Term_p copy[size];
-        memcpy(copy, args, sizeof(Term_p) * size);
-        qsort(copy, size, sizeof(Term_p), PCmpFun);
-        bool unique = true;
-        for (long i = 1; i < size && unique; i++) {
-            unique = args[i] != args[i - 1];
-        }
-        return unique;
-    }
+bool TermArrayNoDuplicates(Term_p* args, long size)
+{
+   if (size <= 1)
+   {
+      return true;
+   }
+   else
+   {
+      Term_p copy[size];
+      memcpy(copy, args, sizeof(Term_p)*size);
+      qsort(copy, size, sizeof(Term_p), PCmpFun);
+      bool unique = true;
+      for(long i=1; i<size && unique; i++)
+      {
+         unique = args[i] != args[i-1];
+      }
+      return unique;
+   }
+
 }
 
 
@@ -2454,15 +2863,17 @@ bool TermArrayNoDuplicates(Term_p *args, long size) {
 //
 /----------------------------------------------------------------------*/
 
-long TermLinearize(PStack_p stack, Term_p term) {
-    long res = 1;
-    int i;
+long TermLinearize(PStack_p stack, Term_p term)
+{
+   long res = 1;
+   int i;
 
-    PStackPushP(stack, term);
-    for (i = 0; i < term->arity; i++) {
-        res += TermLinearize(stack, term->args[i]);
-    }
-    return res;
+   PStackPushP(stack, term);
+   for(i = 0; i<term->arity; i++)
+   {
+      res += TermLinearize(stack, term->args[i]);
+   }
+   return res;
 }
 
 
@@ -2480,15 +2891,16 @@ long TermLinearize(PStack_p stack, Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermCheckConsistency(Term_p term, DerefType deref) {
-    Term_p res;
-    PTree_p branch = NULL;
+Term_p TermCheckConsistency(Term_p term, DerefType deref)
+{
+   Term_p   res;
+   PTree_p  branch = NULL;
 
-    printf("TermCheckConsistency...\n");
-    res = term_check_consistency_rek(term, &branch, deref);
-    assert(branch == 0);
-    printf("...TermCheckConsistency\n");
-    return res;
+   printf("TermCheckConsistency...\n");
+   res = term_check_consistency_rek(term, &branch, deref);
+   assert(branch == 0);
+   printf("...TermCheckConsistency\n");
+   return res;
 }
 
 
@@ -2505,20 +2917,22 @@ Term_p TermCheckConsistency(Term_p term, DerefType deref) {
 //
 /----------------------------------------------------------------------*/
 
-void TermAssertSameSort(Sig_p sig, Term_p t1, Term_p t2) {
-    if (t1->type != t2->type) {
-        fprintf(stderr, "# Error: terms ");
-        TermPrintDbg(stderr, t1, sig, DEREF_NEVER);
-        fprintf(stderr, ": ");
-        TypePrintTSTP(stderr, sig->type_bank, t1->type);
-        fprintf(stderr, " and ");
-        TermPrintDbg(stderr, t2, sig, DEREF_NEVER);
-        fprintf(stderr, ": ");
-        TypePrintTSTP(stderr, sig->type_bank, t2->type);
-        fprintf(stderr, " should have the same sort\n");
-        assert(false);
-        Error("Type error", SYNTAX_ERROR);
-    }
+void TermAssertSameSort(Sig_p sig, Term_p t1, Term_p t2)
+{
+   if(t1->type != t2->type)
+   {
+      fprintf(stderr, "# Error: terms ");
+      TermPrintDbg(stderr, t1, sig, DEREF_NEVER);
+      fprintf(stderr, ": ");
+      TypePrintTSTP(stderr, sig->type_bank, t1->type);
+      fprintf(stderr, " and ");
+      TermPrintDbg(stderr, t2, sig, DEREF_NEVER);
+      fprintf(stderr, ": ");
+      TypePrintTSTP(stderr, sig->type_bank, t2->type);
+      fprintf(stderr, " should have the same sort\n");
+      assert(false);
+      Error("Type error", SYNTAX_ERROR);
+   }
 }
 
 
@@ -2536,27 +2950,32 @@ void TermAssertSameSort(Sig_p sig, Term_p t1, Term_p t2) {
 //
 /----------------------------------------------------------------------*/
 
-bool TermIsUntyped(Term_p term) {
-    bool res = true;
+bool TermIsUntyped(Term_p term)
+{
+   bool res = true;
 
-    PLocalStackInit(stack);
+   PLocalStackInit(stack);
 
-    PLocalStackPush(stack, term);
+   PLocalStackPush(stack, term);
 
-    while (!PLocalStackEmpty(stack)) {
-        term = PLocalStackPop(stack);
+   while(!PLocalStackEmpty(stack))
+   {
+      term = PLocalStackPop(stack);
 
-        if (TypeIsIndividual(term->type) || TypeIsBool(term->type)) {
-            PLocalStackPushTermArgs(stack, term);
-        } else {
-            res = false;
-            break;
-        }
-    }
+      if(TypeIsIndividual(term->type) || TypeIsBool(term->type))
+      {
+         PLocalStackPushTermArgs(stack, term);
+      }
+      else
+      {
+         res = false;
+         break;
+      }
+   }
 
-    PLocalStackFree(stack);
+   PLocalStackFree(stack);
 
-    return res;
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -2571,28 +2990,31 @@ bool TermIsUntyped(Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermAppEncode(Term_p orig, Sig_p sig) {
-    if (orig->arity == 0) {
-        return TermCopyKeepVars(orig, DEREF_NEVER);
-    }
+Term_p TermAppEncode(Term_p orig, Sig_p sig)
+{
+   if(orig->arity == 0)
+   {
+      return TermCopyKeepVars(orig, DEREF_NEVER);
+   }
 
-    assert(orig->arity > 0);
-    Term_p orig_prefix = discard_last(orig);
-    Term_p applied_to = orig->args[orig->arity - 1];
+   assert(orig->arity > 0);
+   Term_p orig_prefix = discard_last(orig);
+   Term_p applied_to  = orig->args[orig->arity-1];
 
-    assert(TermIsFreeVar(orig_prefix) || !orig_prefix->type);
-    TypeInferSort(sig, orig_prefix, NULL);
-    assert(orig_prefix->type);
+   assert(TermIsFreeVar(orig_prefix) || !orig_prefix->type);
+   TypeInferSort(sig, orig_prefix, NULL);
+   assert(orig_prefix->type);
 
-    Term_p app_encoded = TermTopAlloc(SigGetTypedApp(sig, orig_prefix->type, applied_to->type, orig->type), 2);
-    app_encoded->args[0] = TermAppEncode(orig_prefix, sig);
-    app_encoded->args[1] = TermAppEncode(applied_to, sig);
+   Term_p app_encoded = TermTopAlloc(SigGetTypedApp(sig, orig_prefix->type, applied_to->type, orig->type), 2);
+   app_encoded->args[0] = TermAppEncode(orig_prefix, sig);
+   app_encoded->args[1] = TermAppEncode(applied_to, sig);
 
-    if (!TermIsFreeVar(orig_prefix)) {
-        TermTopFree(orig_prefix);
-    }
+   if(!TermIsFreeVar(orig_prefix))
+   {
+      TermTopFree(orig_prefix);
+   }
 
-    return app_encoded;
+   return app_encoded;
 }
 
 /*-----------------------------------------------------------------------
@@ -2611,31 +3033,38 @@ Term_p TermAppEncode(Term_p orig, Sig_p sig) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermCreatePrefix(Term_p orig, int arg_num) {
-    assert(orig && arg_num >= 0 && orig->arity >= arg_num);
-    assert(!TermIsPhonyApp(orig) || orig->arity != arg_num);
+Term_p TermCreatePrefix(Term_p orig, int arg_num)
+{
+   assert(orig && arg_num >= 0 && orig->arity >= arg_num);
+   assert(!TermIsPhonyApp(orig) || orig->arity != arg_num);
 
-    Term_p prefix;
+   Term_p prefix;
 
-    if (arg_num == ARG_NUM(orig)) {
-        prefix = orig;
-    } else if (TermIsPhonyApp(orig) && arg_num == 0) {
-        // due to app-encoding of applied variables,
-        // the term head is hidden in first argument
-        prefix = orig->args[0];
-    } else {
-        assert(arg_num < ARG_NUM(orig));
-        int pref_len = arg_num + (TermIsPhonyApp(orig) ? 1 : 0);
-        prefix = TermTopAlloc(orig->f_code, pref_len);
+   if(arg_num == ARG_NUM(orig))
+   {
+      prefix = orig;
+   }
+   else if(TermIsPhonyApp(orig) && arg_num == 0)
+   {
+      // due to app-encoding of applied variables,
+      // the term head is hidden in first argument
+      prefix = orig->args[0];
+   }
+   else
+   {
+      assert(arg_num < ARG_NUM(orig));
+      int pref_len = arg_num + (TermIsPhonyApp(orig) ? 1 : 0);
+      prefix = TermTopAlloc(orig->f_code, pref_len);
 
-        for (int i = 0; i < pref_len; i++) {
-            prefix->args[i] = orig->args[i];
-        }
+      for(int i=0; i < pref_len; i++)
+      {
+         prefix->args[i] = orig->args[i];
+      }
 
-        assert(!TermIsShared(prefix));
-    }
+      assert(!TermIsShared(prefix));
+   }
 
-    return prefix;
+   return prefix;
 }
 
 /*-----------------------------------------------------------------------
@@ -2651,8 +3080,9 @@ Term_p TermCreatePrefix(Term_p orig, int arg_num) {
 //
 /----------------------------------------------------------------------*/
 
-void TermFOOLPrint(FILE *out, Sig_p sig, TFormula_p form) {
-    do_fool_print(out, sig, form, 0);
+void TermFOOLPrint(FILE* out, Sig_p sig, TFormula_p form)
+{
+   do_fool_print(out, sig, form, 0);
 }
 
 /*----------------------------------------------------------------------*/
@@ -2667,21 +3097,28 @@ void TermFOOLPrint(FILE *out, Sig_p sig, TFormula_p form) {
 //
 /*----------------------------------------------------------------------*/
 
-Term_p TermCopyRenameVars(NumTree_p *renaming, Term_p term) {
+Term_p TermCopyRenameVars(NumTree_p* renaming, Term_p term)
+{
     int i;
     Term_p copy;
     NumTree_p entry;
 
-    if (TermIsFreeVar(term)) {
+    if (TermIsFreeVar(term))
+    {
         entry = NumTreeFind(renaming, term->f_code);
         assert(entry);
         copy = (Term_p)(entry->val1.p_val);
-    } else if (TermIsDBVar(term)) {
+    }
+    else if (TermIsDBVar(term))
+    {
         copy = term;
-    } else {
+    }
+    else
+    {
         copy = TermTopCopy(term);
         copy->type = term->type;
-        for (i = 0; i < term->arity; i++) {
+        for (i=0; i<term->arity; i++)
+        {
             copy->args[i] = TermCopyRenameVars(renaming, term->args[i]);
         }
     }
@@ -2702,7 +3139,8 @@ Term_p TermCopyRenameVars(NumTree_p *renaming, Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermCopyNormalizeVarsAlpha(VarBank_p vars, Term_p term) {
+Term_p TermCopyNormalizeVarsAlpha(VarBank_p vars, Term_p term)
+{
     Term_p copy;
     NumTree_p renaming;
 
@@ -2725,21 +3163,23 @@ Term_p TermCopyNormalizeVarsAlpha(VarBank_p vars, Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermCopyUnifyVars(VarBank_p vars, Term_p term) {
+Term_p TermCopyUnifyVars(VarBank_p vars, Term_p term)
+{
     int i;
 
-    if (TermIsFreeVar(term)) {
+    if (TermIsFreeVar(term))
+    {
         return VarBankVarAssertAlloc(vars, -2, vars->sort_table->i_type);
-    } else if (TermIsDBVar(term)) {
+    }
+    else if (TermIsDBVar(term))
+    {
         return term;
     }
 
-    Term_p
-    new = TermTopCopy(term);
-    for (i = 0; i < term->arity; i++) {
-        new
-        ->
-        args[i] = TermCopyUnifyVars(vars, term->args[i]);
+    Term_p new = TermTopCopy(term);
+    for (i=0; i<term->arity; i++)
+    {
+        new->args[i] = TermCopyUnifyVars(vars, term->args[i]);
     }
 
     return new;
@@ -2758,15 +3198,16 @@ Term_p TermCopyUnifyVars(VarBank_p vars, Term_p term) {
 /----------------------------------------------------------------------*/
 
 Term_p TermCopyNormalizeVars(VarBank_p vars, Term_p term,
-                             VarNormStyle var_norm) {
-    switch (var_norm) {
-        case NSUnivar:
-            return TermCopyUnifyVars(vars, term);
-        case NSAlpha:
-            return TermCopyNormalizeVarsAlpha(vars, term);
-        default:
-            return TermCopy(term, vars, NULL, DEREF_NEVER);
-    }
+   VarNormStyle var_norm)
+{
+   switch (var_norm) {
+   case NSUnivar:
+      return TermCopyUnifyVars(vars,term);
+   case NSAlpha:
+      return TermCopyNormalizeVarsAlpha(vars,term);
+   default:
+      return TermCopy(term,vars,NULL,DEREF_NEVER);
+   }
 }
 
 
@@ -2790,40 +3231,50 @@ Term_p TermCopyNormalizeVars(VarBank_p vars, Term_p term,
 /----------------------------------------------------------------------*/
 
 long TermDAGWeight(Term_p term, long fweight, long vweight,
-                   long dup_weight, bool new_term) {
-    PStack_p stack;
-    long res = 0;
-    int i;
+                   long dup_weight, bool new_term)
+{
+   PStack_p stack;
+   long res = 0;
+   int i;
 
-    assert(term);
+   assert(term);
 
-    if (new_term) {
-        TermDelPropOpt(term, TPOpFlag);
-    }
-    stack = PStackAlloc();
-    PStackPushP(stack, term);
+   if(new_term)
+   {
+      TermDelPropOpt(term, TPOpFlag);
+   }
+   stack = PStackAlloc();
+   PStackPushP(stack, term);
 
-    // printf("(F%ld/V%ld)\n", fweight, vweight);
+   // printf("(F%ld/V%ld)\n", fweight, vweight);
 
-    while (!PStackEmpty(stack)) {
-        term = PStackPopP(stack);
-        assert(term);
-        if (TermCellQueryProp(term, TPOpFlag)) {
-            res += dup_weight;
-        } else {
-            TermCellSetProp(term, TPOpFlag);
-            if (TermIsFreeVar(term)) {
-                res += vweight;
-            } else {
-                res += fweight;
-                for (i = 0; i < term->arity; i++) {
-                    PStackPushP(stack, term->args[i]);
-                }
+   while(!PStackEmpty(stack))
+   {
+      term = PStackPopP(stack);
+      assert(term);
+      if(TermCellQueryProp(term, TPOpFlag))
+      {
+         res += dup_weight;
+      }
+      else
+      {
+         TermCellSetProp(term, TPOpFlag);
+         if(TermIsFreeVar(term))
+         {
+            res += vweight;
+         }
+         else
+         {
+            res += fweight;
+            for(i=0; i< term->arity; i++)
+            {
+               PStackPushP(stack, term->args[i]);
             }
-        }
-    }
-    PStackFree(stack);
-    return res;
+         }
+      }
+   }
+   PStackFree(stack);
+   return res;
 }
 
 /*-----------------------------------------------------------------------
@@ -2838,8 +3289,9 @@ long TermDAGWeight(Term_p term, long fweight, long vweight,
 //                   cells.
 //
 /----------------------------------------------------------------------*/
-bool TermIsDBClosed(Term_p term) {
-    return !TermHasDBSubterm(term) || do_is_db_closed(term, 0);
+bool TermIsDBClosed(Term_p term)
+{
+   return !TermHasDBSubterm(term) || do_is_db_closed(term, 0);
 }
 
 /*-----------------------------------------------------------------------
@@ -2855,26 +3307,31 @@ bool TermIsDBClosed(Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-Term_p TermApplyArg(TypeBank_p tb, Term_p s, Term_p arg) {
-    assert(TypeIsArrow(s->type));
-    assert(s->type->args[0] == arg->type);
+Term_p TermApplyArg(TypeBank_p tb, Term_p s, Term_p arg)
+{
+   assert(TypeIsArrow(s->type));
+   assert(s->type->args[0] == arg->type);
 
-    Term_p s_arg = NULL;
-    if ((!TermIsAnyVar(s) && !TermIsLambda(s))) {
-        s_arg = TermTopAlloc(s->f_code, s->arity + 1);
-        for (int i = 0; i < s->arity; i++) {
-            s_arg->args[i] = s->args[i];
-        }
-        s_arg->args[s->arity] = arg;
-    } else {
-        s_arg = TermTopAlloc(SIG_PHONY_APP_CODE, 2);
-        s_arg->args[0] = s;
-        s_arg->args[1] = arg;
-    }
+   Term_p s_arg = NULL;
+   if ((!TermIsAnyVar(s) && !TermIsLambda(s)))
+   {
+      s_arg = TermTopAlloc(s->f_code, s->arity+1);
+      for(int i=0; i<s->arity; i++)
+      {
+         s_arg->args[i] = s->args[i];
+      }
+      s_arg->args[s->arity] = arg;
+   }
+   else
+   {
+      s_arg = TermTopAlloc(SIG_PHONY_APP_CODE, 2);
+      s_arg->args[0] = s;
+      s_arg->args[1] = arg;
+   }
 
-    s_arg->type = TypeBankInsertTypeShared(tb, TypeDropFirstArg(s->type));
+   s_arg->type = TypeBankInsertTypeShared(tb, TypeDropFirstArg(s->type));
 
-    return s_arg;
+   return s_arg;
 }
 
 /*-----------------------------------------------------------------------
@@ -2889,22 +3346,25 @@ Term_p TermApplyArg(TypeBank_p tb, Term_p s, Term_p arg) {
 //
 /----------------------------------------------------------------------*/
 
-int TermComputeOrder(Sig_p sig, Term_p term) {
-    PStack_p subterms = PStackAlloc();
-    PStackPushP(subterms, term);
-    int ord = VAR_ORDER(term->type);
+int TermComputeOrder(Sig_p sig, Term_p term)
+{
+   PStack_p subterms = PStackAlloc();
+   PStackPushP(subterms, term);
+   int ord = VAR_ORDER(term->type);
 
-    while (!PStackEmpty(subterms)) {
-        Term_p subterm = PStackPopP(subterms);
-        ord = MAX(ord, VAR_ORDER(subterm->type));
+   while(!PStackEmpty(subterms))
+   {
+      Term_p subterm = PStackPopP(subterms);
+      ord = MAX(ord, VAR_ORDER(subterm->type));
 
-        for (int i = TermIsLambda(subterm) ? 1 : 0; i < subterm->arity; i++) {
-            PStackPushP(subterms, subterm->args[i]);
-        }
-    }
+      for(int i=TermIsLambda(subterm) ? 1 : 0; i<subterm->arity; i++)
+      {
+         PStackPushP(subterms, subterm->args[i]);
+      }
+   }
 
-    PStackFree(subterms);
-    return ord;
+   PStackFree(subterms);
+   return ord;
 }
 
 /*-----------------------------------------------------------------------
@@ -2919,21 +3379,26 @@ int TermComputeOrder(Sig_p sig, Term_p term) {
 //
 /----------------------------------------------------------------------*/
 
-void visitor(void *sig, void *tp) {
-    Term_p t = tp;
-    DBG_PRINT(stderr, "", TermPrintDbg(stderr, t, sig, DEREF_NEVER), " <- ");
-    if (t->binding) {
-        DBG_PRINT(stderr, "", TermPrintDbg(stderr, t->binding, sig, DEREF_NEVER), ";");
-    } else {
-        fprintf(stderr, "/;");
-    }
+void visitor(void* sig, void* tp)
+{
+   Term_p t = tp;
+   DBG_PRINT(stderr, "", TermPrintDbg(stderr, t, sig, DEREF_NEVER), " <- ");
+   if(t->binding)
+   {
+      DBG_PRINT(stderr, "", TermPrintDbg(stderr, t->binding, sig, DEREF_NEVER), ";");
+   }
+   else
+   {
+      fprintf(stderr, "/;");
+   }
 }
 
-void TermPrintDbgVarBinds(Sig_p sig, Term_p t) {
-    PTree_p vars = NULL;
-    TermCollectVariables(t, &vars);
-    PTreeVisitInOrder(vars, visitor, sig);
-    PTreeFree(vars);
+void TermPrintDbgVarBinds(Sig_p sig, Term_p t)
+{
+   PTree_p vars = NULL;
+   TermCollectVariables(t, &vars);
+   PTreeVisitInOrder(vars, visitor, sig);
+   PTreeFree(vars);
 }
 
 /*-----------------------------------------------------------------------
@@ -2950,19 +3415,21 @@ void TermPrintDbgVarBinds(Sig_p sig, Term_p t) {
 /----------------------------------------------------------------------*/
 
 #define TRIM_THRESHOLD 10
+Term_p TermTrimImplications(Sig_p sig, Term_p f)
+{
+   Term_p orig_f = f;
+   while(TFormulaIsQuantified(sig, f) && f->arity == 2)
+   {
+      f = f->args[1];
+   }
 
-Term_p TermTrimImplications(Sig_p sig, Term_p f) {
-    Term_p orig_f = f;
-    while (TFormulaIsQuantified(sig, f) && f->arity == 2) {
-        f = f->args[1];
-    }
-
-    int num_impls = 0;
-    while (f->f_code == sig->impl_code && f->arity == 2) {
-        num_impls++;
-        f = f->args[1];
-    }
-    return num_impls >= TRIM_THRESHOLD ? f : orig_f;
+   int num_impls = 0;
+   while(f->f_code == sig->impl_code && f->arity == 2)
+   {
+      num_impls++;
+      f = f->args[1];
+   }
+   return num_impls >= TRIM_THRESHOLD ? f : orig_f;
 }
 
 /*---------------------------------------------------------------------*/

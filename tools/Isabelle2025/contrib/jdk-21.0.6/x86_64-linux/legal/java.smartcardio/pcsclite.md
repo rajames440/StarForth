@@ -1,7 +1,6 @@
 ## PC/SC Lite v1.9.9
 
 ### PC/SC Lite Notice
-
 ```
 MUSCLE SmartCard Development ( https://pcsclite.apdu.fr/ )
 
@@ -30,7 +29,6 @@ Copyright for pcsclite.h:
 ```
 
 ### PC/SC Lite License
-
 ```
 
 Redistribution and use in source and binary forms, with or without

@@ -1,11 +1,20 @@
 /*
- * This file is part of the source code of the software program
- * Vampire. It is protected by applicable
- * copyright laws.
- *
- * This source code is distributed under the licence found here
- * https://vprover.github.io/license.html
- * and in the source directory
+                                  ***   StarForth   ***
+
+  Lexer.cpp- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:03.661-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/vampire-4.8/src/Shell/Lexer.cpp
  */
 /**
  * @file Shell/Lexer.cpp
@@ -28,14 +37,15 @@ using namespace Lib;
  * Initialise a lexer.
  * @since 27/07/2004 Torrevieja
  */
-Lexer::Lexer(istream &in)
-    : _charBuffer(512),
-      _charCursor(0),
-      _stream(in),
-      _eof(false),
-      _lineNumber(1),
-      _lookAheadChar(0) {
-    readNextChar();
+Lexer::Lexer (istream& in)
+  : _charBuffer(512),
+    _charCursor(0),
+    _stream(in),
+    _eof(false),
+    _lineNumber(1),
+    _lookAheadChar(0)
+{
+  readNextChar();
 } // Lexer::Lexer
 
 
@@ -45,33 +55,34 @@ Lexer::Lexer(istream &in)
  * @return true if such a character exists
  * @since 14/07/2004 Turku
  */
-bool Lexer::readNextChar() {
-    CALL("Lexer::readNextChar");
+bool Lexer::readNextChar ()
+{
+  CALL("Lexer::readNextChar");
 
-    if (_lookAheadChar) {
-        _lastCharacter = _lookAheadChar;
-        _lookAheadChar = 0;
-        if (_lastCharacter == -1) {
-            _eof = true;
-            return false;
-        }
-        return true;
-    }
-
-    if (_eof) {
-        return false;
-    }
-
-    _lastCharacter = _stream.get();
+  if (_lookAheadChar) {
+    _lastCharacter = _lookAheadChar;
+    _lookAheadChar = 0;
     if (_lastCharacter == -1) {
-        _eof = true;
-        return false;
-    }
-
-    if (_lastCharacter == '\n') {
-        _lineNumber++;
+      _eof = true;
+      return false;
     }
     return true;
+  }
+
+  if (_eof) {
+    return false;
+  }
+
+  _lastCharacter = _stream.get();
+  if (_lastCharacter == -1) {
+    _eof = true;
+    return false;
+  }
+
+  if (_lastCharacter == '\n') {
+    _lineNumber++;
+  }
+  return true;
 } // Lexer::readNextChar
 
 
@@ -79,30 +90,31 @@ bool Lexer::readNextChar() {
  * Read a number (either integer or floating point).
  * @since 15/07/2004 Turku
  */
-void Lexer::readNumber(Token &token) {
-    CALL("Lexer::readNumber");
+void Lexer::readNumber (Token& token)
+{
+  CALL("Lexer::readNumber");
 
-    if (_lastCharacter == '-') {
-        saveLastChar();
-        readNextChar();
+  if (_lastCharacter == '-') {
+    saveLastChar();
+    readNextChar();
+  }
+  readUnsignedInteger();
+  if (_lastCharacter == '.') {
+    saveLastChar();
+    if (readNextChar()) {
+      if (isDigit(_lastCharacter)) {
+	readUnsignedInteger();
+	token.tag = TT_REAL;
+	saveTokenText(token);
+	return;
+      }
     }
-    readUnsignedInteger();
-    if (_lastCharacter == '.') {
-        saveLastChar();
-        if (readNextChar()) {
-            if (isDigit(_lastCharacter)) {
-                readUnsignedInteger();
-                token.tag = TT_REAL;
-                saveTokenText(token);
-                return;
-            }
-        }
-        saveTokenText(token);
-        throw LexerException((vstring) "incorrect number format in " + token.text,
-                             *this);
-    }
-    token.tag = TT_INTEGER;
     saveTokenText(token);
+    throw LexerException((vstring)"incorrect number format in " + token.text,
+			 *this);
+  }
+  token.tag = TT_INTEGER;
+  saveTokenText(token);
 } // Lexer::readNumber
 
 
@@ -110,9 +122,10 @@ void Lexer::readNumber(Token &token) {
  * Save last character in the character buffer (if capacity permits).
  * @since 15/07/2004 Turku
  */
-void Lexer::saveLastChar() {
-    CALL("Lexer::saveLastChar");
-    _charBuffer[_charCursor++] = (char) _lastCharacter;
+void Lexer::saveLastChar ()
+{
+  CALL("Lexer::saveLastChar");
+  _charBuffer[_charCursor++]  = (char)_lastCharacter;
 } // Lexer::saveLastChar
 
 
@@ -120,10 +133,11 @@ void Lexer::saveLastChar() {
  * Save character in the character buffer (if capacity permits).
  * @since 25/08/2004 Torrevieja
  */
-void Lexer::saveChar(int character) {
-    CALL("Lexer::saveChar");
+void Lexer::saveChar (int character)
+{
+  CALL("Lexer::saveChar");
 
-    _charBuffer[_charCursor++] = (char) character;
+  _charBuffer[_charCursor++]  = (char)character;
 } // Lexer::saveChar
 
 
@@ -132,11 +146,12 @@ void Lexer::saveChar(int character) {
  * of the given token.
  * @since 15/07/2004 Turku
  */
-void Lexer::saveTokenText(Token &token) {
-    CALL("Lexer::saveTokenText");
+void Lexer::saveTokenText (Token& token)
+{
+  CALL("Lexer::saveTokenText");
 
-    _charBuffer[_charCursor] = 0;
-    token.text = _charBuffer.content();
+  _charBuffer[_charCursor] = 0;
+  token.text = _charBuffer.content();
 } // Lexer::saveTokenText
 
 
@@ -144,32 +159,34 @@ void Lexer::saveTokenText(Token &token) {
  * Read an unsigned integer.
  * @since 15/07/2004 Turku
  */
-void Lexer::readUnsignedInteger() {
-    CALL("TPTPLexer::readUnsignedInteger");
+void Lexer::readUnsignedInteger ()
+{
+  CALL("TPTPLexer::readUnsignedInteger");
 
+  saveLastChar();
+
+  while (readNextChar() && isDigit(_lastCharacter)) {
     saveLastChar();
-
-    while (readNextChar() && isDigit(_lastCharacter)) {
-        saveLastChar();
-    }
+  }
 } // Lexer::readUnsignedInteger
 
 /**
  * Create a new lexer exception.
  * @since 15/07/2004 Turku
  */
-LexerException::LexerException(vstring message, const Lexer &lexer)
-    : _message(message) {
-    if (lexer.isAtEndOfFile()) {
-        _message += " at end of input";
-        return;
-    }
-    int line = lexer.lineNumber();
-    if (lexer.lastCharacter() == '\n') {
-        line--;
-    }
-    _message += " in line ";
-    _message += Int::toString(line);
+LexerException::LexerException (vstring message,const Lexer& lexer)
+  : _message (message)
+{
+  if (lexer.isAtEndOfFile()) {
+    _message += " at end of input";
+    return;
+  }
+  int line = lexer.lineNumber();
+  if (lexer.lastCharacter() == '\n') {
+    line--;
+  }
+  _message += " in line ";
+  _message += Int::toString(line);
 } // LexerException::LexerException
 
 
@@ -177,8 +194,9 @@ LexerException::LexerException(vstring message, const Lexer &lexer)
  * Write itself to an ostream.
  * @since 15/07/2004 Turku
  */
-void LexerException::cry(ostream &out) const {
-    out << "Lexer exception: " << _message << '\n';
+void LexerException::cry (ostream& out) const
+{
+  out << "Lexer exception: " << _message << '\n';
 } // LexerException::LexerException
 
 
@@ -186,16 +204,17 @@ void LexerException::cry(ostream &out) const {
  * Read a sequence of characters cs without saving them.
  * @since 25/08/2004 Torrevieja
  */
-void Lexer::readSequence(const char *cs) {
-    while (*cs) {
-        readNextChar();
-        if (lastCharacter() != *cs) {
-            throw LexerException((vstring) cs +
-                                 " expected", *this);
-        }
-        cs++;
-    }
+void Lexer::readSequence (const char* cs)
+{
+  while (*cs) {
     readNextChar();
+    if (lastCharacter() != *cs) {
+      throw LexerException((vstring)cs + 
+			   " expected",*this);
+    }
+    cs++;
+  }
+  readNextChar();
 } // Lexer::readSequence
 
 
@@ -203,10 +222,12 @@ void Lexer::readSequence(const char *cs) {
  * Look ahead one character and return it.
  * @since 27/11/2006 Haifa
  */
-int Lexer::lookAhead() {
-    CALL("Lexer::lookAhead");
-    ASS(!_lookAheadChar); // cannot look ahead by two characters!
+int Lexer::lookAhead()
+{
+  CALL("Lexer::lookAhead");
+  ASS(! _lookAheadChar); // cannot look ahead by two characters!
 
-    _lookAheadChar = _stream.get();
-    return _lookAheadChar;
+  _lookAheadChar = _stream.get();
+  return _lookAheadChar;
 } // Lexer::lookAhead()
+

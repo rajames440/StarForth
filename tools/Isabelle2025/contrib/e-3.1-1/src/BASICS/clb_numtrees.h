@@ -1,25 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-  File  : clb_numtrees.h
+  clb_numtrees.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.317-04
 
-  Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Definitions for SPLAY trees with long integer keys and up to two
-  long or pointer values. Copied from clb_stringtrees.h
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 1998, 1999 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-  Changes
-
-  Created: Thu Sep 25 02:23:01 MET DST 1997
-
-  -----------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/BASICS/clb_numtrees.h
+ */
 
 #ifndef CLB_NUMTREES
 
@@ -40,13 +36,14 @@
    part of the data stucture and will not be touched by deallocating
    trees or tree nodes. */
 
-typedef struct numtreecell {
-    long key;
-    IntOrP val1;
-    IntOrP val2;
-    struct numtreecell *lson;
-    struct numtreecell *rson;
-} NumTreeCell, *NumTree_p;
+typedef struct numtreecell
+{
+   long               key;
+   IntOrP             val1;
+   IntOrP             val2;
+   struct numtreecell *lson;
+   struct numtreecell *rson;
+}NumTreeCell, *NumTree_p;
 
 
 /*---------------------------------------------------------------------*/
@@ -63,28 +60,17 @@ typedef struct numtreecell {
 #endif
 
 NumTree_p NumTreeCellAllocEmpty(void);
-
-void NumTreeFree(NumTree_p junk);
-
+void      NumTreeFree(NumTree_p junk);
 NumTree_p NumTreeInsert(NumTree_p *root, NumTree_p newnode);
-
-bool NumTreeStore(NumTree_p *root, long key, IntOrP val1, IntOrP val2);
-
-long NumTreeDebugPrint(FILE *out, NumTree_p tree,
-                       bool keys_only);
-
+bool      NumTreeStore(NumTree_p *root, long key, IntOrP val1, IntOrP val2);
+long      NumTreeDebugPrint(FILE* out, NumTree_p tree,
+                            bool keys_only);
 NumTree_p NumTreeFind(NumTree_p *root, long key);
-
 NumTree_p NumTreeExtractEntry(NumTree_p *root, long key);
-
 NumTree_p NumTreeExtractRoot(NumTree_p *root);
-
-bool NumTreeDeleteEntry(NumTree_p *root, long key);
-
-long NumTreeNodes(NumTree_p root);
-
+bool      NumTreeDeleteEntry(NumTree_p *root, long key);
+long      NumTreeNodes(NumTree_p root);
 NumTree_p NumTreeMaxNode(NumTree_p root);
-
 #define   NumTreeMaxKey(tree) (NumTreeMaxNode(tree)->key)
 
 PStack_p NumTreeLimitedTraverseInit(NumTree_p root, long limit);

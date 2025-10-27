@@ -1,7 +1,6 @@
 # References View
 
-This extension shows reference search results as separate view, just like search results. It complements the peek view
-presentation that is also built into VS Code. The following feature are available:
+This extension shows reference search results as separate view, just like search results. It complements the peek view presentation that is also built into VS Code. The following feature are available:
 
 * List All References via the Command Palette, the Context Menu, or via <kbd>Alt+Shift+F12</kbd>
 * View references in a dedicated tree view that sits in the sidebar
@@ -10,22 +9,19 @@ presentation that is also built into VS Code. The following feature are availabl
 
 ![](https://raw.githubusercontent.com/microsoft/vscode-references-view/master/media/demo.png)
 
-**Note** that this extension is bundled with Visual Studio Code version 1.29 and later - it doesn't need to be installed
-anymore.
+**Note** that this extension is bundled with Visual Studio Code version 1.29 and later - it doesn't need to be installed anymore.
 
 ## Requirements
 
-This extension is just an alternative UI for reference search and extensions implementing reference search must still be
-installed.
+This extension is just an alternative UI for reference search and extensions implementing reference search must still be installed.
 
 ## Issues
 
-This extension ships with Visual Studio Code and uses its issue tracker. Please file issue
-here: https://github.com/Microsoft/vscode/issues
+This extension ships with Visual Studio Code and uses its issue tracker. Please file issue here: https://github.com/Microsoft/vscode/issues
 
 # Contributing
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a
+This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.microsoft.com.
 

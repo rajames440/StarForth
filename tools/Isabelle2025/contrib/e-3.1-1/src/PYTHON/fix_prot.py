@@ -48,6 +48,23 @@ Germany
 or via email (address above).
 """
 
+#                                   ***   StarForth   ***
+#
+#   fix_prot.py- FORTH-79 Standard and ANSI C99 ONLY
+#   Modified by - rajames
+#   Last modified - 2025-10-27T12:40:03.088-04
+#
+#   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+#
+#   This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+#   To the extent possible under law, the author(s) have dedicated all copyright and related
+#   and neighboring rights to this software to the public domain worldwide.
+#   This software is distributed without any warranty.
+#
+#   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+#
+#   /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/PYTHON/fix_prot.py
+
 import sys
 import getopt
 import pylib_io
@@ -55,22 +72,21 @@ import pylib_generic
 import pylib_eprot
 import pylib_emconf
 
+
 if __name__ == '__main__':
     opts, args = getopt.gnu_getopt(sys.argv[1:], "hv", ["Verbose"])
 
     for option, optarg in opts:
         if option == "-h":
-            print
-            __doc__
+            print __doc__
             sys.exit()
-        elif option == "-v" or option == "--verbose":
+        elif option == "-v" or option =="--verbose":
             pylib_io.Verbose = 1
         else:
-            sys.exit("Unknown option " + option)
+            sys.exit("Unknown option "+ option)
 
-    if len(args) < 1:
-        print
-        __doc__
+    if len(args)<1:
+        print __doc__
         sys.exit()
 
     config = pylib_emconf.e_mconfig(args[0])
@@ -78,7 +94,6 @@ if __name__ == '__main__':
     for arg in args[1:]:
         strat = pylib_eprot.estrat_task(arg)
         strat.parse(config.specdir, config.protdir)
-        print
-        strat
+        print strat
         strat.set_synced(False)
         strat.sync()

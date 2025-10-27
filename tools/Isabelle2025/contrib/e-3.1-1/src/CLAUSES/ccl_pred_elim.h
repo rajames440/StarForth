@@ -1,24 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-  File  : clb_pred_elim.h
+  ccl_pred_elim.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.139-04
 
-  Author: Petar Vukmirovic
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Implements (defined) predicate elimination as described in
-  SAT-inspired eliminations for superposition
-  (https://ieeexplore.ieee.org/document/9617710).
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 2022 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-  Created:  Fri Jan 7 2022 13:34:39 CET
-
-  -----------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/CLAUSES/ccl_pred_elim.h
+ */
 
 #ifndef CCL_PE
 #define CCL_PE
@@ -27,7 +24,7 @@
 #include <che_hcb.h>
 
 void PredicateElimination(ClauseSet_p passive, ClauseSet_p archive,
-                          const HeuristicParms_p parms, TB_p bank,
+                          const HeuristicParms_p parms,  TB_p bank,
                           TB_p tmp_bank, VarBank_p fresh_vars);
 
 #endif

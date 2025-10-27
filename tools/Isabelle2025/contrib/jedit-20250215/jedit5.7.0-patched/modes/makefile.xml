@@ -1,77 +1,96 @@
 <?xml version="1.0"?>
 
+<!--
+  ~                                  ***   StarForth   ***
+  ~
+  ~  makefile.xml- FORTH-79 Standard and ANSI C99 ONLY
+  ~  Modified by - rajames
+  ~  Last modified - 2025-10-27T12:40:03.771-04
+  ~
+  ~  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+  ~
+  ~  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  ~  To the extent possible under law, the author(s) have dedicated all copyright and related
+  ~  and neighboring rights to this software to the public domain worldwide.
+  ~  This software is distributed without any warranty.
+  ~
+  ~  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+  ~
+  ~  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/jedit-20250215/jedit5.7.0-patched/modes/makefile.xml
+  -->
+
 <!DOCTYPE MODE SYSTEM "xmode.dtd">
 
 <MODE>
-    <PROPS>
-        <PROPERTY NAME="lineComment" VALUE="#"/>
-    </PROPS>
-    <RULES IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE">
-        <!-- Comment -->
-        <EOL_SPAN TYPE="COMMENT1">#</EOL_SPAN>
+	<PROPS>
+		<PROPERTY NAME="lineComment" VALUE="#" />
+	</PROPS>
+	<RULES IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE">
+		<!-- Comment -->
+		<EOL_SPAN TYPE="COMMENT1">#</EOL_SPAN>
 
-        <!-- Function calls -->
-        <SPAN_REGEXP TYPE="FUNCTION" HASH_CHAR="$" DELEGATE="MAIN">
-            <BEGIN>\$\([a-zA-Z][\w-]*</BEGIN>
-            <END>)</END>
-        </SPAN_REGEXP>
+		<!-- Function calls -->
+		<SPAN_REGEXP TYPE="FUNCTION" HASH_CHAR="$" DELEGATE="MAIN">
+			<BEGIN>\$\([a-zA-Z][\w-]* </BEGIN>
+			<END>)</END>
+		</SPAN_REGEXP>
 
-        <!-- $(...) variables -->
-        <SPAN TYPE="KEYWORD2" NO_LINE_BREAK="TRUE" DELEGATE="VARIABLE">
-            <BEGIN>$(</BEGIN>
-            <END>)</END>
-        </SPAN>
-        <SPAN TYPE="KEYWORD2" NO_LINE_BREAK="TRUE" DELEGATE="VARIABLE">
-            <BEGIN>${</BEGIN>
-            <END>}</END>
-        </SPAN>
+		<!-- $(...) variables -->
+		<SPAN TYPE="KEYWORD2" NO_LINE_BREAK="TRUE" DELEGATE="VARIABLE">
+			<BEGIN>$(</BEGIN>
+			<END>)</END>
+		</SPAN>
+		<SPAN TYPE="KEYWORD2" NO_LINE_BREAK="TRUE" DELEGATE="VARIABLE">
+			<BEGIN>${</BEGIN>
+			<END>}</END>
+		</SPAN>
 
-        <MARK_FOLLOWING TYPE="KEYWORD2">$</MARK_FOLLOWING>
+		<MARK_FOLLOWING TYPE="KEYWORD2">$</MARK_FOLLOWING>
 
-        <!-- Literals -->
-        <SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
-            <BEGIN>"</BEGIN>
-            <END>"</END>
-        </SPAN>
-        <SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
-            <BEGIN>'</BEGIN>
-            <END>'</END>
-        </SPAN>
-        <SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
-            <BEGIN>`</BEGIN>
-            <END>`</END>
-        </SPAN>
+		<!-- Literals -->
+		<SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
+			<BEGIN>"</BEGIN>
+			<END>"</END>
+		</SPAN>
+		<SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
+			<BEGIN>'</BEGIN>
+			<END>'</END>
+		</SPAN>
+		<SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
+			<BEGIN>`</BEGIN>
+			<END>`</END>
+		</SPAN>
 
-        <SEQ TYPE="OPERATOR">=</SEQ>
-        <SEQ TYPE="OPERATOR">:=</SEQ>
-        <SEQ TYPE="OPERATOR">+=</SEQ>
-        <SEQ TYPE="OPERATOR">?=</SEQ>
+		<SEQ TYPE="OPERATOR">=</SEQ>
+		<SEQ TYPE="OPERATOR">:=</SEQ>
+		<SEQ TYPE="OPERATOR">+=</SEQ>
+		<SEQ TYPE="OPERATOR">?=</SEQ>
 
-        <MARK_PREVIOUS TYPE="LABEL" AT_LINE_START="TRUE">:</MARK_PREVIOUS>
+		<MARK_PREVIOUS TYPE="LABEL" AT_LINE_START="TRUE">:</MARK_PREVIOUS>
 
-        <KEYWORDS>
-            <KEYWORD1>subst</KEYWORD1>
-            <KEYWORD1>addprefix</KEYWORD1>
-            <KEYWORD1>addsuffix</KEYWORD1>
-            <KEYWORD1>basename</KEYWORD1>
-            <KEYWORD1>dir</KEYWORD1>
-            <KEYWORD1>filter</KEYWORD1>
-            <KEYWORD1>filter-out</KEYWORD1>
-            <KEYWORD1>findstring</KEYWORD1>
-            <KEYWORD1>firstword</KEYWORD1>
-            <KEYWORD1>foreach</KEYWORD1>
-            <KEYWORD1>join</KEYWORD1>
-            <KEYWORD1>notdir</KEYWORD1>
-            <KEYWORD1>origin</KEYWORD1>
-            <KEYWORD1>patsubst</KEYWORD1>
-            <KEYWORD1>shell</KEYWORD1>
-            <KEYWORD1>sort</KEYWORD1>
-            <KEYWORD1>strip</KEYWORD1>
-            <KEYWORD1>suffix</KEYWORD1>
-            <KEYWORD1>wildcard</KEYWORD1>
-            <KEYWORD1>word</KEYWORD1>
-            <KEYWORD1>words</KEYWORD1>
-            <KEYWORD1>ifeq</KEYWORD1>
+		<KEYWORDS>
+			<KEYWORD1>subst</KEYWORD1>
+			<KEYWORD1>addprefix</KEYWORD1>
+			<KEYWORD1>addsuffix</KEYWORD1>
+			<KEYWORD1>basename</KEYWORD1>
+			<KEYWORD1>dir</KEYWORD1>
+			<KEYWORD1>filter</KEYWORD1>
+			<KEYWORD1>filter-out</KEYWORD1>
+			<KEYWORD1>findstring</KEYWORD1>
+			<KEYWORD1>firstword</KEYWORD1>
+			<KEYWORD1>foreach</KEYWORD1>
+			<KEYWORD1>join</KEYWORD1>
+			<KEYWORD1>notdir</KEYWORD1>
+			<KEYWORD1>origin</KEYWORD1>
+			<KEYWORD1>patsubst</KEYWORD1>
+			<KEYWORD1>shell</KEYWORD1>
+			<KEYWORD1>sort</KEYWORD1>
+			<KEYWORD1>strip</KEYWORD1>
+			<KEYWORD1>suffix</KEYWORD1>
+			<KEYWORD1>wildcard</KEYWORD1>
+			<KEYWORD1>word</KEYWORD1>
+			<KEYWORD1>words</KEYWORD1>
+			<KEYWORD1>ifeq</KEYWORD1>
             <KEYWORD1>ifneq</KEYWORD1>
             <KEYWORD1>else</KEYWORD1>
             <KEYWORD1>endif</KEYWORD1>
@@ -79,23 +98,23 @@
             <KEYWORD1>endef</KEYWORD1>
             <KEYWORD1>ifdef</KEYWORD1>
             <KEYWORD1>ifndef</KEYWORD1>
-        </KEYWORDS>
+		</KEYWORDS>
 
-    </RULES>
+	</RULES>
 
-    <RULES SET="VARIABLE" ESCAPE="\" IGNORE_CASE="FALSE"
-           DEFAULT="KEYWORD2">
-        <!-- Comment -->
-        <EOL_SPAN TYPE="COMMENT1">#</EOL_SPAN>
+	<RULES SET="VARIABLE" ESCAPE="\" IGNORE_CASE="FALSE"
+		DEFAULT="KEYWORD2">
+		<!-- Comment -->
+		<EOL_SPAN TYPE="COMMENT1">#</EOL_SPAN>
 
-        <!-- $(...) variables -->
-        <SPAN TYPE="KEYWORD2" NO_LINE_BREAK="TRUE" DELEGATE="VARIABLE">
-            <BEGIN>$(</BEGIN>
-            <END>)</END>
-        </SPAN>
-        <SPAN TYPE="KEYWORD2" NO_LINE_BREAK="TRUE" DELEGATE="VARIABLE">
-            <BEGIN>${</BEGIN>
-            <END>}</END>
-        </SPAN>
-    </RULES>
+		<!-- $(...) variables -->
+		<SPAN TYPE="KEYWORD2" NO_LINE_BREAK="TRUE" DELEGATE="VARIABLE">
+			<BEGIN>$(</BEGIN>
+			<END>)</END>
+		</SPAN>
+		<SPAN TYPE="KEYWORD2" NO_LINE_BREAK="TRUE" DELEGATE="VARIABLE">
+			<BEGIN>${</BEGIN>
+			<END>}</END>
+		</SPAN>
+	</RULES>
 </MODE>

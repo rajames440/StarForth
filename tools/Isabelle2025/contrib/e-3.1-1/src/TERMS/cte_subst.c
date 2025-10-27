@@ -1,29 +1,26 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-  File  : cte_subst.c
+  cte_subst.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.461-04
 
-  Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  General functions for substitutions.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 1998, 1999 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-  Changes
-
-  <1> Thu Mar  5 00:22:28 MET 1998
-  New
-
-  -----------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/TERMS/cte_subst.c
+ */
 
 #include "cte_subst.h"
 #include "clb_plocalstacks.h"
 #include "cte_lambda.h"
+
 
 
 /*---------------------------------------------------------------------*/
@@ -39,6 +36,7 @@
 /*---------------------------------------------------------------------*/
 /*                         Internal Functions                          */
 /*---------------------------------------------------------------------*/
+
 
 
 /*---------------------------------------------------------------------*/
@@ -59,20 +57,22 @@
 //
 /----------------------------------------------------------------------*/
 
-bool SubstBacktrackSingle(Subst_p subst) {
-    Term_p handle;
+bool SubstBacktrackSingle(Subst_p subst)
+{
+   Term_p handle;
 
-    assert(subst);
+   assert(subst);
 
-    if (PStackEmpty(subst)) {
-        return false;
-    }
-    handle = PStackPopP(subst);
+   if(PStackEmpty(subst))
+   {
+      return false;
+   }
+   handle = PStackPopP(subst);
 
-    assert(TermIsFreeVar(handle));
-    handle->binding = NULL;
+   assert(TermIsFreeVar(handle));
+   handle->binding = NULL;
 
-    return true;
+   return true;
 }
 
 /*-----------------------------------------------------------------------
@@ -88,14 +88,16 @@ bool SubstBacktrackSingle(Subst_p subst) {
 //
 /----------------------------------------------------------------------*/
 
-int SubstBacktrackToPos(Subst_p subst, PStackPointer pos) {
-    int ret = 0;
+int SubstBacktrackToPos(Subst_p subst, PStackPointer pos)
+{
+   int ret = 0;
 
-    while (PStackGetSP(subst) > pos) {
-        SubstBacktrackSingle(subst);
-        ret++;
-    }
-    return ret;
+   while(PStackGetSP(subst) > pos)
+   {
+      SubstBacktrackSingle(subst);
+      ret++;
+   }
+   return ret;
 }
 
 /*-----------------------------------------------------------------------
@@ -110,13 +112,15 @@ int SubstBacktrackToPos(Subst_p subst, PStackPointer pos) {
 //
 /----------------------------------------------------------------------*/
 
-int SubstBacktrack(Subst_p subst) {
-    int ret = 0;
+int SubstBacktrack(Subst_p subst)
+{
+   int ret = 0;
 
-    while (SubstBacktrackSingle(subst)) {
-        ret++;
-    }
-    return ret;
+   while(SubstBacktrackSingle(subst))
+   {
+      ret++;
+   }
+   return ret;
 }
 
 
@@ -143,30 +147,36 @@ int SubstBacktrack(Subst_p subst) {
 //
 /----------------------------------------------------------------------*/
 
-PStackPointer SubstNormTerm(Term_p term, Subst_p subst, VarBank_p vars, Sig_p sig) {
-    PStackPointer ret = PStackGetSP(subst);
-    PLocalStackInit(stack);
-    PLocalStackPush(stack, term);
-    // assert(TermGetBank(term));
+PStackPointer SubstNormTerm(Term_p term, Subst_p subst, VarBank_p vars, Sig_p sig)
+{
+   PStackPointer ret = PStackGetSP(subst);
+   PLocalStackInit(stack);
+   PLocalStackPush(stack, term);
+   // assert(TermGetBank(term));
 
-    Term_p(*deref)(Term_p) =
-            problemType == PROBLEM_HO ? WHNF_deref : TermDerefAlways;
+   Term_p (*deref)(Term_p) =
+      problemType == PROBLEM_HO ? WHNF_deref : TermDerefAlways;
 
-    while (!PLocalStackEmpty(stack)) {
-        term = deref(PLocalStackPop(stack));
-        if (TermIsFreeVar(term)) {
-            if (!TermCellQueryProp(term, TPSpecialFlag)) {
-                Term_p newvar = VarBankGetFreshVar(vars, term->type);
-                TermCellSetProp(newvar, TPSpecialFlag);
-                SubstAddBinding(subst, term, newvar);
-            }
-        } else {
-            PLocalStackPushTermArgsReversed(stack, term);
-        }
-    }
+   while(!PLocalStackEmpty(stack))
+   {
+      term = deref(PLocalStackPop(stack));
+      if(TermIsFreeVar(term))
+      {
+         if(!TermCellQueryProp(term, TPSpecialFlag))
+         {
+            Term_p newvar = VarBankGetFreshVar(vars, term->type);
+            TermCellSetProp(newvar, TPSpecialFlag);
+            SubstAddBinding(subst, term, newvar);
+         }
+      }
+      else
+      {
+         PLocalStackPushTermArgsReversed(stack, term);
+      }
+   }
 
-    PLocalStackFree(stack);
-    return ret;
+   PLocalStackFree(stack);
+   return ret;
 }
 
 
@@ -183,16 +193,18 @@ PStackPointer SubstNormTerm(Term_p term, Subst_p subst, VarBank_p vars, Sig_p si
 //
 /----------------------------------------------------------------------*/
 
-bool SubstBindingPrint(FILE *out, Term_p var, Sig_p sig, DerefType deref) {
-    TermPrint(out, var, sig, DEREF_NEVER);
-    // DBG_PRINT(out, " : ", TypePrintTSTP(out, sig->type_bank, var->type), " ");
-    fprintf(out, "<-");
-    if (var->binding) {
-        TermPrint(out, var->binding, sig, deref);
-        return true;
-    }
-    TermPrint(out, var, sig, DEREF_NEVER);
-    return false;
+bool SubstBindingPrint(FILE* out, Term_p var, Sig_p sig, DerefType deref)
+{
+   TermPrint(out, var, sig, DEREF_NEVER);
+   // DBG_PRINT(out, " : ", TypePrintTSTP(out, sig->type_bank, var->type), " ");
+   fprintf(out, "<-");
+   if(var->binding)
+   {
+      TermPrint(out, var->binding, sig, deref);
+      return true;
+   }
+   TermPrint(out, var, sig, DEREF_NEVER);
+   return false;
 }
 
 
@@ -213,23 +225,27 @@ bool SubstBindingPrint(FILE *out, Term_p var, Sig_p sig, DerefType deref) {
 //
 /----------------------------------------------------------------------*/
 
-long SubstPrint(FILE *out, Subst_p subst, Sig_p sig, DerefType deref) {
-    PStackPointer i, limit;
+long SubstPrint(FILE* out, Subst_p subst, Sig_p sig, DerefType deref)
+{
+   PStackPointer i, limit;
 
-    limit = PStackGetSP(subst);
-    fprintf(out, "{");
-    if (limit) {
-        SubstBindingPrint(out, PStackElementP(subst, 0), sig, deref); {
-            for (i = 1; i < limit; i++) {
-                fprintf(out, ", ");
-                SubstBindingPrint(out, PStackElementP(subst, i), sig,
-                                  deref);
-            }
-        }
-    }
-    fprintf(out, "}");
+   limit = PStackGetSP(subst);
+   fprintf(out, "{");
+   if(limit)
+   {
+      SubstBindingPrint(out,  PStackElementP(subst,0), sig, deref);
+      {
+         for(i=1; i<limit;i++)
+         {
+            fprintf(out, ", ");
+            SubstBindingPrint(out,  PStackElementP(subst,i), sig,
+                              deref);
+         }
+      }
+   }
+   fprintf(out, "}");
 
-    return (long) limit;
+   return (long)limit;
 }
 
 
@@ -248,44 +264,49 @@ long SubstPrint(FILE *out, Subst_p subst, Sig_p sig, DerefType deref) {
 //
 /----------------------------------------------------------------------*/
 
-bool SubstIsRenaming(Subst_p subst) {
-    PStackPointer i, size;
-    Term_p var, inst;
-    DerefType deref;
+bool SubstIsRenaming(Subst_p subst)
+{
+   PStackPointer i, size;
+   Term_p        var, inst;
+   DerefType     deref;
 
-    assert(subst);
-    size = PStackGetSP(subst);
+   assert(subst);
+   size = PStackGetSP(subst);
 
-    /* Check that variables are instantiated with variables, reset
+   /* Check that variables are instantiated with variables, reset
       TPOpFlag of all terms concerned */
 
-    for (i = 0; i < size; i++) {
-        var = PStackElementP(subst, i);
-        assert(TermIsFreeVar(var));
-        assert(var->binding);
-        deref = DEREF_ONCE;
-        inst = TermDeref(var, &deref);
+   for(i=0; i< size; i++)
+   {
+      var = PStackElementP(subst,i);
+      assert(TermIsFreeVar(var));
+      assert(var->binding);
+      deref=DEREF_ONCE;
+      inst = TermDeref(var, &deref);
 
-        if (!TermIsFreeVar(inst)) {
-            return false;
-        }
-        TermCellDelProp(inst, TPOpFlag);
-    }
+      if(!TermIsFreeVar(inst))
+      {
+         return false;
+      }
+      TermCellDelProp(inst, TPOpFlag);
+   }
 
-    /* For each unchecked variable, check wether another variable was
+   /* For each unchecked variable, check wether another variable was
       already mapped to its instantiation */
 
-    for (i = 0; i < size; i++) {
-        var = PStackElementP(subst, i);
-        deref = DEREF_ONCE;
-        inst = TermDeref(var, &deref);
+   for(i=0; i< size; i++)
+   {
+      var = PStackElementP(subst,i);
+      deref=DEREF_ONCE;
+      inst = TermDeref(var, &deref);
 
-        if (TermCellQueryProp(inst, TPOpFlag)) {
-            return false;
-        }
-        TermCellSetProp(inst, TPOpFlag);
-    }
-    return true;
+      if(TermCellQueryProp(inst, TPOpFlag))
+      {
+         return false;
+      }
+      TermCellSetProp(inst, TPOpFlag);
+   }
+   return true;
 }
 
 
@@ -301,16 +322,18 @@ bool SubstIsRenaming(Subst_p subst) {
 //
 /----------------------------------------------------------------------*/
 
-void SubstBacktrackSkolem(Subst_p subst) {
-    Term_p handle;
+void SubstBacktrackSkolem(Subst_p subst)
+{
+   Term_p handle;
 
-    while (!PStackEmpty(subst)) {
-        handle = PStackPopP(subst);
-        assert(handle);
-        assert(handle->binding);
-        TermFree(handle->binding);
-        handle->binding = NULL;
-    }
+   while(!PStackEmpty(subst))
+   {
+      handle = PStackPopP(subst);
+      assert(handle);
+      assert(handle->binding);
+      TermFree(handle->binding);
+      handle->binding = NULL;
+   }
 }
 
 /*-----------------------------------------------------------------------
@@ -326,22 +349,28 @@ void SubstBacktrackSkolem(Subst_p subst) {
 //
 /----------------------------------------------------------------------*/
 
-void SubstSkolemizeTerm(Term_p term, Subst_p subst, Sig_p sig) {
-    int i;
+void SubstSkolemizeTerm(Term_p term, Subst_p subst, Sig_p sig)
+{
+   int i;
 
-    assert(term && subst && sig);
+   assert(term && subst && sig);
 
-    if (TermIsFreeVar(term)) {
-        if (!(term->binding)) {
-            PStackPushP(subst, term);
-            term->binding =
-                    TermConstCellAlloc(SigGetNewSkolemCode(sig, 0));
-        }
-    } else {
-        for (i = 0; i < term->arity; i++) {
-            SubstSkolemizeTerm(term->args[i], subst, sig);
-        }
-    }
+   if(TermIsFreeVar(term))
+   {
+      if(!(term->binding))
+      {
+         PStackPushP(subst, term);
+         term->binding =
+            TermConstCellAlloc(SigGetNewSkolemCode(sig,0));
+      }
+   }
+   else
+   {
+      for(i=0;i<term->arity;i++)
+      {
+         SubstSkolemizeTerm(term->args[i], subst, sig);
+      }
+   }
 }
 
 
@@ -360,18 +389,24 @@ void SubstSkolemizeTerm(Term_p term, Subst_p subst, Sig_p sig) {
 /----------------------------------------------------------------------*/
 
 void SubstCompleteInstance(Subst_p subst, Term_p term,
-                           Term_p default_binding) {
-    int i;
+                           Term_p default_binding)
+{
+   int i;
 
-    if (TermIsFreeVar(term)) {
-        if (!(term->binding)) {
-            SubstAddBinding(subst, term, default_binding);
-        }
-    } else {
-        for (i = 0; i < term->arity; i++) {
-            SubstCompleteInstance(subst, term->args[i], default_binding);
-        }
-    }
+   if(TermIsFreeVar(term))
+   {
+      if(!(term->binding))
+      {
+         SubstAddBinding(subst, term, default_binding);
+      }
+   }
+   else
+   {
+      for(i=0;i<term->arity;i++)
+      {
+         SubstCompleteInstance(subst, term->args[i], default_binding);
+      }
+   }
 }
 
 /*-----------------------------------------------------------------------
@@ -390,24 +425,26 @@ void SubstCompleteInstance(Subst_p subst, Term_p term,
 //
 /----------------------------------------------------------------------*/
 
-PStackPointer SubstBindAppVar(Subst_p subst, Term_p var, Term_p to_bind, int up_to, TB_p bank) {
-    PStackPointer ret = PStackGetSP(subst);
-    assert(var);
-    assert(to_bind);
-    assert(TermIsFreeVar(var));
-    assert(!(var->binding));
-    assert(problemType == PROBLEM_HO || !TermCellQueryProp(to_bind, TPPredPos));
-    assert(var->type);
-    assert(to_bind->type);
+PStackPointer SubstBindAppVar(Subst_p subst, Term_p var, Term_p to_bind, int up_to, TB_p bank)
+{
+   PStackPointer ret = PStackGetSP(subst);
+   assert(var);
+   assert(to_bind);
+   assert(TermIsFreeVar(var));
+   assert(!(var->binding));
+   assert(problemType == PROBLEM_HO || !TermCellQueryProp(to_bind, TPPredPos));
+   assert(var->type);
+   assert(to_bind->type);
 
-    Term_p to_bind_pref = TermCreatePrefix(to_bind, up_to);
-    to_bind_pref->type = var->type;
+   Term_p to_bind_pref = TermCreatePrefix(to_bind, up_to);
+   to_bind_pref->type = var->type;
 
-    // if term is not shared it is prefix
-    var->binding = TermIsShared(to_bind_pref) ? to_bind_pref : TBTermTopInsert(bank, to_bind_pref);
-    PStackPushP(subst, var);
+   // if term is not shared it is prefix
+   var->binding = TermIsShared(to_bind_pref) ?
+                     to_bind_pref : TBTermTopInsert(bank, to_bind_pref);
+   PStackPushP(subst, var);
 
-    return ret;
+   return ret;
 }
 
 /*-----------------------------------------------------------------------
@@ -423,15 +460,18 @@ PStackPointer SubstBindAppVar(Subst_p subst, Term_p var, Term_p to_bind, int up_
 //
 /----------------------------------------------------------------------*/
 
-bool SubstHasHOBinding(Subst_p subst) {
-    bool ans = false;
-    if (problemType == PROBLEM_HO) {
-        for (PStackPointer i = 0; !ans && i < PStackGetSP(subst); i++) {
-            Term_p var = PStackElementP(subst, i);
-            ans = TypeIsArrow(var->type);
-        }
-    }
-    return ans;
+bool SubstHasHOBinding(Subst_p subst)
+{
+   bool ans = false;
+   if(problemType == PROBLEM_HO)
+   {
+      for(PStackPointer i = 0; !ans && i<PStackGetSP(subst); i++)
+      {
+         Term_p var = PStackElementP(subst, i);
+         ans = TypeIsArrow(var->type);
+      }
+   }
+   return ans;
 }
 
 /*---------------------------------------------------------------------*/

@@ -10,241 +10,236 @@
 \makeatletter\@twosidefalse\@mparswitchfalse\makeatother
 %
 \begin{document}
-    \title{Instructions for Using Springer's \texttt{llncs} Class for
-    Computer Science Proceedings Papers}
+\title{Instructions for Using Springer's \texttt{llncs} Class for
+Computer Science Proceedings Papers}
 %
-    \subtitle{\texttt{llncs}, Version 2.25, Oct 21, 2024}
+\subtitle{\texttt{llncs}, Version 2.25, Oct 21, 2024}
 %
-    \author{}
-    \institute{}
+\author{}
+\institute{}
 
-    \maketitle \thispagestyle{empty}
-    \markright{Instructions for Using Springer's \texttt{llncs} Class}
+\maketitle \thispagestyle{empty}
+\markright{Instructions for Using Springer's \texttt{llncs} Class}
 %
-
-
-    \section{Installation}
+\section{Installation}
 %
-    Copy \texttt{llncs.cls} to a directory that is searched by \LaTeX{},
-    e.g. either your \texttt{texmf} tree or the local work directory with your main
-        {\LaTeX} file.
+Copy \texttt{llncs.cls} to a directory that is searched by \LaTeX{},
+e.g. either your \texttt{texmf} tree or the local work directory with your main
+{\LaTeX} file.
 
 %
-
-
-    \section{Working with the \texttt{llncs} Document Class}
+\section{Working with the \texttt{llncs} Document Class}
 %
+\subsection{General Information}
+The \texttt{llncs} class is an extension of the standard \LaTeX{} \texttt{article}
+class. Therefore you may use all \texttt{article} commands in your
+manuscript.
 
-    \subsection{General Information}
-    The \texttt{llncs} class is an extension of the standard \LaTeX{} \texttt{article}
-    class. Therefore you may use all \texttt{article} commands in your
-    manuscript.
+If you are already familiar with \LaTeX{}, the \texttt{llncs} class should
+not give you any major difficulties. It basically adjusts the layout
+to the required standard, defining styles and spacing of headings
+and captions and setting the printing area to 122\,mm horizontally
+by 193\,mm vertically. To keep the layout consistent, we kindly ask
+you to refrain from using any \LaTeX{} or \TeX{} command that
+modifies these settings (i.e. \verb|\textheight|, \verb|\vspace|,
+\verb|baselinestretch|, etc.). Such manual layout adjustments should
+be limited to very exceptional cases.
 
-    If you are already familiar with \LaTeX{}, the \texttt{llncs} class should
-    not give you any major difficulties. It basically adjusts the layout
-    to the required standard, defining styles and spacing of headings
-    and captions and setting the printing area to 122\,mm horizontally
-    by 193\,mm vertically. To keep the layout consistent, we kindly ask
-    you to refrain from using any \LaTeX{} or \TeX{} command that
-    modifies these settings (i.e. \verb|\textheight|, \verb|\vspace|,
-    \verb|baselinestretch|, etc.). Such manual layout adjustments should
-    be limited to very exceptional cases.
+In addition to defining the general layout, the \texttt{llncs} document class
+provides some special commands for typesetting the contribution
+header, i.e. title, authors, affiliations, abstract, and additional
+metadata. These special commands are described in Sect.~\ref{Sec2}.
 
-    In addition to defining the general layout, the \texttt{llncs} document class
-    provides some special commands for typesetting the contribution
-    header, i.e. title, authors, affiliations, abstract, and additional
-    metadata. These special commands are described in Sect.~\ref{Sec2}.
+For a more detailed description of how to prepare your text,
+illustrations, and references, see the {\em Springer Guidelines for
+Authors of Proceedings}.
 
-    For a more detailed description of how to prepare your text,
-    illustrations, and references, see the {\em Springer Guidelines for
-    Authors of Proceedings}.
 
-    \subsection{How to Use the \texttt{llncs} Document Class}
-    The \texttt{llncs} class is invoked by replacing \texttt{article} by \texttt{llncs} in
-    the first line of your \LaTeX{} document:
-    \begin{verbatim}
+\subsection{How to Use the \texttt{llncs} Document Class}
+The \texttt{llncs} class is invoked by replacing \texttt{article} by \texttt{llncs} in
+the first line of your \LaTeX{} document:
+\begin{verbatim}
 \documentclass{llncs}
 %
 \begin{document}
   <Your contribution>
 \end{document}
-    \end{verbatim}
+\end{verbatim}
 %
-    If your file is already coded with \LaTeX{}, you can easily adapt it
-    to the \texttt{llncs} document class by replacing
-    \begin{verbatim}
+If your file is already coded with \LaTeX{}, you can easily adapt it
+to the \texttt{llncs} document class by replacing
+\begin{verbatim}
 \documentclass{article}
-    \end{verbatim}
-    with
-    \begin{verbatim}
+\end{verbatim}
+with
+\begin{verbatim}
 \documentclass{llncs}
-    \end{verbatim}
+\end{verbatim}
 
 
-    \section{How to Code the Header of Your Paper}\label{Sec2}
-    \label{contbegin}
-
-    \subsection{Title}
+\section{How to Code the Header of Your Paper}\label{Sec2}
+\label{contbegin}
+\subsection{Title}
 %
-    \DescribeMacro{\title} Please code the title of your contribution as
-    follows:
-    \begin{verbatim}
+\DescribeMacro{\title} Please code the title of your contribution as
+follows:
+\begin{verbatim}
 \title{<Your contribution title>}
-    \end{verbatim}
-    All words in titles should be capitalized except for conjunctions,
-    prepositions (e.g.\ on, of, by, and, or, but, from, with, without,
-    under), and definite/indefinite articles (the, a, an), unless they
-    appear at the beginning. Formula letters are typeset as in the text.
-    Long titles that run over multiple lines can be wrapped explicitly
-    with \verb|\\|. Titles have no end punctuation.
+\end{verbatim}
+All words in titles should be capitalized except for conjunctions,
+prepositions (e.g.\ on, of, by, and, or, but, from, with, without,
+under), and definite/indefinite articles (the, a, an), unless they
+appear at the beginning. Formula letters are typeset as in the text.
+Long titles that run over multiple lines can be wrapped explicitly
+with \verb|\\|. Titles have no end punctuation.
 
-    Acknowledgements should generally be placed in an unnumbered
-    subsection at the end of the paper. If you still need to refer to a
-    support or funding program in a note to the title, you can use
-    the\DescribeMacro{\thanks} \verb|\thanks| macro inside the title:
-    \begin{verbatim}
+Acknowledgements should generally be placed in an unnumbered
+subsection at the end of the paper. If you still need to refer to a
+support or funding program in a note to the title, you can use
+the\DescribeMacro{\thanks} \verb|\thanks| macro inside the title:
+\begin{verbatim}
 \title{<Your contribution title>\thanks{<granted by x>}}
-    \end{verbatim}
-    Please do not use \verb|\thanks| inside \verb|\author| or
-    \verb|\institute| as footnotes for these elements are not supported
-    in the online version and will therefore be dropped.
+\end{verbatim}
+Please do not use \verb|\thanks| inside \verb|\author| or
+\verb|\institute| as footnotes for these elements are not supported
+in the online version and will therefore be dropped.
 
-    \DescribeMacro{\fnmsep} If you need two or more footnotes please
-    separate them with \verb|\fnmsep| (i.e. {\itshape f}oot\emph note
-    \emph mark \emph{sep}arator).
+\DescribeMacro{\fnmsep} If you need two or more footnotes please
+separate them with \verb|\fnmsep| (i.e. {\itshape f}oot\emph note
+\emph mark \emph{sep}arator).
 
-    \DescribeMacro{\titlerunning} If a long title does not fit in the
-    single line of the running head, a warning is generated. You can
-    specify an abbreviated title for the running head with the command
-    \begin{verbatim}
+\DescribeMacro{\titlerunning} If a long title does not fit in the
+single line of the running head, a warning is generated. You can
+specify an abbreviated title for the running head with the command
+\begin{verbatim}
 \titlerunning{<Your abbreviated contribution title>}
-    \end{verbatim}
-    \DescribeMacro{\subtitle} An optional subtitle may also be added:
-    \begin{verbatim}
+\end{verbatim}
+\DescribeMacro{\subtitle} An optional subtitle may also be added:
+\begin{verbatim}
 \subtitle{<subtitle of your contribution>}
-    \end{verbatim}
+\end{verbatim}
 
-    \subsection{Author(s)}
-    \DescribeMacro{\author} The name(s) of the author(s) are specified
-    by:
-    \begin{verbatim}
+\subsection{Author(s)}
+\DescribeMacro{\author} The name(s) of the author(s) are specified
+by:
+\begin{verbatim}
 \author{<author(s) name(s)>}
-    \end{verbatim}
-    \DescribeMacro{\and} If there is more than one author, please
-    separate them by \verb|\and|. This makes sure that correct
-    punctuation is inserted according to the number of authors.
+\end{verbatim}
+\DescribeMacro{\and} If there is more than one author, please
+separate them by \verb|\and|. This makes sure that correct
+punctuation is inserted according to the number of authors.
 
-    \DescribeMacro{\inst} Numbers referring to different addresses or
-    affiliations should be attached to each author with the
-    \verb|\inst{<number>}| command. If an author is affiliated with
-    multiple institutions the numbers should be separated by a comma,
-    for example \verb|\inst{2,3}|.
+\DescribeMacro{\inst} Numbers referring to different addresses or
+affiliations should be attached to each author with the
+\verb|\inst{<number>}| command. If an author is affiliated with
+multiple institutions the numbers should be separated by a comma,
+for example \verb|\inst{2,3}|.
 
-    \DescribeMacro{\orcidID} ORCID identifiers can be included with
-    \begin{verbatim}
+\DescribeMacro{\orcidID} ORCID identifiers can be included with
+\begin{verbatim}
 \orcidID{<ORCID identifier>}
-    \end{verbatim}
-    The ORCID (Open Researcher and Contributor ID) registry provides
-    authors with unique digital identifiers that distinguish them from
-    other researchers and help them link their research activities to
-    these identifiers. Authors who are not yet registered with ORCID are
-    encouraged to apply for an individual ORCID id at
-    \url{https://www.orcid.org} and to include it in their papers. In
-    the final publication, the ORCID id will be replaced by an ORCID
-    icon, which will link from the eBook to the
-    actual ID in the ORCID database. The ORCID icon will also replace
-    the number in the printed book.
+\end{verbatim}
+The ORCID (Open Researcher and Contributor ID) registry provides
+authors with unique digital identifiers that distinguish them from
+other researchers and help them link their research activities to
+these identifiers. Authors who are not yet registered with ORCID are
+encouraged to apply for an individual ORCID id at
+\url{https://www.orcid.org} and to include it in their papers. In
+the final publication, the ORCID id will be replaced by an ORCID
+icon, which will link from the eBook to the
+actual ID in the ORCID database. The ORCID icon will also replace
+the number in the printed book.
 
-    If you have done this correctly, the author line now reads, for
-    example:
-    \begin{verbatim}
+If you have done this correctly, the author line now reads, for
+example:
+\begin{verbatim}
 \author{First Author\inst{1}\orcidID{0000-1111-2222-3333} \and
 Second Author\inst{2,3}\orcidID{1111-2222-3333-4444}}
-    \end{verbatim}
-    The given name(s) should always be followed by the family name(s).
-    Authors who have more than one family name should indicate which
-    part of their name represents the family name(s), for example by
-    non-breaking spaces \verb|Jos\'{e} Martinez~Perez| or curly braces
-    \verb|Jos\'{e} {Martinez Perez}|.
+\end{verbatim}
+The given name(s) should always be followed by the family name(s).
+Authors who have more than one family name should indicate which
+part of their name represents the family name(s), for example by
+non-breaking spaces \verb|Jos\'{e} Martinez~Perez| or curly braces
+\verb|Jos\'{e} {Martinez Perez}|.
 
-    \DescribeMacro{\authorrunning} As given name(s) are to be shortened
-    to initials in the running heads, specifying an abbreviated author
-    list with the optional command:
-    \begin{verbatim}
+\DescribeMacro{\authorrunning} As given name(s) are to be shortened
+to initials in the running heads, specifying an abbreviated author
+list with the optional command:
+\begin{verbatim}
 \authorrunning{<abbreviated author list>}
-    \end{verbatim}
-    might add some clarity about the correct representation of author
-    names, in the running-heads as well as in the author index.
+\end{verbatim}
+might add some clarity about the correct representation of author
+names, in the running-heads as well as in the author index.
 
-    \subsection{Affiliations}
-    \DescribeMacro{\institute} Addresses of institutes, companies, etc.
-    should be given in \verb|\institute|.
+\subsection{Affiliations}
+\DescribeMacro{\institute} Addresses of institutes, companies, etc.
+should be given in \verb|\institute|.
 
-    \DescribeMacro{\and} Multiple affiliations are separated by
-    \verb|\and|, which automatically assures correct numbering:
-    \begin{verbatim}
+\DescribeMacro{\and} Multiple affiliations are separated by
+\verb|\and|, which automatically assures correct numbering:
+\begin{verbatim}
 \institute{<name of an institute>
 \and <name of the next institute>
 \and <name of the next institute>}
-    \end{verbatim}
-    \DescribeMacro{\email}Inside \verb|\institute| you can use
-    \begin{verbatim}
+\end{verbatim}
+\DescribeMacro{\email}Inside \verb|\institute| you can use
+\begin{verbatim}
 \email{<email address>}
-    \end{verbatim}
-    \DescribeMacro{\url}and
-    \begin{verbatim}
-    \url{<url>}
-    \end{verbatim}
-    to provide author email addresses and Web pages. If you need to
-    typeset the tilde character -- e.g. for your Web page in your unix
-    system's home directory -- the \verb|\homedir| command will do this.
-    If multiple authors have the same affiliation, please check that the
-    order of email addresses matches the sequence of (affiliated) author
-    names.
+\end{verbatim}
+\DescribeMacro{\url}and
+\begin{verbatim}
+\url{<url>}
+\end{verbatim}
+to provide author email addresses and Web pages. If you need to
+typeset the tilde character -- e.g. for your Web page in your unix
+system's home directory -- the \verb|\homedir| command will do this.
+If multiple authors have the same affiliation, please check that the
+order of email addresses matches the sequence of (affiliated) author
+names.
 
-    Please note that, if email addresses are given in your paper, they
-    will also be included in the metadata of the online version.
+Please note that, if email addresses are given in your paper, they
+will also be included in the metadata of the online version.
 
-    \subsection{Format the Header}
-    \DescribeMacro{\maketitle} The command \verb|\maketitle| formats the
-    header of your paper. If you leave it out the work done so far will
-    produce \emph{no} text.
+\subsection{Format the Header}
+\DescribeMacro{\maketitle} The command \verb|\maketitle| formats the
+header of your paper. If you leave it out the work done so far will
+produce \emph{no} text.
 
-    \subsection{Abstract and Keywords}
-    \DescribeEnv{abstract}The abstract is coded as follows:
-    \begin{verbatim}
-    \begin{abstract}
-    <Text of the summary of your paper>
-    \end{abstract}
-    \end{verbatim}
-    \DescribeMacro{\keywords} Keywords should be specified inside the
-    \verb|abstract| environment. \DescribeMacro{\and}Please capitalize
-    the first letter of each keyword and again separate them with
-    \verb|\and|:
-    \begin{verbatim}
-    \keywords{First keyword \and Second keyword \and Third keyword}
-    \end{verbatim}
-    The keyword separator will then be properly rendered as a middle
-    dot.
+\subsection{Abstract and Keywords}
+\DescribeEnv{abstract}The abstract is coded as follows:
+\begin{verbatim}
+\begin{abstract}
+<Text of the summary of your paper>
+\end{abstract}
+\end{verbatim}
+\DescribeMacro{\keywords} Keywords should be specified inside the
+\verb|abstract| environment. \DescribeMacro{\and}Please capitalize
+the first letter of each keyword and again separate them with
+\verb|\and|:
+\begin{verbatim}
+\keywords{First keyword \and Second keyword \and Third keyword}
+\end{verbatim}
+The keyword separator will then be properly rendered as a middle
+dot.
 
-    \section{How to Code the Body of Your Paper}
-    %
-    \subsection{General Rules}
-    From a technical point of view, the \texttt{llncs} document class does not
-    require any specific {\LaTeX} coding in the body of your paper. You
-    can simply use the commands provided by the `article' document
-    class. For more information about what will be done with your
-    manuscript before publication, please refer to the {\em Springer
-    Guidelines for Authors of Proceedings}.
+\section{How to Code the Body of Your Paper}
+%
+\subsection{General Rules}
+From a technical point of view, the \texttt{llncs} document class does not
+require any specific {\LaTeX} coding in the body of your paper. You
+can simply use the commands provided by the `article' document
+class. For more information about what will be done with your
+manuscript before publication, please refer to the {\em Springer
+Guidelines for Authors of Proceedings}.
 
-    \subsection{Special Math Characters}
-    The \texttt{llncs} document class supports some additional special
-    characters:\smallskip
-    \begin{center}
-    \begin{tabular}{l@{\hspace{1em}yields\hspace{1em}}
-    c@{\hspace{3em}}l@{\hspace{1em}yields\hspace{1em}}c}
-    \verb|\grole| & $\grole$ & \verb|\getsto| & $\getsto$\\
-    \verb|\lid|   & $\lid$   & \verb|\gid|    & $\gid$
+\subsection{Special Math Characters}
+The \texttt{llncs} document class supports some additional special
+characters:\smallskip
+\begin{center}
+\begin{tabular}{l@{\hspace{1em}yields\hspace{1em}}
+c@{\hspace{3em}}l@{\hspace{1em}yields\hspace{1em}}c}
+\verb|\grole| & $\grole$ & \verb|\getsto| & $\getsto$\\
+\verb|\lid|   & $\lid$   & \verb|\gid|    & $\gid$
 \end{tabular}\smallskip
 \end{center}
 If you need blackboard bold characters, i.e. for sets of numbers,

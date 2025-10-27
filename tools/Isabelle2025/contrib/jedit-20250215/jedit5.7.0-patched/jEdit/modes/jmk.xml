@@ -1,68 +1,87 @@
 <?xml version="1.0"?>
 
+<!--
+  ~                                  ***   StarForth   ***
+  ~
+  ~  jmk.xml- FORTH-79 Standard and ANSI C99 ONLY
+  ~  Modified by - rajames
+  ~  Last modified - 2025-10-27T12:40:03.587-04
+  ~
+  ~  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+  ~
+  ~  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  ~  To the extent possible under law, the author(s) have dedicated all copyright and related
+  ~  and neighboring rights to this software to the public domain worldwide.
+  ~  This software is distributed without any warranty.
+  ~
+  ~  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+  ~
+  ~  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/jedit-20250215/jedit5.7.0-patched/jEdit/modes/jmk.xml
+  -->
+
 <!DOCTYPE MODE SYSTEM "xmode.dtd">
 
 <MODE>
-    <PROPS>
-        <PROPERTY NAME="lineComment" VALUE="#"/>
-        <PROPERTY NAME="indentOpenBrackets" VALUE="{"/>
-        <PROPERTY NAME="indentCloseBrackets" VALUE="}"/>
-        <PROPERTY NAME="contextInsensitive" VALUE="true"/>
-    </PROPS>
-    <RULES IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE">
-        <!-- Comment -->
-        <EOL_SPAN TYPE="COMMENT1">#</EOL_SPAN>
+	<PROPS>
+		<PROPERTY NAME="lineComment" VALUE="#" />
+		<PROPERTY NAME="indentOpenBrackets" VALUE="{" />
+		<PROPERTY NAME="indentCloseBrackets" VALUE="}" />
+		<PROPERTY NAME="contextInsensitive" VALUE="true" />
+	</PROPS>
+	<RULES IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE">
+		<!-- Comment -->
+		<EOL_SPAN TYPE="COMMENT1">#</EOL_SPAN>
 
-        <!-- Literals -->
-        <SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
-            <BEGIN>"</BEGIN>
-            <END>"</END>
-        </SPAN>
-        <SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
-            <BEGIN>'</BEGIN>
-            <END>'</END>
-        </SPAN>
+		<!-- Literals -->
+		<SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
+			<BEGIN>"</BEGIN>
+			<END>"</END>
+		</SPAN>
+		<SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
+			<BEGIN>'</BEGIN>
+			<END>'</END>
+		</SPAN>
 
-        <!-- Brackets -->
-        <SEQ TYPE="OPERATOR">{</SEQ>
-        <SEQ TYPE="OPERATOR">}</SEQ>
-        <SEQ TYPE="OPERATOR">(</SEQ>
-        <SEQ TYPE="OPERATOR">)</SEQ>
-        <SEQ TYPE="OPERATOR">-</SEQ>
-        <SEQ TYPE="OPERATOR">=</SEQ>
+		<!-- Brackets -->
+		<SEQ TYPE="OPERATOR">{</SEQ>
+		<SEQ TYPE="OPERATOR">}</SEQ>
+		<SEQ TYPE="OPERATOR">(</SEQ>
+		<SEQ TYPE="OPERATOR">)</SEQ>
+		<SEQ TYPE="OPERATOR">-</SEQ>
+		<SEQ TYPE="OPERATOR">=</SEQ>
 
-        <KEYWORDS>
-            <KEYWORD1>cat</KEYWORD1>
-            <KEYWORD1>copy</KEYWORD1>
-            <KEYWORD1>create</KEYWORD1>
-            <KEYWORD1>delall</KEYWORD1>
-            <KEYWORD1>delete</KEYWORD1>
-            <KEYWORD1>dirs</KEYWORD1>
-            <KEYWORD1>equal</KEYWORD1>
-            <KEYWORD1>else</KEYWORD1>
-            <KEYWORD1>end</KEYWORD1>
-            <KEYWORD1>exec</KEYWORD1>
-            <KEYWORD1>first</KEYWORD1>
-            <KEYWORD1>forname</KEYWORD1>
-            <KEYWORD1>function</KEYWORD1>
-            <KEYWORD1>getprop</KEYWORD1>
-            <KEYWORD1>glob</KEYWORD1>
-            <KEYWORD1>if</KEYWORD1>
-            <KEYWORD1>join</KEYWORD1>
-            <KEYWORD1>load</KEYWORD1>
-            <KEYWORD1>mkdir</KEYWORD1>
-            <KEYWORD1>mkdirs</KEYWORD1>
-            <KEYWORD1>note</KEYWORD1>
-            <KEYWORD1>patsubst</KEYWORD1>
-            <KEYWORD1>rename</KEYWORD1>
-            <KEYWORD1>rest</KEYWORD1>
-            <KEYWORD1>subst</KEYWORD1>
-            <KEYWORD1>then</KEYWORD1>
-            <KEYWORD2>@</KEYWORD2>
-            <KEYWORD2>?</KEYWORD2>
-            <KEYWORD2>&lt;</KEYWORD2>
-            <KEYWORD2>%</KEYWORD2>
-            <KEYWORD3>include</KEYWORD3>
-        </KEYWORDS>
-    </RULES>
+		<KEYWORDS>
+			<KEYWORD1>cat</KEYWORD1>
+			<KEYWORD1>copy</KEYWORD1>
+			<KEYWORD1>create</KEYWORD1>
+			<KEYWORD1>delall</KEYWORD1>
+			<KEYWORD1>delete</KEYWORD1>
+			<KEYWORD1>dirs</KEYWORD1>
+			<KEYWORD1>equal</KEYWORD1>
+			<KEYWORD1>else</KEYWORD1>
+			<KEYWORD1>end</KEYWORD1>
+			<KEYWORD1>exec</KEYWORD1>
+			<KEYWORD1>first</KEYWORD1>
+			<KEYWORD1>forname</KEYWORD1>
+			<KEYWORD1>function</KEYWORD1>
+			<KEYWORD1>getprop</KEYWORD1>
+			<KEYWORD1>glob</KEYWORD1>
+			<KEYWORD1>if</KEYWORD1>
+			<KEYWORD1>join</KEYWORD1>
+			<KEYWORD1>load</KEYWORD1>
+			<KEYWORD1>mkdir</KEYWORD1>
+			<KEYWORD1>mkdirs</KEYWORD1>
+			<KEYWORD1>note</KEYWORD1>
+			<KEYWORD1>patsubst</KEYWORD1>
+			<KEYWORD1>rename</KEYWORD1>
+			<KEYWORD1>rest</KEYWORD1>
+			<KEYWORD1>subst</KEYWORD1>
+			<KEYWORD1>then</KEYWORD1>
+			<KEYWORD2>@</KEYWORD2>
+			<KEYWORD2>?</KEYWORD2>
+			<KEYWORD2>&lt;</KEYWORD2>
+			<KEYWORD2>%</KEYWORD2>
+			<KEYWORD3>include</KEYWORD3>
+		</KEYWORDS>
+	</RULES>
 </MODE>

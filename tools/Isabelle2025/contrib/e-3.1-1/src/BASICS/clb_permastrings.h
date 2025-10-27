@@ -1,22 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-  File  : clb_permastrings.h
+  clb_permastrings.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.327-04
 
-  Author: Stephan Schulz (schulz@eprover.org)
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Simple registry for (potentially shared) permanent strings to
-  simplify memory mangement.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 2023 by the authors.
-  This code is released under the GNU General Public Licence.
-  See the file COPYING in the main CLIB directory for details.
-  Run "eprover -h" for contact information.
-
-  Created: Fri Nov 24 15:01:29 CET 2023
-
------------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/BASICS/clb_permastrings.h
+ */
 
 #ifndef CLB_PERMASTRINGS
 
@@ -30,15 +29,15 @@
 /*---------------------------------------------------------------------*/
 
 
+
+
 /*---------------------------------------------------------------------*/
 /*                Exported Functions and Variables                     */
 /*---------------------------------------------------------------------*/
 
-char *PermaString(char *str);
-
-char *PermaStringStore(char *str);
-
-void PermaStringsFree(void);
+char* PermaString(char *str);
+char* PermaStringStore(char *str);
+void  PermaStringsFree(void);
 
 
 #endif

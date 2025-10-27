@@ -42,12 +42,30 @@ Germany
 or via email (address above).
 """
 
+#                                   ***   StarForth   ***
+#
+#   pylib_econf.py- FORTH-79 Standard and ANSI C99 ONLY
+#   Modified by - rajames
+#   Last modified - 2025-10-27T12:40:04.441-04
+#
+#   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+#
+#   This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+#   To the extent possible under law, the author(s) have dedicated all copyright and related
+#   and neighboring rights to this software to the public domain worldwide.
+#   This software is distributed without any warranty.
+#
+#   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+#
+#   /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/PYTHON/pylib_econf.py
+
 import sys
 import re
 import getopt
 from socket import gethostbyname
 import pylib_generic
 import pylib_io
+
 
 DEFAULT_LISTEN_PORT = 20000
 """
@@ -59,6 +77,7 @@ DEFAULT_LOAD_LIMIT = 5000.0
 Maximum load acceptable for starting new jobs.
 """
 
+
 filename_hack_re = re.compile("\.\.")
 
 
@@ -67,34 +86,34 @@ class e_config(object):
     Represent the configuration of a server. This will normally be
     read from a server-local file.
     """
-    template = \
-        """
-        Port:               %d
-        Binaries directory: %s
-        Problem directory:  %s
-        E-Mark:             %f
-        Memory limit:       %d
-        Auto options:       %s
-        Master:             %s
-        Nice:               %d
-        """
-
+    template=\
+"""
+Port:               %d
+Binaries directory: %s
+Problem directory:  %s
+E-Mark:             %f
+Memory limit:       %d
+Auto options:       %s
+Master:             %s
+Nice:               %d
+"""
+    
     def __init__(self, config=None):
         homedir = pylib_io.get_homedir()
 
-        self.port = DEFAULT_LISTEN_PORT
-        self.bindir = homedir + "/EPROVER/bin"
-        self.problemdir = homedir + "/EPROVER/TPTP"
-        self.e_mark = 100.0
+        self.port         = DEFAULT_LISTEN_PORT
+        self.bindir       = homedir+"/EPROVER/bin"
+        self.problemdir   = homedir+"/EPROVER/TPTP"
+        self.e_mark       = 100.0
         self.memory_limit = 384
-        self.max_procs = 1
-        self.auto_opt = "-s --print-statistics"
-        self.nicelevel = 10
+        self.max_procs    = 1
+        self.auto_opt     = "-s --print-statistics"
+        self.nicelevel    = 10
         self.local_blocks = False
-        self.load_limit = DEFAULT_LOAD_LIMIT
-        self.masters = []
-        self.mode = "announce"
-
+        self.load_limit   = DEFAULT_LOAD_LIMIT
+        self.masters      = []
+        self.mode         = "announce"
+        
         if not config:
             return
 
@@ -121,7 +140,7 @@ class e_config(object):
                 elif key == "Nice":
                     self.nicelevel = int(value)
                 elif key == "Local blocks":
-                    self.local_blocks = value == "true"
+                    self.local_blocks = value=="true"
                 elif key == "Load limit":
                     self.load_limit = float(value)
                 elif key == "Master":
@@ -140,18 +159,19 @@ class e_config(object):
                     raise pylib_io.ECconfigSyntaxError("Unknown keyword",
                                                        key)
         except pylib_io.ECconfigSyntaxError, inst:
-            sys.stderr.write(str(inst) + "\n")
+            sys.stderr.write(str(inst)+"\n")
             sys.exit(1)
-
+        
     def __str__(self):
         addr = []
         for i in self.masters:
-            addr.append(i[0] + ":" + str(i[1]))
+            addr.append(i[0]+":"+str(i[1]))
         masters = ",".join(addr)
 
-        return e_config.template % (self.port, self.bindir, self.problemdir,
-                                    self.e_mark, self.memory_limit,
-                                    self.auto_opt, masters)
+        return e_config.template%(self.port, self.bindir, self.problemdir,
+                                  self.e_mark, self.memory_limit,
+                                  self.auto_opt, masters)
+
 
     def concrete_time(self, time, rawtime=False):
         """
@@ -160,7 +180,7 @@ class e_config(object):
         """
         if rawtime:
             return time
-        return time * 100.0 / self.e_mark
+        return time*100.0/self.e_mark
 
     def abstract_time(self, time, rawtime=False):
         """
@@ -169,7 +189,7 @@ class e_config(object):
         """
         if rawtime:
             return time
-        return time * self.e_mark / 100
+        return time*self.e_mark/100
 
     def command(self, prover, options, prob, timelimit, rawtime=False):
         """
@@ -177,41 +197,38 @@ class e_config(object):
         """
 
         # Make sure that prover is not pointing somewhere strange
-
+        
         if filename_hack_re.search(prover):
             cmd_array = ["/bin/false"]
 
         else:
             procname = "%s/%s" % (self.bindir, prover)
-            limits = "--cpu-limit=%d --memory-limit=%d" % \
-                     (self.concrete_time(timelimit, rawtime), self.memory_limit)
+            limits   = "--cpu-limit=%d --memory-limit=%d" %\
+                       (self.concrete_time(timelimit, rawtime), self.memory_limit)
             probname = "%s/%s" % (self.problemdir, prob)
             cmd_array = [procname] + \
-                        pylib_generic.break_shell_str(limits) + \
-                        pylib_generic.break_shell_str(self.auto_opt) + \
-                        pylib_generic.break_shell_str(options) + \
+                        pylib_generic.break_shell_str(limits)+\
+                        pylib_generic.break_shell_str(self.auto_opt)+\
+                        pylib_generic.break_shell_str(options)+\
                         pylib_generic.break_shell_str(probname)
-
+        
         return cmd_array
-
+        
 
 if __name__ == '__main__':
     opts, args = getopt.gnu_getopt(sys.argv[1:], "h")
 
     for option, optarg in opts:
         if option == "-h":
-            print
-            __doc__
+            print __doc__
             sys.exit()
         else:
-            sys.exit("Unknown option " + option)
+            sys.exit("Unknown option "+ option)
 
     if len(args) > 2:
-        print
-        __doc__
+        print __doc__
         sys.exit()
 
     # Minimal unit test
     c = e_config("eserver_config.txt")
-    print
-    c
+    print c

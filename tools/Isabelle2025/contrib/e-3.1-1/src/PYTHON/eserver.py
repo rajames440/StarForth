@@ -47,6 +47,23 @@ Germany
 or via email (address above).
 """
 
+#                                   ***   StarForth   ***
+#
+#   eserver.py- FORTH-79 Standard and ANSI C99 ONLY
+#   Modified by - rajames
+#   Last modified - 2025-10-27T12:40:02.985-04
+#
+#   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+#
+#   This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+#   To the extent possible under law, the author(s) have dedicated all copyright and related
+#   and neighboring rights to this software to the public domain worldwide.
+#   This software is distributed without any warranty.
+#
+#   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+#
+#   /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/PYTHON/eserver.py
+
 import sys
 import re
 import string
@@ -58,38 +75,38 @@ import pylib_io
 import pylib_econf
 import pylib_eserver
 
+        
+
 if __name__ == '__main__':
     opts, args = getopt.gnu_getopt(sys.argv[1:], "hv", ["Verbose"])
 
     for option, optarg in opts:
         if option == "-h":
-            print
-            __doc__
+            print __doc__
             sys.exit()
-        elif option == "-v" or option == "--verbose":
+        elif option == "-v" or option =="--verbose":
             pylib_io.Verbose = 1
         else:
-            sys.exit("Unknown option " + option)
+            sys.exit("Unknown option "+ option)
 
-    if len(args) > 1 or len(args) < 1:
-        print
-        __doc__
+    if len(args) > 1 or len(args)<1:
+        print __doc__
         sys.exit()
 
     config = pylib_econf.e_config(args[0])
 
     nice = os.nice(0)
-    if config.nicelevel > nice:
-        os.nice(config.nicelevel - nice)
-
+    if config.nicelevel > nice:        
+        os.nice(config.nicelevel-nice)
+    
     exists = pylib_eserver.eserver_get_reply(("localhost",
                                               config.port),
                                              "version\n.\n\n")
 
     if exists:
-        sys.exit("Other process listening on port %d\nVersion reply: %s" %
+        sys.exit("Other process listening on port %d\nVersion reply: %s"%
                  (config.port, exists))
-
+    
     server = pylib_eserver.eserver(config)
 
     server.process()

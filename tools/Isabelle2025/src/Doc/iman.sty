@@ -74,15 +74,12 @@
 
 %%%% ``WARNING'' environment
 \def\dbend{\vtop to 0pt{\vss\hbox{\Huge\bf!}\vss}}
-\newenvironment{warn}{\medskip\medbreak\begingroup \clubpenalty=10000
-\small %%WAS\baselineskip=0.9\baselineskip
-\noindent \ifdim
-              \parindent > 0pt\hangindent\parindent\else
-              \hangindent1.5em
-\fi
-    \hangafter=-2
-    \hbox to0pt{\hskip-\hangindent\dbend\hfill}\ignorespaces}%
-{\par\endgroup\medbreak}
+\newenvironment{warn}{\medskip\medbreak\begingroup \clubpenalty=10000 
+         \small %%WAS\baselineskip=0.9\baselineskip
+         \noindent \ifdim\parindent > 0pt\hangindent\parindent\else\hangindent1.5em\fi
+         \hangafter=-2
+         \hbox to0pt{\hskip-\hangindent\dbend\hfill}\ignorespaces}%
+        {\par\endgroup\medbreak}
 
 
 %%%% Standard logical symbols
@@ -144,8 +141,7 @@
 %
 \DeclareSymbolFont{italics}{\encodingdefault}{\rmdefault}{m}{it}%
 \def\@setmcodes#1#2#3{{\count0=#1 \count1=#3
-\loop \global\mathcode\count0=\count1 \ifnum
-                                          \count0<#2
-                                          \advance\count0 by1 \advance\count1 by1 \repeat}}
+        \loop \global\mathcode\count0=\count1 \ifnum \count0<#2
+        \advance\count0 by1 \advance\count1 by1 \repeat}}
 \@setmcodes{`A}{`Z}{"7\hexnumber@\symitalics41}
 \@setmcodes{`a}{`z}{"7\hexnumber@\symitalics61}

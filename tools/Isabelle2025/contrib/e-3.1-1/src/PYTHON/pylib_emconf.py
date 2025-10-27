@@ -42,6 +42,23 @@ Germany
 or via email (address above).
 """
 
+#                                   ***   StarForth   ***
+#
+#   pylib_emconf.py- FORTH-79 Standard and ANSI C99 ONLY
+#   Modified by - rajames
+#   Last modified - 2025-10-27T12:40:04.452-04
+#
+#   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+#
+#   This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+#   To the extent possible under law, the author(s) have dedicated all copyright and related
+#   and neighboring rights to this software to the public domain worldwide.
+#   This software is distributed without any warranty.
+#
+#   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+#
+#   /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/PYTHON/pylib_emconf.py
+
 import sys
 import re
 import getopt
@@ -49,12 +66,13 @@ from socket import gethostbyname
 import pylib_generic
 import pylib_io
 
+
 DEFAULT_ANNOUNCE_PORT = 30000
 """
 Servers announce their presence here.
 """
 
-DEFAULT_CONTROL_PORT = 40000
+DEFAULT_CONTROL_PORT  = 40000
 """
 Control applications connect here.
 """
@@ -69,6 +87,7 @@ DEFAULT_SYNC_COUNT = 30
 How often will a protocol be automatically synced to disk?
 """
 
+
 filename_hack_re = re.compile("\.\.")
 
 
@@ -76,22 +95,22 @@ class e_mconfig(object):
     """
     Represent the configuration of a master.
     """
-    template = \
-        """
-        Port:               %d
-        Job directory:      %s
-        Result directory:   %s
-        """
+    template=\
+"""
+Port:               %d
+Job directory:      %s
+Result directory:   %s
+"""
 
     def __init__(self, config=None):
         homedir = pylib_io.get_homedir()
 
-        self.port = DEFAULT_ANNOUNCE_PORT
-        self.ctrl_port = DEFAULT_CONTROL_PORT
-        self.specdir = homedir + "/" + DEFAULT_TESTDIR
-        self.protdir = homedir + "/" + DEFAULT_TESTDIR
-        self.auto_sync = DEFAULT_SYNC_COUNT
-        self.mode = "active"
+        self.port         = DEFAULT_ANNOUNCE_PORT
+        self.ctrl_port    = DEFAULT_CONTROL_PORT
+        self.specdir      = homedir+"/"+DEFAULT_TESTDIR
+        self.protdir      = homedir+"/"+DEFAULT_TESTDIR
+        self.auto_sync    = DEFAULT_SYNC_COUNT
+        self.mode         = "active"
 
         if not config:
             return
@@ -118,11 +137,11 @@ class e_mconfig(object):
                     raise pylib_io.ECconfigSyntaxError("Unknown keyword",
                                                        key)
         except pylib_io.ECconfigSyntaxError, inst:
-            sys.stderr.write(str(inst) + "\n")
+            sys.stderr.write(str(inst)+"\n")
             sys.exit(1)
 
     def __str__(self):
-        return e_mconfig.template % (self.port, self.specdir, self.protdir)
+        return e_mconfig.template%(self.port, self.specdir, self.protdir)
 
 
 if __name__ == '__main__':
@@ -130,18 +149,15 @@ if __name__ == '__main__':
 
     for option, optarg in opts:
         if option == "-h":
-            print
-            __doc__
+            print __doc__
             sys.exit()
         else:
-            sys.exit("Unknown option " + option)
+            sys.exit("Unknown option "+ option)
 
     if len(args) > 2:
-        print
-        __doc__
+        print __doc__
         sys.exit()
 
     # Minimal unit test
     c = e_mconfig("emaster_config.txt")
-    print
-    c
+    print c

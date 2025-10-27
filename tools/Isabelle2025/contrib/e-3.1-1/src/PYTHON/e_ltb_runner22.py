@@ -50,6 +50,23 @@ Germany
 or via email (address above).
 """
 
+#                                   ***   StarForth   ***
+#
+#   e_ltb_runner22.py- FORTH-79 Standard and ANSI C99 ONLY
+#   Modified by - rajames
+#   Last modified - 2025-10-27T12:40:02.705-04
+#
+#   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+#
+#   This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+#   To the extent possible under law, the author(s) have dedicated all copyright and related
+#   and neighboring rights to this software to the public domain worldwide.
+#   This software is distributed without any warranty.
+#
+#   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+#
+#   /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/PYTHON/e_ltb_runner22.py
+
 import sys
 import re
 import os
@@ -74,13 +91,13 @@ def run_shell_command(cmd):
 
 class filejob:
     def __init__(self, infile, outfile):
-        self.infile = infile
+        self.infile  = infile
         self.outfile = outfile
 
     def __str__(self):
-        return "<filejob: %s -> %s>" % (self.infile, self.outfile)
+        return "<filejob: %s -> %s>"%(self.infile, self.outfile)
 
-
+    
 def filejob_parser(filename):
     res = []
     fp = open(filename, "r")
@@ -93,17 +110,15 @@ def filejob_parser(filename):
             problem_mode = True
         elif i.startswith("% SZS end BatchProblems"):
             problem_mode = False
-        elif problem_mode == True:
+        elif problem_mode == True:            
             try:
                 infile, outfile = i.split()
                 res.append(filejob(infile, outfile))
             except:
-                print
-                "Warning: Bogus line: ", i
+                print "Warning: Bogus line: ", i
         else:
             pass
     return res
-
 
 def run_e(prover, filter, timelimit, problem):
     cmd = e_template % (prover, filter, timelimit, problem.infile)
@@ -131,78 +146,74 @@ def run_e(prover, filter, timelimit, problem):
         return (status, cpu_time, preproc_estimate)
     return (False, cpu_time, preproc_estimate)
 
-
 def get_cpu_time():
-    self_usage = resource.getrusage(resource.RUSAGE_SELF)
+    self_usage  = resource.getrusage(resource.RUSAGE_SELF)
     child_usage = resource.getrusage(resource.RUSAGE_CHILDREN)
-    return self_usage.ru_utime + self_usage.ru_stime + \
-        child_usage.ru_utime + child_usage.ru_stime
-
+    return self_usage.ru_utime+self_usage.ru_stime+\
+           child_usage.ru_utime+child_usage.ru_stime
+ 
 
 if __name__ == '__main__':
     opts, args = getopt.gnu_getopt(sys.argv[1:], "h")
 
     for option, optarg in opts:
         if option == "-h":
-            print
-            __doc__
+            print __doc__
             sys.exit()
         else:
-            sys.exit("Unknown option " + option)
+            sys.exit("Unknown option "+ option)
 
     timelimit = None
-    prover = "eprover"
+    prover    = "eprover"
 
-    if len(args) < 1 or len(args) > 3:
-        print
-        __doc__
+    if len(args) < 1 or len(args) >3:
+        print __doc__
         sys.exit()
-
+        
     jobfile = args[0]
-    if len(args) > 1:
+    if len(args)> 1:
         timelimit = int(args[1])
-    if len(args) > 2:
+    if len(args)>2:
         prover = args[2]
 
     jobs = filejob_parser(jobfile)
     worklist = list(jobs)
     if not timelimit:
-        timelimit = 240 * len(worklist)
+        timelimit = 240*len(worklist)
 
     # We need to go into the first problem, anyways.
     estimated_preproc_time = -10.0
-    limit = timelimit / (len(worklist) * 2)
-
+    limit = timelimit/(len(worklist)*2)
+    
     while worklist:
         problem = worklist.pop(0)
 
-        print
-        "\n% SZS status Started for", problem.infile
+        print "\n% SZS status Started for", problem.infile
         sys.stdout.flush()
-        joblist = ["--rel-pruning-level=2", "--rel-pruning-level=3", ""]
-
-        while joblist:
+        joblist = [ "--rel-pruning-level=2", "--rel-pruning-level=3", ""]
+        
+        while joblist:        
             remaining_time = timelimit - get_cpu_time()
-            jobno = (3.0 * len(worklist)) + len(joblist)
-            time_per_problem = remaining_time / jobno
+            jobno = (3.0 * len(worklist))+len(joblist)
+            time_per_problem = remaining_time/jobno
             status = None
 
             job = joblist.pop(0)
-            if time_per_problem > estimated_preproc_time + 5.0:
+            if time_per_problem > estimated_preproc_time+5.0:
                 if estimated_preproc_time < 0:
-                    limit = limit * 2
+                    limit = limit*2
                 else:
                     limit = time_per_problem
                 status, cpu_time, preproc = run_e(prover, job, limit, problem)
-
+                
                 if preproc and preproc > estimated_preproc_time:
                     estimated_preproc_time = preproc
                 if status:
-                    print
-                    "% SZS status", status, "for", problem.infile
+                    print "% SZS status", status, "for", problem.infile
                     sys.stdout.flush()
                     break
-
-        print
-        "% SZS status Ended for", problem.infile
-        sys.stdout.flush()
+                
+        print "% SZS status Ended for", problem.infile
+        sys.stdout.flush()       
+            
+            

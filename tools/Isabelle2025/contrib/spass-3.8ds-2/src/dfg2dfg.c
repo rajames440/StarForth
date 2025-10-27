@@ -1,11 +1,29 @@
+/*
+                                  ***   StarForth   ***
+
+  dfg2dfg.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.639-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/spass-3.8ds-2/src/dfg2dfg.c
+ */
+
 /**************************************************************/
 /* ********************************************************** */
 /* *                                                        * */
 /* *              GENERATING APPROXIMATIONS                 * */
 /* *                                                        * */
-/* *  $Module:   DFG2DFG                                    * */
+/* *  $Module:   DFG2DFG                                    * */ 
 /* *                                                        * */
-/* *  Copyright (C) 2000, 2001 MPI fuer Informatik          * */
 /* *                                                        * */
 /* *  This program is free software; you can redistribute   * */
 /* *  it and/or modify it under the terms of the FreeBSD    * */
@@ -52,211 +70,215 @@ static void dfg2dfg_ResetSelectedLiterals(LIST Clauses)
   RETURNS: Nothing.
 ***********************************************************/
 {
-    LIST Scan;
+  LIST Scan;
 
-    for (Scan = Clauses; !list_Empty(Scan); Scan = list_Cdr(Scan)) {
-        NAT i;
-        CLAUSE Clause;
+  for (Scan = Clauses; !list_Empty(Scan); Scan = list_Cdr(Scan)) {
+    NAT i;
+    CLAUSE Clause;
 
-        Clause = (CLAUSE) list_Car(Scan);
+    Clause = (CLAUSE) list_Car(Scan);
 
-        /* For each clause in the list, if the clause contains selected
+    /* For each clause in the list, if the clause contains selected
        literals, remove the selected status of the literals. */
-        if (clause_GetFlag(Clause, CLAUSESELECT)) {
-            for (i = clause_FirstAntecedentLitIndex(Clause); i <= clause_LastAntecedentLitIndex(Clause); i++)
-                clause_LiteralClearFlag(clause_GetLiteral(Clause, i), LITSELECT);
-            clause_RemoveFlag(Clause, CLAUSESELECT);
-        }
+    if (clause_GetFlag(Clause, CLAUSESELECT)) {
+      for (i = clause_FirstAntecedentLitIndex(Clause); i <= clause_LastAntecedentLitIndex(Clause); i++)
+        clause_LiteralClearFlag(clause_GetLiteral(Clause, i), LITSELECT);
+      clause_RemoveFlag(Clause, CLAUSESELECT);
     }
+  }
 }
 
-int main(int argc, const char *argv[]) {
-    LIST Clauses, Axioms, Conjectures, SortDecls,
-            UserPrecedence, UserSelection, ClAxRelation;
-    const char *Filename;
-    char *IncludePath;
-    const char *Creator = "{* dfg2dfg Version " DFG2DFG__VERSION " *}";
-    FILE *File;
-    int value;
-    FLAGSTORE Flags;
-    PRECEDENCE Precedence;
-    BOOL HasPlainClauses;
-    DFGDESCRIPTION Description;
+int main(int argc, const char* argv[])
+{
+  LIST       Clauses, Axioms, Conjectures, SortDecls, 
+             UserPrecedence, UserSelection, ClAxRelation;
+  const char *Filename;
+  char *     IncludePath;  
+  const char *Creator = "{* dfg2dfg Version " DFG2DFG__VERSION " *}";
+  FILE       *File;
+  int        value;
+  FLAGSTORE  Flags;
+  PRECEDENCE Precedence;
+  BOOL       HasPlainClauses;
+  DFGDESCRIPTION Description;
 
-    /* Initialization */
-    memory_Init(memory__UNLIMITED);
-    atexit(memory_FreeAllMem);
-    symbol_Init(TRUE);
-    stack_Init();
-    term_Init();
-    flag_Init(flag_SPASS);
-    flag_Init(flag_DFG2DFG);
+  /* Initialization */
+  memory_Init(memory__UNLIMITED);
+  atexit(memory_FreeAllMem);
+  symbol_Init(TRUE);
+  stack_Init();
+  term_Init();
+  flag_Init(flag_SPASS);
+  flag_Init(flag_DFG2DFG);
 
-    Flags = flag_CreateStore();
-    flag_InitStoreByDefaults(Flags);
-    Precedence = symbol_CreatePrecedence();
-    Description = desc_Create();
+  Flags = flag_CreateStore();
+  flag_InitStoreByDefaults(Flags);
+  Precedence = symbol_CreatePrecedence();
+  Description = desc_Create();
 
-    fol_Init(TRUE, Precedence);
-    eml_Init(Precedence);
-    clause_Init();
-    approx_Init();
-    cmdlne_Init(flag_SPASS);
-    cmdlne_Init(flag_DFG2DFG);
+  fol_Init(TRUE, Precedence);
+  eml_Init(Precedence);
+  clause_Init();
+  approx_Init();
+  cmdlne_Init(flag_SPASS);
+  cmdlne_Init(flag_DFG2DFG);
 
-    if (!cmdlne_Read(argc, argv) ||
-        cmdlne_GetInputFile() == (char *) NULL) {
-        /* print options */
-        fputs("\n\t          dfg2dfg Version ", stdout);
-        fputs(DFG2DFG__VERSION, stdout);
-        fputs("\nUsage: dfg2dfg [-horn] [-linear] [-monadic[=n]]", stdout);
-        puts(" [-shallow[=m]] input [output]\n");
-        puts("See the man page or the postscript documentation for more details.");
-        return EXIT_FAILURE;
-    }
+  if (!cmdlne_Read(argc, argv) ||
+      cmdlne_GetInputFile() == (char*)NULL) {
+    /* print options */
+    fputs("\n\t          dfg2dfg Version ", stdout);
+    fputs(DFG2DFG__VERSION, stdout);
+    fputs("\nUsage: dfg2dfg [-horn] [-linear] [-monadic[=n]]", stdout);
+    puts(" [-shallow[=m]] input [output]\n");
+    puts("See the man page or the postscript documentation for more details.");
+    return EXIT_FAILURE;
+  }
 
-    if (!cmdlne_SetFlags(Flags))
-        return EXIT_FAILURE;
+  if (!cmdlne_SetFlags(Flags))
+    return EXIT_FAILURE;
 
-    Filename = cmdlne_GetInputFile();
-    File = misc_OpenFile(Filename, "r");
+  Filename = cmdlne_GetInputFile();
+  File     = misc_OpenFile(Filename, "r");
 
-    /* Call the parser */
-    Axioms = list_Nil();
+  /* Call the parser */
+  Axioms         = list_Nil();
+  Conjectures    = list_Nil();
+  SortDecls      = list_Nil();
+  UserPrecedence = list_Nil();
+  UserSelection  = list_Nil();
+  ClAxRelation   = list_Nil();
+  
+  IncludePath = flag_GetFlagStringValue(Flags,flag_IncludePath);   
+  
+  Clauses = dfg_DFGParser(File,IncludePath,Flags,Precedence,Description,&Axioms,&Conjectures,
+			  &SortDecls, &UserPrecedence, &UserSelection,
+			  &ClAxRelation, &HasPlainClauses);
+
+  misc_CloseFile(File, Filename);
+
+  /* Formulae are ignored */
+  dfg_DeleteFormulaPairList(Axioms);
+  dfg_DeleteFormulaPairList(Conjectures);
+  dfg_DeleteFormulaPairList(SortDecls);
+
+  if (list_Empty(Clauses)) {
+    misc_StartUserErrorReport();
+    misc_UserErrorReport("\n No clauses found in input file!\n");
+    misc_FinishUserErrorReport();
+  }
+  
+  /* Apply some approximations */
+  /* 1. the transformation to horn clauses */
+  if (flag_GetFlagIntValue(Flags, flag_DFG2DFGHORN) == flag_ON) {
     Conjectures = list_Nil();
-    SortDecls = list_Nil();
-    UserPrecedence = list_Nil();
-    UserSelection = list_Nil();
-    ClAxRelation = list_Nil();
-
-    IncludePath = flag_GetFlagStringValue(Flags, flag_IncludePath);
-
-    Clauses = dfg_DFGParser(File, IncludePath, Flags, Precedence, Description, &Axioms, &Conjectures,
-                            &SortDecls, &UserPrecedence, &UserSelection,
-                            &ClAxRelation, &HasPlainClauses);
-
-    misc_CloseFile(File, Filename);
-
-    /* Formulae are ignored */
-    dfg_DeleteFormulaPairList(Axioms);
-    dfg_DeleteFormulaPairList(Conjectures);
-    dfg_DeleteFormulaPairList(SortDecls);
-
-    if (list_Empty(Clauses)) {
-        misc_StartUserErrorReport();
-        misc_UserErrorReport("\n No clauses found in input file!\n");
-        misc_FinishUserErrorReport();
+    for ( ; !list_Empty(Clauses); Clauses = list_Pop(Clauses)) {
+      Axioms = approx_MakeHorn(list_Car(Clauses), Flags, Precedence);
+      if (list_Empty(Axioms))
+	Conjectures = list_Nconc(Conjectures, list_List(list_Car(Clauses)));
+      else {
+	clause_Delete(list_Car(Clauses));
+	Conjectures = list_Nconc(Conjectures, Axioms);
+      }
     }
+    Clauses = Conjectures;
+  }
 
-    /* Apply some approximations */
-    /* 1. the transformation to horn clauses */
-    if (flag_GetFlagIntValue(Flags, flag_DFG2DFGHORN) == flag_ON) {
-        Conjectures = list_Nil();
-        for (; !list_Empty(Clauses); Clauses = list_Pop(Clauses)) {
-            Axioms = approx_MakeHorn(list_Car(Clauses), Flags, Precedence);
-            if (list_Empty(Axioms))
-                Conjectures = list_Nconc(Conjectures, list_List(list_Car(Clauses)));
-            else {
-                clause_Delete(list_Car(Clauses));
-                Conjectures = list_Nconc(Conjectures, Axioms);
-            }
-        }
-        Clauses = Conjectures;
+  /* 2. the transformation to monadic literals */
+  if (flag_GetFlagIntValue(Flags, flag_DFG2DFGMONADIC) != flag_OFF) {
+    if (flag_GetFlagIntValue(Flags, flag_DFG2DFGMONADIC) == flag_DFG2DFGMONADICPROJECT) {
+      Conjectures = approx_MonadicByProjection(Clauses, Flags, Precedence);
+      clause_DeleteClauseList(Clauses);
+      Clauses = Conjectures;
     }
-
-    /* 2. the transformation to monadic literals */
-    if (flag_GetFlagIntValue(Flags, flag_DFG2DFGMONADIC) != flag_OFF) {
-        if (flag_GetFlagIntValue(Flags, flag_DFG2DFGMONADIC) == flag_DFG2DFGMONADICPROJECT) {
-            Conjectures = approx_MonadicByProjection(Clauses, Flags, Precedence);
-            clause_DeleteClauseList(Clauses);
-            Clauses = Conjectures;
-        } else if (flag_GetFlagIntValue(Flags, flag_DFG2DFGMONADIC) == flag_DFG2DFGMONADICTERM) {
-            Conjectures = approx_MonadicByTermEncoding(Clauses, Flags, Precedence);
-            clause_DeleteClauseList(Clauses);
-            Clauses = Conjectures;
-        } else {
-            misc_StartUserErrorReport();
-            misc_UserErrorReport("\nError: argument of option 'monadic' must be 0, 1 or 2\n");
-            misc_FinishUserErrorReport();
-        }
+    else if (flag_GetFlagIntValue(Flags, flag_DFG2DFGMONADIC) == flag_DFG2DFGMONADICTERM) {
+      Conjectures = approx_MonadicByTermEncoding(Clauses, Flags, Precedence);
+      clause_DeleteClauseList(Clauses);
+      Clauses = Conjectures;
     }
-
-    /* 3. the linear transformation */
-    if (flag_GetFlagIntValue(Flags, flag_DFG2DFGLINEAR) == flag_ON) {
-        Conjectures = approx_MonadicMakeLinear(Clauses, Flags, Precedence);
-        clause_DeleteClauseList(Clauses);
-        Clauses = Conjectures;
+    else {
+      misc_StartUserErrorReport();
+      misc_UserErrorReport("\nError: argument of option 'monadic' must be 0, 1 or 2\n");
+      misc_FinishUserErrorReport();
     }
+  }
 
-    /* 4. the shallow transformation */
-    if (flag_GetFlagIntValue(Flags, flag_DFG2DFGSHALLOW) != flag_OFF) {
-        BOOL flag1, flag2;
-        flag1 = flag2 = TRUE;
-        value = flag_GetFlagIntValue(Flags, flag_DFG2DFGSHALLOW);
-        if (value == 2)
-            flag1 = FALSE;
-        else if (value == 3)
-            flag1 = flag2 = FALSE;
-        else if (value != 0 && value != 1) {
-            misc_StartUserErrorReport();
-            misc_UserErrorReport("Error: argument of option 'shallow' must be 0, 1, 2 or 3\n");
-            misc_FinishUserErrorReport();
-        }
-
-        if (value != 0) {
-            Conjectures = list_Nil();
-            for (; !list_Empty(Clauses); Clauses = list_Pop(Clauses)) {
-                Axioms = approx_HornMonadicFlattenHeads(list_Car(Clauses), flag1,
-                                                        flag2, Flags, Precedence);
-                if (list_Empty(Axioms))
-                    Conjectures = list_Nconc(Conjectures, list_List(list_Car(Clauses)));
-                else {
-                    clause_Delete(list_Car(Clauses));
-                    Conjectures = list_Nconc(Conjectures, Axioms);
-                }
-            }
-            Clauses = Conjectures;
-        }
-    }
-
-    /* Print transformed clauses to stdout by default */
-    File = stdout;
-    if (cmdlne_GetOutputFile()) {
-        /* Name of output file is given */
-        File = misc_OpenFile(cmdlne_GetOutputFile(), "w");
-    }
-
-    /* Do not print the selected status of the literals. */
-    dfg2dfg_ResetSelectedLiterals(Clauses);
-
-    clause_FPrintCnfDFGProblem(File, FALSE, "{**}",
-                               Creator,
-                               "unknown",
-                               "{**}", Clauses, NULL,
-                               Flags, Precedence, NULL, FALSE, FALSE);
-
-    if (cmdlne_GetOutputFile()) {
-        /* Name of output file is given */
-        misc_CloseFile(File, cmdlne_GetOutputFile());
-    }
+  /* 3. the linear transformation */
+  if (flag_GetFlagIntValue(Flags, flag_DFG2DFGLINEAR) == flag_ON) {
+    Conjectures = approx_MonadicMakeLinear(Clauses, Flags, Precedence);
     clause_DeleteClauseList(Clauses);
-    eml_Free();
-    flag_DeleteStore(Flags);
-    symbol_DeletePrecedence(Precedence);
-    list_Delete(UserPrecedence);
-    list_Delete(UserSelection);
-    dfg_DeleteClAxRelation(ClAxRelation);
-    desc_Delete(Description);
+    Clauses = Conjectures;
+  }
 
-    cmdlne_Free();
-    fol_Free();
-    symbol_FreeAllSymbols();
+  /* 4. the shallow transformation */
+  if (flag_GetFlagIntValue(Flags, flag_DFG2DFGSHALLOW) != flag_OFF) {
+    BOOL flag1, flag2;
+    flag1 = flag2 = TRUE;
+    value = flag_GetFlagIntValue(Flags, flag_DFG2DFGSHALLOW);
+    if (value == 2)
+      flag1 = FALSE;
+    else if (value == 3)
+      flag1 = flag2 = FALSE;
+    else if (value != 0 && value != 1) {
+      misc_StartUserErrorReport();
+      misc_UserErrorReport("Error: argument of option 'shallow' must be 0, 1, 2 or 3\n");
+      misc_FinishUserErrorReport();
+    }
+
+    if (value != 0) {
+      Conjectures = list_Nil();
+      for ( ; !list_Empty(Clauses); Clauses = list_Pop(Clauses)) {
+	Axioms = approx_HornMonadicFlattenHeads(list_Car(Clauses), flag1,
+						flag2, Flags, Precedence);
+	if (list_Empty(Axioms))
+	  Conjectures = list_Nconc(Conjectures, list_List(list_Car(Clauses)));
+	else {
+	  clause_Delete(list_Car(Clauses));
+	  Conjectures = list_Nconc(Conjectures, Axioms);
+	}
+      }
+      Clauses = Conjectures;
+    }
+  }
+    
+  /* Print transformed clauses to stdout by default */
+  File = stdout;
+  if (cmdlne_GetOutputFile()) {
+    /* Name of output file is given */
+    File = misc_OpenFile(cmdlne_GetOutputFile(), "w");
+  }
+
+  /* Do not print the selected status of the literals. */
+  dfg2dfg_ResetSelectedLiterals(Clauses);
+
+  clause_FPrintCnfDFGProblem(File, FALSE, "{**}", 
+			     Creator,
+			     "unknown",
+			     "{**}", Clauses, NULL, 
+                             Flags, Precedence, NULL, FALSE, FALSE);
+  
+  if (cmdlne_GetOutputFile()) {
+    /* Name of output file is given */
+    misc_CloseFile(File, cmdlne_GetOutputFile());
+  }
+  clause_DeleteClauseList(Clauses);
+  eml_Free();
+  flag_DeleteStore(Flags);
+  symbol_DeletePrecedence(Precedence);
+  list_Delete(UserPrecedence);
+  list_Delete(UserSelection);
+  dfg_DeleteClAxRelation(ClAxRelation);
+  desc_Delete(Description);
+  
+  cmdlne_Free();
+  fol_Free();
+  symbol_FreeAllSymbols();
 
 #ifdef CHECK
-    memory_Print();
-    memory_PrintLeaks();
+  memory_Print();
+  memory_PrintLeaks();
 #endif
 
-    putchar('\n');
-    return 0;
+  putchar('\n');
+  return 0;
 }
+

@@ -15,17 +15,18 @@ Lecture Notes in Computer Science (LNCS) and other proceedings book series.
 
 It consists of the following files:
 
-* readme.txt(this file)
+* readme.txt  (this file)
 
-* history.txt(the version history of the package)
+* history.txt  (the version history of the package)
 
-* llncs.cls(the LaTeX2e document class)
+* llncs.cls  (the LaTeX2e document class)
 
-* llncsdoc.tex(the documentation of the class, LaTeX souce)
+* llncsdoc.tex  (the documentation of the class, LaTeX souce)
 
-* llncsdoc.pdf(the documentation of the class, PDF file)
+* llncsdoc.pdf  (the documentation of the class, PDF file)
 
-* splncs04.bst(LNCS BibTeX style with alphabetic sorting)
+* splncs04.bst  (LNCS BibTeX style with alphabetic sorting)
+
 
 ## Installation
 
@@ -35,5 +36,5 @@ file.
 
 ## License
 
-This work may be distributed and/or modified under the conditions of the
+This work may be distributed and/or modified under the conditions of the 
 CC BY license, version 4.0 or later.

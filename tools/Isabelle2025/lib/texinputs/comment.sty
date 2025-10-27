@@ -148,106 +148,96 @@
 \def\CommentCutFile{comment.cut}
 
 \def\ProcessComment#1% start it all of
-    {\begingroup
-\def\CurrentComment{#1}%
-\let\do\makeinnocent \dospecials
-\makeinnocent\^^L% and whatever other special cases
-\endlinechar`\^^M \catcode`\^^M=12 \xComment}
+   {\begingroup
+    \def\CurrentComment{#1}%
+    \let\do\makeinnocent \dospecials 
+    \makeinnocent\^^L% and whatever other special cases
+    \endlinechar`\^^M \catcode`\^^M=12 \xComment}
 %\def\ProcessCommentWithArg#1#2% to be used in \leveledcomment
 %   {\begingroup
 %    \def\CurrentComment{#1}%
 %    \let\do\makeinnocent \dospecials 
 %    \makeinnocent\^^L% and whatever other special cases
 %    \endlinechar`\^^M \catcode`\^^M=12 \xComment}
-    {\catcode`\^^M=12 \endlinechar=-1 %
-\gdef\xComment#1^^M{%
+{\catcode`\^^M=12 \endlinechar=-1 %
+ \gdef\xComment#1^^M{%
     \expandafter\ProcessCommentLine}
-\gdef\ProcessCommentLine#1^^M{\def\test{#1}
-\csarg\ifx
-              {End\CurrentComment Test}\test
+ \gdef\ProcessCommentLine#1^^M{\def\test{#1}
+      \csarg\ifx{End\CurrentComment Test}\test
           \edef\next{\noexpand\EndOfComment{\CurrentComment}}%
-\else
-          \ThisComment{#1}\let\next\ProcessCommentLine
-\fi \next}
+      \else \ThisComment{#1}\let\next\ProcessCommentLine
+      \fi \next}
 }
 
 \def\CSstringmeaning#1{\expandafter\CSgobblearrow\meaning#1}
 \def\CSstringcsnoescape#1{\expandafter\CSgobbleescape\string#1}
-    {\escapechar-1
+{\escapechar-1
 \expandafter\expandafter\expandafter\gdef
-\expandafter\expandafter\expandafter\CSgobblearrow
-\expandafter\string\csname macro:->\endcsname{}
+  \expandafter\expandafter\expandafter\CSgobblearrow
+    \expandafter\string\csname macro:->\endcsname{}
 }
-\def\CSgobbleescape#1{\ifnum
-                          `\\=`#1 \else
-                          #1
-\fi}
+\def\CSgobbleescape#1{\ifnum`\\=`#1 \else #1\fi}
 \def\WriteCommentLine#1{\def\CStmp{#1}%
-\immediate\write\CommentStream{\CSstringmeaning\CStmp}}
+    \immediate\write\CommentStream{\CSstringmeaning\CStmp}}
 
 % 3.1 change: in LaTeX and LaTeX2e prevent grouping
-\if
+\if 0%
+\ifx\fmtname\latexename 
     0%
-    \ifx
-        \fmtname\latexename
-        0%
-    \else
-        \ifx
-            \fmtname\latexname
-            0%
-        \else
-            1%
-        \fi
-    \fi
+\else \ifx\fmtname\latexname 
+          0%
+      \else 
+          1%
+\fi   \fi
 %%%%
 %%%% definitions for LaTeX
 %%%%
-    \def\AfterIncludedComment
-    {\immediate\closeout\CommentStream
+\def\AfterIncludedComment
+   {\immediate\closeout\CommentStream
     \input{\CommentCutFile}\relax
     }%
-    \def\TossComment{\immediate\closeout\CommentStream}
-    \def\BeforeIncludedComment
-    {\immediate\openout\CommentStream=\CommentCutFile
+\def\TossComment{\immediate\closeout\CommentStream}
+\def\BeforeIncludedComment
+   {\immediate\openout\CommentStream=\CommentCutFile
     \let\ThisComment\WriteCommentLine}
-    \def\includecomment
-    #1{\message{Include comment '#1'}%
+\def\includecomment
+ #1{\message{Include comment '#1'}%
     \csarg\let{After#1Comment}\AfterIncludedComment
     \csarg\def{#1}{\BeforeIncludedComment
-    \ProcessComment{#1}}%
+        \ProcessComment{#1}}%
     \CommentEndDef{#1}}
-    \long\def\specialcomment
-    #1#2#3{\message{Special comment '#1'}%
+\long\def\specialcomment
+ #1#2#3{\message{Special comment '#1'}%
     % note: \AfterIncludedComment does \input, so #2 goes here!
     \csarg\def{After#1Comment}{#2\AfterIncludedComment#3}%
     \csarg\def{#1}{\BeforeIncludedComment\relax
-    \ProcessComment{#1}}%
+          \ProcessComment{#1}}%
     \CommentEndDef{#1}}
-    \long\def\processcomment
-    #1#2#3#4{\message{Lines-Processing comment '#1'}%
+\long\def\processcomment
+ #1#2#3#4{\message{Lines-Processing comment '#1'}%
     \csarg\def{After#1Comment}{#3\AfterIncludedComment#4}%
     \csarg\def{#1}{\BeforeIncludedComment#2\relax
-    \ProcessComment{#1}}%
+          \ProcessComment{#1}}%
     \CommentEndDef{#1}}
-    \def\leveledcomment
-    #1#2{\message{Include comment '#1' up to level '#2'}%
+\def\leveledcomment
+ #1#2{\message{Include comment '#1' up to level '#2'}%
     %\csname #1IsLeveledCommenttrue\endcsname
     \csarg\let{After#1Comment}\AfterIncludedComment
     \csarg\def{#1}{\BeforeIncludedComment
-    \ProcessCommentWithArg{#1}}%
+        \ProcessCommentWithArg{#1}}%
     \CommentEndDef{#1}}
-\else
+\else 
 %%%%
 %%%%plain TeX and other formats
 %%%%
-    \def\includecomment
-    #1{\message{Including comment '#1'}%
+\def\includecomment
+ #1{\message{Including comment '#1'}%
     \csarg\def{#1}{}%
     \csarg\def{end#1}{}}
-    \long\def\specialcomment
-    #1#2#3{\message{Special comment '#1'}%
+\long\def\specialcomment
+ #1#2#3{\message{Special comment '#1'}%
     \csarg\def{#1}{\def\ThisComment{}\def\AfterComment{#3}#2%
-    \ProcessComment{#1}}%
+           \ProcessComment{#1}}%
     \CommentEndDef{#1}}
 \fi
 
@@ -255,37 +245,32 @@
 %%%% general definition of skipped comment
 %%%%
 \def\excludecomment
-#1{\message{Excluding comment '#1'}%
-\csarg\def{#1}{\let\AfterComment\relax
-\def\ThisComment####1{}\ProcessComment{#1}}%
-\csarg\let{After#1Comment}\TossComment
-\CommentEndDef{#1}}
+ #1{\message{Excluding comment '#1'}%
+    \csarg\def{#1}{\let\AfterComment\relax
+           \def\ThisComment####1{}\ProcessComment{#1}}%
+    \csarg\let{After#1Comment}\TossComment
+    \CommentEndDef{#1}}
 
-\if
+\if 0%
+\ifx\fmtname\latexename 
     0%
-    \ifx
-        \fmtname\latexename
-        0%
-    \else
-        \ifx
-            \fmtname\latexname
-            0%
-        \else
-            1%
-        \fi
-    \fi
+\else \ifx\fmtname\latexname 
+          0%
+      \else 
+          1%
+\fi   \fi
 % latex & latex2e:
-    \def\EndOfComment#1{\endgroup\end{#1}%
-\csname After#1Comment\endcsname}
+\def\EndOfComment#1{\endgroup\end{#1}%
+    \csname After#1Comment\endcsname}
 \def\CommentEndDef#1{{\escapechar=-1\relax
-\csarg\xdef{End#1Test}{\string\\end\string\{#1\string\}}%
-}}
+    \csarg\xdef{End#1Test}{\string\\end\string\{#1\string\}}%
+    }}
 \else
 % plain & other
 \def\EndOfComment#1{\endgroup\AfterComment}
 \def\CommentEndDef#1{{\escapechar=-1\relax
-\csarg\xdef{End#1Test}{\string\\end#1}%
-}}
+    \csarg\xdef{End#1Test}{\string\\end#1}%
+    }}
 \fi
 
 \excludecomment{comment}

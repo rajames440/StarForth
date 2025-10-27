@@ -1,29 +1,48 @@
 <?xml version="1.0"?>
+<!--
+  ~                                  ***   StarForth   ***
+  ~
+  ~  json.xml- FORTH-79 Standard and ANSI C99 ONLY
+  ~  Modified by - rajames
+  ~  Last modified - 2025-10-27T12:40:03.591-04
+  ~
+  ~  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+  ~
+  ~  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  ~  To the extent possible under law, the author(s) have dedicated all copyright and related
+  ~  and neighboring rights to this software to the public domain worldwide.
+  ~  This software is distributed without any warranty.
+  ~
+  ~  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+  ~
+  ~  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/jedit-20250215/jedit5.7.0-patched/modes/json.xml
+  -->
+
 <!DOCTYPE MODE SYSTEM "xmode.dtd">
 <MODE>
-    <PROPS>
-        <!-- auto indent -->
-        <PROPERTY NAME="indentOpenBrackets" VALUE="[{"/>
-        <PROPERTY NAME="indentCloseBrackets" VALUE="}]"/>
-        <PROPERTY NAME="contextInsensitive" VALUE="true"/>
-    </PROPS>
+	<PROPS>
+		<!-- auto indent -->
+		<PROPERTY NAME="indentOpenBrackets" VALUE="[{"/>
+		<PROPERTY NAME="indentCloseBrackets" VALUE="}]"/>
+		<PROPERTY NAME="contextInsensitive" VALUE="true"/>
+	</PROPS>
 
-    <RULES>
-        <!-- mark numbers as DIGIT -->
-        <SEQ_REGEXP HASH_CHARS="-0123456789." TYPE="DIGIT">[-]?\d+([.]\d*)?([eE][+-]?\d+)?</SEQ_REGEXP>
+	<RULES>
+		<!-- mark numbers as DIGIT -->
+		<SEQ_REGEXP HASH_CHARS="-0123456789." TYPE="DIGIT">[-]?\d+([.]\d*)?([eE][+-]?\d+)?</SEQ_REGEXP>
 
-        <!-- mark strings as LITERAL1 -->
-        <SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
-            <BEGIN>"</BEGIN>
-            <END>"</END>
-        </SPAN>
+		<!-- mark strings as LITERAL1 -->
+		<SPAN TYPE="LITERAL1" ESCAPE="\" NO_LINE_BREAK="TRUE">
+			<BEGIN>"</BEGIN>
+			<END>"</END>
+		</SPAN>
 
-        <!-- mark pair separator as OPERATOR -->
-        <SEQ TYPE="OPERATOR">:</SEQ>
+		<!-- mark pair separator as OPERATOR -->
+		<SEQ TYPE="OPERATOR">:</SEQ>
 
-        <!-- mark these special values as LITERAL2 -->
-        <SEQ TYPE="LITERAL2">true</SEQ>
-        <SEQ TYPE="LITERAL2">false</SEQ>
-        <SEQ TYPE="LITERAL2">null</SEQ>
-    </RULES>
+		<!-- mark these special values as LITERAL2 -->
+		<SEQ TYPE="LITERAL2">true</SEQ>
+		<SEQ TYPE="LITERAL2">false</SEQ>
+		<SEQ TYPE="LITERAL2">null</SEQ>
+	</RULES>
 </MODE>

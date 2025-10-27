@@ -1,3 +1,22 @@
+/*
+                                  ***   StarForth   ***
+
+  mingw.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:03.820-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/mlton-20241230-1/x86_64-linux/lib/mlton/include/platform/mingw.h
+ */
+
 /* Many of the functions used in mingw.c are Win2000+ */
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0500
@@ -72,9 +91,8 @@ typedef unsigned int MLton_nfds_t; // we have a fake poll() with this many fds
 #define nlink_t MLton_nlink_t
 #define nfds_t MLton_nfds_t
 
-MLTON_WRAPPER int MLton_getpagesize(void);
-
-MLTON_WRAPPER int MLton_mkstemp(char *template);
+MLTON_WRAPPER int MLton_getpagesize (void);
+MLTON_WRAPPER int MLton_mkstemp (char *template);
 
 #undef getpagesize
 #undef mkstemp
@@ -206,12 +224,12 @@ MLTON_WRAPPER int MLton_mkstemp(char *template);
  * In order to avoid a name conflict, we use a different name.
  */
 struct MLton_timezone {
-    int unused;
+      int unused;
 };
 #undef timezone
 #define timezone MLton_timezone
 
-MLTON_WRAPPER int MLton_gettimeofday(struct timeval *tv, struct timezone *tz);
+MLTON_WRAPPER int MLton_gettimeofday (struct timeval *tv, struct timezone *tz);
 #undef gettimeofday
 #define gettimeofday MLton_gettimeofday
 
@@ -236,15 +254,15 @@ MLTON_WRAPPER int MLton_gettimeofday(struct timeval *tv, struct timezone *tz);
 #endif
 
 struct MLton_itimerval {
-    struct timeval it_interval;
-    struct timeval it_value;
+        struct timeval it_interval;
+        struct timeval it_value;
 };
 #undef itimerval
 #define itimerval MLton_itimerval
 
-MLTON_WRAPPER int MLton_setitimer(int which,
-                                  const struct itimerval *value,
-                                  struct itimerval *ovalue);
+MLTON_WRAPPER int MLton_setitimer (int which,
+                              const struct itimerval *value,
+                              struct itimerval *ovalue);
 #undef setitimer
 #define setitimer MLton_setitimer
 
@@ -304,15 +322,14 @@ typedef unsigned long MLton_rlim_t;
 #define rlim_t MLton_rlim_t
 
 struct MLton_rlimit {
-    rlim_t rlim_cur;
-    rlim_t rlim_max;
+        rlim_t  rlim_cur;
+        rlim_t  rlim_max;
 };
 #undef rlimit
 #define rlimit MLton_rlimit
 
-MLTON_WRAPPER int MLton_getrlimit(int resource, struct rlimit *rlim);
-
-MLTON_WRAPPER int MLton_setrlimit(int resource, const struct rlimit *rlim);
+MLTON_WRAPPER int MLton_getrlimit (int resource, struct rlimit *rlim);
+MLTON_WRAPPER int MLton_setrlimit (int resource, const struct rlimit *rlim);
 #undef getrlimit
 #undef setrlimit
 #define getrlimit MLton_getrlimit
@@ -331,13 +348,13 @@ MLTON_WRAPPER int MLton_setrlimit(int resource, const struct rlimit *rlim);
 #endif
 
 struct MLton_rusage {
-    struct timeval ru_utime;
-    struct timeval ru_stime;
+        struct timeval ru_utime;
+        struct timeval ru_stime;
 };
 #undef rusage
 #define rusage MLton_rusage
 
-MLTON_WRAPPER int MLton_getrusage(int who, struct rusage *usage);
+MLTON_WRAPPER int MLton_getrusage (int who, struct rusage *usage);
 #undef getrusage
 #define getrusage MLton_getrusage
 
@@ -346,14 +363,14 @@ MLTON_WRAPPER int MLton_getrusage(int who, struct rusage *usage);
 /* ------------------------------------------------- */
 
 struct MLton_pollfd {
-    short events;
-    int fd;
-    short revents;
+        short events;
+        int fd;
+        short revents;
 };
 #undef pollfd
 #define pollfd MLton_pollfd
 
-MLTON_WRAPPER int MLton_poll(struct pollfd *ufds, nfds_t nfds, int timeout);
+MLTON_WRAPPER int MLton_poll (struct pollfd *ufds, nfds_t nfds, int timeout);
 #undef poll
 #define poll MLton_poll
 
@@ -630,29 +647,18 @@ MLTON_WRAPPER char *MLton_strerror(int code);
 #define O_ACCMODE O_RDONLY|O_WRONLY|O_RDWR
 #endif
 
-MLTON_WRAPPER int MLton_chown(const char *path, uid_t owner, gid_t group);
-
-MLTON_WRAPPER int MLton_fchmod(int filedes, mode_t mode);
-
-MLTON_WRAPPER int MLton_fchdir(int filedes);
-
-MLTON_WRAPPER int MLton_fchown(int fd, uid_t owner, gid_t group);
-
-MLTON_WRAPPER long MLton_fpathconf(int filedes, int name);
-
-MLTON_WRAPPER int MLton_link(const char *oldpath, const char *newpath);
-
-MLTON_WRAPPER int MLton_lstat(const char *file_name, struct stat *buf);
-
-MLTON_WRAPPER int MLton_mkfifo(const char *pathname, mode_t mode);
-
-MLTON_WRAPPER long MLton_pathconf(const char *path, int name);
-
-MLTON_WRAPPER int MLton_readlink(const char *path, char *buf, size_t bufsiz);
-
-MLTON_WRAPPER int MLton_symlink(const char *oldpath, const char *newpath);
-
-MLTON_WRAPPER int MLton_truncate(const char *path, off_t len);
+MLTON_WRAPPER int MLton_chown (const char *path, uid_t owner, gid_t group);
+MLTON_WRAPPER int MLton_fchmod (int filedes, mode_t mode);
+MLTON_WRAPPER int MLton_fchdir (int filedes);
+MLTON_WRAPPER int MLton_fchown (int fd, uid_t owner, gid_t group);
+MLTON_WRAPPER long MLton_fpathconf (int filedes, int name);
+MLTON_WRAPPER int MLton_link (const char *oldpath, const char *newpath);
+MLTON_WRAPPER int MLton_lstat (const char *file_name, struct stat *buf);
+MLTON_WRAPPER int MLton_mkfifo (const char *pathname, mode_t mode);
+MLTON_WRAPPER long MLton_pathconf (const char *path, int name);
+MLTON_WRAPPER int MLton_readlink (const char *path, char *buf, size_t bufsiz);
+MLTON_WRAPPER int MLton_symlink (const char *oldpath, const char *newpath);
+MLTON_WRAPPER int MLton_truncate (const char *path, off_t len);
 
 #undef chown
 #undef fchmod
@@ -688,20 +694,18 @@ MLTON_WRAPPER int MLton_truncate(const char *path, off_t len);
 /* ------------------------------------------------- */
 
 struct MLton_flock {
-    off_t l_len;
-    pid_t l_pid;
-    off_t l_start;
-    short l_type;
-    short l_whence;
+        off_t l_len;
+        pid_t l_pid;
+        off_t l_start;
+        short l_type;
+        short l_whence;
 };
 #undef flock
 #define flock MLton_flock
 
-MLTON_WRAPPER int MLton_fcntl(int fd, int cmd, ...);
-
-MLTON_WRAPPER int MLton_fsync(int fd);
-
-MLTON_WRAPPER int MLton_pipe(int filedes[2]);
+MLTON_WRAPPER int MLton_fcntl (int fd, int cmd, ...);
+MLTON_WRAPPER int MLton_fsync (int fd);
+MLTON_WRAPPER int MLton_pipe (int filedes[2]);
 
 #undef fcntl
 #undef fsync
@@ -748,18 +752,18 @@ MLTON_WRAPPER int MLton_pipe(int filedes[2]);
 #endif
 
 struct MLton_tms {
-    int tms_utime;
-    int tms_stime;
-    int tms_cutime;
-    int tms_cstime;
+        int tms_utime;
+        int tms_stime;
+        int tms_cutime;
+        int tms_cstime;
 };
 
 struct MLton_utsname {
-    char machine[20];
-    char nodename[256];
-    char release[20];
-    char sysname[30];
-    char version[20];
+        char machine[20];
+        char nodename[256];
+        char release[20];
+        char sysname[30];
+        char version[20];
 };
 
 #undef tms
@@ -768,45 +772,26 @@ struct MLton_utsname {
 #define tms MLton_tms
 #define utsname MLton_utsname
 
-MLTON_WRAPPER char *MLton_getlogin(void);
-
-MLTON_WRAPPER char *MLton_ctermid(char *s);
-
-MLTON_WRAPPER gid_t MLton_getegid(void);
-
-MLTON_WRAPPER uid_t MLton_geteuid(void);
-
-MLTON_WRAPPER gid_t MLton_getgid(void);
-
-MLTON_WRAPPER int MLton_getgroups(int size, gid_t list[]);
-
+MLTON_WRAPPER char *MLton_getlogin (void);
+MLTON_WRAPPER char *MLton_ctermid (char *s);
+MLTON_WRAPPER gid_t MLton_getegid (void);
+MLTON_WRAPPER uid_t MLton_geteuid (void);
+MLTON_WRAPPER gid_t MLton_getgid (void);
+MLTON_WRAPPER int MLton_getgroups (int size, gid_t list[]);
 MLTON_WRAPPER pid_t MLton_getpgid(pid_t pid);
-
 MLTON_WRAPPER pid_t MLton_getpgrp(void);
-
-MLTON_WRAPPER pid_t MLton_getppid(void);
-
-MLTON_WRAPPER uid_t MLton_getuid(void);
-
-MLTON_WRAPPER int MLton_setenv(const char *name, const char *value, int overwrite);
-
-MLTON_WRAPPER int MLton_setgid(gid_t gid);
-
-MLTON_WRAPPER int MLton_setgroups(size_t size, const gid_t *list);
-
-MLTON_WRAPPER int MLton_setpgid(pid_t pid, pid_t pgid);
-
-MLTON_WRAPPER pid_t MLton_setsid(void);
-
-MLTON_WRAPPER int MLton_setuid(uid_t uid);
-
-MLTON_WRAPPER long MLton_sysconf(int name);
-
-MLTON_WRAPPER clock_t MLton_times(struct tms *buf);
-
-MLTON_WRAPPER char *MLton_ttyname(int desc);
-
-MLTON_WRAPPER int MLton_uname(struct utsname *buf);
+MLTON_WRAPPER pid_t MLton_getppid (void);
+MLTON_WRAPPER uid_t MLton_getuid (void);
+MLTON_WRAPPER int MLton_setenv (const char *name, const char *value, int overwrite);
+MLTON_WRAPPER int MLton_setgid (gid_t gid);
+MLTON_WRAPPER int MLton_setgroups (size_t size, const gid_t *list);
+MLTON_WRAPPER int MLton_setpgid (pid_t pid, pid_t pgid);
+MLTON_WRAPPER pid_t MLton_setsid (void);
+MLTON_WRAPPER int MLton_setuid (uid_t uid);
+MLTON_WRAPPER long MLton_sysconf (int name);
+MLTON_WRAPPER clock_t MLton_times (struct tms *buf);
+MLTON_WRAPPER char *MLton_ttyname (int desc);
+MLTON_WRAPPER int MLton_uname (struct utsname *buf);
 
 #undef getlogin
 #undef ctermid
@@ -904,25 +889,19 @@ MLTON_WRAPPER int MLton_uname(struct utsname *buf);
 /* Sometimes defined by mingw */
 #if !defined(TIMESPEC_DEFINED) && !defined(_TIMESPEC_DEFINED)
 struct timespec {
-    time_t tv_sec;
-    long tv_nsec;
+  time_t tv_sec;
+  long tv_nsec;
 };
 #endif
 
 MLTON_WRAPPER int MLton_alarm(int);
-
 MLTON_WRAPPER int MLton_fork(void); /* mingw demands this return int */
-MLTON_WRAPPER int MLton_kill(pid_t pid, int sig);
-
-MLTON_WRAPPER int MLton_pause(void);
-
-MLTON_WRAPPER int MLton_nanosleep(const struct timespec *req, struct timespec *rem);
-
-MLTON_WRAPPER unsigned int MLton_sleep(unsigned int seconds);
-
-MLTON_WRAPPER pid_t MLton_wait(int *status);
-
-MLTON_WRAPPER pid_t MLton_waitpid(pid_t pid, int *status, int options);
+MLTON_WRAPPER int MLton_kill (pid_t pid, int sig);
+MLTON_WRAPPER int MLton_pause (void);
+MLTON_WRAPPER int MLton_nanosleep (const struct timespec *req, struct timespec *rem);
+MLTON_WRAPPER unsigned int MLton_sleep (unsigned int seconds);
+MLTON_WRAPPER pid_t MLton_wait (int *status);
+MLTON_WRAPPER pid_t MLton_waitpid (pid_t pid, int *status, int options);
 
 #undef alarm
 #undef fork
@@ -1058,9 +1037,9 @@ typedef int MLton_sigset_t;
 #define sigset_t MLton_sigset_t
 
 struct MLton_sigaction {
-    int sa_flags;
-    sigset_t sa_mask;
-    _sig_func_ptr sa_handler;
+        int             sa_flags;
+        sigset_t        sa_mask;
+        _sig_func_ptr   sa_handler;
 };
 
 #undef sigaction
@@ -1070,25 +1049,17 @@ struct MLton_sigaction {
 #define SIGTOMASK(sn)   (1 << ((sn)-1))
 #endif
 
-MLTON_WRAPPER int MLton_sigaction(int signum,
-                                  const struct sigaction *act,
-                                  struct sigaction *oldact);
-
-MLTON_WRAPPER int MLton_sigaddset(sigset_t *set, int signum);
-
-MLTON_WRAPPER int MLton_sigdelset(sigset_t *set, int signum);
-
-MLTON_WRAPPER int MLton_sigemptyset(sigset_t *set);
-
-MLTON_WRAPPER int MLton_sigfillset(sigset_t *set);
-
-MLTON_WRAPPER int MLton_sigismember(const sigset_t *set, int signum);
-
-MLTON_WRAPPER int MLton_sigpending(sigset_t *set);
-
-MLTON_WRAPPER int MLton_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
-
-MLTON_WRAPPER int MLton_sigsuspend(const sigset_t *mask);
+MLTON_WRAPPER int MLton_sigaction (int signum,
+                              const struct sigaction *act,
+                              struct sigaction *oldact);
+MLTON_WRAPPER int MLton_sigaddset (sigset_t *set, int signum);
+MLTON_WRAPPER int MLton_sigdelset (sigset_t *set, int signum);
+MLTON_WRAPPER int MLton_sigemptyset (sigset_t *set);
+MLTON_WRAPPER int MLton_sigfillset (sigset_t *set);
+MLTON_WRAPPER int MLton_sigismember (const sigset_t *set, int signum);
+MLTON_WRAPPER int MLton_sigpending (sigset_t *set);
+MLTON_WRAPPER int MLton_sigprocmask (int how, const sigset_t *set, sigset_t *oldset);
+MLTON_WRAPPER int MLton_sigsuspend (const sigset_t *mask);
 
 #undef sigaction
 #undef sigaddset
@@ -1115,18 +1086,18 @@ MLTON_WRAPPER int MLton_sigsuspend(const sigset_t *mask);
 /* ------------------------------------------------- */
 
 struct MLton_group {
-    gid_t gr_gid;
-    char **gr_mem;
-    char *gr_name;
-    char *gr_passwd;
+        gid_t   gr_gid;
+        char    **gr_mem;
+        char    *gr_name;
+        char    *gr_passwd;
 };
 
 struct MLton_passwd {
-    char *pw_dir;
-    gid_t pw_gid;
-    char *pw_name;
-    char *pw_shell;
-    uid_t pw_uid;
+        char    *pw_dir;
+        gid_t   pw_gid;
+        char    *pw_name;
+        char    *pw_shell;
+        uid_t   pw_uid;
 };
 
 #undef group
@@ -1134,13 +1105,10 @@ struct MLton_passwd {
 #define group MLton_group
 #define passwd MLton_passwd
 
-MLTON_WRAPPER struct group *MLton_getgrgid(gid_t gid);
-
-MLTON_WRAPPER struct group *MLton_getgrnam(const char *name);
-
-MLTON_WRAPPER struct passwd *MLton_getpwnam(const char *name);
-
-MLTON_WRAPPER struct passwd *MLton_getpwuid(uid_t uid);
+MLTON_WRAPPER struct group *MLton_getgrgid (gid_t gid);
+MLTON_WRAPPER struct group *MLton_getgrnam (const char *name);
+MLTON_WRAPPER struct passwd *MLton_getpwnam (const char *name);
+MLTON_WRAPPER struct passwd *MLton_getpwuid (uid_t uid);
 
 #undef getgrgid
 #undef getgrnam
@@ -1520,9 +1488,9 @@ MLTON_WRAPPER struct passwd *MLton_getpwuid(uid_t uid);
 #define TCSADFLUSH      4
 #endif
 
-typedef unsigned char MLton_cc_t;
-typedef unsigned int MLton_speed_t;
-typedef unsigned int MLton_tcflag_t;
+typedef unsigned char   MLton_cc_t;
+typedef unsigned int    MLton_speed_t;
+typedef unsigned int    MLton_tcflag_t;
 
 #undef cc_t
 #undef speed_t
@@ -1533,38 +1501,27 @@ typedef unsigned int MLton_tcflag_t;
 #define tcflag_t MLton_tcflag_t
 
 struct MLton_termios {
-    cc_t c_cc[NCCS];
-    tcflag_t c_cflag;
-    tcflag_t c_iflag;
-    tcflag_t c_lflag;
-    tcflag_t c_oflag;
+        cc_t c_cc[NCCS];
+        tcflag_t c_cflag;
+        tcflag_t c_iflag;
+        tcflag_t c_lflag;
+        tcflag_t c_oflag;
 };
 #undef termios
 #define termios MLton_termios
 
-MLTON_WRAPPER speed_t MLton_cfgetispeed(struct termios *termios_p);
-
-MLTON_WRAPPER speed_t MLton_cfgetospeed(struct termios *termios_p);
-
-MLTON_WRAPPER int MLton_cfsetispeed(struct termios *termios_p, speed_t speed);
-
-MLTON_WRAPPER int MLton_cfsetospeed(struct termios *termios_p, speed_t speed);
-
-MLTON_WRAPPER int MLton_tcdrain(int fd);
-
-MLTON_WRAPPER int MLton_tcflow(int fd, int action);
-
-MLTON_WRAPPER int MLton_tcflush(int fd, int queue_selector);
-
-MLTON_WRAPPER int MLton_tcgetattr(int fd, struct termios *termios_p);
-
-MLTON_WRAPPER pid_t MLton_tcgetpgrp(int fd);
-
-MLTON_WRAPPER int MLton_tcsendbreak(int fd, int duration);
-
-MLTON_WRAPPER int MLton_tcsetattr(int fd, int optional_actions, struct termios *termios_p);
-
-MLTON_WRAPPER int MLton_tcsetpgrp(int fd, pid_t pgrpid);
+MLTON_WRAPPER speed_t MLton_cfgetispeed (struct termios *termios_p);
+MLTON_WRAPPER speed_t MLton_cfgetospeed (struct termios *termios_p);
+MLTON_WRAPPER int MLton_cfsetispeed (struct termios *termios_p, speed_t speed);
+MLTON_WRAPPER int MLton_cfsetospeed (struct termios *termios_p, speed_t speed);
+MLTON_WRAPPER int MLton_tcdrain (int fd);
+MLTON_WRAPPER int MLton_tcflow (int fd, int action);
+MLTON_WRAPPER int MLton_tcflush (int fd, int queue_selector);
+MLTON_WRAPPER int MLton_tcgetattr (int fd, struct termios *termios_p);
+MLTON_WRAPPER pid_t MLton_tcgetpgrp (int fd);
+MLTON_WRAPPER int MLton_tcsendbreak (int fd, int duration);
+MLTON_WRAPPER int MLton_tcsetattr (int fd, int optional_actions, struct termios *termios_p);
+MLTON_WRAPPER int MLton_tcsetpgrp (int fd, pid_t pgrpid);
 
 #undef cfgetispeed
 #undef cfgetospeed
@@ -1626,15 +1583,14 @@ typedef unsigned short MLton_sa_family_t;
 #define sa_family_t MLton_sa_family_t
 
 struct MLton_sockaddr_un {
-    sa_family_t sun_family;
-    char sun_path[UNIX_PATH_MAX];
+        sa_family_t sun_family;
+        char sun_path[UNIX_PATH_MAX];
 };
 #undef sockaddr_un
 #define sockaddr_un MLton_sockaddr_un
 
-MLTON_WRAPPER int MLton_ioctl(int d, int request, ...);
-
-MLTON_WRAPPER int MLton_socketpair(int d, int type, int protocol, int sv[2]);
+MLTON_WRAPPER int MLton_ioctl (int d, int request, ...);
+MLTON_WRAPPER int MLton_socketpair (int d, int type, int protocol, int sv[2]);
 
 #undef ioctl
 #undef socketpair
@@ -1774,11 +1730,9 @@ MLTON_WRAPPER int MLton_socketpair(int d, int type, int protocol, int sv[2]);
 #define LOG_UUCP 18
 #endif
 
-MLTON_WRAPPER void MLton_openlog(const char *ident, int logopt, int facility);
-
+MLTON_WRAPPER void MLton_openlog(const char* ident, int logopt, int facility);
 MLTON_WRAPPER void MLton_closelog(void);
-
-MLTON_WRAPPER void MLton_syslog(int priority, const char *fmt, const char *msg);
+MLTON_WRAPPER void MLton_syslog(int priority, const char* fmt, const char* msg);
 
 #undef openlog
 #undef closelog

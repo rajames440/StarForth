@@ -1,26 +1,21 @@
 /*
-    Title:      Run-time system.
-    Author:     Dave Matthews, Cambridge University Computer Laboratory
+                                  ***   StarForth   ***
 
-    Copyright (c) 2000
-        Cambridge University Technical Services Limited
+  run_time.cpp- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:04.594-04
 
-    Further work copyright David C. J. Matthews 2009, 2012, 2015-18
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License version 2.1 as published by the Free Software Foundation.
-    
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-    
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-*/
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/polyml-5.9.1/src/libpolyml/run_time.cpp
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -61,7 +56,6 @@
 
 extern "C" {
     POLYEXTERNALSYMBOL POLYUNSIGNED PolyFullGC(POLYUNSIGNED threadId);
-
     POLYEXTERNALSYMBOL POLYUNSIGNED PolyIsBigEndian();
 }
 
@@ -77,20 +71,21 @@ PolyObject *alloc(TaskData *taskData, uintptr_t data_words, unsigned flags)
     if (data_words > MAX_OBJECT_SIZE)
         raise_exception0(taskData, EXC_size);
 
-    POLYUNSIGNED words = (POLYUNSIGNED) data_words + 1;
-
+    POLYUNSIGNED words = (POLYUNSIGNED)data_words + 1;
+    
     if (profileMode == kProfileStoreAllocation)
         taskData->addProfileCount(words);
 
     PolyWord *foundSpace = processes->FindAllocationSpace(taskData, words, false);
-    if (foundSpace == 0) {
+    if (foundSpace == 0)
+    {
         // Failed - the thread is set to raise an exception.
         throw IOException();
     }
 
-    PolyObject *pObj = (PolyObject *) (foundSpace + 1);
-    pObj->SetLengthWord((POLYUNSIGNED) data_words, flags);
-
+    PolyObject *pObj = (PolyObject*)(foundSpace + 1);
+    pObj->SetLengthWord((POLYUNSIGNED)data_words, flags);
+    
     // Must initialise object here, because GC doesn't clean store.
     // Is this necessary any more?  This used to be necessary when we used
     // structural equality and wanted to make sure that unused bytes were cleared.
@@ -105,7 +100,8 @@ Handle alloc_and_save(TaskData *taskData, uintptr_t size, unsigned flags)
     return taskData->saveVec.push(alloc(taskData, size, flags));
 }
 
-POLYUNSIGNED PolyFullGC(POLYUNSIGNED threadId) {
+POLYUNSIGNED PolyFullGC(POLYUNSIGNED threadId)
+{
     TaskData *taskData = TaskData::FindTaskForId(threadId);
     ASSERT(taskData != 0);
     taskData->PreRTSCall();
@@ -113,8 +109,7 @@ POLYUNSIGNED PolyFullGC(POLYUNSIGNED threadId) {
     try {
         // Can this raise an exception e.g. if there is insufficient memory?
         FullGC(taskData);
-    } catch (...) {
-    } // If an ML exception is raised
+    } catch (...) { } // If an ML exception is raised
 
     taskData->PostRTSCall();
     return TAGGED(0).AsUnsigned(); // Returns unit.
@@ -131,14 +126,16 @@ POLYUNSIGNED PolyFullGC(POLYUNSIGNED threadId) {
 // Return the handle to a string error message.  This will return
 // something like "Unknown error" from strerror if it doesn't match
 // anything.
-Handle errorMsg(TaskData *taskData, int err) {
+Handle errorMsg(TaskData *taskData, int err)
+{
 #if (defined(_WIN32))
     LPTSTR lpMsg = NULL;
     TCHAR *p;
     if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-                      FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                      FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL, (DWORD) err, 0, (LPTSTR) & lpMsg, 1, NULL) > 0) {
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL, (DWORD)err, 0, (LPTSTR)&lpMsg, 1, NULL) > 0)
+    {
         /* The message is returned with CRLF at the end.  Remove them. */
         for (p = lpMsg; *p != '\0' && *p != '\n' && *p != '\r'; p++);
         *p = '\0';
@@ -153,57 +150,47 @@ Handle errorMsg(TaskData *taskData, int err) {
 
 #define DEREFEXNHANDLE(_x)       ((poly_exn *)DEREFHANDLE(_x))
 
-static Handle make_exn(TaskData *taskData, int id, Handle arg, const char *fileName, int lineNo) {
+static Handle make_exn(TaskData *taskData, int id, Handle arg, const char *fileName, int lineNo)
+{
     const char *exName;
     switch (id) {
-        case EXC_interrupt: exName = "Interrupt";
-            break;
-        case EXC_syserr: exName = "SysErr";
-            break;
-        case EXC_size: exName = "Size";
-            break;
-        case EXC_overflow: exName = "Overflow";
-            break;
-        case EXC_divide: exName = "Div";
-            break;
-        case EXC_conversion: exName = "Conversion";
-            break;
-        case EXC_XWindows: exName = "XWindows";
-            break;
-        case EXC_subscript: exName = "Subscript";
-            break;
-        case EXC_foreign: exName = "Foreign";
-            break;
-        case EXC_Fail: exName = "Fail";
-            break;
-        case EXC_thread: exName = "Thread";
-            break;
-        default: ASSERT(0);
-            exName = "Unknown"; // Shouldn't happen.
+    case EXC_interrupt: exName = "Interrupt"; break;
+    case EXC_syserr: exName = "SysErr"; break;
+    case EXC_size: exName = "Size"; break;
+    case EXC_overflow: exName = "Overflow"; break;
+    case EXC_divide: exName = "Div"; break;
+    case EXC_conversion: exName = "Conversion"; break;
+    case EXC_XWindows: exName = "XWindows"; break;
+    case EXC_subscript: exName = "Subscript"; break;
+    case EXC_foreign: exName = "Foreign"; break;
+    case EXC_Fail: exName = "Fail"; break;
+    case EXC_thread: exName = "Thread"; break;
+    default: ASSERT(0); exName = "Unknown"; // Shouldn't happen.
     }
-
+   
     Handle pushed_name = SAVE(C_string_to_Poly(taskData, exName));
-
+    
     Handle exnHandle = alloc_and_save(taskData, SIZEOF(poly_exn));
     Handle location;
     // The location data in an exception packet is either "NoLocation" (tagged 0)
     // or the address of a record.
     if (fileName == 0)
         location = taskData->saveVec.push(TAGGED(0));
-    else {
+    else
+    {
         Handle file = taskData->saveVec.push(C_string_to_Poly(taskData, fileName));
         Handle line = Make_fixed_precision(taskData, lineNo);
         location = alloc_and_save(taskData, 5);
-        location->WordP()->Set(0, file->Word()); // file
-        location->WordP()->Set(1, line->Word()); // startLine
-        location->WordP()->Set(2, line->Word()); // endLine
-        location->WordP()->Set(3, TAGGED(0)); // startPosition
-        location->WordP()->Set(4, TAGGED(0)); // endPosition
+        location->WordP()->Set(0, file->Word());     // file
+        location->WordP()->Set(1, line->Word());     // startLine
+        location->WordP()->Set(2, line->Word());     // endLine
+        location->WordP()->Set(3, TAGGED(0));        // startPosition
+        location->WordP()->Set(4, TAGGED(0));        // endPosition
     }
-
-    DEREFEXNHANDLE(exnHandle)->ex_id = TAGGED(id);
+    
+    DEREFEXNHANDLE(exnHandle)->ex_id   = TAGGED(id);
     DEREFEXNHANDLE(exnHandle)->ex_name = pushed_name->Word();
-    DEREFEXNHANDLE(exnHandle)->arg = arg->Word();
+    DEREFEXNHANDLE(exnHandle)->arg     = arg->Word();
     DEREFEXNHANDLE(exnHandle)->ex_location = location->Word();
 
     return exnHandle;
@@ -211,7 +198,8 @@ static Handle make_exn(TaskData *taskData, int id, Handle arg, const char *fileN
 
 // Create an exception packet, e.g. Interrupt, for later use.  This does not have a
 // location.
-poly_exn *makeExceptionPacket(TaskData *taskData, int id) {
+poly_exn *makeExceptionPacket(TaskData *taskData, int id)
+{
     Handle exn = make_exn(taskData, id, taskData->saveVec.push(TAGGED(0)), 0, 0);
     return DEREFEXNHANDLE(exn);
 }
@@ -243,8 +231,10 @@ void raiseExceptionStringWithLocation(TaskData *taskData, int id, const char *st
 }
 
 // This is called via a macro that puts in the file name and line number.
-void raiseSycallWithLocation(TaskData *taskData, const char *errmsg, int err, const char *file, int line) {
-    if (err == 0) {
+void raiseSycallWithLocation(TaskData *taskData, const char *errmsg, int err, const char *file, int line)
+{
+    if (err == 0)
+    {
         Handle pushed_option = SAVE(NONE_VALUE); /* NONE */
         Handle pushed_name = SAVE(C_string_to_Poly(taskData, errmsg));
         Handle pair = alloc_and_save(taskData, 2);
@@ -252,7 +242,9 @@ void raiseSycallWithLocation(TaskData *taskData, const char *errmsg, int err, co
         DEREFHANDLE(pair)->Set(1, pushed_option->Word());
 
         raise_exception(taskData, EXC_syserr, pair, file, line);
-    } else {
+    }
+    else
+    {
         Handle errornum = Make_sysword(taskData, err);
         Handle pushed_option = alloc_and_save(taskData, 1);
         DEREFHANDLE(pushed_option)->Set(0, errornum->Word()); /* SOME err */
@@ -265,22 +257,25 @@ void raiseSycallWithLocation(TaskData *taskData, const char *errmsg, int err, co
     }
 }
 
-void raiseExceptionFailWithLocation(TaskData *taskData, const char *str, const char *file, int line) {
+void raiseExceptionFailWithLocation(TaskData *taskData, const char *str, const char *file, int line)
+{
     raiseExceptionStringWithLocation(taskData, EXC_Fail, str, file, line);
 }
 
 /* "Polymorphic" function to generate a list. */
 Handle makeList(TaskData *taskData, int count, char *p, int size, void *arg,
-                Handle (mkEntry)(TaskData *, void *, char *)) {
+                       Handle (mkEntry)(TaskData *, void*, char*))
+{
     Handle saved = taskData->saveVec.mark();
     Handle list = SAVE(ListNull);
     /* Start from the end of the list. */
-    p += count * size;
-    while (count > 0) {
+    p += count*size;
+    while (count > 0)
+    {
         Handle value, next;
         p -= size; /* Back up to the last entry. */
         value = mkEntry(taskData, arg, p);
-        next = alloc_and_save(taskData, SIZEOF(ML_Cons_Cell));
+        next  = alloc_and_save(taskData, SIZEOF(ML_Cons_Cell));
 
         DEREFLISTHANDLE(next)->h = value->Word();
         DEREFLISTHANDLE(next)->t = list->Word();
@@ -309,7 +304,8 @@ void CheckAndGrowStack(TaskData *taskData, uintptr_t minSize)
     uintptr_t limitSize = getPolyUnsigned(taskData, taskData->threadObject->mlStackSize);
 
     // Do not grow the stack if its size is already too big.
-    if ((limitSize != 0 && old_len >= limitSize) || !gMem.GrowOrShrinkStack(taskData, new_len)) {
+    if ((limitSize != 0 && old_len >= limitSize) || ! gMem.GrowOrShrinkStack(taskData, new_len))
+    {
         /* Cannot expand the stack any further. */
         extern FILE *polyStderr;
         fprintf(polyStderr, "Warning - Unable to increase stack - interrupting thread\n");
@@ -318,22 +314,26 @@ void CheckAndGrowStack(TaskData *taskData, uintptr_t minSize)
         // We really should do this only if the thread is handling interrupts
         // asynchronously.  On the other hand what else do we do?
         taskData->SetException(processes->GetInterrupt());
-    } else {
+    }
+    else
+    {
         if (debugOptions & DEBUG_THREADS)
             Log("THREAD: Growing stack for thread %p from %lu to %lu\n", taskData, old_len, new_len);
     }
 }
 
-Handle Make_fixed_precision(TaskData *taskData, int val) {
+Handle Make_fixed_precision(TaskData *taskData, int val)
+{
 #if (SIZEOF_INT >= SIZEOF_POLYWORD)
     // This range check may produce a warning if int is 32 bits and PolyWord is 64-bits.
-    if (val > MAXTAGGED || val < -MAXTAGGED - 1)
+    if (val > MAXTAGGED || val < -MAXTAGGED-1)
         raise_exception0(taskData, EXC_overflow);
 #endif
     return taskData->saveVec.push(TAGGED(val));
 }
 
-Handle Make_fixed_precision(TaskData *taskData, unsigned uval) {
+Handle Make_fixed_precision(TaskData *taskData, unsigned uval)
+{
 #if (SIZEOF_INT >= SIZEOF_POLYWORD)
     if (uval > MAXTAGGED)
         raise_exception0(taskData, EXC_overflow);
@@ -341,56 +341,64 @@ Handle Make_fixed_precision(TaskData *taskData, unsigned uval) {
     return taskData->saveVec.push(TAGGED(uval));
 }
 
-Handle Make_fixed_precision(TaskData *taskData, long val) {
-    if (val > MAXTAGGED || val < -MAXTAGGED - 1)
+Handle Make_fixed_precision(TaskData *taskData, long val)
+{
+    if (val > MAXTAGGED || val < -MAXTAGGED-1)
         raise_exception0(taskData, EXC_overflow);
     return taskData->saveVec.push(TAGGED(val));
 }
 
-Handle Make_fixed_precision(TaskData *taskData, unsigned long uval) {
+Handle Make_fixed_precision(TaskData *taskData, unsigned long uval)
+{
     if (uval > MAXTAGGED)
         raise_exception0(taskData, EXC_overflow);
     return taskData->saveVec.push(TAGGED(uval));
 }
 
 #ifdef HAVE_LONG_LONG
-Handle Make_fixed_precision(TaskData *taskData, long long val) {
-    if (val > MAXTAGGED || val < -MAXTAGGED - 1)
+Handle Make_fixed_precision(TaskData *taskData, long long val)
+{
+    if (val > MAXTAGGED || val < -MAXTAGGED-1)
         raise_exception0(taskData, EXC_overflow);
-    return taskData->saveVec.push(TAGGED((POLYSIGNED) val));
+    return taskData->saveVec.push(TAGGED((POLYSIGNED)val));
 }
 
-Handle Make_fixed_precision(TaskData *taskData, unsigned long long uval) {
+Handle Make_fixed_precision(TaskData *taskData, unsigned long long uval)
+{
     if (uval > MAXTAGGED)
         raise_exception0(taskData, EXC_overflow);
-    return taskData->saveVec.push(TAGGED((POLYUNSIGNED) uval));
+    return taskData->saveVec.push(TAGGED((POLYUNSIGNED)uval));
 }
 #endif
 
-Handle Make_sysword(TaskData *taskData, uintptr_t p) {
-    Handle result = alloc_and_save(taskData, sizeof(uintptr_t) / sizeof(PolyWord), F_BYTE_OBJ);
-    *(uintptr_t *) (result->Word().AsCodePtr()) = p;
+Handle Make_sysword(TaskData *taskData, uintptr_t p)
+{
+    Handle result = alloc_and_save(taskData, sizeof(uintptr_t)/sizeof(PolyWord), F_BYTE_OBJ);
+    *(uintptr_t*)(result->Word().AsCodePtr()) = p;
     return result;
 }
 
 // A volatile ref is used for data that is not valid in a different session.
 // When loaded from a saved state it is cleared to zero.
-Handle MakeVolatileWord(TaskData *taskData, void *p) {
+Handle MakeVolatileWord(TaskData *taskData, void *p)
+{
     Handle result = alloc_and_save(taskData,
-                                   WORDS(SIZEOF_VOIDP), F_BYTE_OBJ | F_WEAK_BIT | F_MUTABLE_BIT | F_NO_OVERWRITE);
-    *(void **) (result->Word().AsCodePtr()) = p;
+            WORDS(SIZEOF_VOIDP), F_BYTE_OBJ | F_WEAK_BIT | F_MUTABLE_BIT | F_NO_OVERWRITE);
+    *(void**)(result->Word().AsCodePtr()) = p;
     return result;
 }
 
-Handle MakeVolatileWord(TaskData *taskData, uintptr_t p) {
-    return MakeVolatileWord(taskData, (void *) p);
+Handle MakeVolatileWord(TaskData *taskData, uintptr_t p)
+{
+    return MakeVolatileWord(taskData, (void*)p);
 }
 
 // This is used to determine the endian-ness that Poly/ML is running under.
 // It's really only needed for the interpreter.  In particular the pre-built
 // compiler may be running under either byte order and has to check at
 // run-time.
-POLYUNSIGNED PolyIsBigEndian() {
+POLYUNSIGNED PolyIsBigEndian()
+{
 #ifdef WORDS_BIGENDIAN
     return TAGGED(1).AsUnsigned();
 #else
@@ -400,8 +408,8 @@ POLYUNSIGNED PolyIsBigEndian() {
 
 struct _entrypts runTimeEPT[] =
 {
-    {"PolyFullGC", (polyRTSFunction) & PolyFullGC},
-    {"PolyIsBigEndian", (polyRTSFunction) & PolyIsBigEndian},
+    { "PolyFullGC",                     (polyRTSFunction)&PolyFullGC},
+    { "PolyIsBigEndian",                (polyRTSFunction)&PolyIsBigEndian},
 
-    {NULL, NULL} // End of list.
+    { NULL, NULL} // End of list.
 };

@@ -1,22 +1,21 @@
 /*
-    Title:      Task farm for Multi-Threaded Garbage Collector
+                                  ***   StarForth   ***
 
-    Copyright (c) 2010, 2019, 2021 David C. J. Matthews
+  gctaskfarm.cpp- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:03.151-04
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License version 2.1 as published by the Free Software Foundation.
-    
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-    
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-*/
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/polyml-5.9.1/src/libpolyml/gctaskfarm.cpp
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -52,7 +51,8 @@ static GCTaskId gTask;
 
 GCTaskId *globalTask = &gTask;
 
-GCTaskFarm::GCTaskFarm() : workLock("GC task farm work") {
+GCTaskFarm::GCTaskFarm(): workLock("GC task farm work")
+{
     queueSize = queueIn = queuedItems = 0;
     workQueue = 0;
     terminate = false;
@@ -60,25 +60,27 @@ GCTaskFarm::GCTaskFarm() : workLock("GC task farm work") {
     threadHandles = 0;
 }
 
-GCTaskFarm::~GCTaskFarm() {
+GCTaskFarm::~GCTaskFarm()
+{
     Terminate();
     free(workQueue);
     free(threadHandles);
 }
 
 
-bool GCTaskFarm::Initialise(unsigned thrdCount, unsigned qSize) {
+bool GCTaskFarm::Initialise(unsigned thrdCount, unsigned qSize)
+{
     terminate = false;
     if (!waitForWork.Init(0, thrdCount)) return false;
-    workQueue = (queue_entry *) calloc(qSize, sizeof(queue_entry));
+    workQueue = (queue_entry*)calloc(qSize, sizeof(queue_entry));
     if (workQueue == 0) return false;
 #if (!defined(_WIN32))
     queueSize = qSize;
-    threadHandles = (pthread_t *) calloc(thrdCount, sizeof(pthread_t));
+    threadHandles = (pthread_t*)calloc(thrdCount, sizeof(pthread_t));
     if (threadHandles == 0) return false;
 #else
     queueSize = qSize;
-    threadHandles = (HANDLE *) calloc(thrdCount, sizeof(HANDLE));
+    threadHandles = (HANDLE*)calloc(thrdCount, sizeof(HANDLE));
     if (threadHandles == 0) return false;
 #endif
     // Create the worker threads.
@@ -94,7 +96,7 @@ bool GCTaskFarm::Initialise(unsigned thrdCount, unsigned qSize) {
 #else
         DWORD dwThrdId; // Have to provide this although we don't use it.
         HANDLE threadHandle =
-                CreateThread(NULL, 0, WorkerThreadFunction, this, 0, &dwThrdId);
+            CreateThread(NULL, 0, WorkerThreadFunction, this, 0, &dwThrdId);
         if (threadHandle == NULL) break;
         threadHandles[threadCount++] = threadHandle;
 #endif
@@ -103,7 +105,8 @@ bool GCTaskFarm::Initialise(unsigned thrdCount, unsigned qSize) {
     return true;
 }
 
-void GCTaskFarm::Terminate() {
+void GCTaskFarm::Terminate()
+{
     terminate = true;
     // Increment the semaphore by the number of threads to release them all.
     for (unsigned i = 0; i < threadCount; i++) waitForWork.Signal();
@@ -118,11 +121,13 @@ void GCTaskFarm::Terminate() {
 }
 
 // Add work to the queue.  Returns true if it succeeds.
-bool GCTaskFarm::AddWork(gctask work, void *arg1, void *arg2) {
-    bool wantSignal = false; {
+bool GCTaskFarm::AddWork(gctask work, void *arg1, void *arg2)
+{
+    bool wantSignal = false;
+    {
         PLocker l(&workLock);
         if (queuedItems == queueSize)
-            return false; // Queue is full
+			return false; // Queue is full
         workQueue[queueIn].task = work;
         workQueue[queueIn].arg1 = arg1;
         workQueue[queueIn].arg2 = arg2;
@@ -136,12 +141,14 @@ bool GCTaskFarm::AddWork(gctask work, void *arg1, void *arg2) {
 }
 
 // Schedule this as a task or run it immediately if the queue is full.
-void GCTaskFarm::AddWorkOrRunNow(gctask work, void *arg1, void *arg2) {
-    if (!AddWork(work, arg1, arg2))
+void GCTaskFarm::AddWorkOrRunNow(gctask work, void *arg1, void *arg2)
+{
+    if (! AddWork(work, arg1, arg2))
         (*work)(globalTask, arg1, arg2);
 }
 
-void GCTaskFarm::ThreadFunction() {
+void GCTaskFarm::ThreadFunction()
+{
 #ifdef HAVE_PTHREAD_JIT_WRITE_PROTECT_NP
     // On MacOS this thread needs to be marked to write rather than execute.
     pthread_jit_write_protect_np(false);
@@ -155,16 +162,15 @@ void GCTaskFarm::ThreadFunction() {
 #endif
     workLock.Lock();
     activeThreadCount++;
-    while (!terminate) {
+    while (! terminate) {
         // Invariant: We have the lock and the activeThreadCount includes this thread.
         // Find some work.
 
-        if (queuedItems > 0) {
-            // There is work
+        if (queuedItems > 0) { // There is work
             unsigned outPos;
             if (queuedItems > queueIn)
-                outPos = queueIn + queueSize - queuedItems;
-            else outPos = queueIn - queuedItems;
+                outPos = queueIn+queueSize-queuedItems;
+            else outPos = queueIn-queuedItems;
             gctask work = workQueue[outPos].task;
             void *arg1 = workQueue[outPos].arg1;
             void *arg2 = workQueue[outPos].arg2;
@@ -174,7 +180,8 @@ void GCTaskFarm::ThreadFunction() {
             workLock.Unlock();
             (*work)(&myTaskId, arg1, arg2);
             workLock.Lock();
-        } else {
+        }
+        else {
             activeThreadCount--; // We're no longer active
             // If there is no work and we're the last active thread signal the
             // main thread that the queue is empty
@@ -186,16 +193,17 @@ void GCTaskFarm::ThreadFunction() {
             // still held.
             workLock.Unlock();
 
-            if (debugOptions & DEBUG_GCTASKS) {
+            if (debugOptions & DEBUG_GCTASKS)
+            {
 #if (defined(_WIN32))
                 Log("GCTask: Thread %p blocking after %u milliseconds\n", &myTaskId,
-                    GetTickCount() - startActive);
+                     GetTickCount() - startActive);
 #else
                 struct timeval endTime;
                 gettimeofday(&endTime, NULL);
                 subTimevals(&endTime, &startTime);
                 Log("GCTask: Thread %p blocking after %0.4f seconds\n", &myTaskId,
-                    (float) endTime.tv_sec + (float) endTime.tv_usec / 1.0E6);
+                    (float)endTime.tv_sec + (float)endTime.tv_usec / 1.0E6);
 #endif
             }
 
@@ -203,7 +211,8 @@ void GCTaskFarm::ThreadFunction() {
             // Block until there's work.
             waitForWork.Wait();
             // We've been woken up
-            if (debugOptions & DEBUG_GCTASKS) {
+            if (debugOptions & DEBUG_GCTASKS)
+            {
 #if (defined(_WIN32))
                 startActive = GetTickCount();
 #else
@@ -220,21 +229,24 @@ void GCTaskFarm::ThreadFunction() {
 }
 
 #if (!defined(_WIN32))
-void *GCTaskFarm::WorkerThreadFunction(void *parameter) {
-    GCTaskFarm * t = (GCTaskFarm *) parameter;
+void *GCTaskFarm::WorkerThreadFunction(void *parameter)
+{
+    GCTaskFarm *t = (GCTaskFarm *)parameter;
     t->ThreadFunction();
     return 0;
 }
 #else
-DWORD WINAPI GCTaskFarm::WorkerThreadFunction(void *parameter) {
-    GCTaskFarm * t = (GCTaskFarm *) parameter;
+DWORD WINAPI GCTaskFarm::WorkerThreadFunction(void *parameter)
+{
+    GCTaskFarm *t = (GCTaskFarm *)parameter;
     t->ThreadFunction();
     return 0;
 }
 #endif
 
 // Wait until the queue is empty.
-void GCTaskFarm::WaitForCompletion(void) {
+void GCTaskFarm::WaitForCompletion(void)
+{
 #if (defined(_WIN32))
     DWORD startWait;
     if (debugOptions & DEBUG_GCTASKS)
@@ -249,15 +261,16 @@ void GCTaskFarm::WaitForCompletion(void) {
         waitForCompletion.Wait(&workLock);
     workLock.Unlock();
 
-    if (debugOptions & DEBUG_GCTASKS) {
+    if (debugOptions & DEBUG_GCTASKS)
+    {
 #if (defined(_WIN32))
-        Log("GCTask: Threads completed after %u milliseconds\n", GetTickCount() - startWait);
+        Log("GCTask: Threads completed after %u milliseconds\n", GetTickCount()-startWait);
 #else
         struct timeval endWait;
         gettimeofday(&endWait, NULL);
         subTimevals(&endWait, &startWait);
         Log("GCTask: Threads completed after %0.4f seconds\n",
-            (float) endWait.tv_sec + (float) endWait.tv_usec / 1.0E6);
+            (float)endWait.tv_sec + (float)endWait.tv_usec / 1.0E6);
 #endif
     }
 }

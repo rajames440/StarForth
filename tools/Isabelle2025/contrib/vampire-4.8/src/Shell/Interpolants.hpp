@@ -1,11 +1,20 @@
 /*
- * This file is part of the source code of the software program
- * Vampire. It is protected by applicable
- * copyright laws.
- *
- * This source code is distributed under the licence found here
- * https://vprover.github.io/license.html
- * and in the source directory
+                                  ***   StarForth   ***
+
+  Interpolants.hpp- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:03.553-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/vampire-4.8/src/Shell/Interpolants.hpp
  */
 /**
  * @file Interpolants.cpp
@@ -23,37 +32,36 @@
 
 #include "Forwards.hpp"
 
-namespace Shell {
+namespace Shell
+{
     /*
     * iterator, which traverses the proof in depth-first post-order.
     */
-    class ProofIteratorPostOrder {
+    class ProofIteratorPostOrder
+    {
     public:
-        ProofIteratorPostOrder(Kernel::Unit *refutation);
-
-        bool hasNext();
-
-        Kernel::Unit *next();
+      ProofIteratorPostOrder(Kernel::Unit* refutation);
+      bool hasNext();
+      Kernel::Unit* next();
 
     private:
-        std::stack<Kernel::Unit *> todo;
-        std::unordered_set<Kernel::Unit *> visited; // the units we have already visited
+      std::stack<Kernel::Unit*> todo;
+      std::unordered_set<Kernel::Unit*> visited; // the units we have already visited
     };
 
     /*
     * iterator, which traverses the proof in breadth-first pre-order.
     */
-    class ProofIteratorBFSPreOrder {
+    class ProofIteratorBFSPreOrder
+    {
     public:
-        ProofIteratorBFSPreOrder(Kernel::Unit *refutation);
-
-        bool hasNext();
-
-        Kernel::Unit *next();
+      ProofIteratorBFSPreOrder(Kernel::Unit* refutation);
+      bool hasNext();
+      Kernel::Unit* next();
 
     private:
-        std::queue<Kernel::Unit *> todo;
-        std::unordered_set<Kernel::Unit *> visited; // the units we have already visited
+      std::queue<Kernel::Unit*> todo;
+      std::unordered_set<Kernel::Unit*> visited; // the units we have already visited
     };
 
 
@@ -62,19 +70,20 @@ namespace Shell {
      * computes interpolants from local refutations
      * algorithms are based on master thesis of Bernhard Gleiss
      */
-    class Interpolants {
+    class Interpolants
+    {
     public:
-        Interpolants() {
-        }
-
+        Interpolants(){}
+        
         /*
          * controls which quality measurement is used for creating the interpolant
          */
-        enum UnitWeight {
+        enum UnitWeight
+        {
             VAMPIRE, // the weight usually used in vampire, i.e. number of symbols
             QUANTIFIED_VARS // use number of different quantified vars as weight
         };
-
+        
         /*
          * preprocesses proofs by removing all inferences
          * which are derived only from theory axioms,
@@ -88,8 +97,8 @@ namespace Shell {
          * @post: all input inferences of refutation have their inheritedColor assigned to
          * either COLOR_LEFT or COLOR_RIGHT
          */
-        void removeTheoryInferences(Kernel::Unit *refutation);
-
+        void removeTheoryInferences(Kernel::Unit* refutation);
+        
         /*
          * main method to call
          * computes interpolant for a given local proof.
@@ -99,7 +108,7 @@ namespace Shell {
          * determine how to split the proof
          * @pre: refutation must be a local refutation
          */
-        Kernel::Formula *getInterpolant(Kernel::Unit *refutation, UnitWeight weightFunction);
+        Kernel::Formula* getInterpolant(Kernel::Unit* refutation, UnitWeight weightFunction);
 
         // method moved from "old" Interpolants implementation
         /**
@@ -109,7 +118,7 @@ namespace Shell {
          * and leave the negated_conjecture child of this unit as the leaf instead.
          * (Inference::NEGATED_CONJECTURE is not sound).
          */
-        static void removeConjectureNodesFromRefutation(Kernel::Unit *refutation);
+        static void removeConjectureNodesFromRefutation(Kernel::Unit* refutation);
 
         // method moved from "old" Interpolants implementation
         /**
@@ -120,51 +129,41 @@ namespace Shell {
          * Assume that once we have formula on a parent path we can't go back to a clause.
          *
          */
-        static Kernel::Unit *formulifyRefutation(Kernel::Unit *refutation);
-
+        static Kernel::Unit* formulifyRefutation(Kernel::Unit* refutation);
     protected:
+        
         /*
          * implements so called "splitting function" from the thesis
          * (uses improved version of approach #2, cf. section 3.3).
          */
-        typedef std::unordered_map<Kernel::Unit *, Kernel::Color> SplittingFunction;
-
-        virtual SplittingFunction computeSplittingFunction(Kernel::Unit *refutation, UnitWeight weightFunction);
-
+        typedef std::unordered_map<Kernel::Unit*, Kernel::Color> SplittingFunction;
+        virtual SplittingFunction computeSplittingFunction(Kernel::Unit* refutation, UnitWeight weightFunction);
+        
         /*
          * helper method to compute the weight of a unit
          */
-        double weightForUnit(Kernel::Unit *unit, UnitWeight weightFunction);
-
+        double weightForUnit(Kernel::Unit* unit, UnitWeight weightFunction);
+        
         // TODO: make the following three methods private again after benchmarking
         /*
          * helper methods to compute interpolant
          */
-        typedef std::unordered_map<Kernel::Unit *, Kernel::Unit *> SubproofsUnionFind;
+        typedef std::unordered_map<Kernel::Unit*, Kernel::Unit*> SubproofsUnionFind;
+        SubproofsUnionFind computeSubproofs(Kernel::Unit* refutation, const SplittingFunction& splittingFunction);
 
-        SubproofsUnionFind computeSubproofs(Kernel::Unit *refutation, const SplittingFunction &splittingFunction);
-
-        typedef std::pair<const std::unordered_set<Kernel::Unit *>, const std::unordered_set<Kernel::Unit *>> Boundary;
-
-        // pair of inputNodes and outputNodes
-        Boundary computeBoundary(Kernel::Unit *refutation, const SplittingFunction &splittingFunction);
-
-        Kernel::Formula *generateInterpolant(Kernel::Unit *refutation, const Boundary &boundary,
-                                             const SplittingFunction &splittingFunction,
-                                             const SubproofsUnionFind &unitsToRepresentative);
-
+        typedef std::pair<const std::unordered_set<Kernel::Unit*>, const std::unordered_set<Kernel::Unit*>> Boundary; // pair of inputNodes and outputNodes
+        Boundary computeBoundary(Kernel::Unit* refutation, const SplittingFunction& splittingFunction);
+        Kernel::Formula* generateInterpolant(Kernel::Unit* refutation, const Boundary& boundary, const SplittingFunction& splittingFunction,
+                                                                 const SubproofsUnionFind& unitsToRepresentative);
     private:
+      
         /*
          * methods used to implement union find: root, find and merge (aka union)
          */
-        typedef std::unordered_map<Kernel::Unit *, Kernel::Unit *> UnionFindMap;
-
-        Kernel::Unit *root(const UnionFindMap &unitsToRepresentative, Kernel::Unit *unit);
-
-        bool find(UnionFindMap &unitsToRepresentative, Kernel::Unit *unit1, Kernel::Unit *unit2);
-
-        void merge(UnionFindMap &unitsToRepresentative, std::unordered_map<Kernel::Unit *, int> unitsToSize,
-                   Kernel::Unit *unit1, Kernel::Unit *unit2);
+        typedef std::unordered_map<Kernel::Unit*, Kernel::Unit*> UnionFindMap;
+        Kernel::Unit* root(const UnionFindMap& unitsToRepresentative, Kernel::Unit* unit);
+        bool find(UnionFindMap& unitsToRepresentative, Kernel::Unit* unit1, Kernel::Unit* unit2);
+        void merge(UnionFindMap& unitsToRepresentative, std::unordered_map<Kernel::Unit*, int> unitsToSize, Kernel::Unit* unit1, Kernel::Unit* unit2);
     };
 };
 #endif // __Interpolants__

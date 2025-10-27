@@ -1,10 +1,20 @@
-/* Copyright (C) 2019-2020 Matthew Fluet.
- * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
- *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-2000 NEC Research Institute.
- *
- * MLton is released under a HPND-style license.
- * See the file MLton-LICENSE for details.
+/*
+                                  ***   StarForth   ***
+
+  c-main.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.037-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/mlton-20241230-1/x86_64-linux/lib/mlton/include/c-main.h
  */
 
 #ifndef _C_MAIN_H_
@@ -14,27 +24,26 @@
 #include "c-common.h"
 
 PRIVATE GC_state MLton_gcState() {
-    static struct GC_state gcState;
-    return &gcState;
+  static struct GC_state gcState;
+  return &gcState;
 }
 
-static GC_frameIndex returnAddressToFrameIndex(GC_returnAddress ra) {
-    return (GC_frameIndex) ra;
+static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
+        return (GC_frameIndex)ra;
 }
 
-static inline uintptr_t getNextBlockFromStackTop(GC_state s) {
-    return *(uintptr_t *) (s->stackTop - GC_RETURNADDRESS_SIZE);
+static inline uintptr_t getNextBlockFromStackTop (GC_state s) {
+  return *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE);
 }
 
 PRIVATE uintptr_t MLton_unreachable() { return -2; }
 
-PRIVATE extern ChunkFnPtr_t
-const nextChunks [];
+PRIVATE extern ChunkFnPtr_t const nextChunks[];
 
-static inline void MLton_trampoline(GC_state s, uintptr_t nextBlock, bool mayReturnToC) {
-    do {
-        nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock);
-    } while (!mayReturnToC || nextBlock != (uintptr_t) - 1);
+static inline void MLton_trampoline (GC_state s, uintptr_t nextBlock, bool mayReturnToC) {
+        do {
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock);
+        } while (!mayReturnToC || nextBlock != (uintptr_t)-1);
 }
 
 #define MLtonCallFromC()                                                \

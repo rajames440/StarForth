@@ -1,49 +1,22 @@
 /*
-PostgreSQL Database Management System
-(formerly known as Postgres, then as Postgres95)
+                                  ***   StarForth   ***
 
-Portions Copyright (c) 1996-2005, The PostgreSQL Global Development Group
+  addrinfo.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:01.442-04
 
-Portions Copyright (c) 1994, The Regents of the University of California
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-Permission to use, copy, modify, and distribute this software and its
-documentation for any purpose, without fee, and without a written agreement
-is hereby granted, provided that the above copyright notice and this paragraph
-and the following two paragraphs appear in all copies.
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
-LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION,
-EVEN IF THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY WARRANTIES,
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS FOR A PARTICULAR PURPOSE. THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS
-TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-
-*/
-
-/*-------------------------------------------------------------------------
- *
- * getaddrinfo.h
- *	  Support getaddrinfo() on platforms that don't have it.
- *
- * Note: we use our own routines on platforms that don't HAVE_STRUCT_ADDRINFO,
- * whether or not the library routine getaddrinfo() can be found.  This
- * policy is needed because on some platforms a manually installed libbind.a
- * may provide getaddrinfo(), yet the system headers may not provide the
- * struct definitions needed to call it.  To avoid conflict with the libbind
- * definition in such cases, we rename our routines to pg_xxx() via macros.
- *
- * This code will also work on platforms where struct addrinfo is defined
- * in the system headers but no getaddrinfo() can be located.
- *
- * Copyright (c) 2003-2007, PostgreSQL Global Development Group
- *
- *-------------------------------------------------------------------------
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/rsync-3.2.7-1/src/lib/addrinfo.h
  */
+
 #ifndef ADDRINFO_H
 #define ADDRINFO_H
 
@@ -124,23 +97,24 @@ TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #endif
 
 #ifndef HAVE_STRUCT_ADDRINFO
-struct addrinfo {
-    int ai_flags;
-    int ai_family;
-    int ai_socktype;
-    int ai_protocol;
-    size_t ai_addrlen;
-    struct sockaddr *ai_addr;
-    char *ai_canonname;
-    struct addrinfo *ai_next;
+struct addrinfo
+{
+	int			ai_flags;
+	int			ai_family;
+	int			ai_socktype;
+	int			ai_protocol;
+	size_t		ai_addrlen;
+	struct sockaddr *ai_addr;
+	char	   *ai_canonname;
+	struct addrinfo *ai_next;
 };
 #endif   /* !HAVE_STRUCT_ADDRINFO */
 
 #ifndef HAVE_STRUCT_SOCKADDR_STORAGE
 struct sockaddr_storage {
-    unsigned short ss_family;
-    unsigned long ss_align;
-    char ss_padding[128 - sizeof(unsigned long)];
+	unsigned short ss_family;
+	unsigned long ss_align;
+	char ss_padding[128 - sizeof (unsigned long)];
 };
 #endif	/* !HAVE_STRUCT_SOCKADDR_STORAGE */
 
@@ -168,15 +142,12 @@ struct sockaddr_storage {
 #define getnameinfo pg_getnameinfo
 
 extern int getaddrinfo(const char *node, const char *service,
-                       const struct addrinfo *hints, struct addrinfo **res);
-
-extern void freeaddrinfo(struct addrinfo *res);
-
+			const struct addrinfo * hints, struct addrinfo ** res);
+extern void freeaddrinfo(struct addrinfo * res);
 extern const char *gai_strerror(int errcode);
-
-extern int getnameinfo(const struct sockaddr *sa, socklen_t salen,
-                       char *node, size_t nodelen,
-                       char *service, size_t servicelen, int flags);
+extern int getnameinfo(const struct sockaddr * sa, socklen_t salen,
+			char *node, size_t nodelen,
+			char *service, size_t servicelen, int flags);
 #endif   /* !HAVE_GETADDRINFO */
 
 #endif   /* ADDRINFO_H */

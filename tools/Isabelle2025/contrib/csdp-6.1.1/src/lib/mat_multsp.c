@@ -1,4 +1,23 @@
 /*
+                                  ***   StarForth   ***
+
+  mat_multsp.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:03.808-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/csdp-6.1.1/src/lib/mat_multsp.c
+ */
+
+/*
  *  Compute C=scale1*A*B+scale2*C.  
  *  Note that C must consist of dense matrix and vector blocks- no sparse
  *  blocks or eye's or other special cases.
@@ -43,422 +62,479 @@
 #define SPARSELIMC 0.01
 #endif
 
-void mat_multspb(scale1, scale2, A, B, C, fill)
-double scale1, scale2;
-struct blockmatrix A, B, C;
+void mat_multspb(scale1,scale2,A,B,C,fill)
+     double scale1,scale2;
+     struct blockmatrix A,B,C;
+     struct constraintmatrix fill;
+{
+  int blk,i,ii,j;
+  int blksize,p,q;
+  struct sparseblock *ptr;
+  double temp;
+  int total_threads;
+  int thread_num;
 
-struct constraintmatrix fill; {
-    int blk, i, ii, j;
-    int blksize, p, q;
-    struct sparseblock *ptr;
-    double temp;
-    int total_threads;
-    int thread_num;
+  if (scale2 == 0.0)
+    {
+      zero_mat(C);
 
-    if (scale2 == 0.0) {
-        zero_mat(C);
-
-        /*
+      /*
        * if scale1 also is zero, then we just zero'd out C.
        */
 
-        if (scale1 == 0.0)
-            return;
+      if (scale1 == 0.0)
+	return;
 
-        /*
+      /*
        * Now, multiply A*B and add it in.
        */
 
-        ptr = fill.blocks;
-        while (ptr != NULL) {
-            blk = ptr->blocknum;
+      ptr=fill.blocks;
+      while (ptr != NULL)
+	{
+	  blk=ptr->blocknum;
+	  
+	  switch (A.blocks[blk].blockcategory)
+	    {
+	    case DIAG:
+	      for (i=1; i<=A.blocks[blk].blocksize; i++)
+		C.blocks[blk].data.vec[i]=scale1*A.blocks[blk].data.vec[i]*
+		  B.blocks[blk].data.vec[i];
+	      break;
+	    case MATRIX:
+	      blksize=ptr->blocksize;
 
-            switch (A.blocks[blk].blockcategory) {
-                case DIAG:
-                    for (i = 1; i <= A.blocks[blk].blocksize; i++)
-                        C.blocks[blk].data.vec[i] = scale1 * A.blocks[blk].data.vec[i] *
-                                                    B.blocks[blk].data.vec[i];
-                    break;
-                case MATRIX:
-                    blksize = ptr->blocksize;
-
-                    /*
+	      /*
 	       * If this matrix is fairly dense, then don't bother with
 	       * This approach.
 	       */
-                    if (ptr->numentries / (blksize * blksize * 1.0) > SPARSELIMB) {
-                        /*
+	      if (ptr->numentries/(blksize*blksize*1.0) > SPARSELIMB)
+		{
+		  /*
 		   * A dense block.  Do it the old fashioned way.
-		   */
-                        mat_mult_raw(blksize, scale1, scale2, A.blocks[blk].data.mat,
-                                     B.blocks[blk].data.mat, C.blocks[blk].data.mat);
-                    } else {
+		   */ 
+		  mat_mult_raw(blksize,scale1,scale2,A.blocks[blk].data.mat,
+			       B.blocks[blk].data.mat,C.blocks[blk].data.mat);
+		}
+	      else
+		{
 #ifdef __GNUC__
-#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3))
-                        __builtin_prefetch(ptr->next, 0, 3);
+#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3)) 
+		  __builtin_prefetch(ptr->next,0,3);
 #endif
 #endif
 
 #ifdef USEOPENMP
 #pragma omp parallel default(none) private(i,ii,p,q,thread_num,total_threads,temp) shared(ptr,A,B,C,blk,blksize,scale1)
-                        {
-                            total_threads = omp_get_num_threads();
-                            thread_num = omp_get_thread_num();
-                            for (ii = 1; ii <= ptr->numentries; ii++) {
-                                q = ptr->jindices[ii];
-                                if ((q % total_threads) == thread_num) {
-                                    p = ptr->iindices[ii];
-                                    temp = scale1 * B.blocks[blk].data.mat[ijtok(p, q, blksize)];
-                                    for (i = 1; i <= blksize; i++)
-                                        C.blocks[blk].data.mat[ijtok(i, q, blksize)] += temp *
-                                                A.blocks[blk].data.mat[ijtok(i, p, blksize)];
-                                };
-                            };
-                        }
+ {
+   total_threads=omp_get_num_threads();
+   thread_num=omp_get_thread_num();
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      q=ptr->jindices[ii];
+		      if ((q % total_threads)==thread_num)
+			{
+			  p=ptr->iindices[ii];
+			  temp=scale1*B.blocks[blk].data.mat[ijtok(p,q,blksize)];
+			  for (i=1; i<=blksize; i++)
+			    C.blocks[blk].data.mat[ijtok(i,q,blksize)]+=temp*
+			      A.blocks[blk].data.mat[ijtok(i,p,blksize)];
+			};
+
+		    };
+
+ }
 #pragma omp barrier
 #else
-                        for (ii = 1; ii <= ptr->numentries; ii++) {
-                            p = ptr->iindices[ii];
-                            q = ptr->jindices[ii];
-                            temp = scale1 * B.blocks[blk].data.mat[ijtok(p, q, blksize)];
-                            for (i = 1; i <= blksize; i++)
-                                C.blocks[blk].data.mat[ijtok(i, q, blksize)] += temp *
-                                        A.blocks[blk].data.mat[ijtok(i, p, blksize)];
-                        };
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      p=ptr->iindices[ii];
+		      q=ptr->jindices[ii];
+		      temp=scale1*B.blocks[blk].data.mat[ijtok(p,q,blksize)];
+		      for (i=1; i<=blksize; i++)
+			C.blocks[blk].data.mat[ijtok(i,q,blksize)]+=temp*
+			  A.blocks[blk].data.mat[ijtok(i,p,blksize)];
+		    };
 
 
 #endif
-                    };
-                    break;
-                case PACKEDMATRIX:
-                default:
-                    printf("mat_multsp illegal block type \n");
-                    exit(12);
-            };
-            /*
+
+		};
+	      break;
+	    case PACKEDMATRIX:
+	    default:
+	      printf("mat_multsp illegal block type \n");
+	      exit(12);
+	    };
+	  /*
 	   * Move on to the next block.
 	   */
-            ptr = ptr->next;
-        };
-    } else {
-        /*
+	  ptr=ptr->next;
+	};
+    }
+  else
+    {
+      /*
        * First, scale C by the scale 2 factor.
        */
-        for (blk = 1; blk <= C.nblocks; blk++) {
-            switch (C.blocks[blk].blockcategory) {
-                case DIAG:
-                    for (i = 1; i <= C.blocks[blk].blocksize; i++)
-                        C.blocks[blk].data.vec[i] = scale2 * C.blocks[blk].data.vec[i];
-                    break;
-                case MATRIX:
+      for (blk=1; blk<=C.nblocks; blk++)
+	{
+	  switch (C.blocks[blk].blockcategory)
+	    {
+	    case DIAG:
+	      for (i=1; i<=C.blocks[blk].blocksize; i++)
+		C.blocks[blk].data.vec[i]=scale2*C.blocks[blk].data.vec[i];
+	      break;
+	    case MATRIX:
 #pragma omp parallel for schedule(dynamic,64) default(none) private(i,j) shared(blk,C,scale2)
-                    for (j = 1; j <= C.blocks[blk].blocksize; j++)
-                        for (i = 1; i <= C.blocks[blk].blocksize; i++)
-                            C.blocks[blk].data.mat[ijtok(i, j, C.blocks[blk].blocksize)] =
-                                    scale2 * C.blocks[blk].data.mat[ijtok(i, j, C.blocks[blk].blocksize)];
-                    break;
-                case PACKEDMATRIX:
-                default:
-                    printf("mat_multsp illegal block type \n");
-                    exit(12);
-            };
-        };
+	      for (j=1; j<=C.blocks[blk].blocksize; j++)
+		for (i=1; i<=C.blocks[blk].blocksize; i++)
+		  C.blocks[blk].data.mat[ijtok(i,j,C.blocks[blk].blocksize)]=
+		    scale2*C.blocks[blk].data.mat[ijtok(i,j,C.blocks[blk].blocksize)];
+	      break;
+	    case PACKEDMATRIX:
+	    default:
+	      printf("mat_multsp illegal block type \n");
+	      exit(12);
 
-        /*
+	    };
+	};
+
+      /*
        * if scale1 is zero, then we're done.
        */
 
-        if (scale1 == 0.0)
-            return;
+      if (scale1 == 0.0)
+	return;
 
-        /*
+      /*
        * Now, multiply A*B and add it in.
        */
 
-        ptr = fill.blocks;
-        while (ptr != NULL) {
-            blk = ptr->blocknum;
+      ptr=fill.blocks;
+      while (ptr != NULL)
+	{
+	  blk=ptr->blocknum;
 
-            switch (A.blocks[blk].blockcategory) {
-                case DIAG:
-                    for (i = 1; i <= A.blocks[blk].blocksize; i++)
-                        C.blocks[blk].data.vec[i] += scale1 * A.blocks[blk].data.vec[i] *
-                                B.blocks[blk].data.vec[i];
-                    break;
-                case MATRIX:
-                    blksize = ptr->blocksize;
+	  switch (A.blocks[blk].blockcategory)
+	    {
+	    case DIAG:
+	      for (i=1; i<=A.blocks[blk].blocksize; i++)
+		C.blocks[blk].data.vec[i]+=scale1*A.blocks[blk].data.vec[i]*
+		  B.blocks[blk].data.vec[i];
+	      break;
+	    case MATRIX:
+	      blksize=ptr->blocksize;
 
-                    /*
+	      /*
 	       * If this matrix is fairly dense, then don't bother with
 	       * This approach.
 	       */
-                    if (ptr->numentries / (blksize * blksize * 1.0) > SPARSELIMB) {
-                        /*
+	      if (ptr->numentries/(blksize*blksize*1.0) > SPARSELIMB)
+		{
+		  /*
 		   * A dense block.  Do it the old fashioned way.
-		   */
-                        mat_mult_raw(blksize, scale1, 1.0, A.blocks[blk].data.mat,
-                                     B.blocks[blk].data.mat, C.blocks[blk].data.mat);
-                    } else {
+		   */ 
+		  mat_mult_raw(blksize,scale1,1.0,A.blocks[blk].data.mat,
+			       B.blocks[blk].data.mat,C.blocks[blk].data.mat);
+		}
+	      else
+		{
 #ifdef __GNUC__
-#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3))
-                        __builtin_prefetch(ptr->next, 0, 3);
+#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3)) 
+		  __builtin_prefetch(ptr->next,0,3);
 #endif
 #endif
 #ifdef USEOPENMP
 #pragma omp parallel default(none) private(i,ii,p,q,thread_num,total_threads,temp) shared(ptr,A,B,C,blk,blksize,scale1)
-                        {
-                            total_threads = omp_get_num_threads();
-                            thread_num = omp_get_thread_num();
-                            for (ii = 1; ii <= ptr->numentries; ii++) {
-                                q = ptr->jindices[ii];
-                                if ((q % total_threads) == thread_num) {
-                                    p = ptr->iindices[ii];
-                                    temp = scale1 * B.blocks[blk].data.mat[ijtok(p, q, blksize)];
-                                    for (i = 1; i <= blksize; i++)
-                                        C.blocks[blk].data.mat[ijtok(i, q, blksize)] += temp *
-                                                A.blocks[blk].data.mat[ijtok(i, p, blksize)];
-                                };
-                            };
-                        }
+ {
+   total_threads=omp_get_num_threads();
+   thread_num=omp_get_thread_num();
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      q=ptr->jindices[ii];
+		      if ((q % total_threads)==thread_num)
+			{
+			  p=ptr->iindices[ii];
+			  temp=scale1*B.blocks[blk].data.mat[ijtok(p,q,blksize)];
+			  for (i=1; i<=blksize; i++)
+			    C.blocks[blk].data.mat[ijtok(i,q,blksize)]+=temp*
+			      A.blocks[blk].data.mat[ijtok(i,p,blksize)];
+			};
+
+		    };
+
+ }
 #pragma omp barrier
 #else
 
-                        for (ii = 1; ii <= ptr->numentries; ii++) {
-                            p = ptr->iindices[ii];
-                            q = ptr->jindices[ii];
-                            temp = scale1 * B.blocks[blk].data.mat[ijtok(p, q, blksize)];
-                            for (i = 1; i <= blksize; i++)
-                                C.blocks[blk].data.mat[ijtok(i, q, blksize)] += temp *
-                                        A.blocks[blk].data.mat[ijtok(i, p, blksize)];
-                        };
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      p=ptr->iindices[ii];
+		      q=ptr->jindices[ii];
+		      temp=scale1*B.blocks[blk].data.mat[ijtok(p,q,blksize)];
+		      for (i=1; i<=blksize; i++)
+			C.blocks[blk].data.mat[ijtok(i,q,blksize)]+=temp*
+			  A.blocks[blk].data.mat[ijtok(i,p,blksize)];
+		    };
 #endif
-                    };
-                    break;
-                case PACKEDMATRIX:
-                default:
-                    printf("mat_multsp illegal block type \n");
-                    exit(12);
-            };
+		};
+	      break;
+	    case PACKEDMATRIX:
+	    default:
+	      printf("mat_multsp illegal block type \n");
+	      exit(12);
+	    };
 
-            /*
+	  /*
 	   * Move on to the next block.
 	   */
-            ptr = ptr->next;
-        };
+	  ptr=ptr->next;
+	};
     };
+
 }
 
 /*
  *  This version of mat_mult is specialized for sparse A matrices.
  */
 
-void mat_multspa(scale1, scale2, A, B, C, fill)
-double scale1, scale2;
-struct blockmatrix A, B, C;
+void mat_multspa(scale1,scale2,A,B,C,fill)
+     double scale1,scale2;
+     struct blockmatrix A,B,C;
+     struct constraintmatrix fill;
+{
+  int blk,i,j,ii;
+  int blksize,p,q;
+  struct sparseblock *ptr;
+  double temp;
+  int total_threads;
+  int thread_num;
 
-struct constraintmatrix fill; {
-    int blk, i, j, ii;
-    int blksize, p, q;
-    struct sparseblock *ptr;
-    double temp;
-    int total_threads;
-    int thread_num;
+  if (scale2 == 0.0)
+    {
+      zero_mat(C);
 
-    if (scale2 == 0.0) {
-        zero_mat(C);
-
-        /*
+      /*
        * if scale1 also is zero, then we just zero'd out C.
        */
 
-        if (scale1 == 0.0)
-            return;
+      if (scale1 == 0.0)
+	return;
 
-        /*
+      /*
        * Now, multiply A*B and add it in.
        */
 
-        ptr = fill.blocks;
-        while (ptr != NULL) {
-            blk = ptr->blocknum;
+      ptr=fill.blocks;
+      while (ptr != NULL)
+	{
+	  blk=ptr->blocknum;
 
-            switch (A.blocks[blk].blockcategory) {
-                case DIAG:
-                    for (i = 1; i <= A.blocks[blk].blocksize; i++)
-                        C.blocks[blk].data.vec[i] = scale1 * A.blocks[blk].data.vec[i] *
-                                                    B.blocks[blk].data.vec[i];
-                    break;
-                case MATRIX:
-                    blksize = ptr->blocksize;
+	  switch (A.blocks[blk].blockcategory)
+	    {
+	    case DIAG:
+	      for (i=1; i<=A.blocks[blk].blocksize; i++)
+		C.blocks[blk].data.vec[i]=scale1*A.blocks[blk].data.vec[i]*
+		  B.blocks[blk].data.vec[i];
+	      break;
+	    case MATRIX:
+	      blksize=ptr->blocksize;
 
-                    /*
+	      /*
 	       * If this matrix is fairly dense, then don't bother with
 	       * This approach.
 	       */
-                    if (ptr->numentries / (blksize * blksize * 1.0) > SPARSELIMA) {
-                        /*
+	      if (ptr->numentries/(blksize*blksize*1.0) > SPARSELIMA)
+		{
+		  /*
 		   * A dense block.  Do it the old fashioned way.
-		   */
-                        mat_mult_raw(blksize, scale1, scale2, A.blocks[blk].data.mat,
-                                     B.blocks[blk].data.mat, C.blocks[blk].data.mat);
-                    } else {
+		   */ 
+		  mat_mult_raw(blksize,scale1,scale2,A.blocks[blk].data.mat,
+			       B.blocks[blk].data.mat,C.blocks[blk].data.mat);
+		}
+	      else
+		{
 #ifdef __GNUC__
-#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3))
-                        __builtin_prefetch(ptr->next, 0, 3);
+#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3)) 
+		  __builtin_prefetch(ptr->next,0,3);
 #endif
 #endif
 
 #ifdef USEOPENMP
 #pragma omp parallel default(none) private(i,ii,p,q,thread_num,total_threads,temp) shared(ptr,A,B,C,blk,blksize,scale1)
-                        {
-                            total_threads = omp_get_num_threads();
-                            thread_num = omp_get_thread_num();
+ {
+   total_threads=omp_get_num_threads();
+   thread_num=omp_get_thread_num();
 
-                            for (ii = 1; ii <= ptr->numentries; ii++) {
-                                p = ptr->iindices[ii];
-                                if ((p % total_threads) == thread_num) {
-                                    q = ptr->jindices[ii];
-                                    temp = scale1 * A.blocks[blk].data.mat[ijtok(p, q, blksize)];
-                                    for (i = 1; i <= ptr->blocksize; i++)
-                                        C.blocks[blk].data.mat[ijtok(p, i, blksize)] += temp *
-                                                B.blocks[blk].data.mat[ijtok(i, q, blksize)];
-                                };
-                            };
-                        }
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      p=ptr->iindices[ii];
+		      if ((p % total_threads) == thread_num)
+			{
+			  q=ptr->jindices[ii];
+			  temp=scale1*A.blocks[blk].data.mat[ijtok(p,q,blksize)];
+			  for (i=1; i<=ptr->blocksize; i++)
+			    C.blocks[blk].data.mat[ijtok(p,i,blksize)]+=temp*
+			      B.blocks[blk].data.mat[ijtok(i,q,blksize)];
+			};
+
+
+		    };
+ }
 #pragma omp barrier
 #else
-                        for (ii = 1; ii <= ptr->numentries; ii++) {
-                            p = ptr->iindices[ii];
-                            q = ptr->jindices[ii];
-                            temp = scale1 * A.blocks[blk].data.mat[ijtok(p, q, blksize)];
-                            for (i = 1; i <= ptr->blocksize; i++)
-                                C.blocks[blk].data.mat[ijtok(p, i, blksize)] += temp *
-                                        B.blocks[blk].data.mat[ijtok(i, q, blksize)];
-                        };
-#endif
-                    };
-                    break;
-                case PACKEDMATRIX:
-                default:
-                    printf("mat_multsp illegal block type \n");
-                    exit(12);
-            };
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      p=ptr->iindices[ii];
+		      q=ptr->jindices[ii];
+		      temp=scale1*A.blocks[blk].data.mat[ijtok(p,q,blksize)];
+		      for (i=1; i<=ptr->blocksize; i++)
+			C.blocks[blk].data.mat[ijtok(p,i,blksize)]+=temp*
+			  B.blocks[blk].data.mat[ijtok(i,q,blksize)];
 
-            /*
+		    };
+#endif
+		};
+	      break;
+	    case PACKEDMATRIX:
+	    default:
+	      printf("mat_multsp illegal block type \n");
+	      exit(12);
+	    };
+
+	  /*
 	   * Move on to the next block.
 	   */
-            ptr = ptr->next;
-        };
-    } else {
-        /*
+	  ptr=ptr->next;
+	};
+    }
+  else
+    {
+      /*
        * First, scale C by the scale 1 factor.
        */
 
-        for (blk = 1; blk <= C.nblocks; blk++) {
-            switch (C.blocks[blk].blockcategory) {
-                case DIAG:
-                    for (i = 1; i <= C.blocks[blk].blocksize; i++)
-                        C.blocks[blk].data.vec[i] = scale2 * C.blocks[blk].data.vec[i];
-                    break;
-                case MATRIX:
+      for (blk=1; blk<=C.nblocks; blk++)
+	{
+	  switch (C.blocks[blk].blockcategory)
+	    {
+	    case DIAG:
+	      for (i=1; i<=C.blocks[blk].blocksize; i++)
+		C.blocks[blk].data.vec[i]=scale2*C.blocks[blk].data.vec[i];
+	      break;
+	    case MATRIX:
 #pragma omp parallel for default(none) schedule(dynamic,64) private(i,j) shared(blk,C,scale2)
-                    for (j = 1; j <= C.blocks[blk].blocksize; j++)
-                        for (i = 1; i <= C.blocks[blk].blocksize; i++)
-                            C.blocks[blk].data.mat[ijtok(i, j, C.blocks[blk].blocksize)] =
-                                    scale2 * C.blocks[blk].data.mat[ijtok(i, j, C.blocks[blk].blocksize)];
-                    break;
-                case PACKEDMATRIX:
-                default:
-                    printf("mat_multsp illegal block type \n");
-                    exit(12);
-            };
-        };
+	      for (j=1; j<=C.blocks[blk].blocksize; j++)
+		for (i=1; i<=C.blocks[blk].blocksize; i++)
+		  C.blocks[blk].data.mat[ijtok(i,j,C.blocks[blk].blocksize)]=
+		    scale2*C.blocks[blk].data.mat[ijtok(i,j,C.blocks[blk].blocksize)];
+	      break;
+	    case PACKEDMATRIX:
+	    default:
+	      printf("mat_multsp illegal block type \n");
+	      exit(12);
 
-        /*
+	    };
+	};
+
+      /*
        * if scale1 is zero, then we're done.
        */
 
-        if (scale1 == 0.0)
-            return;
+      if (scale1 == 0.0)
+	return;
 
-        /*
+      /*
        * Now, multiply A*B and add it in.
        */
 
 
-        ptr = fill.blocks;
-        while (ptr != NULL) {
-            blk = ptr->blocknum;
+      ptr=fill.blocks;
+      while (ptr != NULL)
+	{
+	  blk=ptr->blocknum;
 
-            switch (A.blocks[blk].blockcategory) {
-                case DIAG:
-                    for (i = 1; i <= A.blocks[blk].blocksize; i++)
-                        C.blocks[blk].data.vec[i] += scale1 * A.blocks[blk].data.vec[i] *
-                                B.blocks[blk].data.vec[i];
-                    break;
-                case MATRIX:
-                    blksize = ptr->blocksize;
+	  switch (A.blocks[blk].blockcategory)
+	    {
+	    case DIAG:
+	      for (i=1; i<=A.blocks[blk].blocksize; i++)
+		C.blocks[blk].data.vec[i]+=scale1*A.blocks[blk].data.vec[i]*
+		  B.blocks[blk].data.vec[i];
+	      break;
+	    case MATRIX:
+	      blksize=ptr->blocksize;
 
-                    /*
+	      /*
 	       * If this matrix is fairly dense, then don't bother with
 	       * This approach.
 	       */
-                    if (ptr->numentries / (blksize * blksize * 1.0) > SPARSELIMA) {
-                        /*
+	      if (ptr->numentries/(blksize*blksize*1.0) > SPARSELIMA)
+		{
+		  /*
 		   * A dense block.  Do it the old fashioned way.
-		   */
-                        mat_mult_raw(blksize, scale1, 1.0, A.blocks[blk].data.mat,
-                                     B.blocks[blk].data.mat, C.blocks[blk].data.mat);
-                    } else {
+		   */ 
+		  mat_mult_raw(blksize,scale1,1.0,A.blocks[blk].data.mat,
+			       B.blocks[blk].data.mat,C.blocks[blk].data.mat);
+		}
+	      else
+		{
 #ifdef __GNUC__
-#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3))
-                        __builtin_prefetch(ptr->next, 0, 3);
+#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3)) 
+		  __builtin_prefetch(ptr->next,0,3);
 #endif
 #endif
 
 #ifdef USEOPENMP
 #pragma omp parallel default(none) private(i,ii,p,q,thread_num,total_threads,temp) shared(ptr,A,B,C,blk,blksize,scale1)
-                        {
-                            total_threads = omp_get_num_threads();
-                            thread_num = omp_get_thread_num();
+ {
+   total_threads=omp_get_num_threads();
+   thread_num=omp_get_thread_num();
 
-                            for (ii = 1; ii <= ptr->numentries; ii++) {
-                                p = ptr->iindices[ii];
-                                if ((p % total_threads) == thread_num) {
-                                    q = ptr->jindices[ii];
-                                    temp = scale1 * A.blocks[blk].data.mat[ijtok(p, q, blksize)];
-                                    for (i = 1; i <= ptr->blocksize; i++)
-                                        C.blocks[blk].data.mat[ijtok(p, i, blksize)] += temp *
-                                                B.blocks[blk].data.mat[ijtok(i, q, blksize)];
-                                };
-                            };
-                        }
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      p=ptr->iindices[ii];
+		      if ((p % total_threads) == thread_num)
+			{
+			  q=ptr->jindices[ii];
+			  temp=scale1*A.blocks[blk].data.mat[ijtok(p,q,blksize)];
+			  for (i=1; i<=ptr->blocksize; i++)
+			    C.blocks[blk].data.mat[ijtok(p,i,blksize)]+=temp*
+			      B.blocks[blk].data.mat[ijtok(i,q,blksize)];
+			};
+
+
+		    };
+ }
 #pragma omp barrier
 #else
-                        for (ii = 1; ii <= ptr->numentries; ii++) {
-                            p = ptr->iindices[ii];
-                            q = ptr->jindices[ii];
-                            temp = scale1 * A.blocks[blk].data.mat[ijtok(p, q, blksize)];
-                            for (i = 1; i <= ptr->blocksize; i++)
-                                C.blocks[blk].data.mat[ijtok(p, i, blksize)] += temp *
-                                        B.blocks[blk].data.mat[ijtok(i, q, blksize)];
-                        };
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      p=ptr->iindices[ii];
+		      q=ptr->jindices[ii];
+		      temp=scale1*A.blocks[blk].data.mat[ijtok(p,q,blksize)];
+		      for (i=1; i<=ptr->blocksize; i++)
+			C.blocks[blk].data.mat[ijtok(p,i,blksize)]+=temp*
+			  B.blocks[blk].data.mat[ijtok(i,q,blksize)];
+		    };
 #endif
-                    };
-                    break;
-                case PACKEDMATRIX:
-                default:
-                    printf("mat_multsp illegal block type \n");
-                    exit(12);
-            };
 
-            /*
+		};
+	      break;
+	    case PACKEDMATRIX:
+	    default:
+	      printf("mat_multsp illegal block type \n");
+	      exit(12);
+	    };
+
+	  /*
 	   * Move on to the next block.
 	   */
 
-            ptr = ptr->next;
-        };
+	  ptr=ptr->next;
+	};
     };
+
 }
 
 
@@ -468,146 +544,165 @@ struct constraintmatrix fill; {
  *  to elements described in fill.  
  */
 
-void mat_multspc(scale1, scale2, A, B, C, fill)
-double scale1, scale2;
-struct blockmatrix A, B, C;
+void mat_multspc(scale1,scale2,A,B,C,fill)
+     double scale1,scale2;
+     struct blockmatrix A,B,C;
+     struct constraintmatrix fill;
+{
+  int blk,i,j,ii;
+  int blksize,p,q;
+  struct sparseblock *ptr;
+  double temp;
 
-struct constraintmatrix fill; {
-    int blk, i, j, ii;
-    int blksize, p, q;
-    struct sparseblock *ptr;
-    double temp;
-
-    /*
+  /*
    * To protect against bad implementations of the BLAS that don't handle
    * scale2=0 in dgemv well.
    */
 
-    if (scale2 == 0.0) {
-        /*
+  if (scale2 == 0.0)
+    {
+
+      /*
        * To protect against bad implementations of the BLAS that don't handle
        * scale2=0 in dgemv well.
        */
 
-        zero_mat(C);
+      zero_mat(C);
 
 
-        /*
+      /*
        * Now, multiply A*B and add it in.
        */
 
-        ptr = fill.blocks;
-        while (ptr != NULL) {
-            blk = ptr->blocknum;
+      ptr=fill.blocks;
+      while (ptr != NULL)
+	{
+	  blk=ptr->blocknum;
 
-            switch (A.blocks[blk].blockcategory) {
-                case DIAG:
-                    for (i = 1; i <= A.blocks[blk].blocksize; i++)
-                        C.blocks[blk].data.vec[i] = scale1 * A.blocks[blk].data.vec[i] *
-                                                    B.blocks[blk].data.vec[i];
-                    break;
-                case MATRIX:
-                    blksize = ptr->blocksize;
+	  switch (A.blocks[blk].blockcategory)
+	    {
+	    case DIAG:
+	      for (i=1; i<=A.blocks[blk].blocksize; i++)
+		C.blocks[blk].data.vec[i]=scale1*A.blocks[blk].data.vec[i]*
+		  B.blocks[blk].data.vec[i];
+	      break;
+	    case MATRIX:
+	      blksize=ptr->blocksize;
 
-                    /*
+	      /*
 	       * If this matrix is fairly dense, then don't bother with
 	       * This approach.
 	       */
-                    if (ptr->numentries / (blksize * blksize * 1.0) > SPARSELIMC) {
-                        /*
+	      if (ptr->numentries/(blksize*blksize*1.0) > SPARSELIMC)
+		{
+		  /*
 		   * A dense block.  Do it the old fashioned way.
-		   */
-                        mat_mult_raw(blksize, scale1, scale2, A.blocks[blk].data.mat,
-                                     B.blocks[blk].data.mat, C.blocks[blk].data.mat);
-                    } else {
+		   */ 
+		  mat_mult_raw(blksize,scale1,scale2,A.blocks[blk].data.mat,
+			       B.blocks[blk].data.mat,C.blocks[blk].data.mat);
+		}
+	      else
+		{
 #ifdef __GNUC__
-#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3))
-                        __builtin_prefetch(ptr->next, 0, 3);
+#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3)) 
+		  __builtin_prefetch(ptr->next,0,3);
 #endif
 #endif
 #pragma omp parallel for schedule(dynamic,64) default(none) private(i,ii,p,q,temp) shared(ptr,A,B,C,blk,blksize,scale1)
-                        for (ii = 1; ii <= ptr->numentries; ii++) {
-                            p = ptr->iindices[ii];
-                            q = ptr->jindices[ii];
-                            temp = 0;
-                            for (i = 1; i <= ptr->blocksize; i++)
-                                temp +=
-                                        A.blocks[blk].data.mat[ijtok(i, p, blksize)] *
-                                        B.blocks[blk].data.mat[ijtok(i, q, blksize)];
-                            C.blocks[blk].data.mat[ijtok(p, q, blksize)] = temp * scale1;
-                        };
-                    };
-                    break;
-                case PACKEDMATRIX:
-                default:
-                    printf("mat_multsp illegal block type \n");
-                    exit(12);
-            };
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      p=ptr->iindices[ii];
+		      q=ptr->jindices[ii];
+		      temp=0;
+		      for (i=1; i<=ptr->blocksize; i++)
+			temp+=
+			  A.blocks[blk].data.mat[ijtok(i,p,blksize)]*
+			  B.blocks[blk].data.mat[ijtok(i,q,blksize)];
+		      C.blocks[blk].data.mat[ijtok(p,q,blksize)]=temp*scale1;
+		    };
+		};
+	      break;
+	    case PACKEDMATRIX:
+	    default:
+	      printf("mat_multsp illegal block type \n");
+	      exit(12);
+	    };
 
 
-            /*
+	  /*
 	   * Move on to the next block.
 	   */
-            ptr = ptr->next;
-        };
-    } else {
-        /*
+	  ptr=ptr->next;
+	};
+    }
+  else
+    {
+      /*
        * First, scale C by the scale 2 factor.
        */
-        for (blk = 1; blk <= C.nblocks; blk++) {
-            switch (C.blocks[blk].blockcategory) {
-                case DIAG:
-                    for (i = 1; i <= C.blocks[blk].blocksize; i++)
-                        C.blocks[blk].data.vec[i] = scale2 * C.blocks[blk].data.vec[i];
-                    break;
-                case MATRIX:
+      for (blk=1; blk<=C.nblocks; blk++)
+	{
+	  switch (C.blocks[blk].blockcategory)
+	    {
+	    case DIAG:
+	      for (i=1; i<=C.blocks[blk].blocksize; i++)
+		C.blocks[blk].data.vec[i]=scale2*C.blocks[blk].data.vec[i];
+	      break;
+	    case MATRIX:
 #pragma omp parallel for default(none) schedule(dynamic,64) private(i,j) shared(blk,C,scale2)
-                    for (j = 1; j <= C.blocks[blk].blocksize; j++)
-                        for (i = 1; i <= C.blocks[blk].blocksize; i++)
-                            C.blocks[blk].data.mat[ijtok(i, j, C.blocks[blk].blocksize)] =
-                                    scale2 * C.blocks[blk].data.mat[ijtok(i, j, C.blocks[blk].blocksize)];
-                    break;
-                case PACKEDMATRIX:
-                default:
-                    printf("mat_multsp illegal block type \n");
-                    exit(12);
-            };
-        };
-        /*
+	      for (j=1; j<=C.blocks[blk].blocksize; j++)
+		for (i=1; i<=C.blocks[blk].blocksize; i++)
+		  C.blocks[blk].data.mat[ijtok(i,j,C.blocks[blk].blocksize)]=
+		    scale2*C.blocks[blk].data.mat[ijtok(i,j,C.blocks[blk].blocksize)];
+	      break;
+	    case PACKEDMATRIX:
+	    default:
+	      printf("mat_multsp illegal block type \n");
+	      exit(12);
+
+	    };
+	};
+      /*
        * Now, multiply A*B and add it in.
        */
 
-        ptr = fill.blocks;
-        while (ptr != NULL) {
-            blk = ptr->blocknum;
+      ptr=fill.blocks;
+      while (ptr != NULL)
+	{
+	  blk=ptr->blocknum;
 
-            switch (A.blocks[blk].blockcategory) {
-                case DIAG:
-                    for (i = 1; i <= A.blocks[blk].blocksize; i++)
-                        C.blocks[blk].data.vec[i] += scale1 * A.blocks[blk].data.vec[i] *
-                                B.blocks[blk].data.vec[i];
-                    break;
-                case MATRIX:
-                    blksize = ptr->blocksize;
+	  switch (A.blocks[blk].blockcategory)
+	    {
+	    case DIAG:
+	      for (i=1; i<=A.blocks[blk].blocksize; i++)
+		C.blocks[blk].data.vec[i]+=scale1*A.blocks[blk].data.vec[i]*
+		  B.blocks[blk].data.vec[i];
+	      break;
+	    case MATRIX:
+	      blksize=ptr->blocksize;
 
-                    /*
+	      /*
 	       * If this matrix is fairly dense, then don't bother with
 	       * This approach.
 	       */
-                    if (ptr->numentries / (blksize * blksize * 1.0) > SPARSELIMC) {
-                        /*
+	      if (ptr->numentries/(blksize*blksize*1.0) > SPARSELIMC)
+		{
+		  /*
 		   * A dense block.  Do it the old fashioned way.
-		   */
-                        mat_mult_raw(blksize, scale1, scale2, A.blocks[blk].data.mat,
-                                     B.blocks[blk].data.mat, C.blocks[blk].data.mat);
-                    } else {
+		   */ 
+		  mat_mult_raw(blksize,scale1,scale2,A.blocks[blk].data.mat,
+			       B.blocks[blk].data.mat,C.blocks[blk].data.mat);
+		}
+	      else
+		{
 #ifdef __GNUC__
-#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3))
-                        __builtin_prefetch(ptr->next, 0, 3);
+#if (((__GNUC__ == 3) && (__GNUC_MINOR__ > 1)) || (__GNUC__ > 3)) 
+		  __builtin_prefetch(ptr->next,0,3);
 #endif
 #endif
-                        for (ii = 1; ii <= ptr->numentries; ii++) {
-                            /*
+		  for (ii=1; ii<=ptr->numentries; ii++)
+		    {
+		      /*
 		      p=ptr->iindices[ii];
 		      q=ptr->jindices[ii];
 		      for (i=1; i<=ptr->blocksize; i++)
@@ -615,27 +710,33 @@ struct constraintmatrix fill; {
 			  A.blocks[blk].data.mat[ijtok(p,i,blksize)]*
 			  B.blocks[blk].data.mat[ijtok(i,q,blksize)];
 		      */
-                            p = ptr->iindices[ii];
-                            q = ptr->jindices[ii];
-                            temp = 0;
-                            for (i = 1; i <= ptr->blocksize; i++)
-                                temp +=
-                                        A.blocks[blk].data.mat[ijtok(i, p, blksize)] *
-                                        B.blocks[blk].data.mat[ijtok(i, q, blksize)];
-                            C.blocks[blk].data.mat[ijtok(p, q, blksize)] += temp * scale1;
-                        };
-                    };
-                    break;
-                case PACKEDMATRIX:
-                default:
-                    printf("mat_multsp illegal block type \n");
-                    exit(12);
-            };
+		      p=ptr->iindices[ii];
+		      q=ptr->jindices[ii];
+		      temp=0;
+		      for (i=1; i<=ptr->blocksize; i++)
+			temp+=
+			  A.blocks[blk].data.mat[ijtok(i,p,blksize)]*
+			  B.blocks[blk].data.mat[ijtok(i,q,blksize)];
+		      C.blocks[blk].data.mat[ijtok(p,q,blksize)]+=temp*scale1;
+		    };
+		};
+	      break;
+	    case PACKEDMATRIX:
+	    default:
+	      printf("mat_multsp illegal block type \n");
+	      exit(12);
+	    };
 
-            /*
+	  /*
 	   * Move on to the next block.
 	   */
-            ptr = ptr->next;
-        };
+	  ptr=ptr->next;
+	};
+
     };
 }
+
+
+
+
+

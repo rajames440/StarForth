@@ -6,50 +6,46 @@
 
 \begin{document}
 
-    \title{Programming and Proving in Isabelle/HOL}
-    \subtitle{\includegraphics[scale=.7]{isabelle_logo}}
-    \author{Tobias Nipkow}
-    \maketitle
+\title{Programming and Proving in Isabelle/HOL}
+\subtitle{\includegraphics[scale=.7]{isabelle_logo}}
+\author{Tobias Nipkow}
+\maketitle
 
-    \frontmatter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\frontmatter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    \setcounter{tocdepth}{1}
-    \tableofcontents
+\setcounter{tocdepth}{1}
+\tableofcontents
 
 
-    \mainmatter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\mainmatter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %\part{Isabelle}
 
+\chapter{Introduction}
+\input{intro-isabelle.tex}
 
-    \chapter{Introduction}
-    \input{intro-isabelle.tex}
-
-
-    \chapter{Programming and Proving}
-    \label{sec:FP}
-    \input{Basics.tex}
-    \input{Bool_nat_list}
-    \input{Types_and_funs}
+\chapter{Programming and Proving}
+\label{sec:FP}
+\input{Basics.tex}
+\input{Bool_nat_list}
+\input{Types_and_funs}
 
 %\chapter{Case Study: IMP Expressions}
 %\label{sec:CaseStudyExp}
 %\input{../generated/Expressions}
 
+\chapter{Logic and Proof Beyond Equality}
+\label{ch:Logic}
+\input{Logic}
 
-    \chapter{Logic and Proof Beyond Equality}
-    \label{ch:Logic}
-    \input{Logic}
+\chapter{Isar: A Language for Structured Proofs}
+\label{ch:Isar}
+\input{Isar}
 
+\backmatter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    \chapter{Isar: A Language for Structured Proofs}
-    \label{ch:Isar}
-    \input{Isar}
-
-    \backmatter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    \bibliographystyle{plain}
-    \bibliography{root}
+\bibliographystyle{plain}
+\bibliography{root}
 
 %\printindex
 

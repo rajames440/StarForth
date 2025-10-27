@@ -1,26 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-  File  : clb_memory.h
+  clb_memory.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.303-04
 
-  Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  This module implements simple general purpose memory management
-  routines that is efficient for problems with a very regular memory
-  access pattern (like most theorem provers). In addition to the
-  groundwork it also implements secure versions of standard functions
-  making use of memory allocation.
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Copyright 1998-2017 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Changes
-
-  Created: Wed Aug 13 21:56:20 MET DST 1997
-
-  -----------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/BASICS/clb_memory.h
+ */
 
 #ifndef CLB_MEMORY
 
@@ -39,12 +34,13 @@
 
 /* Administrate deallocated memory blocks */
 
-typedef struct memcell {
-    struct memcell *next;
+typedef struct memcell
+{
+   struct memcell* next;
 #ifndef NDEBUG
-    unsigned long test;
+   unsigned long   test;
 #endif
-} MemCell, *Mem_p;
+}MemCell, *Mem_p;
 
 /*---------------------------------------------------------------------*/
 /*                Exported Functions and Variables                     */
@@ -59,9 +55,8 @@ extern bool MemIsLow;
 extern Mem_p free_mem_list[]; /* Exported for use by inline
                                * functions/Macros */
 
-static inline void *SizeMallocReal(size_t size);
-
-static inline void SizeFreeReal(void *junk, size_t size);
+static inline void* SizeMallocReal(size_t size);
+static inline void  SizeFreeReal(void* junk, size_t size);
 
 
 /* For estimating the real memory consumption of a data type - the
@@ -101,24 +96,18 @@ static inline void SizeFreeReal(void *junk, size_t size);
 
 #endif
 
-void MemFlushFreeList(void);
-
-void *SecureMalloc(size_t size);
-
-void *SecureRealloc(void *ptr, size_t size);
-
-char *SecureStrdup(const char *source);
-
-char *SecureStrndup(const char *source, size_t n);
-
+void  MemFlushFreeList(void);
+void* SecureMalloc(size_t size);
+void* SecureRealloc(void *ptr, size_t size);
+char* SecureStrdup(const char* source);
+char* SecureStrndup(const char* source, size_t n);
 #define FREE(junk) assert(junk);free(junk); junk=NULL
 
-long *IntArrayAlloc(int size);
-
+long* IntArrayAlloc(int size);
 #define IntArrayFree(array, size) SizeFree(array, size*sizeof(long))
 
 #ifdef CLB_MEMORY_DEBUG
-void MemDebugPrintStats(FILE * out);
+void MemDebugPrintStats(FILE* out);
 extern long size_malloc_mem;
 extern long size_malloc_count;
 extern long size_free_mem;
@@ -129,7 +118,7 @@ extern long secure_malloc_mem;
 extern long secure_realloc_count;
 extern long secure_realloc_m_count;
 extern long secure_realloc_f_count;
-void MemFreeListPrint(FILE * out);
+void MemFreeListPrint(FILE* out);
 #undef FREE
 #define FREE(junk) assert(junk); clb_free_count++; free(junk); junk=NULL
 #endif
@@ -166,30 +155,35 @@ void MemFreeListPrint(FILE * out);
 //
 /----------------------------------------------------------------------*/
 
-static inline void *SizeMallocReal(size_t size) {
-    Mem_p handle;
+static inline void* SizeMallocReal(size_t size)
+{
+   Mem_p handle;
 
-    if (size >= MEM_ARR_MIN_INDEX && size < MEM_ARR_SIZE && free_mem_list[size]) {
-        assert(free_mem_list[size]->test == MEM_FREE_PATTERN);
-        assert((free_mem_list[size]->test = MEM_RSET_PATTERN, true));
-        handle = free_mem_list[size];
-        free_mem_list[size] = free_mem_list[size]->next;
-    } else {
-        handle = SecureMalloc(size);
+   if(size>=MEM_ARR_MIN_INDEX && size<MEM_ARR_SIZE && free_mem_list[size])
+   {
+      assert(free_mem_list[size]->test == MEM_FREE_PATTERN);
+      assert((free_mem_list[size]->test = MEM_RSET_PATTERN, true));
+      handle = free_mem_list[size];
+      free_mem_list[size] = free_mem_list[size]->next;
+   }
+   else
+   {
+      handle = SecureMalloc(size);
 #ifndef NDEBUG
-        if (size >= MEM_ARR_MIN_INDEX && size < MEM_ARR_SIZE) {
-            assert((handle->test = MEM_RSET_PATTERN, true));
-        }
+      if(size>=MEM_ARR_MIN_INDEX && size<MEM_ARR_SIZE)
+      {
+         assert((handle->test = MEM_RSET_PATTERN, true));
+      }
 #endif
-    }
+   }
 #ifdef CLB_MEMORY_DEBUG
-    size_malloc_mem += size;
-    size_malloc_count++;
+   size_malloc_mem+=size;
+   size_malloc_count++;
 #endif
 #ifdef CLB_MEMORY_DEBUG2
-    printf("\nBlock %p A: size %zd\n", handle, size);
+   printf("\nBlock %p A: size %zd\n", handle, size);
 #endif
-    return handle;
+   return handle;
 }
 
 
@@ -209,25 +203,29 @@ static inline void *SizeMallocReal(size_t size) {
 //
 /----------------------------------------------------------------------*/
 
-static inline void SizeFreeReal(void *junk, size_t size) {
-    assert(junk != NULL);
+static inline void SizeFreeReal(void* junk, size_t size)
+{
+   assert(junk!=NULL);
 
 #ifdef CLB_MEMORY_DEBUG2
-    printf("\nBlock %p D: size %zd\n", junk, size);
+   printf("\nBlock %p D: size %zd\n", junk, size);
 #endif
 
-    if (size >= MEM_ARR_MIN_INDEX && size < MEM_ARR_SIZE) {
-        ((Mem_p) junk)->next = free_mem_list[size];
-        free_mem_list[size] = (Mem_p) junk;
-        assert(free_mem_list[size]->test != MEM_FREE_PATTERN);
-        assert((free_mem_list[size]->test = MEM_FREE_PATTERN));
-    } else {
-        FREE(junk);
-    }
+   if(size>=MEM_ARR_MIN_INDEX && size<MEM_ARR_SIZE)
+   {
+      ((Mem_p)junk)->next = free_mem_list[size];
+      free_mem_list[size] = (Mem_p)junk;
+      assert(free_mem_list[size]->test != MEM_FREE_PATTERN);
+      assert((free_mem_list[size]->test = MEM_FREE_PATTERN));
+   }
+   else
+   {
+      FREE(junk);
+   }
 
 #ifdef CLB_MEMORY_DEBUG
-    size_free_mem += size;
-    size_free_count++;
+   size_free_mem+=size;
+   size_free_count++;
 #endif
 }
 

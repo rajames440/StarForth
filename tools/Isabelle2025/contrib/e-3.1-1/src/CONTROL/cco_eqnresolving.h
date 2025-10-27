@@ -1,25 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-File  : cco_eqnresolving.h
+  cco_eqnresolving.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.149-04
 
-Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Routines for the control of equality resolution.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 1998, 1999 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-Changes
-
-<1> Mon Jun  8 17:10:03 MET DST 1998
-    New
-
------------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/CONTROL/cco_eqnresolving.h
+ */
 
 #ifndef CCO_EQNRESOLVING
 
@@ -33,18 +29,25 @@ Changes
 /*---------------------------------------------------------------------*/
 
 
+
+
 /*---------------------------------------------------------------------*/
 /*                Exported Functions and Variables                     */
 /*---------------------------------------------------------------------*/
 
 long ComputeAllEqnResolvents(TB_p bank, Clause_p clause, ClauseSet_p
-                             store, VarBank_p freshvars);
+              store, VarBank_p freshvars);
 
 long ClauseERNormalizeVar(TB_p bank, Clause_p clause, ClauseSet_p
-                          store, VarBank_p freshvars, bool strong);
+           store, VarBank_p freshvars, bool strong);
 
 #endif
 
 /*---------------------------------------------------------------------*/
 /*                        End of File                                  */
 /*---------------------------------------------------------------------*/
+
+
+
+
+

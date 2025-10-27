@@ -1,23 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-  File  : clb_memory.c
+  clb_memory.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.297-04
 
-  Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-  Memory management. The implemented routines are very simple, because
-  they make use of the standard memory management for reorganization.
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Copyright 1998-2017 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Changes
-
-  Created: Thu Aug 14 10:00:35 MET DST 1997
-
-  -----------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/BASICS/clb_memory.c
+ */
 
 #ifdef USE_NEWMEM
 #include "clb_newmem.c"
@@ -76,13 +74,15 @@ long secure_realloc_f_count = 0;
 //
 /----------------------------------------------------------------------*/
 
-static long free_list_size(Mem_p list) {
-    long res = 0;
-    while (list) {
-        list = list->next;
-        res++;
-    }
-    return res;
+static long free_list_size(Mem_p list)
+{
+   long res = 0;
+   while(list)
+   {
+      list = list->next;
+      res++;
+   }
+   return res;
 }
 
 #endif
@@ -108,18 +108,21 @@ static long free_list_size(Mem_p list) {
 //
 /----------------------------------------------------------------------*/
 
-void MemFlushFreeList(void) {
-    int f;
-    void *handle;
+void MemFlushFreeList(void)
+{
+   int f;
+   void* handle;
 
-    VERBOUT("MemFlushFreeList() called for cleanup or reorganization\n");
-    for (f = 0; f < MEM_ARR_SIZE; f++) {
-        while (free_mem_list[f]) {
-            handle = (void *) free_mem_list[f];
-            free_mem_list[f] = free_mem_list[f]->next;
-            FREE(handle);
-        }
-    }
+   VERBOUT("MemFlushFreeList() called for cleanup or reorganization\n");
+   for(f = 0;f<MEM_ARR_SIZE;f++)
+   {
+      while(free_mem_list[f])
+      {
+         handle = (void*)free_mem_list[f];
+         free_mem_list[f] = free_mem_list[f]->next;
+         FREE(handle);
+      }
+   }
 }
 
 
@@ -139,39 +142,40 @@ void MemFlushFreeList(void) {
 //
 /----------------------------------------------------------------------*/
 
-void *SecureMalloc(size_t size) {
-    void *handle;
+void* SecureMalloc(size_t size)
+{
+   void* handle;
 
 #ifdef CLB_MEMORY_DEBUG
-    secure_malloc_count++;
-    secure_malloc_mem += size;
+   secure_malloc_count++;
+   secure_malloc_mem += size;
 #endif
 
-    handle = (void *) malloc(size);
+   handle = (void*)malloc(size);
 
-    if (UNLIKELY(!handle)) {
-        /* malloc has no memory left  */
-        MemIsLow = true;
-        MemFlushFreeList(); /* Return own freelist */
+   if(UNLIKELY(!handle))
+   {    /* malloc has no memory left  */
+      MemIsLow = true;
+      MemFlushFreeList(); /* Return own freelist */
 
-        handle = (void *) malloc(size);
+      handle = (void*)malloc(size);
 
-        if (!handle) {
-            /*  Still nothing...*/
+      if(!handle)
+      {   /*  Still nothing...*/
 #ifdef PRINT_SOMEERRORS_STDOUT
-            SetMemoryLimit(RLIM_INFINITY);
-            fprintf(stdout, "# Failure: Resource limit exceeded (memory)\n");
-            TSTPOUT(stdout, "ResourceOut");
-            fflush(stdout);
-            PrintRusage(stdout);
+         SetMemoryLimit(RLIM_INFINITY);
+         fprintf(stdout, "# Failure: Resource limit exceeded (memory)\n");
+         TSTPOUT(stdout, "ResourceOut");
+         fflush(stdout);
+         PrintRusage(stdout);
 #endif
-            Error("Out of Memory", OUT_OF_MEMORY);
-        }
-    }
+         Error("Out of Memory", OUT_OF_MEMORY);
+      }
+   }
 #ifdef CLB_MEMORY_DEBUG2
-    printf("\nBlock %p M: %zd\n", handle, size);
+   printf("\nBlock %p M: %zd\n", handle, size);
 #endif
-    return handle;
+   return handle;
 }
 
 /*-------------------------------------------------------------------------
@@ -188,45 +192,52 @@ void *SecureMalloc(size_t size) {
 //
 //-----------------------------------------------------------------------*/
 
-void *SecureRealloc(void *ptr, size_t size) {
-    void *handle;
+void* SecureRealloc(void *ptr, size_t size)
+{
+   void* handle;
 
 #ifdef CLB_MEMORY_DEBUG
-    secure_realloc_count++;
-    if (ptr && !size) {
-        secure_realloc_f_count++;
-    } else if (!ptr && size) {
-        secure_realloc_m_count++;
-    }
+   secure_realloc_count++;
+   if(ptr && !size)
+   {
+      secure_realloc_f_count++;
+   }
+   else if(!ptr && size)
+   {
+      secure_realloc_m_count++;
+   }
 #endif
-    /* SunOS realloc() is broken, so here is a stupid workaround...*/
+   /* SunOS realloc() is broken, so here is a stupid workaround...*/
 
-    handle = ptr ? realloc(ptr, size) : malloc(size);
-    if (UNLIKELY(!handle && size != 0)) {
-        MemIsLow = true;
-        MemFlushFreeList();
-        handle = ptr ? realloc(ptr, size) : malloc(size);
-        if (!handle) {
-            /*  Still nothing...*/
+   handle = ptr?realloc(ptr,size):malloc(size);
+   if(UNLIKELY(!handle && size!=0))
+   {
+      MemIsLow = true;
+      MemFlushFreeList();
+      handle = ptr?realloc(ptr,size):malloc(size);
+      if(!handle)
+      {   /*  Still nothing...*/
 #ifdef PRINT_SOMEERRORS_STDOUT
-            SetMemoryLimit(RLIM_INFINITY);
-            fprintf(stdout, "# Failure: Resource limit exceeded (memory)\n");
-            fflush(stdout);
-            PrintRusage(stdout);
+         SetMemoryLimit(RLIM_INFINITY);
+         fprintf(stdout, "# Failure: Resource limit exceeded (memory)\n");
+         fflush(stdout);
+         PrintRusage(stdout);
 #endif
-            Error("Out of Memory", OUT_OF_MEMORY);
-        }
-    }
+         Error("Out of Memory", OUT_OF_MEMORY);
+      }
+   }
 #ifdef CLB_MEMORY_DEBUG2
-    if (ptr != handle) {
-        if (ptr) {
-            printf("\nBlock %p F:\n", ptr);
-        }
-        printf("\nBlock %p R: %zd\n", handle, size);
-    }
+   if(ptr != handle)
+   {
+      if(ptr)
+      {
+         printf("\nBlock %p F:\n", ptr);
+      }
+      printf("\nBlock %p R: %zd\n" ,handle, size);
+   }
 #endif
 
-    return handle;
+   return handle;
 }
 
 /*-----------------------------------------------------------------------
@@ -242,13 +253,14 @@ void *SecureRealloc(void *ptr, size_t size) {
 //
 /----------------------------------------------------------------------*/
 
-char *SecureStrdup(const char *source) {
-    char *handle;
+char* SecureStrdup(const char* source)
+{
+   char* handle;
 
-    handle = SecureMalloc(strlen(source) + 1);
-    strcpy(handle, source);
+   handle = SecureMalloc(strlen(source)+1);
+   strcpy(handle,source);
 
-    return handle;
+   return handle;
 }
 
 /*-----------------------------------------------------------------------
@@ -265,24 +277,30 @@ char *SecureStrdup(const char *source) {
 //
 /----------------------------------------------------------------------*/
 
-char *SecureStrndup(const char *source, size_t n) {
-    char *handle;
-    size_t len;
+char* SecureStrndup(const char* source, size_t n)
+{
+   char* handle;
+   size_t len;
 
-    assert(source);
-    assert(n >= 0);
+   assert(source);
+   assert(n>=0);
 
-    len = strlen(source);
+   len = strlen(source);
 
-    if (len > n) {
-        handle = SecureMalloc(n + 1);
-        strncpy(handle, source, n);
-        handle[n] = '\0';
-    } else {
-        handle = SecureStrdup(source);
-    }
-    return handle;
+   if(len > n)
+   {
+      handle = SecureMalloc(n+1);
+      strncpy(handle,source, n);
+      handle[n]='\0';
+   }
+   else
+   {
+      handle = SecureStrdup(source);
+   }
+   return handle;
 }
+
+
 
 
 /*-----------------------------------------------------------------------
@@ -298,17 +316,21 @@ char *SecureStrndup(const char *source, size_t n) {
 //
 /----------------------------------------------------------------------*/
 
-long *IntArrayAlloc(int size) {
-    long *res;
-    int i;
+long* IntArrayAlloc(int size)
+{
+   long *res;
+   int i;
 
-    res = SizeMalloc(size * sizeof(long));
+   res = SizeMalloc(size*sizeof(long));
 
-    for (i = 0; i < size; i++) {
-        res[i] = 0;
-    }
-    return res;
+   for(i=0; i<size; i++)
+   {
+      res[i]=0;
+   }
+   return res;
 }
+
+
 
 
 #ifdef CLB_MEMORY_DEBUG
@@ -326,32 +348,33 @@ long *IntArrayAlloc(int size) {
 //
 /----------------------------------------------------------------------*/
 
-void MemDebugPrintStats(FILE *out) {
-    fprintf(out,
-            "\n# -------------------------------------------------\n");
-    fprintf(out,
-            "# Total SizeMalloc()ed memory: %ld Bytes (%ld requests)\n",
-            size_malloc_mem, size_malloc_count);
-    fprintf(out,
-            "# Total SizeFree()ed   memory: %ld Bytes (%ld requests)\n",
-            size_free_mem, size_free_count);
-    fprintf(out,
-            "# New requests: %6ld (%6ld by SecureMalloc(), %6ld by SecureRealloc())\n",
-            secure_malloc_count + secure_realloc_m_count,
-            secure_malloc_count, secure_realloc_m_count);
-    fprintf(out,
-            "# Total SecureMalloc()ed memory: %ld Bytes\n", secure_malloc_mem);
-    fprintf(out,
-            "# Returned:    %6ld (%6ld by FREE(),         %6ld by SecureRealloc())\n",
-            clb_free_count + secure_realloc_f_count,
-            clb_free_count, secure_realloc_f_count);
-    fprintf(out,
-            "# SecureRealloc(ptr): %6ld (%6ld Allocs, %6ld Frees, %6ld Reallocs)\n",
-            secure_realloc_count, secure_realloc_m_count,
-            secure_realloc_f_count,
-            secure_realloc_count - (secure_realloc_m_count + secure_realloc_f_count));
-    fprintf(out,
-            "# -------------------------------------------------\n\n");
+void MemDebugPrintStats(FILE* out)
+{
+   fprintf(out,
+           "\n# -------------------------------------------------\n");
+   fprintf(out,
+           "# Total SizeMalloc()ed memory: %ld Bytes (%ld requests)\n",
+           size_malloc_mem, size_malloc_count);
+   fprintf(out,
+           "# Total SizeFree()ed   memory: %ld Bytes (%ld requests)\n",
+           size_free_mem, size_free_count);
+   fprintf(out,
+           "# New requests: %6ld (%6ld by SecureMalloc(), %6ld by SecureRealloc())\n",
+           secure_malloc_count+secure_realloc_m_count,
+           secure_malloc_count, secure_realloc_m_count);
+   fprintf(out,
+           "# Total SecureMalloc()ed memory: %ld Bytes\n", secure_malloc_mem);
+   fprintf(out,
+           "# Returned:    %6ld (%6ld by FREE(),         %6ld by SecureRealloc())\n",
+           clb_free_count+secure_realloc_f_count,
+           clb_free_count , secure_realloc_f_count);
+   fprintf(out,
+           "# SecureRealloc(ptr): %6ld (%6ld Allocs, %6ld Frees, %6ld Reallocs)\n",
+           secure_realloc_count, secure_realloc_m_count,
+           secure_realloc_f_count,
+           secure_realloc_count-(secure_realloc_m_count+secure_realloc_f_count));
+   fprintf(out,
+           "# -------------------------------------------------\n\n");
 }
 
 
@@ -367,21 +390,24 @@ void MemDebugPrintStats(FILE *out) {
 //
 /----------------------------------------------------------------------*/
 
-void MemFreeListPrint(FILE *out) {
-    long i, sum = 0, count = 0, tmp;
+void MemFreeListPrint(FILE* out)
+{
+   long i, sum =0, count=0, tmp;
 
-    fprintf(out, "# MemFreeListPrint()\n");
-    fprintf(out, "# ===============================\n");
-    for (i = 0; i < MEM_ARR_SIZE; i++) {
-        tmp = free_list_size(free_mem_list[i]);
-        if (tmp) {
-            fprintf(out, "# %4ld: %ld\n", i, tmp);
-            sum += tmp * (i);
-            count += tmp;
-        }
-    }
-    fprintf(out, "# ===============================\n");
-    fprintf(out, "# %6ld blocks with %ld bytes \n", count, sum);
+   fprintf(out, "# MemFreeListPrint()\n");
+   fprintf(out, "# ===============================\n");
+   for(i=0; i< MEM_ARR_SIZE; i++)
+   {
+      tmp = free_list_size(free_mem_list[i]);
+      if(tmp)
+      {
+         fprintf(out, "# %4ld: %ld\n", i, tmp);
+         sum += tmp*(i);
+         count += tmp;
+      }
+   }
+   fprintf(out, "# ===============================\n");
+   fprintf(out, "# %6ld blocks with %ld bytes \n", count, sum);
 }
 
 

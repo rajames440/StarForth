@@ -39,6 +39,23 @@ Germany
 or via email (address above).
 """
 
+#                                   ***   StarForth   ***
+#
+#   pylib_erun.py- FORTH-79 Standard and ANSI C99 ONLY
+#   Modified by - rajames
+#   Last modified - 2025-10-27T12:40:04.460-04
+#
+#   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+#
+#   This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+#   To the extent possible under law, the author(s) have dedicated all copyright and related
+#   and neighboring rights to this software to the public domain worldwide.
+#   This software is distributed without any warranty.
+#
+#   See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+#
+#   /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/PYTHON/pylib_erun.py
+
 import sys
 import re
 import string
@@ -48,21 +65,21 @@ import subprocess
 import pylib_io
 import pylib_econf
 
-resline_re = re.compile("#.*?:.*")
+
+resline_re     = re.compile("#.*?:.*")
 
 
 class runner(object):
     """
     Class to run a (long-running) command and to return the result.
     """
-
     def __init__(self, cmd):
-
+        
         self.proc = subprocess.Popen(cmd, stdin=None,
                                      stdout=subprocess.PIPE,
                                      close_fds=True)
         self.cmd = cmd
-
+        
     def fileno(self):
         """
         Return the pipe's fileno to support select.
@@ -79,17 +96,17 @@ class runner(object):
         """
         ret = self.proc.poll()
 
-        if ret == None:
+        if ret==None:
             return (False, "")
-
+        
         tmp, tmperr = self.proc.communicate()
 
         if ret and ret != 6:
             # 6 is E result from CPU timeout
-            print
-            "# Warning: '", self.cmd, "' returned status " + \
-                                      repr(ret)
+            print "# Warning: '", self.cmd, "' returned status "+\
+                  repr(ret)
         return (True, tmp)
+
 
 
 class e_res_parser(runner):
@@ -98,31 +115,32 @@ class e_res_parser(runner):
     """
 
     status_trans = \
-        {
-            "ResourceOut": "F",
-            "InputError": "F",
-            "Theorem": "T",
-            "Unsatisfiable": "T",
-            "Unknown": "F",
-            "GaveUp": "F",
-            "CounterSatisfiable": "N",
-            "Satisfiable": "N"
-        }
+    {
+        "ResourceOut"        :"F",
+        "InputError"         :"F",
+        "Theorem"            :"T",
+        "Unsatisfiable"      :"T",
+        "Unknown"            :"F",
+        "GaveUp"             :"F",
+        "CounterSatisfiable" :"N",
+        "Satisfiable"        :"N"
+    }
 
     failure_trans = \
-        {
-            "Resource limit exceeded (memory)": "maxmem",
-            "Resource limit exceeded (time)": "maxtime",
-            "Out of unprocessed clauses!": "incomplete",
-            "User resource limit exceeded!": "incomplete"
-        }
+    {
+        "Resource limit exceeded (memory)": "maxmem",
+        "Resource limit exceeded (time)"  : "maxtime",
+        "Out of unprocessed clauses!"     : "incomplete",
+        "User resource limit exceeded!"   : "incomplete"
+    }
+    
 
-    def __init__(self, time, res_descriptor=[]):
+    def __init__(self, time, res_descriptor =[]):
         """
         Initialize E-Runner object.
         """
         self.res_descriptor = res_descriptor
-        self.time = time
+        self.time    = time
 
     def translate_result(self, e_output):
         """
@@ -138,7 +156,7 @@ class e_res_parser(runner):
         for l in resl:
             mo = resline_re.match(l)
             if mo:
-                key, val = l.split(":", 1)
+                key, val = l.split(":",1)
                 key = key.strip()
                 val = val.strip()
                 resdict[key] = val
@@ -156,11 +174,11 @@ class e_res_parser(runner):
                 reason = "unknown"
 
         try:
-            tmp = resdict["# Total time"]
-            time = float(tmp.split()[0])
+            tmp   = resdict["# Total time"]
+            time  = float(tmp.split()[0])
         except:
             time = "-"
-
+            
         result = [status, reason, time]
 
         for i in self.res_descriptor:
@@ -168,24 +186,24 @@ class e_res_parser(runner):
                 tmp = resdict[i]
             except:
                 tmp = "-"
-            result.append(tmp)
+            result.append(tmp)          
 
         return result
-
+    
     def encode_result(self, e_output, default_time):
         """
         Return a string representing the result status (i.e. a line in
         an E protocol, but without the (unknown) problem name).
         """
         res = self.translate_result(e_output)
-
+        
         if res:
             if res[2] == "-":
                 res[2] = default_time
-            result = "%s %f %s " % \
+            result = "%s %f %s "%\
                      (e_res_parser.status_trans[res[0]], res[2], res[1])
             extra = " ".join([str(i) for i in res[3:]])
-            return result + extra
+            return result+extra
         else:
             return None
 
@@ -196,7 +214,7 @@ class e_runner(runner):
     """
 
     def __init__(self, key, config, prover, args, problem, time,
-                 rawtime=False, res_descriptor=[]):
+        rawtime=False, res_descriptor =[]):
         """
         Initialize E-Runner object.
         """
@@ -204,16 +222,16 @@ class e_runner(runner):
         self.config = config
         self.key = key
         self.rawtime = rawtime
-        self.time = time
+        self.time    = time
         self.problem = problem
         cmd = config.command(prover, args, problem, time, rawtime)
-        print
-        "Command", cmd
+        print "Command", cmd
         runner.__init__(self, cmd)
         self.res_parser = e_res_parser(time, res_descriptor)
 
+
     def __str__(self):
-        return "<e_run:" + self.key + ":" + self.problem + ">"
+        return "<e_run:"+self.key+":"+self.problem+">"
 
     def get_result(self):
         """
@@ -223,8 +241,7 @@ class e_runner(runner):
         status, res = runner.get_result(self)
         if not status:
             return None
-        print
-        res
+        print res
 
         res = self.res_parser.translate_result(res)
 
@@ -240,9 +257,12 @@ class e_runner(runner):
         result = [self.key, self.problem, status, atime, reason, time]
 
         for i in rest:
-            result.append(i)
+            result.append(i)          
 
         return result
+    
+
+
 
 
 if __name__ == '__main__':
@@ -254,24 +274,23 @@ if __name__ == '__main__':
                    "# Generated clauses",
                    "# Clause-clause subsumption calls (NU)"])
     r2 = e_runner("teststrat", c, "eprover", "--tptp3-in -xAuto -tAuto",
-                  "RNG004-1.p", 10,
+                  "RNG004-1.p", 10, 
                   ["# Processed clauses",
                    "# Generated clauses",
-                   "# Clause-clause subsumption calls (NU)"])
+                   "# Clause-clause subsumption calls (NU)"]) 
     r3 = e_runner("teststrat", c, "eprover", "--tptp3-in -xAuto -tAuto",
-                  "SET542-6.p", 10,
+                  "SET542-6.p", 10, 
                   ["# Processed clauses",
                    "# Generated clauses",
                    "# Clause-clause subsumption calls (NU)"])
+   
 
     running = [r1, r2, r3]
-    while len(running) != 0:
+    while len(running)!=0:
         readable = select.select(running, [], [], 1)
-        print
-        readable
+        print readable
         for r in readable[0]:
             result = r.get_result()
             if result:
                 running.remove(r)
-                print
-                result
+                print result

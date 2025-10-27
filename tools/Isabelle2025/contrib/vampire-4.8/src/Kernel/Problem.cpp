@@ -1,11 +1,20 @@
 /*
- * This file is part of the source code of the software program
- * Vampire. It is protected by applicable
- * copyright laws.
- *
- * This source code is distributed under the licence found here
- * https://vprover.github.io/license.html
- * and in the source directory
+                                  ***   StarForth   ***
+
+  Problem.cpp- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:04.369-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/vampire-4.8/src/Kernel/Problem.cpp
  */
 /**
  * @file Kernel/Problem.cpp
@@ -37,13 +46,14 @@ using namespace Kernel;
  *
  * The new object takes ownership of the list @c units.
  */
-Problem::Problem(UnitList *units)
-    : _units(0), _smtlibLogic(SMTLIBLogic::SMT_UNDEFINED) {
-    CALL("Problem::Problem(UnitList*)");
+Problem::Problem(UnitList* units)
+: _units(0), _smtlibLogic(SMTLIBLogic::SMT_UNDEFINED) 
+{
+  CALL("Problem::Problem(UnitList*)");
 
-    initValues();
+  initValues();
 
-    addUnits(units);
+  addUnits(units);
 }
 
 /**
@@ -53,28 +63,31 @@ Problem::Problem(UnitList *units)
  * clauses in the iterator.
  */
 Problem::Problem(ClauseIterator clauses, bool copy)
-    : _units(0) {
-    CALL("Problem::Problem(ClauseIterator,bool)");
+: _units(0)
+{
+  CALL("Problem::Problem(ClauseIterator,bool)");
 
-    initValues();
+  initValues();
 
-    UnitList *units = 0;
-    while (clauses.hasNext()) {
-        Clause *cl = clauses.next();
-        if (copy) {
-            cl = Clause::fromClause(cl);
-        }
-        UnitList::push(cl, units);
+  UnitList* units = 0;
+  while(clauses.hasNext()) {
+    Clause* cl = clauses.next();
+    if(copy) {
+      cl = Clause::fromClause(cl);
     }
-    addUnits(units);
+    UnitList::push(cl, units);
+  }
+  addUnits(units);
+
 }
 
-Problem::~Problem() {
-    CALL("Problem::~Problem");
-    //TODO: decrease reference counter of clauses (but make sure there's no segfault...)
+Problem::~Problem()
+{
+  CALL("Problem::~Problem");
+  //TODO: decrease reference counter of clauses (but make sure there's no segfault...)
 
-    UnitList::destroy(_units);
-    // Don't delete the property as it is owned by Environment
+  UnitList::destroy(_units);
+  // Don't delete the property as it is owned by Environment
 }
 
 /**
@@ -83,17 +96,18 @@ Problem::~Problem() {
  * This function we have to share the initialisation code among different
  * constructors.
  */
-void Problem::initValues() {
-    CALL("Problem::initValues");
+void Problem::initValues()
+{
+  CALL("Problem::initValues");
 
-    _hadIncompleteTransformation = false;
-    _mayHaveEquality = true;
-    _mayHaveFormulas = true;
-    _mayHaveFunctionDefinitions = true;
-    _mayHaveInequalityResolvableWithDeletion = true;
-    _mayHaveXEqualsY = true;
-    _propertyValid = false;
-    _property = env.property;
+  _hadIncompleteTransformation = false;
+  _mayHaveEquality = true;
+  _mayHaveFormulas = true;
+  _mayHaveFunctionDefinitions = true;
+  _mayHaveInequalityResolvableWithDeletion = true;
+  _mayHaveXEqualsY = true;
+  _propertyValid = false;
+  _property = env.property;
 }
 
 /**
@@ -101,24 +115,26 @@ void Problem::initValues() {
  * so that it stays valid, otherwise invalidate the stored knowledge of the
  * problem.
  */
-void Problem::addUnits(UnitList *newUnits) {
-    CALL("Problem::addUnits");
+void Problem::addUnits(UnitList* newUnits)
+{
+  CALL("Problem::addUnits");
 
-    UnitList::Iterator uit(newUnits);
-    while (uit.hasNext()) {
-        Unit *u = uit.next();
-        if (u->isClause()) {
-            static_cast<Clause *>(u)->incRefCnt();
-        }
+  UnitList::Iterator uit(newUnits);
+  while(uit.hasNext()) {
+    Unit* u = uit.next();
+    if(u->isClause()) {
+      static_cast<Clause*>(u)->incRefCnt();
     }
-    _units = UnitList::concat(newUnits, _units);
-    if (_propertyValid) {
-        TIME_TRACE(TimeTrace::PROPERTY_EVALUATION);
-        _property->add(newUnits);
-        readDetailsFromProperty();
-    } else {
-        invalidateEverything();
-    }
+  }
+  _units = UnitList::concat(newUnits, _units);
+  if(_propertyValid) {
+    TIME_TRACE(TimeTrace::PROPERTY_EVALUATION);
+    _property->add(newUnits);
+    readDetailsFromProperty();
+  }
+  else {
+    invalidateEverything();
+  }
 }
 
 /**
@@ -126,14 +142,15 @@ void Problem::addUnits(UnitList *newUnits) {
  * When this function is called, problem can no longer
  * contain formulas.
  */
-ClauseIterator Problem::clauseIterator() const {
-    CALL("Problem::clauseIterator");
+ClauseIterator Problem::clauseIterator() const
+{
+  CALL("Problem::clauseIterator");
 
-    //we first call mayHaveFormulas(). if this returns false, we know there are
-    //no formulas. otherwise we call hasFormulas() which may cause rescanning
-    //the problem property
-    ASS(!mayHaveFormulas() || !hasFormulas());
-    return pvi(getStaticCastIterator<Clause *>(UnitList::Iterator(units())));
+  //we first call mayHaveFormulas(). if this returns false, we know there are
+  //no formulas. otherwise we call hasFormulas() which may cause rescanning
+  //the problem property
+  ASS(!mayHaveFormulas() || !hasFormulas());
+  return pvi( getStaticCastIterator<Clause*>(UnitList::Iterator(units())) );
 }
 
 /**
@@ -144,12 +161,13 @@ ClauseIterator Problem::clauseIterator() const {
  * coming from passing the Problem object as an argument by value rather
  * than by reference.
  */
-Problem *Problem::copy(bool copyClauses) {
-    CALL("Problem::copy/1");
+Problem* Problem::copy(bool copyClauses)
+{
+  CALL("Problem::copy/1");
 
-    Problem * res = new Problem();
-    copyInto(*res, copyClauses);
-    return res;
+  Problem* res = new Problem();
+  copyInto(*res, copyClauses);
+  return res;
 }
 
 /**
@@ -160,44 +178,45 @@ Problem *Problem::copy(bool copyClauses) {
  * coming from passing the Problem object as an argument by value rather
  * than by reference.
  */
-void Problem::copyInto(Problem &tgt, bool copyClauses) {
-    CALL("Problem::copy/2");
+void Problem::copyInto(Problem& tgt, bool copyClauses)
+{
+  CALL("Problem::copy/2");
 
-    tgt.setSMTLIBLogic(getSMTLIBLogic());
+  tgt.setSMTLIBLogic(getSMTLIBLogic());
 
-    if (copyClauses) {
-        UnitList *newUnits = 0;
-        UnitList::Iterator uit(units());
-        while (uit.hasNext()) {
-            Unit *u = uit.next();
-            if (!u->isClause()) {
-                UnitList::push(u, newUnits);
-                continue;
-            }
-            Clause *cl = static_cast<Clause *>(u);
-            Clause *newCl = Clause::fromClause(cl);
-            UnitList::push(newCl, newUnits);
-        }
-        tgt.addUnits(UnitList::reverse(newUnits));
-    } else {
-        tgt.addUnits(UnitList::copy(units()));
+  if(copyClauses) {
+    UnitList* newUnits = 0;
+    UnitList::Iterator uit(units());
+    while(uit.hasNext()) {
+      Unit* u = uit.next();
+      if(!u->isClause()) {
+	UnitList::push(u, newUnits);
+	continue;
+      }
+      Clause* cl = static_cast<Clause*>(u);
+      Clause* newCl = Clause::fromClause(cl);
+      UnitList::push(newCl, newUnits);
     }
-    if (hadIncompleteTransformation()) {
-        tgt.reportIncompleteTransformation();
-    }
-    if (isPropertyUpToDate()) {
-        //if we have an up-to-date property, we just copy it into the
-        //copied object so we save ourselves scanning for the property
-        //in the child
-        tgt._propertyValid = true;
-        //warning: both objects contain a pointer to the same property.
-        //after copying, the property should be treated as strictly read
-        //only.
-        tgt._property = _property;
-        tgt.readDetailsFromProperty();
-    }
+    tgt.addUnits(UnitList::reverse(newUnits));
+  }else {
+    tgt.addUnits(UnitList::copy(units()));
+  }
+  if(hadIncompleteTransformation()) {
+    tgt.reportIncompleteTransformation();
+  }
+  if(isPropertyUpToDate()) {
+    //if we have an up-to-date property, we just copy it into the
+    //copied object so we save ourselves scanning for the property
+    //in the child
+    tgt._propertyValid = true;
+    //warning: both objects contain a pointer to the same property.
+    //after copying, the property should be treated as strictly read
+    //only.
+    tgt._property = _property;
+    tgt.readDetailsFromProperty();
+  }
 
-    //TODO copy the deleted maps
+  //TODO copy the deleted maps
 }
 
 /**
@@ -208,10 +227,11 @@ void Problem::copyInto(Problem &tgt, bool copyClauses) {
  *
  * This information may be used during model output
  */
-void Problem::addTrivialPredicate(unsigned pred, bool assignment) {
-    CALL("Problem::addTrivialPredicate");
+void Problem::addTrivialPredicate(unsigned pred, bool assignment)
+{
+  CALL("Problem::addTrivialPredicate");
 
-    ALWAYS(_trivialPredicates.insert(pred, assignment));
+  ALWAYS(_trivialPredicates.insert(pred, assignment));
 }
 
 /**
@@ -219,11 +239,12 @@ void Problem::addTrivialPredicate(unsigned pred, bool assignment) {
  *
  * This information may be used during model output
  */
-void Problem::addEliminatedFunction(unsigned func, Literal *definition) {
-    CALL("Problem::addEliminatedFunction");
-    ASS(definition->isEquality());
+void Problem::addEliminatedFunction(unsigned func, Literal* definition)
+{
+  CALL("Problem::addEliminatedFunction");
+  ASS(definition->isEquality());
 
-    _deletedFunctions.insert(func, definition);
+  _deletedFunctions.insert(func,definition);
 }
 
 /**
@@ -231,10 +252,11 @@ void Problem::addEliminatedFunction(unsigned func, Literal *definition) {
  *
  * This information may be used during model output
  */
-void Problem::addEliminatedPredicate(unsigned pred, Unit *definition) {
-    CALL("Problem::addEliminatedPredicate");
+void Problem::addEliminatedPredicate(unsigned pred, Unit* definition)
+{
+  CALL("Problem::addEliminatedPredicate");
 
-    _deletedPredicates.insert(pred, definition);
+  _deletedPredicates.insert(pred,definition);
 }
 
 /**
@@ -242,198 +264,215 @@ void Problem::addEliminatedPredicate(unsigned pred, Unit *definition) {
  *
  * This information may be used during model output
  */
-void Problem::addPartiallyEliminatedPredicate(unsigned pred, Unit *definition) {
-    CALL("Problem::addPurePredicateDefinition");
+void Problem::addPartiallyEliminatedPredicate(unsigned pred, Unit* definition)
+{
+  CALL("Problem::addPurePredicateDefinition");
 
-    _partiallyDeletedPredicates.insert(pred, definition);
+  _partiallyDeletedPredicates.insert(pred,definition);
 }
 
 /**
  * Recalculate the property from the current set of formulas
  */
-void Problem::refreshProperty() const {
-    CALL("Problem::refreshProperty");
+void Problem::refreshProperty() const
+{
+  CALL("Problem::refreshProperty");
 
-    TIME_TRACE(TimeTrace::PROPERTY_EVALUATION);
-    ScopedLet<Statistics::ExecutionPhase> phaseLet(env.statistics->phase, Statistics::PROPERTY_SCANNING);
+  TIME_TRACE(TimeTrace::PROPERTY_EVALUATION);
+  ScopedLet<Statistics::ExecutionPhase> phaseLet(env.statistics->phase, Statistics::PROPERTY_SCANNING);
 
-    auto oldProp = _property;
-    _propertyValid = true;
-    _property = Property::scan(_units);
-    if (oldProp) {
-        delete oldProp;
-    }
-    env.property = _property;
-    ASS(_property);
-    _property->setSMTLIBLogic(getSMTLIBLogic());
-    readDetailsFromProperty();
+  auto oldProp = _property;
+  _propertyValid = true;
+  _property = Property::scan(_units);
+  if(oldProp) {
+    delete oldProp;
+  }
+  env.property = _property;
+  ASS(_property);
+  _property->setSMTLIBLogic(getSMTLIBLogic());
+  readDetailsFromProperty();
 }
 
 /**
  * Read the locally stored information from the Property object
  */
-void Problem::readDetailsFromProperty() const {
-    CALL("Problem::readDetailsFromProperty");
+void Problem::readDetailsFromProperty() const
+{
+  CALL("Problem::readDetailsFromProperty");
 
-    _hasFormulas = _property->hasFormulas();
-    _hasEquality = _property->equalityAtoms() != 0;
-    _hasInterpretedOperations = _property->hasInterpretedOperations();
-    _hasNumerals = _property->hasNumerals();
-    _hasFOOL = _property->hasFOOL();
-    _hasPolymorphicSym = _property->hasPolymorphicSym();
-    _quantifiesOverPolymorphicVar = _property->quantifiesOverPolymorphicVar();
-    _hasBoolVar = _property->hasBoolVar();
-#if VHOL
-    _higherOrder = _property->higherOrder();
-    _hasLogicalProxy = _property->hasLogicalProxy();
-    _hasApp = _property->hasApp();
+  _hasFormulas = _property->hasFormulas();
+  _hasEquality = _property->equalityAtoms()!=0;
+  _hasInterpretedOperations = _property->hasInterpretedOperations();
+  _hasNumerals = _property->hasNumerals();
+  _hasFOOL = _property->hasFOOL();
+  _hasPolymorphicSym = _property->hasPolymorphicSym();
+  _quantifiesOverPolymorphicVar = _property->quantifiesOverPolymorphicVar();
+  _hasBoolVar = _property->hasBoolVar();
+#if VHOL  
+  _higherOrder = _property->higherOrder();
+  _hasLogicalProxy = _property->hasLogicalProxy();
+  _hasApp = _property->hasApp();
 #endif
 
-    _mayHaveFormulas = _hasFormulas.value();
-    _mayHaveEquality = _hasEquality.value();
-    _mayHaveFunctionDefinitions = _property->hasProp(Property::PR_HAS_FUNCTION_DEFINITIONS);
-    _mayHaveInequalityResolvableWithDeletion = _property->hasProp(Property::PR_HAS_INEQUALITY_RESOLVABLE_WITH_DELETION);
-    _mayHaveXEqualsY = _property->hasProp(Property::PR_HAS_X_EQUALS_Y);
+  _mayHaveFormulas = _hasFormulas.value();
+  _mayHaveEquality = _hasEquality.value();
+  _mayHaveFunctionDefinitions = _property->hasProp(Property::PR_HAS_FUNCTION_DEFINITIONS);
+  _mayHaveInequalityResolvableWithDeletion = _property->hasProp(Property::PR_HAS_INEQUALITY_RESOLVABLE_WITH_DELETION);
+  _mayHaveXEqualsY = _property->hasProp(Property::PR_HAS_X_EQUALS_Y);
 }
 
 /**
  * Invalidate all the information stored about the problem
  */
-void Problem::invalidateEverything() {
-    CALL("Problem::invalidateEverything");
+void Problem::invalidateEverything()
+{
+  CALL("Problem::invalidateEverything");
 
-    invalidateProperty();
-    _hasFormulas = MaybeBool::UNKNOWN;
-    _hasEquality = MaybeBool::UNKNOWN;
-    _hasInterpretedOperations = MaybeBool::UNKNOWN;
-    _hasNumerals = MaybeBool::UNKNOWN;
-    _hasFOOL = MaybeBool::UNKNOWN;
+  invalidateProperty();
+  _hasFormulas = MaybeBool::UNKNOWN;
+  _hasEquality = MaybeBool::UNKNOWN;
+  _hasInterpretedOperations = MaybeBool::UNKNOWN;
+  _hasNumerals = MaybeBool::UNKNOWN;
+  _hasFOOL = MaybeBool::UNKNOWN;
 #if VHOL
-    _hasApp = MaybeBool::UNKNOWN;
+  _hasApp = MaybeBool::UNKNOWN;
 #endif
-    _mayHaveFormulas = true;
-    _mayHaveEquality = true;
-    _mayHaveFunctionDefinitions = true;
-    _mayHaveInequalityResolvableWithDeletion = true;
-    _mayHaveXEqualsY = true;
+  _mayHaveFormulas = true;
+  _mayHaveEquality = true;
+  _mayHaveFunctionDefinitions = true;
+  _mayHaveInequalityResolvableWithDeletion = true;
+  _mayHaveXEqualsY = true;
 }
 
 /**
  * Invalidate the information about problem that could have been
  * violated by removing some formulas or their parts
  */
-void Problem::invalidateByRemoval() {
-    CALL("Problem::invalidateByRemoval");
+void Problem::invalidateByRemoval()
+{
+  CALL("Problem::invalidateByRemoval");
 
-    invalidateProperty();
-    _hasFormulas.mightBecameFalse();
-    _hasEquality.mightBecameFalse();
-    _hasInterpretedOperations.mightBecameFalse();
-    _hasNumerals.mightBecameFalse();
-    _hasFOOL.mightBecameFalse();
+  invalidateProperty();
+  _hasFormulas.mightBecameFalse();
+  _hasEquality.mightBecameFalse();
+  _hasInterpretedOperations.mightBecameFalse();
+  _hasNumerals.mightBecameFalse();
+  _hasFOOL.mightBecameFalse();
 #if VHOL
-    _hasLogicalProxy.mightBecameFalse();
+  _hasLogicalProxy.mightBecameFalse();
 #endif
-    _hasPolymorphicSym.mightBecameFalse();
-    _quantifiesOverPolymorphicVar.mightBecameFalse();
-    _hasBoolVar.mightBecameFalse();
+  _hasPolymorphicSym.mightBecameFalse();
+  _quantifiesOverPolymorphicVar.mightBecameFalse();
+  _hasBoolVar.mightBecameFalse();
 }
 
 /**
  * Return property corresponding to the current state of the problem
  */
-Property *Problem::getProperty() const {
-    CALL("Problem::getProperty");
+Property* Problem::getProperty() const
+{
+  CALL("Problem::getProperty");
 
-    if (!_propertyValid) {
-        refreshProperty();
-    }
-    ASS(_property);
+  if(!_propertyValid) {
+    refreshProperty();
+  }
+  ASS(_property);
 
-    return _property;
+  return _property;
 }
 
 
-bool Problem::hasFormulas() const {
-    CALL("Problem::hasFormulas");
+bool Problem::hasFormulas() const
+{
+  CALL("Problem::hasFormulas");
 
-    if (!mayHaveFormulas()) { return false; }
-    if (!_hasFormulas.known()) { refreshProperty(); }
-    ASS(_hasFormulas.known());
-    return _hasFormulas.value();
+  if(!mayHaveFormulas()) { return false; }
+  if(!_hasFormulas.known()) { refreshProperty(); }  
+  ASS(_hasFormulas.known());
+  return _hasFormulas.value();
 }
 
-bool Problem::hasEquality() const {
-    CALL("Problem::hasEquality");
+bool Problem::hasEquality() const
+{
+  CALL("Problem::hasEquality");
 
-    if (!mayHaveEquality()) { return false; }
-    if (!_hasEquality.known()) { refreshProperty(); }
-    return _hasEquality.value();
+  if(!mayHaveEquality()) { return false; }
+  if(!_hasEquality.known()) { refreshProperty(); }
+  return _hasEquality.value();
 }
 
-bool Problem::hasInterpretedOperations() const {
-    CALL("Problem::hasInterpretedOperations");
+bool Problem::hasInterpretedOperations() const
+{
+  CALL("Problem::hasInterpretedOperations");
 
-    if (!_hasInterpretedOperations.known()) { refreshProperty(); }
-    return _hasInterpretedOperations.value();
+  if(!_hasInterpretedOperations.known()) { refreshProperty(); }
+  return _hasInterpretedOperations.value();
 }
 
-bool Problem::hasNumerals() const {
-    CALL("Problem::hasNumerals");
+bool Problem::hasNumerals() const
+{
+  CALL("Problem::hasNumerals");
 
-    if (!_hasNumerals.known()) { refreshProperty(); }
-    return _hasNumerals.value();
+  if(!_hasNumerals.known()) { refreshProperty(); }
+  return _hasNumerals.value();
 }
 
-bool Problem::hasFOOL() const {
-    CALL("Problem::hasFOOL");
+bool Problem::hasFOOL() const
+{
+  CALL("Problem::hasFOOL");
 
-    if (!_hasFOOL.known()) { refreshProperty(); }
-    return _hasFOOL.value();
+  if(!_hasFOOL.known()) { refreshProperty(); }
+  return _hasFOOL.value();
 }
 
 #if VHOL
-bool Problem::hasApp() const {
-    CALL("Problem::hasApp");
+bool Problem::hasApp() const
+{
+  CALL("Problem::hasApp");
 
-    if (!_hasApp.known()) { refreshProperty(); }
-    return _hasApp.value();
+  if(!_hasApp.known()) { refreshProperty(); }
+  return _hasApp.value();
 }
 
-bool Problem::hasLogicalProxy() const {
-    CALL("Problem::hasLogicalProxy");
+bool Problem::hasLogicalProxy() const
+{
+  CALL("Problem::hasLogicalProxy");
 
-    if (!_hasLogicalProxy.known()) { refreshProperty(); }
-    return _hasLogicalProxy.value();
+  if(!_hasLogicalProxy.known()) { refreshProperty(); }
+  return _hasLogicalProxy.value();
 }
 
-bool Problem::higherOrder() const {
-    CALL("Problem::hasPolymorphicSym");
+bool Problem::higherOrder() const
+{
+  CALL("Problem::hasPolymorphicSym");
 
-    if (!_higherOrder.known()) { refreshProperty(); }
-    return _higherOrder.value();
+  if(!_higherOrder.known()) { refreshProperty(); }
+  return _higherOrder.value();
 }
 #endif
 
-bool Problem::hasBoolVar() const {
-    CALL("Problem::hasBoolVar");
+bool Problem::hasBoolVar() const
+{
+  CALL("Problem::hasBoolVar");
 
-    if (!_hasBoolVar.known()) { refreshProperty(); }
-    return _hasBoolVar.value();
+  if(!_hasBoolVar.known()) { refreshProperty(); }
+  return _hasBoolVar.value();
 }
 
-bool Problem::hasPolymorphicSym() const {
-    CALL("Problem::hasPolymorphicSym");
+bool Problem::hasPolymorphicSym() const
+{
+  CALL("Problem::hasPolymorphicSym");
 
-    if (!_hasPolymorphicSym.known()) { refreshProperty(); }
-    return _hasPolymorphicSym.value();
+  if(!_hasPolymorphicSym.known()) { refreshProperty(); }
+  return _hasPolymorphicSym.value();
 }
 
-bool Problem::quantifiesOverPolymorphicVar() const {
-    CALL(" Problem::quantifiesOverPolymorphicVar");
+bool Problem::quantifiesOverPolymorphicVar() const
+{
+  CALL(" Problem::quantifiesOverPolymorphicVar");
 
-    if (!_quantifiesOverPolymorphicVar.known()) { refreshProperty(); }
-    return _quantifiesOverPolymorphicVar.value();
+  if(!_quantifiesOverPolymorphicVar.known()) { refreshProperty(); }
+  return _quantifiesOverPolymorphicVar.value();
 }
 
 
@@ -441,13 +480,14 @@ bool Problem::quantifiesOverPolymorphicVar() const {
 ///////////////////////
 // debugging
 //
-void Problem::assertValid() {
-    CALL("Problem::assertValid");
+void Problem::assertValid()
+{
+  CALL("Problem::assertValid");
 
-    UnitList::Iterator uit(units());
-    while (uit.hasNext()) {
-        Unit *u = uit.next();
-        ASSERT_VALID(*u);
-    }
+  UnitList::Iterator uit(units());
+  while(uit.hasNext()) {
+    Unit* u = uit.next();
+    ASSERT_VALID(*u);
+  }
 }
 #endif

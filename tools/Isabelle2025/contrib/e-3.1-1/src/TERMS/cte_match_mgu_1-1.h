@@ -1,27 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-File  : cte_match_mgu_1-1.h
+  cte_match_mgu_1-1.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.454-04
 
-Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Interface to simple, non-indexed 1-1 match and unification
-  routines on shared terms (and unshared terms with shared
-  variables).
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 1998, 1999 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-Changes
-
-<1> Wed Mar 11 16:17:33 MET 1998
-    New
-
------------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/TERMS/cte_match_mgu_1-1.h
+ */
 
 #ifndef CTE_MATCH_MGU_1_1
 
@@ -34,9 +28,9 @@ Changes
 /*                    Data type declarations                           */
 /*---------------------------------------------------------------------*/
 typedef enum which_term {
-    NoTerm = 0,
-    LeftTerm = 1,
-    RightTerm = 2
+   NoTerm    = 0,
+   LeftTerm  = 1,
+   RightTerm = 2
 } UnifTermSide;
 
 typedef enum oracle_unif_result {
@@ -61,7 +55,7 @@ extern long UnifAttempts;
 extern long UnifSuccesses;
 #endif
 
-PERF_CTR_DECL (MguTimer);
+PERF_CTR_DECL(MguTimer);
 
 #define MATCH_FAILED -1
 
@@ -69,14 +63,11 @@ bool OccurCheck(restrict Term_p term, restrict Term_p var);
 
 // FO matching and unification
 bool SubstComputeMatch(Term_p matcher, Term_p to_match, Subst_p subst);
-
 bool SubstComputeMgu(Term_p t1, Term_p t2, Subst_p subst);
 
 // HO matching and unification
-int PartiallyMatchVar(Term_p var_matcher, Term_p to_match, Sig_p sig, bool perform_OccursCheck);
-
-int SubstComputeMatchHO(Term_p matcher, Term_p to_match, Subst_p subst);
-
+int  PartiallyMatchVar(Term_p var_matcher, Term_p to_match, Sig_p sig, bool perform_OccursCheck);
+int  SubstComputeMatchHO(Term_p matcher, Term_p to_match, Subst_p subst);
 UnificationResult SubstComputeMguHO(Term_p t1, Term_p t2, Subst_p subst);
 
 
@@ -104,3 +95,8 @@ bool SubstMguComplete(Term_p t, Term_p s, Subst_p subst);
 /*---------------------------------------------------------------------*/
 /*                        End of File                                  */
 /*---------------------------------------------------------------------*/
+
+
+
+
+

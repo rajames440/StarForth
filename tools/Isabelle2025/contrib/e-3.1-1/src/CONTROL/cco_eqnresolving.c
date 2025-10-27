@@ -1,27 +1,24 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-File  : cco_eqnresolving.c
+  cco_eqnresolving.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.145-04
 
-Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Functions controlling equality resolution.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 1998, 1999 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-Changes
-
-<1> Mon Jun  8 17:17:57 MET DST 1998
-    New
-
------------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/CONTROL/cco_eqnresolving.c
+ */
 
 #include "cco_eqnresolving.h"
+
 
 
 /*---------------------------------------------------------------------*/
@@ -37,6 +34,7 @@ Changes
 /*---------------------------------------------------------------------*/
 /*                         Internal Functions                          */
 /*---------------------------------------------------------------------*/
+
 
 
 /*---------------------------------------------------------------------*/
@@ -59,40 +57,44 @@ Changes
 /----------------------------------------------------------------------*/
 
 long ComputeAllEqnResolvents(TB_p bank, Clause_p clause, ClauseSet_p
-                             store, VarBank_p freshvars) {
-    Clause_p resolvent;
-    Eqn_p test;
-    ClausePos_p pos;
-    long resolv_count = 0;
-    PStack_p res_cls = PStackAlloc();
+              store, VarBank_p freshvars)
+{
+   Clause_p    resolvent;
+   Eqn_p       test;
+   ClausePos_p pos;
+   long        resolv_count = 0;
+   PStack_p    res_cls = PStackAlloc();
 
-    if (clause->neg_lit_no && !ClauseQueryProp(clause, CPNoGeneration)) {
-        pos = ClausePosAlloc();
+   if(clause->neg_lit_no && !ClauseQueryProp(clause,CPNoGeneration))
+   {
+      pos = ClausePosAlloc();
 
-        test = ClausePosFirstEqResLiteral(clause, pos);
+      test = ClausePosFirstEqResLiteral(clause, pos);
 
-        while (test) {
-            bool inf_is_ho = false;
-            UNUSED(ComputeEqRes(bank, pos, freshvars, &inf_is_ho, res_cls));
+      while(test)
+      {
+         bool inf_is_ho = false;
+         UNUSED(ComputeEqRes(bank, pos, freshvars, &inf_is_ho, res_cls));
 
-            while (!PStackEmpty(res_cls)) {
-                resolvent = PStackPopP(res_cls);
-                resolv_count++;
-                resolvent->proof_depth = clause->proof_depth + 1;
-                resolvent->proof_size = clause->proof_size + 1;
-                ClauseSetTPTPType(resolvent, ClauseQueryTPTPType(clause));
-                ClauseSetProp(resolvent, ClauseGiveProps(clause, CPIsSOS));
-                DocClauseCreationDefault(resolvent, inf_eres, clause, NULL);
-                ClausePushDerivation(resolvent, inf_is_ho ? DPSetIsHO(DCEqRes) : DCEqRes,
-                                     clause, NULL);
-                ClauseSetInsert(store, resolvent);
-            }
-            test = ClausePosNextEqResLiteral(pos);
-        }
-        ClausePosFree(pos);
-    }
-    PStackFree(res_cls);
-    return resolv_count;
+         while(!PStackEmpty(res_cls))
+         {
+            resolvent = PStackPopP(res_cls);
+            resolv_count++;
+            resolvent->proof_depth = clause->proof_depth+1;
+            resolvent->proof_size  = clause->proof_size+1;
+            ClauseSetTPTPType(resolvent, ClauseQueryTPTPType(clause));
+            ClauseSetProp(resolvent, ClauseGiveProps(clause, CPIsSOS));
+            DocClauseCreationDefault(resolvent, inf_eres, clause, NULL);
+            ClausePushDerivation(resolvent, inf_is_ho ? DPSetIsHO(DCEqRes) : DCEqRes, 
+                                 clause, NULL);
+            ClauseSetInsert(store, resolvent);
+         }
+         test = ClausePosNextEqResLiteral(pos);
+      }
+      ClausePosFree(pos);
+   }
+   PStackFree(res_cls);
+   return resolv_count;
 }
 
 /*-----------------------------------------------------------------------
@@ -111,49 +113,56 @@ long ComputeAllEqnResolvents(TB_p bank, Clause_p clause, ClauseSet_p
 /----------------------------------------------------------------------*/
 
 long ClauseERNormalizeVar(TB_p bank, Clause_p clause, ClauseSet_p
-                          store, VarBank_p freshvars, bool strong) {
-    long count = 0;
+           store, VarBank_p freshvars, bool strong)
+{
+   long count = 0;
 
-    if (clause->neg_lit_no && !ClauseQueryProp(clause, CPNoGeneration)) {
-        Eqn_p lit;
-        Clause_p handle;
-        ClausePos_p pos = ClausePosAlloc();
-        bool found = true;
+   if(clause->neg_lit_no && !ClauseQueryProp(clause,CPNoGeneration))
+   {
+      Eqn_p       lit;
+      Clause_p    handle;
+      ClausePos_p pos = ClausePosAlloc();
+      bool        found = true;
 
-        while (found) {
-            found = false;
-            for (lit = clause->literals; lit; lit = lit->next) {
-                if (EqnIsNegative(lit) &&
-                    (EqnIsPureVar(lit) || (strong && EqnIsPartVar(lit)))) {
-                    pos->clause = clause;
-                    pos->literal = lit;
-                    bool is_ho = false;
-                    handle = ComputeEqRes(bank, pos, freshvars, &is_ho, NULL);
-                    if (handle) {
-                        found = true;
-                        count++;
-                        clause->proof_depth++;
-                        clause->proof_size++;
-                        EqnListFree(clause->literals);
-                        clause->literals = handle->literals;
-                        ClauseRecomputeLitCounts(clause);
-                        handle->literals = NULL;
-                        ClauseFree(handle);
-                        DocClauseModificationDefault(clause, inf_eres, clause);
-                        ClausePushDerivation(clause,
-                                             is_ho ? DPSetIsHO(DCDesEqRes) : DCDesEqRes,
-                                             NULL, NULL);
-                        break;
-                    }
-                }
+      while(found)
+      {
+         found = false;
+         for(lit = clause->literals; lit; lit = lit->next)
+         {
+            if(EqnIsNegative(lit)&&
+               (EqnIsPureVar(lit) || (strong&&EqnIsPartVar(lit))))
+            {
+               pos->clause  = clause;
+               pos->literal = lit;
+               bool is_ho = false;
+               handle = ComputeEqRes(bank, pos, freshvars, &is_ho, NULL);
+               if(handle)
+               {
+                  found = true;
+                  count++;
+                  clause->proof_depth++;
+                  clause->proof_size++;
+                  EqnListFree(clause->literals);
+                  clause->literals = handle->literals;
+                  ClauseRecomputeLitCounts(clause);
+                  handle->literals = NULL;
+                  ClauseFree(handle);
+                  DocClauseModificationDefault(clause, inf_eres, clause);
+                  ClausePushDerivation(clause, 
+                                       is_ho ? DPSetIsHO(DCDesEqRes) : DCDesEqRes, 
+                                       NULL, NULL);
+                  break;
+               }
             }
-        }
-        if (count) {
-            ClauseSetInsert(store, clause);
-        }
-        ClausePosFree(pos);
-    }
-    return count;
+         }
+      }
+      if(count)
+      {
+         ClauseSetInsert(store, clause);
+      }
+      ClausePosFree(pos);
+   }
+   return count;
 }
 
 /*---------------------------------------------------------------------*/

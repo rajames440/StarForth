@@ -1,3 +1,22 @@
+/*
+                                  ***   StarForth   ***
+
+  DAG-symb.h- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:02.578-04
+
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
+
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/verit-2021.06.2-rmx-1/src/src/symbolic/DAG-symb.h
+ */
+
 #ifndef DAG_SYMB_H
 #define DAG_SYMB_H
 
@@ -41,18 +60,19 @@ typedef unsigned Tsymb_type;
 
 /**
    \brief Structure to represent symbols of DAGs */
-typedef struct TSsymb {
-    Tsymb_type type; /*< identifies the symbol kind */
-    Tsort sort; /*< sort of the symbol */
-    unsigned hash_key; /*< result of hash function */
-    union {
-        char *name; /*< symbol name; overloading is possible */
-        mpz_t mpz;
-        mpq_t mpq;
-    } value;
-
-    /* TODO: these should be removed at some point */
-    int misc; /*< placeholder for clients */
+typedef struct TSsymb
+{
+	Tsymb_type type; /*< identifies the symbol kind */
+	Tsort sort; /*< sort of the symbol */
+	unsigned hash_key; /*< result of hash function */
+	union
+	{
+		char* name; /*< symbol name; overloading is possible */
+		mpz_t mpz;
+		mpq_t mpq;
+	} value;
+	/* TODO: these should be removed at some point */
+	int misc; /*< placeholder for clients */
 } TSsymb;
 
 TSstack(_Ssymb, TSsymb);
@@ -115,13 +135,11 @@ extern Tstack_Ssymb DAG_symb_stack;
 /**
    \brief Initializes DAG-symb module */
 extern void DAG_symb_init(void);
-
 /**
    \brief Closes DAG_symb module */
 extern void DAG_symb_done(void);
 
-typedef void (*TDAG_symb_hook_resize)(unsigned old, unsignednew);
-
+typedef void (*TDAG_symb_hook_resize)(unsigned old, unsigned new);
 typedef void (*TDAG_symb_hook_free)(Tsymb);
 
 /**
@@ -153,7 +171,7 @@ extern void DAG_symb_set_hook_free(TDAG_symb_hook_free hook_free);
    \return returns the declared symbol
    \note Declares a new symbol
    \note name is not freed in the call */
-extern Tsymb DAG_symb_new(const char *name, Tsymb_type type, Tsort sort);
+extern Tsymb DAG_symb_new(const char* name, Tsymb_type type, Tsort sort);
 
 /**
    \brief Gets symbol with given name and sort.
@@ -165,7 +183,7 @@ extern Tsymb DAG_symb_new(const char *name, Tsymb_type type, Tsort sort);
    subsumes <b>sort2</b> and <b>sort2</b> subsumes <b>sort</b>.
    Returns NULL if there are 0 or several candidates, and the
    candidate symbol otherwise */
-extern Tsymb DAG_symb_lookup_sort(char *name, Tsort sort);
+extern Tsymb DAG_symb_lookup_sort(char* name, Tsort sort);
 
 /**
    \brief Specialized constructor
@@ -210,7 +228,7 @@ extern Tsymb DAG_symb_predicate(Tsort sort);
    \remark PDAG and sort are used for taking the right symbol if name
    is overloaded */
 extern Tsymb DAG_symb_lookup(
-    char *name, unsigned nb_arg, Tsort *Psort, Tsort sort);
+	char* name, unsigned nb_arg, Tsort* Psort, Tsort sort);
 
 /**
    \brief returns sort of application of symb to arguments of sort
@@ -219,27 +237,18 @@ extern Tsymb DAG_symb_lookup(
    \param n the number of arguments
    \param Psort the argument sorts
    \return DAG_SORT_NULL if it cannot be applied */
-extern Tsort DAG_symb_check(Tsymb, unsigned, Tsort *);
+extern Tsort DAG_symb_check(Tsymb, unsigned, Tsort*);
 
 extern Tsymb DAG_symb_integer(long value);
-
 extern Tsymb DAG_symb_integer_mpz(mpz_t mpz);
-
-extern Tsymb DAG_symb_integer_str(char *value);
-
-extern Tsymb DAG_symb_binary_str(char *value);
-
-extern Tsymb DAG_symb_hex_str(char *value);
-
+extern Tsymb DAG_symb_integer_str(char* value);
+extern Tsymb DAG_symb_binary_str(char* value);
+extern Tsymb DAG_symb_hex_str(char* value);
 extern Tsymb DAG_symb_rational(long num, unsigned long den);
-
 extern Tsymb DAG_symb_rational_mpq(mpq_t mpq);
-
-extern Tsymb DAG_symb_decimal_str(char *value);
-
-extern Tsymb DAG_symb_rational_str(char *value);
-
-extern Tsymb DAG_symb_str(char *value);
+extern Tsymb DAG_symb_decimal_str(char* value);
+extern Tsymb DAG_symb_rational_str(char* value);
+extern Tsymb DAG_symb_str(char* value);
 
 /*
   --------------------------------------------------------------
@@ -248,7 +257,7 @@ extern Tsymb DAG_symb_str(char *value);
 */
 
 /** \brief stores the bitmask of each function symbol */
-extern unsigned long long int *symb_mask;
+extern unsigned long long int* symb_mask;
 
 /**
    \brief prints the symbol as it should appear in a text file
@@ -256,6 +265,6 @@ extern unsigned long long int *symb_mask;
    \param n the number of characters available in the buffer
    \param str the buffer to print to
    \remark generates an error if does not fit the buffer */
-extern void DAG_symb_snprint(Tsymb symb, unsigned n, char *str);
+extern void DAG_symb_snprint(Tsymb symb, unsigned n, char* str);
 
 #endif

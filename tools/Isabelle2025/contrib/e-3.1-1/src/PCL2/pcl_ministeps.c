@@ -1,25 +1,21 @@
-/*-----------------------------------------------------------------------
+/*
+                                  ***   StarForth   ***
 
-File  : pcl_ministeps.c
+  pcl_ministeps.c- FORTH-79 Standard and ANSI C99 ONLY
+  Modified by - rajames
+  Last modified - 2025-10-27T12:40:04.096-04
 
-Author: Stephan Schulz
+  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
-Contents
+  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  To the extent possible under law, the author(s) have dedicated all copyright and related
+  and neighboring rights to this software to the public domain worldwide.
+  This software is distributed without any warranty.
 
-  Individual PCL steps and related stuff.
+  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
 
-  Copyright 1998, 1999, 2002 by the author.
-  This code is released under the GNU General Public Licence and
-  the GNU Lesser General Public License.
-  See the file COPYING in the main E directory for details..
-  Run "eprover -h" for contact information.
-
-Changes
-
-<1> Wed Jul 10 21:14:29 MEST 2002
-    Ripped from pcl_steps.c
-
------------------------------------------------------------------------*/
+  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/e-3.1-1/src/PCL2/pcl_ministeps.c
+ */
 
 #include "pcl_ministeps.h"
 
@@ -39,6 +35,7 @@ Changes
 /*---------------------------------------------------------------------*/
 
 
+
 /*---------------------------------------------------------------------*/
 /*                         Exported Functions                          */
 /*---------------------------------------------------------------------*/
@@ -56,21 +53,27 @@ Changes
 //
 /----------------------------------------------------------------------*/
 
-void PCLMiniStepFree(PCLMiniStep_p junk) {
-    assert(junk && junk->id && junk->just);
+void PCLMiniStepFree(PCLMiniStep_p junk)
+{
+   assert(junk && junk->id && junk->just);
 
-    if (PCLStepIsFOF(junk)) {
-        /* Formua is garbage collected */
-    } else {
-        if (junk->logic.clause) {
-            MiniClauseFree(junk->logic.clause);
-        }
-    }
-    PCLMiniExprFree(junk->just);
-    if (junk->extra) {
-        FREE(junk->extra);
-    }
-    PCLMiniStepCellFree(junk);
+   if(PCLStepIsFOF(junk))
+   {
+      /* Formua is garbage collected */
+   }
+   else
+   {
+      if(junk->logic.clause)
+      {
+         MiniClauseFree(junk->logic.clause);
+      }
+   }
+   PCLMiniExprFree(junk->just);
+   if(junk->extra)
+   {
+      FREE(junk->extra);
+   }
+   PCLMiniStepCellFree(junk);
 }
 
 
@@ -86,48 +89,59 @@ void PCLMiniStepFree(PCLMiniStep_p junk) {
 //
 /----------------------------------------------------------------------*/
 
-PCLMiniStep_p PCLMiniStepParse(Scanner_p in, TB_p bank) {
-    PCLMiniStep_p handle = PCLMiniStepCellAlloc();
+PCLMiniStep_p PCLMiniStepParse(Scanner_p in, TB_p bank)
+{
+   PCLMiniStep_p handle = PCLMiniStepCellAlloc();
 
-    assert(in);
-    assert(bank);
+   assert(in);
+   assert(bank);
 
-    handle->bank = bank;
-    handle->id = ParseInt(in);
-    if (TestInpTok(in, Fullstop)) {
-        AktTokenError(in,
-                      "No compound PCL identifiers allowed in this mode",
-                      false);
-    }
-    AcceptInpTok(in, Colon);
-    handle->properties = PCLParseExternalType(in);
-    AcceptInpTok(in, Colon);
+   handle->bank = bank;
+   handle->id = ParseInt(in);
+   if(TestInpTok(in, Fullstop))
+   {
+      AktTokenError(in,
+          "No compound PCL identifiers allowed in this mode",
+          false);
+   }
+   AcceptInpTok(in, Colon);
+   handle->properties = PCLParseExternalType(in);
+   AcceptInpTok(in, Colon);
 
-    if (SupportShellPCL &&TestInpTok(in, Colon)) {
-        handle->logic.clause = NULL;
-        PCLStepSetProp(handle, PCLIsShellStep);
-    } else if (TestInpTok(in, OpenSquare)) {
-        handle->logic.clause = MinifyClause(ClausePCLParse(in, bank));
-        PCLStepDelProp(handle, PCLIsFOFStep);
-    } else {
-        handle->logic.formula = TFormulaTPTPParse(in, bank);
-        PCLStepSetProp(handle, PCLIsFOFStep);
-    }
-    AcceptInpTok(in, Colon);
-    handle->just = PCLMiniExprParse(in);
-    if (TestInpTok(in, Colon)) {
-        NextToken(in);
-        CheckInpTok(in, SQString);
-        handle->extra = DStrCopy(AktToken(in)->literal);
-        NextToken(in);
-    } else {
-        handle->extra = NULL;
-    }
-    PCLStepDelProp(handle, PCLIsProofStep);
-    if (handle->just->op == PCLOpInitial) {
-        PCLStepSetProp(handle, PCLIsInitial);
-    }
-    return handle;
+   if(SupportShellPCL && TestInpTok(in, Colon))
+   {
+      handle->logic.clause = NULL;
+      PCLStepSetProp(handle, PCLIsShellStep);
+   }
+   else if(TestInpTok(in, OpenSquare))
+   {
+      handle->logic.clause = MinifyClause(ClausePCLParse(in, bank));
+      PCLStepDelProp(handle, PCLIsFOFStep);
+   }
+   else
+   {
+      handle->logic.formula = TFormulaTPTPParse(in, bank);
+      PCLStepSetProp(handle, PCLIsFOFStep);
+   }
+   AcceptInpTok(in, Colon);
+   handle->just = PCLMiniExprParse(in);
+   if(TestInpTok(in, Colon))
+   {
+      NextToken(in);
+      CheckInpTok(in, SQString);
+      handle->extra = DStrCopy(AktToken(in)->literal);
+      NextToken(in);
+   }
+   else
+   {
+      handle->extra = NULL;
+   }
+   PCLStepDelProp(handle, PCLIsProofStep);
+   if(handle->just->op == PCLOpInitial)
+   {
+      PCLStepSetProp(handle, PCLIsInitial);
+   }
+   return handle;
 }
 
 
@@ -143,24 +157,30 @@ PCLMiniStep_p PCLMiniStepParse(Scanner_p in, TB_p bank) {
 //
 /----------------------------------------------------------------------*/
 
-void PCLMiniStepPrint(FILE *out, PCLMiniStep_p step, TB_p bank) {
-    assert(step);
+void PCLMiniStepPrint(FILE* out, PCLMiniStep_p step, TB_p bank)
+{
+   assert(step);
 
-    fprintf(out, "%6ld : ", step->id);
-    PCLPrintExternalType(out, step->properties);
-    fputs(" : ", out);
-    if (!PCLStepIsShell(step)) {
-        if (PCLStepIsFOF(step)) {
-            TFormulaTPTPPrint(out, step->bank, step->logic.formula, true, true);
-        } else {
-            MiniClausePCLPrint(out, step->logic.clause, bank);
-        }
-    }
-    fputs(" : ", out);
-    PCLMiniExprPrint(out, step->just);
-    if (step->extra) {
-        fprintf(out, " : %s", step->extra);
-    }
+   fprintf(out, "%6ld : ", step->id);
+   PCLPrintExternalType(out, step->properties);
+   fputs(" : ", out);
+   if(!PCLStepIsShell(step))
+   {
+      if(PCLStepIsFOF(step))
+      {
+         TFormulaTPTPPrint(out, step->bank, step->logic.formula, true, true);
+      }
+      else
+      {
+         MiniClausePCLPrint(out, step->logic.clause, bank);
+      }
+   }
+   fputs(" : ", out);
+   PCLMiniExprPrint(out, step->just);
+   if(step->extra)
+   {
+      fprintf(out, " : %s", step->extra);
+   }
 }
 
 
@@ -176,30 +196,41 @@ void PCLMiniStepPrint(FILE *out, PCLMiniStep_p step, TB_p bank) {
 //
 /----------------------------------------------------------------------*/
 
-void PCLMiniStepPrintTSTP(FILE *out, PCLMiniStep_p step, TB_p bank) {
-    assert(step);
+void PCLMiniStepPrintTSTP(FILE* out, PCLMiniStep_p step, TB_p bank)
+{
+   assert(step);
 
-    if (PCLStepIsClausal(step)) {
-        fprintf(out, "cnf(%ld,%s,", step->id,
-                PCLPropToTSTPType(step->properties));
-        if (PCLStepIsShell(step)) {
-        } else {
-            MiniClauseTSTPCorePrint(out, step->logic.clause, bank);
-        }
-    } else {
-        fprintf(out, "fof(%ld, %s,", step->id,
-                PCLPropToTSTPType(step->properties));
-        if (PCLStepIsShell(step)) {
-        } else {
-            TFormulaTPTPPrint(out, step->bank, step->logic.formula, true, true);
-        }
-    }
-    fputc(',', out);
-    PCLExprPrintTSTP(out, step->just, true);
-    if (step->extra) {
-        fprintf(out, ",[%s]", step->extra);
-    }
-    fputs(").", out);
+   if(PCLStepIsClausal(step))
+   {
+      fprintf(out, "cnf(%ld,%s,",step->id,
+              PCLPropToTSTPType(step->properties));
+      if(PCLStepIsShell(step))
+      {
+      }
+      else
+      {
+         MiniClauseTSTPCorePrint(out, step->logic.clause, bank);
+      }
+   }
+   else
+   {
+      fprintf(out, "fof(%ld, %s,", step->id,
+              PCLPropToTSTPType(step->properties));
+      if(PCLStepIsShell(step))
+      {
+      }
+      else
+      {
+         TFormulaTPTPPrint(out, step->bank, step->logic.formula, true, true);
+      }
+   }
+   fputc(',', out);
+   PCLExprPrintTSTP(out, step->just, true);
+   if(step->extra)
+   {
+      fprintf(out, ",[%s]", step->extra);
+   }
+   fputs(").", out);
 }
 
 
@@ -215,22 +246,27 @@ void PCLMiniStepPrintTSTP(FILE *out, PCLMiniStep_p step, TB_p bank) {
 //
 /----------------------------------------------------------------------*/
 
-void PCLMiniStepPrintFormat(FILE *out, PCLMiniStep_p step, TB_p bank,
-                            OutputFormatType format) {
-    switch (format) {
-        case pcl_format:
-            PCLMiniStepPrint(out, step, bank);
-            break;
-        case tstp_format:
-            PCLMiniStepPrintTSTP(out, step, bank);
-            break;
-        default:
-            assert(false);
-            break;
-    }
+void PCLMiniStepPrintFormat(FILE* out, PCLMiniStep_p step, TB_p bank,
+                            OutputFormatType format)
+{
+   switch(format)
+   {
+   case pcl_format:
+    PCLMiniStepPrint(out, step, bank);
+    break;
+   case tstp_format:
+    PCLMiniStepPrintTSTP(out, step, bank);
+    break;
+   default:
+    assert(false);
+    break;
+   }
 }
 
 
 /*---------------------------------------------------------------------*/
 /*                        End of File                                  */
 /*---------------------------------------------------------------------*/
+
+
+

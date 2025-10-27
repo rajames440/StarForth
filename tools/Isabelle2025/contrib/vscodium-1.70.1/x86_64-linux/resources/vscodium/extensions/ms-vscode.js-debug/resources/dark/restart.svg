@@ -1,5 +1,22 @@
+<!--
+  -                                  ***   StarForth   ***
+  -
+  -  restart.svg- FORTH-79 Standard and ANSI C99 ONLY
+  -  Modified by - rajames
+  -  Last modified - 2025-10-27T12:40:04.555-04
+  -
+  -  Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
+  -
+  -  This work is released into the public domain under the Creative Commons Zero v1.0 Universal license.
+  -  To the extent possible under law, the author(s) have dedicated all copyright and related
+  -  and neighboring rights to this software to the public domain worldwide.
+  -  This software is distributed without any warranty.
+  -
+  -  See <http://creativecommons.org/publicdomain/zero/1.0/> for more information.
+  -
+  -  /home/rajames/CLionProjects/StarForth/tools/Isabelle2025/contrib/vscodium-1.70.1/x86_64-linux/resources/vscodium/extensions/ms-vscode.js-debug/resources/dark/restart.svg
+  -->
+
 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path fill-rule="evenodd" clip-rule="evenodd"
-          d="M12.75 8C12.75 10.4853 10.7353 12.5 8.24999 12.5C6.41795 12.5 4.84162 11.4052 4.13953 9.83416L2.74882 10.399C3.67446 12.5186 5.78923 14 8.24999 14C11.5637 14 14.25 11.3137 14.25 8C14.25 4.68629 11.5637 2 8.24999 2C6.3169 2 4.59732 2.91418 3.5 4.3338V2.5H2V6.5L2.75 7.25H6.25V5.75H4.35201C5.13008 4.40495 6.58436 3.5 8.24999 3.5C10.7353 3.5 12.75 5.51472 12.75 8Z"
-          fill="#89D185"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M12.75 8C12.75 10.4853 10.7353 12.5 8.24999 12.5C6.41795 12.5 4.84162 11.4052 4.13953 9.83416L2.74882 10.399C3.67446 12.5186 5.78923 14 8.24999 14C11.5637 14 14.25 11.3137 14.25 8C14.25 4.68629 11.5637 2 8.24999 2C6.3169 2 4.59732 2.91418 3.5 4.3338V2.5H2V6.5L2.75 7.25H6.25V5.75H4.35201C5.13008 4.40495 6.58436 3.5 8.24999 3.5C10.7353 3.5 12.75 5.51472 12.75 8Z" fill="#89D185"/>
 </svg>
