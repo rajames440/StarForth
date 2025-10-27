@@ -103,7 +103,7 @@ The posterior feeds back into temperature and scheduling weights.
 - **Adaptive window**: perform a gauge study (ANOVA or similar) on the buffered samples to measure variance; narrow or widen the observation window so inference stays both responsive and statistically reliable.
 - **Feedback loop**: once the posterior converges, reflavor `temperature_q8`, `heat_capacity`, or other metrics, then persist summary stats so subsequent runs boot with informed priors rather than cold starts.
 - **Tooling pipeline**: plan for a host-side analyzer that ingests runtime telemetry (over IPC/shared buffer), executes the Bayesian update, and emits refreshed metadata structures.
-No filesystem touches: the VM retains inference state in RAM and can grow its minimal heap if needed to cache priors/posteriors between maintenance cycles.
+No filesystem touches: the VM retains inference state inside a statically sized analytics heap—no dynamic growth permitted.
 Optional checkpoints can be stored in block storage and reloaded during `(INIT)` to emulate warm boots or kick off a training session.
 HOLA owns the analyzer interface contract so every consumer speaks the same shared-memory/command dialect.
 - **VM-level aggregation**: roll per-word fields into VM-level metrics (temperature, entropy flux, latency profile, mass, state flags).

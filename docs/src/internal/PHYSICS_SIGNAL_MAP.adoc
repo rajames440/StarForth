@@ -18,6 +18,7 @@ Treat it as the input stage of the physics-driven scheduler—our "op-amp" metap
 |`l4_kernel_info_t::sched_granularity` (available via KIP struct) |Smallest scheduling quantum promised by the kernel—sets an upper bound on how fine-grained our physics scheduler can react.
 |KIP memory descriptors (`l4_kernel_info_mem_desc`) |Physical memory layout: figure out how much RAM we can earmark for in-RAM inference buffers without starving the VM.
 |`l4_kip_platform_info` |Platform name and SMP flag; informs whether we should expect cross-core noise in timing measurements.
+| |Noise injection hook: SMP availability lets us deliberately schedule work on sibling cores to introduce controlled jitter and keep the physics model honest.
 |===
 
 === Scheduler Object
@@ -114,7 +115,7 @@ Virtual IRQs (e.g., the scheduler hotplug IRQ) are another option for non-blocki
 - **POSIX portability**: On Linux builds the same API can be backed by condition variables or eventfd, but the interface must live behind a common shim so the VM path stays identical.
 - **Documented TODOs**: Any temporary stubs should spell out whether they are L4-only or POSIX-only, keeping concerns separated until the full messaging stack lands.
 
-All state remains resident in RAM; if the inference buffers outgrow the default pool we can expand the minimal heap to accommodate richer histories without touching the filesystem.
+All state remains resident in RAM inside a fixed-size analytics heap; no dynamic expansion is permitted.
 The analytics heap (default 10 MiB) is separate from the VM arena (`VM_MEMORY_SIZE` stays 5 MiB), so dictionary, stacks, and block subsystem budgets remain untouched.
 
 == Immediate Research Tasks
