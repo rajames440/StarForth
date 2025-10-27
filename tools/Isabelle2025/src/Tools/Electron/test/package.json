@@ -9,7 +9,7 @@
   "author": "Makarius",
   "license": "BSD3",
   "devDependencies": {
-      "electron": "^17.1.2",
+      "electron": "^38.4.0",
       "@electron/fuses": "1.5.0"
   }
 }
