@@ -1,9 +1,0 @@
-session StarForth_Specs = HOL +
-  options [document = false]
-  theories
-    StarForth_Spec
-    Observation_Window
-    Ring_Buffer
-    Seeds
-    Snapshot
-    StarForth_Impl_Sketch
