@@ -1,0 +1,191 @@
+Notes from Geoff Sutcliffe:
+
+I added a few lines to the top of bin/isabelle ...
+
+   ## Geoff makes Isabelle a robust tool, because he's kind
+   function cleanup {
+       rm -rf $HOME
+   }
+   if [ -z ${HOME+x} ]; then
+       HOME="/tmp/Isabelle_$$"
+       trap cleanup EXIT
+   fi
+
+... which you might like to adopt. Now it works on SystemOnTPTP.
+
+
+Notes to Geoff:
+
+  Once you have open the archive, Isabelle and its tool are ready to go. The
+  various tools are invoked as follows (given a file name %s):
+
+  	Isabelle, competition version:
+  		STAREXEC_WALLCLOCK_LIMIT=300 ./bin/starexec_run_isabelle %s
+
+  	Isabelle, demo version:
+  		STAREXEC_WALLCLOCK_LIMIT=300 ./bin/starexec_run_isabelle_hot %s
+
+  	Nitpick (formerly also called Nitrox):
+  		STAREXEC_WALLCLOCK_LIMIT=300 ./bin/starexec_run_nitpick %s
+
+  	Refute:
+  		STAREXEC_WALLCLOCK_LIMIT=300 ./bin/starexec_run_refute %s
+
+  Here's an example:
+
+		STAREXEC_WALLCLOCK_LIMIT=300 ./bin/starexec_run_isabelle $TPTP/Problems/SET/SET014^4.p
+
+  The output should look as follows:
+
+    running nitpick for 7 s
+    FAILURE: nitpick
+    running simp for 15 s
+    SUCCESS: simp
+    % SZS status Theorem
+
+  Additional sanity tests:
+
+		STAREXEC_WALLCLOCK_LIMIT=300 ./bin/starexec_run_isabelle_hot $TPTP/Problems/CSR/CSR150^3.p
+		STAREXEC_WALLCLOCK_LIMIT=300 ./bin/starexec_run_isabelle_hot $TPTP/Problems/SYO/SYO304^5.p
+
+  The first problem is unprovable; the second one is proved by Satallax (after
+  some delay).
+
+  All the tools accept CNF, FOF, TFF0, TFF1, THF0, or THF1 problems and output
+  SZS statuses of the form
+
+  	% SZS status XXX
+
+  where XXX is in the set
+
+    {Unknown, TimedOut, Unsatisfiable, Theorem, Satisfiable, CounterSatisfiable}
+
+  Nitpick also output a model within "% SZS begin" and "% SZS end" tags, in
+  its idiosyncratic syntax. For TFF0 and THF0, phantom type arguments are not
+  supported, and type quantifiers are only allowed at the outermost position
+  in a formula, as "forall".
+
+  Enjoy!
+
+
+Notes to myself:
+
+  I downloaded the official Isabelle2016-1 Linux package from
+
+    http://isabelle.in.tum.de/dist/Isabelle2016-1_linux.tar.gz
+
+  on "macbroy21" and renamed the directory "Isabelle2016-1-CASC". I modified
+
+    src/HOL/TPTP
+
+  to include changes backported from the development version of Isabelle. I
+  also modified "bin/isabelle" as suggested by Geoff above. I then built a
+  "HOL-TPTP" image:
+
+    ./bin/isabelle build -b HOL-TPTP
+
+  I moved the heaps over to "./heaps":
+
+    mv ~/.isabelle/Isabelle2016-1/heaps .
+
+  I created some wrapper scripts in "./bin":
+
+    starexec_run_default
+    starexec_run_isabelle
+    starexec_run_isabelle_hot
+    starexec_run_nitpick
+    starexec_run_refute
+
+  I tested the "SET014^4" problem mentioned above.
+
+  Next, I installed and enabled ATPs.
+
+  LEO-II (1.6.2):
+
+    I logged to a 32-bit Linux ("lxlabbroy") machine. I retrieved LEO-II from
+
+      http://page.mi.fu-berlin.de/cbenzmueller/leo/leo2_v1.6.2.tgz
+
+    I did "make opt". I copied "bin/leo.opt" to
+    "~/Isabelle2016-1-CASC/contrib/leo".
+
+    I added this line to "etc/settings":
+
+      LEO2_HOME=$ISABELLE_HOME/contrib
+
+  Satallax (2.7):
+
+    I logged to a 32-bit Linux ("lxlabbroy") machine. I retrieved Satallax from
+
+      http://www.ps.uni-saarland.de/~cebrown/satallax/downloads/satallax-2.7.tar.gz
+
+    I added E to the path so that it gets detected by Satallax's configure
+    script:
+
+      export PATH=$PATH:~/Isabelle2013-CASC/contrib/e-1.6-2/x86-linux
+
+    I followed the instructions in "satallax-2.7/INSTALL". I copied
+    "bin/satallax.opt" to "~/Isabelle2013-CASC/contrib/satallax".
+
+    I added this line to "etc/settings":
+
+      SATALLAX_HOME=$ISABELLE_HOME/contrib
+
+  Vampire 4.0 (commit 2fedff6)
+
+    I copied the file "vampire", which I got from Giles Reger on 23 September
+    2015.
+
+    I added these lines to "etc/settings":
+
+      VAMPIRE_HOME=$ISABELLE_HOME/contrib
+      VAMPIRE_VERSION=4.0
+
+  Z3 TPTP (4.3.2.0 postrelease):
+
+    For Isabelle2015, I cloned out the git repository:
+
+      git clone https://git01.codeplex.com/z3
+
+    I build Z3 and from "build", ran "make examples" to build "z3_tptp".
+    I copied "z3_tptp" as "z3_tptp-solver" and "libz3.so" to "./contrib",
+    and put a wrapper called "z3_tptp" to set the library path correctly
+    (inspired by the CVC4 setup on Mac OS X).
+
+    I added this line to "etc/settings":
+
+      Z3_TPTP_HOME=$ISABELLE_HOME/contrib
+
+    Unfortunately, I got "z3::exception" errors. I did not investigate this
+    further and commented out the environment variable in "etc/settings".
+
+  To test that the examples actually worked, I create a file called
+  "/tmp/T.thy" with the following content:
+
+    theory T imports Main begin
+
+    lemma "a = b ==> [b] = [a]"
+      sledgehammer [cvc4 e leo2 satallax spass vampire z3 (*z3_tptp*)] ()
+      oops
+
+    end
+
+  Then I ran
+
+    ./bin/isabelle process -T /tmp/T
+
+  I also performed the aforementioned sanity tests.
+
+  Finally, I renamed "README" to "README.orig" and copied this "ReadMe" over.
+
+  Ideas for a future year:
+
+    * Unfold definitions, esp. if it makes the problem more first-order (cf.
+      "SEU466^1").
+    * Detect and remove needless definitions.
+
+  That's it.
+
+
+                Jasmin Blanchette
+                15 December 2016

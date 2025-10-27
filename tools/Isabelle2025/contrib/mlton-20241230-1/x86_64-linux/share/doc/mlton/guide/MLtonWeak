@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonWeak</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonWeak</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_WEAK</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">get</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">option</span>
+      <span class="kr">val</span> <span class="nv">new</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A weak pointer is a pointer to an object that is nulled if the object
+becomes <a href="Reachability">unreachable</a> due to garbage collection.  The
+weak pointer does not itself cause the object it points to be retained
+by the garbage collector&#8201;&#8212;&#8201;only other strong pointers can do that.
+For objects that are not allocated in the heap, like integers, a weak
+pointer will always be nulled.  So, if <code>w: int Weak.t</code>, then
+<code>Weak.get w = NONE</code>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>type 'a t</code></p>
+<div class="paragraph">
+<p>the type of weak pointers to objects of type <code>'a</code></p>
+</div>
+</li>
+<li>
+<p><code>get w</code></p>
+<div class="paragraph">
+<p>returns <code>NONE</code> if the object pointed to by <code>w</code> no longer exists.
+Otherwise, returns <code>SOME</code> of the object pointed to by <code>w</code>.</p>
+</div>
+</li>
+<li>
+<p><code>new x</code></p>
+<div class="paragraph">
+<p>returns a weak pointer to <code>x</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonWeak.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonWeak.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

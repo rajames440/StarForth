@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RayRacine</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RayRacine</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Using SML in some <em>Semantic Web</em> stuff.   Anyone interested in
+similar, please contact me.  GreyLensman on #sml on IRC or rracine at
+this domain adelphia with a dot here net.</p>
+</div>
+<div class="paragraph">
+<p>Current areas of coding.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Pretty solid, high performance Rete implementation - base functionality is complete.</p>
+</li>
+<li>
+<p>N3 parser - mostly complete</p>
+</li>
+<li>
+<p>RDF parser based on fxg - not started.</p>
+</li>
+<li>
+<p>Swerve HTTP server - 1/2 done.</p>
+</li>
+<li>
+<p>SPARQL implementation - not started.</p>
+</li>
+<li>
+<p>Persistent engine based on BerkelyDB - not started.</p>
+</li>
+<li>
+<p>Native implementation of Postgresql protocol - underway, ways to go.</p>
+</li>
+<li>
+<p>I also have a small change to the MLton compiler to add <code>PackWord<em>&lt;N&gt;</em></code> - changes compile but needs some more work, clean-up and unit tests.</p>
+</li>
+</ol>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RayRacine.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RayRacine.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

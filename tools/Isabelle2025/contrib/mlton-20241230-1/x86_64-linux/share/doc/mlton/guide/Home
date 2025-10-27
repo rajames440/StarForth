@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLton</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLton</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton is a whole-program optimizing compiler for the Standard&#160;ML
+programming language.  MLton generates small executables with
+excellent runtime performance, utilizing untagged and unboxed native
+integers, reals, and words, unboxed native arrays, fast
+arbitrary-precision arithmetic based on GMP, and multiple code
+generation and garbage collection strategies.  In addition, MLton
+provides a feature rich Standard&#160;ML programming environment, with
+full support for SML97 as given in The Definition of Standard&#160;ML
+(Revised), a number of useful language extensions, a complete
+implementation of the Standard ML Basis Library, various useful
+libraries, a simple and fast C foreign function interface, the ML
+Basis system for programming with source libraries, and tools such as
+a lexer generator, a parser generator, and a profiler.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_whats_new">What&#8217;s new?</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>20241230: Please try out our latest release, <a href="Release20241230">MLton 20241230</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps">Next steps</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Visit the <a href="https://github.com/MLton/mlton">MLton GitHub repository</a>.</p>
+</li>
+<li>
+<p>Read about MLton&#8217;s <a href="Features">Features</a>.</p>
+</li>
+<li>
+<p>Look at <a href="Documentation">Documentation</a>.</p>
+</li>
+<li>
+<p>See some <a href="Users">Users</a> of MLton.</p>
+</li>
+<li>
+<p>Download MLton from <a href="https://github.com/MLton/mlton/releases/latest">GitHub</a>.</p>
+</li>
+<li>
+<p>Meet the MLton <a href="Developers">Developers</a>.</p>
+</li>
+<li>
+<p>Get involved with MLton <a href="Development">Development</a>.</p>
+</li>
+<li>
+<p>User-maintained <a href="FAQ">FAQ</a>.</p>
+</li>
+<li>
+<p><a href="Contact">Contact</a> us.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Mon Dec 30 07:22:35 2024 -0500 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Home.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Home.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

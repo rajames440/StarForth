@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CommonBlock</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CommonBlock</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">CommonBlock</a> is an optimization pass for the <a href="SSA">SSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It eliminates equivalent blocks in a <a href="SSA">SSA</a> function.  The
+equivalence criteria requires blocks to have no arguments or
+statements and transfer via <code>Raise</code>, <code>Return</code>, or <code>Goto</code> of a single
+global variable.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/common-block.fun"><code>common-block.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Rewrites</p>
+<div class="listingblock">
+<div class="content">
+<pre>L_X ()
+  raise (global_Y)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_X ()
+  L_Y' ()</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and adds</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_Y' ()
+  raise (global_Y)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to the <a href="SSA">SSA</a> function.</p>
+</div>
+</li>
+<li>
+<p>Rewrites</p>
+<div class="listingblock">
+<div class="content">
+<pre>L_X ()
+  return (global_Y)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_X ()
+  L_Y' ()</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and adds</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_Y' ()
+  return (global_Y)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to the <a href="SSA">SSA</a> function.</p>
+</div>
+</li>
+<li>
+<p>Rewrites</p>
+<div class="listingblock">
+<div class="content">
+<pre>L_X ()
+  L_Z (global_Y)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_X ()
+  L_Y' ()</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and adds</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_Y' ()
+  L_Z (global_Y)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to the <a href="SSA">SSA</a> function.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The <a href="Shrink">Shrink</a> pass rewrites all uses of <code>L_X</code> to <code>L_Y'</code> and drops <code>L_X</code>.</p>
+</div>
+<div class="paragraph">
+<p>For example, all uncaught <code>Overflow</code> exceptions in a <a href="SSA">SSA</a> function
+share the same raising block.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CommonBlock.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CommonBlock.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

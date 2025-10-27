@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ForLoops</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ForLoops</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A <code>for</code>-loop is typically used to iterate over a range of consecutive
+integers that denote indices of some sort.  For example, in <a href="OCaml">OCaml</a>
+a <code>for</code>-loop takes either the form</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>for &lt;name&gt; = &lt;lower&gt; to &lt;upper&gt; do &lt;body&gt; done</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or the form</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>for &lt;name&gt; = &lt;upper&gt; downto &lt;lower&gt; do &lt;body&gt; done</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Some languages provide considerably more flexible <code>for</code>-loop or
+<code>foreach</code>-constructs.</p>
+</div>
+<div class="paragraph">
+<p>A bit surprisingly, <a href="StandardML">Standard ML</a> provides special syntax
+for <code>while</code>-loops, but not for <code>for</code>-loops.  Indeed, in SML, many uses
+of <code>for</code>-loops are better expressed using <code>app</code>, <code>foldl</code>/<code>foldr</code>,
+<code>map</code> and many other higher-order functions provided by the
+<a href="BasisLibrary">Basis Library</a> for manipulating lists, vectors and
+arrays.  However, the Basis Library does not provide a function for
+iterating over a range of integer values.  Fortunately, it is very
+easy to write one.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_a_fairly_simple_design">A fairly simple design</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following implementation imitates both the syntax and semantics of
+the OCaml <code>for</code>-loop.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">for</span> <span class="p">=</span> <span class="nc">to</span> <span class="kr">of</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span>
+             <span class="p">|</span> <span class="nc">downto</span> <span class="kr">of</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span>
+
+<span class="kr">infix</span> <span class="n">to</span> <span class="n">downto</span>
+
+<span class="kr">val</span> <span class="nv">for</span> <span class="p">=</span>
+    <span class="kr">fn</span> <span class="n">lo</span> <span class="n">to</span> <span class="n">up</span> <span class="p">=&gt;</span>
+       <span class="p">(</span><span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="kr">let</span> <span class="kr">fun</span> <span class="nf">loop</span> <span class="n">lo</span> <span class="p">=</span> <span class="kr">if</span> <span class="n">lo</span> <span class="n">&gt;</span> <span class="n">up</span> <span class="kr">then</span> <span class="p">()</span>
+                                  <span class="kr">else</span> <span class="p">(</span><span class="n">f</span> <span class="n">lo</span><span class="p">;</span> <span class="n">loop</span> <span class="p">(</span><span class="n">lo+</span><span class="mi">1</span><span class="p">))</span>
+                <span class="kr">in</span> <span class="n">loop</span> <span class="n">lo</span> <span class="kr">end</span><span class="p">)</span>
+     <span class="p">|</span> <span class="n">up</span> <span class="n">downto</span> <span class="n">lo</span> <span class="p">=&gt;</span>
+       <span class="p">(</span><span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="kr">let</span> <span class="kr">fun</span> <span class="nf">loop</span> <span class="n">up</span> <span class="p">=</span> <span class="kr">if</span> <span class="n">up</span> <span class="n">&lt;</span> <span class="n">lo</span> <span class="kr">then</span> <span class="p">()</span>
+                                  <span class="kr">else</span> <span class="p">(</span><span class="n">f</span> <span class="n">up</span><span class="p">;</span> <span class="n">loop</span> <span class="p">(</span><span class="n">up-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="kr">in</span> <span class="n">loop</span> <span class="n">up</span> <span class="kr">end</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">for</span> <span class="p">(</span><span class="mi">1</span> <span class="n">to</span> <span class="mi">9</span><span class="p">)</span>
+    <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">print</span> <span class="p">(</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>would print <code>123456789</code> and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">for</span> <span class="p">(</span><span class="mi">9</span> <span class="n">downto</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">print</span> <span class="p">(</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>would print <code>987654321</code>.</p>
+</div>
+<div class="paragraph">
+<p>Straightforward formatting of nested loops</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">for</span> <span class="p">(</span><span class="n">a</span> <span class="n">to</span> <span class="n">b</span><span class="p">)</span>
+    <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span>
+        <span class="n">for</span> <span class="p">(</span><span class="n">c</span> <span class="n">to</span> <span class="n">d</span><span class="p">)</span>
+            <span class="p">(</span><span class="kr">fn</span> <span class="n">j</span> <span class="p">=&gt;</span>
+                <span class="p">...))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is fairly readable, but tends to cause the body of the loop to be
+indented quite deeply.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_off_by_one">Off-by-one</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The above design has an annoying feature.  In practice, the upper
+bound of the iterated range is almost always excluded and most loops
+would subtract one from the upper bound:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">for</span> <span class="p">(</span><span class="mi">0</span> <span class="n">to</span> <span class="n">n-</span><span class="mi">1</span><span class="p">)</span> <span class="p">...</span>
+<span class="n">for</span> <span class="p">(</span><span class="n">n-</span><span class="mi">1</span> <span class="n">downto</span> <span class="mi">0</span><span class="p">)</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is probably better to break convention and exclude the upper bound
+by default, because it leads to more concise code and becomes
+idiomatic with very little practice.  The iterator combinators
+described below exclude the upper bound by default.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_iterator_combinators">Iterator combinators</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>While the simple <code>for</code>-function described in the previous section is
+probably good enough for many uses, it is a bit cumbersome when one
+needs to iterate over a Cartesian product.  One might also want to
+iterate over more than just consecutive integers.  It turns out that
+one can provide a library of iterator combinators that allow one to
+implement iterators more flexibly.</p>
+</div>
+<div class="paragraph">
+<p>Since the types of the combinators may be a bit difficult to infer
+from their implementations, let&#8217;s first take a look at a signature of
+the iterator combinator library:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">ITER</span> <span class="p">=</span>
+  <span class="kr">sig</span>
+    <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+
+    <span class="kr">val</span> <span class="nv">return</span> <span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+    <span class="kr">val</span> <span class="nv">&gt;&gt;</span><span class="p">=</span> <span class="nv">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="n">t</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="n">t</span>
+
+    <span class="kr">val</span> <span class="nv">none</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span>
+
+    <span class="kr">val</span> <span class="nv">to</span> <span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">int</span> <span class="n">t</span>
+    <span class="kr">val</span> <span class="nv">downto</span> <span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">int</span> <span class="n">t</span>
+
+    <span class="kr">val</span> <span class="nv">inList</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">list</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+    <span class="kr">val</span> <span class="nv">inVector</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">vector</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+    <span class="kr">val</span> <span class="nv">inArray</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">array</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+
+    <span class="kr">val</span> <span class="nv">using</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="nn">StringCvt</span><span class="p">.</span><span class="n">reader</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+
+    <span class="kr">val</span> <span class="nv">when</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">bool</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+    <span class="kr">val</span> <span class="nv">by</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="n">t</span>
+    <span class="kr">val</span> <span class="nv">@@</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+    <span class="kr">val</span> <span class="nv">**</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">product</span> <span class="n">t</span>
+
+    <span class="kr">val</span> <span class="nv">for</span> <span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+  <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Several of the above combinators are meant to be used as infix
+operators.  Here is a set of suitable infix declarations:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">infix</span> <span class="mi">2</span> <span class="n">to</span> <span class="n">downto</span>
+<span class="kr">infix</span> <span class="mi">1</span> <span class="n">@@</span> <span class="n">when</span> <span class="n">by</span>
+<span class="kr">infix</span> <span class="mi">0</span> <span class="n">&gt;&gt;=</span> <span class="n">**</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A few notes are in order:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The <code>'a t</code> type constructor with the <code>return</code> and <code>&gt;&gt;=</code> operators forms a monad.</p>
+</li>
+<li>
+<p>The <code>to</code> and <code>downto</code> combinators will omit the upper bound of the range.</p>
+</li>
+<li>
+<p><code>for</code> is the identity function.  It is purely for syntactic sugar and is not strictly required.</p>
+</li>
+<li>
+<p>The <code>@@</code> combinator produces an iterator for the concatenation of the given iterators.</p>
+</li>
+<li>
+<p>The <code>**</code> combinator produces an iterator for the Cartesian product of the given iterators.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>See <a href="ProductType">ProductType</a> for the type constructor <code>('a, 'b) product</code> used in the type of the iterator produced by <code>**</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>The <code>using</code> combinator allows one to iterate over slices, streams and many other kinds of sequences.</p>
+</li>
+<li>
+<p><code>when</code> is the filtering combinator.  The name <code>when</code> is   inspired by <a href="OCaml">OCaml</a>&rsquo;s guard clauses.</p>
+</li>
+<li>
+<p><code>by</code> is the mapping combinator.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The below implementation of the <code>ITER</code>-signature makes use of the
+following basic combinators:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">const</span> <span class="n">x</span> <span class="p">_</span> <span class="p">=</span> <span class="n">x</span>
+<span class="kr">fun</span> <span class="nf">flip</span> <span class="n">f</span> <span class="n">x</span> <span class="n">y</span> <span class="p">=</span> <span class="n">f</span> <span class="n">y</span> <span class="n">x</span>
+<span class="kr">fun</span> <span class="nf">id</span> <span class="n">x</span> <span class="p">=</span> <span class="n">x</span>
+<span class="kr">fun</span> <span class="nf">opt</span> <span class="n">fno</span> <span class="n">fso</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">fno</span> <span class="p">()</span> <span class="p">|</span> <span class="nf">SOME</span> <span class="n">?</span> <span class="p">=&gt;</span> <span class="n">fso</span> <span class="n">?</span>
+<span class="kr">fun</span> <span class="nf">pass</span> <span class="n">x</span> <span class="n">f</span> <span class="p">=</span> <span class="n">f</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here is an implementation the <code>ITER</code>-signature:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Iter</span> <span class="p">:&gt;</span> <span class="n">ITER</span> <span class="p">=</span>
+  <span class="kr">struct</span>
+    <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+
+    <span class="kr">val</span> <span class="nv">return</span> <span class="p">=</span> <span class="n">pass</span>
+    <span class="kr">fun</span> <span class="p">(</span><span class="n">iA</span> <span class="n">&gt;&gt;=</span> <span class="n">a2iB</span><span class="p">)</span> <span class="nf">f</span> <span class="p">=</span> <span class="n">iA</span> <span class="p">(</span><span class="n">flip</span> <span class="n">a2iB</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="kr">val</span> <span class="nv">none</span> <span class="p">=</span> <span class="n">ignore</span>
+
+    <span class="kr">fun</span> <span class="p">(</span><span class="n">l</span> <span class="n">to</span> <span class="n">u</span><span class="p">)</span> <span class="nf">f</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">fun</span> <span class="nf">`</span><span class="n">l</span> <span class="p">=</span> <span class="kr">if</span> <span class="n">l&lt;u</span> <span class="kr">then</span> <span class="p">(</span><span class="n">f</span> <span class="n">l</span><span class="p">;</span> <span class="n">`</span><span class="p">(</span><span class="n">l+</span><span class="mi">1</span><span class="p">))</span> <span class="kr">else</span> <span class="p">()</span> <span class="kr">in</span> <span class="n">`l</span> <span class="kr">end</span>
+    <span class="kr">fun</span> <span class="p">(</span><span class="n">u</span> <span class="n">downto</span> <span class="n">l</span><span class="p">)</span> <span class="nf">f</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">fun</span> <span class="nf">`</span><span class="n">u</span> <span class="p">=</span> <span class="kr">if</span> <span class="n">u&gt;l</span> <span class="kr">then</span> <span class="p">(</span><span class="n">f</span> <span class="p">(</span><span class="n">u-</span><span class="mi">1</span><span class="p">);</span> <span class="n">`</span><span class="p">(</span><span class="n">u-</span><span class="mi">1</span><span class="p">))</span> <span class="kr">else</span> <span class="p">()</span> <span class="kr">in</span> <span class="n">`u</span> <span class="kr">end</span>
+
+    <span class="kr">fun</span> <span class="nf">inList</span> <span class="n">?</span> <span class="p">=</span> <span class="n">flip</span> <span class="nn">List</span><span class="p">.</span><span class="n">app</span> <span class="n">?</span>
+    <span class="kr">fun</span> <span class="nf">inVector</span> <span class="n">?</span> <span class="p">=</span> <span class="n">flip</span> <span class="nn">Vector</span><span class="p">.</span><span class="n">app</span> <span class="n">?</span>
+    <span class="kr">fun</span> <span class="nf">inArray</span> <span class="n">?</span> <span class="p">=</span> <span class="n">flip</span> <span class="nn">Array</span><span class="p">.</span><span class="n">app</span> <span class="n">?</span>
+
+    <span class="kr">fun</span> <span class="nf">using</span> <span class="n">get</span> <span class="n">s</span> <span class="n">f</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">fun</span> <span class="nf">`</span><span class="n">s</span> <span class="p">=</span> <span class="n">opt</span> <span class="p">(</span><span class="n">const</span> <span class="p">())</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">f</span> <span class="n">x</span><span class="p">;</span> <span class="n">`s</span><span class="p">))</span> <span class="p">(</span><span class="n">get</span> <span class="n">s</span><span class="p">)</span> <span class="kr">in</span> <span class="n">`s</span> <span class="kr">end</span>
+
+    <span class="kr">fun</span> <span class="p">(</span><span class="n">iA</span> <span class="n">when</span> <span class="n">p</span><span class="p">)</span> <span class="nf">f</span> <span class="p">=</span> <span class="n">iA</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="kr">if</span> <span class="n">p</span> <span class="n">a</span> <span class="kr">then</span> <span class="n">f</span> <span class="n">a</span> <span class="kr">else</span> <span class="p">())</span>
+    <span class="kr">fun</span> <span class="p">(</span><span class="n">iA</span> <span class="n">by</span> <span class="n">g</span><span class="p">)</span> <span class="nf">f</span> <span class="p">=</span> <span class="n">iA</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">g</span><span class="p">)</span>
+    <span class="kr">fun</span> <span class="p">(</span><span class="n">iA</span> <span class="n">@@</span> <span class="n">iB</span><span class="p">)</span> <span class="nf">f</span> <span class="p">=</span> <span class="p">(</span><span class="n">iA</span> <span class="n">f</span> <span class="p">:</span> <span class="n">unit</span><span class="p">;</span> <span class="n">iB</span> <span class="n">f</span><span class="p">)</span>
+    <span class="kr">fun</span> <span class="p">(</span><span class="n">iA</span> <span class="n">**</span> <span class="n">iB</span><span class="p">)</span> <span class="nf">f</span> <span class="p">=</span> <span class="n">iA</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">iB</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">a</span> <span class="n">&amp;</span> <span class="n">b</span><span class="p">)))</span>
+
+    <span class="kr">val</span> <span class="nv">for</span> <span class="p">=</span> <span class="n">id</span>
+  <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that some of the above combinators (e.g. <code>**</code>) could be expressed
+in terms of the other combinators, most notably <code>return</code> and <code>&gt;&gt;=</code>.
+Another implementation issue worth mentioning is that <code>downto</code> is
+written specifically to avoid computing <code>l-1</code>, which could cause an
+<code>Overflow</code>.</p>
+</div>
+<div class="paragraph">
+<p>To use the above combinators the <code>Iter</code>-structure needs to be opened</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">open</span> <span class="nn">Iter</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and one usually also wants to declare the infix status of the
+operators as shown earlier.</p>
+</div>
+<div class="paragraph">
+<p>Here is an example that illustrates some of the features:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">for</span> <span class="p">(</span><span class="mi">0</span> <span class="n">to</span> <span class="mi">10</span> <span class="n">when</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="n">mod</span> <span class="mi">3</span> <span class="n">&lt;&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">**</span> <span class="n">inList</span> <span class="p">[</span><span class="s2">"a"</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">]</span> <span class="n">**</span> <span class="mi">2</span> <span class="n">downto</span> <span class="mi">1</span> <span class="n">by</span> <span class="n">real</span><span class="p">)</span>
+    <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="n">&amp;</span> <span class="n">y</span> <span class="n">&amp;</span> <span class="n">z</span> <span class="p">=&gt;</span>
+       <span class="n">print</span> <span class="p">(</span><span class="s2">"("</span><span class="n">^</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">x^</span><span class="s2">", </span><span class="se">\"</span><span class="s2">"</span><span class="n">^y^</span><span class="s2">"</span><span class="se">\"</span><span class="s2">, "</span><span class="n">^</span><span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">z^</span><span class="s2">")</span><span class="se">\n</span><span class="s2">"</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the <code>Iter</code> combinators one can easily produce more complicated
+iterators.  For example, here is an iterator over a "triangle":</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">triangle</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="p">=</span> <span class="n">l</span> <span class="n">to</span> <span class="n">u</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span> <span class="n">to</span> <span class="n">u</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">j</span> <span class="p">=&gt;</span> <span class="n">return</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)))</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ForLoops.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ForLoops.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

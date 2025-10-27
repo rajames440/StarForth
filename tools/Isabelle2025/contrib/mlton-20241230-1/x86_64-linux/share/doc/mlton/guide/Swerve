@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Swerve</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Swerve</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p><a href="http://ftp.sun.ac.za/ftp/mirrorsites/ocaml/Systems_programming/book/c3253.html">Swerve</a>
+is an HTTP server written in SML, originally developed with SML/NJ.
+<a href="RayRacine">RayRacine</a> ported Swerve to MLton in January 2005.</p>
+</div>
+<div class="paragraph">
+<p><a href="Swerve.attachments/swerve.tar.bz2">Download</a> the port.</p>
+</div>
+<div class="paragraph">
+<p>Excerpt from the included <code>README</code>:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>Total testing of this port consisted of a successful compile, startup,
+and serving one html page with one gif image.  Given that the original
+code was throughly designed and implemented in a thoughtful manner and
+I expect it is quite usable modulo a few minor bugs introduced by my
+porting effort.</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>Swerve is described in <a href="References#Shipman02">Shipman02</a>.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Swerve.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Swerve.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

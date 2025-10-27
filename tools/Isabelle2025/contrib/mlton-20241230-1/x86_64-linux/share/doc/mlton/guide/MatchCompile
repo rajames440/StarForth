@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MatchCompile</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MatchCompile</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">MatchCompile</a> is a translation pass, agnostic in the
+<a href="IntermediateLanguage">IntermediateLanguage</a>s between which it translates.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="MatchCompilation">Match compilation</a> converts a case expression with
+nested patterns into a case expression with flat patterns.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/match-compile/match-compile.sig"><code>match-compile.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/match-compile/match-compile.fun"><code>match-compile.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">matchCompile</span><span class="p">:</span>
+   <span class="p">{</span><span class="n">caseType</span><span class="p">:</span> <span class="nn">Type</span><span class="p">.</span><span class="n">t</span><span class="p">,</span> <span class="c">(*</span><span class="cm"> type of entire expression *)</span>
+    <span class="n">cases</span><span class="p">:</span> <span class="p">(</span><span class="nn">NestedPat</span><span class="p">.</span><span class="n">t</span> <span class="n">*</span> <span class="p">((</span><span class="nn">Var</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Var</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nn">Exp</span><span class="p">.</span><span class="n">t</span><span class="p">))</span> <span class="n">vector</span><span class="p">,</span>
+    <span class="n">conTycon</span><span class="p">:</span> <span class="nn">Con</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Tycon</span><span class="p">.</span><span class="n">t</span><span class="p">,</span>
+    <span class="n">region</span><span class="p">:</span> <span class="nn">Region</span><span class="p">.</span><span class="n">t</span><span class="p">,</span>
+    <span class="n">test</span><span class="p">:</span> <span class="nn">Var</span><span class="p">.</span><span class="n">t</span><span class="p">,</span>
+    <span class="n">testType</span><span class="p">:</span> <span class="nn">Type</span><span class="p">.</span><span class="n">t</span><span class="p">,</span>
+    <span class="n">tyconCons</span><span class="p">:</span> <span class="nn">Tycon</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="p">{</span><span class="n">con</span><span class="p">:</span> <span class="nn">Con</span><span class="p">.</span><span class="n">t</span><span class="p">,</span> <span class="n">hasArg</span><span class="p">:</span> <span class="n">bool</span><span class="p">}</span> <span class="n">vector</span><span class="p">}</span>
+   <span class="p">-&gt;</span> <span class="nn">Exp</span><span class="p">.</span><span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="p">((</span><span class="nn">Layout</span><span class="p">.</span><span class="n">t</span> <span class="n">*</span> <span class="p">{</span><span class="n">isOnlyExns</span><span class="p">:</span> <span class="n">bool</span><span class="p">})</span> <span class="n">vector</span><span class="p">)</span> <span class="n">vector</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>matchCompile</code> is complicated by the desire for modularity between the
+match compiler and its caller.  Its caller is responsible for building
+the right hand side of a rule <code>p =&gt; e</code>.  On the other hand, the match
+compiler is responsible for destructing the test and binding new
+variables to the components.  In order to connect the new variables
+created by the match compiler with the variables in the pattern <code>p</code>,
+the match compiler passes an environment back to its caller that maps
+each variable in <code>p</code> to the corresponding variable introduced by the
+match compiler.</p>
+</div>
+<div class="paragraph">
+<p>The match compiler builds a tree of n-way case expressions by working
+from outside to inside and left to right in the patterns.  For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">case</span> <span class="n">x</span> <span class="kr">of</span>
+  <span class="p">(_,</span> <span class="n">C1</span> <span class="n">a</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">e1</span>
+<span class="p">|</span> <span class="p">(</span><span class="n">C2</span> <span class="n">b</span><span class="p">,</span> <span class="n">C3</span> <span class="n">c</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">e2</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is translated to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">let</span>
+   <span class="kr">fun</span> <span class="nf">f1</span> <span class="n">a</span> <span class="p">=</span> <span class="n">e1</span>
+   <span class="kr">fun</span> <span class="nf">f2</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="p">=</span> <span class="n">e2</span>
+<span class="kr">in</span>
+  <span class="kr">case</span> <span class="n">x</span> <span class="kr">of</span>
+     <span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">)</span> <span class="p">=&gt;</span>
+       <span class="p">(</span><span class="kr">case</span> <span class="n">x1</span> <span class="kr">of</span>
+          <span class="n">C2</span> <span class="n">b'</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">case</span> <span class="n">x2</span> <span class="kr">of</span>
+                      <span class="n">C1</span> <span class="n">a'</span> <span class="p">=&gt;</span> <span class="n">f1</span> <span class="n">a'</span>
+                    <span class="p">|</span> <span class="n">C3</span> <span class="n">c'</span> <span class="p">=&gt;</span> <span class="n">f2</span><span class="p">(</span><span class="n">b'</span><span class="p">,</span><span class="n">c'</span><span class="p">)</span>
+                    <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Match</span><span class="p">)</span>
+        <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">case</span> <span class="n">x2</span> <span class="kr">of</span>
+                  <span class="n">C1</span> <span class="n">a_</span> <span class="p">=&gt;</span> <span class="n">f1</span> <span class="n">a_</span>
+                <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Match</span><span class="p">))</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here you can see the necessity of abstracting out the ride hand sides
+of the cases in order to avoid code duplication.  Right hand sides are
+always abstracted.  The simplifier cleans things up.  You can also see
+the new (primed) variables introduced by the match compiler and how
+the renaming works.  Finally, you can see how the match compiler
+introduces the necessary default clauses in order to make a match
+exhaustive, i.e. cover all the cases.</p>
+</div>
+<div class="paragraph">
+<p>The match compiler uses <code>numCons</code> and <code>tyconCons</code> to determine
+the exhaustivity of matches against constructors.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MatchCompile.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MatchCompile.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

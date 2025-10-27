@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>NeedsReview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>NeedsReview</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>This page documents some patches and bug fixes that need additional review by experienced developers:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Bug in transparent signature match:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>What is an 'original' interface and why does the equivalence of original interfaces implies the equivalence of the actual interfaces?</p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2007-September/029991.html" class="bare">http://www.mlton.org/pipermail/mlton/2007-September/029991.html</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2007-September/029995.html" class="bare">http://www.mlton.org/pipermail/mlton/2007-September/029995.html</a></p>
+</li>
+<li>
+<p>SVN Revision: <a href="https://github.com/MLton/mlton/search?q=SVN+r6046&amp;type=commits"><code>r6046</code></a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Bug in <a href="DeepFlatten">DeepFlatten</a> pass:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Should we allow argument to <code>Weak_new</code> to be flattened?</p>
+</li>
+<li>
+<p>SVN Revision: <a href="https://github.com/MLton/mlton/search?q=SVN+r6189&amp;type=commits"><code>r6189</code></a> (regression test demonstrating bug)</p>
+</li>
+<li>
+<p>SVN Revision: <a href="https://github.com/MLton/mlton/search?q=SVN+r6191&amp;type=commits"><code>r6191</code></a></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/NeedsReview.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/NeedsReview.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

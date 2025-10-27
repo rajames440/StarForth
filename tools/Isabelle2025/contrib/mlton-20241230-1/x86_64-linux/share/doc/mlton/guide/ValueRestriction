@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ValueRestriction</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ValueRestriction</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_why_the_value_restriction_exists">Why the value restriction exists</a></li>
+<li><a href="#_unnecessarily_rejected_programs">Unnecessarily rejected programs</a></li>
+<li><a href="#_alternatives_to_the_value_restriction">Alternatives to the value restriction</a></li>
+<li><a href="#_working_with_the_value_restriction">Working with the value restriction</a></li>
+<li><a href="#_also_see">Also see</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The value restriction is a rule that governs when type inference is
+allowed to polymorphically generalize a value declaration.  In short,
+the value restriction says that generalization can only occur if the
+right-hand side of an expression is syntactically a value.  For
+example, in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">f</span> <span class="s2">"foo"</span><span class="p">;</span> <span class="n">f</span> <span class="mi">13</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>the expression <code>fn x =&gt; x</code> is syntactically a value, so <code>f</code> has
+polymorphic type <code>'a -&gt; 'a</code> and both calls to <code>f</code> type check.  On the
+other hand, in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">in</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">f</span> <span class="s2">"foo"</span><span class="p">;</span> <span class="n">f</span> <span class="mi">13</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>the expression <code>let in fn x =&gt; x end</code> is not syntactically a value
+and so <code>f</code> can either have type <code>int -&gt; int</code> or <code>string -&gt; string</code>,
+but not <code>'a -&gt; 'a</code>.  Hence, the program does not type check.</p>
+</div>
+<div class="paragraph">
+<p><a href="DefinitionOfStandardML">The Definition of Standard ML</a> spells out
+precisely which expressions are syntactic values (it refers to such
+expressions as <em>non-expansive</em>).  An expression is a value if it is of
+one of the following forms.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a constant (<code>13</code>, <code>"foo"</code>, <code>13.0</code>, &#8230;&#8203;)</p>
+</li>
+<li>
+<p>a variable (<code>x</code>, <code>y</code>, &#8230;&#8203;)</p>
+</li>
+<li>
+<p>a function (<code>fn x =&gt; e</code>)</p>
+</li>
+<li>
+<p>the application of a constructor other than <code>ref</code> to a value (<code>Foo v</code>)</p>
+</li>
+<li>
+<p>a type constrained value (<code>v: t</code>)</p>
+</li>
+<li>
+<p>a tuple in which each field is a value <code>(v1, v2, &#8230;&#8203;)</code></p>
+</li>
+<li>
+<p>a record in which each field is a value <code>{l1 = v1, l2 = v2, &#8230;&#8203;}</code></p>
+</li>
+<li>
+<p>a list in which each element is a value <code>[v1, v2, &#8230;&#8203;]</code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why_the_value_restriction_exists">Why the value restriction exists</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The value restriction prevents a ref cell (or an array) from holding
+values of different types, which would allow a value of one type to be
+cast to another and hence would break type safety.  If the restriction
+were not in place, the following program would type check.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">r</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+<span class="kr">val</span> <span class="nv">r1</span><span class="p">:</span> <span class="n">string</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">r</span>
+<span class="kr">val</span> <span class="nv">r2</span><span class="p">:</span> <span class="n">int</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">r</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">r1</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="s2">"foo"</span>
+<span class="kr">val</span> <span class="nv">v</span><span class="p">:</span> <span class="n">int</span> <span class="p">=</span> <span class="n">valOf</span> <span class="p">(</span><span class="n">!r2</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The first line violates the value restriction because <code>ref NONE</code> is
+not a value.  All other lines are type correct.  By its last line, the
+program has cast the string <code>"foo"</code> to an integer.  This breaks type
+safety, because now we can add a string to an integer with an
+expression like <code>v + 13</code>.  We could even be more devious, by adding
+the following two lines, which allow us to treat the string <code>"foo"</code>
+as a function.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">r3</span><span class="p">:</span> <span class="p">(</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">)</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">r</span>
+<span class="kr">val</span> <span class="nv">v</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">int</span> <span class="p">=</span> <span class="n">valOf</span> <span class="p">(</span><span class="n">!r3</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Eliminating the explicit <code>ref</code> does nothing to fix the problem.  For
+example, we could replace the declaration of <code>r</code> with the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">ref</span> <span class="n">NONE</span>
+<span class="kr">val</span> <span class="nv">r</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">f</span> <span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The declaration of <code>f</code> is well typed, while the declaration of <code>r</code>
+violates the value restriction because <code>f ()</code> is not a value.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_unnecessarily_rejected_programs">Unnecessarily rejected programs</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Unfortunately, the value restriction rejects some programs that could
+be accepted.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="n">id</span> <span class="n">id</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The type constraint on <code>f</code> requires <code>f</code> to be polymorphic, which is
+disallowed because <code>id id</code> is not a value.  MLton reports the
+following type error.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 2.5-2.5.
+  Type of variable cannot be generalized in expansive declaration: f.
+    type: ['a] -&gt; ['a]
+    in: val 'a f: ('a -&gt; 'a) = id id</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton indicates the inability to make <code>f</code> polymorphic by saying that
+the type of <code>f</code> cannot be generalized (made polymorphic) its
+declaration is expansive (not a value).  MLton doesn&#8217;t explicitly
+mention the value restriction, but that is the reason.  If we leave
+the type constraint off of <code>f</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="n">id</span> <span class="n">id</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>then the program succeeds; however, MLton gives us the following
+warning.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Warning: z.sml 2.5-2.5.
+  Type of variable was not inferred and could not be generalized: f.
+    type: ??? -&gt; ???
+    in: val f = id id</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This warning indicates that MLton couldn&#8217;t polymorphically generalize
+<code>f</code>, nor was there enough context using <code>f</code> to determine its type.
+This in itself is not a type error, but it it is a hint that something
+is wrong with our program.  Using <code>f</code> provides enough context to
+eliminate the warning.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="n">id</span> <span class="n">id</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">13</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>But attempting to use <code>f</code> as a polymorphic function will fail.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="n">id</span> <span class="n">id</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">13</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">f</span> <span class="s2">"foo"</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 4.9-4.15.
+  Function applied to incorrect argument.
+    expects: [int]
+    but got: [string]
+    in: f "foo"</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_to_the_value_restriction">Alternatives to the value restriction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There would be nothing wrong with treating <code>f</code> as polymorphic in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="n">id</span> <span class="n">id</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One might think that the value restriction could be relaxed, and that
+only types involving <code>ref</code> should be disallowed.  Unfortunately, the
+following example shows that even the type <code>'a -&gt; 'a</code> can cause
+problems.  If this program were allowed, then we could cast an integer
+to a string (or any other type).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">r</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+   <span class="kr">in</span>
+      <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span>
+      <span class="kr">let</span>
+         <span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="n">!r</span>
+         <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">r</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="n">x</span>
+      <span class="kr">in</span>
+         <span class="kr">case</span> <span class="n">y</span> <span class="kr">of</span>
+            <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">x</span>
+          <span class="p">|</span> <span class="n">SOME</span> <span class="n">y</span> <span class="p">=&gt;</span> <span class="n">y</span>
+      <span class="kr">end</span>
+   <span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">13</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">f</span> <span class="s2">"foo"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous version of Standard ML took a different approach
+(<a href="References#MilnerEtAl90">MilnerEtAl90</a>, <a href="References#Tofte90">Tofte90</a>, <a href="ImperativeTypeVariable">ImperativeTypeVariable</a>)
+than the value restriction.  It encoded information in the type system
+about when ref cells would be created, and used this to prevent a ref
+cell from holding multiple types.  Although it allowed more programs
+to be type checked, this approach had significant drawbacks.  First,
+it was significantly more complex, both for implementers and for
+programmers.  Second, it had an unfortunate interaction with the
+modularity, because information about ref usage was exposed in module
+signatures.  This either prevented the use of references for
+implementing a signature, or required information that one would like
+to keep hidden to propagate across modules.</p>
+</div>
+<div class="paragraph">
+<p>In the early nineties, Andrew Wright studied about 250,000 lines of
+existing SML code and discovered that it did not make significant use
+of the extended typing ability, and proposed the value restriction as
+a simpler alternative (<a href="References#Wright95">Wright95</a>).  This was adopted in the
+revised <a href="DefinitionOfStandardML">Definition</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_working_with_the_value_restriction">Working with the value restriction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One technique that works with the value restriction is
+<a href="EtaExpansion">EtaExpansion</a>.  We can use eta expansion to make our <code>id id</code>
+example type check follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">id</span> <span class="n">id</span><span class="p">)</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This solution means that the computation (in this case <code>id id</code>) will
+be performed each time <code>f</code> is applied, instead of just once when <code>f</code>
+is declared.  In this case, that is not a problem, but it could be if
+the declaration of <code>f</code> performs substantial computation or creates a
+shared data structure.</p>
+</div>
+<div class="paragraph">
+<p>Another technique that sometimes works is to move a monomorphic
+computation prior to a (would-be) polymorphic declaration so that the
+expression is a value.  Consider the following program, which fails
+due to the value restriction.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="kr">of</span> <span class="n">string</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="nd">'a</span>
+<span class="kr">val</span> <span class="nv">x</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span> <span class="n">A</span> <span class="p">(</span><span class="kr">if</span> <span class="n">true</span> <span class="kr">then</span> <span class="s2">"yes"</span> <span class="kr">else</span> <span class="s2">"no"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is easy to rewrite this program as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="kr">of</span> <span class="n">string</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="nd">'a</span>
+<span class="kr">local</span>
+   <span class="kr">val</span> <span class="nv">s</span> <span class="p">=</span> <span class="kr">if</span> <span class="n">true</span> <span class="kr">then</span> <span class="s2">"yes"</span> <span class="kr">else</span> <span class="s2">"no"</span>
+<span class="kr">in</span>
+   <span class="kr">val</span> <span class="nv">x</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span> <span class="n">A</span> <span class="n">s</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The following example (taken from <a href="References#Wright95">Wright95</a>) creates a ref
+cell to count the number of times a function is called.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">count</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">r</span> <span class="p">=</span> <span class="n">ref</span> <span class="mi">0</span>
+   <span class="kr">in</span>
+      <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">r</span> <span class="n">:=</span> <span class="mi">1</span> <span class="n">+</span> <span class="n">!r</span><span class="p">;</span> <span class="n">f</span> <span class="n">x</span><span class="p">),</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">!r</span><span class="p">)</span>
+   <span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="p">(</span><span class="n">countId:</span> <span class="nd">'a</span> <span class="n">-&gt;</span> <span class="nd">'a</span><span class="p">,</span> <span class="n">numCalls</span><span class="p">)</span> <span class="nv">=</span> <span class="n">count</span> <span class="n">id</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The example does not type check, due to the value restriction.
+However, it is easy to rewrite the program, staging the ref cell
+creation before the polymorphic code.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="n">int</span> <span class="n">ref</span>
+<span class="kr">val</span> <span class="nv">count1</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">t</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">T</span> <span class="p">(</span><span class="n">ref</span> <span class="mi">0</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">count2</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="p">(</span><span class="n">T</span> <span class="n">r</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">!r</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">r</span> <span class="n">:=</span> <span class="mi">1</span> <span class="n">+</span> <span class="n">!r</span><span class="p">;</span> <span class="n">f</span> <span class="n">x</span><span class="p">))</span>
+<span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">t</span> <span class="p">=</span> <span class="n">count1</span> <span class="p">()</span>
+<span class="kr">val</span> <span class="nv">countId</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nl">#2</span> <span class="p">(</span><span class="n">count2</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">id</span><span class="p">))</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">numCalls</span> <span class="p">=</span> <span class="nl">#1</span> <span class="p">(</span><span class="n">count2</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">id</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Of course, one can hide the constructor <code>T</code> inside a <code>local</code> or behind
+a signature.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="ImperativeTypeVariable">ImperativeTypeVariable</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ValueRestriction.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ValueRestriction.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonGC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonGC</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_GC</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">val</span> <span class="nv">collect</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">pack</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setMessages</span><span class="p">:</span> <span class="n">bool</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setSummary</span><span class="p">:</span> <span class="n">bool</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">unpack</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">structure</span> <span class="nn">Statistics</span> <span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">val</span> <span class="nv">bytesAllocated</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">int</span>
+            <span class="kr">val</span> <span class="nv">lastBytesLive</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">int</span>
+            <span class="kr">val</span> <span class="nv">numCopyingGCs</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">int</span>
+            <span class="kr">val</span> <span class="nv">numMarkCompactGCs</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">int</span>
+            <span class="kr">val</span> <span class="nv">numMinorGCs</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">int</span>
+            <span class="kr">val</span> <span class="nv">maxBytesLive</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">int</span>
+         <span class="kr">end</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>collect ()</code></p>
+<div class="paragraph">
+<p>causes a garbage collection to occur.</p>
+</div>
+</li>
+<li>
+<p><code>pack ()</code></p>
+<div class="paragraph">
+<p>shrinks the heap as much as possible so that other processes can use
+available RAM.</p>
+</div>
+</li>
+<li>
+<p><code>setMessages b</code></p>
+<div class="paragraph">
+<p>controls whether diagnostic messages are printed at the beginning and
+end of each garbage collection.  It is the same as the <code>gc-messages</code>
+runtime system option.</p>
+</div>
+</li>
+<li>
+<p><code>setSummary b</code></p>
+<div class="paragraph">
+<p>controls whether a summary of garbage collection statistics is printed
+upon termination of the program.  It is the same as the <code>gc-summary</code>
+runtime system option.</p>
+</div>
+</li>
+<li>
+<p><code>unpack ()</code></p>
+<div class="paragraph">
+<p>resizes a packed heap to the size desired by the runtime.</p>
+</div>
+</li>
+<li>
+<p><code>Statistics.bytesAllocated ()</code></p>
+<div class="paragraph">
+<p>returns bytes allocated (as of the most recent garbage collection).</p>
+</div>
+</li>
+<li>
+<p><code>Statistics.lastBytesLive ()</code></p>
+<div class="paragraph">
+<p>returns bytes live (as of the most recent garbage collection).</p>
+</div>
+</li>
+<li>
+<p><code>Statistics.numCopyingGCs ()</code></p>
+<div class="paragraph">
+<p>returns number of (major) copying garbage collections performed (as of
+the most recent garbage collection).</p>
+</div>
+</li>
+<li>
+<p><code>Statistics.numMarkCompactGCs ()</code></p>
+<div class="paragraph">
+<p>returns number of (major) mark-compact garbage collections performed
+(as of the most recent garbage collection).</p>
+</div>
+</li>
+<li>
+<p><code>Statistics.numMinorGCs ()</code></p>
+<div class="paragraph">
+<p>returns number of minor garbage collections performed (as of the most
+recent garbage collection).</p>
+</div>
+</li>
+<li>
+<p><code>Statistics.maxBytesLive ()</code></p>
+<div class="paragraph">
+<p>returns maximum bytes live (as of the most recent garbage collection).</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonGC.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonGC.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

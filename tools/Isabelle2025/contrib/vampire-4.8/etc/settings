@@ -1,0 +1,6 @@
+# -*- shell-script -*- :mode=shellscript:
+
+VAMPIRE_HOME="$COMPONENT/$ISABELLE_PLATFORM64"
+VAMPIRE_VERSION="4.8"
+
+ISABELLE_VAMPIRE="$VAMPIRE_HOME/vampire"

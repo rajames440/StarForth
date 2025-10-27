@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>StandardMLGotchas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>StandardMLGotchas</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_the_and_keyword">The <code>and</code> keyword</a></li>
+<li><a href="#_constructed_patterns">Constructed patterns</a></li>
+<li><a href="#_declarations_and_expressions">Declarations and expressions</a></li>
+<li><a href="#_equality_types">Equality types</a></li>
+<li><a href="#_nested_cases">Nested cases</a></li>
+<li><a href="#_op">(op *)</a></li>
+<li><a href="#_overloading">Overloading</a></li>
+<li><a href="#_semicolons">Semicolons</a></li>
+<li><a href="#_stale_bindings">Stale bindings</a></li>
+<li><a href="#_unresolved_records">Unresolved records</a></li>
+<li><a href="#_value_restriction">Value restriction</a></li>
+<li><a href="#_type_variable_scope">Type Variable Scope</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page contains brief explanations of some recurring sources of
+confusion and problems that SML newbies encounter.</p>
+</div>
+<div class="paragraph">
+<p>Many confusions about the syntax of SML seem to arise from the use of
+an interactive REPL (Read-Eval Print Loop) while trying to learn the
+basics of the language.  While writing your first SML programs, you
+should keep the source code of your programs in a form that is
+accepted by an SML compiler as a whole.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_and_keyword">The <code>and</code> keyword</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is a common mistake to misuse the <code>and</code> keyword or to not know how
+to introduce mutually recursive definitions.  The purpose of the <code>and</code>
+keyword is to introduce mutually recursive definitions of functions
+and datatypes.  For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">isEven</span> <span class="mi">0w0</span> <span class="p">=</span> <span class="n">true</span>
+  <span class="p">|</span> <span class="nf">isEven</span> <span class="mi">0w1</span> <span class="p">=</span> <span class="n">false</span>
+  <span class="p">|</span> <span class="nf">isEven</span> <span class="n">n</span> <span class="p">=</span> <span class="n">isOdd</span> <span class="p">(</span><span class="n">n-</span><span class="mi">0w1</span><span class="p">)</span>
+<span class="kr">and</span> <span class="nf">isOdd</span> <span class="mi">0w0</span> <span class="p">=</span> <span class="n">false</span>
+  <span class="p">|</span> <span class="nf">isOdd</span> <span class="mi">0w1</span> <span class="p">=</span> <span class="n">true</span>
+  <span class="p">|</span> <span class="nf">isOdd</span> <span class="n">n</span> <span class="p">=</span> <span class="n">isEven</span> <span class="p">(</span><span class="n">n-</span><span class="mi">0w1</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">decl</span> <span class="p">=</span> <span class="nc">VAL</span> <span class="kr">of</span> <span class="n">id</span> <span class="n">*</span> <span class="n">pat</span> <span class="n">*</span> <span class="n">expr</span>
+           <span class="c">(*</span><span class="cm"> | ... *)</span>
+     <span class="kr">and</span> <span class="kt">expr</span> <span class="p">=</span> <span class="nc">LET</span> <span class="kr">of</span> <span class="n">decl</span> <span class="n">*</span> <span class="n">expr</span>
+           <span class="c">(*</span><span class="cm"> | ... *)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also use <code>and</code> as a shorthand in a couple of other places, but
+it is not necessary.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_constructed_patterns">Constructed patterns</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is a common mistake to forget to parenthesize constructed patterns
+in <code>fun</code> bindings.  Consider the following invalid definition:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">length</span> <span class="n">nil</span> <span class="p">=</span> <span class="mi">0</span>
+  <span class="p">|</span> <span class="nf">length</span> <span class="n">h</span> <span class="n">::</span> <span class="n">t</span> <span class="p">=</span> <span class="mi">1</span> <span class="n">+</span> <span class="n">length</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">The pattern `h </dt>
+<dd>
+<p>t` needs to be parenthesized:</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">length</span> <span class="n">nil</span> <span class="p">=</span> <span class="mi">0</span>
+  <span class="p">|</span> <span class="nf">length</span> <span class="p">(</span><span class="n">h</span> <span class="n">::</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="mi">1</span> <span class="n">+</span> <span class="n">length</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The parentheses are needed, because a <code>fun</code> definition may have
+multiple consecutive constructed patterns through currying.</p>
+</div>
+<div class="paragraph">
+<p>The same applies to nonfix constructors.  For example, the parentheses
+in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">valOf</span> <span class="n">NONE</span> <span class="p">=</span> <span class="kr">raise</span> <span class="n">Option</span>
+  <span class="p">|</span> <span class="nf">valOf</span> <span class="p">(</span><span class="n">SOME</span> <span class="n">x</span><span class="p">)</span> <span class="p">=</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>are required.  However, the outermost constructed pattern in a <code>fn</code> or
+<code>case</code> expression need not be parenthesized, because in those cases
+there is always just one constructed pattern.  So, both</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">valOf</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Option</span>
+             <span class="p">|</span> <span class="n">SOME</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">valOf</span> <span class="n">x</span> <span class="p">=</span> <span class="kr">case</span> <span class="n">x</span> <span class="kr">of</span>
+                 <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Option</span>
+               <span class="p">|</span> <span class="n">SOME</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>are fine.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declarations_and_expressions">Declarations and expressions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is a common mistake to confuse expressions and declarations.
+Normally an SML source file should only contain declarations.  The
+following are declarations:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">dt</span> <span class="p">=</span> <span class="err">...</span>
+<span class="nc">fun</span> <span class="n">f</span> <span class="p">...</span> <span class="p">=</span> <span class="p">...</span>
+<span class="kr">functor</span> <span class="nn">Fn</span> <span class="p">(...)</span> <span class="p">=</span> <span class="p">...</span>
+<span class="kr">infix</span> <span class="p">...</span>
+<span class="kr">infixr</span> <span class="p">...</span>
+<span class="kr">local</span> <span class="p">...</span> <span class="kr">in</span> <span class="p">...</span> <span class="kr">end</span>
+<span class="kr">nonfix</span> <span class="p">...</span>
+<span class="kr">open</span> <span class="p">...</span>
+<span class="kr">signature</span> <span class="nn">SIG</span> <span class="p">=</span> <span class="p">...</span>
+<span class="kr">structure</span> <span class="nn">Struct</span> <span class="p">=</span> <span class="p">...</span>
+<span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">...</span>
+<span class="kr">val</span> <span class="nv">v</span> <span class="p">=</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">let</span> <span class="p">...</span> <span class="kr">in</span> <span class="p">...</span> <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>isn&#8217;t a declaration.</p>
+</div>
+<div class="paragraph">
+<p>To specify a side-effecting computation in a source file, you can write:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_equality_types">Equality types</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>SML has a fairly intricate built-in notion of equality.  See
+<a href="EqualityType">EqualityType</a> and <a href="EqualityTypeVariable">EqualityTypeVariable</a> for a thorough
+discussion.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_nested_cases">Nested cases</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is a common mistake to write nested case expressions without the
+necessary parentheses.  See <a href="UnresolvedBugs">UnresolvedBugs</a> for a discussion.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_op">(op *)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It used to be a common mistake to parenthesize <code>op *</code> as <code>(op
+*)</code>.  Before SML'97, <code>*)</code> was considered a comment
+terminator in SML and caused a syntax error.  At the time of writing,
+<a href="SMLNJ">SML/NJ</a> still rejects the code.  An extra space may be used
+for portability: <code>(op * )</code>. However, parenthesizing <code>op</code> is
+redundant, even though it is a widely used convention.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_overloading">Overloading</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A number of standard operators (<code>+</code>, <code>-</code>, <code>~</code>, <code>*</code>, <code>&lt;</code>, <code>&gt;</code>, &#8230;&#8203;) and
+numeric constants are overloaded for some of the numeric types (<code>int</code>,
+<code>real</code>, <code>word</code>).  It is a common surprise that definitions using
+overloaded operators such as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">min</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=</span> <span class="kr">if</span> <span class="n">y</span> <span class="n">&lt;</span> <span class="n">x</span> <span class="kr">then</span> <span class="n">y</span> <span class="kr">else</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>are not overloaded themselves.  SML doesn&#8217;t really support
+(user-defined) overloading or other forms of ad hoc polymorphism.  In
+cases such as the above where the context doesn&#8217;t resolve the
+overloading, expressions using overloaded operators or constants get
+assigned a default type.  The above definition gets the type</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">min</span> <span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">int</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See <a href="Overloading">Overloading</a> and <a href="TypeIndexedValues">TypeIndexedValues</a> for further discussion.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_semicolons">Semicolons</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is a common mistake to use redundant semicolons in SML code.  This
+is probably caused by the fact that in an SML REPL, a semicolon (and
+enter) is used to signal the REPL that it should evaluate the
+preceding chunk of code as a unit.  In SML source files, semicolons
+are really needed in only two places.  Namely, in expressions of the
+form</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">exp</span> <span class="p">;</span> <span class="p">...</span> <span class="p">;</span> <span class="n">exp</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">let</span> <span class="p">...</span> <span class="kr">in</span> <span class="n">exp</span> <span class="p">;</span> <span class="p">...</span> <span class="p">;</span> <span class="n">exp</span> <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that semicolons act as expression (or declaration) separators
+rather than as terminators.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_stale_bindings">Stale bindings</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_unresolved_records">Unresolved records</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_value_restriction">Value restriction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>See <a href="ValueRestriction">ValueRestriction</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_variable_scope">Type Variable Scope</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>See <a href="TypeVariableScope">TypeVariableScope</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/StandardMLGotchas.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/StandardMLGotchas.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,5 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ISABELLE_ZSTD_HOME="$COMPONENT"
+
+classpath "$ISABELLE_ZSTD_HOME/zstd-jni-1.5.6-8.jar"

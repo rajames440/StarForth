@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Bug</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Bug</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>To report a bug, please send mail to
+<a href="mailto:mlton-devel@mlton.org"><code>mlton-devel@mlton.org</code></a>.  Please include
+the complete SML program that caused the problem and a log of a
+compile of the program with <code>-verbose 2</code>.  For large programs (over
+256K), please send an email containing the discussion text and a link
+to any large files.</p>
+</div>
+<div class="paragraph">
+<p>There are some <a href="UnresolvedBugs">UnresolvedBugs</a> that we don&#8217;t plan to fix.</p>
+</div>
+<div class="paragraph">
+<p>We also maintain a list of bugs found with each release.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Bugs20210117">Bugs20210117</a></p>
+</li>
+<li>
+<p><a href="Bugs20201002">Bugs20201002</a></p>
+</li>
+<li>
+<p><a href="Bugs20200817">Bugs20200817</a></p>
+</li>
+<li>
+<p><a href="Bugs20200722">Bugs20200722</a></p>
+</li>
+<li>
+<p><a href="Bugs20180207">Bugs20180207</a></p>
+</li>
+<li>
+<p><a href="Bugs20130715">Bugs20130715</a></p>
+</li>
+<li>
+<p><a href="Bugs20100608">Bugs20100608</a></p>
+</li>
+<li>
+<p><a href="Bugs20070826">Bugs20070826</a></p>
+</li>
+<li>
+<p><a href="Bugs20051202">Bugs20051202</a></p>
+</li>
+<li>
+<p><a href="Bugs20041109">Bugs20041109</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Bug.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Bug.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

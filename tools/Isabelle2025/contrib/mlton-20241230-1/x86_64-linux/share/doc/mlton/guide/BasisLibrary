@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>BasisLibrary</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>BasisLibrary</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_top_level_types_and_constructors">Top-level types and constructors</a></li>
+<li><a href="#_top_level_exception_constructors">Top-level exception constructors</a></li>
+<li><a href="#_top_level_values">Top-level values</a></li>
+<li><a href="#_overloaded_identifiers">Overloaded identifiers</a></li>
+<li><a href="#_top_level_signatures">Top-level signatures</a></li>
+<li><a href="#_top_level_structures">Top-level structures</a></li>
+<li><a href="#_top_level_functors">Top-level functors</a></li>
+<li><a href="#_type_equivalences">Type equivalences</a></li>
+<li><a href="#_real_and_math_functions">Real and Math functions</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="StandardML">Standard ML</a> Basis Library is a collection of modules
+dealing with basic types, input/output, OS interfaces, and simple
+datatypes.  It is intended as a portable library usable across all
+implementations of SML.  For the official online version of the Basis
+Library specification, see <a href="https://smlfamily.github.io/Basis" class="bare">https://smlfamily.github.io/Basis</a>.
+<a href="References#GansnerReppy04">The Standard ML Basis Library</a> is a book
+version that includes all of the online version and more.  For a
+reverse chronological list of changes to the specification, see
+<a href="https://smlfamily.github.io/Basis/history.html" class="bare">https://smlfamily.github.io/Basis/history.html</a>.</p>
+</div>
+<div class="paragraph">
+<p>MLton implements all of the required portions of the Basis Library.
+MLton also implements many of the optional structures.  In the future,
+MLton will also implement
+<a href="https://github.com/SMLFamily/BasisLibrary/wiki">proposed improvements</a>
+to the Basis Library.</p>
+</div>
+<div class="paragraph">
+<p>You can obtain a complete and current list of what&#8217;s available using
+<code>mlton -show-basis</code> (see <a href="ShowBasis">ShowBasis</a>).  By default, MLton makes the
+Basis Library available to user programs.  You can also
+<a href="MLBasisAvailableLibraries">access the Basis Library</a> from
+<a href="MLBasis">ML Basis</a> files.</p>
+</div>
+<div class="paragraph">
+<p>MLton purposefully hides the representation of unspecified Basis
+Library types with opaque signature matching.  That is, unless the
+Basis Library specifies that a structure&#8217;s type is equal to some other
+type, the type will be opaque and will not be seen as equal to any
+type but itself.</p>
+</div>
+<div class="paragraph">
+<p>Below is a complete list of what MLton implements.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_top_level_types_and_constructors">Top-level types and constructors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>eqtype 'a array</code></p>
+</div>
+<div class="paragraph">
+<p><code>datatype bool = false | true</code></p>
+</div>
+<div class="paragraph">
+<p><code>eqtype char</code></p>
+</div>
+<div class="paragraph">
+<p><code>type exn</code></p>
+</div>
+<div class="paragraph">
+<p><code>eqtype int</code></p>
+</div>
+<div class="paragraph">
+<p><code>datatype 'a list = nil | :: of ('a * 'a list)</code></p>
+</div>
+<div class="paragraph">
+<p><code>datatype 'a option = NONE | SOME of 'a</code></p>
+</div>
+<div class="paragraph">
+<p><code>datatype order = EQUAL | GREATER | LESS</code></p>
+</div>
+<div class="paragraph">
+<p><code>type real</code></p>
+</div>
+<div class="paragraph">
+<p><code>datatype 'a ref = ref of 'a</code></p>
+</div>
+<div class="paragraph">
+<p><code>eqtype string</code></p>
+</div>
+<div class="paragraph">
+<p><code>type substring</code></p>
+</div>
+<div class="paragraph">
+<p><code>eqtype unit</code></p>
+</div>
+<div class="paragraph">
+<p><code>eqtype 'a vector</code></p>
+</div>
+<div class="paragraph">
+<p><code>eqtype word</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_top_level_exception_constructors">Top-level exception constructors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>Bind</code></p>
+</div>
+<div class="paragraph">
+<p><code>Chr</code></p>
+</div>
+<div class="paragraph">
+<p><code>Div</code></p>
+</div>
+<div class="paragraph">
+<p><code>Domain</code></p>
+</div>
+<div class="paragraph">
+<p><code>Empty</code></p>
+</div>
+<div class="paragraph">
+<p><code>Fail of string</code></p>
+</div>
+<div class="paragraph">
+<p><code>Match</code></p>
+</div>
+<div class="paragraph">
+<p><code>Option</code></p>
+</div>
+<div class="paragraph">
+<p><code>Overflow</code></p>
+</div>
+<div class="paragraph">
+<p><code>Size</code></p>
+</div>
+<div class="paragraph">
+<p><code>Span</code></p>
+</div>
+<div class="paragraph">
+<p><code>Subscript</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_top_level_values">Top-level values</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton does not implement the optional top-level value
+<code>use: string -&gt; unit</code>, which conflicts with whole-program
+compilation because it allows new code to be loaded dynamically.</p>
+</div>
+<div class="paragraph">
+<p>MLton implements all other top-level values:</p>
+</div>
+<div class="paragraph">
+<p><code>!</code>,
+<code>:=</code>,
+<code>&lt;&gt;</code>,
+<code>=</code>,
+<code>@</code>,
+<code>^</code>,
+<code>app</code>,
+<code>before</code>,
+<code>ceil</code>,
+<code>chr</code>,
+<code>concat</code>,
+<code>exnMessage</code>,
+<code>exnName</code>,
+<code>explode</code>,
+<code>floor</code>,
+<code>foldl</code>,
+<code>foldr</code>,
+<code>getOpt</code>,
+<code>hd</code>,
+<code>ignore</code>,
+<code>implode</code>,
+<code>isSome</code>,
+<code>length</code>,
+<code>map</code>,
+<code>not</code>,
+<code>null</code>,
+<code>o</code>,
+<code>ord</code>,
+<code>print</code>,
+<code>real</code>,
+<code>rev</code>,
+<code>round</code>,
+<code>size</code>,
+<code>str</code>,
+<code>substring</code>,
+<code>tl</code>,
+<code>trunc</code>,
+<code>valOf</code>,
+<code>vector</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_overloaded_identifiers">Overloaded identifiers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>*</code>,
+<code>+</code>,
+<code>-</code>,
+<code>/</code>,
+<code>&lt;</code>,
+<code>&#8656;</code>,
+<code>&gt;</code>,
+<code>&gt;=</code>,
+<code>~</code>,
+<code>abs</code>,
+<code>div</code>,
+<code>mod</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_top_level_signatures">Top-level signatures</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>BIN_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>BIT_FLAGS</code></p>
+</div>
+<div class="paragraph">
+<p><code>BOOL</code></p>
+</div>
+<div class="paragraph">
+<p><code>BYTE</code></p>
+</div>
+<div class="paragraph">
+<p><code>CHAR</code></p>
+</div>
+<div class="paragraph">
+<p><code>COMMAND_LINE</code></p>
+</div>
+<div class="paragraph">
+<p><code>DATE</code></p>
+</div>
+<div class="paragraph">
+<p><code>GENERAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>GENERIC_SOCK</code></p>
+</div>
+<div class="paragraph">
+<p><code>IEEE_REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>IMPERATIVE_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>INET_SOCK</code></p>
+</div>
+<div class="paragraph">
+<p><code>INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>INT_INF</code></p>
+</div>
+<div class="paragraph">
+<p><code>IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>LIST</code></p>
+</div>
+<div class="paragraph">
+<p><code>LIST_PAIR</code></p>
+</div>
+<div class="paragraph">
+<p><code>MATH</code></p>
+</div>
+<div class="paragraph">
+<p><code>MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>NET_HOST_DB</code></p>
+</div>
+<div class="paragraph">
+<p><code>NET_PROT_DB</code></p>
+</div>
+<div class="paragraph">
+<p><code>NET_SERV_DB</code></p>
+</div>
+<div class="paragraph">
+<p><code>OPTION</code></p>
+</div>
+<div class="paragraph">
+<p><code>OS</code></p>
+</div>
+<div class="paragraph">
+<p><code>OS_FILE_SYS</code></p>
+</div>
+<div class="paragraph">
+<p><code>OS_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>OS_PATH</code></p>
+</div>
+<div class="paragraph">
+<p><code>OS_PROCESS</code></p>
+</div>
+<div class="paragraph">
+<p><code>PACK_REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>PACK_WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>POSIX</code></p>
+</div>
+<div class="paragraph">
+<p><code>POSIX_ERROR</code></p>
+</div>
+<div class="paragraph">
+<p><code>POSIX_FILE_SYS</code></p>
+</div>
+<div class="paragraph">
+<p><code>POSIX_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>POSIX_PROCESS</code></p>
+</div>
+<div class="paragraph">
+<p><code>POSIX_PROC_ENV</code></p>
+</div>
+<div class="paragraph">
+<p><code>POSIX_SIGNAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>POSIX_SYS_DB</code></p>
+</div>
+<div class="paragraph">
+<p><code>POSIX_TTY</code></p>
+</div>
+<div class="paragraph">
+<p><code>PRIM_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>SOCKET</code></p>
+</div>
+<div class="paragraph">
+<p><code>STREAM_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>STRING</code></p>
+</div>
+<div class="paragraph">
+<p><code>STRING_CVT</code></p>
+</div>
+<div class="paragraph">
+<p><code>SUBSTRING</code></p>
+</div>
+<div class="paragraph">
+<p><code>TEXT</code></p>
+</div>
+<div class="paragraph">
+<p><code>TEXT_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>TEXT_STREAM_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>TIME</code></p>
+</div>
+<div class="paragraph">
+<p><code>TIMER</code></p>
+</div>
+<div class="paragraph">
+<p><code>UNIX</code></p>
+</div>
+<div class="paragraph">
+<p><code>UNIX_SOCK</code></p>
+</div>
+<div class="paragraph">
+<p><code>VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>WORD</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_top_level_structures">Top-level structures</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>structure Array: ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Array2: ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure ArraySlice: ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure BinIO: BIN_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure BinPrimIO: PRIM_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Bool: BOOL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure BoolArray: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure BoolArray2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure BoolArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure BoolVector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure BoolVectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Byte: BYTE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Char: CHAR</code></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Char</code> characters correspond to ISO-8859-1.  The <code>Char</code> functions do not depend on locale.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>structure CharArray: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure CharArray2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure CharArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure CharVector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure CharVectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure CommandLine: COMMAND_LINE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Date: DATE</code></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Date.fromString</code> and <code>Date.scan</code> accept a space in addition to a zero for the first character of the day of the month.  The Basis Library specification only allows a zero.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>structure FixedInt: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure General: GENERAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure GenericSock: GENERIC_SOCK</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure IEEEReal: IEEE_REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure INetSock: INET_SOCK</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure IO: IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int1: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int2: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int3: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int4: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p><code>structure Int31: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int32: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int64: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure IntArray: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure IntArray2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure IntArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure IntVector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure IntVectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int8: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int8Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int8Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int8ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int8Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int8VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int16: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int16Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int16Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int16ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int16Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int16VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int32: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int32Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int32Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int32ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int32Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int32VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int64Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int64Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int64ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int64Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Int64VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure IntInf: INT_INF</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeInt: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeIntArray: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeIntArray2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeIntArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeIntVector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeIntVectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeReal: REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeRealArray: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeRealArray2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeRealArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeRealVector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeRealVectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeWord: WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeWordArray: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeWordArray2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeWordArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeWordVector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure LargeWordVectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure List: LIST</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure ListPair: LIST_PAIR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Math: MATH</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure NetHostDB: NET_HOST_DB</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure NetProtDB: NET_PROT_DB</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure NetServDB: NET_SERV_DB</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure OS: OS</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Option: OPTION</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackReal32Big: PACK_REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackReal32Little: PACK_REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackReal64Big: PACK_REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackReal64Little: PACK_REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackRealBig: PACK_REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackRealLittle: PACK_REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackWord16Big: PACK_WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackWord16Little: PACK_WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackWord32Big: PACK_WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackWord32Little: PACK_WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackWord64Big: PACK_WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure PackWord64Little: PACK_WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Position: INTEGER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Posix: POSIX</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real: REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure RealArray: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure RealArray2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure RealArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure RealVector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure RealVectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real32: REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real32Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real32Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real32ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real32Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real32VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real64: REAL</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real64Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real64Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real64ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real64Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Real64VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Socket: SOCKET</code></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The Basis Library specification requires functions like
+<code>Socket.sendVec</code> to raise an exception if they fail.  However, on some
+platforms, sending to a socket that hasn&#8217;t yet been connected causes a
+<code>SIGPIPE</code> signal, which invokes the default signal handler for
+<code>SIGPIPE</code> and causes the program to terminate.  If you want the
+exception to be raised, you can ignore <code>SIGPIPE</code> by adding the
+following to your program.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">MLton</span><span class="err">.</span><span class="n">Signal</span>
+<span class="kr">in</span>
+   <span class="n">setHandler</span> <span class="p">(</span><span class="nn">Posix</span><span class="p">.</span><span class="nn">Signal</span><span class="p">.</span><span class="n">pipe</span><span class="p">,</span> <span class="nn">Handler</span><span class="p">.</span><span class="n">ignore</span><span class="p">)</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>structure String: STRING</code></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The <code>String</code> functions do not depend on locale.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>structure StringCvt: STRING_CVT</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Substring: SUBSTRING</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure SysWord: WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Text: TEXT</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure TextIO: TEXT_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure TextPrimIO: PRIM_IO</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Time: TIME</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Timer: TIMER</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Unix: UNIX</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure UnixSock: UNIX_SOCK</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Vector: VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure VectorSlice: VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word: WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word1: WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word2: WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word3: WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word4: WORD</code></p>
+</div>
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p><code>structure Word31: WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word32: WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word64: WORD</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure WordArray: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure WordArray2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure WordArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure WordVectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure WordVector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word8Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word8Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word8ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word8Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word8VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word16Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word16Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word16ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word16Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word16VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word32Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word32Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word32ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word32Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word32VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word64Array: MONO_ARRAY</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word64Array2: MONO_ARRAY2</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word64ArraySlice: MONO_ARRAY_SLICE</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word64Vector: MONO_VECTOR</code></p>
+</div>
+<div class="paragraph">
+<p><code>structure Word64VectorSlice: MONO_VECTOR_SLICE</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_top_level_functors">Top-level functors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>ImperativeIO</code></p>
+</div>
+<div class="paragraph">
+<p><code>PrimIO</code></p>
+</div>
+<div class="paragraph">
+<p><code>StreamIO</code></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>MLton&#8217;s <code>StreamIO</code> functor takes structures <code>ArraySlice</code> and
+<code>VectorSlice</code> in addition to the arguments specified in the Basis
+Library specification.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_equivalences">Type equivalences</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following types are equivalent.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>FixedInt = Int64.int
+LargeInt = IntInf.int
+LargeReal.real = Real64.real
+LargeWord = Word64.word</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The default <code>int</code>, <code>real</code>, and <code>word</code> types may be set by the
+<code>-default-type <em>type</em></code> <a href="CompileTimeOptions">compile-time option</a>.
+By default, the following types are equivalent:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>int = Int.int = Int32.int
+real = Real.real = Real64.real
+word = Word.word = Word32.word</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_real_and_math_functions">Real and Math functions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>Real</code>, <code>Real32</code>, and <code>Real64</code> modules are implemented
+using the <code>C</code> math library, so the SML functions will reflect the
+behavior of the underlying library function.  We have made some effort
+to unify the differences between the math libraries on different
+platforms, and in particular to handle exceptional cases according to
+the Basis Library specification.  However, there will be differences
+due to different numerical algorithms and cases we may have missed.
+Please submit a <a href="Bug">bug report</a> if you encounter an error in
+the handling of an exceptional case.</p>
+</div>
+<div class="paragraph">
+<p>On x86, real arithmetic is implemented internally using 80 bits of
+precision.  Using higher precision for intermediate results in
+computations can lead to different results than if all the computation
+is done at 32 or 64 bits.  If you require strict IEEE compliance, you
+can compile with <code>-ieee-fp true</code>, which will cause intermediate
+results to be stored after each operation.  This may cause a
+substantial performance penalty.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/BasisLibrary.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/BasisLibrary.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

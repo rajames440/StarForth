@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ShowProf</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ShowProf</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>If an executable is compiled for <a href="Profiling">profiling</a>, then it
+accepts a special command-line runtime system argument, <code>show-prof</code>,
+that outputs information about the source functions that are profiled.
+Normally, this information is used by <code>mlprof</code>.  This page documents
+the <code>show-prof</code> output format, and is intended for those working on
+the profiler internals.</p>
+</div>
+<div class="paragraph">
+<p>The <code>show-prof</code> output is ASCII, and consists of a sequence of lines.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The magic number of the executable.</p>
+</li>
+<li>
+<p>The number of source names in the executable.</p>
+</li>
+<li>
+<p>A line for each source name giving the name of the function, a tab,
+the filename of the file containing the function, a colon, a space,
+and the line number that the function starts on in that file.</p>
+</li>
+<li>
+<p>The number of (split) source functions.</p>
+</li>
+<li>
+<p>A line for each (split) source function, where each line consists of
+a source-name index (into the array of source names) and a successors
+index (into the array of split-source sequences, defined below).</p>
+</li>
+<li>
+<p>The number of split-source sequences.</p>
+</li>
+<li>
+<p>A line for each split-source sequence, where each line is a space
+separated list of (split) source functions.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The latter two arrays, split sources and split-source sequences,
+define a directed graph, which is the call-graph of the program.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ShowProf.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ShowProf.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

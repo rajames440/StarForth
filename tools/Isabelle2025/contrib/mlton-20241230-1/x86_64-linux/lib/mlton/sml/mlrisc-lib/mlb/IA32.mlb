@@ -1,0 +1,1087 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
+in
+
+local
+  basis l53 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb
+    end
+  basis l147 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+  basis l4 =
+    bas
+      (* $MLRISC.cm(=(proxyLib.cm):.)/MLRISC.cm =??=> *) MLRISC.mlb
+    end
+  basis l68 =
+    bas
+      (* $Control.cm(=(proxyLib.cm):.)/Control.cm =??=> *) Control.mlb
+    end
+  basis l217 =
+    bas
+      (* $Graphs.cm(=(proxyLib.cm):.)/Graphs.cm =??=> *) Graphs.mlb
+    end
+  basis l17 =
+    bas
+      (* $Lib.cm(=(proxyLib.cm):.)/Lib.cm =??=> *) Lib.mlb
+    end
+  basis l193 =
+    bas
+      (* $MLTREE.cm(=(proxyLib.cm):.)/MLTREE.cm =??=> *) MLTREE.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l4
+   in
+      signature gs_0 = REGION
+   end
+   local
+      open l4
+   in
+      signature gs_1 = CONSTANT
+   end
+   local
+      open l4
+   in
+      signature gs_2 = MLTREE
+   end
+   local
+      open l4
+   in
+      signature gs_3 = CELLS_BASIS
+   end
+   local
+      open l17
+   in
+      structure gs_4 = Annotations
+   end
+   local
+      open l4
+   in
+      structure gs_5 = Label
+   end
+   local
+      open l53
+   in
+      structure gs_6 = Char
+      structure gs_7 = CharArray
+      structure gs_8 = CharVector
+      structure gs_9 = FixedInt
+      structure gs_10 = General
+      structure gs_11 = Int
+      structure gs_12 = Int32
+      structure gs_13 = Int64
+      structure gs_14 = IntInf
+      structure gs_15 = LargeInt
+      structure gs_16 = LargeReal
+      structure gs_17 = LargeWord
+      structure gs_18 = OS
+      structure gs_19 = Position
+      structure gs_20 = Real
+      structure gs_21 = Real64
+      structure gs_22 = RealArray
+      structure gs_23 = RealArraySlice
+      structure gs_24 = RealVector
+      structure gs_25 = RealVectorSlice
+      structure gs_26 = SMLofNJ
+      structure gs_27 = Socket
+      structure gs_28 = String
+      structure gs_29 = Substring
+      structure gs_30 = SysWord
+      structure gs_31 = Time
+      structure gs_32 = Word
+      structure gs_33 = Word32
+      structure gs_34 = Word64
+      structure gs_35 = Word8
+   end
+   local
+      open l4
+   in
+      structure gs_36 = CellsBasis
+   end
+   local
+      open l4
+   in
+      functor gs_37 = Cells
+   end
+   local
+      open l4
+   in
+      signature gs_38 = CELLS
+   end
+   local
+      open l68
+   in
+      signature gs_39 = MLRISC_ERROR_MSG
+      structure gs_40 = MLRiscErrorMsg
+   end
+   local
+      signature CELLS = gs_38
+      functor Cells = gs_37
+      structure CellsBasis = gs_36
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure General = gs_10
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntInf = gs_14
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      structure OS = gs_18
+      structure Position = gs_19
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      ../x86/instructions/x86Cells.sml
+   in
+      signature gs_41 = X86CELLS
+      structure gs_42 = X86Cells
+   end
+   local
+      structure Annotations = gs_4
+      signature CELLS_BASIS = gs_3
+      signature CONSTANT = gs_1
+      structure CellsBasis = gs_36
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure General = gs_10
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntInf = gs_14
+      structure Label = gs_5
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      signature MLTREE = gs_2
+      structure OS = gs_18
+      structure Position = gs_19
+      signature REGION = gs_0
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      signature X86CELLS = gs_41
+      structure X86Cells = gs_42
+      ../x86/instructions/x86Instr.sml
+   in
+      signature gs_43 = X86INSTR
+      functor gs_44 = X86Instr
+   end
+   local
+      open l4
+   in
+      signature gs_45 = ARCH_SPILL_INSTR
+   end
+   local
+      open l4
+   in
+      signature gs_46 = INSN_PROPERTIES
+   end
+   local
+      signature ARCH_SPILL_INSTR = gs_45
+      structure CellsBasis = gs_36
+      signature INSN_PROPERTIES = gs_46
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      ../x86/ra/x86SpillInstr.sml
+   in
+      functor gs_47 = X86SpillInstr
+   end
+   local
+      open l4
+   in
+      signature gs_48 = FREQUENCY_PROPERTIES
+   end
+   local
+      open l4
+   in
+      structure gs_49 = MLRiscAnnotations
+   end
+   local
+      open l17
+   in
+      signature gs_50 = PROBABILITY
+      structure gs_51 = Probability
+   end
+   local
+      signature FREQUENCY_PROPERTIES = gs_48
+      structure MLRiscAnnotations = gs_49
+      signature PROBABILITY = gs_50
+      structure Probability = gs_51
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      ../x86/instructions/x86FreqProps.sml
+   in
+      functor gs_52 = X86FreqProps
+   end
+   local
+      open l4
+   in
+      signature gs_53 = MC_EMIT
+   end
+   local
+      open l53
+   in
+      structure gs_54 = Word8Vector
+   end
+   local
+      open l53
+   in
+      structure gs_55 = Option
+   end
+   local
+      open l4
+   in
+      signature gs_56 = INSTRUCTION_EMITTER
+   end
+   local
+      open l4
+   in
+      signature gs_57 = MLTREE_EVAL
+   end
+   local
+      structure CellsBasis = gs_36
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      ../x86/instructions/x86MemRegs.sig
+   in
+      signature gs_58 = MEMORY_REGISTERS
+   end
+   local
+      structure CellsBasis = gs_36
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      ../x86/instructions/x86Shuffle.sig
+   in
+      signature gs_59 = X86SHUFFLE
+   end
+   local
+      structure CellsBasis = gs_36
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure General = gs_10
+      signature INSTRUCTION_EMITTER = gs_56
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntInf = gs_14
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      signature MC_EMIT = gs_53
+      signature MEMORY_REGISTERS = gs_58
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      signature MLTREE_EVAL = gs_57
+      structure OS = gs_18
+      structure Option = gs_55
+      structure Position = gs_19
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      structure Word8Vector = gs_54
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      signature X86SHUFFLE = gs_59
+      ../x86/x86MC.sml
+   in
+      functor gs_60 = X86MCEmitter
+   end
+   local
+      open l4
+   in
+      signature gs_61 = MLTREE_HASH
+   end
+   local
+      structure CellsBasis = gs_36
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure General = gs_10
+      signature INSN_PROPERTIES = gs_46
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntInf = gs_14
+      structure Label = gs_5
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      signature MLTREE_EVAL = gs_57
+      signature MLTREE_HASH = gs_61
+      structure OS = gs_18
+      structure Position = gs_19
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      ../x86/instructions/x86Props.sml
+   in
+      functor gs_62 = X86Props
+   end
+   local
+      open l4
+   in
+      signature gs_63 = PSEUDO_OPS_BASIS
+   end
+   local
+      open l4
+   in
+      functor gs_64 = DarwinPseudoOps
+   end
+   local
+      open l4
+   in
+      functor gs_65 = PseudoOpsLittle
+   end
+   local
+      open l147
+   in
+      structure gs_66 = Format
+   end
+   local
+      open l4
+   in
+      structure gs_67 = PseudoOpsBasisTyp
+   end
+   local
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      functor DarwinPseudoOps = gs_64
+      structure FixedInt = gs_9
+      structure Format = gs_66
+      structure General = gs_10
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntInf = gs_14
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      signature MLTREE = gs_2
+      signature MLTREE_EVAL = gs_57
+      structure OS = gs_18
+      signature PSEUDO_OPS_BASIS = gs_63
+      structure Position = gs_19
+      structure PseudoOpsBasisTyp = gs_67
+      functor PseudoOpsLittle = gs_65
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      ../x86/flowgraph/x86-darwin-pseudo-ops.sml
+   in
+      functor gs_68 = X86DarwinPseudoOps
+   end
+   local
+      open l4
+   in
+      signature gs_69 = SDI_JUMPS
+   end
+   local
+      signature MC_EMIT = gs_53
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      signature MLTREE_EVAL = gs_57
+      signature SDI_JUMPS = gs_69
+      structure Word8Vector = gs_54
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      signature X86SHUFFLE = gs_59
+      ../x86/backpatch/x86Jumps.sml
+   in
+      functor gs_70 = X86Jumps
+   end
+   local
+      open l4
+   in
+      signature gs_71 = CONTROL_FLOW_GRAPH
+   end
+   local
+      open l4
+   in
+      signature gs_72 = MLTREE_STREAM
+   end
+   local
+      ../x86/instructions/x86instr-ext.sml
+   in
+      structure gs_73 = X86InstrExt
+   end
+   local
+      signature CONTROL_FLOW_GRAPH = gs_71
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      signature MLTREE_STREAM = gs_72
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      structure X86InstrExt = gs_73
+      ../x86/instructions/x86comp-instr-ext.sml
+   in
+      signature gs_74 = X86COMP_INSTR_EXT
+      functor gs_75 = X86CompInstrExt
+   end
+   local
+      open l4
+   in
+      functor gs_76 = MLTreeGen
+   end
+   local
+      open l4
+   in
+      functor gs_77 = Shuffle
+   end
+   local
+      open l53
+   in
+      structure gs_78 = List
+   end
+   local
+      open l4
+   in
+      signature gs_79 = MLTREECOMP
+      signature gs_80 = MLTREE_EXTENSION_COMP
+   end
+   local
+      open l193
+   in
+      signature gs_81 = MLTREE_UTILS
+   end
+   local
+      structure Annotations = gs_4
+      structure CellsBasis = gs_36
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure General = gs_10
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntInf = gs_14
+      structure Label = gs_5
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      structure List = gs_78
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscAnnotations = gs_49
+      structure MLRiscErrorMsg = gs_40
+      signature MLTREECOMP = gs_79
+      signature MLTREE_EXTENSION_COMP = gs_80
+      signature MLTREE_STREAM = gs_72
+      signature MLTREE_UTILS = gs_81
+      functor MLTreeGen = gs_76
+      structure OS = gs_18
+      signature PROBABILITY = gs_50
+      structure Position = gs_19
+      structure Probability = gs_51
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      functor Shuffle = gs_77
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      ../x86/mltree/x86.sml
+   in
+      functor gs_82 = X86
+   end
+   local
+      open l4
+   in
+      signature gs_83 = C_CALLS
+   end
+   local
+      open l4
+   in
+      structure gs_84 = CTypes
+   end
+   local
+      structure CTypes = gs_84
+      signature C_CALLS = gs_83
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure General = gs_10
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntInf = gs_14
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      structure List = gs_78
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscAnnotations = gs_49
+      structure MLRiscErrorMsg = gs_40
+      signature MLTREE = gs_2
+      structure OS = gs_18
+      structure Position = gs_19
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      signature X86CELLS = gs_41
+      structure X86Cells = gs_42
+      structure X86InstrExt = gs_73
+      ../x86/c-calls/ia32-svid.sml
+   in
+      functor gs_85 = IA32SVID_CCalls
+   end
+   local
+      open l4
+   in
+      signature gs_86 = OMIT_FRAME_POINTER
+   end
+   local
+      open l147
+   in
+      structure gs_87 = IntHashTable
+   end
+   local
+      open l217
+   in
+      structure gs_88 = Graph
+   end
+   local
+      open l68
+   in
+      signature gs_89 = MLRISC_CONTROL
+      structure gs_90 = MLRiscControl
+   end
+   local
+      open l53
+   in
+      structure gs_91 = ListPair
+   end
+   local
+      signature CONTROL_FLOW_GRAPH = gs_71
+      structure CellsBasis = gs_36
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure General = gs_10
+      structure Graph = gs_88
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntHashTable = gs_87
+      structure IntInf = gs_14
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      structure ListPair = gs_91
+      signature MEMORY_REGISTERS = gs_58
+      signature MLRISC_CONTROL = gs_89
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscAnnotations = gs_49
+      structure MLRiscControl = gs_90
+      structure MLRiscErrorMsg = gs_40
+      signature OMIT_FRAME_POINTER = gs_86
+      structure OS = gs_18
+      structure Option = gs_55
+      structure Position = gs_19
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      ../x86/omit-frameptr/x86omit-frameptr.sml
+   in
+      functor gs_92 = X86OmitFramePointer
+   end
+   local
+      open l4
+   in
+      signature gs_93 = CFG_OPTIMIZATION
+   end
+   local
+      open l4
+   in
+      functor gs_94 = GetReg
+   end
+   local
+      open l4
+   in
+      functor gs_95 = RegisterAllocator
+   end
+   local
+      open l4
+   in
+      functor gs_96 = MemoryRA
+   end
+   local
+      open l4
+   in
+      functor gs_97 = RADeadCodeElim
+   end
+   local
+      open l4
+   in
+      functor gs_98 = ClusterRA
+   end
+   local
+      open l4
+   in
+      signature gs_99 = LIVENESS
+      functor gs_100 = Liveness
+   end
+   local
+      open l4
+   in
+      signature gs_101 = PRINT_FLOWGRAPH
+      functor gs_102 = PrintFlowgraph
+   end
+   local
+      open l53
+   in
+      structure gs_103 = Array
+   end
+   local
+      open l4
+   in
+      signature gs_104 = RA_SPILL
+   end
+   local
+      open l4
+   in
+      signature gs_105 = RA_SPILL_HEURISTICS
+   end
+   local
+      open l4
+   in
+      structure gs_106 = RAGraph
+   end
+   local
+      open l147
+   in
+      structure gs_107 = IntRedBlackMap
+   end
+   local
+      open l53
+   in
+      structure gs_108 = TextIO
+   end
+   local
+      open l4
+   in
+      signature gs_109 = ASM_STREAM
+      structure gs_110 = AsmStream
+   end
+   local
+      open l17
+   in
+      structure gs_111 = StringOutStream
+   end
+   local
+      open l147
+   in
+      structure gs_112 = ListMergeSort
+   end
+   local
+      signature ASM_STREAM = gs_109
+      structure Annotations = gs_4
+      structure Array = gs_103
+      structure AsmStream = gs_110
+      signature CFG_OPTIMIZATION = gs_93
+      signature CONTROL_FLOW_GRAPH = gs_71
+      structure CellsBasis = gs_36
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure General = gs_10
+      structure Graph = gs_88
+      signature INSN_PROPERTIES = gs_46
+      signature INSTRUCTION_EMITTER = gs_56
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntHashTable = gs_87
+      structure IntInf = gs_14
+      structure IntRedBlackMap = gs_107
+      signature LIVENESS = gs_99
+      structure Label = gs_5
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      structure List = gs_78
+      structure ListMergeSort = gs_112
+      structure ListPair = gs_91
+      functor Liveness = gs_100
+      signature MLRISC_CONTROL = gs_89
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscAnnotations = gs_49
+      structure MLRiscControl = gs_90
+      structure MLRiscErrorMsg = gs_40
+      structure OS = gs_18
+      structure Position = gs_19
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure StringOutStream = gs_111
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure TextIO = gs_108
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      ../x86/mltree/x86-fp.sml
+   in
+      functor gs_113 = X86FP
+   end
+   local
+      structure Annotations = gs_4
+      structure Array = gs_103
+      signature CFG_OPTIMIZATION = gs_93
+      signature CONTROL_FLOW_GRAPH = gs_71
+      structure CellsBasis = gs_36
+      functor ClusterRA = gs_98
+      functor GetReg = gs_94
+      structure Graph = gs_88
+      signature INSN_PROPERTIES = gs_46
+      signature INSTRUCTION_EMITTER = gs_56
+      structure IntHashTable = gs_87
+      signature LIVENESS = gs_99
+      structure List = gs_78
+      functor Liveness = gs_100
+      signature MLRISC_CONTROL = gs_89
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscControl = gs_90
+      structure MLRiscErrorMsg = gs_40
+      functor MemoryRA = gs_96
+      signature PRINT_FLOWGRAPH = gs_101
+      functor PrintFlowgraph = gs_102
+      functor RADeadCodeElim = gs_97
+      structure RAGraph = gs_106
+      signature RA_SPILL = gs_104
+      signature RA_SPILL_HEURISTICS = gs_105
+      functor RegisterAllocator = gs_95
+      functor X86FP = gs_113
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      functor X86SpillInstr = gs_47
+      ../x86/ra/x86RA.sml
+   in
+      functor gs_114 = X86RA
+   end
+   local
+      signature CELLS_BASIS = gs_3
+      structure CellsBasis = gs_36
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      ../x86/ra/x86Rewrite.sig
+   in
+      signature gs_115 = X86REWRITE
+   end
+   local
+      open l4
+   in
+      signature gs_116 = ASM_FORMAT_UTIL
+      structure gs_117 = AsmFormatUtil
+   end
+   local
+      open l4
+   in
+      structure gs_118 = AsmFlags
+   end
+   local
+      open l4
+   in
+      signature gs_119 = INSTRUCTION_STREAM
+   end
+   local
+      signature ASM_FORMAT_UTIL = gs_116
+      signature ASM_STREAM = gs_109
+      structure Annotations = gs_4
+      structure AsmFlags = gs_118
+      structure AsmFormatUtil = gs_117
+      structure AsmStream = gs_110
+      structure CellsBasis = gs_36
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure General = gs_10
+      signature INSTRUCTION_EMITTER = gs_56
+      signature INSTRUCTION_STREAM = gs_119
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntInf = gs_14
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      signature MEMORY_REGISTERS = gs_58
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      signature MLTREE_EVAL = gs_57
+      structure OS = gs_18
+      structure Option = gs_55
+      structure Position = gs_19
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure TextIO = gs_108
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      signature X86SHUFFLE = gs_59
+      ../x86/emit/x86Asm.sml
+   in
+      functor gs_120 = X86AsmEmitter
+   end
+   local
+      structure CellsBasis = gs_36
+      structure List = gs_78
+      functor Shuffle = gs_77
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      signature X86SHUFFLE = gs_59
+      ../x86/instructions/x86Shuffle.sml
+   in
+      functor gs_121 = X86Shuffle
+   end
+   local
+      structure CellsBasis = gs_36
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      signature X86INSTR = gs_43
+      functor X86Instr = gs_44
+      signature X86REWRITE = gs_115
+      ../x86/ra/x86Rewrite.sml
+   in
+      functor gs_122 = X86Rewrite
+   end
+   local
+      open l4
+   in
+      functor gs_123 = GasPseudoOps
+   end
+   local
+      structure Char = gs_6
+      structure CharArray = gs_7
+      structure CharVector = gs_8
+      structure FixedInt = gs_9
+      structure Format = gs_66
+      functor GasPseudoOps = gs_123
+      structure General = gs_10
+      structure Int = gs_11
+      structure Int32 = gs_12
+      structure Int64 = gs_13
+      structure IntInf = gs_14
+      structure LargeInt = gs_15
+      structure LargeReal = gs_16
+      structure LargeWord = gs_17
+      signature MLRISC_ERROR_MSG = gs_39
+      structure MLRiscErrorMsg = gs_40
+      signature MLTREE = gs_2
+      signature MLTREE_EVAL = gs_57
+      structure OS = gs_18
+      signature PSEUDO_OPS_BASIS = gs_63
+      structure Position = gs_19
+      structure PseudoOpsBasisTyp = gs_67
+      functor PseudoOpsLittle = gs_65
+      structure Real = gs_20
+      structure Real64 = gs_21
+      structure RealArray = gs_22
+      structure RealArraySlice = gs_23
+      structure RealVector = gs_24
+      structure RealVectorSlice = gs_25
+      structure SMLofNJ = gs_26
+      structure Socket = gs_27
+      structure String = gs_28
+      structure Substring = gs_29
+      structure SysWord = gs_30
+      structure Time = gs_31
+      structure Word = gs_32
+      structure Word32 = gs_33
+      structure Word64 = gs_34
+      structure Word8 = gs_35
+      ../x86/flowgraph/x86GasPseudoOps.sml
+   in
+      functor gs_124 = X86GasPseudoOps
+   end
+in
+   functor IA32SVID_CCalls = gs_85
+   signature MEMORY_REGISTERS = gs_58
+   functor X86 = gs_82
+   functor X86AsmEmitter = gs_120
+   signature X86CELLS = gs_41
+   signature X86COMP_INSTR_EXT = gs_74
+   structure X86Cells = gs_42
+   functor X86CompInstrExt = gs_75
+   functor X86DarwinPseudoOps = gs_68
+   functor X86FP = gs_113
+   functor X86FreqProps = gs_52
+   functor X86GasPseudoOps = gs_124
+   signature X86INSTR = gs_43
+   functor X86Instr = gs_44
+   structure X86InstrExt = gs_73
+   functor X86Jumps = gs_70
+   functor X86MCEmitter = gs_60
+   functor X86OmitFramePointer = gs_92
+   functor X86Props = gs_62
+   functor X86RA = gs_114
+   signature X86REWRITE = gs_115
+   functor X86Rewrite = gs_122
+   signature X86SHUFFLE = gs_59
+   functor X86Shuffle = gs_121
+   functor X86SpillInstr = gs_47
+end
+end
+
+end

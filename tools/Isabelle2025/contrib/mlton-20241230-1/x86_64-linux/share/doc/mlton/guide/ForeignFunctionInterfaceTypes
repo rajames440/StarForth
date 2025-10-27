@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ForeignFunctionInterfaceTypes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ForeignFunctionInterfaceTypes</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>MLton&#8217;s <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> only allows values of certain SML
+types to be passed between SML and C.  The following types are
+allowed: <code>bool</code>, <code>char</code>, <code>int</code>, <code>real</code>, <code>word</code>.  All of the different
+sizes of (fixed-sized) integers, reals, and words are supported as
+well: <code>Int8.int</code>, <code>Int16.int</code>, <code>Int32.int</code>, <code>Int64.int</code>,
+<code>Real32.real</code>, <code>Real64.real</code>, <code>Word8.word</code>, <code>Word16.word</code>,
+<code>Word32.word</code>, <code>Word64.word</code>.  There is a special type,
+<code>MLton.Pointer.t</code>, for passing C pointers&#8201;&#8212;&#8201;see <a href="MLtonPointer">MLtonPointer</a> for
+details.</p>
+</div>
+<div class="paragraph">
+<p>Arrays, refs, and vectors of the above types are also allowed.
+Because in MLton monomorphic arrays and vectors are exactly the same
+as their polymorphic counterpart, these are also allowed.  Hence,
+<code>string</code>, <code>char vector</code>, and <code>CharVector.vector</code> are also allowed.
+Strings are not null terminated, unless you manually do so from the
+SML side.</p>
+</div>
+<div class="paragraph">
+<p>Unfortunately, passing tuples or datatypes is not allowed because that
+would interfere with representation optimizations.</p>
+</div>
+<div class="paragraph">
+<p>The C header file that <code>-export-header</code> generates includes
+<code>typedef</code>s for the C types corresponding to the SML types.  Here is
+the mapping between SML types and C types.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">SML type</th>
+<th class="tableblock halign-left valign-top">C typedef</th>
+<th class="tableblock halign-left valign-top">C type</th>
+<th class="tableblock halign-left valign-top">Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>array</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Pointer</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned char *</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Bool</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int32_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>char</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Char8</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint8_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Int8.int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Int8</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int8_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Int16.int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Int16</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int16_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Int32.int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Int32</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int32_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Int64.int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Int64</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int64_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Int32</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int32_t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Default">(default)</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MLton.Pointer.t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Pointer</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned char *</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Real32.real</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Real32</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Real64.real</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Real64</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>double</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>real</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Real64</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>double</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Default">(default)</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ref</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Pointer</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned char *</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>string</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Pointer</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned char *</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#ReadOnly">(read only)</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>vector</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Pointer</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned char *</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#ReadOnly">(read only)</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Word8.word</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Word8</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint8_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Word16.word</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Word16</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint16_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Word32.word</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Word32</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint32_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Word64.word</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Word64</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint64_t</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>word</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Word32</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint32_t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Default">(default)</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><a id="Default"></a>Note (default): The default <code>int</code>, <code>real</code>, and
+<code>word</code> types may be set by the <code>-default-type <em>type</em></code>
+<a href="CompileTimeOptions">compiler option</a>.  The given C typedef and C
+types correspond to the default behavior.</p>
+</div>
+<div class="paragraph">
+<p><a id="ReadOnly"></a>Note (read only): Because MLton assumes that
+vectors and strings are read-only (and will perform optimizations
+that, for instance, cause them to share space), you must not modify
+the data pointed to by the <code>unsigned char *</code> in C code.</p>
+</div>
+<div class="paragraph">
+<p>Although the C type of an array, ref, or vector is always <code>Pointer</code>,
+in reality, the object has the natural C representation.  Your C code
+should cast to the appropriate C type if you want to keep the C
+compiler from complaining.</p>
+</div>
+<div class="paragraph">
+<p>When calling an <a href="CallingFromSMLToC">imported C function from SML</a>
+that returns an array, ref, or vector result or when calling an
+<a href="CallingFromCToSML">exported SML function from C</a> that takes an
+array, ref, or string argument, then the object must be an ML object
+allocated on the ML heap.  (Although an array, ref, or vector object
+has the natural C representation, the object also has an additional
+header used by the SML runtime system.)</p>
+</div>
+<div class="paragraph">
+<p>In addition, there is an <a href="MLBasis">MLBasis</a> file, <code>$(SML_LIB)/basis/c-types.mlb</code>,
+which provides structure aliases for various C types:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Structure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Signature</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>char</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Char</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>signed char</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_SChar</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned char</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_UChar</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WORD</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>short</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Short</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>signed short</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_SShort</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned short</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_UShort</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WORD</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>signed int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_SInt</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_UInt</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WORD</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>long</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Long</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>signed long</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_SLong</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned long</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_ULong</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WORD</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>long long</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_LongLong</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>signed long long</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_SLongLong</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unsigned long long</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_ULongLong</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WORD</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Float</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>REAL</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>double</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Double</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>REAL</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size_t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Size</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WORD</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ptrdiff_t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Ptrdiff</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>intmax_t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Intmax</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uintmax_t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_UIntmax</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WORD</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>intptr_t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Intptr</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTEGER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uintptr_t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_UIntptr</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WORD</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void *</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>C_Pointer</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WORD</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>These aliases depend on the configuration of the C compiler for the
+target architecture, and are independent of the configuration of MLton
+(including the <code>-default-type <em>type</em></code>
+<a href="CompileTimeOptions">compiler option</a>).</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ForeignFunctionInterfaceTypes.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ForeignFunctionInterfaceTypes.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

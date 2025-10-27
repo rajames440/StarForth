@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>FAQ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>FAQ</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_how_do_you_pronounce_mlton">How do you pronounce MLton?</a></li>
+<li><a href="#_what_sml_software_has_been_ported_to_mlton">What SML software has been ported to MLton?</a></li>
+<li><a href="#_what_graphical_libraries_are_available_for_mlton">What graphical libraries are available for MLton?</a></li>
+<li><a href="#_how_does_mltons_performance_compare_to_other_sml_compilers_and_to_other_languages">How does MLton&#8217;s performance compare to other SML compilers and to other languages?</a></li>
+<li><a href="#_does_mlton_treat_monomorphic_arrays_and_vectors_specially">Does MLton treat monomorphic arrays and vectors specially?</a></li>
+<li><a href="#_why_do_i_get_a_segfaultbus_error_in_a_program_that_uses_intinflargeint_to_calculate_numbers_with_several_hundred_thousand_digits">Why do I get a Segfault/Bus error in a program that uses <code>IntInf</code>/<code>LargeInt</code> to calculate numbers with several hundred thousand digits?</a></li>
+<li><a href="#_how_can_i_decrease_compile_time_memory_usage">How can I decrease compile-time memory usage?</a></li>
+<li><a href="#_how_portable_is_sml_code_across_sml_compilers">How portable is SML code across SML compilers?</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Feel free to ask questions and to update answers by editing this page.
+Since we try to make as much information as possible available on the
+web site and we like to avoid duplication, many of the answers are
+simply links to a web page that answers the question.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_do_you_pronounce_mlton">How do you pronounce MLton?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="Pronounce">Pronounce</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_sml_software_has_been_ported_to_mlton">What SML software has been ported to MLton?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="Libraries">Libraries</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_graphical_libraries_are_available_for_mlton">What graphical libraries are available for MLton?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="Libraries">Libraries</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_does_mltons_performance_compare_to_other_sml_compilers_and_to_other_languages">How does MLton&#8217;s performance compare to other SML compilers and to other languages?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton has <a href="Performance">excellent performance</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_does_mlton_treat_monomorphic_arrays_and_vectors_specially">Does MLton treat monomorphic arrays and vectors specially?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton implements monomorphic arrays and vectors (e.g. <code>BoolArray</code>,
+<code>Word8Vector</code>) exactly as instantiations of their polymorphic
+counterpart (e.g. <code>bool array</code>, <code>Word8.word vector</code>).  Thus, there is
+no need to use the monomorphic versions except when required to
+interface with the <a href="BasisLibrary">Basis Library</a> or for portability
+with other SML implementations.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why_do_i_get_a_segfaultbus_error_in_a_program_that_uses_intinflargeint_to_calculate_numbers_with_several_hundred_thousand_digits">Why do I get a Segfault/Bus error in a program that uses <code>IntInf</code>/<code>LargeInt</code> to calculate numbers with several hundred thousand digits?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="GMP">GMP</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_can_i_decrease_compile_time_memory_usage">How can I decrease compile-time memory usage?</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Compile with <code>-verbose 3</code> to find out if the problem is due to an
+SSA optimization pass.  If so, compile with <code>-disable-pass <em>pass</em></code> to
+skip that pass.</p>
+</li>
+<li>
+<p>Compile with <code>@MLton hash-cons 0.5 --</code>, which will instruct the
+runtime to hash cons the heap every other GC.</p>
+</li>
+<li>
+<p>Compile with <code>-polyvariance false</code>, which is an undocumented option
+that causes less code duplication.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Also, please <a href="Contact">Contact</a> us to let us know the problem to help us
+better understand MLton&#8217;s limitations.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_portable_is_sml_code_across_sml_compilers">How portable is SML code across SML compilers?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="StandardMLPortability">StandardMLPortability</a></p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/FAQ.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/FAQ.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Variant</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Variant</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>A <em>variant</em> is an arm of a datatype declaration.  For example, the
+datatype</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">int</span> <span class="p">|</span> <span class="nc">C</span> <span class="kr">of</span> <span class="n">real</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>has three variants: <code>A</code>, <code>B</code>, and <code>C</code>.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Variant.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Variant.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

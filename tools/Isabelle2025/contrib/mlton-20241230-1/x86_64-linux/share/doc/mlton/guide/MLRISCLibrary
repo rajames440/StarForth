@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLRISCLibrary</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLRISCLibrary</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="http://www.cs.nyu.edu/leunga/www/MLRISC/Doc/html/index.html">MLRISC
+Library</a> is a framework for retargetable and optimizing compiler back
+ends.  The MLRISC Library is distributed with SML/NJ.  Due to
+differences between SML/NJ and MLton, this library will not work
+out-of-the box with MLton.</p>
+</div>
+<div class="paragraph">
+<p>As of 20241214, MLton includes a port of the MLRISC Library
+synchronized with SML/NJ version 110.99.6.1.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>You can import a sub-library of the MLRISC Library into an MLB file with:</p>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">MLB file</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/ALPHA.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The ALPHA backend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/AMD64.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The AMD64 backend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/AMD64-Peephole.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The AMD64 peephole optimizer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/CCall.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/CCall-sparc.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/CCall-x86-64.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/CCall-x86.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/Control.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/Graphs.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/HPPA.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The HPPA backend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/IA32.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The IA32 backend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/IA32-Peephole.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The IA32 peephole optimizer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/Lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/MLTREE.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/Peephole.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/PPC.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The PPC backend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/RA.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/SPARC.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Sparc backend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/StagedAlloc.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mlrisc-lib/mlb/Visual.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>If you are porting a project from SML/NJ&#8217;s <a href="CompilationManager">CompilationManager</a> to
+MLton&#8217;s <a href="MLBasis">ML Basis system</a> using <code>cm2mlb</code>, note that the
+following map is included by default:</p>
+<div class="listingblock">
+<div class="content">
+<pre># MLRISC Library
+$SMLNJ-MLRISC                           $(SML_LIB)/mlrisc-lib/mlb</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will automatically convert a <code>$SMLNJ-MLRISC/MLRISC.cm</code> import in
+an input <code>.cm</code> file into a <code>$(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb</code>
+import in the output <code>.mlb</code> file.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details">Details</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following changes were made to the MLRISC Library, in addition to
+deriving the <code>.mlb</code> files from the <code>.cm</code> files:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>eliminate sequential <code>withtype</code> expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.</p>
+</li>
+<li>
+<p>eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.</p>
+</li>
+<li>
+<p>eliminate <code>where &lt;str&gt; = &lt;str&gt;</code>: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren&#8217;t needed, but it&#8217;s too hard to pick out the right ones.</p>
+</li>
+<li>
+<p><code>library/array-noneq.sml</code> (added, not exported): Implements <code>signature ARRAY_NONEQ</code>, similar to <code>signature ARRAY</code> from the <a href="BasisLibrary">Basis Library</a>, but replacing the latter&#8217;s <code>eqtype 'a array = 'a array</code> and <code>type 'a vector = 'a Vector.vector</code> with <code>type 'a array</code> and <code>type 'a vector</code>.  Thus, array-like containers may match <code>ARRAY_NONEQ</code>, whereas only the pervasive <code>'a array</code> container may match <code>ARRAY</code>.  (SML/NJ&#8217;s implementation of <code>signature ARRAY</code> omits the type realizations.)</p>
+</li>
+<li>
+<p><code>library/dynamic-array.sml</code> and <code>library/hash-array.sml</code> (modifed): Replace <code>include ARRAY</code> with <code>include ARRAY_NONEQ</code>; see above.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_patch">Patch</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/lib/mlrisc-lib/MLRISC.patch"><code>MLRISC.patch</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Sat Dec 14 15:29:31 2024 -0500 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLRISCLibrary.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLRISCLibrary.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

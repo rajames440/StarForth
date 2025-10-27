@@ -1,0 +1,3 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ZIPPERPOSITION_HOME="$COMPONENT/$ISABELLE_PLATFORM64"

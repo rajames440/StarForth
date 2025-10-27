@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Printf</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Printf</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Programmers coming from C or Java often ask if
+<a href="StandardML">Standard ML</a> has a <code>printf</code> function.  It does not.
+However, it is possible to implement your own version with only a few
+lines of code.</p>
+</div>
+<div class="paragraph">
+<p>Here is a definition for <code>printf</code> and <code>fprintf</code>, along with format
+specifiers for booleans, integers, and reals.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Printf</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">$</span> <span class="p">(_,</span> <span class="n">f</span><span class="p">)</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">p</span> <span class="p">=&gt;</span> <span class="n">p</span> <span class="p">())</span> <span class="n">ignore</span>
+      <span class="kr">fun</span> <span class="nf">fprintf</span> <span class="n">out</span> <span class="n">f</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">id</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">printf</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">fprintf</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">stdOut</span> <span class="n">z</span>
+      <span class="kr">fun</span> <span class="nf">one</span> <span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">f</span><span class="p">),</span> <span class="n">make</span><span class="p">)</span> <span class="n">g</span> <span class="p">=</span>
+         <span class="n">g</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">r</span> <span class="p">=&gt;</span>
+            <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">p</span> <span class="p">=&gt;</span>
+               <span class="n">make</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">s</span> <span class="p">=&gt;</span>
+                     <span class="n">r</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">p</span> <span class="p">();</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">output</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">s</span><span class="p">))))))</span>
+      <span class="kr">fun</span> <span class="nf">`</span> <span class="n">x</span> <span class="n">s</span> <span class="p">=</span> <span class="n">one</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">s</span><span class="p">)</span>
+      <span class="kr">fun</span> <span class="nf">spec</span> <span class="n">to</span> <span class="n">x</span> <span class="p">=</span> <span class="n">one</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">o</span> <span class="n">to</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">B</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">spec</span> <span class="nn">Bool</span><span class="p">.</span><span class="n">toString</span> <span class="n">z</span>
+      <span class="kr">val</span> <span class="nv">I</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">spec</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">z</span>
+      <span class="kr">val</span> <span class="nv">R</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">spec</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">z</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s an example use.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="n">`</span><span class="s2">"Int="</span><span class="n">I`</span><span class="s2">"  Bool="</span><span class="n">B`</span><span class="s2">"  Real="</span><span class="n">R`</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="n">$</span> <span class="mi">1</span> <span class="n">false</span> <span class="mf">2.0</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This prints the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Int=1  Bool=false  Real=2.0</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In general, a use of <code>printf</code> looks like</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>printf &lt;spec1&gt; ... &lt;specn&gt; $ &lt;arg1&gt; ... &lt;argm&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where each <code>&lt;speci&gt;</code> is either a specifier like <code>B</code>, <code>I</code>, or <code>R</code>, or
+is an inline string, like <code>`"foo"</code>.  A backtick (<code>`</code>)
+must precede each inline string.  Each <code>&lt;argi&gt;</code> must be of the
+appropriate type for the corresponding specifier.</p>
+</div>
+<div class="paragraph">
+<p>SML <code>printf</code> is more powerful than its C counterpart in a number of
+ways.  In particular, the function produced by <code>printf</code> is a perfectly
+ordinary SML function, and can be passed around, used multiple times,
+etc.  For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">bool</span> <span class="p">-&gt;</span> <span class="n">unit</span> <span class="p">=</span> <span class="n">printf</span> <span class="n">`</span><span class="s2">"Int="</span><span class="n">I`</span><span class="s2">"  Bool="</span><span class="n">B`</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="n">$</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="mi">1</span> <span class="n">true</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="mi">2</span> <span class="n">false</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The definition of <code>printf</code> is even careful to not print anything until
+it is fully applied.  So, examples like the following will work as
+expected.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">bool</span> <span class="p">-&gt;</span> <span class="n">unit</span> <span class="p">=</span> <span class="n">printf</span> <span class="n">`</span><span class="s2">"Int="</span><span class="n">I`</span><span class="s2">"  Bool="</span><span class="n">B`</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="n">$</span> <span class="mi">13</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="n">true</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="n">false</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is also easy to define new format specifiers.  For example, suppose
+we wanted format specifiers for characters and strings.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">C</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">spec</span> <span class="nn">Char</span><span class="p">.</span><span class="n">toString</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">S</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">spec</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="n">s</span><span class="p">)</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One can define format specifiers for more complex types, e.g. pairs of
+integers.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">I2</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+   <span class="n">spec</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="p">=&gt;</span>
+         <span class="n">concat</span> <span class="p">[</span><span class="s2">"("</span><span class="p">,</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span><span class="p">,</span> <span class="s2">", "</span><span class="p">,</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">j</span><span class="p">,</span> <span class="s2">")"</span><span class="p">])</span>
+   <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s an example use.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="n">`</span><span class="s2">"Test "</span><span class="n">I2`</span><span class="s2">"  a string "</span><span class="n">S`</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="n">$</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="s2">"hello"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_printf_via_fold">Printf via <a href="Fold">Fold</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>printf</code> is best viewed as a special case of variable-argument
+<a href="Fold">Fold</a> that inductively builds a function as it processes its
+arguments.  Here is the definition of a <code>Printf</code> structure in terms of
+fold.  The structure is equivalent to the above one, except that it
+uses the standard <code>$</code> instead of a specialized one.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Printf</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">fprintf</span> <span class="n">out</span> <span class="p">=</span>
+         <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">id</span><span class="p">),</span> <span class="kr">fn</span> <span class="p">(_,</span> <span class="n">f</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">p</span> <span class="p">=&gt;</span> <span class="n">p</span> <span class="p">())</span> <span class="n">ignore</span><span class="p">)</span>
+
+      <span class="kr">val</span> <span class="nv">printf</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">fprintf</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">stdOut</span> <span class="n">z</span>
+
+      <span class="kr">fun</span> <span class="nf">one</span> <span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">f</span><span class="p">),</span> <span class="n">make</span><span class="p">)</span> <span class="p">=</span>
+         <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">r</span> <span class="p">=&gt;</span>
+          <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">p</span> <span class="p">=&gt;</span>
+             <span class="n">make</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">s</span> <span class="p">=&gt;</span>
+                   <span class="n">r</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">p</span> <span class="p">();</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">output</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">s</span><span class="p">))))))</span>
+
+      <span class="kr">val</span> <span class="nv">`</span> <span class="p">=</span>
+         <span class="nv">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">one</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">s</span><span class="p">))</span> <span class="n">z</span>
+
+      <span class="kr">fun</span> <span class="nf">spec</span> <span class="n">to</span> <span class="p">=</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">one</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">o</span> <span class="n">to</span><span class="p">))</span>
+
+      <span class="kr">val</span> <span class="nv">B</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">spec</span> <span class="nn">Bool</span><span class="p">.</span><span class="n">toString</span> <span class="n">z</span>
+      <span class="kr">val</span> <span class="nv">I</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">spec</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">z</span>
+      <span class="kr">val</span> <span class="nv">R</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">spec</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">z</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Viewing <code>printf</code> as a fold opens up a number of possibilities.  For
+example, one can name parts of format strings using the fold idiom for
+naming sequences of steps.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">IB</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">u</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="n">u</span> <span class="n">`</span><span class="s2">"Int="</span><span class="n">I`</span><span class="s2">" Bool="</span><span class="n">B</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="n">IB`</span><span class="s2">"  "</span><span class="n">IB`</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="n">$</span> <span class="mi">1</span> <span class="n">true</span> <span class="mi">3</span> <span class="n">false</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One can even parametrize over partial format strings.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">XB</span> <span class="n">X</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">u</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="n">u</span> <span class="n">`</span><span class="s2">"X="</span><span class="n">X`</span><span class="s2">" Bool="</span><span class="n">B</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="p">(</span><span class="n">XB</span> <span class="n">I</span><span class="p">)</span><span class="n">`</span><span class="s2">"  "</span><span class="p">(</span><span class="n">XB</span> <span class="n">R</span><span class="p">)</span><span class="n">`</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="n">$</span> <span class="mi">1</span> <span class="n">true</span> <span class="mf">2.0</span> <span class="n">false</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="PrintfGentle">PrintfGentle</a></p>
+</li>
+<li>
+<p><a href="References#Danvy98">Functional Unparsing</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Printf.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Printf.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

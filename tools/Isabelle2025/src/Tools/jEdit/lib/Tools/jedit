@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+#
+# Author: Makarius
+#
+# DESCRIPTION: Isabelle/jEdit interface wrapper
+
+## diagnostics
+
+PRG="$(basename "$0")"
+
+function usage()
+{
+  echo
+  echo "Usage: isabelle $PRG [OPTIONS] [FILES ...]"
+  echo
+  echo "  Options are:"
+  echo "    -A NAME      ancestor session for option -R (default: parent)"
+  echo "    -D NAME=X    set JVM system property"
+  echo "    -J OPTION    add JVM runtime option"
+  echo "                 (default $JEDIT_JAVA_SYSTEM_OPTIONS $JEDIT_JAVA_OPTIONS)"
+  echo "    -R NAME      build image with requirements from other sessions"
+  echo "    -b           build only"
+  echo "    -d DIR       include session directory"
+  echo "    -f           fresh build"
+  echo "    -i NAME      include session in name-space of theories"
+  echo "    -j OPTION    add jEdit runtime option"
+  echo "                 (default $JEDIT_OPTIONS)"
+  echo "    -l NAME      logic session name"
+  echo "    -m MODE      add print mode for output"
+  echo "    -n           no build of session image on startup"
+  echo "    -p CMD       command prefix for ML process (e.g. NUMA policy)"
+  echo "    -s           system build mode for session image (system_heaps=true)"
+  echo "    -u           user build mode for session image (system_heaps=false)"
+  echo
+  echo "  Start jEdit with Isabelle plugin setup and open FILES"
+  echo "  (default \"$USER_HOME/Scratch.thy\" or \":\" for empty buffer)."
+  echo
+  exit 1
+}
+
+function fail()
+{
+  echo "$1" >&2
+  exit 2
+}
+
+function failed()
+{
+  fail "Failed!"
+}
+
+
+## process command line
+
+# options
+
+BUILD_ONLY=false
+BUILD_OPTIONS=""
+PROCESS_POLICY=""
+JEDIT_LOGIC_ANCESTOR=""
+JEDIT_LOGIC_REQUIREMENTS=""
+JEDIT_INCLUDE_SESSIONS=""
+JEDIT_SESSION_DIRS="-"
+JEDIT_LOGIC=""
+JEDIT_PRINT_MODE=""
+JEDIT_NO_BUILD=""
+JEDIT_BUILD_MODE="default"
+
+function getoptions()
+{
+  OPTIND=1
+  while getopts "A:BFD:J:R:bd:fi:j:l:m:np:su" OPT
+  do
+    case "$OPT" in
+      A)
+        JEDIT_LOGIC_ANCESTOR="$OPTARG"
+        ;;
+      D)
+        JAVA_ARGS["${#JAVA_ARGS[@]}"]="-D$OPTARG"
+        ;;
+      J)
+        JAVA_ARGS["${#JAVA_ARGS[@]}"]="$OPTARG"
+        ;;
+      R)
+        JEDIT_LOGIC="$OPTARG"
+        JEDIT_LOGIC_REQUIREMENTS="true"
+        ;;
+      b)
+        BUILD_ONLY=true
+        ;;
+      d)
+        JEDIT_SESSION_DIRS="$JEDIT_SESSION_DIRS:$OPTARG"
+        ;;
+      i)
+        if [ -z "$JEDIT_INCLUDE_SESSIONS" ]; then
+          JEDIT_INCLUDE_SESSIONS="$OPTARG"
+        else
+          JEDIT_INCLUDE_SESSIONS="$JEDIT_INCLUDE_SESSIONS:$OPTARG"
+        fi
+        ;;
+      f)
+        BUILD_OPTIONS="-f"
+        ;;
+      j)
+        ARGS["${#ARGS[@]}"]="$OPTARG"
+        ;;
+      l)
+        JEDIT_LOGIC="$OPTARG"
+        JEDIT_LOGIC_REQUIREMENTS="false"
+        ;;
+      m)
+        if [ -z "$JEDIT_PRINT_MODE" ]; then
+          JEDIT_PRINT_MODE="$OPTARG"
+        else
+          JEDIT_PRINT_MODE="$JEDIT_PRINT_MODE,$OPTARG"
+        fi
+        ;;
+      n)
+        JEDIT_NO_BUILD="true"
+        ;;
+      p)
+        PROCESS_POLICY="$OPTARG"
+        ;;
+      s)
+        JEDIT_BUILD_MODE="system"
+        ;;
+      u)
+        JEDIT_BUILD_MODE="user"
+        ;;
+      \?)
+        usage
+        ;;
+    esac
+  done
+}
+
+eval "declare -a JAVA_ARGS=($JEDIT_JAVA_SYSTEM_OPTIONS $JEDIT_JAVA_OPTIONS)"
+
+declare -a ARGS=()
+
+declare -a OPTIONS; eval "OPTIONS=($ISABELLE_JEDIT_OPTIONS)"
+getoptions "${OPTIONS[@]}"
+
+getoptions "$@"
+shift $(($OPTIND - 1))
+
+
+# args
+
+while [ "$#" -gt 0 ]; do
+  ARGS["${#ARGS[@]}"]="$(platform_path "$1")"
+  shift
+done
+
+
+## main
+
+isabelle scala_build $BUILD_OPTIONS || exit $?
+
+if [ "$BUILD_ONLY" = false ]
+then
+  "$ISABELLE_HOME/lib/scripts/java-gui-setup"
+
+  export JEDIT_SESSION_DIRS JEDIT_LOGIC JEDIT_LOGIC_ANCESTOR JEDIT_LOGIC_REQUIREMENTS \
+    JEDIT_INCLUDE_SESSIONS JEDIT_PRINT_MODE JEDIT_NO_BUILD JEDIT_BUILD_MODE
+  export JEDIT_PROCESS_POLICY="$PROCESS_POLICY"
+  exec isabelle java -splash:"$(platform_path "$ISABELLE_HOME/lib/logo/isabelle.gif")" \
+    "${JAVA_ARGS[@]}" isabelle.jedit.JEdit_Main "${ARGS[@]}"
+fi

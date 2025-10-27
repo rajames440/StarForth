@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ImplementSuffix</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ImplementSuffix</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">ImplementSuffix</a> is a pass for the <a href="SXML">SXML</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SXMLSimplify">SXMLSimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass implements the <code>TopLevel_setSuffix</code> primitive, which
+installs a function to exit the program.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/implement-suffix.fun"><code>implement-suffix.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">ImplementSuffix</a> works by introducing a new <code>ref</code> cell to contain
+the function of type <code>unit -&gt; unit</code> that should be called on program
+exit.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The following code (appropriately alpha-converted) is appended to the beginning of the <a href="SXML">SXML</a> program:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">z_0</span> <span class="p">=</span>
+  <span class="kr">fn</span> <span class="n">a_0</span> <span class="p">=&gt;</span>
+  <span class="kr">let</span>
+    <span class="kr">val</span> <span class="nv">x_0</span> <span class="p">=</span>
+      <span class="s2">"toplevel suffix not installed"</span>
+    <span class="kr">val</span> <span class="nv">x_1</span> <span class="p">=</span>
+      <span class="n">MLton_bug</span> <span class="p">(</span><span class="n">x_0</span><span class="p">)</span>
+  <span class="kr">in</span>
+    <span class="n">x_1</span>
+  <span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">topLevelSuffixCell</span> <span class="p">=</span>
+  <span class="n">Ref_ref</span> <span class="p">(</span><span class="n">z_0</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Any occurrence of</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">x_0</span> <span class="p">=</span>
+  <span class="n">TopLevel_setSuffix</span> <span class="p">(</span><span class="n">f_0</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is rewritten to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">x_0</span> <span class="p">=</span>
+  <span class="n">Ref_assign</span> <span class="p">(</span><span class="n">topLevelSuffixCell</span><span class="p">,</span> <span class="n">f_0</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>The following code (appropriately alpha-converted) is appended to the end of the <a href="SXML">SXML</a> program:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f_0</span> <span class="p">=</span>
+  <span class="n">Ref_deref</span> <span class="p">(</span><span class="n">topLevelSuffixCell</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">z_0</span> <span class="p">=</span>
+  <span class="p">()</span>
+<span class="kr">val</span> <span class="nv">x_0</span> <span class="p">=</span>
+  <span class="n">f_0</span> <span class="n">z_0</span></code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ImplementSuffix.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ImplementSuffix.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

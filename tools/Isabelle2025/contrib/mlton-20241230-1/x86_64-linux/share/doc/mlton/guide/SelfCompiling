@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SelfCompiling</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SelfCompiling</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you want to compile MLton, you must first get the <a href="Sources">Sources</a>. You
+can compile with either MLton or SML/NJ, but we strongly recommend
+using MLton, since it generates a much faster and more robust
+executable.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_compiling_with_mlton">Compiling with MLton</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To compile with MLton, you need the binary versions of <code>mlton</code>,
+<code>mllex</code>, and <code>mlyacc</code> that come with the MLton binary package.  To be
+safe, you should use the same version of MLton that you are building.
+However, older versions may work, as long as they don&#8217;t go back too
+far.  To build MLton, run <code>make</code> from within the root directory of the
+sources.  This will build MLton first with the already installed
+binary version of MLton and will then rebuild MLton with itself.</p>
+</div>
+<div class="paragraph">
+<p>First, the <code>Makefile</code> calls <code>mllex</code> and <code>mlyacc</code> to build the lexer
+and parser, and then calls <code>mlton</code> to compile itself.  When making
+MLton using another version the <code>Makefile</code> automatically uses
+<code>mlton-stubs.mlb</code>, which will put in enough stubs to emulate the
+<code>structure MLton</code>.  Once MLton is built, the <code>Makefile</code> will rebuild
+MLton with itself, this time using <code>mlton.mlb</code> and the real
+<code>structure MLton</code> from the <a href="BasisLibrary">Basis Library</a>.  This second round
+of compilation is essential in order to achieve a fast and robust
+MLton.</p>
+</div>
+<div class="paragraph">
+<p>Compiling MLton requires at least 1GB of RAM for 32-bit platforms (2GB is
+preferable) and at least 2GB RAM for 64-bit platforms (4GB is preferable).
+If your machine has less RAM, self-compilation will
+likely fail, or at least take a very long time due to paging.  Even if
+you have enough memory, there simply may not be enough available, due
+to memory consumed by other processes.  In this case, you may see an
+<code>Out of memory</code> message, or self-compilation may become extremely
+slow.  The only fix is to make sure that enough memory is available.</p>
+</div>
+<div class="sect2">
+<h3 id="_possible_errors">Possible Errors</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>The C compiler may not be able to find the <a href="GMP">GMP</a> header file,
+<code>gmp.h</code> leading to an error like the following.</p>
+<div class="listingblock">
+<div class="content">
+<pre>  cenv.h:49:18: fatal error: gmp.h: No such file or directory</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The solution is to install (or build) <a href="GMP">GMP</a> on your machine.  If you
+install it at a location not on the default seach path, then run
+<code>make WITH_GMP_INC_DIR=<em>/path/to/gmp/include</em> WITH_GMP_LIB_DIR=<em>/path/to/gmp/lib</em></code>.</p>
+</div>
+</li>
+<li>
+<p>The following errors indicates that a binary version of MLton could
+not be found in your path.</p>
+<div class="listingblock">
+<div class="content">
+<pre>/bin/sh: mlton: command not found</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>make[2]: mlton: Command not found</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You need to have <code>mlton</code> in your path to build MLton from source.</p>
+</div>
+<div class="paragraph">
+<p>During the build process, there are various times that the <code>Makefile</code>-s
+look for a <code>mlton</code> in your path and in <code>src/build/bin</code>.  It is OK if
+the latter doesn&#8217;t exist when the build starts; it is the target being
+built.  Failure to find a <code>mlton</code> in your path will abort the build.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_compiling_with_smlnj">Compiling with SML/NJ</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To compile with SML/NJ, run <code>make bootstrap-smlnj</code> from within the
+root directory of the sources.  You must use a recent version of
+SML/NJ.  First, the <code>Makefile</code> calls <code>ml-lex</code> and <code>ml-yacc</code> to build
+the lexer and parser.  Then, it calls SML/NJ with the appropriate
+<code>sources.cm</code> file.  Once MLton is built with SML/NJ, the <code>Makefile</code>
+will rebuild MLton with this SML/NJ built MLton and then will rebuild
+MLton with the MLton built MLton.  Building with SML/NJ takes
+significant time (particularly during the <code>parseAndElaborate</code> phase
+when the SML/NJ built MLton is compiling MLton).  Unless you are doing
+compiler development and need rapid recompilation, we recommend
+compiling with MLton.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SelfCompiling.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SelfCompiling.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

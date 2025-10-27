@@ -1,0 +1,16 @@
+This is E prover 3.1 from
+https://wwwlehre.dhbw-stuttgart.de/~sschulz/WORK/E_DOWNLOAD/V_3.1/E.tgz
+
+* On Windows/Cygwin, the sources have been patched to remove setpgid in
+  PROVER/eprover.c
+
+* The distribution has been built like this:
+
+    cd src && ./configure --enable-ho && make
+
+* Some executables from PROVERS/ have been moved to the platform-specific
+Isabelle component directory: x86_64-linux etc.
+
+
+        Makarius
+        03-Jan-2025

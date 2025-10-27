@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>GarbageCollection</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>GarbageCollection</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>For a good introduction and overview to garbage collection, see
+<a href="References#Jones99">Jones99</a>.</p>
+</div>
+<div class="paragraph">
+<p>MLton&#8217;s garbage collector uses copying, mark-compact, and generational
+collection, automatically switching between them at run time based on
+the amount of live data relative to the amount of RAM.  The runtime
+system tries to keep the heap within RAM if at all possible.</p>
+</div>
+<div class="paragraph">
+<p>MLton&#8217;s copying collector is a simple, two-space, breadth-first,
+Cheney-style collector.  The design for the generational and
+mark-compact GC is based on <a href="References#Sansom91">Sansom91</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_design_notes">Design notes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2002-May/012420.html" class="bare">http://www.mlton.org/pipermail/mlton/2002-May/012420.html</a></p>
+<div class="paragraph">
+<p>object layout and header word design</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Regions">Regions</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/GarbageCollection.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/GarbageCollection.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

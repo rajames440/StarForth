@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Elaborate</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Elaborate</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">Elaborate</a> is a translation pass from the <a href="AST">AST</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a> to the <a href="CoreML">CoreML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass performs type inference and type checking according to the
+<a href="DefinitionOfStandardML">Definition</a>.  It also defunctorizes the
+program, eliminating all module-level constructs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate.sig"><code>elaborate.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate.fun"><code>elaborate.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-env.sig"><code>elaborate-env.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-env.fun"><code>elaborate-env.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-modules.sig"><code>elaborate-modules.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-modules.fun"><code>elaborate-modules.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-core.sig"><code>elaborate-core.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-core.fun"><code>elaborate-core.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/tree/master/mlton/elaborate"><code>elaborate</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>At the modules level, the <a href="#">Elaborate</a> pass:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>elaborates signatures with interfaces (see
+<a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/interface.sig"><code>interface.sig</code></a> and
+<a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/interface.fun"><code>interface.fun</code></a>)</p>
+<div class="paragraph">
+<p>The main trick is to use disjoint sets to efficiently handle sharing
+of tycons and of structures and then to copy signatures as dags rather
+than as trees.</p>
+</div>
+</li>
+<li>
+<p>checks functors at the point of definition, using functor summaries
+to speed up checking of functor applications.</p>
+<div class="paragraph">
+<p>When a functor is first type checked, we keep track of the dummy
+argument structure and the dummy result structure, as well as all the
+tycons that were created while elaborating the body.  Then, if we
+later need to type check an application of the functor (as opposed to
+defunctorize an application), we pair up tycons in the dummy argument
+structure with the actual argument structure and then replace the
+dummy tycons with the actual tycons in the dummy result structure,
+yielding the actual result structure.  We also generate new tycons for
+all the tycons that we created while originally elaborating the body.</p>
+</div>
+</li>
+<li>
+<p>handles opaque signature constraints.</p>
+<div class="paragraph">
+<p>This is implemented by building a dummy structure realized from the
+signature, just as we would for a functor argument when type checking
+a functor.  The dummy structure contains exactly the type information
+that is in the signature, which is what opacity requires.  We then
+replace the variables (and constructors) in the dummy structure with
+the corresponding variables (and constructors) from the actual
+structure so that the translation to <a href="CoreML">CoreML</a> uses the right stuff.
+For each tycon in the dummy structure, we keep track of the
+corresponding type structure in the actual structure.  This is used
+when producing the <a href="CoreML">CoreML</a> types (see <code>expandOpaque</code> in
+<a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/type-env.sig"><code>type-env.sig</code></a> and
+<a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/type-env.fun"><code>type-env.fun</code></a>).</p>
+</div>
+<div class="paragraph">
+<p>Then, within each <code>structure</code> or <code>functor</code> body, for each declaration
+(<code>&lt;dec&gt;</code> in the <a href="StandardML">Standard ML</a> grammar), the <a href="#">Elaborate</a>
+pass does three steps:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="ScopeInference">ScopeInference</a></p>
+</li>
+<li>
+<p></p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="PrecedenceParse">PrecedenceParse</a></p>
+</li>
+<li>
+<p><code>_{ex,im}port</code> expansion</p>
+</li>
+<li>
+<p>profiling insertion</p>
+</li>
+<li>
+<p>unification</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Overloaded {constant, function, record pattern} resolution</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_defunctorization">Defunctorization</h3>
+<div class="paragraph">
+<p>The <a href="#">Elaborate</a> pass performs a number of duties historically
+assigned to the <a href="Defunctorize">Defunctorize</a> pass.</p>
+</div>
+<div class="paragraph">
+<p>As part of the <a href="#">Elaborate</a> pass, all module level constructs
+(<code>open</code>, <code>signature</code>, <code>structure</code>, <code>functor</code>, long identifiers) are
+removed.  This works because the <a href="#">Elaborate</a> pass assigns a unique
+name to every type and variable in the program.  This also allows the
+<a href="#">Elaborate</a> pass to eliminate <code>local</code> declarations, which are purely
+for namespace management.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples">Examples</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here are a number of examples of elaboration.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>All variables bound in <code>val</code> declarations are renamed.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">13</span>
+<span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>val x_0 = 13
+val y_0 = x_0</pre>
+</div>
+</div>
+</li>
+<li>
+<p>All variables in <code>fun</code> declarations are renamed.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">f</span> <span class="n">x</span> <span class="p">=</span> <span class="n">g</span> <span class="n">x</span>
+<span class="kr">and</span> <span class="nf">g</span> <span class="n">y</span> <span class="p">=</span> <span class="n">f</span> <span class="n">y</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>fun f_0 x_0 = g_0 x_0
+and g_0 y_0 = f_0 y_0</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Type abbreviations are removed, and the abbreviation is expanded
+wherever it is used.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="nd">'a</span> <span class="kt">u</span> <span class="p">=</span> <span class="n">int</span> <span class="n">*</span> <span class="nd">'a</span>
+<span class="kr">type</span> <span class="nd">'b</span> <span class="kt">t</span> <span class="p">=</span> <span class="nd">'b</span> <span class="n">u</span> <span class="n">*</span> <span class="n">real</span>
+<span class="kr">fun</span> <span class="nf">f</span> <span class="p">(</span><span class="n">x</span> <span class="p">:</span> <span class="n">bool</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>fun f_0 (x_0 : (int * bool) * real) = x_0</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Exception declarations create a new constructor and rename the type.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">int</span>
+<span class="kr">exception</span> <span class="nc">E</span> <span class="kr">of</span> <span class="n">t</span> <span class="n">*</span> <span class="n">real</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>exception E_0 of int * real</pre>
+</div>
+</div>
+</li>
+<li>
+<p>The type and value constructors in datatype declarations are renamed.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="kr">of</span> <span class="n">int</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">real</span> <span class="n">*</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>datatype t_0 = A_0 of int | B_0 of real * t_0</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Local declarations are moved to the top-level.  The environment
+keeps track of the variables in scope.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">13</span>
+<span class="kr">local</span> <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">14</span>
+<span class="kr">in</span> <span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="n">x</span>
+<span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">z</span> <span class="p">=</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>val x_0 = 13
+val x_1 = 14
+val y_0 = x_1
+val z_0 = x_0</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Structure declarations are eliminated, with all declarations moved
+to the top level.  Long identifiers are renamed.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">S</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">int</span>
+      <span class="kr">val</span> <span class="nv">x</span> <span class="p">:</span> <span class="n">t</span> <span class="p">=</span> <span class="mi">13</span>
+   <span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">y</span> <span class="p">:</span> <span class="nn">S</span><span class="p">.</span><span class="n">t</span> <span class="p">=</span> <span class="nn">S</span><span class="p">.</span><span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>val x_0 : int = 13
+val y_0 : int = x_0</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Open declarations are eliminated.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">13</span>
+<span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="mi">14</span>
+<span class="kr">structure</span> <span class="nn">S</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+     <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">15</span>
+   <span class="kr">end</span>
+<span class="kr">open</span> <span class="nn">S</span>
+<span class="kr">val</span> <span class="nv">z</span> <span class="p">=</span> <span class="n">x</span> <span class="n">+</span> <span class="n">y</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>val x_0 = 13
+val y_0 = 14
+val x_1 = 15
+val z_0 = x_1 + y_0</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Functor declarations are eliminated, and the body of a functor is
+duplicated wherever the functor is applied.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">F</span><span class="p">(</span><span class="kr">val</span> <span class="nv">x</span> <span class="p">:</span> <span class="n">int</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+     <span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="n">x</span>
+   <span class="kr">end</span>
+<span class="kr">structure</span> <span class="nn">F1</span> <span class="p">=</span> <span class="n">F</span><span class="p">(</span><span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">13</span><span class="p">)</span>
+<span class="kr">structure</span> <span class="nn">F2</span> <span class="p">=</span> <span class="n">F</span><span class="p">(</span><span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">14</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">z</span> <span class="p">=</span> <span class="nn">F1</span><span class="p">.</span><span class="n">y</span> <span class="n">+</span> <span class="nn">F2</span><span class="p">.</span><span class="n">y</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>val x_0 = 13
+val y_0 = x_0
+val x_1 = 14
+val y_1 = x_1
+val z_0 = y_0 + y_1</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Signature constraints are eliminated.  Note that signatures do
+affect how subsequent variables are renamed.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="mi">13</span>
+<span class="kr">structure</span> <span class="nn">S</span> <span class="p">:</span> <span class="kr">sig</span>
+                 <span class="kr">val</span> <span class="nv">x</span> <span class="p">:</span> <span class="n">int</span>
+              <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">14</span>
+      <span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="n">x</span>
+   <span class="kr">end</span>
+<span class="kr">open</span> <span class="nn">S</span>
+<span class="kr">val</span> <span class="nv">z</span> <span class="p">=</span> <span class="n">x</span> <span class="n">+</span> <span class="n">y</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>val y_0 = 13
+val x_0 = 14
+val y_1 = x_0
+val z_0 = x_0 + y_0</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Elaborate.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Elaborate.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

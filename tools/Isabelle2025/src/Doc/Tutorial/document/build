@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -e
+
+$ISABELLE_LUALATEX root
+$ISABELLE_BIBTEX root
+$ISABELLE_LUALATEX root
+$ISABELLE_LUALATEX root
+./isa-index root
+$ISABELLE_LUALATEX root

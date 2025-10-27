@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CompilationManager</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CompilationManager</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="http://www.smlnj.org/doc/CM/index.html">Compilation Manager</a> (CM) is SML/NJ&#8217;s mechanism for supporting programming-in-the-very-large.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_porting_smlnj_cm_files_to_mlton">Porting SML/NJ CM files to MLton</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To help in porting CM files to MLton, the MLton source distribution
+includes the sources for a utility, <code>cm2mlb</code>, that will print an
+<a href="MLBasis">ML Basis</a> file with essentially the same semantics as the
+CM file&#8201;&#8212;&#8201;handling the full syntax of CM supported by your installed
+SML/NJ version and correctly handling export filters.  When <code>cm2mlb</code>
+encounters a <code>.cm</code> import, it attempts to convert it to a
+corresponding <code>.mlb</code> import.  CM anchored paths are translated to
+paths according to a default configuration file
+(<a href="https://github.com/MLton/mlton/blob/master/util/cm2mlb/cm2mlb-map"><code>cm2mlb-map</code></a>). For example,
+the default configuration includes</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre># Standard ML Basis Library
+$SMLNJ-BASIS                            $(SML_LIB)/basis
+$basis.cm                               $(SML_LIB)/basis
+$basis.cm/basis.cm                      $(SML_LIB)/basis/basis.mlb</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to ensure that a <code>$/basis.cm</code> import is translated to a
+<code>$(SML_LIB)/basis/basis.mlb</code> import.  See <code>util/cm2mlb</code> for details.
+Building <code>cm2mlb</code> requires that you have already installed a recent
+version of SML/NJ.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CompilationManager.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CompilationManager.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

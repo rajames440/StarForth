@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLBasis</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLBasis</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The ML Basis system extends <a href="StandardML">Standard ML</a> to support
+programming-in-the-very-large, namespace management at the module
+level, separate delivery of library sources, and more.  While Standard
+ML modules are a sophisticated language for programming-in-the-large,
+it is difficult, if not impossible, to accomplish a number of routine
+namespace management operations when a program draws upon multiple
+libraries provided by different vendors.</p>
+</div>
+<div class="paragraph">
+<p>The ML Basis system is a simple, yet powerful, approach that builds
+upon the programmer&#8217;s intuitive notion (and
+<a href="DefinitionOfStandardML">The Definition of Standard ML (Revised)</a>&rsquo;s
+formal notion) of the top-level environment (a <em>basis</em>).  The system
+is designed as a natural extension of <a href="StandardML">Standard ML</a>; the
+formal specification of the ML Basis system
+(<a href="MLBasis.attachments/mlb-formal.pdf"><code>mlb-formal.pdf</code></a>) is given in the style
+of the Definition.</p>
+</div>
+<div class="paragraph">
+<p>Here are some of the key features of the ML Basis system:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Explicit file order: The order of files (and, hence, the order of
+evaluation) in the program is explicit.  The ML Basis system&#8217;s
+semantics are structured in such a way that for any well-formed
+project, there will be exactly one possible interpretation of the
+project&#8217;s syntax, static semantics, and dynamic semantics.</p>
+</li>
+<li>
+<p>Implicit dependencies: A source file (corresponding to an SML
+top-level declaration) is elaborated in the environment described by
+preceding declarations.  It is not necessary to explicitly list the
+dependencies of a file.</p>
+</li>
+<li>
+<p>Scoping and renaming: The ML Basis system provides mechanisms for
+limiting the scope of (i.e, hiding) and renaming identifiers.</p>
+</li>
+<li>
+<p>No naming convention for finding the file that defines a module.
+To import a module, its defining file must appear in some ML Basis
+file.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps">Next steps</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="MLBasisSyntaxAndSemantics">MLBasisSyntaxAndSemantics</a></p>
+</li>
+<li>
+<p><a href="MLBasisExamples">MLBasisExamples</a></p>
+</li>
+<li>
+<p><a href="MLBasisPathMap">MLBasisPathMap</a></p>
+</li>
+<li>
+<p><a href="MLBasisAnnotations">MLBasisAnnotations</a></p>
+</li>
+<li>
+<p><a href="MLBasisAvailableLibraries">MLBasisAvailableLibraries</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLBasis.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLBasis.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

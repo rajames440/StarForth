@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>UnresolvedBugs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>UnresolvedBugs</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Here are the places where MLton deviates from
+<a href="DefinitionOfStandardML">The Definition of Standard ML (Revised)</a> and
+the <a href="BasisLibrary">Basis Library</a>.  In general, MLton complies with
+the <a href="DefinitionOfStandardML">Definition</a> quite closely, typically much
+more closely than other SML compilers (see, e.g., our list of
+<a href="SMLNJDeviations">SML/NJ&#8217;s deviations</a>).  In fact, the four deviations
+listed here are the only known deviations, and we have no immediate
+plans to fix them.  If you find a deviation not listed here, please
+report a <a href="Bug">Bug</a>.</p>
+</div>
+<div class="paragraph">
+<p>We don&#8217;t plan to fix these bugs because the first (parsing nested
+cases) has historically never been accepted by any SML compiler, the
+second clearly indicates a problem in the
+<a href="DefinitionOfStandardML">Definition</a>, and the remaining are difficult
+to resolve in the context of MLton&#8217;s implementaton of Standard ML (and
+unlikely to be problematic in practice).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>MLton does not correctly parse case expressions nested within other
+matches. For example, the following fails.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">f</span> <span class="mi">0</span> <span class="n">y</span> <span class="p">=</span>
+      <span class="kr">case</span> <span class="n">x</span> <span class="kr">of</span>
+         <span class="mi">1</span> <span class="p">=&gt;</span> <span class="mi">2</span>
+       <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="mi">3</span>
+  <span class="p">|</span> <span class="n">f</span> <span class="p">_</span> <span class="n">y</span> <span class="p">=</span> <span class="mi">4</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To do this in a program, simply parenthesize the case expression.</p>
+</div>
+<div class="paragraph">
+<p>Allowing such expressions, although compliant with the Definition,
+would be a mistake, since using parentheses is clearer and no SML
+compiler has ever allowed them.  Furthermore, implementing this would
+require serious yacc grammar rewriting followed by postprocessing.</p>
+</div>
+</li>
+<li>
+<p>MLton does not raise the <code>Bind</code> exception at run time when
+evaluating <code>val rec</code> (and <code>fun</code>) declarations that redefine
+identifiers that previously had constructor status.  (By default,
+MLton does warn at compile time about <code>val rec</code> (and <code>fun</code>)
+declarations that redefine identifiers that previously had
+constructors status; see the <code>valrecConstr</code> <a href="MLBasisAnnotations">ML
+Basis annotation</a>.)  For example, the Definition requires the
+following program to type check, but also (bizarelly) requires it to
+raise the <code>Bind</code> exception</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">rec</span> <span class="n">NONE</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Definition&#8217;s behavior is obviously an error, a mismatch between
+the static semantics (rule 26) and the dynamic semantics (rule 126).
+Given the comments on rule 26 in the Definition, it seems clear that
+the authors meant for <code>val rec</code> to allow an identifier&#8217;s constructor
+status to be overridden both statically and dynamically.  Hence, MLton
+and most SML compilers follow rule 26, but do not follow rule 126.</p>
+</div>
+</li>
+<li>
+<p>MLton does not hide the equality aspect of types declared in
+<code>abstype</code> declarations. So, MLton accepts programs like the following,
+while the Definition rejects them.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">abstype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">with</span> <span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span> <span class="p">:</span> <span class="n">t</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">t1</span> <span class="p">=</span> <span class="n">t2</span>
+
+<span class="kr">abstype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">with</span> <span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="n">T</span> <span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">a</span> <span class="p">=</span> <span class="n">a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One consequence of this choice is that MLton accepts the following
+program, in accordance with the Definition.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">abstype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">with</span> <span class="kr">val</span> <span class="nv">eq</span> <span class="p">=</span> <span class="kr">op</span> <span class="p">=</span> <span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span> <span class="p">:</span> <span class="n">t</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">eq</span> <span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Other implementations will typically reject this program, because they
+make an early choice for the type of <code>eq</code> to be <code>''a * ''a -&gt; bool</code>
+instead of <code>t * t -&gt; bool</code>.  The choice is understandable, since the
+Definition accepts the following program.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">abstype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">with</span> <span class="kr">val</span> <span class="nv">eq</span> <span class="p">=</span> <span class="kr">op</span> <span class="p">=</span> <span class="kr">end</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">eq</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>MLton (re-)type checks each functor definition at every
+corresponding functor application (the compilation technique of
+defunctorization).  One consequence of this implementation is that
+MLton accepts the following program, while the Definition rejects
+it.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">F</span> <span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="kr">sig</span> <span class="kr">type</span> <span class="kt">t</span> <span class="kr">end</span><span class="p">)</span> <span class="p">=</span> <span class="kr">struct</span>
+    <span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="n">id</span> <span class="n">id</span>
+<span class="kr">end</span>
+<span class="kr">structure</span> <span class="nn">A</span> <span class="p">=</span> <span class="n">F</span> <span class="p">(</span><span class="kr">struct</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">int</span> <span class="kr">end</span><span class="p">)</span>
+<span class="kr">structure</span> <span class="nn">B</span> <span class="p">=</span> <span class="n">F</span> <span class="p">(</span><span class="kr">struct</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">bool</span> <span class="kr">end</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">A</span><span class="p">.</span><span class="n">f</span> <span class="mi">10</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">B</span><span class="p">.</span><span class="n">f</span> <span class="s2">"dude"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On the other hand, other implementations will typically reject the
+following program, while MLton and the Definition accept it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">F</span> <span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="kr">sig</span> <span class="kr">type</span> <span class="kt">t</span> <span class="kr">end</span><span class="p">)</span> <span class="p">=</span> <span class="kr">struct</span>
+    <span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="n">id</span> <span class="n">id</span>
+<span class="kr">end</span>
+<span class="kr">structure</span> <span class="nn">A</span> <span class="p">=</span> <span class="n">F</span> <span class="p">(</span><span class="kr">struct</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">int</span> <span class="kr">end</span><span class="p">)</span>
+<span class="kr">structure</span> <span class="nn">B</span> <span class="p">=</span> <span class="n">F</span> <span class="p">(</span><span class="kr">struct</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">bool</span> <span class="kr">end</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">A</span><span class="p">.</span><span class="n">f</span> <span class="mi">10</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">B</span><span class="p">.</span><span class="n">f</span> <span class="n">false</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See <a href="References#DreyerBlume07">DreyerBlume07</a> for more details.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/UnresolvedBugs.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/UnresolvedBugs.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

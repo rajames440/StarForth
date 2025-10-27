@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CallingFromCToSML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CallingFromCToSML</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton&#8217;s <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> allows programs to <em>export</em> SML
+functions to be called from C.  Suppose you would like export from SML
+a function of type <code>real * char -&gt; int</code> as the C function <code>foo</code>.
+MLton extends the syntax of SML to allow expressions like the
+following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>_export "foo": (real * char -&gt; int) -&gt; unit;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above expression exports a C function named <code>foo</code>, with
+prototype</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="n">Int32</span> <span class="nf">foo</span> <span class="p">(</span><span class="n">Real64</span> <span class="n">x0</span><span class="p">,</span> <span class="n">Char</span> <span class="n">x1</span><span class="p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>_export</code> expression denotes a function of type
+<code>(real * char -&gt; int) -&gt; unit</code> that when called with a function
+<code>f</code>, arranges for the exported <code>foo</code> function to call <code>f</code>
+when <code>foo</code> is called.  So, for example, the following exports and
+defines <code>foo</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">e</span> <span class="p">=</span> <span class="p">_</span><span class="n">export</span> <span class="s2">"foo"</span><span class="p">:</span> <span class="p">(</span><span class="n">real</span> <span class="n">*</span> <span class="n">char</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">e</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="mi">13</span> <span class="n">+</span> <span class="nn">Real</span><span class="p">.</span><span class="n">floor</span> <span class="n">x</span> <span class="n">+</span> <span class="nn">Char</span><span class="p">.</span><span class="n">ord</span> <span class="n">c</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The general form of an <code>_export</code> expression is</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>_export "C function name" attr... : cFuncTy -&gt; unit;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The type and the semicolon are not optional.  As with <code>_import</code>, a
+sequence of attributes may follow the function name.</p>
+</div>
+<div class="paragraph">
+<p>MLton&#8217;s <code>-export-header</code> option generates a C header file with
+prototypes for all of the functions exported from SML.  Include this
+header file in your C files to type check calls to functions exported
+from SML.  This header file includes <code>typedef</code>s for the
+<a href="ForeignFunctionInterfaceTypes">types that can be passed between SML and C</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example">Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Suppose that <code>export.sml</code> is</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">e</span> <span class="p">=</span> <span class="p">_</span><span class="n">export</span> <span class="s2">"f"</span><span class="p">:</span> <span class="p">(</span><span class="n">int</span> <span class="n">*</span> <span class="n">real</span> <span class="n">*</span> <span class="n">char</span> <span class="p">-&gt;</span> <span class="n">char</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">e</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="p">_)</span> <span class="p">=&gt;</span>
+           <span class="p">(</span><span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="s2">"i = "</span><span class="p">,</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span><span class="p">,</span>
+                           <span class="s2">"  r = "</span><span class="p">,</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">r</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span>
+            <span class="p">;</span> <span class="sc">#"g"</span><span class="p">))</span>
+<span class="kr">val</span> <span class="nv">g</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"g"</span> <span class="n">public</span> <span class="n">reentrant</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">g</span> <span class="p">()</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">g</span> <span class="p">()</span>
+
+<span class="kr">val</span> <span class="nv">e</span> <span class="p">=</span> <span class="p">_</span><span class="n">export</span> <span class="s2">"f2"</span><span class="p">:</span> <span class="p">(</span><span class="nn">Word8</span><span class="p">.</span><span class="n">word</span> <span class="p">-&gt;</span> <span class="n">word</span> <span class="n">array</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">e</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">w</span> <span class="p">=&gt;</span>
+           <span class="nn">Array</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="nn">Word</span><span class="p">.</span><span class="n">fromLargeWord</span> <span class="p">(</span><span class="nn">Word8</span><span class="p">.</span><span class="n">toLargeWord</span> <span class="n">w</span><span class="p">)))</span>
+<span class="kr">val</span> <span class="nv">g2</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"g2"</span> <span class="n">public</span> <span class="n">reentrant</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">word</span> <span class="n">array</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="n">g2</span> <span class="p">()</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="s2">"0wx"</span><span class="p">,</span> <span class="nn">Word</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="nn">Array</span><span class="p">.</span><span class="n">sub</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span>
+
+<span class="kr">val</span> <span class="nv">e</span> <span class="p">=</span> <span class="p">_</span><span class="n">export</span> <span class="s2">"f3"</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">e</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">print</span> <span class="s2">"hello</span><span class="se">\n</span><span class="s2">"</span><span class="p">);</span>
+<span class="kr">val</span> <span class="nv">g3</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"g3"</span> <span class="n">public</span> <span class="n">reentrant</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">g3</span> <span class="p">()</span>
+
+<span class="c">(*</span><span class="cm"> This example demonstrates mutual recursion between C and SML. *)</span>
+<span class="kr">val</span> <span class="nv">e</span> <span class="p">=</span> <span class="p">_</span><span class="n">export</span> <span class="s2">"f4"</span><span class="p">:</span> <span class="p">(</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">g4</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"g4"</span> <span class="n">public</span> <span class="n">reentrant</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">e</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="kr">if</span> <span class="n">i</span> <span class="p">=</span> <span class="mi">0</span> <span class="kr">then</span> <span class="p">()</span> <span class="kr">else</span> <span class="n">g4</span> <span class="p">(</span><span class="n">i</span> <span class="n">-</span> <span class="mi">1</span><span class="p">))</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">g4</span> <span class="mi">13</span>
+
+<span class="kr">val</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">zzzSet</span><span class="p">)</span> <span class="nv">=</span> <span class="p">_</span><span class="n">symbol</span> <span class="s2">"zzz"</span> <span class="n">alloc</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">);</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">zzzSet</span> <span class="mi">42</span>
+<span class="kr">val</span> <span class="nv">g5</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"g5"</span> <span class="n">public</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">g5</span> <span class="p">()</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="s2">"success</span><span class="se">\n</span><span class="s2">"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the the <code>reentrant</code> attribute is used for <code>_import</code>-ing the
+C functions that will call the <code>_export</code>-ed SML functions.</p>
+</div>
+<div class="paragraph">
+<p>Create the header file with <code>-export-header</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton -default-ann 'allowFFI true'    \
+        -export-header export.h         \
+        -stop tc                        \
+        export.sml</pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>export.h</code> now contains the following C prototypes.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Int8 f (Int32 x0, Real64 x1, Int8 x2);
+Pointer f2 (Word8 x0);
+void f3 ();
+void f4 (Int32 x0);
+extern Int32 zzz;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use <code>export.h</code> in a C program, <code>ffi-export.c</code>, as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">"export.h"</span><span class="cp">
+</span>
+<span class="cm">/* Functions in C are by default PUBLIC symbols */</span>
+<span class="kt">void</span> <span class="nf">g</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="n">Char8</span> <span class="n">c</span><span class="p">;</span>
+
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"g starting</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">f</span> <span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">17</span><span class="p">.</span><span class="mi">15</span><span class="p">,</span> <span class="sc">'a'</span><span class="p">);</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"g done  char = %c</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">Pointer</span> <span class="nf">g2</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="n">Pointer</span> <span class="n">res</span><span class="p">;</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"g2 starting</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">f2</span> <span class="p">(</span><span class="mh">0xFF</span><span class="p">);</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"g2 done</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">g3</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"g3 starting</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="n">f3</span> <span class="p">();</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"g3 done</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">g4</span> <span class="p">(</span><span class="n">Int32</span> <span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"g4 (%d)</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+        <span class="n">f4</span> <span class="p">(</span><span class="n">i</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">g5</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"g5 ()</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"zzz = %i</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">zzz</span><span class="p">);</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"g5 done</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Compile <code>ffi-export.c</code> and <code>export.sml</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% gcc -c ffi-export.c
+% mlton -default-ann 'allowFFI true' \
+         export.sml ffi-export.o</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Finally, run <code>export</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% ./export
+g starting
+...
+g4 (0)
+success</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_download">Download</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://raw.github.com/MLton/mlton/master/doc/examples/ffi/export.sml"><code>export.sml</code></a></p>
+</li>
+<li>
+<p><a href="https://raw.github.com/MLton/mlton/master/doc/examples/ffi/ffi-export.c"><code>ffi-export.c</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CallingFromCToSML.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CallingFromCToSML.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

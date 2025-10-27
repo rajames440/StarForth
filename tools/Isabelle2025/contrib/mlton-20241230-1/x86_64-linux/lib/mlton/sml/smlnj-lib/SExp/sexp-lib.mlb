@@ -1,0 +1,314 @@
+
+ann
+  "nonexhaustiveBind ignore" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+in
+
+local
+  basis l4 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb
+    end
+  basis l8 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+  basis l93 =
+    bas
+      (* $/pp-lib.cm ====> *) $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
+    end
+  basis l15 =
+    bas
+      (* $/ml-lpt-lib.cm ====> *) $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l4
+   in
+      structure gs_0 = TextIO
+   end
+   local
+      open l8
+   in
+      structure gs_1 = Atom
+   end
+   local
+      open l4
+   in
+      structure gs_2 = List
+   end
+   local
+      open l15
+   in
+      structure gs_3 = AntlrStreamPos
+   end
+   local
+      open l4
+   in
+      structure gs_4 = Char
+      structure gs_5 = CharArray
+      structure gs_6 = CharVector
+      structure gs_7 = FixedInt
+      structure gs_8 = General
+      structure gs_9 = Int
+      structure gs_10 = Int32
+      structure gs_11 = Int64
+      structure gs_12 = IntInf
+      structure gs_13 = LargeInt
+      structure gs_14 = LargeReal
+      structure gs_15 = LargeWord
+      structure gs_16 = OS
+      structure gs_17 = Position
+      structure gs_18 = Real
+      structure gs_19 = Real64
+      structure gs_20 = RealArray
+      structure gs_21 = RealArraySlice
+      structure gs_22 = RealVector
+      structure gs_23 = RealVectorSlice
+      structure gs_24 = SMLofNJ
+      structure gs_25 = Socket
+      structure gs_26 = String
+      structure gs_27 = Substring
+      structure gs_28 = SysWord
+      structure gs_29 = Time
+      structure gs_30 = Word
+      structure gs_31 = Word32
+      structure gs_32 = Word64
+      structure gs_33 = Word8
+   end
+   local
+      open l15
+   in
+      structure gs_34 = UTF8
+   end
+   local
+      structure Char = gs_4
+      structure CharArray = gs_5
+      structure CharVector = gs_6
+      structure FixedInt = gs_7
+      structure General = gs_8
+      structure Int = gs_9
+      structure Int32 = gs_10
+      structure Int64 = gs_11
+      structure IntInf = gs_12
+      structure LargeInt = gs_13
+      structure LargeReal = gs_14
+      structure LargeWord = gs_15
+      structure List = gs_2
+      structure OS = gs_16
+      structure Position = gs_17
+      structure Real = gs_18
+      structure Real64 = gs_19
+      structure RealArray = gs_20
+      structure RealArraySlice = gs_21
+      structure RealVector = gs_22
+      structure RealVectorSlice = gs_23
+      structure SMLofNJ = gs_24
+      structure Socket = gs_25
+      structure String = gs_26
+      structure Substring = gs_27
+      structure SysWord = gs_28
+      structure Time = gs_29
+      structure UTF8 = gs_34
+      structure Word = gs_30
+      structure Word32 = gs_31
+      structure Word64 = gs_32
+      structure Word8 = gs_33
+      sexp-tokens.sml
+   in
+      structure gs_35 = SExpTokens
+   end
+   local
+      open l4
+   in
+      structure gs_36 = Vector
+   end
+   local
+      open l4
+   in
+      structure gs_37 = StringCvt
+   end
+   local
+      open l15
+   in
+      structure gs_38 = ULexBuffer
+   end
+   local
+      structure AntlrStreamPos = gs_3
+      structure Char = gs_4
+      structure CharArray = gs_5
+      structure CharVector = gs_6
+      structure FixedInt = gs_7
+      structure General = gs_8
+      structure Int = gs_9
+      structure Int32 = gs_10
+      structure Int64 = gs_11
+      structure IntInf = gs_12
+      structure LargeInt = gs_13
+      structure LargeReal = gs_14
+      structure LargeWord = gs_15
+      structure List = gs_2
+      structure OS = gs_16
+      structure Position = gs_17
+      structure Real = gs_18
+      structure Real64 = gs_19
+      structure RealArray = gs_20
+      structure RealArraySlice = gs_21
+      structure RealVector = gs_22
+      structure RealVectorSlice = gs_23
+      structure SExpTokens = gs_35
+      structure SMLofNJ = gs_24
+      structure Socket = gs_25
+      structure String = gs_26
+      structure StringCvt = gs_37
+      structure Substring = gs_27
+      structure SysWord = gs_28
+      structure TextIO = gs_0
+      structure Time = gs_29
+      structure ULexBuffer = gs_38
+      structure UTF8 = gs_34
+      structure Vector = gs_36
+      structure Word = gs_30
+      structure Word32 = gs_31
+      structure Word64 = gs_32
+      structure Word8 = gs_33
+      sexp.lex.sml
+   in
+      structure gs_39 = SExpLexer
+   end
+   local
+      open l4
+   in
+      structure gs_40 = ListPair
+   end
+   local
+      structure Atom = gs_1
+      structure Char = gs_4
+      structure CharArray = gs_5
+      structure CharVector = gs_6
+      structure FixedInt = gs_7
+      structure General = gs_8
+      structure Int = gs_9
+      structure Int32 = gs_10
+      structure Int64 = gs_11
+      structure IntInf = gs_12
+      structure LargeInt = gs_13
+      structure LargeReal = gs_14
+      structure LargeWord = gs_15
+      structure List = gs_2
+      structure ListPair = gs_40
+      structure OS = gs_16
+      structure Position = gs_17
+      structure Real = gs_18
+      structure Real64 = gs_19
+      structure RealArray = gs_20
+      structure RealArraySlice = gs_21
+      structure RealVector = gs_22
+      structure RealVectorSlice = gs_23
+      structure SMLofNJ = gs_24
+      structure Socket = gs_25
+      structure String = gs_26
+      structure Substring = gs_27
+      structure SysWord = gs_28
+      structure Time = gs_29
+      structure Word = gs_30
+      structure Word32 = gs_31
+      structure Word64 = gs_32
+      structure Word8 = gs_33
+      sexp.sml
+   in
+      structure gs_41 = SExp
+   end
+   local
+      structure AntlrStreamPos = gs_3
+      structure Atom = gs_1
+      structure List = gs_2
+      structure SExp = gs_41
+      structure SExpLexer = gs_39
+      structure SExpTokens = gs_35
+      structure TextIO = gs_0
+      sexp-parser.sml
+   in
+      structure gs_42 = SExpParser
+   end
+   local
+      open l8
+   in
+      structure gs_43 = Format
+   end
+   local
+      structure Char = gs_4
+      structure CharArray = gs_5
+      structure CharVector = gs_6
+      structure FixedInt = gs_7
+      structure General = gs_8
+      structure Int = gs_9
+      structure Int32 = gs_10
+      structure Int64 = gs_11
+      structure IntInf = gs_12
+      structure LargeInt = gs_13
+      structure LargeReal = gs_14
+      structure LargeWord = gs_15
+      structure OS = gs_16
+      structure Position = gs_17
+      structure Real = gs_18
+      structure Real64 = gs_19
+      structure RealArray = gs_20
+      structure RealArraySlice = gs_21
+      structure RealVector = gs_22
+      structure RealVectorSlice = gs_23
+      structure SMLofNJ = gs_24
+      structure Socket = gs_25
+      structure String = gs_26
+      structure StringCvt = gs_37
+      structure Substring = gs_27
+      structure SysWord = gs_28
+      structure Time = gs_29
+      structure Word = gs_30
+      structure Word32 = gs_31
+      structure Word64 = gs_32
+      structure Word8 = gs_33
+      sexp-string-util.sml
+   in
+      structure gs_44 = SExpStringUtil
+   end
+   local
+      structure Atom = gs_1
+      structure Format = gs_43
+      structure List = gs_2
+      structure SExp = gs_41
+      structure SExpStringUtil = gs_44
+      structure TextIO = gs_0
+      sexp-printer.sml
+   in
+      structure gs_45 = SExpPrinter
+   end
+   local
+      open l93
+   in
+      structure gs_46 = TextIOPP
+   end
+   local
+      structure Atom = gs_1
+      structure Format = gs_43
+      structure List = gs_2
+      structure SExp = gs_41
+      structure SExpStringUtil = gs_44
+      structure TextIOPP = gs_46
+      sexp-pp.sml
+   in
+      structure gs_47 = SExpPP
+   end
+in
+   structure SExp = gs_41
+   structure SExpPP = gs_47
+   structure SExpParser = gs_42
+   structure SExpPrinter = gs_45
+end
+end
+
+end

@@ -1,0 +1,34 @@
+# -*- shell-script -*- :mode=shellscript:
+
+if grep "isabelle_fonts_hinted.*=.*false" "$ISABELLE_HOME_USER/etc/preferences" >/dev/null 2>/dev/null
+then
+  isabelle_fonts \
+    "$COMPONENT/ttf/IsabelleDejaVuSansMono.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSansMono-Bold.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSansMono-Oblique.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSansMono-BoldOblique.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSans.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSans-Bold.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSans-Oblique.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSans-BoldOblique.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSerif.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSerif-Bold.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSerif-Italic.ttf" \
+    "$COMPONENT/ttf/IsabelleDejaVuSerif-BoldItalic.ttf"
+else
+  isabelle_fonts \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSansMono.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSansMono-Bold.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSansMono-Oblique.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSansMono-BoldOblique.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSans.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSans-Bold.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSans-Oblique.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSans-BoldOblique.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSerif.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSerif-Bold.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSerif-Italic.ttf" \
+    "$COMPONENT/ttf-hinted/IsabelleDejaVuSerif-BoldItalic.ttf"
+fi
+
+isabelle_fonts_hidden "$COMPONENT/ttf/Vacuous.ttf"

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SMLNJLibrary</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SMLNJLibrary</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="http://www.smlnj.org/doc/smlnj-lib/index.html">SML/NJ Library</a> is a
+collection of libraries that are distributed with SML/NJ.  Due to
+differences between SML/NJ and MLton, these libraries will not work
+out-of-the box with MLton.</p>
+</div>
+<div class="paragraph">
+<p>As of 20241214, MLton includes a port of the SML/NJ Library
+synchronized with SML/NJ version 110.99.6.1.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>You can import a sub-library of the SML/NJ Library into an MLB file with:</p>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">MLB file</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Various utility modules, included collections, simple formating, &#8230;&#8203;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/Controls/controls-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A library for managing control flags in an application.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/HashCons/hash-cons-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Support for implementing hash-consed data structures.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/HTML/html-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTML 3.2 parsing and pretty-printing library.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/HTML4/html4-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTML 4.01 parsing and pretty-printing library.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/INet/inet-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Networking utilities; supported on both Unix and Windows systems.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/JSON/json-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JavaScript Object Notation (JSON) reading and writing library.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/PP/pp-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pretty-printing library.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/Reactive/reactive-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Reactive scripting library.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/RegExp/regexp-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Regular expression library.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/SExp/sexp-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S-expression library.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/Unix/unix-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Utilities for Unix-based operating systems.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/UUID/uuid-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">UUID generating library.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/smlnj-lib/XML/xml-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">XML library.</p></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>If you are porting a project from SML/NJ&#8217;s <a href="CompilationManager">CompilationManager</a> to
+MLton&#8217;s <a href="MLBasis">ML Basis system</a> using <code>cm2mlb</code>, note that the
+following maps are included by default:</p>
+<div class="listingblock">
+<div class="content">
+<pre># SMLNJ Library
+$SMLNJ-LIB                              $(SML_LIB)/smlnj-lib
+$smlnj-lib.cm                           $(SML_LIB)/smlnj-lib/Util
+$controls-lib.cm                        $(SML_LIB)/smlnj-lib/Controls
+$hash-cons-lib.cm                       $(SML_LIB)/smlnj-lib/HashCons
+$html-lib.cm                            $(SML_LIB)/smlnj-lib/HTML
+$html4-lib.cm                           $(SML_LIB)/smlnj-lib/HTML4
+$inet-lib.cm                            $(SML_LIB)/smlnj-lib/INet
+$json-lib.cm                            $(SML_LIB)/smlnj-lib/JSON
+$pp-lib.cm                              $(SML_LIB)/smlnj-lib/PP
+$reactive-lib.cm                        $(SML_LIB)/smlnj-lib/Reactive
+$regexp-lib.cm                          $(SML_LIB)/smlnj-lib/RegExp
+$sexp-lib.cm                            $(SML_LIB)/smlnj-lib/SExp
+$unix-lib.cm                            $(SML_LIB)/smlnj-lib/Unix
+$xml-lib.cm                             $(SML_LIB)/smlnj-lib/XML</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will automatically convert a <code>$/smlnj-lib.cm</code> import in an input
+<code>.cm</code> file into a <code>$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb</code> import in
+the output <code>.mlb</code> file.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details">Details</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following changes were made to the SML/NJ Library, in addition to
+deriving the <code>.mlb</code> files from the <code>.cm</code> files:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Compat/either</code> (added): Implements <code>signature EITHER</code> and <code>structure Either: EITHER</code> (see <a href="https://github.com/SMLFamily/BasisLibrary/wiki/2015-002-Addition-of-Either-module" class="bare">https://github.com/SMLFamily/BasisLibrary/wiki/2015-002-Addition-of-Either-module</a>); used by RegExp Library.</p>
+</li>
+<li>
+<p><code>Compat/fn</code> (added): Implements <code>signature FN</code> and <code>structure Fn: FN</code> (see <a href="https://github.com/SMLFamily/BasisLibrary/wiki/2015-005-Addition-of-Fn-module" class="bare">https://github.com/SMLFamily/BasisLibrary/wiki/2015-005-Addition-of-Fn-module</a>); used by JSON Library.</p>
+</li>
+<li>
+<p><code>Compat/mono-buffer</code> (added): Implements <code>signature MONO_BUFFER</code> and <code>structure CharBuffer: MONO_BUFFER</code> (see <a href="https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers" class="bare">https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers</a>); used by JSON and PP Libraries.</p>
+</li>
+<li>
+<p><code>Compat/mono-sequence</code> (added): Implements <code>signature MONO_{ARRAY,VECTOR}{,_SLICE}_EXT</code> and <code>structure Word8Slice: MONO_VECTOR_SLICE_EXT</code> (see <a href="https://github.com/SMLFamily/BasisLibrary/wiki/2015-003-Additional-operations-on-sequences" class="bare">https://github.com/SMLFamily/BasisLibrary/wiki/2015-003-Additional-operations-on-sequences</a> and
+<a href="https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers" class="bare">https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers</a>); used by SML/NJ Library.</p>
+</li>
+<li>
+<p><code>HTML4/pp-init.sml</code> (added): Implements <code>structure PrettyPrint</code> using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the <code>structure PrettyPrint</code> provided by the SML/NJ compiler itself.</p>
+</li>
+<li>
+<p><code>JSON/json-stream-parser.sml</code> and <code>JSON/json-parser.sml</code> (modified): Rewrote use of <code>Unsafe.CharVector.create</code> and <code>Unsafe.CharVector.update</code>; MLton assumes that vectors are immutable.</p>
+</li>
+<li>
+<p><code>Util/base64.sml</code> (modified): Rewrote use of <code>Unsafe.CharVector.create</code> and <code>Unsafe.CharVector.update</code>; MLton assumes that vectors are immutable.</p>
+</li>
+<li>
+<p><code>Util/dynamic-array.sml</code> (modified): Rewrote use of <code>Array.fromVector</code>.</p>
+</li>
+<li>
+<p><code>Util/engine.mlton.sml</code> (added, not exported): Implements <code>structure Engine</code>, providing time-limited, resumable computations using &lt;:MLtonThread:&gt;, &lt;:MLtonSignal:&gt;, and &lt;:MLtonItimer:&gt;.</p>
+</li>
+<li>
+<p><code>Util/graph-scc-fn.sml</code> (modified): Rewrote use of <code>where</code> structure specification.</p>
+</li>
+<li>
+<p><code>Util/time-limit.mlb</code> (added): Exports <code>structure TimeLimit</code>, which is <em>not</em> exported by <code>smlnj-lib.mlb</code>.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including <code>structure TimeLimit</code>.</p>
+</li>
+<li>
+<p><code>Util/time-limit.mlton.sml</code> (added): Implements <code>structure TimeLimit</code> using <code>structure Engine</code>.  The SML/NJ implementation of <code>structure TimeLimit</code> uses SML/NJ&#8217;s first-class continuations, signals, and interval timer.</p>
+</li>
+<li>
+<p><code>Util/utf8.sml</code> (modified): Rewrote use of <code>String.implodeRev</code> (see <a href="https://github.com/SMLFamily/BasisLibrary/wiki/2015-003d-STRING" class="bare">https://github.com/SMLFamily/BasisLibrary/wiki/2015-003d-STRING</a>).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_patch">Patch</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/lib/smlnj-lib/smlnj-lib.patch"><code>smlnj-lib.patch</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Sat Dec 14 15:29:31 2024 -0500 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SMLNJLibrary.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SMLNJLibrary.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

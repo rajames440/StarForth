@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>PropertyList</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>PropertyList</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A property list is a dictionary-like data structure into which
+properties (name-value pairs) can be inserted and from which
+properties can be looked up by name.  The term comes from the Lisp
+language, where every symbol has a property list for storing
+information, and where the names are typically symbols and keys can be
+any type of value.</p>
+</div>
+<div class="paragraph">
+<p>Here is an SML signature for property lists such that for any type of
+value a new property can be dynamically created to manipulate that
+type of value in a property list.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">PROPERTY_LIST</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">new</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">newProperty</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="p">{</span><span class="n">add</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">,</span>
+                                <span class="n">peek</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">option</span><span class="p">}</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here is a functor demonstrating the use of property lists.  It first
+creates a property list, then two new properties (of different types),
+and adds a value to the list for each property.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">Test</span> <span class="p">(</span><span class="n">P</span><span class="p">:</span> <span class="n">PROPERTY_LIST</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">val</span> <span class="nv">pl</span> <span class="p">=</span> <span class="nn">P</span><span class="p">.</span><span class="n">new</span> <span class="p">()</span>
+
+      <span class="kr">val</span> <span class="p">{</span><span class="n">add</span> <span class="p">=</span> <span class="n">addInt</span><span class="p">:</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">,</span> <span class="n">peek</span> <span class="p">=</span> <span class="n">peekInt</span><span class="p">}</span> <span class="p">=</span> <span class="nn">P</span><span class="p">.</span><span class="n">newProperty</span> <span class="p">()</span>
+      <span class="kr">val</span> <span class="p">{</span><span class="n">add</span> <span class="p">=</span> <span class="n">addReal</span><span class="p">:</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span> <span class="n">*</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">,</span> <span class="n">peek</span> <span class="p">=</span> <span class="n">peekReal</span><span class="p">}</span> <span class="p">=</span> <span class="nn">P</span><span class="p">.</span><span class="n">newProperty</span> <span class="p">()</span>
+
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">addInt</span> <span class="p">(</span><span class="n">pl</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">addReal</span> <span class="p">(</span><span class="n">pl</span><span class="p">,</span> <span class="mf">17.0</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">s1</span> <span class="p">=</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="n">valOf</span> <span class="p">(</span><span class="n">peekInt</span> <span class="n">pl</span><span class="p">))</span>
+      <span class="kr">val</span> <span class="nv">s2</span> <span class="p">=</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="n">valOf</span> <span class="p">(</span><span class="n">peekReal</span> <span class="n">pl</span><span class="p">))</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Applied to an appropriate implementation <code>PROPERTY_LIST</code>, the <code>Test</code>
+functor will produce the following output.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>13 17.0</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Because property lists can hold values of any type, their
+implementation requires a <a href="UniversalType">UniversalType</a>.  Given that, a property
+list is simply a list of elements of the universal type.  Adding a
+property adds to the front of the list, and looking up a property
+scans the list.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">PropertyList</span> <span class="p">(</span><span class="n">U</span><span class="p">:</span> <span class="n">UNIVERSAL_TYPE</span><span class="p">):</span> <span class="n">PROPERTY_LIST</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="nn">U</span><span class="p">.</span><span class="n">t</span> <span class="n">list</span> <span class="n">ref</span>
+
+      <span class="kr">fun</span> <span class="nf">new</span> <span class="p">()</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="n">ref</span> <span class="p">[])</span>
+
+      <span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">newProperty</span> <span class="p">()</span> <span class="p">=</span>
+         <span class="kr">let</span>
+            <span class="kr">val</span> <span class="p">(</span><span class="n">inject</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span> <span class="nv">=</span> <span class="nn">U</span><span class="p">.</span><span class="n">embed</span> <span class="p">()</span>
+            <span class="kr">fun</span> <span class="nf">add</span> <span class="p">(</span><span class="n">T</span> <span class="n">r</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="nd">'a</span><span class="p">):</span> <span class="n">unit</span> <span class="p">=</span> <span class="n">r</span> <span class="n">:=</span> <span class="n">inject</span> <span class="n">a</span> <span class="n">::</span> <span class="p">(</span><span class="n">!r</span><span class="p">)</span>
+            <span class="kr">fun</span> <span class="nf">peek</span> <span class="p">(</span><span class="n">T</span> <span class="n">r</span><span class="p">)</span> <span class="p">=</span>
+               <span class="nn">Option</span><span class="p">.</span><span class="n">map</span> <span class="p">(</span><span class="n">valOf</span> <span class="n">o</span> <span class="n">out</span><span class="p">)</span> <span class="p">(</span><span class="nn">List</span><span class="p">.</span><span class="n">find</span> <span class="p">(</span><span class="n">isSome</span> <span class="n">o</span> <span class="n">out</span><span class="p">)</span> <span class="p">(</span><span class="n">!r</span><span class="p">))</span>
+         <span class="kr">in</span>
+            <span class="p">{</span><span class="n">add</span> <span class="p">=</span> <span class="n">add</span><span class="p">,</span> <span class="n">peek</span> <span class="p">=</span> <span class="n">peek</span><span class="p">}</span>
+         <span class="kr">end</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If <code>U: UNIVERSAL_TYPE</code>, then we can test our code as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Z</span> <span class="p">=</span> <span class="n">Test</span> <span class="p">(</span><span class="n">PropertyList</span> <span class="p">(</span><span class="n">U</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Of course, a serious implementation of property lists would have to
+handle duplicate insertions of the same property, as well as the
+removal of elements in order to avoid space leaks.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>MLton relies heavily on property lists for attaching information to
+syntax tree nodes in its intermediate languages.  See
+<a href="https://github.com/MLton/mlton/blob/master/lib/mlton/basic/property-list.sig"><code>property-list.sig</code></a> and
+<a href="https://github.com/MLton/mlton/blob/master/lib/mlton/basic/property-list.fun"><code>property-list.fun</code></a>.</p>
+</li>
+<li>
+<p>The <a href="MLRISCLibrary">MLRISCLibrary</a> <a href="References#LeungGeorge99">uses property lists
+extensively</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/PropertyList.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/PropertyList.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

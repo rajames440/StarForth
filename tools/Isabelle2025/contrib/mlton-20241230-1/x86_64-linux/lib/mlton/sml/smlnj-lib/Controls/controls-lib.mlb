@@ -1,0 +1,300 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+in
+
+local
+  basis l11 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb
+    end
+  basis l4 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l4
+   in
+      structure gs_0 = AtomTable
+   end
+   local
+      open l4
+   in
+      structure gs_1 = Atom
+   end
+   local
+      open l11
+   in
+      structure gs_2 = List
+   end
+   local
+      open l4
+   in
+      structure gs_3 = ListMergeSort
+   end
+   local
+      open l11
+   in
+      structure gs_4 = Char
+      structure gs_5 = CharArray
+      structure gs_6 = CharVector
+      structure gs_7 = FixedInt
+      structure gs_8 = General
+      structure gs_9 = Int
+      structure gs_10 = Int32
+      structure gs_11 = Int64
+      structure gs_12 = IntInf
+      structure gs_13 = LargeInt
+      structure gs_14 = LargeReal
+      structure gs_15 = LargeWord
+      structure gs_16 = OS
+      structure gs_17 = Position
+      structure gs_18 = Real
+      structure gs_19 = Real64
+      structure gs_20 = RealArray
+      structure gs_21 = RealArraySlice
+      structure gs_22 = RealVector
+      structure gs_23 = RealVectorSlice
+      structure gs_24 = SMLofNJ
+      structure gs_25 = Socket
+      structure gs_26 = String
+      structure gs_27 = Substring
+      structure gs_28 = SysWord
+      structure gs_29 = Time
+      structure gs_30 = Word
+      structure gs_31 = Word32
+      structure gs_32 = Word64
+      structure gs_33 = Word8
+   end
+   local
+      open l11
+   in
+      structure gs_34 = Option
+   end
+   local
+      open l4
+   in
+      structure gs_35 = GetOpt
+   end
+   local
+      structure GetOpt = gs_35
+      controls-sig.sml
+   in
+      signature gs_36 = CONTROLS
+   end
+   local
+      structure Atom = gs_1
+      structure AtomTable = gs_0
+      structure Char = gs_4
+      structure CharArray = gs_5
+      structure CharVector = gs_6
+      structure FixedInt = gs_7
+      structure General = gs_8
+      structure Int = gs_9
+      structure Int32 = gs_10
+      structure Int64 = gs_11
+      structure IntInf = gs_12
+      structure LargeInt = gs_13
+      structure LargeReal = gs_14
+      structure LargeWord = gs_15
+      structure List = gs_2
+      structure OS = gs_16
+      structure Position = gs_17
+      structure Real = gs_18
+      structure Real64 = gs_19
+      structure RealArray = gs_20
+      structure RealArraySlice = gs_21
+      structure RealVector = gs_22
+      structure RealVectorSlice = gs_23
+      structure SMLofNJ = gs_24
+      structure Socket = gs_25
+      structure String = gs_26
+      structure Substring = gs_27
+      structure SysWord = gs_28
+      structure Time = gs_29
+      structure Word = gs_30
+      structure Word32 = gs_31
+      structure Word64 = gs_32
+      structure Word8 = gs_33
+      control-reps.sml
+   in
+      structure gs_37 = ControlReps
+   end
+   local
+      structure Atom = gs_1
+      signature CONTROLS = gs_36
+      structure Char = gs_4
+      structure CharArray = gs_5
+      structure CharVector = gs_6
+      structure ControlReps = gs_37
+      structure FixedInt = gs_7
+      structure General = gs_8
+      structure GetOpt = gs_35
+      structure Int = gs_9
+      structure Int32 = gs_10
+      structure Int64 = gs_11
+      structure IntInf = gs_12
+      structure LargeInt = gs_13
+      structure LargeReal = gs_14
+      structure LargeWord = gs_15
+      structure List = gs_2
+      structure OS = gs_16
+      structure Option = gs_34
+      structure Position = gs_17
+      structure Real = gs_18
+      structure Real64 = gs_19
+      structure RealArray = gs_20
+      structure RealArraySlice = gs_21
+      structure RealVector = gs_22
+      structure RealVectorSlice = gs_23
+      structure SMLofNJ = gs_24
+      structure Socket = gs_25
+      structure String = gs_26
+      structure Substring = gs_27
+      structure SysWord = gs_28
+      structure Time = gs_29
+      structure Word = gs_30
+      structure Word32 = gs_31
+      structure Word64 = gs_32
+      structure Word8 = gs_33
+      controls.sml
+   in
+      structure gs_38 = Controls
+   end
+   local
+      structure Atom = gs_1
+      structure Controls = gs_38
+      control-set-sig.sml
+   in
+      signature gs_39 = CONTROL_SET
+   end
+   local
+      structure AtomTable = gs_0
+      signature CONTROL_SET = gs_39
+      structure ControlReps = gs_37
+      structure Controls = gs_38
+      structure ListMergeSort = gs_3
+      structure Option = gs_34
+      control-set.sml
+   in
+      structure gs_40 = ControlSet
+   end
+   local
+      structure ControlSet = gs_40
+      structure Controls = gs_38
+      control-registry-sig.sml
+   in
+      signature gs_41 = CONTROL_REGISTRY
+   end
+   local
+      structure Atom = gs_1
+      structure AtomTable = gs_0
+      signature CONTROL_REGISTRY = gs_41
+      structure Char = gs_4
+      structure CharArray = gs_5
+      structure CharVector = gs_6
+      structure ControlReps = gs_37
+      structure ControlSet = gs_40
+      structure Controls = gs_38
+      structure FixedInt = gs_7
+      structure General = gs_8
+      structure Int = gs_9
+      structure Int32 = gs_10
+      structure Int64 = gs_11
+      structure IntInf = gs_12
+      structure LargeInt = gs_13
+      structure LargeReal = gs_14
+      structure LargeWord = gs_15
+      structure List = gs_2
+      structure ListMergeSort = gs_3
+      structure OS = gs_16
+      structure Position = gs_17
+      structure Real = gs_18
+      structure Real64 = gs_19
+      structure RealArray = gs_20
+      structure RealArraySlice = gs_21
+      structure RealVector = gs_22
+      structure RealVectorSlice = gs_23
+      structure SMLofNJ = gs_24
+      structure Socket = gs_25
+      structure String = gs_26
+      structure Substring = gs_27
+      structure SysWord = gs_28
+      structure Time = gs_29
+      structure Word = gs_30
+      structure Word32 = gs_31
+      structure Word64 = gs_32
+      structure Word8 = gs_33
+      control-registry.sml
+   in
+      structure gs_42 = ControlRegistry
+   end
+   local
+      structure Controls = gs_38
+      control-util-sig.sml
+   in
+      signature gs_43 = CONTROL_UTIL
+   end
+   local
+      open l11
+   in
+      structure gs_44 = Bool
+   end
+   local
+      structure Bool = gs_44
+      signature CONTROL_UTIL = gs_43
+      structure Char = gs_4
+      structure CharArray = gs_5
+      structure CharVector = gs_6
+      structure Controls = gs_38
+      structure FixedInt = gs_7
+      structure General = gs_8
+      structure Int = gs_9
+      structure Int32 = gs_10
+      structure Int64 = gs_11
+      structure IntInf = gs_12
+      structure LargeInt = gs_13
+      structure LargeReal = gs_14
+      structure LargeWord = gs_15
+      structure List = gs_2
+      structure OS = gs_16
+      structure Position = gs_17
+      structure Real = gs_18
+      structure Real64 = gs_19
+      structure RealArray = gs_20
+      structure RealArraySlice = gs_21
+      structure RealVector = gs_22
+      structure RealVectorSlice = gs_23
+      structure SMLofNJ = gs_24
+      structure Socket = gs_25
+      structure String = gs_26
+      structure Substring = gs_27
+      structure SysWord = gs_28
+      structure Time = gs_29
+      structure Word = gs_30
+      structure Word32 = gs_31
+      structure Word64 = gs_32
+      structure Word8 = gs_33
+      control-util.sml
+   in
+      structure gs_45 = ControlUtil
+   end
+in
+   signature CONTROLS = gs_36
+   signature CONTROL_REGISTRY = gs_41
+   signature CONTROL_SET = gs_39
+   signature CONTROL_UTIL = gs_43
+   structure ControlRegistry = gs_42
+   structure ControlSet = gs_40
+   structure ControlUtil = gs_45
+   structure Controls = gs_38
+end
+end
+
+end

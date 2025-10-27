@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MatchCompilation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MatchCompilation</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Match compilation is the process of translating an SML match into a
+nested tree (or dag) of simple case expressions and tests.</p>
+</div>
+<div class="paragraph">
+<p>MLton&#8217;s match compiler is described <a href="MatchCompile">here</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_match_compilation_in_other_compilers">Match compilation in other compilers</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="References#BaudinetMacQueen85">BaudinetMacQueen85</a></p>
+</li>
+<li>
+<p><a href="References#Leroy90">Leroy90</a>, pages 60-69.</p>
+</li>
+<li>
+<p><a href="References#Sestoft96">Sestoft96</a></p>
+</li>
+<li>
+<p><a href="References#ScottRamsey00">ScottRamsey00</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MatchCompilation.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MatchCompilation.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

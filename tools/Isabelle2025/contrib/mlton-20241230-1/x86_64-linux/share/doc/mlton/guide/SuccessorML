@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SuccessorML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SuccessorML</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The purpose of <a href="http://sml-family.org/successor-ml/">successor ML</a>, or
+sML for short, is to provide a vehicle for the continued evolution of
+ML, using Standard ML as a starting point. The intention is for
+successor ML to be a living, evolving dialect of ML that is responsive
+to community needs and advances in language design, implementation,
+and semantics.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_successorml_features_in_mlton">SuccessorML Features in MLton</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following SuccessorML features have been implemented in MLton.
+The features are disabled by default, and may be enabled utilizing the
+feature&#8217;s corresponding <a href="MLBasisAnnotations">ML Basis annotation</a>
+which is listed directly after the feature name.  In addition, the
+<code>allowSuccessorML {false|true}</code> annotation can be used to
+simultaneously enable all of the features.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a id="DoDecls"></a>
+<code>do</code> Declarations: <code>allowDoDecls {false|true}</code></p>
+<div class="paragraph">
+<p>Allow a <code>do <em>exp</em></code> declaration form, which evaluates <em>exp</em> for its
+side effects.  The following example uses a <code>do</code> declaration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">do</span> <span class="n">print</span> <span class="s2">"Hello world.</span><span class="se">\n</span><span class="s2">"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and is equivalent to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">print</span> <span class="s2">"Hello world.</span><span class="se">\n</span><span class="s2">"</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><a id="ExtendedConsts"></a>
+Extended Constants: <code>allowExtendedConsts {false|true}</code></p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph">
+<p>Allow or disallow all of the extended constants features.  This is a
+proxy for all of the following annotations.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a id="ExtendedNumConsts"></a>
+Extended Numeric Constants: <code>allowExtendedNumConsts {false|true}</code></p>
+<div class="paragraph">
+<p>Allow underscores as a separator in numeric constants and allow binary
+integer and word constants.</p>
+</div>
+<div class="paragraph">
+<p>Underscores in a numeric constant must occur between digits and
+consecutive underscores are allowed.</p>
+</div>
+<div class="paragraph">
+<p>Binary integer constants use the prefix <code>0b</code> and binary word constants
+use the prefix <code>0wb</code>.</p>
+</div>
+<div class="paragraph">
+<p>The following example uses extended numeric constants (although it may
+be incorrectly syntax highlighted):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">pb</span> <span class="p">=</span> <span class="mi">0</span><span class="n">b10101</span>
+<span class="kr">val</span> <span class="nv">nb</span> <span class="p">=</span> <span class="mi">~0</span><span class="n">b10_10_10</span>
+<span class="kr">val</span> <span class="nv">wb</span> <span class="p">=</span> <span class="mi">0</span><span class="n">wb1010</span>
+<span class="kr">val</span> <span class="nv">i</span> <span class="p">=</span> <span class="mi">4</span><span class="p">__</span><span class="mi">327</span><span class="p">__</span><span class="mi">829</span>
+<span class="kr">val</span> <span class="nv">r</span> <span class="p">=</span> <span class="mf">6.022</span><span class="p">_</span><span class="mi">140</span><span class="p">_</span><span class="mf">9e23</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><a id="ExtendedTextConsts"></a>
+Extended Text Constants: <code>allowExtendedTextConsts {false|true}</code></p>
+<div class="paragraph">
+<p>Allow characters with integer codes &ge; 128 and &le; 247 that
+correspond to syntactically well-formed UTF-8 byte sequences in text
+constants.</p>
+</div>
+<div class="paragraph">
+<p>Any 1, 2, 3, or 4 byte sequence that can be properly decoded to a
+binary number according to the UTF-8 encoding/decoding scheme is
+allowed in a text constant (but invalid sequences are not explicitly
+rejected) and denotes the corresponding sequence of characters with
+integer codes &ge; 128 and &le; 247.  This feature enables "UTF-8
+convenience" (but not comprehensive Unicode support); in particular,
+it allows one to copy text from a browser and paste it into a string
+constant in an editor and, furthermore, if the string is printed to a
+terminal, then will (typically) appear as the original text.  The
+following example uses UTF-8 byte sequences:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">s1</span> <span class="p">:</span> <span class="nn">String</span><span class="p">.</span><span class="n">string</span> <span class="p">=</span> <span class="s2">"</span><span class="se">\240\159\130\161</span><span class="s2">"</span>
+<span class="kr">val</span> <span class="nv">s2</span> <span class="p">:</span> <span class="nn">String</span><span class="p">.</span><span class="n">string</span> <span class="p">=</span> <span class="s2">"🂡"</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="s2">"s1 --&gt; "</span> <span class="n">^</span> <span class="n">s1</span> <span class="n">^</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="s2">"s2 --&gt; "</span> <span class="n">^</span> <span class="n">s2</span> <span class="n">^</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="s2">"String.size s1 --&gt; "</span> <span class="n">^</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="nn">String</span><span class="p">.</span><span class="n">size</span> <span class="n">s1</span><span class="p">)</span> <span class="n">^</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="s2">"String.size s2 --&gt; "</span> <span class="n">^</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="nn">String</span><span class="p">.</span><span class="n">size</span> <span class="n">s2</span><span class="p">)</span> <span class="n">^</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="s2">"s1 = s2 --&gt; "</span> <span class="n">^</span> <span class="nn">Bool</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="n">s1</span> <span class="p">=</span> <span class="n">s2</span><span class="p">)</span> <span class="n">^</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and, when compiled and executed, will display:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>s1 --&gt; 🂡
+s2 --&gt; 🂡
+String.size s1 --&gt; 4
+String.size s2 --&gt; 4
+s1 = s2 --&gt; true</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the <code>String.string</code> type corresponds to any sequence of
+8-bit values, including invalid UTF-8 sequences; hence the string
+constant <code>"\192"</code> (a UTF-8 leading byte with no UTF-8 continuation
+byte) is valid.  Similarly, the <code>Char.char</code> type corresponds to a
+single 8-bit value; hence the char constant <code>#"α"</code> is not valid, as
+the text constant <code>"α"</code> denotes a sequence of two 8-bit values.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p><a id="LineComments"></a>
+Line Comments: <code>allowLineComments {false|true}</code></p>
+<div class="paragraph">
+<p>Allow line comments beginning with the token <code>(*)</code>.  The following
+example uses a line comment:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="c">(*</span><span class="cm">) This is a line comment</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Line comments properly nest within block comments.  The following
+example uses line comments nested within block comments:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="c">(*</span><span class="cm">
+val x = 4 (*) This is a line comment
+*)
+
+(*
+val y = 5 (*) This is a line comment *)
+*)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><a id="OptBar"></a>
+Optional Pattern Bars: <code>allowOptBar {false|true}</code></p>
+<div class="paragraph">
+<p>Allow a bar to appear before the first match rule of a <code>case</code>, <code>fn</code>,
+or <code>handle</code> expression, allow a bar to appear before the first
+function-value binding of a <code>fun</code> declaration, and allow a bar to
+appear before the first constructor binding or description of a
+<code>datatype</code> declaration or specification.  The following example uses
+leading bars in a <code>datatype</code> declaration, a <code>fun</code> declaration, and a
+<code>case</code> expression:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span>
+  <span class="nc">|</span> <span class="n">C</span>
+  <span class="p">|</span> <span class="nc">B</span>
+  <span class="p">|</span> <span class="nc">A</span>
+
+<span class="kr">fun</span>
+  <span class="nf">|</span> <span class="n">f</span> <span class="n">NONE</span> <span class="p">=</span> <span class="mi">0</span>
+  <span class="p">|</span> <span class="nf">f</span> <span class="p">(</span><span class="n">SOME</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span>
+     <span class="p">(</span><span class="kr">case</span> <span class="n">t</span> <span class="kr">of</span>
+        <span class="p">|</span> <span class="n">A</span> <span class="p">=&gt;</span> <span class="mi">1</span>
+        <span class="p">|</span> <span class="n">B</span> <span class="p">=&gt;</span> <span class="mi">2</span>
+        <span class="p">|</span> <span class="n">C</span> <span class="p">=&gt;</span> <span class="mi">3</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>By eliminating the special case of the first element, this feature
+allows for simpler refactoring (e.g., sorting the lines of the
+<code>datatype</code> declaration&#8217;s constructor bindings to put the constructors
+in alphabetical order).</p>
+</div>
+</li>
+<li>
+<p><a id="OptSemicolon"></a>
+Optional Semicolons: <code>allowOptSemicolon {false|true}</code></p>
+<div class="paragraph">
+<p>Allow a semicolon to appear after the last expression in a sequence or
+<code>let</code>-body expression.  The following example uses a trailing
+semicolon in the body of a <code>let</code> expression:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">h</span> <span class="n">z</span> <span class="p">=</span>
+  <span class="kr">let</span>
+    <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">3</span> <span class="n">*</span> <span class="n">z</span>
+  <span class="kr">in</span>
+     <span class="n">f</span> <span class="n">x</span> <span class="p">;</span>
+     <span class="n">g</span> <span class="n">x</span> <span class="p">;</span>
+  <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>By eliminating the special case of the last element, this feature
+allows for simpler refactoring.</p>
+</div>
+</li>
+<li>
+<p><a id="OrPats"></a>
+Disjunctive (Or) Patterns: <code>allowOrPats {false|true}</code></p>
+<div class="paragraph">
+<p>Allow disjunctive (a.k.a., "or") patterns of the form
+<code><em>pat<sub>1</sub></em> | <em>pat<sub>2</sub></em></code>, which matches a value that matches either
+<code><em>pat<sub>1</sub></em></code> or <code><em>pat<sub>2</sub></em></code>.  Disjunctive patterns have lower precedence
+than <code>as</code> patterns and constraint patterns, much as <code>orelse</code>
+expressions have lower precedence than <code>andalso</code> expressions and
+constraint expressions.  Both sub-patterns of a disjunctive pattern
+must bind the same variables with the same types.  The following
+example uses disjunctive patterns:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="kr">of</span> <span class="n">int</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">int</span> <span class="p">|</span> <span class="nc">C</span> <span class="kr">of</span> <span class="n">int</span> <span class="p">|</span> <span class="nc">D</span> <span class="kr">of</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span> <span class="p">|</span> <span class="nc">E</span> <span class="kr">of</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span>
+
+<span class="kr">fun</span> <span class="nf">f</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">case</span> <span class="n">t</span> <span class="kr">of</span>
+     <span class="n">A</span> <span class="n">x</span> <span class="p">|</span> <span class="n">B</span> <span class="n">x</span> <span class="p">|</span> <span class="n">C</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="n">+</span> <span class="mi">1</span>
+   <span class="p">|</span> <span class="n">D</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">_)</span> <span class="p">|</span> <span class="n">E</span> <span class="p">(_,</span> <span class="n">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="n">*</span> <span class="mi">2</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><a id="RecordPunExps"></a>
+Record Punning Expressions: <code>allowRecordPunExps {false|true}</code></p>
+<div class="paragraph">
+<p>Allow record punning expressions, whereby an identifier <code><em>vid</em></code> as an
+expression row in a record expression denotes the expression row
+<code><em>vid</em> = <em>vid</em></code> (i.e., treating a label as a variable).  The following
+example uses record punning expressions (and also record punning
+patterns):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">incB</span> <span class="n">r</span> <span class="p">=</span>
+  <span class="kr">case</span> <span class="n">r</span> <span class="kr">of</span> <span class="p">{</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">}</span> <span class="p">=&gt;</span> <span class="p">{</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="n">b</span> <span class="n">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">c</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and is equivalent to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">incB</span> <span class="n">r</span> <span class="p">=</span>
+  <span class="kr">case</span> <span class="n">r</span> <span class="kr">of</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="n">c</span><span class="p">}</span> <span class="p">=&gt;</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="n">b</span> <span class="n">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="n">c</span><span class="p">}</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><a id="SigWithtype"></a>
+<code>withtype</code> in Signatures: <code>allowSigWithtype {false|true}</code></p>
+<div class="paragraph">
+<p>Allow <code>withtype</code> to modify a <code>datatype</code> specification in a signature.
+The following example uses <code>withtype</code> in a signature (and also
+<code>withtype</code> in a declaration):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">STREAM</span> <span class="p">=</span>
+  <span class="kr">sig</span>
+    <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">u</span> <span class="p">=</span> <span class="nc">Nil</span> <span class="p">|</span> <span class="nc">Cons</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">t</span>
+    <span class="kr">withtype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">u</span>
+  <span class="kr">end</span>
+<span class="kr">structure</span> <span class="nn">Stream</span> <span class="p">:</span> <span class="n">STREAM</span> <span class="p">=</span>
+  <span class="kr">struct</span>
+    <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">u</span> <span class="p">=</span> <span class="nc">Nil</span> <span class="p">|</span> <span class="nc">Cons</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">t</span>
+    <span class="kr">withtype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">u</span>
+  <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and is equivalent to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">STREAM</span> <span class="p">=</span>
+  <span class="kr">sig</span>
+    <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">u</span> <span class="p">=</span> <span class="nc">Nil</span> <span class="p">|</span> <span class="nc">Cons</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">u</span><span class="p">)</span>
+    <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">u</span>
+  <span class="kr">end</span>
+<span class="kr">structure</span> <span class="nn">Stream</span> <span class="p">:</span> <span class="n">STREAM</span> <span class="p">=</span>
+  <span class="kr">struct</span>
+    <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">u</span> <span class="p">=</span> <span class="nc">Nil</span> <span class="p">|</span> <span class="nc">Cons</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">u</span><span class="p">)</span>
+    <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">u</span>
+  <span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><a id="VectorExpsAndPats"></a>
+Vector Expressions and Patterns: <code>allowVectorExpsAndPats {false|true}</code></p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph">
+<p>Allow or disallow vector expressions and vector patterns.  This is a
+proxy for all of the following annotations.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a id="VectorExps"></a>
+Vector Expressions: <code>allowVectorExps {false|true}</code></p>
+<div class="paragraph">
+<p>Allow vector expressions of the form
+<code>#[<em>exp<sub>0</sub></em>, <em>exp<sub>1</sub></em>, &#8230;&#8203;, <em>exp<sub>n-1</sub></em>]</code> (where <em>n ≥ 0</em>).  The
+expression has type <code><em>τ</em> vector</code> when each expression <code><em>exp<sub>i</sub></em></code> has
+type <code><em>τ</em></code>.</p>
+</div>
+</li>
+<li>
+<p><a id="VectorPats"></a>
+Vector Patterns: <code>allowVectorPats {false|true}</code></p>
+<div class="paragraph">
+<p>Allow vector patterns of the form
+<code>#[<em>pat<sub>0</sub></em>, <em>pat<sub>1</sub></em>, &#8230;&#8203;, <em>pat<sub>n-1</sub></em>]</code> (where <em>n ≥ 0</em>).  The pattern
+matches values of type <code><em>τ</em> vector</code> when each pattern <code><em>pat<sub>i</sub></em></code>
+matches values of type <code><em>τ</em></code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SuccessorML.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SuccessorML.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

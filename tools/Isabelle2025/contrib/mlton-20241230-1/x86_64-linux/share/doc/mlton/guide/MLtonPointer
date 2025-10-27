@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonPointer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonPointer</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_POINTER</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">eqtype</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">add</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">word</span> <span class="p">-&gt;</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">compare</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">order</span>
+      <span class="kr">val</span> <span class="nv">diff</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">word</span>
+      <span class="kr">val</span> <span class="nv">getInt8</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Int8</span><span class="p">.</span><span class="n">int</span>
+      <span class="kr">val</span> <span class="nv">getInt16</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Int16</span><span class="p">.</span><span class="n">int</span>
+      <span class="kr">val</span> <span class="nv">getInt32</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Int32</span><span class="p">.</span><span class="n">int</span>
+      <span class="kr">val</span> <span class="nv">getInt64</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Int64</span><span class="p">.</span><span class="n">int</span>
+      <span class="kr">val</span> <span class="nv">getPointer</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">getReal32</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Real32</span><span class="p">.</span><span class="n">real</span>
+      <span class="kr">val</span> <span class="nv">getReal64</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Real64</span><span class="p">.</span><span class="n">real</span>
+      <span class="kr">val</span> <span class="nv">getWord8</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Word8</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">val</span> <span class="nv">getWord16</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Word16</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">val</span> <span class="nv">getWord32</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Word32</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">val</span> <span class="nv">getWord64</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">Word64</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">val</span> <span class="nv">null</span><span class="p">:</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">setInt8</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Int8</span><span class="p">.</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setInt16</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Int16</span><span class="p">.</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setInt32</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Int32</span><span class="p">.</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setInt64</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Int64</span><span class="p">.</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setPointer</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setReal32</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Real32</span><span class="p">.</span><span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setReal64</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Real64</span><span class="p">.</span><span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setWord8</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Word8</span><span class="p">.</span><span class="n">word</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setWord16</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Word16</span><span class="p">.</span><span class="n">word</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setWord32</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Word32</span><span class="p">.</span><span class="n">word</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">setWord64</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">Word64</span><span class="p">.</span><span class="n">word</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">sizeofPointer</span><span class="p">:</span> <span class="n">word</span>
+      <span class="kr">val</span> <span class="nv">sub</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">word</span> <span class="p">-&gt;</span> <span class="n">t</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>eqtype t</code></p>
+<div class="paragraph">
+<p>the type of pointers, i.e. machine addresses.</p>
+</div>
+</li>
+<li>
+<p><code>add (p, w)</code></p>
+<div class="paragraph">
+<p>returns the pointer <code>w</code> bytes after than <code>p</code>.  Does not check for
+overflow.</p>
+</div>
+</li>
+<li>
+<p><code>compare (p1, p2)</code></p>
+<div class="paragraph">
+<p>compares the pointer <code>p1</code> to the pointer <code>p2</code> (as addresses).</p>
+</div>
+</li>
+<li>
+<p><code>diff (p1, p2)</code></p>
+<div class="paragraph">
+<p>returns the number of bytes <code>w</code> such that <code>add (p2, w) = p1</code>.  Does
+not check for overflow.</p>
+</div>
+</li>
+<li>
+<p><code>get<em>&lt;X&gt;</em> (p, i)</code></p>
+<div class="paragraph">
+<p>returns the object stored at index i of the array of <em>X</em> objects
+pointed to by <code>p</code>.  For example, <code>getWord32 (p, 7)</code> returns the 32-bit
+word stored 28 bytes beyond <code>p</code>.</p>
+</div>
+</li>
+<li>
+<p><code>null</code></p>
+<div class="paragraph">
+<p>the null pointer, i.e. 0.</p>
+</div>
+</li>
+<li>
+<p><code>set<em>&lt;X&gt;</em> (p, i, v)</code></p>
+<div class="paragraph">
+<p>assigns <code>v</code> to the object stored at index i of the array of <em>X</em>
+objects pointed to by <code>p</code>.  For example, <code>setWord32 (p, 7, w)</code> stores
+the 32-bit word <code>w</code> at the address 28 bytes beyond <code>p</code>.</p>
+</div>
+</li>
+<li>
+<p><code>sizeofPointer</code></p>
+<div class="paragraph">
+<p>size, in bytes, of a pointer.</p>
+</div>
+</li>
+<li>
+<p><code>sub (p, w)</code></p>
+<div class="paragraph">
+<p>returns the pointer <code>w</code> bytes before <code>p</code>.  Does not check for
+overflow.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonPointer.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonPointer.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

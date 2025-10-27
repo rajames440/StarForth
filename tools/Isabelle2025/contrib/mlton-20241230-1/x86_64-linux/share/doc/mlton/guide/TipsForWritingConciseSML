@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>TipsForWritingConciseSML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>TipsForWritingConciseSML</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>SML is a rich enough language that there are often several ways to
+express things.  This page contains miscellaneous tips (ideas not
+rules) for writing concise SML.  The metric that we are interested in
+here is the number of tokens or words (rather than the number of
+lines, for example).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_datatypes_in_signatures">Datatypes in Signatures</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A seemingly frequent source of repetition in SML is that of datatype
+definitions in signatures and structures.  Actually, it isn&#8217;t
+repetition at all.  A datatype specification in a signature, such as,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">EXP</span> <span class="p">=</span> <span class="kr">sig</span>
+   <span class="kr">datatype</span> <span class="kt">exp</span> <span class="p">=</span> <span class="nc">Fn</span> <span class="kr">of</span> <span class="n">id</span> <span class="n">*</span> <span class="n">exp</span> <span class="p">|</span> <span class="nc">App</span> <span class="kr">of</span> <span class="n">exp</span> <span class="n">*</span> <span class="n">exp</span> <span class="p">|</span> <span class="nc">Var</span> <span class="kr">of</span> <span class="n">id</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is just a specification of a datatype that may be matched by multiple
+(albeit identical) datatype declarations.  For example, in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">AnExp</span> <span class="p">:</span> <span class="n">EXP</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">datatype</span> <span class="kt">exp</span> <span class="p">=</span> <span class="nc">Fn</span> <span class="kr">of</span> <span class="n">id</span> <span class="n">*</span> <span class="n">exp</span> <span class="p">|</span> <span class="nc">App</span> <span class="kr">of</span> <span class="n">exp</span> <span class="n">*</span> <span class="n">exp</span> <span class="p">|</span> <span class="nc">Var</span> <span class="kr">of</span> <span class="n">id</span>
+<span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">AnotherExp</span> <span class="p">:</span> <span class="n">EXP</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">datatype</span> <span class="kt">exp</span> <span class="p">=</span> <span class="nc">Fn</span> <span class="kr">of</span> <span class="n">id</span> <span class="n">*</span> <span class="n">exp</span> <span class="p">|</span> <span class="nc">App</span> <span class="kr">of</span> <span class="n">exp</span> <span class="n">*</span> <span class="n">exp</span> <span class="p">|</span> <span class="nc">Var</span> <span class="kr">of</span> <span class="n">id</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>the types <code>AnExp.exp</code> and <code>AnotherExp.exp</code> are two distinct types.  If
+such <a href="GenerativeDatatype">generativity</a> isn&#8217;t desired or needed, you
+can avoid the repetition:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Exp</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">datatype</span> <span class="kt">exp</span> <span class="p">=</span> <span class="nc">Fn</span> <span class="kr">of</span> <span class="n">id</span> <span class="n">*</span> <span class="n">exp</span> <span class="p">|</span> <span class="nc">App</span> <span class="kr">of</span> <span class="n">exp</span> <span class="n">*</span> <span class="n">exp</span> <span class="p">|</span> <span class="nc">Var</span> <span class="kr">of</span> <span class="n">id</span>
+<span class="kr">end</span>
+
+<span class="kr">signature</span> <span class="nn">EXP</span> <span class="p">=</span> <span class="kr">sig</span>
+   <span class="kr">datatype</span> <span class="kt">exp</span> <span class="p">=</span> <span class="kr">datatype</span> <span class="nn">Exp</span><span class="p">.</span><span class="n">exp</span>
+<span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">Exp</span> <span class="p">:</span> <span class="n">EXP</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">open</span> <span class="nn">Exp</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Keep in mind that this isn&#8217;t semantically equivalent to the original.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_clausal_function_definitions">Clausal Function Definitions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The syntax of clausal function definitions is rather repetitive.  For
+example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">isSome</span> <span class="n">NONE</span> <span class="p">=</span> <span class="n">false</span>
+  <span class="p">|</span> <span class="nf">isSome</span> <span class="p">(</span><span class="n">SOME</span> <span class="p">_)</span> <span class="p">=</span> <span class="n">true</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is more verbose than</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">isSome</span> <span class="p">=</span>
+ <span class="kr">fn</span> <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">false</span>
+  <span class="p">|</span> <span class="n">SOME</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">true</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For recursive functions the break-even point is one clause higher.  For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">fib</span> <span class="mi">0</span> <span class="p">=</span> <span class="mi">0</span>
+  <span class="p">|</span> <span class="nf">fib</span> <span class="mi">1</span> <span class="p">=</span> <span class="mi">1</span>
+  <span class="p">|</span> <span class="nf">fib</span> <span class="n">n</span> <span class="p">=</span> <span class="n">fib</span> <span class="p">(</span><span class="n">n-</span><span class="mi">1</span><span class="p">)</span> <span class="n">+</span> <span class="n">fib</span> <span class="p">(</span><span class="n">n-</span><span class="mi">2</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>isn&#8217;t less verbose than</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">rec</span> <span class="n">fib</span> <span class="p">=</span>
+ <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="mi">0</span>
+  <span class="p">|</span> <span class="mi">1</span> <span class="p">=&gt;</span> <span class="mi">1</span>
+  <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="n">fib</span> <span class="p">(</span><span class="n">n-</span><span class="mi">1</span><span class="p">)</span> <span class="n">+</span> <span class="n">fib</span> <span class="p">(</span><span class="n">n-</span><span class="mi">2</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is quite often the case that a curried function primarily examines
+just one of its arguments.  Such functions can be written particularly
+concisely by making the examined argument last.  For example, instead
+of</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">eval</span> <span class="p">(</span><span class="n">Fn</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span> <span class="n">env</span> <span class="p">=&gt;</span> <span class="p">...</span>
+  <span class="p">|</span> <span class="nf">eval</span> <span class="p">(</span><span class="n">App</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="n">env</span> <span class="p">=&gt;</span> <span class="p">...</span>
+  <span class="p">|</span> <span class="n">eval</span> <span class="p">(</span><span class="n">Var</span> <span class="n">v</span><span class="p">)</span> <span class="n">env</span> <span class="p">=&gt;</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>consider writing</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">eval</span> <span class="n">env</span> <span class="p">=</span>
+ <span class="kr">fn</span> <span class="n">Fn</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">...</span>
+  <span class="p">|</span> <span class="nf">App</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">...</span>
+  <span class="p">|</span> <span class="nf">Var</span> <span class="n">v</span> <span class="p">=&gt;</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parentheses">Parentheses</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is a good idea to avoid using lots of irritating superfluous
+parentheses.  An important rule to know is that prefix function
+application in SML has higher precedence than any infix operator.  For
+example, the outer parentheses in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">square</span> <span class="p">(</span><span class="mi">5</span> <span class="n">+</span> <span class="mi">1</span><span class="p">))</span> <span class="n">+</span> <span class="p">(</span><span class="n">square</span> <span class="p">(</span><span class="mi">5</span> <span class="n">*</span> <span class="mi">2</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>are superfluous.</p>
+</div>
+<div class="paragraph">
+<p>People trained in other languages often use superfluous parentheses in
+a number of places.  In particular, the parentheses in the following
+examples are practically always superfluous and are best avoided:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">if</span> <span class="p">(</span><span class="n">condition</span><span class="p">)</span> <span class="kr">then</span> <span class="p">...</span> <span class="kr">else</span> <span class="p">...</span>
+<span class="kr">while</span> <span class="p">(</span><span class="n">condition</span><span class="p">)</span> <span class="kr">do</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The same basically applies to case expressions:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">case</span> <span class="p">(</span><span class="n">expression</span><span class="p">)</span> <span class="kr">of</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is not uncommon to match a tuple of two or more values:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">case</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="kr">of</span>
+   <span class="p">(</span><span class="n">A1</span><span class="p">,</span> <span class="n">B1</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">...</span>
+ <span class="p">|</span> <span class="p">(</span><span class="n">A2</span><span class="p">,</span> <span class="n">B2</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Such case expressions can be written more concisely with an
+<a href="ProductType">infix product constructor</a>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">case</span> <span class="n">a</span> <span class="n">&amp;</span> <span class="n">b</span> <span class="kr">of</span>
+   <span class="n">A1</span> <span class="n">&amp;</span> <span class="n">B1</span> <span class="p">=&gt;</span> <span class="p">...</span>
+ <span class="p">|</span> <span class="n">A2</span> <span class="n">&amp;</span> <span class="n">B2</span> <span class="p">=&gt;</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_conditionals">Conditionals</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Repeated sequences of conditionals such as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">if</span> <span class="n">x</span> <span class="n">&lt;</span> <span class="n">y</span> <span class="kr">then</span> <span class="p">...</span>
+<span class="kr">else</span> <span class="kr">if</span> <span class="n">x</span> <span class="p">=</span> <span class="n">y</span> <span class="kr">then</span> <span class="p">...</span>
+<span class="kr">else</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>can often be written more concisely as case expressions such as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">case</span> <span class="nn">Int</span><span class="p">.</span><span class="n">compare</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="kr">of</span>
+   <span class="n">LESS</span> <span class="p">=&gt;</span> <span class="p">...</span>
+ <span class="p">|</span> <span class="n">EQUAL</span> <span class="p">=&gt;</span> <span class="p">...</span>
+ <span class="p">|</span> <span class="n">GREATER</span> <span class="p">=&gt;</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For a custom comparison, you would then define an appropriate datatype
+and a reification function.  An alternative to using datatypes is to
+use dispatch functions</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">comparing</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="p">{</span><span class="n">lt</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">...,</span>
+ <span class="n">eq</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">...,</span>
+ <span class="n">gt</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">...}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">comparing</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span><span class="n">lt</span><span class="p">,</span> <span class="n">eq</span><span class="p">,</span> <span class="n">gt</span><span class="p">}</span> <span class="p">=</span>
+    <span class="p">(</span><span class="kr">case</span> <span class="nn">Int</span><span class="p">.</span><span class="n">compare</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="kr">of</span>
+        <span class="n">LESS</span> <span class="p">=&gt;</span> <span class="n">lt</span>
+      <span class="p">|</span> <span class="n">EQUAL</span> <span class="p">=&gt;</span> <span class="n">eq</span>
+      <span class="p">|</span> <span class="n">GREATER</span> <span class="p">=&gt;</span> <span class="n">gt</span><span class="p">)</span> <span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An advantage is that no datatype definition is needed.  A disadvantage
+is that you can&#8217;t combine multiple dispatch results easily.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_command_query_fusion">Command-Query Fusion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Many are familiar with the
+<a href="http://en.wikipedia.org/wiki/Command-Query_Separation">Command-Query
+Separation Principle</a>.  Adhering to the principle, a signature for an
+imperative stack might contain specifications</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">isEmpty</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+<span class="kr">val</span> <span class="nv">pop</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and use of a stack would look like</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">if</span> <span class="n">isEmpty</span> <span class="n">stack</span>
+<span class="kr">then</span> <span class="p">...</span> <span class="n">pop</span> <span class="n">stack</span> <span class="p">...</span>
+<span class="kr">else</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or, when the element needs to be named,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">if</span> <span class="n">isEmpty</span> <span class="n">stack</span>
+<span class="kr">then</span> <span class="kr">let</span> <span class="kr">val</span> <span class="nv">elem</span> <span class="p">=</span> <span class="n">pop</span> <span class="n">stack</span> <span class="kr">in</span> <span class="p">...</span> <span class="kr">end</span>
+<span class="kr">else</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For efficiency, correctness, and conciseness, it is often better to
+combine the query and command and return the result as an option:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">pop</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">option</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A use of a stack would then look like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">case</span> <span class="n">pop</span> <span class="n">stack</span> <span class="kr">of</span>
+   <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="p">...</span>
+ <span class="p">|</span> <span class="n">SOME</span> <span class="n">elem</span> <span class="p">=&gt;</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/TipsForWritingConciseSML.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/TipsForWritingConciseSML.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

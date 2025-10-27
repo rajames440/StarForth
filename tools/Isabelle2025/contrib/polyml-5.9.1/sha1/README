@@ -1,0 +1,32 @@
+
+  SHA1 library
+
+The SHA1 algorithm computes a 160 bit checksum for arbitrary strings.
+This implementation of SHA1 is taken from the GNU coreutils package,
+version 8.4.  More precisely, the following files where copied without
+modification:
+
+  COPYING
+  sha1.c
+  sha1.h
+
+The file "config.h", holding the configuration options obtain from the
+coreutils build process is intentionally left empty here.  All other
+files have been written for building and testing the SHA1 library.
+
+The license of coreutils also applies to this derived work.
+
+
+
+  Building the SHA1 library
+
+Running the "build" script without arguments prints a list of
+supported platforms.  Running the "build" script with one of the
+supported platforms as argument builds the SHA1 library for that
+platform.
+
+
+
+  Sascha Böhme
+  April 14, 2010
+

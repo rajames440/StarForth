@@ -1,0 +1,5 @@
+# -*- shell-script -*- :mode=shellscript:
+
+MINISAT_HOME="$COMPONENT/$ISABELLE_PLATFORM64"
+
+ISABELLE_MINISAT="$MINISAT_HOME/minisat"

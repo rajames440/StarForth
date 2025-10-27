@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>AdmitsEquality</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>AdmitsEquality</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A <a href="TypeConstructor">TypeConstructor</a> admits equality if whenever it is applied to
+equality types, the result is an <a href="EqualityType">EqualityType</a>.  This notion enables
+one to determine whether a type constructor application yields an
+equality type solely from the application, without looking at the
+definition of the type constructor.  It helps to ensure that
+<a href="PolymorphicEquality">PolymorphicEquality</a> is only applied to sensible values.</p>
+</div>
+<div class="paragraph">
+<p>The definition of admits equality depends on whether the type
+constructor was declared by a <code>type</code> definition or a
+<code>datatype</code> declaration.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_definitions">Type definitions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For type definition</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="err">...</span><span class="p">,</span> <span class="nd">'an</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>type constructor <code>t</code> admits equality if the right-hand side of the
+definition is an equality type after replacing <code>'a1</code>, &#8230;&#8203;,
+<code>'an</code> by equality types (it doesn&#8217;t matter which equality types
+are chosen).</p>
+</div>
+<div class="paragraph">
+<p>For a nullary type definition, this amounts to the right-hand side
+being an equality type.  For example, after the definition</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">bool</span> <span class="n">*</span> <span class="n">int</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>type constructor <code>t</code> admits equality because <code>bool * int</code> is
+an equality type.   On the other hand, after the definition</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">bool</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="n">real</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>type constructor <code>t</code> does not admit equality, because <code>real</code>
+is not an equality type.</p>
+</div>
+<div class="paragraph">
+<p>For another example, after the definition</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">bool</span> <span class="n">*</span> <span class="nd">'a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>type constructor <code>t</code> admits equality because <code>bool * int</code>
+is an equality type (we could have chosen any equality type other than
+<code>int</code>).</p>
+</div>
+<div class="paragraph">
+<p>On the other hand, after the definition</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">real</span> <span class="n">*</span> <span class="nd">'a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>type constructor <code>t</code> does not admit equality because
+<code>real * int</code> is not equality type.</p>
+</div>
+<div class="paragraph">
+<p>We can check that a type constructor admits equality using an
+<code>eqtype</code> specification.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Ok</span><span class="p">:</span> <span class="kr">sig</span> <span class="kr">eqtype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">bool</span> <span class="n">*</span> <span class="nd">'a</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Bad</span><span class="p">:</span> <span class="kr">sig</span> <span class="kr">eqtype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">real</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nd">'a</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On <code>structure Bad</code>, MLton reports the following error.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 1.16-1.34.
+  Type in structure disagrees with signature (admits equality): t.
+    structure: type 'a t = [real] * _ * _
+    defn at: z.sml 3.15-3.15
+    signature: [eqtype] 'a t
+    spec at: z.sml 1.30-1.30</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>structure:</code> section provides an explanation of why the type
+did not admit equality, highlighting the problematic component
+(<code>real</code>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_datatype_declarations">Datatype declarations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For a type constructor declared by a datatype declaration to admit
+equality, every <a href="Variant">variant</a> of the datatype must admit equality.  For
+example, the following datatype admits equality because <code>bool</code> and
+<code>char * int</code> are equality types.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="kr">of</span> <span class="n">bool</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">char</span> <span class="n">*</span> <span class="n">int</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Nullary constructors trivially admit equality, so that the following
+datatype admits equality.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="p">|</span> <span class="nc">C</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For a parameterized datatype constructor to admit equality, we
+consider each <a href="Variant">variant</a> as a type definition, and require that the
+definition admit equality.  For example, for the datatype</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="kr">of</span> <span class="n">bool</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="nd">'a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>the type definitions</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="nd">'a</span> <span class="kt">tA</span> <span class="p">=</span> <span class="n">bool</span> <span class="n">*</span> <span class="nd">'a</span>
+<span class="kr">type</span> <span class="nd">'a</span> <span class="kt">tB</span> <span class="p">=</span> <span class="nd">'a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>both admit equality.  Thus, type constructor <code>t</code> admits equality.</p>
+</div>
+<div class="paragraph">
+<p>On the other hand, the following datatype does not admit equality.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="kr">of</span> <span class="n">bool</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">real</span> <span class="n">*</span> <span class="nd">'a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As with type definitions, we can check using an <code>eqtype</code>
+specification.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Bad</span><span class="p">:</span> <span class="kr">sig</span> <span class="kr">eqtype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="kr">of</span> <span class="n">bool</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">real</span> <span class="n">*</span> <span class="nd">'a</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton reports the following error.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 1.16-1.34.
+  Type in structure disagrees with signature (admits equality): t.
+    structure: datatype 'a t = B of [real] * _ | ...
+    defn at: z.sml 3.19-3.19
+    signature: [eqtype] 'a t
+    spec at: z.sml 1.30-1.30</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton indicates the problematic constructor (<code>B</code>), as well as
+the problematic component of the constructor&#8217;s argument.</p>
+</div>
+<div class="sect2">
+<h3 id="_recursive_datatypes">Recursive datatypes</h3>
+<div class="paragraph">
+<p>A recursive datatype like</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">int</span> <span class="n">*</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>introduces a new problem, since in order to decide whether <code>t</code>
+admits equality, we need to know for the <code>B</code> <a href="Variant">variant</a> whether
+<code>t</code> admits equality.  The <a href="DefinitionOfStandardML">Definition</a>
+answers this question by requiring a type constructor to admit
+equality if it is consistent to do so.  So, in our above example, if
+we assume that <code>t</code> admits equality, then the <a href="Variant">variant</a>
+<code>B of int * t</code> admits equality.  Then, since the <code>A</code> <a href="Variant">variant</a>
+trivially admits equality, so does the type constructor <code>t</code>.
+Thus, it was consistent to assume that <code>t</code> admits equality, and
+so, <code>t</code> does admit equality.</p>
+</div>
+<div class="paragraph">
+<p>On the other hand, in the following declaration</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">real</span> <span class="n">*</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>if we assume that <code>t</code> admits equality, then the <code>B</code> <a href="Variant">variant</a>
+does not admit equality.  Hence, the type constructor <code>t</code> does not
+admit equality, and our assumption was inconsistent.  Hence, <code>t</code>
+does not admit equality.</p>
+</div>
+<div class="paragraph">
+<p>The same kind of reasoning applies to mutually recursive datatypes as
+well.  For example, the following defines both <code>t</code> and <code>u</code> to
+admit equality.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">u</span>
+<span class="kr">and</span> <span class="kt">u</span> <span class="p">=</span> <span class="nc">C</span> <span class="p">|</span> <span class="nc">D</span> <span class="kr">of</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>But the following defines neither <code>t</code> nor <code>u</code> to admit
+equality.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">u</span> <span class="n">*</span> <span class="n">real</span>
+<span class="kr">and</span> <span class="kt">u</span> <span class="p">=</span> <span class="nc">C</span> <span class="p">|</span> <span class="nc">D</span> <span class="kr">of</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As always, we can check whether a type admits equality using an
+<code>eqtype</code> specification.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Bad</span><span class="p">:</span> <span class="kr">sig</span> <span class="kr">eqtype</span> <span class="kt">t</span> <span class="kr">eqtype</span> <span class="kt">u</span> <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">u</span> <span class="n">*</span> <span class="n">real</span>
+      <span class="kr">and</span> <span class="kt">u</span> <span class="p">=</span> <span class="nc">C</span> <span class="p">|</span> <span class="nc">D</span> <span class="kr">of</span> <span class="n">t</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton reports the following error.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 1.16-1.40.
+  Type in structure disagrees with signature (admits equality): t.
+    structure: datatype t = B of [_str.u] * [real] | ...
+    defn at: z.sml 3.16-3.16
+    signature: [eqtype] t
+    spec at: z.sml 1.27-1.27
+Error: z.sml 1.16-1.40.
+  Type in structure disagrees with signature (admits equality): u.
+    structure: datatype u = D of [_str.t] | ...
+    defn at: z.sml 4.11-4.11
+    signature: [eqtype] u
+    spec at: z.sml 1.36-1.36</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/AdmitsEquality.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/AdmitsEquality.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

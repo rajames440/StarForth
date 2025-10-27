@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>The PolyML.NameSpace structure</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="docstyle.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<ul class="nav">
+  <li><a href="PolyMLMake.html">Previous</a></li>
+  <li><a href="PolyMLStructure.html">Up</a></li>
+  <li><a href="PolyMLProfiling.html">Next</a></li>
+</ul>
+<H2><STRONG><font face="Arial, Helvetica, sans-serif">The PolyML.NameSpace structure</font></STRONG></H2>
+<p> The <span class="identifier">PolyML.NameSpace</span> structure contains functions 
+  associated with a name-space, a collection of values, types, structures, functors, 
+  signatures and infix settings. It is used primarily in connection with the compiler.</p>
+<p>In the Standard ML language there are separate classes of identifiers for values, 
+  type constructors, structures, signatures and functors. In addition infix status 
+  is essentially another identifier class since infix status and priority can 
+  be set for an identifier whether or not there is actually a function with that 
+  name. Value identifiers include datatype and exception constructors as well 
+  as identifiers bound with <span class="identifier">val</span> or <span class="identifier">fun</span> 
+  bindings. Name-spaces are ways of holding and managing collections of identifiers. 
+  Nothing in the NameSpace structure assumes a particular implementation of a 
+  name-space; it is more of an interface than an implementation.</p>
+<pre class="mainsig">structure NameSpace:
+    sig
+        structure Functors:<br>          sig<br>            val code = fn: functorVal -&gt; CodeTree.codetree<br>            type functorVal<br>            val name = fn: functorVal -&gt; string<br>            val print = fn: functorVal * int * nameSpace option -&gt; pretty<br>            val properties = fn: functorVal -&gt; ptProperties list<br>          end<br>        structure Infixes:<br>          sig<br>            type fixity<br>            val name = fn: fixity -&gt; string<br>            val print = fn: fixity -&gt; pretty<br>          end<br>        structure Signatures:<br>          sig<br>            val name = fn: signatureVal -&gt; string<br>            val print = fn: signatureVal * int * nameSpace option -&gt; pretty<br>            val properties = fn: signatureVal -&gt; ptProperties list<br>            type signatureVal<br>          end<br>        structure Structures:<br>          sig<br>            val code = fn: structureVal -&gt; CodeTree.codetree
+            val contents = fn: structureVal -&gt; nameSpace<br>            val name = fn: structureVal -&gt; string<br>            val print = fn: structureVal * int * nameSpace option -&gt; pretty<br>            val properties = fn: structureVal -&gt; ptProperties list<br>            type structureVal<br>          end<br>        structure TypeConstrs:<br>          sig<br>            val name = fn: typeConstr -&gt; string<br>            val print = fn: typeConstr * int * nameSpace option -&gt; pretty<br>            val properties = fn: typeConstr -&gt; ptProperties list<br>            type typeConstr<br>          end<br>        structure Values:<br>          sig<br>            val code = fn: value -&gt; CodeTree.codetree<br>            val isConstructor = fn: value -&gt; bool<br>            val isException = fn: value -&gt; bool<br>            val name = fn: value -&gt; string<br>            val print = fn: value * int -&gt; pretty<br>            val printType = fn:<br>               typeExpression * int * nameSpace option -&gt; pretty<br>            val printWithType = fn: value * int * nameSpace option -&gt; pretty<br>            val properties = fn: value -&gt; ptProperties list<br>            type typeExpression<br>            val typeof = fn: value -&gt; typeExpression<br>            type value<br>          end<br>    type <a href="#nameSpace">nameSpace</a> =<br>           {allFix: unit -&gt; (string * Infixes.fixity) list,<br>             allFunct: unit -&gt; (string * Functors.functorVal) list,<br>             allSig: unit -&gt; (string * Signatures.signatureVal) list,<br>             allStruct: unit -&gt; (string * Structures.structureVal) list,<br>             allType: unit -&gt; (string * TypeConstrs.typeConstr) list,<br>             allVal: unit -&gt; (string * Values.value) list,<br>             enterFix: string * Infixes.fixity -&gt; unit,<br>             enterFunct: string * Functors.functorVal -&gt; unit,<br>             enterSig: string * Signatures.signatureVal -&gt; unit,<br>             enterStruct: string * Structures.structureVal -&gt; unit,<br>             enterType: string * TypeConstrs.typeConstr -&gt; unit,<br>             enterVal: string * Values.value -&gt; unit,<br>             lookupFix: string -&gt; Infixes.fixity option,<br>             lookupFunct: string -&gt; Functors.functorVal option,<br>             lookupSig: string -&gt; Signatures.signatureVal option,<br>             lookupStruct: string -&gt; Structures.structureVal option,<br>             lookupType: string -&gt; TypeConstrs.typeConstr option,<br>             lookupVal: string -&gt; Values.value option}<br>    end
+
+val globalNameSpace: nameSpace
+</pre>
+<div class="entryBlock"> 
+  <pre class="entrycode"><a name="nameSpace"></a>type nameSpace =<br>           {allFix: unit -&gt; (string * Infixes.fixity) list,<br>             allFunct: unit -&gt; (string * Functors.functorVal) list,<br>             allSig: unit -&gt; (string * Signatures.signatureVal) list,<br>             allStruct: unit -&gt; (string * Structures.structureVal) list,<br>             allType: unit -&gt; (string * TypeConstrs.typeConstr) list,<br>             allVal: unit -&gt; (string * Values.value) list,<br>             enterFix: string * Infixes.fixity -&gt; unit,<br>             enterFunct: string * Functors.functorVal -&gt; unit,<br>             enterSig: string * Signatures.signatureVal -&gt; unit,<br>             enterStruct: string * Structures.structureVal -&gt; unit,<br>             enterType: string * TypeConstrs.typeConstr -&gt; unit,<br>             enterVal: string * Values.value -&gt; unit,<br>             lookupFix: string -&gt; Infixes.fixity option,<br>             lookupFunct: string -&gt; Functors.functorVal option,<br>             lookupSig: string -&gt; Signatures.signatureVal option,<br>             lookupStruct: string -&gt; Structures.structureVal option,<br>             lookupType: string -&gt; TypeConstrs.typeConstr option,<br>             lookupVal: string -&gt; Values.value option}<br></pre>
+  <div class="entrytext">
+  <p>The <span class="identifier">nameSpace</span> type is a record of functions. 
+    For each class of identifier there is a lookup function that takes a string 
+    and returns an option type, an enter function that takes a string name and 
+    adds a values to the table and an &quot;all&quot; function that returns a 
+    list of all the identifiers of that class. It is important to note that the 
+    <span class="identifier">nameSpace</span> type does not imply any particular 
+    implementation, it is simply an interface. Typically, it will be implemented 
+    in terms of one or more hash-tables but it is perfectly possible to implement 
+    something more complex. For example, <a href="PolyMLMake.html" class="identifier">PolyML.make</a>, 
+    is implemented by passing to the compiler a name-space that has a side-effect 
+    of checking, and if necessary recompiling, a file when called to look-up a 
+    structure, functor or signature.</p>
+</div>
+</div>
+<div class="entryBlock"> 
+  <pre class="entrycode"><a name="globalNameSpace"></a>val globalNameSpace: nameSpace</pre>
+  <div class="entrytext"> 
+  <p><span class="identifier">globalNameSpace</span> is the default name-space. 
+    The interactive top-level, the <span class="identifier">use</span> function 
+    and <span class="identifier">PolyML.make</span>, all use this.</p>
+</div>
+</div>
+<div class="entryBlock"> 
+  <pre class="entrycode"><a name="valueVal" id="valueVal"></a>type valueVal
+<a name="typeVal" id="typeVal"></a>type typeVal
+<a name="fixityVal" id="fixityVal"></a>type fixityVal
+<a name="functorVal" id="functorVal"></a>type functorVal
+<a name="signatureVal" id="signatureVal"></a>type signatureVal
+<a name="structureVal" id="structureVal"></a>type structureVal</pre>
+  <div class="entrytext"> Values of these types are the data structures used to 
+    represent the different kind of identifiers. Values of type<span class="identifier"> 
+    valueVal </span>are used to hold information about value identifiers, <span class="identifier">typeVal</span> 
+    is used for type constructors, <span class="identifier">fixityVal</span> for 
+    infix status, <span class="identifier">functorVal</span> for functors, <span class="identifier">signatureVal</span> 
+    for signatures and <span class="identifier">structureVal</span> for structures. 
+    There are no constructors available to create values of these types; the only 
+    way these value can be created is by compiling ML source code.</div>
+</div>
+<div class="entryBlock"> 
+  <pre class="entrycode"><a name="typeExpression"></a>type typeExpression</pre>
+  <div class="entrytext"> 
+    <p><span class="identifier">typeExpression</span> is used to represent the 
+      type of a value. This is not really part of a name-space but is included 
+      here, along with displayTypeExpression as a convenience. Values of this 
+      type are returned as <a href="PolyMLStructure.html#PTtype"><span class="identifier">PTtype</span></a> 
+      nodes in the parse-tree.</p>
+  </div>
+</div>
+<div class="entryBlock"> 
+  <pre class="entrycode"><a name="displayVal" id="displayVal"></a>val displayVal: valueVal * int * nameSpace -> pretty</pre>
+  <div class="entrytext"> 
+    <p>The <span class="identifier">displayVal</span> function returns a text 
+      representation of the value as a <span class="identifier"><a href="PolyMLStructure.html#pretty">pretty</a></span> 
+      structure. The structure returned is similar to way values are printed at 
+      the top level and include both their value and their type. The <span class="identifier">int</span> 
+      argument controls the depth when printing complex values. The <span class="identifier">nameSpace</span> 
+      argument is used to assist in displaying appropriate type constructors in 
+      the type.</p>
+  </div>
+</div>
+<ul class="nav">
+  <li><a href="PolyMLMake.html">Previous</a></li>
+  <li><a href="PolyMLStructure.html">Up</a></li>
+  <li><a href="PolyMLProfiling.html">Next</a></li>
+</ul>
+
+</body>
+</html>

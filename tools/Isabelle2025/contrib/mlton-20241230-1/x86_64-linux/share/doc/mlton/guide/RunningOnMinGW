@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RunningOnMinGW</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RunningOnMinGW</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton runs on <a href="http://mingw.org">MinGW</a>, a library for porting Unix
+applications to Windows.  Some library functionality is missing or
+changed.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">Notes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>To compile MLton on MinGW:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>The <a href="GMP">GMP</a> library is required.</p>
+</li>
+<li>
+<p>The Bash shell is required.  If you are using a prebuilt MSYS, you
+probably want to symlink <code>bash</code> to <code>sh</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_known_issues">Known issues</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Many functions are unimplemented and will <code>raise SysErr</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>MLton.Itimer.set</code></p>
+</li>
+<li>
+<p><code>MLton.ProcEnv.setgroups</code></p>
+</li>
+<li>
+<p><code>MLton.Process.kill</code></p>
+</li>
+<li>
+<p><code>MLton.Process.reap</code></p>
+</li>
+<li>
+<p><code>MLton.World.load</code></p>
+</li>
+<li>
+<p><code>OS.FileSys.readLink</code></p>
+</li>
+<li>
+<p><code>OS.IO.poll</code></p>
+</li>
+<li>
+<p><code>OS.Process.terminate</code></p>
+</li>
+<li>
+<p><code>Posix.FileSys.chown</code></p>
+</li>
+<li>
+<p><code>Posix.FileSys.fchown</code></p>
+</li>
+<li>
+<p><code>Posix.FileSys.fpathconf</code></p>
+</li>
+<li>
+<p><code>Posix.FileSys.link</code></p>
+</li>
+<li>
+<p><code>Posix.FileSys.mkfifo</code></p>
+</li>
+<li>
+<p><code>Posix.FileSys.pathconf</code></p>
+</li>
+<li>
+<p><code>Posix.FileSys.readlink</code></p>
+</li>
+<li>
+<p><code>Posix.FileSys.symlink</code></p>
+</li>
+<li>
+<p><code>Posix.IO.dupfd</code></p>
+</li>
+<li>
+<p><code>Posix.IO.getfd</code></p>
+</li>
+<li>
+<p><code>Posix.IO.getfl</code></p>
+</li>
+<li>
+<p><code>Posix.IO.getlk</code></p>
+</li>
+<li>
+<p><code>Posix.IO.setfd</code></p>
+</li>
+<li>
+<p><code>Posix.IO.setfl</code></p>
+</li>
+<li>
+<p><code>Posix.IO.setlkw</code></p>
+</li>
+<li>
+<p><code>Posix.IO.setlk</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.ctermid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.getegid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.geteuid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.getgid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.getgroups</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.getlogin</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.getpgrp</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.getpid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.getppid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.getuid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.setgid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.setpgid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.setsid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.setuid</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.sysconf</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.times</code></p>
+</li>
+<li>
+<p><code>Posix.ProcEnv.ttyname</code></p>
+</li>
+<li>
+<p><code>Posix.Process.exece</code></p>
+</li>
+<li>
+<p><code>Posix.Process.execp</code></p>
+</li>
+<li>
+<p><code>Posix.Process.exit</code></p>
+</li>
+<li>
+<p><code>Posix.Process.fork</code></p>
+</li>
+<li>
+<p><code>Posix.Process.kill</code></p>
+</li>
+<li>
+<p><code>Posix.Process.pause</code></p>
+</li>
+<li>
+<p><code>Posix.Process.waitpid_nh</code></p>
+</li>
+<li>
+<p><code>Posix.Process.waitpid</code></p>
+</li>
+<li>
+<p><code>Posix.SysDB.getgrgid</code></p>
+</li>
+<li>
+<p><code>Posix.SysDB.getgrnam</code></p>
+</li>
+<li>
+<p><code>Posix.SysDB.getpwuid</code></p>
+</li>
+<li>
+<p><code>Posix.TTY.TC.drain</code></p>
+</li>
+<li>
+<p><code>Posix.TTY.TC.flow</code></p>
+</li>
+<li>
+<p><code>Posix.TTY.TC.flush</code></p>
+</li>
+<li>
+<p><code>Posix.TTY.TC.getattr</code></p>
+</li>
+<li>
+<p><code>Posix.TTY.TC.getpgrp</code></p>
+</li>
+<li>
+<p><code>Posix.TTY.TC.sendbreak</code></p>
+</li>
+<li>
+<p><code>Posix.TTY.TC.setattr</code></p>
+</li>
+<li>
+<p><code>Posix.TTY.TC.setpgrp</code></p>
+</li>
+<li>
+<p><code>Unix.kill</code></p>
+</li>
+<li>
+<p><code>Unix.reap</code></p>
+</li>
+<li>
+<p><code>UnixSock.fromAddr</code></p>
+</li>
+<li>
+<p><code>UnixSock.toAddr</code></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RunningOnMinGW.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RunningOnMinGW.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

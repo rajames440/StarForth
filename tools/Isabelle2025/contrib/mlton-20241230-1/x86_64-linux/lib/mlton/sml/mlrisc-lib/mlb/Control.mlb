@@ -1,0 +1,193 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
+in
+
+local
+  basis l4 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb
+    end
+  basis l51 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+  basis l44 =
+    bas
+      (* $/controls-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Controls/controls-lib.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l4
+   in
+      structure gs_0 = Timer
+   end
+   local
+      open l4
+   in
+      structure gs_1 = Char
+      structure gs_2 = CharArray
+      structure gs_3 = CharVector
+      structure gs_4 = FixedInt
+      structure gs_5 = General
+      structure gs_6 = Int
+      structure gs_7 = Int32
+      structure gs_8 = Int64
+      structure gs_9 = IntInf
+      structure gs_10 = LargeInt
+      structure gs_11 = LargeReal
+      structure gs_12 = LargeWord
+      structure gs_13 = OS
+      structure gs_14 = Position
+      structure gs_15 = Real
+      structure gs_16 = Real64
+      structure gs_17 = RealArray
+      structure gs_18 = RealArraySlice
+      structure gs_19 = RealVector
+      structure gs_20 = RealVectorSlice
+      structure gs_21 = SMLofNJ
+      structure gs_22 = Socket
+      structure gs_23 = String
+      structure gs_24 = Substring
+      structure gs_25 = SysWord
+      structure gs_26 = Time
+      structure gs_27 = Word
+      structure gs_28 = Word32
+      structure gs_29 = Word64
+      structure gs_30 = Word8
+   end
+   local
+      open l4
+   in
+      structure gs_31 = TextIO
+   end
+   local
+      open l44
+   in
+      structure gs_32 = ControlRegistry
+   end
+   local
+      open l44
+   in
+      structure gs_33 = ControlSet
+   end
+   local
+      open l51
+   in
+      structure gs_34 = Atom
+   end
+   local
+      open l44
+   in
+      structure gs_35 = ControlUtil
+   end
+   local
+      open l44
+   in
+      structure gs_36 = Controls
+   end
+   local
+      structure Atom = gs_34
+      structure Char = gs_1
+      structure CharArray = gs_2
+      structure CharVector = gs_3
+      structure ControlRegistry = gs_32
+      structure ControlSet = gs_33
+      structure ControlUtil = gs_35
+      structure Controls = gs_36
+      structure FixedInt = gs_4
+      structure General = gs_5
+      structure Int = gs_6
+      structure Int32 = gs_7
+      structure Int64 = gs_8
+      structure IntInf = gs_9
+      structure LargeInt = gs_10
+      structure LargeReal = gs_11
+      structure LargeWord = gs_12
+      structure OS = gs_13
+      structure Position = gs_14
+      structure Real = gs_15
+      structure Real64 = gs_16
+      structure RealArray = gs_17
+      structure RealArraySlice = gs_18
+      structure RealVector = gs_19
+      structure RealVectorSlice = gs_20
+      structure SMLofNJ = gs_21
+      structure Socket = gs_22
+      structure String = gs_23
+      structure Substring = gs_24
+      structure SysWord = gs_25
+      structure TextIO = gs_31
+      structure Time = gs_26
+      structure Word = gs_27
+      structure Word32 = gs_28
+      structure Word64 = gs_29
+      structure Word8 = gs_30
+      ../control/mlrisc-control.sml
+   in
+      signature gs_37 = MLRISC_CONTROL
+      structure gs_38 = MLRiscControl
+   end
+   local
+      structure Char = gs_1
+      structure CharArray = gs_2
+      structure CharVector = gs_3
+      structure FixedInt = gs_4
+      structure General = gs_5
+      structure Int = gs_6
+      structure Int32 = gs_7
+      structure Int64 = gs_8
+      structure IntInf = gs_9
+      structure LargeInt = gs_10
+      structure LargeReal = gs_11
+      structure LargeWord = gs_12
+      signature MLRISC_CONTROL = gs_37
+      structure MLRiscControl = gs_38
+      structure OS = gs_13
+      structure Position = gs_14
+      structure Real = gs_15
+      structure Real64 = gs_16
+      structure RealArray = gs_17
+      structure RealArraySlice = gs_18
+      structure RealVector = gs_19
+      structure RealVectorSlice = gs_20
+      structure SMLofNJ = gs_21
+      structure Socket = gs_22
+      structure String = gs_23
+      structure Substring = gs_24
+      structure SysWord = gs_25
+      structure Time = gs_26
+      structure Timer = gs_0
+      structure Word = gs_27
+      structure Word32 = gs_28
+      structure Word64 = gs_29
+      structure Word8 = gs_30
+      ../control/mlrisc-timing.sml
+   in
+      signature gs_39 = MLRISC_TIMING
+      structure gs_40 = MLRiscTiming
+   end
+   local
+      structure TextIO = gs_31
+      ../control/mlriscErrormsg.sml
+   in
+      signature gs_41 = MLRISC_ERROR_MSG
+      structure gs_42 = MLRiscErrorMsg
+   end
+in
+   signature MLRISC_CONTROL = gs_37
+   signature MLRISC_ERROR_MSG = gs_41
+   signature MLRISC_TIMING = gs_39
+   structure MLRiscControl = gs_38
+   structure MLRiscErrorMsg = gs_42
+   structure MLRiscTiming = gs_40
+end
+end
+
+end

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Shrink</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Shrink</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">Shrink</a> is a rewrite pass for the <a href="SSA">SSA</a> and <a href="SSA2">SSA2</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>s, invoked from every optimization pass (see
+<a href="SSASimplify">SSASimplify</a> and <a href="SSA2Simplify">SSA2Simplify</a>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass implements a whole family of compile-time reductions, like:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>#1(a, b)</code> &#8658; <code>a</code></p>
+</li>
+<li>
+<p><code>case C x of C y =&gt; e</code> &#8658; <code>let y = x in e</code></p>
+</li>
+<li>
+<p>constant folding, copy propagation</p>
+</li>
+<li>
+<p>eta blocks</p>
+</li>
+<li>
+<p>tuple reconstruction elimination</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/shrink.sig"><code>shrink.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/shrink.fun"><code>shrink.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/shrink2.sig"><code>shrink2.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/shrink2.fun"><code>shrink2.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="#">Shrink</a> pass is run after every <a href="SSA">SSA</a> and <a href="SSA2">SSA2</a>
+optimization pass.</p>
+</div>
+<div class="paragraph">
+<p>The <a href="#">Shrink</a> implementation also includes functions to eliminate
+unreachable blocks from a <a href="SSA">SSA</a> or <a href="SSA2">SSA2</a> program or function.
+The <a href="#">Shrink</a> pass does not guarantee to eliminate all unreachable
+blocks.  Doing so would unduly complicate the implementation, and it
+is almost always the case that all unreachable blocks are eliminated.
+However, a small number of optimization passes require that the input
+have no unreachable blocks (essentially, when the analysis works on
+the control flow graph and the rewrite iterates on the vector of
+blocks).  These passes explicitly call <code>eliminateDeadBlocks</code>.</p>
+</div>
+<div class="paragraph">
+<p>The <a href="#">Shrink</a> pass has a special case to turn a non-tail call where
+the continuation and handler only do <code>Profile</code> statements into a tail
+call where the <code>Profile</code> statements precede the tail call.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Shrink.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Shrink.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

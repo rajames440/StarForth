@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CombineConversions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CombineConversions</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">CombineConversions</a> is an optimization pass for the <a href="SSA">SSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass looks for and simplifies nested calls to (signed)
+extension/truncation.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/combine-conversions.fun"><code>combine-conversions.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It processes each block in dfs order (visiting definitions before uses):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>If the statement is not a <code>PrimApp</code> with <code>Word_extdToWord</code>, skip it.</p>
+</li>
+<li>
+<p>After processing a conversion, it tags the <code>Var</code> for subsequent use.</p>
+</li>
+<li>
+<p>When inspecting a conversion, check if the <code>Var</code> operand is also the
+result of a conversion. If it is, try to combine the two operations.
+Repeatedly simplify until hitting either a non-conversion <code>Var</code> or a
+case where the conversion cannot be simplified.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The optimization rules are very simple:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>x1 = ...
+x2 = Word_extdToWord (W1, W2, {signed=s1}) x1
+x3 = Word_extdToWord (W2, W3, {signed=s2}) x2</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>If <code>W1 = W2</code>, then there is no conversions before <code>x_1</code>.</p>
+<div class="paragraph">
+<p>This is guaranteed because <code>W2 = W3</code> will always trigger optimization.</p>
+</div>
+</li>
+<li>
+<p>Case <code>W1 &le; W3 &le; W2</code>:</p>
+<div class="listingblock">
+<div class="content">
+<pre>x3 = Word_extdToWord (W1, W3, {signed=s1}) x1</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Case <code>W1 &lt;  W2 &lt;  W3  AND  ((NOT s1) OR s2)</code>:</p>
+<div class="listingblock">
+<div class="content">
+<pre>x3 = Word_extdToWord (W1, W3, {signed=s1}) x1</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Case <code>W1 =  W2 &lt;  W3</code>:</p>
+<div class="paragraph">
+<p>unoptimized, because there are no conversions past <code>W1</code> and <code>x2 = x1</code></p>
+</div>
+</li>
+<li>
+<p>Case <code>W3 &le; W2 &le; W1  OR  W3 &le; W1 &le; W2</code>:</p>
+<div class="listingblock">
+<div class="content">
+<pre>x_3 = Word_extdToWord (W1, W3, {signed=_}) x1</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>because <code>W3 &le; W1 &amp;&amp; W3 &le; W2</code>, just clip <code>x1</code></p>
+</div>
+</li>
+<li>
+<p>Case <code>W2 &lt; W1 &le; W3  OR  W2 &lt; W3 &le; W1</code>:</p>
+<div class="paragraph">
+<p>unoptimized, because <code>W2 &lt; W1 &amp;&amp; W2 &lt; W3</code>, has truncation effect</p>
+</div>
+</li>
+<li>
+<p>Case <code>W1 &lt; W2 &lt; W3  AND  (s1 AND (NOT s2))</code>:</p>
+<div class="paragraph">
+<p>unoptimized, because each conversion affects the result separately</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CombineConversions.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CombineConversions.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

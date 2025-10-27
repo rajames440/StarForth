@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Drawbacks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Drawbacks</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>MLton has several drawbacks due to its use of whole-program
+compilation.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Large compile-time memory requirement.</p>
+<div class="paragraph">
+<p>Because MLton performs whole-program analysis and optimization,
+compilation requires a large amount of memory.  For example, compiling
+MLton (over 140K lines) requires at least 512M RAM.</p>
+</div>
+</li>
+<li>
+<p>Long compile times.</p>
+<div class="paragraph">
+<p>Whole-program compilation can take a long time.  For example,
+compiling MLton (over 140K lines) on a 1.6GHz machine takes five to
+ten minutes.</p>
+</div>
+</li>
+<li>
+<p>No interactive top level.</p>
+<div class="paragraph">
+<p>Because of whole-program compilation, MLton does not provide an
+interactive top level.  In particular, it does not implement the
+optional <a href="BasisLibrary">Basis Library</a> function <code>use</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Drawbacks.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Drawbacks.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

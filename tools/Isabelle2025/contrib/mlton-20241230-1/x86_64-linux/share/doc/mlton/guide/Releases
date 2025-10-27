@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Releases</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Releases</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Public releases of MLton:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Release20241230">Release20241230</a></p>
+</li>
+<li>
+<p><a href="Release20210117">Release20210117</a></p>
+</li>
+<li>
+<p><a href="Release20201002">Release20201002</a></p>
+</li>
+<li>
+<p><a href="Release20200817">Release20200817</a></p>
+</li>
+<li>
+<p><a href="Release20200722">Release20200722</a></p>
+</li>
+<li>
+<p><a href="Release20180207">Release20180207</a></p>
+</li>
+<li>
+<p><a href="Release20130715">Release20130715</a></p>
+</li>
+<li>
+<p><a href="Release20100608">Release20100608</a></p>
+</li>
+<li>
+<p><a href="Release20070826">Release20070826</a></p>
+</li>
+<li>
+<p><a href="Release20051202">Release20051202</a></p>
+</li>
+<li>
+<p><a href="Release20041109">Release20041109</a></p>
+</li>
+<li>
+<p>Release20040227</p>
+</li>
+<li>
+<p>Release20030716</p>
+</li>
+<li>
+<p>Release20030711</p>
+</li>
+<li>
+<p>Release20030312</p>
+</li>
+<li>
+<p>Release20020923</p>
+</li>
+<li>
+<p>Release20020410</p>
+</li>
+<li>
+<p>Release20011006</p>
+</li>
+<li>
+<p>Release20010806</p>
+</li>
+<li>
+<p>Release20010706</p>
+</li>
+<li>
+<p>Release20000906</p>
+</li>
+<li>
+<p>Release20000712</p>
+</li>
+<li>
+<p>Release19990712</p>
+</li>
+<li>
+<p>Release19990319</p>
+</li>
+<li>
+<p>Release19980826</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Mon Dec 30 07:22:35 2024 -0500 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Releases.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Releases.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,199 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2022.10.24)  31 OCT 2022 21:07
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**foiltex.ins
+(./foiltex.ins
+LaTeX2e <2021-11-15> patch level 1
+L3 programming layer <2022-01-21>
+(/usr/share/texlive/texmf-dist/tex/latex/base/docstrip.tex
+\blockLevel=\count185
+\emptyLines=\count186
+\processedLines=\count187
+\commentsRemoved=\count188
+\commentsPassed=\count189
+\codeLinesPassed=\count190
+\TotalprocessedLines=\count191
+\TotalcommentsRemoved=\count192
+\TotalcommentsPassed=\count193
+\TotalcodeLinesPassed=\count194
+\NumberOfFiles=\count195
+\inFile=\read2
+\inputcheck=\read3
+\off@0=\count196
+\off@1=\count197
+\off@2=\count198
+\off@3=\count199
+\off@4=\count266
+\off@5=\count267
+\off@6=\count268
+\off@7=\count269
+\off@8=\count270
+\off@9=\count271
+\off@10=\count272
+\off@11=\count273
+\off@12=\count274
+\off@13=\count275
+\off@14=\count276
+\off@15=\count277
+\@maxfiles=\count278
+\@maxoutfiles=\count279
+
+Utility: `docstrip' v2.6a <2020-11-23>
+English documentation    <2020-11-23>
+
+**********************************************************
+* This program converts documented macro-files into fast *
+* loadable files by stripping off (nearly) all comments! *
+**********************************************************
+
+********************************************************
+* No Configuration file found, using default settings. *
+********************************************************
+
+(./foiltex.ins
+
+Generating file(s) ./foils.cls 
+\openout0 = `./foils.cls'.
+
+
+Processing file foiltex.dtx (package) -> foils.cls
+File foiltex.dtx ended by \endinput.
+Lines  processed: 4248
+Comments removed: 2529
+Comments  passed: 23
+Codelines passed: 1656
+
+
+Generating file(s) ./foil17.clo 
+\openout0 = `./foil17.clo'.
+
+
+Processing file foiltex.dtx (17pt) -> foil17.clo
+File foiltex.dtx ended by \endinput.
+Lines  processed: 4248
+Comments removed: 2529
+Comments  passed: 23
+Codelines passed: 1656
+
+
+Generating file(s) ./foil20.clo 
+\openout0 = `./foil20.clo'.
+
+
+Processing file foiltex.dtx (20pt) -> foil20.clo
+File foiltex.dtx ended by \endinput.
+Lines  processed: 4248
+Comments removed: 2529
+Comments  passed: 23
+Codelines passed: 1656
+
+
+Generating file(s) ./foil25.clo 
+\openout0 = `./foil25.clo'.
+
+
+Processing file foiltex.dtx (25pt) -> foil25.clo
+File foiltex.dtx ended by \endinput.
+Lines  processed: 4248
+Comments removed: 2529
+Comments  passed: 23
+Codelines passed: 1656
+
+
+Generating file(s) ./foil30.clo 
+\openout0 = `./foil30.clo'.
+
+
+Processing file foiltex.dtx (30pt) -> foil30.clo
+File foiltex.dtx ended by \endinput.
+Lines  processed: 4248
+Comments removed: 2529
+Comments  passed: 23
+Codelines passed: 1656
+
+
+Generating file(s) ./foilshrt.clo 
+\openout0 = `./foilshrt.clo'.
+
+
+Processing file foiltex.dtx (short) -> foilshrt.clo
+File foiltex.dtx ended by \endinput.
+Lines  processed: 4248
+Comments removed: 2529
+Comments  passed: 23
+Codelines passed: 1656
+
+
+Generating file(s) ./foils.sty 
+\openout0 = `./foils.sty'.
+
+
+Processing file foiltex.dtx (oldstyle) -> foils.sty
+File foiltex.dtx ended by \endinput.
+Lines  processed: 4248
+Comments removed: 2529
+Comments  passed: 23
+Codelines passed: 1656
+
+
+Generating file(s) ./fltfonts.def 
+\openout0 = `./fltfonts.def'.
+
+
+Processing file foiltex.dtx (fonts) -> fltfonts.def
+File foiltex.dtx ended by \endinput.
+Lines  processed: 4248
+Comments removed: 2529
+Comments  passed: 23
+Codelines passed: 1656
+
+
+Generating file(s) ./sampfoil.tex 
+\openout0 = `./sampfoil.tex'.
+
+
+Processing file foiltex.dtx (sample) -> sampfoil.tex
+File foiltex.dtx ended by \endinput.
+Lines  processed: 4248
+Comments removed: 2529
+Comments  passed: 23
+Codelines passed: 1656
+
+**********************************************************************
+*
+* To finish the installation, do the following:
+*
+*  1) Copy or move the foils.cls, foil*.clo, fltfonts.def and
+*     and foils.sty files to the some directory in your TEXINPUTS
+*     LATEXINPUTS path. See your TeX systems documentation for
+*     additional steps that may be required for your local environment.
+*  2) Run LaTeX on the foiltex.dtx file to produce the documentation
+*     in dvi format. Put the resulting foiltex.dvi file and the
+*     foiltex.dtx somewhere in your documentation subdirectory.
+*  3) Put the sample file (sampfoil.tex) in the examples directory.
+*
+**********************************************************************
+)
+Overall statistics:
+Files  processed: 9
+Lines  processed: 38232
+Comments removed: 22761
+Comments  passed: 207
+Codelines passed: 14904
+ ) ) 
+Here is how much of TeX's memory you used:
+ 416 strings out of 480162
+ 4401 string characters out of 5894188
+ 293342 words of memory out of 5000000
+ 18456 multiletter control sequences out of 15000+600000
+ 469259 words of font info for 28 fonts, out of 8000000 for 9000
+ 59 hyphenation exceptions out of 8191
+ 18i,0n,18p,221b,145s stack positions out of 5000i,500n,10000p,200000b,80000s
+
+No pages of output.
+PDF statistics:
+ 0 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+

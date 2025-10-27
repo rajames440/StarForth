@@ -1,0 +1,16 @@
+chapter Misc
+
+session Tools = Pure +
+  theories
+    Code_Generator
+    Profiling
+
+session SML in SML = Pure +
+  theories
+    Examples
+
+session Haskell in Haskell = HOL +
+  theories
+    Haskell
+  theories [condition = ISABELLE_GHC_STACK]
+    Test

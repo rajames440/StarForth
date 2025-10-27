@@ -1,0 +1,7 @@
+The bash_process executable has been built like this:
+
+  cc -Wall bash_process.c -o bash_process
+
+
+        Makarius
+        26-Mar-2024

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>InfixingOperators</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>InfixingOperators</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Fixity specifications are not part of signatures in
+<a href="StandardML">Standard ML</a>. When one wants to use a module that
+provides functions designed to be used as infix operators there are
+several obvious alternatives:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Use only prefix applications. Unfortunately there are situations
+where infix applications lead to considerably more readable code.</p>
+</li>
+<li>
+<p>Make the fixity declarations at the top-level. This may lead to
+collisions and may be unsustainable in a large project. Pollution of
+the top-level should be avoided.</p>
+</li>
+<li>
+<p>Make the fixity declarations at each scope where you want to use
+infix applications. The duplication becomes inconvenient if the
+operators are widely used. Duplication of code should be avoided.</p>
+</li>
+<li>
+<p>Use non-standard extensions, such as the <a href="MLBasis">ML Basis system</a>
+to control the scope of fixity declarations. This has the obvious
+drawback of reduced portability.</p>
+</li>
+<li>
+<p>Reuse existing infix operator symbols (<code>^</code>, <code>+</code>, <code>-</code>, &#8230;&#8203;).  This
+can be convenient when the standard operators aren&#8217;t needed in the
+same scope with the new operators.  On the other hand, one is limited
+to the standard operator symbols and the code may appear confusing.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>None of the obvious alternatives is best in every case. The following
+describes a slightly less obvious alternative that can sometimes be
+useful. The idea is to approximate Haskell&#8217;s special syntax for
+treating any identifier enclosed in grave accents (backquotes) as an
+infix operator. In Haskell, instead of writing the prefix application
+<code>f x y</code> one can write the infix application <code>x `f` y</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_infixing_operators">Infixing operators</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Let&#8217;s first take a look at the definitions of the operators:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">infix</span>  <span class="mi">3</span> <span class="n">&lt;\</span>     <span class="kr">fun</span> <span class="nf">x</span> <span class="n">&lt;\</span> <span class="n">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">y</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>     <span class="c">(*</span><span class="cm"> Left section      *)</span>
+<span class="kr">infix</span>  <span class="mi">3</span> <span class="n">\&gt;</span>     <span class="kr">fun</span> <span class="nf">f</span> <span class="n">\&gt;</span> <span class="n">y</span> <span class="p">=</span> <span class="n">f</span> <span class="n">y</span>                  <span class="c">(*</span><span class="cm"> Left application  *)</span>
+<span class="kr">infixr</span> <span class="mi">3</span> <span class="n">/&gt;</span>     <span class="kr">fun</span> <span class="nf">f</span> <span class="n">/&gt;</span> <span class="n">y</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>     <span class="c">(*</span><span class="cm"> Right section     *)</span>
+<span class="kr">infixr</span> <span class="mi">3</span> <span class="n">&lt;/</span>     <span class="kr">fun</span> <span class="nf">x</span> <span class="n">&lt;/</span> <span class="n">f</span> <span class="p">=</span> <span class="n">f</span> <span class="n">x</span>                  <span class="c">(*</span><span class="cm"> Right application *)</span>
+
+<span class="kr">infix</span>  <span class="mi">2</span> <span class="n">o</span>  <span class="c">(*</span><span class="cm"> See motivation below *)</span>
+<span class="kr">infix</span>  <span class="mi">0</span> <span class="n">:=</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The left and right sectioning operators, <code>&lt;\</code> and <code>/&gt;</code>, are useful in
+SML for partial application of infix operators.
+<a href="References#Paulson96">ML For the Working Programmer</a> describes curried
+functions <code>secl</code> and <code>secr</code> for the same purpose on pages 179-181.
+For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nn">List</span><span class="p">.</span><span class="n">map</span> <span class="p">(</span><span class="kr">op</span><span class="n">-</span> <span class="n">/&gt;</span> <span class="n">y</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is a function for subtracting <code>y</code> from a list of integers and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nn">List</span><span class="p">.</span><span class="n">exists</span> <span class="p">(</span><span class="n">x</span> <span class="n">&lt;\</span> <span class="kr">op</span><span class="p">=)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is a function for testing whether a list contains an <code>x</code>.</p>
+</div>
+<div class="paragraph">
+<p>Together with the left and right application operators, <code>\&gt;</code> and <code>&lt;/</code>,
+the sectioning operators provide a way to treat any binary function
+(i.e. a function whose domain is a pair) as an infix operator.  In
+general,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>x0 &lt;\f1\&gt; x1 &lt;\f2\&gt; x2 ... &lt;\fN\&gt; xN = fN (... f2 (f1 (x0, x1), x2) ..., xN)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>xN &lt;/fN/&gt; ... x2 &lt;/f2/&gt; x1 &lt;/f1/&gt; x0  =  fN (xN, ... f2 (x2, f1 (x1, x0)) ...)</pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_examples">Examples</h3>
+<div class="paragraph">
+<p>As a fairly realistic example, consider providing a function for sequencing
+comparisons:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Order</span> <span class="c">(*</span><span class="cm"> ... *)</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="c">(*</span><span class="cm"> ... *)</span>
+      <span class="kr">val</span> <span class="nv">orWhenEq</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">EQUAL</span><span class="p">,</span> <span class="n">th</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">th</span> <span class="p">()</span>
+                      <span class="p">|</span> <span class="p">(</span><span class="n">other</span><span class="p">,</span>  <span class="p">_)</span> <span class="p">=&gt;</span> <span class="n">other</span>
+      <span class="c">(*</span><span class="cm"> ... *)</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using <code>orWhenEq</code> and the infixing operators, one can write a
+<code>compare</code> function for triples as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">compare</span> <span class="p">(</span><span class="n">fad</span><span class="p">,</span> <span class="n">fbe</span><span class="p">,</span> <span class="n">fcf</span><span class="p">)</span> <span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">),</span> <span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span> <span class="p">=</span>
+    <span class="n">fad</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="n">&lt;\</span><span class="nn">Order</span><span class="p">.</span><span class="n">orWhenEq\&gt;</span> <span class="n">`fbe</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="n">&lt;\</span><span class="nn">Order</span><span class="p">.</span><span class="n">orWhenEq\&gt;</span> <span class="n">`fcf</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where <code>`</code> is defined as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">`</span><span class="n">f</span> <span class="n">x</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Although <code>orWhenEq</code> can be convenient (try rewriting the above without
+it), it is probably not useful enough to be defined at the top level
+as an infix operator. Fortunately we can use the infixing operators
+and don&#8217;t have to.</p>
+</div>
+<div class="paragraph">
+<p>Another fairly realistic example would be to use the infixing operators with
+the technique described on the <a href="Printf">Printf</a> page. Assuming that you would have
+a <code>Printf</code> module binding <code>printf</code>, <code>`</code>, and formatting combinators
+named <code>int</code> and <code>string</code>, you could write</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">let</span> <span class="kr">open</span> <span class="nn">Printf</span> <span class="kr">in</span>
+  <span class="n">printf</span> <span class="p">(</span><span class="n">`</span><span class="s2">"Here's an int "</span><span class="n">&lt;\int\&gt;</span><span class="s2">" and a string "</span><span class="n">&lt;\string\&gt;</span><span class="s2">"."</span><span class="p">)</span> <span class="mi">13</span> <span class="s2">"foo"</span> <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>without having to duplicate the fixity declarations. Alternatively, you could
+write</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nn">P</span><span class="p">.</span><span class="n">printf</span> <span class="p">(</span><span class="nn">P</span><span class="p">.</span><span class="n">`</span><span class="s2">"Here's an int "</span><span class="n">&lt;\</span><span class="nn">P</span><span class="p">.</span><span class="n">int\&gt;</span><span class="s2">" and a string "</span><span class="n">&lt;\</span><span class="nn">P</span><span class="p">.</span><span class="n">string\&gt;</span><span class="s2">"."</span><span class="p">)</span> <span class="mi">13</span> <span class="s2">"foo"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>assuming you have the made the binding</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">P</span> <span class="p">=</span> <span class="n">Printf</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_application_and_piping_operators">Application and piping operators</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The left and right application operators may also provide some notational
+convenience on their own. In general,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>f \&gt; x1 \&gt; ... \&gt; xN = f x1 ... xN</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>xN &lt;/ ... &lt;/ x1 &lt;/ f = f x1 ... xN</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If nothing else, both of them can eliminate parentheses. For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">foo</span> <span class="p">(</span><span class="mi">1</span> <span class="n">+</span> <span class="mi">2</span><span class="p">)</span> <span class="p">=</span> <span class="n">foo</span> <span class="n">\&gt;</span> <span class="mi">1</span> <span class="n">+</span> <span class="mi">2</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The left and right application operators are related to operators
+that could be described as the right and left piping operators:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">infix</span>  <span class="mi">1</span> <span class="n">&gt;|</span>     <span class="kr">val</span> <span class="nv">op</span><span class="n">&gt;|</span> <span class="p">=</span> <span class="kr">op</span><span class="n">&lt;/</span>      <span class="c">(*</span><span class="cm"> Left pipe *)</span>
+<span class="kr">infixr</span> <span class="mi">1</span> <span class="n">|&lt;</span>     <span class="kr">val</span> <span class="nv">op</span><span class="n">|&lt;</span> <span class="p">=</span> <span class="kr">op</span><span class="n">\&gt;</span>      <span class="c">(*</span><span class="cm"> Right pipe *)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you can see, the left and right piping operators, <code>&gt;|</code> and <code>|&lt;</code>,
+are the same as the right and left application operators,
+respectively, except the associativities are reversed and the binding
+strength is lower. They are useful for piping data through a sequence
+of operations. In general,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>x &gt;| f1 &gt;| ... &gt;| fN = fN (... (f1 x) ...) = (fN o ... o f1) x</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>fN |&lt; ... |&lt; f1 |&lt; x = fN (... (f1 x) ...) = (fN o ... o f1) x</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The right piping operator, <code>|&lt;</code>, is provided by the Haskell prelude as
+<code>$</code>. It can be convenient in CPS or continuation passing style.</p>
+</div>
+<div class="paragraph">
+<p>A use for the left piping operator is with parsing combinators. In a
+strict language, like SML, eta-reduction is generally unsafe. Using
+the left piping operator, parsing functions can be formatted
+conveniently as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">parsingFunc</span> <span class="n">input</span> <span class="p">=</span>
+   <span class="n">input</span> <span class="n">&gt;|</span> <span class="c">(*</span><span class="cm"> ... *)</span>
+         <span class="p">|</span><span class="nf">|</span> <span class="c">(*</span><span class="cm"> ... *)</span>
+         <span class="p">|</span><span class="nf">|</span> <span class="c">(*</span><span class="cm"> ... *)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where <code>||</code> is supposed to be a combinator provided by the parsing combinator
+library.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_about_precedences">About precedences</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You probably noticed that we redefined the
+<a href="OperatorPrecedence">precedences</a> of the function composition operator
+<code>o</code> and the assignment operator <code>:=</code>. Doing so is not strictly
+necessary, but can be convenient and should be relatively
+safe. Consider the following motivating examples from
+<a href="WesleyTerpstra">Wesley W. Terpstra</a> relying on the redefined
+precedences:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nn">Word8</span><span class="p">.</span><span class="n">fromInt</span> <span class="n">o</span> <span class="nn">Char</span><span class="p">.</span><span class="n">ord</span> <span class="n">o</span> <span class="n">s</span> <span class="n">&lt;\</span><span class="nn">String</span><span class="p">.</span><span class="n">sub</span>
+<span class="c">(*</span><span class="cm"> Combining sectioning and composition *)</span>
+
+<span class="n">x</span> <span class="n">:=</span> <span class="n">s</span> <span class="n">&lt;\</span><span class="nn">String</span><span class="p">.</span><span class="n">sub\&gt;</span> <span class="n">i</span>
+<span class="c">(*</span><span class="cm"> Assigning the result of an infixed application *)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In imperative languages, assignment usually has the lowest precedence
+(ignoring statement separators). The precedence of <code>:=</code> in the
+<a href="BasisLibrary">Basis Library</a> is perhaps unnecessarily high, because
+an expression of the form <code>r := x</code> always returns a unit, which makes
+little sense to combine with anything. Dropping <code>:=</code> to the lowest
+precedence level makes it behave more like in other imperative
+languages.</p>
+</div>
+<div class="paragraph">
+<p>The case for <code>o</code> is different. With the exception of <code>before</code> and
+<code>:=</code>, it doesn&#8217;t seem to make much sense to use <code>o</code> with any of the
+operators defined by the <a href="BasisLibrary">Basis Library</a> in an
+unparenthesized expression. This is simply because none of the other
+operators deal with functions. It would seem that the precedence of
+<code>o</code> could be chosen completely arbitrarily from the set <code>{1, &#8230;&#8203;, 9}</code>
+without having any adverse effects with respect to other infix
+operators defined by the <a href="BasisLibrary">Basis Library</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_design_of_the_symbols">Design of the symbols</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The closest approximation of Haskell&#8217;s <code>x `f` y</code> syntax
+achievable in Standard ML would probably be something like
+<code>x `f^ y</code>, but <code>^</code> is already used for string
+concatenation by the <a href="BasisLibrary">Basis Library</a>. Other
+combinations of the characters <code>`</code> and <code>^</code> would be
+possible, but none seems clearly the best visually. The symbols <code>&lt;\</code>,
+<code>\&gt;</code>, <code>&lt;/</code>, and <code>/&gt;</code> are reasonably concise and have a certain
+self-documenting appearance and symmetry, which can help to remember
+them.  As the names suggest, the symbols of the piping operators <code>&gt;|</code>
+and <code>|&lt;</code> are inspired by Unix shell pipelines.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Utilities">Utilities</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/InfixingOperators.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/InfixingOperators.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+#
+# Author: Stefan Berghofer, TU Muenchen
+# Author: Makarius
+#
+# DESCRIPTION: display Isabelle version
+
+
+PRG="$(basename "$0")"
+
+function usage()
+{
+  echo
+  echo "Usage: isabelle $PRG [OPTIONS]"
+  echo
+  echo "  Options are:"
+  echo "    -i           short identification (derived from Mercurial id)"
+  echo "    -t           symbolic tags (derived from Mercurial id)"
+  echo
+  echo "  Display Isabelle version information."
+  echo
+  exit 1
+}
+
+function fail()
+{
+  echo "$1" >&2
+  exit 2
+}
+
+
+## process command line
+
+# options
+
+SHORT_ID=""
+TAGS=""
+
+while getopts "it" OPT
+do
+  case "$OPT" in
+    i)
+      SHORT_ID=true
+      ;;
+    t)
+      TAGS=true
+      ;;
+    \?)
+      usage
+      ;;
+  esac
+done
+
+shift $(($OPTIND - 1))
+
+
+# args
+
+[ "$#" -ne 0 ] && usage
+
+
+## main
+
+if [ -z "$SHORT_ID" -a -z "$TAGS" ]; then
+  echo "$ISABELLE_NAME"
+fi
+
+HG_ARCHIVAL="$ISABELLE_HOME/.hg_archival.txt"
+
+export LANG=C
+export HGPLAIN=
+
+if [ -n "$SHORT_ID" ]; then
+  if [ -f "$ISABELLE_HOME/etc/ISABELLE_ID" ]; then
+    RESULT="$(cat "$ISABELLE_HOME/etc/ISABELLE_ID")"
+    RC="$?"
+  elif [ -d "$ISABELLE_HOME/.hg" ]; then
+    RESULT=$("${HG:-hg}" -R "$ISABELLE_HOME" log -r "p1()" --template="{node|short}\n" 2>/dev/null)
+    RC="$?"
+  elif [ -f "$HG_ARCHIVAL" ]; then
+    RESULT="$(grep "^node:" < "$HG_ARCHIVAL" | cut -d " " -f2 | head -c12)"
+    RC="$?"
+  else
+    RESULT=""
+    RC="0"
+  fi
+  if [ "$RC" -ne 0 ]; then
+    exit "$RC"
+  elif [ -n "$RESULT" ]; then
+    echo "$RESULT"
+  fi
+fi
+
+if [ -n "$TAGS" ]; then
+  if [ -f "$ISABELLE_HOME/etc/ISABELLE_TAGS" ]; then
+    RESULT="$(cat "$ISABELLE_HOME/etc/ISABELLE_TAGS")"
+    RC="$?"
+  elif [ -d "$ISABELLE_HOME/.hg" ]; then
+    RESULT=$("${HG:-hg}" -R "$ISABELLE_HOME" id -t 2>/dev/null)
+    RC="$?"
+  elif [ -f "$HG_ARCHIVAL" ]; then
+    RESULT="$(grep "^tag:" < "$HG_ARCHIVAL" | cut -d " " -f2)"
+    RC="$?"
+  else
+    RESULT=""
+    RC="0"
+  fi
+  if [ "$RC" -ne 0 ]; then
+    exit "$RC"
+  elif [ -n "$RESULT" -a "$RESULT" != "tip" ]; then
+    echo "$RESULT"
+  fi
+fi

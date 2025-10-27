@@ -1,0 +1,202 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
+in
+
+local
+  basis l56 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb
+    end
+  basis l15 =
+    bas
+      (* $MLRISC.cm(=(proxyLib.cm):.)/MLRISC.cm =??=> *) MLRISC.mlb
+    end
+  basis l4 =
+    bas
+      (* $StagedAlloc.cm(=(proxyLib.cm):.)/StagedAlloc.cm =??=> *) StagedAlloc.mlb
+    end
+  basis l8 =
+    bas
+      (* $CCall.cm(=(proxyLib.cm):.)/CCall.cm =??=> *) CCall.mlb
+    end
+  basis l20 =
+    bas
+      (* $AMD64.cm(=(proxyLib.cm):.)/AMD64.cm =??=> *) AMD64.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l4
+   in
+      functor gs_0 = X86_64CConventionFn
+   end
+   local
+      open l8
+   in
+      functor gs_1 = CCallGenFn
+   end
+   local
+      open l4
+   in
+      functor gs_2 = StagedAllocationFn
+   end
+   local
+      open l15
+   in
+      structure gs_3 = CellsBasis
+   end
+   local
+      open l20
+   in
+      signature gs_4 = AMD64CELLS
+      structure gs_5 = AMD64Cells
+   end
+   local
+      open l8
+   in
+      structure gs_6 = CType
+   end
+   local
+      open l56
+   in
+      structure gs_7 = Char
+      structure gs_8 = CharArray
+      structure gs_9 = CharVector
+      structure gs_10 = FixedInt
+      structure gs_11 = General
+      structure gs_12 = Int
+      structure gs_13 = Int32
+      structure gs_14 = Int64
+      structure gs_15 = IntInf
+      structure gs_16 = LargeInt
+      structure gs_17 = LargeReal
+      structure gs_18 = LargeWord
+      structure gs_19 = OS
+      structure gs_20 = Position
+      structure gs_21 = Real
+      structure gs_22 = Real64
+      structure gs_23 = RealArray
+      structure gs_24 = RealArraySlice
+      structure gs_25 = RealVector
+      structure gs_26 = RealVectorSlice
+      structure gs_27 = SMLofNJ
+      structure gs_28 = Socket
+      structure gs_29 = String
+      structure gs_30 = Substring
+      structure gs_31 = SysWord
+      structure gs_32 = Time
+      structure gs_33 = Word
+      structure gs_34 = Word32
+      structure gs_35 = Word64
+      structure gs_36 = Word8
+   end
+   local
+      open l56
+   in
+      structure gs_37 = List
+   end
+   local
+      open l4
+   in
+      structure gs_38 = CLocKind
+   end
+   local
+      open l15
+   in
+      signature gs_39 = MLTREE
+   end
+   local
+      structure CType = gs_6
+      structure Char = gs_7
+      structure CharArray = gs_8
+      structure CharVector = gs_9
+      structure FixedInt = gs_10
+      structure General = gs_11
+      structure Int = gs_12
+      structure Int32 = gs_13
+      structure Int64 = gs_14
+      structure IntInf = gs_15
+      structure LargeInt = gs_16
+      structure LargeReal = gs_17
+      structure LargeWord = gs_18
+      structure OS = gs_19
+      structure Position = gs_20
+      structure Real = gs_21
+      structure Real64 = gs_22
+      structure RealArray = gs_23
+      structure RealArraySlice = gs_24
+      structure RealVector = gs_25
+      structure RealVectorSlice = gs_26
+      structure SMLofNJ = gs_27
+      structure Socket = gs_28
+      structure String = gs_29
+      structure Substring = gs_30
+      structure SysWord = gs_31
+      structure Time = gs_32
+      structure Word = gs_33
+      structure Word32 = gs_34
+      structure Word64 = gs_35
+      structure Word8 = gs_36
+      ../c-call/archs/x86-64-c-sizes.sml
+   in
+      structure gs_40 = CSizes
+   end
+   local
+      signature AMD64CELLS = gs_4
+      structure AMD64Cells = gs_5
+      functor CCallGenFn = gs_1
+      structure CLocKind = gs_38
+      structure CSizes = gs_40
+      structure CType = gs_6
+      structure CellsBasis = gs_3
+      structure Char = gs_7
+      structure CharArray = gs_8
+      structure CharVector = gs_9
+      structure FixedInt = gs_10
+      structure General = gs_11
+      structure Int = gs_12
+      structure Int32 = gs_13
+      structure Int64 = gs_14
+      structure IntInf = gs_15
+      structure LargeInt = gs_16
+      structure LargeReal = gs_17
+      structure LargeWord = gs_18
+      structure List = gs_37
+      signature MLTREE = gs_39
+      structure OS = gs_19
+      structure Position = gs_20
+      structure Real = gs_21
+      structure Real64 = gs_22
+      structure RealArray = gs_23
+      structure RealArraySlice = gs_24
+      structure RealVector = gs_25
+      structure RealVectorSlice = gs_26
+      structure SMLofNJ = gs_27
+      structure Socket = gs_28
+      functor StagedAllocationFn = gs_2
+      structure String = gs_29
+      structure Substring = gs_30
+      structure SysWord = gs_31
+      structure Time = gs_32
+      structure Word = gs_33
+      structure Word32 = gs_34
+      structure Word64 = gs_35
+      structure Word8 = gs_36
+      functor X86_64CConventionFn = gs_0
+      ../c-call/archs/x86-64-svid-fn.sml
+   in
+      functor gs_41 = X86_64SVIDFn
+   end
+in
+   structure CSizes = gs_40
+   functor X86_64SVIDFn = gs_41
+end
+end
+
+end

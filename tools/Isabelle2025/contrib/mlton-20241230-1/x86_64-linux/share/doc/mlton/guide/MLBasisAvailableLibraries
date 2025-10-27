@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLBasisAvailableLibraries</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLBasisAvailableLibraries</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton comes with the following <a href="MLBasis">ML Basis</a> files available.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>$(SML_LIB)/basis/basis.mlb</code></p>
+<div class="paragraph">
+<p>The <a href="BasisLibrary">Basis Library</a>.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/basis-1997.mlb</code></p>
+<div class="paragraph">
+<p>The (deprecated) 1997 version of the <a href="BasisLibrary">Basis Library</a>.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/mlton.mlb</code></p>
+<div class="paragraph">
+<p>The <a href="MLtonStructure">MLton</a> structure and signatures.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/c-types.mlb</code></p>
+<div class="paragraph">
+<p>Various structure aliases useful as <a href="ForeignFunctionInterfaceTypes">ForeignFunctionInterfaceTypes</a>.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/unsafe.mlb</code></p>
+<div class="paragraph">
+<p>The <a href="UnsafeStructure">Unsafe</a> structure and signature.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/sml-nj.mlb</code></p>
+<div class="paragraph">
+<p>The <a href="SMLofNJStructure">SMLofNJ</a> structure and signature.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb</code></p>
+<div class="paragraph">
+<p>Modules used by parsers built with <a href="MLYacc">MLYacc</a>.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/cml/cml.mlb</code></p>
+<div class="paragraph">
+<p><a href="ConcurrentML">ConcurrentML</a>, a library for message-passing concurrency.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb</code></p>
+<div class="paragraph">
+<p><a href="MLNLFFI">ML-NLFFI</a>, a library for foreign function interfaces.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/mlrisc-lib/&#8230;&#8203;</code></p>
+<div class="paragraph">
+<p><a href="MLRISCLibrary">MLRISCLibrary</a>, a library for retargetable and optimizing compiler back ends.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/smlnj-lib/&#8230;&#8203;</code></p>
+<div class="paragraph">
+<p><a href="SMLNJLibrary">SMLNJLibrary</a>, a collection of libraries distributed with SML/NJ.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/ckit-lib/ckit-lib.mlb</code></p>
+<div class="paragraph">
+<p><a href="CKitLibrary">CKitLibrary</a>, a library for C source code.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/mllpt-lib/mllpt-lib.mlb</code></p>
+<div class="paragraph">
+<p><a href="MLLPTLibrary">MLLPTLibrary</a>, a support library for the <a href="MLULex">MLULex</a> scanner generator and the <a href="MLAntlr">MLAntlr</a> parser generator.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_basis_fragments">Basis fragments</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are a number of specialized ML Basis files for importing
+fragments of the <a href="BasisLibrary">Basis Library</a> that can not be
+expressed within SML.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>$(SML_LIB)/basis/pervasive-types.mlb</code></p>
+<div class="paragraph">
+<p>The top-level types and constructors of the Basis Library.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/pervasive-exns.mlb</code></p>
+<div class="paragraph">
+<p>The top-level exception constructors of the Basis Library.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/pervasive-vals.mlb</code></p>
+<div class="paragraph">
+<p>The top-level values of the Basis Library, without infix status.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/overloads.mlb</code></p>
+<div class="paragraph">
+<p>The top-level overloaded values of the Basis Library, without infix status.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/equal.mlb</code></p>
+<div class="paragraph">
+<p>The polymorphic equality <code>=</code> and inequality <code>&lt;&gt;</code> values, without infix status.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/infixes.mlb</code></p>
+<div class="paragraph">
+<p>The infix declarations of the Basis Library.</p>
+</div>
+</li>
+<li>
+<p><code>$(SML_LIB)/basis/pervasive.mlb</code></p>
+<div class="paragraph">
+<p>The entire top-level value and type environment of the Basis Library, with infix status.  This is the same as importing the above six MLB files.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLBasisAvailableLibraries.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLBasisAvailableLibraries.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

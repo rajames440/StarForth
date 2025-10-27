@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonIntInf</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonIntInf</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_INT_INF</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">int</span>
+
+      <span class="kr">val</span> <span class="nv">areSmall</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+      <span class="kr">val</span> <span class="nv">gcd</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">isSmall</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+
+      <span class="kr">structure</span> <span class="nn">BigWord</span> <span class="p">:</span> <span class="n">WORD</span>
+      <span class="kr">structure</span> <span class="nn">SmallInt</span> <span class="p">:</span> <span class="n">INTEGER</span>
+      <span class="kr">datatype</span> <span class="kt">rep</span> <span class="p">=</span>
+         <span class="nc">Big</span> <span class="kr">of</span> <span class="nn">BigWord</span><span class="p">.</span><span class="n">word</span> <span class="n">vector</span>
+       <span class="p">|</span> <span class="nc">Small</span> <span class="kr">of</span> <span class="nn">SmallInt</span><span class="p">.</span><span class="n">int</span>
+      <span class="kr">val</span> <span class="nv">rep</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">rep</span>
+      <span class="kr">val</span> <span class="nv">fromRep</span> <span class="p">:</span> <span class="n">rep</span> <span class="p">-&gt;</span> <span class="n">t</span> <span class="n">option</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton represents an arbitrary precision integer either as an unboxed
+word with the bottom bit set to 1 and the top bits representing a
+small signed integer, or as a pointer to a vector of words, where the
+first word indicates the sign and the rest are the limbs of a
+<a href="GMP">GMP</a> big integer.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>type t</code></p>
+<div class="paragraph">
+<p>the same as type <code>IntInf.int</code>.</p>
+</div>
+</li>
+<li>
+<p><code>areSmall (a, b)</code></p>
+<div class="paragraph">
+<p>returns true iff both <code>a</code> and <code>b</code> are small.</p>
+</div>
+</li>
+<li>
+<p><code>gcd (a, b)</code></p>
+<div class="paragraph">
+<p>uses <a href="GMP">GMP&#8217;s</a> fast gcd implementation.</p>
+</div>
+</li>
+<li>
+<p><code>isSmall a</code></p>
+<div class="paragraph">
+<p>returns true iff <code>a</code> is small.</p>
+</div>
+</li>
+<li>
+<p><code>BigWord : WORD</code></p>
+<div class="paragraph">
+<p>representation of a big <code>IntInf.int</code> as a vector of words; on 32-bit
+platforms, <code>BigWord</code> is likely to be equivalent to <code>Word32</code>, and on
+64-bit platforms, <code>BigWord</code> is likely to be equivalent to <code>Word64</code>.</p>
+</div>
+</li>
+<li>
+<p><code>SmallInt : INTEGER</code></p>
+<div class="paragraph">
+<p>representation of a small <code>IntInf.int</code> as a signed integer; on 32-bit
+platforms, <code>SmallInt</code> is likely to be equivalent to <code>Int32</code>, and on
+64-bit platforms, <code>SmallInt</code> is likely to be equivalent to <code>Int64</code>.</p>
+</div>
+</li>
+<li>
+<p><code>datatype rep</code></p>
+<div class="paragraph">
+<p>the underlying representation of an <code>IntInf.int</code>.</p>
+</div>
+</li>
+<li>
+<p><code>rep i</code></p>
+<div class="paragraph">
+<p>returns the underlying representation of <code>i</code>.</p>
+</div>
+</li>
+<li>
+<p><code>fromRep r</code></p>
+<div class="paragraph">
+<p>converts from the underlying representation back to an <code>IntInf.int</code>.
+If <code>fromRep r</code> is given anything besides the valid result of <code>rep i</code>
+for some <code>i</code>, this function call will return <code>NONE</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonIntInf.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonIntInf.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

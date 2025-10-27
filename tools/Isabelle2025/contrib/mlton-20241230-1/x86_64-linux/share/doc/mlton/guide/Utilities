@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Utilities</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Utilities</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>This page is a collection of basic utilities used in the examples on
+various pages.  See</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="InfixingOperators">InfixingOperators</a>, and</p>
+</li>
+<li>
+<p><a href="ProductType">ProductType</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>for longer discussions on some of these utilities.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="c">(*</span><span class="cm"> Operator precedence table *)</span>
+<span class="kr">infix</span>   <span class="mi">8</span>  <span class="n">*</span> <span class="n">/</span> <span class="n">div</span> <span class="n">mod</span>        <span class="c">(*</span><span class="cm"> +1 from Basis Library *)</span>
+<span class="kr">infix</span>   <span class="mi">7</span>  <span class="n">+</span> <span class="n">-</span> <span class="n">^</span>              <span class="c">(*</span><span class="cm"> +1 from Basis Library *)</span>
+<span class="kr">infixr</span>  <span class="mi">6</span>  <span class="n">::</span> <span class="n">@</span>               <span class="c">(*</span><span class="cm"> +1 from Basis Library *)</span>
+<span class="kr">infix</span>   <span class="mi">5</span>  <span class="p">=</span> <span class="n">&lt;&gt;</span> <span class="n">&gt;</span> <span class="n">&gt;=</span> <span class="n">&lt;</span> <span class="n">&lt;=</span>     <span class="c">(*</span><span class="cm"> +1 from Basis Library *)</span>
+<span class="kr">infix</span>   <span class="mi">4</span>  <span class="n">&lt;\</span> <span class="n">\&gt;</span>
+<span class="kr">infixr</span>  <span class="mi">4</span>  <span class="n">&lt;/</span> <span class="n">/&gt;</span>
+<span class="kr">infix</span>   <span class="mi">3</span>  <span class="n">o</span>
+<span class="kr">infix</span>   <span class="mi">2</span>  <span class="n">&gt;|</span>
+<span class="kr">infixr</span>  <span class="mi">2</span>  <span class="n">|&lt;</span>
+<span class="kr">infix</span>   <span class="mi">1</span>  <span class="n">:=</span>                 <span class="c">(*</span><span class="cm"> -2 from Basis Library *)</span>
+<span class="kr">infix</span>   <span class="mi">0</span>  <span class="n">before</span> <span class="n">&amp;</span>
+
+<span class="c">(*</span><span class="cm"> Some basic combinators *)</span>
+<span class="kr">fun</span> <span class="nf">const</span> <span class="n">x</span> <span class="p">_</span> <span class="p">=</span> <span class="n">x</span>
+<span class="kr">fun</span> <span class="nf">cross</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=</span> <span class="p">(</span><span class="n">f</span> <span class="n">x</span><span class="p">,</span> <span class="n">g</span> <span class="n">y</span><span class="p">)</span>
+<span class="kr">fun</span> <span class="nf">curry</span> <span class="n">f</span> <span class="n">x</span> <span class="n">y</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="kr">fun</span> <span class="nf">fail</span> <span class="n">e</span> <span class="p">_</span> <span class="p">=</span> <span class="kr">raise</span> <span class="n">e</span>
+<span class="kr">fun</span> <span class="nf">id</span> <span class="n">x</span> <span class="p">=</span> <span class="n">x</span>
+
+<span class="c">(*</span><span class="cm"> Product type *)</span>
+<span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">product</span> <span class="p">=</span> <span class="nc">&amp;</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span>
+
+<span class="c">(*</span><span class="cm"> Sum type *)</span>
+<span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">sum</span> <span class="p">=</span> <span class="nc">INL</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="p">|</span> <span class="nc">INR</span> <span class="kr">of</span> <span class="nd">'b</span>
+
+<span class="c">(*</span><span class="cm"> Some type shorthands *)</span>
+<span class="kr">type</span> <span class="nd">'a</span> <span class="kt">uop</span> <span class="p">=</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+<span class="kr">type</span> <span class="nd">'a</span> <span class="kt">fix</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">uop</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+<span class="kr">type</span> <span class="nd">'a</span> <span class="kt">thunk</span> <span class="p">=</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+<span class="kr">type</span> <span class="nd">'a</span> <span class="kt">effect</span> <span class="p">=</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+<span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">emb</span> <span class="p">=</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span>
+
+<span class="c">(*</span><span class="cm"> Infixing, sectioning, and application operators *)</span>
+<span class="kr">fun</span> <span class="nf">x</span> <span class="n">&lt;\</span> <span class="n">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">y</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="kr">fun</span> <span class="nf">f</span> <span class="n">\&gt;</span> <span class="n">y</span> <span class="p">=</span> <span class="n">f</span> <span class="n">y</span>
+<span class="kr">fun</span> <span class="nf">f</span> <span class="n">/&gt;</span> <span class="n">y</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="kr">fun</span> <span class="nf">x</span> <span class="n">&lt;/</span> <span class="n">f</span> <span class="p">=</span> <span class="n">f</span> <span class="n">x</span>
+
+<span class="c">(*</span><span class="cm"> Piping operators *)</span>
+<span class="kr">val</span> <span class="nv">op</span><span class="n">&gt;|</span> <span class="p">=</span> <span class="kr">op</span><span class="n">&lt;/</span>
+<span class="kr">val</span> <span class="nv">op</span><span class="n">|&lt;</span> <span class="p">=</span> <span class="kr">op</span><span class="n">\&gt;</span></code></pre>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Utilities.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Utilities.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

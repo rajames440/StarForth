@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CompilingWithSMLNJ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CompilingWithSMLNJ</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>You can compile MLton with <a href="SMLNJ">SML/NJ</a>, however the resulting
+compiler will run much more slowly than MLton compiled by itself.  We
+don&#8217;t recommend using SML/NJ as a means of
+<a href="PortingMLton">porting MLton</a> to a new platform or bootstrapping on a
+new platform.</p>
+</div>
+<div class="paragraph">
+<p>If you do want to build MLton with SML/NJ, it is best to have a binary
+MLton package installed.  If you don&#8217;t, here are some issues you may
+encounter when you run <code>make smlnj-mlton</code>.</p>
+</div>
+<div class="paragraph">
+<p>You will get (many copies of) the error messages:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>/bin/sh: mlton: command not found</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>make[2]: mlton: Command not found</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>Makefile</code> calls <code>mlton</code> to determine dependencies, and can
+proceed in spite of this error.</p>
+</div>
+<div class="paragraph">
+<p>If you don&#8217;t have an <code>mllex</code> executable, you will get the error
+message:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>mllex: Command not found</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Building MLton requires <code>mllex</code> and <code>mlyacc</code> executables, which are
+distributed with a binary package of MLton.  The easiest solution is
+to copy the front-end lexer/parser files from a different machine
+(<code>ml.grm.sml</code>, <code>ml.grm.sig</code>, <code>ml.lex.sml</code>, <code>mlb.grm.sig</code>,
+<code>mlb.grm.sml</code>).</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CompilingWithSMLNJ.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CompilingWithSMLNJ.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

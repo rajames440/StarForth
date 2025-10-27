@@ -1,0 +1,498 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
+in
+
+local
+  basis l33 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l33
+   in
+      structure gs_0 = Char
+      structure gs_1 = CharArray
+      structure gs_2 = CharVector
+      structure gs_3 = FixedInt
+      structure gs_4 = General
+      structure gs_5 = Int
+      structure gs_6 = Int32
+      structure gs_7 = Int64
+      structure gs_8 = IntInf
+      structure gs_9 = LargeInt
+      structure gs_10 = LargeReal
+      structure gs_11 = LargeWord
+      structure gs_12 = OS
+      structure gs_13 = Position
+      structure gs_14 = Real
+      structure gs_15 = Real64
+      structure gs_16 = RealArray
+      structure gs_17 = RealArraySlice
+      structure gs_18 = RealVector
+      structure gs_19 = RealVectorSlice
+      structure gs_20 = SMLofNJ
+      structure gs_21 = Socket
+      structure gs_22 = String
+      structure gs_23 = Substring
+      structure gs_24 = SysWord
+      structure gs_25 = Time
+      structure gs_26 = Word
+      structure gs_27 = Word32
+      structure gs_28 = Word64
+      structure gs_29 = Word8
+   end
+   local
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../library/line-break.sml
+   in
+      signature gs_30 = LINE_BREAK
+      structure gs_31 = LineBreak
+   end
+   local
+      ../library/cache.sml
+   in
+      signature gs_32 = CACHE_REF
+      structure gs_33 = CacheRef
+   end
+   local
+      ../library/catlist.sml
+   in
+      signature gs_34 = CATNETABLE_LIST
+      structure gs_35 = CatnetableList
+   end
+   local
+      ../library/annotations.sig
+   in
+      signature gs_36 = ANNOTATIONS
+   end
+   local
+      signature ANNOTATIONS = gs_36
+      ../library/annotations.sml
+   in
+      structure gs_37 = Annotations
+   end
+   local
+      ../library/sortedlist.sml
+   in
+      structure gs_38 = SortedList
+   end
+   local
+      open l33
+   in
+      structure gs_39 = List
+   end
+   local
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure List = gs_39
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../library/probability.sml
+   in
+      signature gs_40 = PROBABILITY
+      structure gs_41 = Probability
+   end
+   local
+      open l33
+   in
+      structure gs_42 = TextPrimIO
+   end
+   local
+      open l33
+   in
+      structure gs_43 = TextIO
+   end
+   local
+      open l33
+   in
+      structure gs_44 = CharArraySlice
+   end
+   local
+      open l33
+   in
+      structure gs_45 = CharVectorSlice
+   end
+   local
+      open l33
+   in
+      structure gs_46 = IO
+   end
+   local
+      structure TextIO = gs_43
+      ../library/stringOutStream.sig
+   in
+      signature gs_47 = STRING_OUTSTREAM
+   end
+   local
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharArraySlice = gs_44
+      structure CharVector = gs_2
+      structure CharVectorSlice = gs_45
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure IO = gs_46
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure List = gs_39
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      signature STRING_OUTSTREAM = gs_47
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure TextIO = gs_43
+      structure TextPrimIO = gs_42
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../library/stringOutStream.sml
+   in
+      structure gs_48 = StringOutStream
+   end
+   local
+      open l33
+   in
+      signature gs_49 = INTEGER
+   end
+   local
+      signature INTEGER = gs_49
+      ../library/freq.sig
+   in
+      signature gs_50 = FREQ
+   end
+   local
+      ../library/array-noneq.sig
+   in
+      signature gs_51 = ARRAY_NONEQ
+   end
+   local
+      ../library/priQueue.sig
+   in
+      signature gs_52 = PRIORITY_QUEUE
+   end
+   local
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure OS = gs_12
+      signature PRIORITY_QUEUE = gs_52
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../library/priQueue.sml
+   in
+      structure gs_53 = PriorityQueue
+   end
+   local
+      open l33
+   in
+      structure gs_54 = Word8Array
+   end
+   local
+      ../library/bitset.sig
+   in
+      signature gs_55 = BITSET
+   end
+   local
+      signature BITSET = gs_55
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      structure Word8Array = gs_54
+      ../library/bitset.sml
+   in
+      structure gs_56 = BitSet
+   end
+   local
+      open l33
+   in
+      structure gs_57 = ArraySlice
+   end
+   local
+      open l33
+   in
+      structure gs_58 = Array
+   end
+   local
+      open l33
+   in
+      structure gs_59 = Vector
+   end
+   local
+      signature ARRAY_NONEQ = gs_51
+      structure Array = gs_58
+      structure ArraySlice = gs_57
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Vector = gs_59
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../library/dynamic-array.sml
+   in
+      structure gs_60 = DynArray
+   end
+   local
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      signature FREQ = gs_50
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../library/freq.sml
+   in
+      structure gs_61 = Freq
+   end
+   local
+      signature ARRAY_NONEQ = gs_51
+      structure Array = gs_58
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure List = gs_39
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Vector = gs_59
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../library/hash-array.sml
+   in
+      structure gs_62 = HashArray
+   end
+   local
+      structure Array = gs_58
+      signature PRIORITY_QUEUE = gs_52
+      ../library/heap.sml
+   in
+      structure gs_63 = PriorityHeap
+   end
+in
+   signature ANNOTATIONS = gs_36
+   signature ARRAY_NONEQ = gs_51
+   structure Annotations = gs_37
+   signature BITSET = gs_55
+   structure BitSet = gs_56
+   signature CACHE_REF = gs_32
+   signature CATNETABLE_LIST = gs_34
+   structure CacheRef = gs_33
+   structure CatnetableList = gs_35
+   structure DynArray = gs_60
+   signature FREQ = gs_50
+   structure Freq = gs_61
+   structure HashArray = gs_62
+   signature LINE_BREAK = gs_30
+   structure LineBreak = gs_31
+   signature PRIORITY_QUEUE = gs_52
+   signature PROBABILITY = gs_40
+   structure PriorityHeap = gs_63
+   structure PriorityQueue = gs_53
+   structure Probability = gs_41
+   signature STRING_OUTSTREAM = gs_47
+   structure SortedList = gs_38
+   structure StringOutStream = gs_48
+end
+end
+
+end

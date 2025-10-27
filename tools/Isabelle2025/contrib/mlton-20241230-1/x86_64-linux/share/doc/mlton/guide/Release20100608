@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Release20100608</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Release20100608</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an archived public release of MLton, version 20100608.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_the_last_public_release">Changes since the last public release</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>New platforms.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnAMD64">AMD64</a>/<a href="RunningOnDarwin">Darwin</a> (Mac OS X Snow Leopard)</p>
+</li>
+<li>
+<p><a href="RunningOnIA64">IA64</a>/<a href="RunningOnHPUX">HPUX</a></p>
+</li>
+<li>
+<p><a href="RunningOnPowerPC64">PowerPC64</a>/<a href="RunningOnAIX">AIX</a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Compiler.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="CompileTimeOptions">Command-line switches</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>-mlb-path-var <em>&lt;name&gt; &lt;value&gt;</em></code></p>
+</li>
+<li>
+<p>Removed: <code>-keep sml</code>, <code>-stop sml</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Improved constant folding of floating-point operations.</p>
+</li>
+<li>
+<p>Experimental: Support for compiling to a C library; see <a href="LibrarySupport">documentation</a>.</p>
+</li>
+<li>
+<p>Extended <code>-show-def-use <em>output</em></code> to include types of variable definitions.</p>
+</li>
+<li>
+<p>Deprecated features (to be removed in a future release)</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Bytecode codegen: The bytecode codegen has not seen significant use and it is not well understood by any of the active developers.</p>
+</li>
+<li>
+<p>Support for <code>.cm</code> files as input: The ML Basis system provides much better infrastructure for "programming in the very large" than the (very) limited support for CM.  The <code>cm2mlb</code> tool (available in the source distribution) can be used to convert CM projects to MLB projects, preserving the CM scoping of module identifiers.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Bug fixes: see <a href="https://raw.github.com/MLton/mlton/on-20100608-release/doc/changelog"><code>changelog</code></a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Runtime.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunTimeOptions">@MLton switches</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>may-page-heap {false|true}</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>may-page-heap</code>: By default, MLton will not page the heap to disk when unable to grow the heap to accommodate an allocation. (Previously, this behavior was the default, with no means to disable, with security an least-surprise issues.)</p>
+</li>
+<li>
+<p>Bug fixes: see <a href="https://raw.github.com/MLton/mlton/on-20100608-release/doc/changelog"><code>changelog</code></a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Language.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Allow numeric characters in <a href="MLBasis">ML Basis</a> path variables.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="BasisLibrary">Basis Library</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Bug fixes: see <a href="https://raw.github.com/MLton/mlton/on-20100608-release/doc/changelog"><code>changelog</code></a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="MLtonStructure">MLton structure</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>MLton.equal</code>, <code>MLton.hash</code>, <code>MLton.Cont.isolate</code>, <code>MLton.GC.Statistics</code>, <code>MLton.Pointer.sizeofPointer</code>, <code>MLton.Socket.Address.toVector</code></p>
+</li>
+<li>
+<p>Changed:</p>
+</li>
+<li>
+<p>Deprecated: <code>MLton.Socket</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="UnsafeStructure">Unsafe structure</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added versions of all of the monomorphic array and vector structures.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Updated: <a href="CKitLibrary">ckit library</a>, <a href="MLRISCLibrary">MLRISC library</a>, <a href="SMLNJLibrary">SML/NJ library</a>.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Tools.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>mllex</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Eliminated top-level <code>type int = Int.int</code> in output.</p>
+</li>
+<li>
+<p>Include <code>(*#line line:col "file.lex" *)</code> directives in output.</p>
+</li>
+<li>
+<p>Added <code>%posint</code> command, to set the <code>yypos</code> type and allow the lexing of multi-gigabyte files.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>mlnlffigen</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added command-line switches <code>-linkage archive</code> and <code>-linkage shared</code>.</p>
+</li>
+<li>
+<p>Deprecated command-line switch <code>-linkage static</code>.</p>
+</li>
+<li>
+<p>Added support for <a href="RunningOnIA64">IA64</a> and <a href="RunningOnHPPA">HPPA</a> targets.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>mlyacc</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Eliminated top-level <code>type int = Int.int</code> in output.</p>
+</li>
+<li>
+<p>Include <code>(*#line line:col "file.grm" *)</code> directives in output.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a complete list of changes and bug fixes since <a href="Release20070826">Release20070826</a>, see the
+<a href="https://raw.github.com/MLton/mlton/on-20100608-release/doc/changelog"><code>changelog</code></a>
+and <a href="Bugs20070826">Bugs20070826</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20100608_binary_packages">20100608 binary packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>AMD64 (aka "x86-64" or "x64")</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-macports.tgz">Darwin (.tgz)</a> 10.3 (Mac OS X Snow Leopard), dynamically linked against <a href="GMP">GMP</a> in <code>/opt/local/lib</code> (suitable for <a href="http://macports.org">MacPorts</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-static.tgz">Darwin (.tgz)</a> 10.3 (Mac OS X Snow Leopard), statically linked against <a href="GMP">GMP</a> (but requires <a href="GMP">GMP</a> for generated executables)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-linux.tgz">Linux</a>, glibc 2.11</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-linux.static.tgz">Linux</a>, statically linked</p>
+</li>
+<li>
+<p>Windows MinGW 32/64 <a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.exe">self-extracting</a> (28MB) or <a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.msi">MSI</a> (61MB) installer</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>X86</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-cygwin.tgz">Cygwin</a> 1.7.5</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-macports.tgz">Darwin (.tgz)</a> 9.8 (Mac OS X Leopard), dynamically linked against <a href="GMP">GMP</a> in <code>/opt/local/lib</code> (suitable for <a href="http://macports.org">MacPorts</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-static.tgz">Darwin (.tgz)</a> 9.8 (Mac OS X Leopard), statically linked against <a href="GMP">GMP</a> (but requires <a href="GMP">GMP</a> for generated executables)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-linux.tgz">Linux</a>, glibc 2.11</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-linux.static.tgz">Linux</a>, statically linked</p>
+</li>
+<li>
+<p>Windows MinGW 32/64 <a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.exe">self-extracting</a> (28MB) or <a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.msi">MSI</a> (61MB) installer</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20100608_source_packages">20100608 source packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608.src.tgz">mlton-20100608.src.tgz</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_packages_available_at_other_sites">Packages available at other sites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://packages.debian.org/search?keywords=mlton&amp;searchon=names&amp;suite=all&amp;section=all">Debian</a></p>
+</li>
+<li>
+<p><a href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all">FreeBSD</a></p>
+</li>
+<li>
+<p><a href="https://admin.fedoraproject.org/pkgdb/acls/name/mlton">Fedora</a></p>
+</li>
+<li>
+<p><a href="http://packages.ubuntu.com/search?suite=default&amp;section=all&amp;arch=any&amp;searchon=names&amp;keywords=mlton">Ubuntu</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Bugs20100608">Bugs20100608</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/guide/20100608/">MLton Guide (20100608)</a>.</p>
+<div class="paragraph">
+<p>A snapshot of the MLton wiki at the time of release.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Release20100608.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Release20100608.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

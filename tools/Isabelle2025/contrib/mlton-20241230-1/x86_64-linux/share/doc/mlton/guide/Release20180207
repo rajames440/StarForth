@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Release20180207</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Release20180207</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an archived public release of MLton, version 20180207.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_the_last_public_release">Changes since the last public release</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Compiler.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added an experimental LLVM codegen (<code>-codegen llvm</code>); requires LLVM tools
+(<code>llvm-as</code>, <code>opt</code>, <code>llc</code>) version &ge; 3.7.</p>
+</li>
+<li>
+<p>Made many substantial cosmetic improvements to front-end diagnostic
+messages, especially with respect to source location regions, type inference
+for <code>fun</code> and <code>val rec</code> declarations, signature constraints applied to a
+structure, <code>sharing type</code> specifications and <code>where type</code> signature
+expressions, type constructor or type variable escaping scope, and
+nonexhaustive pattern matching.</p>
+</li>
+<li>
+<p>Fixed minor bugs with exception replication, precedence parsing of function
+clauses, and simultaneous <code>sharing</code> of multiple structures.</p>
+</li>
+<li>
+<p>Made compilation deterministic (eliminate output executable name from
+compile-time specified <code>@MLton</code> runtime arguments; deterministically generate
+magic constant for executable).</p>
+</li>
+<li>
+<p>Updated <code>-show-basis</code> (recursively expand structures in environments,
+displaying components with long identifiers; append <code>(* @ region *)</code>
+annotations to items shown in environment).</p>
+</li>
+<li>
+<p>Forced amd64 codegen to generate PIC on amd64-linux targets.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Runtime.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added <code>gc-summary-file file</code> runtime option.</p>
+</li>
+<li>
+<p>Reorganized runtime support for <code>IntInf</code> operations so that programs that
+do not use <code>IntInf</code> compile to executables with no residual dependency on GMP.</p>
+</li>
+<li>
+<p>Changed heap representation to store forwarding pointer for an object in
+the object header (rather than in the object data and setting the header to a
+sentinel value).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Language.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added support for selected SuccessorML features; see
+<a href="http://mlton.org/SuccessorML" class="bare">http://mlton.org/SuccessorML</a> for details.</p>
+</li>
+<li>
+<p>Added <code>(*#showBasis "file" *)</code> directive; see
+<a href="http://mlton.org/ShowBasisDirective" class="bare">http://mlton.org/ShowBasisDirective</a> for details.</p>
+</li>
+<li>
+<p>FFI:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added <code>pure</code>, <code>impure</code>, and <code>reentrant</code> attributes to <code>_import</code>.  An
+unattributed <code>_import</code> is treated as <code>impure</code>.  A <code>pure</code> <code>_import</code> may be
+subject to more aggressive optimizations (common subexpression elimination,
+dead-code elimination).  An <code>_import</code>-ed C function that (directly or
+indirectly) calls an <code>_export</code>-ed SML function should be attributed
+<code>reentrant</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>ML Basis annotations.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added <code>allowSuccessorML {false|true}</code> to enable all SuccessorML features
+and other annotations to enable specific SuccessorML features; see
+<a href="http://mlton.org/SuccessorML" class="bare">http://mlton.org/SuccessorML</a> for details.</p>
+</li>
+<li>
+<p>Split <code>nonexhaustiveMatch {warn|error|igore}</code> and <code>redundantMatch
+{warn|error|ignore}</code> into <code>nonexhaustiveMatch</code> and <code>redundantMatch</code>
+(controls diagnostics for <code>case</code> expressions, <code>fn</code> expressions, and <code>fun</code>
+declarations (which may raise <code>Match</code> on failure)) and <code>nonexhaustiveBind</code>
+and <code>redundantBind</code> (controls diagnostics for <code>val</code> declarations (which may
+raise <code>Bind</code> on failure)).</p>
+</li>
+<li>
+<p>Added <code>valrecConstr {warn|error|ignore}</code> to report when a <code>val rec</code> (or
+<code>fun</code>) declaration redefines an identifier that previously had constructor
+status.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Basis Library.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Improved performance of <code>Array.copy</code>, <code>Array.copyVec</code>, <code>Vector.append</code>,
+<code>String.^</code>, <code>String.concat</code>, <code>String.concatWith</code>, and other related
+functions by using <code>memmove</code> rather than element-by-element constructions.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>Unsafe</code> structure.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added unsafe operations for array uninitialization and raw arrays; see
+<a href="https://github.com/MLton/mlton/pull/207" class="bare">https://github.com/MLton/mlton/pull/207</a> for details.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Tools.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>mlnlffigen</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Updated to warn and skip (rather than abort) when encountering functions
+with <code>struct</code>/<code>union</code> argument or return type.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a complete list of changes and bug fixes since
+<a href="Release20130715">Release20130715</a>, see the
+<a href="https://github.com/MLton/mlton/blob/on-20180207-release/CHANGELOG.adoc"><code>CHANGELOG.adoc</code></a> and
+<a href="Bugs20130715">Bugs20130715</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20180207_binary_packages">20180207 binary packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>AMD64 (aka "x86-64" or "x64")</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-darwin.gmp-homebrew.tgz">Darwin (.tgz)</a> 16.7 (Mac OS X Sierra), dynamically linked against <a href="GMP">GMP</a> in <code>/usr/local/lib</code> (suitable for <a href="https://brew.sh/">Homebrew</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-darwin.gmp-static.tgz">Darwin (.tgz)</a> 16.7 (Mac OS X Sierra), statically linked against <a href="GMP">GMP</a> (but requires <a href="GMP">GMP</a> for generated executables)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-linux.tgz">Linux</a>, glibc 2.23</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20180207_source_packages">20180207 source packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207.src.tgz">mlton-20180207.src.tgz</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Bugs20180207">Bugs20180207</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/guide/20180207/">MLton Guide (20180207)</a>.</p>
+<div class="paragraph">
+<p>A snapshot of the MLton website at the time of release.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Release20180207.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Release20180207.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

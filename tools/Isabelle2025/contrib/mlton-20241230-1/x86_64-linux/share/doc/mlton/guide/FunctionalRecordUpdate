@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>FunctionalRecordUpdate</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>FunctionalRecordUpdate</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Functional record update is the copying of a record while replacing
+the values of some of the fields.  <a href="StandardML">Standard ML</a> does not
+have explicit syntax for functional record update.  We will show below
+how to implement functional record update in SML, with a little
+boilerplate code.</p>
+</div>
+<div class="paragraph">
+<p>As an example, the functional update of the record</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="mi">13</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="mi">14</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="mi">15</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>with <code>c = 16</code> yields a new record</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="mi">13</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="mi">14</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="mi">16</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Functional record update also makes sense with multiple simultaneous
+updates.  For example, the functional update of the record above with
+<code>a = 18, c = 19</code> yields a new record</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="mi">18</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="mi">14</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="mi">19</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One could easily imagine an extension of the SML that supports
+functional record update.  For example</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">e</span> <span class="kr">with</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="mi">16</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="mi">17</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>would create a copy of the record denoted by <code>e</code> with field <code>a</code>
+replaced with <code>16</code> and <code>b</code> replaced with <code>17</code>.</p>
+</div>
+<div class="paragraph">
+<p>Since there is no such syntax in SML, we now show how to implement
+functional record update directly.  We first give a simple
+implementation that has a number of problems.  We then give an
+advanced implementation, that, while complex underneath, is a reusable
+library that admits simple use.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_simple_implementation">Simple implementation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To support functional record update on the record type</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="nd">'a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nd">'b</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="nd">'c</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>first, define an update function for each component.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">withA</span> <span class="p">({</span><span class="n">a</span> <span class="p">=</span> <span class="p">_,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">},</span> <span class="n">a</span><span class="p">)</span> <span class="p">=</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="n">c</span><span class="p">}</span>
+<span class="kr">fun</span> <span class="nf">withB</span> <span class="p">({</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="p">_,</span> <span class="n">c</span><span class="p">},</span> <span class="n">b</span><span class="p">)</span> <span class="p">=</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="n">c</span><span class="p">}</span>
+<span class="kr">fun</span> <span class="nf">withC</span> <span class="p">({</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="p">_},</span> <span class="n">c</span><span class="p">)</span> <span class="p">=</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="n">c</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then, one can express <code>e with {a = 16, b = 17}</code> as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">withB</span> <span class="p">(</span><span class="n">withA</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span> <span class="mi">17</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With infix notation</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">infix</span> <span class="n">withA</span> <span class="n">withB</span> <span class="n">withC</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>the syntax is almost as concise as a language extension.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">e</span> <span class="n">withA</span> <span class="mi">16</span> <span class="n">withB</span> <span class="mi">17</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This approach suffers from the fact that the amount of boilerplate
+code is quadratic in the number of record fields.  Furthermore,
+changing, adding, or deleting a field requires time proportional to
+the number of fields (because each <code>with<em>&lt;L&gt;</em></code> function must be
+changed).  It is also annoying to have to define a <code>with<em>&lt;L&gt;</em></code>
+function, possibly with a fixity declaration, for each field.</p>
+</div>
+<div class="paragraph">
+<p>Fortunately, there is a solution to these problems.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_advanced_implementation">Advanced implementation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Using <a href="Fold">Fold</a> one can define a family of <code>makeUpdate<em>&lt;N&gt;</em></code>
+functions and single <em>update</em> operator <code>U</code> so that one can define a
+functional record update function for any record type simply by
+specifying a (trivial) isomorphism between that type and function
+argument list.  For example, suppose that we would like to do
+functional record update on records with fields <code>a</code> and <code>b</code>.  Then one
+defines a function <code>updateAB</code> as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">updateAB</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">fun</span> <span class="nf">from</span> <span class="n">v1</span> <span class="n">v2</span> <span class="p">=</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="n">v1</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="n">v2</span><span class="p">}</span>
+      <span class="kr">fun</span> <span class="nf">to</span> <span class="n">f</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="n">v1</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="n">v2</span><span class="p">}</span> <span class="p">=</span> <span class="n">f</span> <span class="n">v1</span> <span class="n">v2</span>
+   <span class="kr">in</span>
+      <span class="n">makeUpdate2</span> <span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
+   <span class="kr">end</span>
+   <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The functions <code>from</code> (think <em>from function arguments</em>) and <code>to</code> (think
+<em>to function arguements</em>) specify an isomorphism between <code>a</code>,<code>b</code>
+records and function arguments.  There is a second use of <code>from</code> to
+work around the lack of
+<a href="FirstClassPolymorphism">first-class polymorphism</a> in SML.</p>
+</div>
+<div class="paragraph">
+<p>With the definition of <code>updateAB</code> in place, the following expressions
+are valid.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">updateAB</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="mi">13</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="s2">"hello"</span><span class="p">}</span> <span class="p">(</span><span class="n">set</span><span class="nl">#b</span> <span class="s2">"goodbye"</span><span class="p">)</span> <span class="n">$</span>
+<span class="n">updateAB</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="mf">13.5</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="n">true</span><span class="p">}</span> <span class="p">(</span><span class="n">set</span><span class="nl">#b</span> <span class="n">false</span><span class="p">)</span> <span class="p">(</span><span class="n">set</span><span class="nl">#a</span> <span class="mf">12.5</span><span class="p">)</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As another example, suppose that we would like to do functional record
+update on records with fields <code>b</code>, <code>c</code>, and <code>d</code>.  Then one defines a
+function <code>updateBCD</code> as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">updateBCD</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">fun</span> <span class="nf">from</span> <span class="n">v1</span> <span class="n">v2</span> <span class="n">v3</span> <span class="p">=</span> <span class="p">{</span><span class="n">b</span> <span class="p">=</span> <span class="n">v1</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="n">v2</span><span class="p">,</span> <span class="n">d</span> <span class="p">=</span> <span class="n">v3</span><span class="p">}</span>
+      <span class="kr">fun</span> <span class="nf">to</span> <span class="n">f</span> <span class="p">{</span><span class="n">b</span> <span class="p">=</span> <span class="n">v1</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="n">v2</span><span class="p">,</span> <span class="n">d</span> <span class="p">=</span> <span class="n">v3</span><span class="p">}</span> <span class="p">=</span> <span class="n">f</span> <span class="n">v1</span> <span class="n">v2</span> <span class="n">v3</span>
+   <span class="kr">in</span>
+      <span class="n">makeUpdate3</span> <span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
+   <span class="kr">end</span>
+   <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With the definition of <code>updateBCD</code> in place, the following expression
+is valid.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">updateBCD</span> <span class="p">{</span><span class="n">b</span> <span class="p">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">d</span> <span class="p">=</span> <span class="mi">3</span><span class="p">}</span> <span class="p">(</span><span class="n">set</span><span class="nl">#c</span> <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="n">set</span><span class="nl">#c</span> <span class="mi">5</span><span class="p">)</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that not all fields need be updated and that the same field may
+be updated multiple times.  Further note that the same <code>set</code> operator
+is used for all update functions (in the above, for both <code>updateAB</code>
+and <code>updateBCD</code>).</p>
+</div>
+<div class="paragraph">
+<p>In general, to define a functional-record-update function on records
+with fields <code>f1</code>, <code>f2</code>, &#8230;&#8203;, <code>fN</code>, use the following template.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">update</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">fun</span> <span class="nf">from</span> <span class="n">v1</span> <span class="n">v2</span> <span class="p">...</span> <span class="n">vn</span> <span class="p">=</span> <span class="p">{</span><span class="n">f1</span> <span class="p">=</span> <span class="n">v1</span><span class="p">,</span> <span class="n">f2</span> <span class="p">=</span> <span class="n">v2</span><span class="p">,</span> <span class="p">...,</span> <span class="kr">fn</span> <span class="p">=</span> <span class="n">vn</span><span class="p">}</span>
+      <span class="kr">fun</span> <span class="nf">to</span> <span class="n">f</span> <span class="p">{</span><span class="n">f1</span> <span class="p">=</span> <span class="n">v1</span><span class="p">,</span> <span class="n">f2</span> <span class="p">=</span> <span class="n">v2</span><span class="p">,</span> <span class="p">...,</span> <span class="kr">fn</span> <span class="p">=</span> <span class="n">vn</span><span class="p">}</span> <span class="p">=</span> <span class="n">v1</span> <span class="n">v2</span> <span class="p">...</span> <span class="n">vn</span>
+   <span class="kr">in</span>
+      <span class="n">makeUpdateN</span> <span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
+   <span class="kr">end</span>
+   <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With this, one can update a record as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">update</span> <span class="p">{</span><span class="n">f1</span> <span class="p">=</span> <span class="n">v1</span><span class="p">,</span> <span class="p">...,</span> <span class="kr">fn</span> <span class="p">=</span> <span class="n">vn</span><span class="p">}</span> <span class="p">(</span><span class="n">set</span><span class="nl">#fi1</span> <span class="n">vi1</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">set</span><span class="nl">#fim</span> <span class="n">vim</span><span class="p">)</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_functionalrecordupdate_structure">The <code>FunctionalRecordUpdate</code> structure</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here is the implementation of functional record update.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">FunctionalRecordUpdate</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">local</span>
+         <span class="kr">fun</span> <span class="nf">next</span> <span class="n">g</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="n">x</span> <span class="p">=</span> <span class="n">g</span> <span class="p">(</span><span class="n">f</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+         <span class="kr">fun</span> <span class="nf">f1</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="n">x</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">z</span> <span class="n">x</span><span class="p">)</span>
+         <span class="kr">fun</span> <span class="nf">f2</span>  <span class="n">z</span> <span class="p">=</span> <span class="n">next</span> <span class="n">f1</span>  <span class="n">z</span>
+         <span class="kr">fun</span> <span class="nf">f3</span>  <span class="n">z</span> <span class="p">=</span> <span class="n">next</span> <span class="n">f2</span>  <span class="n">z</span>
+
+         <span class="kr">fun</span> <span class="nf">c0</span>  <span class="n">from</span> <span class="p">=</span> <span class="n">from</span>
+         <span class="kr">fun</span> <span class="nf">c1</span>  <span class="n">from</span> <span class="p">=</span> <span class="n">c0</span>  <span class="n">from</span> <span class="n">f1</span>
+         <span class="kr">fun</span> <span class="nf">c2</span>  <span class="n">from</span> <span class="p">=</span> <span class="n">c1</span>  <span class="n">from</span> <span class="n">f2</span>
+         <span class="kr">fun</span> <span class="nf">c3</span>  <span class="n">from</span> <span class="p">=</span> <span class="n">c2</span>  <span class="n">from</span> <span class="n">f3</span>
+
+         <span class="kr">fun</span> <span class="nf">makeUpdate</span> <span class="n">cX</span> <span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">from'</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span> <span class="n">record</span> <span class="p">=</span>
+            <span class="kr">let</span>
+               <span class="kr">fun</span> <span class="nf">ops</span> <span class="p">()</span> <span class="p">=</span> <span class="n">cX</span> <span class="n">from'</span>
+               <span class="kr">fun</span> <span class="nf">vars</span> <span class="n">f</span> <span class="p">=</span> <span class="n">to</span> <span class="n">f</span> <span class="n">record</span>
+            <span class="kr">in</span>
+               <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">((</span><span class="n">vars</span><span class="p">,</span> <span class="n">ops</span><span class="p">),</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">vars</span><span class="p">,</span> <span class="p">_)</span> <span class="p">=&gt;</span> <span class="n">vars</span> <span class="n">from</span><span class="p">)</span>
+            <span class="kr">end</span>
+      <span class="kr">in</span>
+         <span class="kr">fun</span> <span class="nf">makeUpdate0</span>  <span class="n">z</span> <span class="p">=</span> <span class="n">makeUpdate</span> <span class="n">c0</span>  <span class="n">z</span>
+         <span class="kr">fun</span> <span class="nf">makeUpdate1</span>  <span class="n">z</span> <span class="p">=</span> <span class="n">makeUpdate</span> <span class="n">c1</span>  <span class="n">z</span>
+         <span class="kr">fun</span> <span class="nf">makeUpdate2</span>  <span class="n">z</span> <span class="p">=</span> <span class="n">makeUpdate</span> <span class="n">c2</span>  <span class="n">z</span>
+         <span class="kr">fun</span> <span class="nf">makeUpdate3</span>  <span class="n">z</span> <span class="p">=</span> <span class="n">makeUpdate</span> <span class="n">c3</span>  <span class="n">z</span>
+
+         <span class="kr">fun</span> <span class="nf">upd</span> <span class="n">z</span> <span class="p">=</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step2</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="p">(</span><span class="n">vars</span><span class="p">,</span> <span class="n">ops</span><span class="p">))</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">out</span> <span class="p">=&gt;</span> <span class="n">vars</span> <span class="p">(</span><span class="n">s</span> <span class="p">(</span><span class="n">ops</span> <span class="p">())</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">f</span><span class="p">)),</span> <span class="n">ops</span><span class="p">))</span> <span class="n">z</span>
+         <span class="kr">fun</span> <span class="nf">set</span> <span class="n">z</span> <span class="p">=</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step2</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="n">vars</span><span class="p">,</span> <span class="n">ops</span><span class="p">))</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">out</span> <span class="p">=&gt;</span> <span class="n">vars</span> <span class="p">(</span><span class="n">s</span> <span class="p">(</span><span class="n">ops</span> <span class="p">())</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">)),</span> <span class="n">ops</span><span class="p">))</span> <span class="n">z</span>
+      <span class="kr">end</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The idea of <code>makeUpdate</code> is to build a record of functions which can
+replace the contents of one argument out of a list of arguments.  The
+functions <code>f<em>&lt;X&gt;</em></code> replace the 0th, 1st, &#8230;&#8203; argument with their
+argument <code>z</code>. The <code>c<em>&lt;X&gt;</em></code> functions pass the first <em>X</em> <code>f</code>
+functions to the record constructor.</p>
+</div>
+<div class="paragraph">
+<p>The <code>#field</code> notation of Standard ML allows us to select the map
+function which replaces the corresponding argument. By converting the
+record to an argument list, feeding that list through the selected map
+function and piping the list into the record constructor, functional
+record update is achieved.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_efficiency">Efficiency</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>With MLton, the efficiency of this approach is as good as one would
+expect with the special syntax.  Namely a sequence of updates will be
+optimized into a single record construction that copies the unchanged
+fields and fills in the changed fields with their new values.</p>
+</div>
+<div class="paragraph">
+<p>Before Sep 14, 2009, this page advocated an alternative implementation
+of <a href="#">FunctionalRecordUpdate</a>.  However, the old structure caused
+exponentially increasing compile times.  We advise you to switch to
+the newer version.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_applications">Applications</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Functional record update can be used to implement labelled
+<a href="OptionalArguments">optional arguments</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/FunctionalRecordUpdate.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/FunctionalRecordUpdate.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>VariableArityPolymorphism</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>VariableArityPolymorphism</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p><a href="StandardML">Standard ML</a> programmers often face the problem of how to
+provide a variable-arity polymorphic function.  For example, suppose
+one is defining a combinator library, e.g. for parsing or pickling.
+The signature for such a library might look something like the
+following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">COMBINATOR</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">int</span><span class="p">:</span> <span class="n">int</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">real</span><span class="p">:</span> <span class="n">real</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">string</span><span class="p">:</span> <span class="n">string</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">unit</span><span class="p">:</span> <span class="n">unit</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">tuple2</span><span class="p">:</span> <span class="nd">'a1</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a2</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a1</span> <span class="n">*</span> <span class="nd">'a2</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">tuple3</span><span class="p">:</span> <span class="nd">'a1</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a2</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a3</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a1</span> <span class="n">*</span> <span class="nd">'a2</span> <span class="n">*</span> <span class="nd">'a3</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">tuple4</span><span class="p">:</span> <span class="nd">'a1</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a2</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a3</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a4</span> <span class="n">t</span>
+                  <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a1</span> <span class="n">*</span> <span class="nd">'a2</span> <span class="n">*</span> <span class="nd">'a3</span> <span class="n">*</span> <span class="nd">'a4</span><span class="p">)</span> <span class="n">t</span>
+      <span class="p">...</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The question is how to define a variable-arity tuple combinator.
+Traditionally, the only way to take a variable number of arguments in
+SML is to put the arguments in a list (or vector) and pass that.  So,
+one might define a tuple combinator with the following signature.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">tupleN</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">list</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">list</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The problem with this approach is that as soon as one places values in
+a list, they must all have the same type.  So, programmers often take
+an alternative approach, and define a family of <code>tuple&lt;N&gt;</code> functions,
+as we see in the <code>COMBINATOR</code> signature above.</p>
+</div>
+<div class="paragraph">
+<p>The family-of-functions approach is ugly for many reasons.  First, it
+clutters the signature with a number of functions when there should
+really only be one.  Second, it is <em>closed</em>, in that there are a fixed
+number of tuple combinators in the interface, and should a client need
+a combinator for a large tuple, he is out of luck.  Third, this
+approach often requires a lot of duplicate code in the implementation
+of the combinators.</p>
+</div>
+<div class="paragraph">
+<p>Fortunately, using <a href="Fold01N">Fold01N</a> and <a href="ProductType">products</a>, one can
+provide an interface and implementation that solves all these
+problems.  Here is a simple pickling module that converts values to
+strings.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Pickler</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">string</span>
+
+      <span class="kr">val</span> <span class="nv">unit</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="s2">""</span>
+
+      <span class="kr">val</span> <span class="nv">int</span> <span class="p">=</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span>
+
+      <span class="kr">val</span> <span class="nv">real</span> <span class="p">=</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span>
+
+      <span class="kr">val</span> <span class="nv">string</span> <span class="p">=</span> <span class="n">id</span>
+
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">accum</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">*</span> <span class="n">string</span> <span class="n">list</span> <span class="p">-&gt;</span> <span class="n">string</span> <span class="n">list</span>
+
+      <span class="kr">val</span> <span class="nv">tuple</span> <span class="p">=</span>
+         <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+         <span class="nn">Fold01N</span><span class="p">.</span><span class="n">fold</span>
+         <span class="p">{</span><span class="n">finish</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">ps</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">concat</span> <span class="p">(</span><span class="n">rev</span> <span class="p">(</span><span class="n">ps</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[]))),</span>
+          <span class="n">start</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">p</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">p</span> <span class="n">x</span> <span class="n">::</span> <span class="n">l</span><span class="p">,</span>
+          <span class="n">zero</span> <span class="p">=</span> <span class="n">unit</span><span class="p">}</span>
+         <span class="n">z</span>
+
+      <span class="kr">val</span> <span class="nv">`</span> <span class="p">=</span>
+         <span class="nv">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+         <span class="nn">Fold01N</span><span class="p">.</span><span class="n">step1</span>
+         <span class="p">{</span><span class="n">combine</span> <span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p'</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">x</span> <span class="n">&amp;</span> <span class="n">x'</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">p'</span> <span class="n">x'</span> <span class="n">::</span> <span class="s2">","</span> <span class="n">::</span> <span class="n">p</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">l</span><span class="p">))}</span>
+         <span class="n">z</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If one has <code>n</code> picklers of types</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">p1</span><span class="p">:</span> <span class="n">a1</span> <span class="nn">Pickler</span><span class="p">.</span><span class="n">t</span>
+<span class="kr">val</span> <span class="nv">p2</span><span class="p">:</span> <span class="n">a2</span> <span class="nn">Pickler</span><span class="p">.</span><span class="n">t</span>
+<span class="p">...</span>
+<span class="kr">val</span> <span class="nv">pn</span><span class="p">:</span> <span class="n">an</span> <span class="nn">Pickler</span><span class="p">.</span><span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>then one can construct a pickler for n-ary products as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">tuple</span> <span class="n">`p1</span> <span class="n">`p2</span> <span class="p">...</span> <span class="n">`pn</span> <span class="n">$</span> <span class="p">:</span> <span class="p">(</span><span class="n">a1</span> <span class="n">&amp;</span> <span class="n">a2</span> <span class="n">&amp;</span> <span class="p">...</span> <span class="n">&amp;</span> <span class="n">an</span><span class="p">)</span> <span class="nn">Pickler</span><span class="p">.</span><span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For example, with <code>Pickler</code> in scope, one can prove the following
+equations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="s2">""</span> <span class="p">=</span> <span class="n">tuple</span> <span class="n">$</span> <span class="p">()</span>
+<span class="s2">"1"</span> <span class="p">=</span> <span class="n">tuple</span> <span class="n">`int</span> <span class="n">$</span> <span class="mi">1</span>
+<span class="s2">"1,2.0"</span> <span class="p">=</span> <span class="n">tuple</span> <span class="n">`int</span> <span class="n">`real</span> <span class="n">$</span> <span class="p">(</span><span class="mi">1</span> <span class="n">&amp;</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="s2">"1,2.0,three"</span> <span class="p">=</span> <span class="n">tuple</span> <span class="n">`int</span> <span class="n">`real</span> <span class="n">`string</span> <span class="n">$</span> <span class="p">(</span><span class="mi">1</span> <span class="n">&amp;</span> <span class="mf">2.0</span> <span class="n">&amp;</span> <span class="s2">"three"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here is the signature for <code>Pickler</code>.  It shows why the <code>accum</code> type is
+useful.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">PICKLER</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">int</span><span class="p">:</span> <span class="n">int</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">real</span><span class="p">:</span> <span class="n">real</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">string</span><span class="p">:</span> <span class="n">string</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">unit</span><span class="p">:</span> <span class="n">unit</span> <span class="n">t</span>
+
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">accum</span>
+      <span class="kr">val</span> <span class="nv">`</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">accum</span><span class="p">,</span> <span class="nd">'b</span> <span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">prod</span> <span class="n">accum</span><span class="p">,</span>
+               <span class="nd">'z1</span><span class="p">,</span> <span class="nd">'z2</span><span class="p">,</span> <span class="nd">'z3</span><span class="p">,</span> <span class="nd">'z4</span><span class="p">,</span> <span class="nd">'z5</span><span class="p">,</span> <span class="nd">'z6</span><span class="p">,</span> <span class="nd">'z7</span><span class="p">)</span> <span class="nn">Fold01N</span><span class="p">.</span><span class="n">step1</span>
+      <span class="kr">val</span> <span class="nv">tuple</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">t</span><span class="p">,</span> <span class="nd">'a</span> <span class="n">accum</span><span class="p">,</span> <span class="nd">'b</span> <span class="n">accum</span><span class="p">,</span> <span class="nd">'b</span> <span class="n">t</span><span class="p">,</span> <span class="n">unit</span> <span class="n">t</span><span class="p">,</span>
+                  <span class="nd">'z1</span><span class="p">,</span> <span class="nd">'z2</span><span class="p">,</span> <span class="nd">'z3</span><span class="p">,</span> <span class="nd">'z4</span><span class="p">,</span> <span class="nd">'z5</span><span class="p">)</span> <span class="nn">Fold01N</span><span class="p">.</span><span class="n">t</span>
+   <span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">Pickler</span><span class="p">:</span> <span class="n">PICKLER</span> <span class="p">=</span> <span class="n">Pickler</span></code></pre>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/VariableArityPolymorphism.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/VariableArityPolymorphism.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

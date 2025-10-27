@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonProcess</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonProcess</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_PROCESS</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">pid</span>
+
+      <span class="kr">val</span> <span class="nv">spawn</span><span class="p">:</span> <span class="p">{</span><span class="n">args</span><span class="p">:</span> <span class="n">string</span> <span class="n">list</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">string</span><span class="p">}</span> <span class="p">-&gt;</span> <span class="n">pid</span>
+      <span class="kr">val</span> <span class="nv">spawne</span><span class="p">:</span> <span class="p">{</span><span class="n">args</span><span class="p">:</span> <span class="n">string</span> <span class="n">list</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">string</span> <span class="n">list</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">string</span><span class="p">}</span> <span class="p">-&gt;</span> <span class="n">pid</span>
+      <span class="kr">val</span> <span class="nv">spawnp</span><span class="p">:</span> <span class="p">{</span><span class="n">args</span><span class="p">:</span> <span class="n">string</span> <span class="n">list</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="n">string</span><span class="p">}</span> <span class="p">-&gt;</span> <span class="n">pid</span>
+
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'stdin</span><span class="p">,</span> <span class="nd">'stdout</span><span class="p">,</span> <span class="nd">'stderr</span><span class="p">)</span> <span class="kt">t</span>
+
+      <span class="kr">type</span> <span class="kt">input</span>
+      <span class="kr">type</span> <span class="kt">output</span>
+
+      <span class="kr">type</span> <span class="kt">none</span>
+      <span class="kr">type</span> <span class="kt">chain</span>
+      <span class="kr">type</span> <span class="kt">any</span>
+
+      <span class="kr">exception</span> <span class="nc">MisuseOfForget</span>
+      <span class="kr">exception</span> <span class="nc">DoublyRedirected</span>
+
+      <span class="kr">structure</span> <span class="nn">Child</span><span class="p">:</span>
+        <span class="kr">sig</span>
+          <span class="kr">type</span> <span class="p">(</span><span class="nd">'use</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="kt">t</span>
+
+          <span class="kr">val</span> <span class="nv">binIn</span><span class="p">:</span> <span class="p">(</span><span class="nn">BinIO</span><span class="p">.</span><span class="n">instream</span><span class="p">,</span> <span class="n">input</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">BinIO</span><span class="p">.</span><span class="n">instream</span>
+          <span class="kr">val</span> <span class="nv">binOut</span><span class="p">:</span> <span class="p">(</span><span class="nn">BinIO</span><span class="p">.</span><span class="n">outstream</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">BinIO</span><span class="p">.</span><span class="n">outstream</span>
+          <span class="kr">val</span> <span class="nv">fd</span><span class="p">:</span> <span class="p">(</span><span class="nn">Posix</span><span class="p">.</span><span class="nn">FileSys</span><span class="p">.</span><span class="n">file_desc</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Posix</span><span class="p">.</span><span class="nn">FileSys</span><span class="p">.</span><span class="n">file_desc</span>
+          <span class="kr">val</span> <span class="nv">remember</span><span class="p">:</span> <span class="p">(</span><span class="n">any</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'use</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span>
+          <span class="kr">val</span> <span class="nv">textIn</span><span class="p">:</span> <span class="p">(</span><span class="nn">TextIO</span><span class="p">.</span><span class="n">instream</span><span class="p">,</span> <span class="n">input</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">instream</span>
+          <span class="kr">val</span> <span class="nv">textOut</span><span class="p">:</span> <span class="p">(</span><span class="nn">TextIO</span><span class="p">.</span><span class="n">outstream</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">outstream</span>
+        <span class="kr">end</span>
+
+      <span class="kr">structure</span> <span class="nn">Param</span><span class="p">:</span>
+        <span class="kr">sig</span>
+          <span class="kr">type</span> <span class="p">(</span><span class="nd">'use</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="kt">t</span>
+
+          <span class="kr">val</span> <span class="nv">child</span><span class="p">:</span> <span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="nn">Child</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="n">none</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span>
+          <span class="kr">val</span> <span class="nv">fd</span><span class="p">:</span> <span class="nn">Posix</span><span class="p">.</span><span class="nn">FileSys</span><span class="p">.</span><span class="n">file_desc</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="n">none</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span>
+          <span class="kr">val</span> <span class="nv">file</span><span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="n">none</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span>
+          <span class="kr">val</span> <span class="nv">forget</span><span class="p">:</span> <span class="p">(</span><span class="nd">'use</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="n">any</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span>
+          <span class="kr">val</span> <span class="nv">null</span><span class="p">:</span> <span class="p">(</span><span class="n">none</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span>
+          <span class="kr">val</span> <span class="nv">pipe</span><span class="p">:</span> <span class="p">(</span><span class="nd">'use</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span>
+          <span class="kr">val</span> <span class="nv">self</span><span class="p">:</span> <span class="p">(</span><span class="n">none</span><span class="p">,</span> <span class="nd">'dir</span><span class="p">)</span> <span class="n">t</span>
+        <span class="kr">end</span>
+
+      <span class="kr">val</span> <span class="nv">create</span><span class="p">:</span>
+         <span class="p">{</span><span class="n">args</span><span class="p">:</span> <span class="n">string</span> <span class="n">list</span><span class="p">,</span>
+          <span class="n">env</span><span class="p">:</span> <span class="n">string</span> <span class="n">list</span> <span class="n">option</span><span class="p">,</span>
+          <span class="n">path</span><span class="p">:</span> <span class="n">string</span><span class="p">,</span>
+          <span class="n">stderr</span><span class="p">:</span> <span class="p">(</span><span class="nd">'stderr</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="nn">Param</span><span class="p">.</span><span class="n">t</span><span class="p">,</span>
+          <span class="n">stdin</span><span class="p">:</span> <span class="p">(</span><span class="nd">'stdin</span><span class="p">,</span> <span class="n">input</span><span class="p">)</span> <span class="nn">Param</span><span class="p">.</span><span class="n">t</span><span class="p">,</span>
+          <span class="n">stdout</span><span class="p">:</span> <span class="p">(</span><span class="nd">'stdout</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="nn">Param</span><span class="p">.</span><span class="n">t</span><span class="p">}</span>
+         <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'stdin</span><span class="p">,</span> <span class="nd">'stdout</span><span class="p">,</span> <span class="nd">'stderr</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">getStderr</span><span class="p">:</span> <span class="p">(</span><span class="nd">'stdin</span><span class="p">,</span> <span class="nd">'stdout</span><span class="p">,</span> <span class="nd">'stderr</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'stderr</span><span class="p">,</span> <span class="n">input</span><span class="p">)</span> <span class="nn">Child</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">getStdin</span><span class="p">:</span>  <span class="p">(</span><span class="nd">'stdin</span><span class="p">,</span> <span class="nd">'stdout</span><span class="p">,</span> <span class="nd">'stderr</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'stdin</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="nn">Child</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">getStdout</span><span class="p">:</span> <span class="p">(</span><span class="nd">'stdin</span><span class="p">,</span> <span class="nd">'stdout</span><span class="p">,</span> <span class="nd">'stderr</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'stdout</span><span class="p">,</span> <span class="n">input</span><span class="p">)</span> <span class="nn">Child</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">kill</span><span class="p">:</span> <span class="p">(</span><span class="nd">'stdin</span><span class="p">,</span> <span class="nd">'stdout</span><span class="p">,</span> <span class="nd">'stderr</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="nn">Posix</span><span class="p">.</span><span class="nn">Signal</span><span class="p">.</span><span class="n">signal</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">reap</span><span class="p">:</span> <span class="p">(</span><span class="nd">'stdin</span><span class="p">,</span> <span class="nd">'stdout</span><span class="p">,</span> <span class="nd">'stderr</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Posix</span><span class="p">.</span><span class="nn">Process</span><span class="p">.</span><span class="n">exit_status</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spawn">Spawn</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>spawn</code> functions provide an alternative to the
+<code>fork</code>/<code>exec</code> idiom that is typically used to create a new
+process.  On most platforms, the <code>spawn</code> functions are simple
+wrappers around <code>fork</code>/<code>exec</code>.  However, under Windows, the
+<code>spawn</code> functions are primitive.  All <code>spawn</code> functions return
+the process id of the spawned process.  They differ in how the
+executable is found and the environment that it uses.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>spawn {args, path}</code></p>
+<div class="paragraph">
+<p>starts a new process running the executable specified by <code>path</code>
+with the arguments <code>args</code>.  Like <code>Posix.Process.exec</code>.</p>
+</div>
+</li>
+<li>
+<p><code>spawne {args, env, path}</code></p>
+<div class="paragraph">
+<p>starts a new process running the executable specified by <code>path</code> with
+the arguments <code>args</code> and environment <code>env</code>.  Like
+<code>Posix.Process.exece</code>.</p>
+</div>
+</li>
+<li>
+<p><code>spawnp {args, file}</code></p>
+<div class="paragraph">
+<p>search the <code>PATH</code> environment variable for an executable named <code>file</code>,
+and start a new process running that executable with the arguments
+<code>args</code>.  Like <code>Posix.Process.execp</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_create">Create</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>MLton.Process.create</code> provides functionality similar to
+<code>Unix.executeInEnv</code>, but provides more control control over the input,
+output, and error streams.  In addition, <code>create</code> works on all
+platforms, including Cygwin and MinGW (Windows) where <code>Posix.fork</code> is
+unavailable.  For greatest portability programs should still use the
+standard <code>Unix.execute</code>, <code>Unix.executeInEnv</code>, and <code>OS.Process.system</code>.</p>
+</div>
+<div class="paragraph">
+<p>The following types and sub-structures are used by the <code>create</code>
+function.  They provide static type checking of correct stream usage.</p>
+</div>
+<div class="sect2">
+<h3 id="_child">Child</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>('use, 'dir) Child.t</code></p>
+<div class="paragraph">
+<p>This represents a handle to one of a child&#8217;s standard streams. The
+<code>'dir</code> is viewed with respect to the parent. Thus a <code>('a, input)
+Child.t</code> handle means that the parent may input the output from the
+child.</p>
+</div>
+</li>
+<li>
+<p><code>Child.{bin,text}{In,Out} h</code></p>
+<div class="paragraph">
+<p>These functions take a handle and bind it to a stream of the named
+type.  The type system will detect attempts to reverse the direction
+of a stream or to use the same stream in multiple, incompatible ways.</p>
+</div>
+</li>
+<li>
+<p><code>Child.fd h</code></p>
+<div class="paragraph">
+<p>This function behaves like the other <code>Child.*</code> functions; it opens a
+stream. However, it does not enforce that you read or write from the
+handle. If you use the descriptor in an inappropriate direction, the
+behavior is undefined. Furthermore, this function may potentially be
+unavailable on future MLton host platforms.</p>
+</div>
+</li>
+<li>
+<p><code>Child.remember h</code></p>
+<div class="paragraph">
+<p>This function takes a stream of use <code>any</code> and resets the use of the
+stream so that the stream may be used by <code>Child.*</code>. An <code>any</code> stream
+may have had use <code>none</code> or <code>'use</code> prior to calling <code>Param.forget</code>. If
+the stream was <code>none</code> and is used, <code>MisuseOfForget</code> is raised.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_param">Param</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>('use, 'dir) Param.t</code></p>
+<div class="paragraph">
+<p>This is a handle to an input/output source and will be passed to the
+created child process. The <code>'dir</code> is relative to the child process.
+Input means that the child process will read from this stream.</p>
+</div>
+</li>
+<li>
+<p><code>Param.child h</code></p>
+<div class="paragraph">
+<p>Connect the stream of the new child process to the stream of a
+previously created child process. A single child stream should be
+connected to only one child process or else <code>DoublyRedirected</code> will be
+raised.</p>
+</div>
+</li>
+<li>
+<p><code>Param.fd fd</code></p>
+<div class="paragraph">
+<p>This creates a stream from the provided file descriptor which will be
+closed when <code>create</code> is called. This function may not be available on
+future MLton host platforms.</p>
+</div>
+</li>
+<li>
+<p><code>Param.forget h</code></p>
+<div class="paragraph">
+<p>This hides the type of the actual parameter as <code>any</code>. This is useful
+if you are implementing an application which conditionally attaches
+the child process to files or pipes. However, you must ensure that
+your use after <code>Child.remember</code> matches the original type.</p>
+</div>
+</li>
+<li>
+<p><code>Param.file s</code></p>
+<div class="paragraph">
+<p>Open the given file and connect it to the child process. Note that the
+file will be opened only when <code>create</code> is called. So any exceptions
+will be raised there and not by this function. If used for <code>input</code>,
+the file is opened read-only. If used for <code>output</code>, the file is opened
+read-write.</p>
+</div>
+</li>
+<li>
+<p><code>Param.null</code></p>
+<div class="paragraph">
+<p>In some situations, the child process should have its output
+discarded.  The <code>null</code> param when passed as <code>stdout</code> or <code>stderr</code> does
+this.  When used for <code>stdin</code>, the child process will either receive
+<code>EOF</code> or a failure condition if it attempts to read from <code>stdin</code>.</p>
+</div>
+</li>
+<li>
+<p><code>Param.pipe</code></p>
+<div class="paragraph">
+<p>This will connect the input/output of the child process to a pipe
+which the parent process holds. This may later form the input to one
+of the <code>Child.*</code> functions and/or the <code>Param.child</code> function.</p>
+</div>
+</li>
+<li>
+<p><code>Param.self</code></p>
+<div class="paragraph">
+<p>This will connect the input/output of the child process to the
+corresponding stream of the parent process.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_process">Process</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>type ('stdin, 'stdout, 'stderr) t</code></p>
+<div class="paragraph">
+<p>represents a handle to a child process.  The type arguments capture
+how the named stream of the child process may be used.</p>
+</div>
+</li>
+<li>
+<p><code>type any</code></p>
+<div class="paragraph">
+<p>bypasses the type system in situations where an application does not
+want the it to enforce correct usage.  See <code>Child.remember</code> and
+<code>Param.forget</code>.</p>
+</div>
+</li>
+<li>
+<p><code>type chain</code></p>
+<div class="paragraph">
+<p>means that the child process&#8217;s stream was connected via a pipe to the
+parent process. The parent process may pass this pipe in turn to
+another child, thus chaining them together.</p>
+</div>
+</li>
+<li>
+<p><code>type input, output</code></p>
+<div class="paragraph">
+<p>record the direction that a stream flows.  They are used as a part of
+<code>Param.t</code> and <code>Child.t</code> and is detailed there.</p>
+</div>
+</li>
+<li>
+<p><code>type none</code></p>
+<div class="paragraph">
+<p>means that the child process&#8217;s stream my not be used by the parent
+process.  This happens when the child process is connected directly to
+some source.</p>
+</div>
+<div class="paragraph">
+<p>The types <code>BinIO.instream</code>, <code>BinIO.outstream</code>, <code>TextIO.instream</code>,
+<code>TextIO.outstream</code>, and <code>Posix.FileSys.file_desc</code> are also valid types
+with which to instantiate child streams.</p>
+</div>
+</li>
+<li>
+<p><code>exception MisuseOfForget</code></p>
+<div class="paragraph">
+<p>may be raised if <code>Child.remember</code> and <code>Param.forget</code> are used to
+bypass the normal type checking.  This exception will only be raised
+in cases where the <code>forget</code> mechanism allows a misuse that would be
+impossible with the type-safe versions.</p>
+</div>
+</li>
+<li>
+<p><code>exception DoublyRedirected</code></p>
+<div class="paragraph">
+<p>raised if a stream connected to a child process is redirected to two
+separate child processes.  It is safe, though bad style, to use the a
+<code>Child.t</code> with the same <code>Child.*</code> function repeatedly.</p>
+</div>
+</li>
+<li>
+<p><code>create {args, path, env, stderr, stdin, stdout}</code></p>
+<div class="paragraph">
+<p>starts a child process with the given command-line <code>args</code> (excluding
+the program name). <code>path</code> should be an absolute path to the executable
+run in the new child process; relative paths work, but are less
+robust.  Optionally, the environment may be overridden with <code>env</code>
+where each string element has the form <code>"key=value"</code>. The <code>std*</code>
+options must be provided by the <code>Param.*</code> functions documented above.</p>
+</div>
+<div class="paragraph">
+<p>Processes which are <code>create</code>-d must be either <code>reap</code>-ed or <code>kill</code>-ed.</p>
+</div>
+</li>
+<li>
+<p><code>getStd{in,out,err} proc</code></p>
+<div class="paragraph">
+<p>gets a handle to the specified stream. These should be used by the
+<code>Child.*</code> functions. Failure to use a stream connected via pipe to a
+child process may result in runtime dead-lock and elicits a compiler
+warning.</p>
+</div>
+</li>
+<li>
+<p><code>kill (proc, sig)</code></p>
+<div class="paragraph">
+<p>terminates the child process immediately.  The signal may or may not
+mean anything depending on the host platform.  A good value is
+<code>Posix.Signal.term</code>.</p>
+</div>
+</li>
+<li>
+<p><code>reap proc</code></p>
+<div class="paragraph">
+<p>waits for the child process to terminate and return its exit status.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_important_usage_notes">Important usage notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When building an application with many pipes between child processes,
+it is important to ensure that there are no cycles in the undirected
+pipe graph.  If this property is not maintained, deadlocks are a very
+serious potential bug which may only appear under difficult to
+reproduce conditions.</p>
+</div>
+<div class="paragraph">
+<p>The danger lies in that most operating systems implement pipes with a
+fixed buffer size. If process A has two output pipes which process B
+reads, it can happen that process A blocks writing to pipe 2 because
+it is full while process B blocks reading from pipe 1 because it is
+empty. This same situation can happen with any undirected cycle formed
+between processes (vertexes) and pipes (undirected edges) in the
+graph.</p>
+</div>
+<div class="paragraph">
+<p>It is possible to make this safe using low-level I/O primitives for
+polling.  However, these primitives are not very portable and
+difficult to use properly.  A far better approach is to make sure you
+never create a cycle in the first place.</p>
+</div>
+<div class="paragraph">
+<p>For these reasons, the <code>Unix.executeInEnv</code> is a very dangerous
+function. Be careful when using it to ensure that the child process
+only operates on either <code>stdin</code> or <code>stdout</code>, but not both.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_use_of_mlton_process_create">Example use of MLton.Process.create</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following example program launches the <code>ipconfig</code> utility, pipes
+its output through <code>grep</code>, and then reads the result back into the
+program.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">open</span> <span class="nn">MLton</span><span class="err">.</span><span class="n">Process</span>
+<span class="kr">val</span> <span class="nv">p</span> <span class="p">=</span>
+        <span class="n">create</span> <span class="p">{</span><span class="n">args</span> <span class="p">=</span> <span class="p">[</span> <span class="s2">"/all"</span> <span class="p">],</span>
+                <span class="n">env</span> <span class="p">=</span> <span class="n">NONE</span><span class="p">,</span>
+                <span class="n">path</span> <span class="p">=</span> <span class="s2">"C:</span><span class="se">\\</span><span class="s2">WINDOWS</span><span class="se">\\</span><span class="s2">system32</span><span class="se">\\</span><span class="s2">ipconfig.exe"</span><span class="p">,</span>
+                <span class="n">stderr</span> <span class="p">=</span> <span class="nn">Param</span><span class="p">.</span><span class="n">self</span><span class="p">,</span>
+                <span class="n">stdin</span> <span class="p">=</span> <span class="nn">Param</span><span class="p">.</span><span class="n">null</span><span class="p">,</span>
+                <span class="n">stdout</span> <span class="p">=</span> <span class="nn">Param</span><span class="p">.</span><span class="n">pipe</span><span class="p">}</span>
+<span class="kr">val</span> <span class="nv">q</span> <span class="p">=</span>
+        <span class="n">create</span> <span class="p">{</span><span class="n">args</span> <span class="p">=</span> <span class="p">[</span> <span class="s2">"IP-Ad"</span> <span class="p">],</span>
+                <span class="n">env</span> <span class="p">=</span> <span class="n">NONE</span><span class="p">,</span>
+                <span class="n">path</span> <span class="p">=</span> <span class="s2">"C:</span><span class="se">\\</span><span class="s2">msys</span><span class="se">\\</span><span class="s2">bin</span><span class="se">\\</span><span class="s2">grep.exe"</span><span class="p">,</span>
+                <span class="n">stderr</span> <span class="p">=</span> <span class="nn">Param</span><span class="p">.</span><span class="n">self</span><span class="p">,</span>
+                <span class="n">stdin</span> <span class="p">=</span> <span class="nn">Param</span><span class="p">.</span><span class="n">child</span> <span class="p">(</span><span class="n">getStdout</span> <span class="n">p</span><span class="p">),</span>
+                <span class="n">stdout</span> <span class="p">=</span> <span class="nn">Param</span><span class="p">.</span><span class="n">pipe</span><span class="p">}</span>
+<span class="kr">fun</span> <span class="nf">suck</span> <span class="n">h</span> <span class="p">=</span>
+        <span class="kr">case</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">inputLine</span> <span class="n">h</span> <span class="kr">of</span>
+                <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="p">()</span>
+                <span class="p">|</span> <span class="n">SOME</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">print</span> <span class="p">(</span><span class="s2">"'"</span> <span class="n">^</span> <span class="n">s</span> <span class="n">^</span> <span class="s2">"'</span><span class="se">\n</span><span class="s2">"</span><span class="p">);</span> <span class="n">suck</span> <span class="n">h</span><span class="p">)</span>
+
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">suck</span> <span class="p">(</span><span class="nn">Child</span><span class="p">.</span><span class="n">textIn</span> <span class="p">(</span><span class="n">getStdout</span> <span class="n">q</span><span class="p">))</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonProcess.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonProcess.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

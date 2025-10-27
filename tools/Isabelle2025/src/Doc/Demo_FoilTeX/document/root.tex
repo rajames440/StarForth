@@ -1,0 +1,37 @@
+\documentclass[a4paper,landscape]{foils}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb}
+\usepackage[svgnames]{xcolor}
+\usepackage{graphicx}
+\usepackage{isabelle,isabellesym}
+\usepackage{isabellefoils}
+\usepackage{pdfsetup}
+
+\parindent 0pt\parskip 0.5ex
+
+\urlstyle{sf}
+\isabellestyle{it}
+\MyLogo{}
+
+\isadroptag{theory}
+\isafoldtag{proof}
+
+
+\begin{document}
+
+    \title{\titlestyle Simple slides with FoilTeX}
+    \author{Makarius Wenzel, Augsburg \\ \url{https://sketis.net}}
+    \date{}
+    \maketitle
+
+    \vfill
+
+    \begin{center}
+        \includegraphics[width=0.15\textwidth]{isabelle_logo}
+    \end{center}
+
+    \vfill
+
+    \input{session}
+
+\end{document}

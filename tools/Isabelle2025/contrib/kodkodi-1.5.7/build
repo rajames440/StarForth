@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+THIS="$(cd "$(dirname "$0")"; pwd)"
+
+function fail()
+{
+  echo "$1" >&2
+  exit 2
+}
+
+
+## check Java installation
+
+function bad_java()
+{
+  fail "Please provide JAVA_HOME for Java/JDK 7"
+}
+
+[ -z "$JAVA_HOME" ] && bad_java
+
+case $("$JAVA_HOME/bin/javac" -version 2>&1) in
+  javac*1.7*) ;;
+  *) bad_java ;;
+esac
+
+
+## main
+
+set -e
+
+echo "Building Kodkodi..."
+
+cd "$THIS"
+
+export CLASSPATH="$THIS/jar/kodkod-1.5.jar:$THIS/jar/antlr-3.1.1.jar"
+
+"$JAVA_HOME/bin/java" org.antlr.Tool src/Kodkodi.g
+
+rm -rf classes
+mkdir classes
+
+"$JAVA_HOME/bin/javac" -d classes \
+  src/ConsoleReporterV2.java \
+  src/Context.java \
+  src/ExternalSolverV2.java \
+  src/KodkodiClient.java \
+  src/Kodkodi.java \
+  src/KodkodiLexer.java \
+  src/KodkodiParser.java
+
+(
+  cd classes
+  "$JAVA_HOME/bin/jar" cf ../jar/kodkodi-1.5.7.jar .
+)
+
+rm -rf classes

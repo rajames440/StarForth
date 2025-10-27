@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonStructure</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonStructure</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>MLton</code> structure contains a lot of functionality that is not
+available in the <a href="BasisLibrary">Basis Library</a>.  As a warning,
+please keep in mind that the <code>MLton</code> structure and its
+substructures do change from release to release of MLton.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">MLton</span><span class="p">:</span>
+   <span class="kr">sig</span>
+      <span class="kr">val</span> <span class="nv">eq</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+      <span class="kr">val</span> <span class="nv">equal</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+      <span class="kr">val</span> <span class="nv">hash</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nn">Word32</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">val</span> <span class="nv">isMLton</span><span class="p">:</span> <span class="n">bool</span>
+      <span class="kr">val</span> <span class="nv">share</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">shareAll</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">size</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">int</span>
+      <span class="kr">val</span> <span class="nv">sizeAll</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">int</span>
+
+      <span class="kr">structure</span> <span class="nn">Array</span><span class="p">:</span> <span class="n">MLTON_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">BinIO</span><span class="p">:</span> <span class="n">MLTON_BIN_IO</span>
+      <span class="kr">structure</span> <span class="nn">CharArray</span><span class="p">:</span> <span class="n">MLTON_MONO_ARRAY</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">CharArray</span><span class="p">.</span><span class="n">array</span>
+                                            <span class="kr">where</span> <span class="kr">type</span> <span class="kt">elem</span> <span class="p">=</span> <span class="nn">CharArray</span><span class="p">.</span><span class="n">elem</span>
+      <span class="kr">structure</span> <span class="nn">CharVector</span><span class="p">:</span> <span class="n">MLTON_MONO_VECTOR</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">CharVector</span><span class="p">.</span><span class="n">vector</span>
+                                              <span class="kr">where</span> <span class="kr">type</span> <span class="kt">elem</span> <span class="p">=</span> <span class="nn">CharVector</span><span class="p">.</span><span class="n">elem</span>
+      <span class="kr">structure</span> <span class="nn">Cont</span><span class="p">:</span> <span class="n">MLTON_CONT</span>
+      <span class="kr">structure</span> <span class="nn">Exn</span><span class="p">:</span> <span class="n">MLTON_EXN</span>
+      <span class="kr">structure</span> <span class="nn">Finalizable</span><span class="p">:</span> <span class="n">MLTON_FINALIZABLE</span>
+      <span class="kr">structure</span> <span class="nn">GC</span><span class="p">:</span> <span class="n">MLTON_GC</span>
+      <span class="kr">structure</span> <span class="nn">IntInf</span><span class="p">:</span> <span class="n">MLTON_INT_INF</span>
+      <span class="kr">structure</span> <span class="nn">Itimer</span><span class="p">:</span> <span class="n">MLTON_ITIMER</span>
+      <span class="kr">structure</span> <span class="nn">LargeReal</span><span class="p">:</span> <span class="n">MLTON_REAL</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">LargeReal</span><span class="p">.</span><span class="n">real</span>
+      <span class="kr">structure</span> <span class="nn">LargeWord</span><span class="p">:</span> <span class="n">MLTON_WORD</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">LargeWord</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">structure</span> <span class="nn">Platform</span><span class="p">:</span> <span class="n">MLTON_PLATFORM</span>
+      <span class="kr">structure</span> <span class="nn">Pointer</span><span class="p">:</span> <span class="n">MLTON_POINTER</span>
+      <span class="kr">structure</span> <span class="nn">ProcEnv</span><span class="p">:</span> <span class="n">MLTON_PROC_ENV</span>
+      <span class="kr">structure</span> <span class="nn">Process</span><span class="p">:</span> <span class="n">MLTON_PROCESS</span>
+      <span class="kr">structure</span> <span class="nn">Profile</span><span class="p">:</span> <span class="n">MLTON_PROFILE</span>
+      <span class="kr">structure</span> <span class="nn">Random</span><span class="p">:</span> <span class="n">MLTON_RANDOM</span>
+      <span class="kr">structure</span> <span class="nn">Real</span><span class="p">:</span> <span class="n">MLTON_REAL</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Real</span><span class="p">.</span><span class="n">real</span>
+      <span class="kr">structure</span> <span class="nn">Real32</span><span class="p">:</span> <span class="kr">sig</span>
+                           <span class="kr">include</span> <span class="nn">MLTON_REAL</span>
+                           <span class="kr">val</span> <span class="nv">castFromWord</span><span class="p">:</span> <span class="nn">Word32</span><span class="p">.</span><span class="n">word</span> <span class="p">-&gt;</span> <span class="n">t</span>
+                           <span class="kr">val</span> <span class="nv">castToWord</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Word32</span><span class="p">.</span><span class="n">word</span>
+                        <span class="kr">end</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Real32</span><span class="p">.</span><span class="n">real</span>
+      <span class="kr">structure</span> <span class="nn">Real64</span><span class="p">:</span> <span class="kr">sig</span>
+                           <span class="kr">include</span> <span class="nn">MLTON_REAL</span>
+                           <span class="kr">val</span> <span class="nv">castFromWord</span><span class="p">:</span> <span class="nn">Word64</span><span class="p">.</span><span class="n">word</span> <span class="p">-&gt;</span> <span class="n">t</span>
+                           <span class="kr">val</span> <span class="nv">castToWord</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Word64</span><span class="p">.</span><span class="n">word</span>
+                        <span class="kr">end</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Real64</span><span class="p">.</span><span class="n">real</span>
+      <span class="kr">structure</span> <span class="nn">Rlimit</span><span class="p">:</span> <span class="n">MLTON_RLIMIT</span>
+      <span class="kr">structure</span> <span class="nn">Rusage</span><span class="p">:</span> <span class="n">MLTON_RUSAGE</span>
+      <span class="kr">structure</span> <span class="nn">Signal</span><span class="p">:</span> <span class="n">MLTON_SIGNAL</span>
+      <span class="kr">structure</span> <span class="nn">Syslog</span><span class="p">:</span> <span class="n">MLTON_SYSLOG</span>
+      <span class="kr">structure</span> <span class="nn">TextIO</span><span class="p">:</span> <span class="n">MLTON_TEXT_IO</span>
+      <span class="kr">structure</span> <span class="nn">Thread</span><span class="p">:</span> <span class="n">MLTON_THREAD</span>
+      <span class="kr">structure</span> <span class="nn">Vector</span><span class="p">:</span> <span class="n">MLTON_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Weak</span><span class="p">:</span> <span class="n">MLTON_WEAK</span>
+      <span class="kr">structure</span> <span class="nn">Word</span><span class="p">:</span> <span class="n">MLTON_WORD</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Word</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">structure</span> <span class="nn">Word8</span><span class="p">:</span> <span class="n">MLTON_WORD</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Word8</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">structure</span> <span class="nn">Word16</span><span class="p">:</span> <span class="n">MLTON_WORD</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Word16</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">structure</span> <span class="nn">Word32</span><span class="p">:</span> <span class="n">MLTON_WORD</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Word32</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">structure</span> <span class="nn">Word64</span><span class="p">:</span> <span class="n">MLTON_WORD</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Word64</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">structure</span> <span class="nn">Word8Array</span><span class="p">:</span> <span class="n">MLTON_MONO_ARRAY</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Word8Array</span><span class="p">.</span><span class="n">array</span>
+                                             <span class="kr">where</span> <span class="kr">type</span> <span class="kt">elem</span> <span class="p">=</span> <span class="nn">Word8Array</span><span class="p">.</span><span class="n">elem</span>
+      <span class="kr">structure</span> <span class="nn">Word8Vector</span><span class="p">:</span> <span class="n">MLTON_MONO_VECTOR</span> <span class="kr">where</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Word8Vector</span><span class="p">.</span><span class="n">vector</span>
+                                               <span class="kr">where</span> <span class="kr">type</span> <span class="kt">elem</span> <span class="p">=</span> <span class="nn">Word8Vector</span><span class="p">.</span><span class="n">elem</span>
+      <span class="kr">structure</span> <span class="nn">World</span><span class="p">:</span> <span class="n">MLTON_WORLD</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_substructures">Substructures</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="MLtonArray">MLtonArray</a></p>
+</li>
+<li>
+<p><a href="MLtonBinIO">MLtonBinIO</a></p>
+</li>
+<li>
+<p><a href="MLtonCont">MLtonCont</a></p>
+</li>
+<li>
+<p><a href="MLtonExn">MLtonExn</a></p>
+</li>
+<li>
+<p><a href="MLtonFinalizable">MLtonFinalizable</a></p>
+</li>
+<li>
+<p><a href="MLtonGC">MLtonGC</a></p>
+</li>
+<li>
+<p><a href="MLtonIntInf">MLtonIntInf</a></p>
+</li>
+<li>
+<p><a href="MLtonIO">MLtonIO</a></p>
+</li>
+<li>
+<p><a href="MLtonItimer">MLtonItimer</a></p>
+</li>
+<li>
+<p><a href="MLtonMonoArray">MLtonMonoArray</a></p>
+</li>
+<li>
+<p><a href="MLtonMonoVector">MLtonMonoVector</a></p>
+</li>
+<li>
+<p><a href="MLtonPlatform">MLtonPlatform</a></p>
+</li>
+<li>
+<p><a href="MLtonPointer">MLtonPointer</a></p>
+</li>
+<li>
+<p><a href="MLtonProcEnv">MLtonProcEnv</a></p>
+</li>
+<li>
+<p><a href="MLtonProcess">MLtonProcess</a></p>
+</li>
+<li>
+<p><a href="MLtonRandom">MLtonRandom</a></p>
+</li>
+<li>
+<p><a href="MLtonReal">MLtonReal</a></p>
+</li>
+<li>
+<p><a href="MLtonRlimit">MLtonRlimit</a></p>
+</li>
+<li>
+<p><a href="MLtonRusage">MLtonRusage</a></p>
+</li>
+<li>
+<p><a href="MLtonSignal">MLtonSignal</a></p>
+</li>
+<li>
+<p><a href="MLtonSyslog">MLtonSyslog</a></p>
+</li>
+<li>
+<p><a href="MLtonTextIO">MLtonTextIO</a></p>
+</li>
+<li>
+<p><a href="MLtonThread">MLtonThread</a></p>
+</li>
+<li>
+<p><a href="MLtonVector">MLtonVector</a></p>
+</li>
+<li>
+<p><a href="MLtonWeak">MLtonWeak</a></p>
+</li>
+<li>
+<p><a href="MLtonWord">MLtonWord</a></p>
+</li>
+<li>
+<p><a href="MLtonWorld">MLtonWorld</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_values">Values</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><code>eq (x, y)</code></p>
+<div class="paragraph">
+<p>returns true if <code>x</code> and <code>y</code> are equal as pointers.  For simple types
+like <code>char</code>, <code>int</code>, and <code>word</code>, this is the same as equals.  For
+arrays, datatypes, strings, tuples, and vectors, this is a simple
+pointer equality.  The semantics is a bit murky.</p>
+</div>
+</li>
+<li>
+<p><code>equal (x, y)</code></p>
+<div class="paragraph">
+<p>returns true if <code>x</code> and <code>y</code> are structurally equal.  For equality
+types, this is the same as <a href="PolymorphicEquality">PolymorphicEquality</a>.  For other types,
+it is a conservative approximation of equivalence.</p>
+</div>
+</li>
+<li>
+<p><code>hash x</code></p>
+<div class="paragraph">
+<p>returns a structural hash of <code>x</code>.  The hash function is consistent
+between execution of the same program, but may not be consistent
+between different programs.</p>
+</div>
+</li>
+<li>
+<p><code>isMLton</code></p>
+<div class="paragraph">
+<p>is always <code>true</code> in a MLton implementation, and is always <code>false</code> in a
+stub implementation.</p>
+</div>
+</li>
+<li>
+<p><code>share x</code></p>
+<div class="paragraph">
+<p>maximizes sharing in the heap for the object graph reachable from <code>x</code>.</p>
+</div>
+</li>
+<li>
+<p><code>shareAll ()</code></p>
+<div class="paragraph">
+<p>maximizes sharing in the heap by sharing space for equivalent
+immutable objects.  A call to <code>shareAll</code> performs a major garbage
+collection, and takes time proportional to the size of the heap.</p>
+</div>
+</li>
+<li>
+<p><code>size x</code></p>
+<div class="paragraph">
+<p>returns the amount of heap space (in bytes) taken by the value of <code>x</code>,
+including all objects reachable from <code>x</code> by following pointers.  It
+takes time proportional to the size of <code>x</code>.  See below for an example.</p>
+</div>
+</li>
+<li>
+<p><code>sizeAll ()</code></p>
+<div class="paragraph">
+<p>returns the amount of heap space (in bytes) taken by all reachable
+live data.  It takes time proportional to the size of live data.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="size">Example of <code>MLton.size</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This example, <code>size.sml</code>, demonstrates the application of <code>MLton.size</code>
+to many different kinds of objects.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">printSize</span> <span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">string</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nd">'a</span><span class="p">,</span> <span class="n">use</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">):</span> <span class="n">unit</span><span class="p">=</span>
+   <span class="p">(</span><span class="n">print</span> <span class="s2">"The size of "</span>
+    <span class="p">;</span> <span class="n">print</span> <span class="n">name</span>
+    <span class="p">;</span> <span class="n">print</span> <span class="s2">" is "</span>
+    <span class="p">;</span> <span class="n">print</span> <span class="p">(</span><span class="nn">IntInf</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="nn">MLton</span><span class="p">.</span><span class="n">size</span> <span class="n">value</span><span class="p">))</span>
+    <span class="p">;</span> <span class="n">print</span> <span class="s2">" bytes.</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="p">;</span> <span class="n">use</span> <span class="n">value</span><span class="p">)</span>
+
+<span class="kr">fun</span> <span class="nf">chk</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">if</span> <span class="n">x</span> <span class="p">=</span> <span class="n">y</span>
+      <span class="kr">then</span> <span class="p">()</span>
+      <span class="kr">else</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"bug"</span>
+
+<span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span>
+   <span class="p">(</span><span class="n">printSize</span> <span class="p">(</span><span class="s2">"a char"</span><span class="p">,</span> <span class="sc">#"c"</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="p">())</span>
+    <span class="p">;</span> <span class="n">printSize</span> <span class="p">(</span><span class="s2">"an int list of length 4"</span><span class="p">,</span>
+                 <span class="nn">List</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span> <span class="n">+</span> <span class="mi">1</span><span class="p">),</span> <span class="kr">fn</span> <span class="n">l</span> <span class="p">=&gt;</span>
+                 <span class="n">chk</span> <span class="p">(</span><span class="n">foldl</span> <span class="p">(</span><span class="kr">op</span> <span class="n">+</span><span class="p">)</span> <span class="mi">0</span> <span class="n">l</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+    <span class="p">;</span> <span class="n">printSize</span> <span class="p">(</span><span class="s2">"a string of length 10"</span><span class="p">,</span>
+                 <span class="nn">CharVector</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">chr</span> <span class="p">(</span><span class="n">ord</span> <span class="sc">#"0"</span> <span class="n">+</span> <span class="n">i</span><span class="p">)),</span> <span class="kr">fn</span> <span class="n">s</span> <span class="p">=&gt;</span>
+                 <span class="n">chk</span> <span class="p">(</span><span class="nn">CharVector</span><span class="p">.</span><span class="n">foldl</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">s</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">ord</span> <span class="n">c</span> <span class="n">+</span> <span class="n">s</span><span class="p">)</span> <span class="mi">0</span> <span class="n">s</span><span class="p">,</span>  <span class="mi">525</span><span class="p">))</span>
+    <span class="p">;</span> <span class="n">printSize</span> <span class="p">(</span><span class="s2">"an int array of length 10"</span><span class="p">,</span>
+                 <span class="nn">Array</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">),</span> <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span>
+                 <span class="n">chk</span> <span class="p">(</span><span class="nn">Array</span><span class="p">.</span><span class="n">foldl</span> <span class="p">(</span><span class="kr">op</span> <span class="n">+</span><span class="p">)</span> <span class="mi">0</span> <span class="n">a</span><span class="p">,</span> <span class="mi">45</span><span class="p">))</span>
+    <span class="p">;</span> <span class="n">printSize</span> <span class="p">(</span><span class="s2">"a double array of length 10"</span><span class="p">,</span>
+                 <span class="nn">Array</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">real</span><span class="p">),</span> <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span>
+                 <span class="n">chk</span> <span class="p">(</span><span class="nn">Real</span><span class="p">.</span><span class="n">floor</span> <span class="p">(</span><span class="nn">Array</span><span class="p">.</span><span class="n">foldl</span> <span class="p">(</span><span class="kr">op</span> <span class="n">+</span><span class="p">)</span> <span class="mf">0.0</span> <span class="n">a</span><span class="p">),</span> <span class="mi">45</span><span class="p">))</span>
+    <span class="p">;</span> <span class="n">printSize</span> <span class="p">(</span><span class="s2">"an array of length 10 of 2-ples of ints"</span><span class="p">,</span>
+                 <span class="nn">Array</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="n">+</span> <span class="mi">1</span><span class="p">)),</span> <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span>
+                 <span class="n">chk</span> <span class="p">(</span><span class="nn">Array</span><span class="p">.</span><span class="n">foldl</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">((</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">),</span><span class="n">s</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">a</span> <span class="n">+</span> <span class="n">b</span> <span class="n">+</span> <span class="n">s</span><span class="p">)</span> <span class="mi">0</span> <span class="n">a</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+    <span class="p">;</span> <span class="n">printSize</span> <span class="p">(</span><span class="s2">"a useless function"</span><span class="p">,</span>
+                 <span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="mi">13</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="p">())</span>
+    <span class="p">)</span>
+
+<span class="kr">local</span>
+   <span class="kr">open</span> <span class="nn">MLton</span><span class="err">.</span><span class="n">Cont</span>
+<span class="kr">in</span>
+   <span class="kr">val</span> <span class="nv">rc</span><span class="p">:</span> <span class="n">int</span> <span class="n">option</span> <span class="n">t</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+   <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span>
+      <span class="kr">case</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k</span><span class="p">:</span> <span class="n">int</span> <span class="n">option</span> <span class="n">t</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">rc</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="n">k</span><span class="p">;</span> <span class="n">throw</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">NONE</span><span class="p">)))</span> <span class="kr">of</span>
+         <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="p">()</span>
+       <span class="p">|</span> <span class="n">SOME</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span>
+<span class="kr">end</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">printSize</span> <span class="p">(</span><span class="s2">"a continuation option ref"</span><span class="p">,</span>
+                   <span class="n">rc</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">rc</span> <span class="p">=&gt;</span>
+                   <span class="kr">case</span> <span class="n">!rc</span> <span class="kr">of</span>
+                      <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="p">()</span>
+                    <span class="p">|</span> <span class="n">SOME</span> <span class="n">k</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">rc</span> <span class="n">:=</span> <span class="n">NONE</span><span class="p">;</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Cont</span><span class="p">.</span><span class="n">throw</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">SOME</span> <span class="mi">13</span><span class="p">)))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Compile and run as usual.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton size.sml
+% ./size
+The size of a char is 0 bytes.
+The size of an int list of length 4 is 96 bytes.
+The size of a string of length 10 is 40 bytes.
+The size of an int array of length 10 is 64 bytes.
+The size of a double array of length 10 is 104 bytes.
+The size of an array of length 10 of 2-ples of ints is 104 bytes.
+The size of a useless function is 0 bytes.
+The size of a continuation option ref is 5016 bytes.
+13
+The size of a continuation option ref is 16 bytes.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that sizes are dependent upon the target platform and compiler
+optimizations.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonStructure.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonStructure.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

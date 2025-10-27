@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Fixpoints</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Fixpoints</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>This page discusses a framework that makes it possible to compute
+fixpoints over arbitrary products of abstract types.  The code is from
+an Extended Basis library
+(<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/README"><code>README</code></a>).</p>
+</div>
+<div class="paragraph">
+<p>First the signature of the framework
+(<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/public/generic/tie.sig"><code>tie.sig</code></a>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="c">(*</span><span class="cm">*
+ * A framework for computing fixpoints.
+ *
+ * In a strict language you sometimes want to provide a fixpoint
+ * combinator for an abstract type {t} to make it possible to write
+ * recursive definitions.  Unfortunately, a single combinator {fix} of the
+ * type {(t -&gt; t) -&gt; t} does not support mutual recursion.  To support
+ * mutual recursion, you would need to provide a family of fixpoint
+ * combinators having types of the form {(u -&gt; u) -&gt; u} where {u} is a
+ * type of the form {t * ... * t}.  Unfortunately, even such a family of
+ * fixpoint combinators does not support mutual recursion over different
+ * abstract types.
+ *)</span>
+<span class="kr">signature</span> <span class="nn">TIE</span> <span class="p">=</span> <span class="kr">sig</span>
+   <span class="kr">include</span> <span class="nn">ETAEXP'</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">etaexp</span>
+   <span class="c">(*</span><span class="cm">* The type of fixpoint witnesses. *)</span>
+
+   <span class="kr">val</span> <span class="nv">fix</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="nn">Fix</span><span class="p">.</span><span class="n">t</span>
+   <span class="c">(*</span><span class="cm">*
+    * Produces a fixpoint combinator from the given witness.  For example,
+    * one can make a mutually recursive definition of functions:
+    *
+    *&gt; val isEven &amp; isOdd =
+    *&gt;     let open Tie in fix (function *` function) end
+    *&gt;        (fn isEven &amp; isOdd =&gt;
+    *&gt;            (fn 0 =&gt; true
+    *&gt;              | 1 =&gt; false
+    *&gt;              | n =&gt; isOdd (n-1)) &amp;
+    *&gt;            (fn 0 =&gt; false
+    *&gt;              | 1 =&gt; true
+    *&gt;              | n =&gt; isEven (n-1)))
+    *)</span>
+
+   <span class="c">(*</span><span class="cm">* == Making New Witnesses == *)</span>
+
+   <span class="kr">val</span> <span class="nv">pure</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="nn">UnOp</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="nn">Thunk</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="c">(*</span><span class="cm">*
+    * {pure} is a more general version of {tier}.  It is mostly useful for
+    * computing fixpoints in a non-imperative manner.
+    *)</span>
+
+   <span class="kr">val</span> <span class="nv">tier</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="nn">Effect</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="nn">Thunk</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="c">(*</span><span class="cm">*
+    * {tier} is used to define fixpoint witnesses for new abstract types
+    * by providing a thunk whose instantiation allocates a mutable proxy
+    * and a procedure for updating it with the result.
+    *)</span>
+
+   <span class="kr">val</span> <span class="nv">id</span> <span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="c">(*</span><span class="cm">* {id x} is equivalent to {pure (const (x, id))}. *)</span>
+
+   <span class="c">(*</span><span class="cm">* == Combining Existing Witnesses == *)</span>
+
+   <span class="kr">val</span> <span class="nv">iso</span> <span class="p">:</span> <span class="nd">'b</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="nn">Iso</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="c">(*</span><span class="cm">*
+    * Given an isomorphism between {'a} and {'b} and a witness for {'b},
+    * produces a witness for {'a}.  This is useful when you have a new
+    * type that is isomorphic to some old type for which you already have
+    * a witness.
+    *)</span>
+
+   <span class="kr">val</span> <span class="nv">product</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="n">t</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="nn">Product</span><span class="p">.</span><span class="n">t</span> <span class="n">t</span>
+   <span class="c">(*</span><span class="cm">*
+    * Dependent product combinator.  Given a witness for {'a} and a
+    * constructor from a {'a} to witness for {'b}, produces a witness for
+    * the product {('a, 'b) Product.t}.  The constructor for {'b} should
+    * not access the (proxy) value {'a} before it has been fixed.
+    *)</span>
+
+   <span class="kr">val</span> <span class="nv">*`</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="nn">Product</span><span class="p">.</span><span class="n">t</span> <span class="n">t</span>
+   <span class="c">(*</span><span class="cm">* {a *` b} is equivalent to {product (a, const b)}. *)</span>
+
+   <span class="kr">val</span> <span class="nv">tuple2</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span>
+   <span class="c">(*</span><span class="cm">*
+    * Given witnesses for {'a} and {'b} produces a witness for the product
+    * {'a * 'b}.
+    *)</span>
+
+   <span class="c">(*</span><span class="cm">* == Particular Witnesses == *)</span>
+
+   <span class="kr">val</span> <span class="nv">function</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span>
+   <span class="c">(*</span><span class="cm">* Witness for functions. *)</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>fix</code> is a <a href="TypeIndexedValues">type-indexed</a> function.  The type-index
+parameter to <code>fix</code> is called a "witness".  To compute fixpoints over
+products, one uses the <code>*`</code> operator to combine witnesses.  To provide
+a fixpoint combinator for an abstract type, one implements a witness
+providing a thunk whose instantiation allocates a fresh, mutable proxy
+and a procedure for updating the proxy with the solution.  Naturally
+this means that not all possible ways of computing a fixpoint of a
+particular type are possible under the framework.  The <code>pure</code>
+combinator is a generalization of <code>tier</code>.  The <code>iso</code> combinator is
+provided for reusing existing witnesses.</p>
+</div>
+<div class="paragraph">
+<p>Note that instead of using an infix operator, we could alternatively
+employ an interface using <a href="Fold">Fold</a>.  Also, witnesses are eta-expanded
+to work around the <a href="ValueRestriction">value restriction</a>, while
+maintaining abstraction.</p>
+</div>
+<div class="paragraph">
+<p>Here is the implementation
+(<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/detail/generic/tie.sml"><code>tie.sml</code></a>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Tie</span> <span class="p">:&gt;</span> <span class="n">TIE</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">open</span> <span class="nn">Product</span>
+   <span class="kr">infix</span> <span class="n">&amp;</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">etaexp_dom</span> <span class="p">=</span> <span class="nn">Unit</span><span class="p">.</span><span class="n">t</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">etaexp_cod</span> <span class="p">=</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="nn">UnOp</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="nn">Thunk</span><span class="p">.</span><span class="n">t</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">etaexp</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">etaexp_dom</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">etaexp_cod</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">etaexp</span>
+   <span class="kr">fun</span> <span class="nf">fix</span> <span class="n">aT</span> <span class="n">f</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">val</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">ta</span><span class="p">)</span> <span class="nv">=</span> <span class="n">aT</span> <span class="p">()</span> <span class="p">()</span> <span class="kr">in</span> <span class="n">ta</span> <span class="p">(</span><span class="n">f</span> <span class="n">a</span><span class="p">)</span> <span class="kr">end</span>
+   <span class="kr">val</span> <span class="nv">pure</span> <span class="p">=</span> <span class="nn">Thunk</span><span class="p">.</span><span class="n">mk</span>
+   <span class="kr">fun</span> <span class="nf">iso</span> <span class="n">bT</span> <span class="p">(</span><span class="n">iso</span> <span class="kr">as</span> <span class="p">(_,</span> <span class="n">b2a</span><span class="p">))</span> <span class="p">()</span> <span class="p">()</span> <span class="p">=</span> <span class="kr">let</span>
+      <span class="kr">val</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">fB</span><span class="p">)</span> <span class="nv">=</span> <span class="n">bT</span> <span class="p">()</span> <span class="p">()</span>
+   <span class="kr">in</span>
+      <span class="p">(</span><span class="n">b2a</span> <span class="n">b</span><span class="p">,</span> <span class="nn">Fn</span><span class="p">.</span><span class="n">map</span> <span class="n">iso</span> <span class="n">fB</span><span class="p">)</span>
+   <span class="kr">end</span>
+   <span class="kr">fun</span> <span class="nf">product</span> <span class="p">(</span><span class="n">aT</span><span class="p">,</span> <span class="n">a2bT</span><span class="p">)</span> <span class="p">()</span> <span class="p">()</span> <span class="p">=</span> <span class="kr">let</span>
+      <span class="kr">val</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">fA</span><span class="p">)</span> <span class="nv">=</span> <span class="n">aT</span> <span class="p">()</span> <span class="p">()</span>
+      <span class="kr">val</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">fB</span><span class="p">)</span> <span class="nv">=</span> <span class="n">a2bT</span> <span class="n">a</span> <span class="p">()</span> <span class="p">()</span>
+   <span class="kr">in</span>
+      <span class="p">(</span><span class="n">a</span> <span class="n">&amp;</span> <span class="n">b</span><span class="p">,</span> <span class="nn">Product</span><span class="p">.</span><span class="n">map</span> <span class="p">(</span><span class="n">fA</span><span class="p">,</span> <span class="n">fB</span><span class="p">))</span>
+   <span class="kr">end</span>
+   <span class="c">(*</span><span class="cm"> The rest are not primitive operations. *)</span>
+   <span class="kr">fun</span> <span class="nf">op</span> <span class="n">*`</span> <span class="p">(</span><span class="n">aT</span><span class="p">,</span> <span class="n">bT</span><span class="p">)</span> <span class="p">=</span> <span class="n">product</span> <span class="p">(</span><span class="n">aT</span><span class="p">,</span> <span class="nn">Fn</span><span class="p">.</span><span class="n">const</span> <span class="n">bT</span><span class="p">)</span>
+   <span class="kr">fun</span> <span class="nf">tuple2</span> <span class="n">ab</span> <span class="p">=</span> <span class="n">iso</span> <span class="p">(</span><span class="kr">op</span> <span class="n">*`</span> <span class="n">ab</span><span class="p">)</span> <span class="nn">Product</span><span class="p">.</span><span class="n">isoTuple2</span>
+   <span class="kr">fun</span> <span class="nf">tier</span> <span class="n">th</span> <span class="p">=</span> <span class="n">pure</span> <span class="p">((</span><span class="kr">fn</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">ua</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nn">Fn</span><span class="p">.</span><span class="n">const</span> <span class="n">a</span> <span class="n">o</span> <span class="n">ua</span><span class="p">))</span> <span class="n">o</span> <span class="n">th</span><span class="p">)</span>
+   <span class="kr">fun</span> <span class="nf">id</span> <span class="n">x</span> <span class="p">=</span> <span class="n">pure</span> <span class="p">(</span><span class="nn">Fn</span><span class="p">.</span><span class="n">const</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nn">Fn</span><span class="p">.</span><span class="n">id</span><span class="p">))</span>
+   <span class="kr">fun</span> <span class="nf">function</span> <span class="n">?</span> <span class="p">=</span>
+       <span class="n">pure</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="kr">let</span>
+                   <span class="kr">val</span> <span class="nv">r</span> <span class="p">=</span> <span class="n">ref</span> <span class="p">(</span><span class="nn">Basic</span><span class="p">.</span><span class="n">raising</span> <span class="nn">Fix</span><span class="p">.</span><span class="n">Fix</span><span class="p">)</span>
+                <span class="kr">in</span>
+                   <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">!r</span> <span class="n">x</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">r</span> <span class="n">:=</span> <span class="n">f</span> <span class="p">;</span> <span class="n">f</span><span class="p">))</span>
+                <span class="kr">end</span><span class="p">)</span> <span class="n">?</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s then take a look at a couple of additional examples.</p>
+</div>
+<div class="paragraph">
+<p>Here is a naive implementation of lazy promises:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Promise</span> <span class="p">:&gt;</span> <span class="kr">sig</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+   <span class="kr">val</span> <span class="nv">lazy</span> <span class="p">:</span> <span class="nd">'a</span> <span class="nn">Thunk</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">force</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+   <span class="kr">val</span> <span class="nv">Y</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="nn">Tie</span><span class="p">.</span><span class="n">t</span>
+<span class="kr">end</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t'</span> <span class="p">=</span>
+      <span class="nc">EXN</span> <span class="kr">of</span> <span class="n">exn</span>
+    <span class="p">|</span> <span class="nc">THUNK</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="nn">Thunk</span><span class="p">.</span><span class="n">t</span>
+    <span class="p">|</span> <span class="nc">VALUE</span> <span class="kr">of</span> <span class="nd">'a</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">t'</span> <span class="nn">Ref</span><span class="p">.</span><span class="n">t</span>
+   <span class="kr">fun</span> <span class="nf">lazy</span> <span class="n">f</span> <span class="p">=</span> <span class="n">ref</span> <span class="p">(</span><span class="n">THUNK</span> <span class="n">f</span><span class="p">)</span>
+   <span class="kr">fun</span> <span class="nf">force</span> <span class="n">t</span> <span class="p">=</span>
+      <span class="kr">case</span> <span class="n">!t</span>
+       <span class="kr">of</span> <span class="n">EXN</span> <span class="n">e</span>   <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">e</span>
+        <span class="p">|</span> <span class="n">THUNK</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">t</span> <span class="n">:=</span> <span class="n">VALUE</span> <span class="p">(</span><span class="n">f</span> <span class="p">())</span> <span class="kr">handle</span> <span class="n">e</span> <span class="p">=&gt;</span> <span class="n">t</span> <span class="n">:=</span> <span class="n">EXN</span> <span class="n">e</span> <span class="p">;</span> <span class="n">force</span> <span class="n">t</span><span class="p">)</span>
+        <span class="p">|</span> <span class="n">VALUE</span> <span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span>
+   <span class="kr">fun</span> <span class="nf">Y</span> <span class="n">?</span> <span class="p">=</span> <span class="nn">Tie</span><span class="p">.</span><span class="n">tier</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="kr">let</span>
+                             <span class="kr">val</span> <span class="nv">r</span> <span class="p">=</span> <span class="n">lazy</span> <span class="p">(</span><span class="n">raising</span> <span class="nn">Fix</span><span class="p">.</span><span class="n">Fix</span><span class="p">)</span>
+                          <span class="kr">in</span>
+                             <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">r</span> <span class="n">&lt;\</span> <span class="kr">op</span> <span class="n">:=</span> <span class="n">o</span> <span class="n">!</span><span class="p">)</span>
+                          <span class="kr">end</span><span class="p">)</span> <span class="n">?</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An example use of our naive lazy promises is to implement equally naive
+lazy streams:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Stream</span> <span class="p">:&gt;</span> <span class="kr">sig</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+   <span class="kr">val</span> <span class="nv">cons</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">get</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">t</span><span class="p">)</span> <span class="nn">Option</span><span class="p">.</span><span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">Y</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="nn">Tie</span><span class="p">.</span><span class="n">t</span>
+<span class="kr">end</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">IN</span> <span class="kr">of</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">t</span><span class="p">)</span> <span class="nn">Option</span><span class="p">.</span><span class="n">t</span> <span class="nn">Promise</span><span class="p">.</span><span class="n">t</span>
+   <span class="kr">fun</span> <span class="nf">cons</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="nn">Promise</span><span class="p">.</span><span class="n">lazy</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">xs</span><span class="p">)))</span>
+   <span class="kr">fun</span> <span class="nf">get</span> <span class="p">(</span><span class="n">IN</span> <span class="n">p</span><span class="p">)</span> <span class="p">=</span> <span class="nn">Promise</span><span class="p">.</span><span class="n">force</span> <span class="n">p</span>
+   <span class="kr">fun</span> <span class="nf">Y</span> <span class="n">?</span> <span class="p">=</span> <span class="nn">Tie</span><span class="p">.</span><span class="n">iso</span> <span class="nn">Promise</span><span class="p">.</span><span class="n">Y</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">IN</span> <span class="n">p</span> <span class="p">=&gt;</span> <span class="n">p</span><span class="p">,</span> <span class="n">IN</span><span class="p">)</span> <span class="n">?</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that above we make use of the <code>iso</code> combinator.  Here is a finite
+representation of an infinite stream of ones:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">ones</span> <span class="p">=</span> <span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">Tie</span> <span class="nn">Stream</span>
+<span class="kr">in</span>
+   <span class="n">fix</span> <span class="n">Y</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">ones</span> <span class="p">=&gt;</span> <span class="n">cons</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ones</span><span class="p">))</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Fixpoints.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Fixpoints.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+This is javamail-20250122 from
+https://repo1.maven.org/maven2
+
+See also:
+  - https://jakarta.ee/specifications/mail
+  - https://mvnrepository.com/artifact/jakarta.mail/jakarta.mail-api
+
+  - https://jakarta.ee/specifications/activation
+  - https://mvnrepository.com/artifact/jakarta.activation/jakarta.activation-api
+
+  - https://eclipse-ee4j.github.io/angus-mail/
+  - https://mvnrepository.com/artifact/org.eclipse.angus/angus-mail
+
+  - https://eclipse-ee4j.github.io/angus-activation/
+  - https://mvnrepository.com/artifact/org.eclipse.angus/angus-activation
+
+
+Fabian
+        22-Jan-2025

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>UniversalType</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>UniversalType</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A universal type is a type into which all other types can be embedded.
+Here&#8217;s a <a href="StandardML">Standard ML</a> signature for a universal type.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">UNIVERSAL_TYPE</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">embed</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">t</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">option</span><span class="p">)</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The idea is that <code>type t</code> is the universal type and that each call to
+<code>embed</code> returns a new pair of functions <code>(inject, project)</code>, where
+<code>inject</code> embeds a value into the universal type and <code>project</code> extracts
+the value from the universal type.  A pair <code>(inject, project)</code>
+returned by <code>embed</code> works together in that <code>project u</code> will return
+<code>SOME v</code> if and only if <code>u</code> was created by <code>inject v</code>.  If <code>u</code> was
+created by a different function <code>inject'</code>, then <code>project</code> returns
+<code>NONE</code>.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s an example embedding integers and reals into a universal type.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">Test</span> <span class="p">(</span><span class="n">U</span><span class="p">:</span> <span class="n">UNIVERSAL_TYPE</span><span class="p">):</span> <span class="kr">sig</span> <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">val</span> <span class="p">(</span><span class="n">intIn:</span> <span class="n">int</span> <span class="n">-&gt;</span> <span class="n">U</span><span class="err">.</span><span class="n">t</span><span class="p">,</span> <span class="n">intOut</span><span class="p">)</span> <span class="nv">=</span> <span class="nn">U</span><span class="p">.</span><span class="n">embed</span> <span class="p">()</span>
+      <span class="kr">val</span> <span class="nv">r</span><span class="p">:</span> <span class="nn">U</span><span class="p">.</span><span class="n">t</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="p">(</span><span class="n">intIn</span> <span class="mi">13</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">s1</span> <span class="p">=</span>
+         <span class="kr">case</span> <span class="n">intOut</span> <span class="p">(</span><span class="n">!r</span><span class="p">)</span> <span class="kr">of</span>
+            <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="s2">"NONE"</span>
+          <span class="p">|</span> <span class="n">SOME</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span>
+      <span class="kr">val</span> <span class="p">(</span><span class="n">realIn:</span> <span class="n">real</span> <span class="n">-&gt;</span> <span class="n">U</span><span class="err">.</span><span class="n">t</span><span class="p">,</span> <span class="n">realOut</span><span class="p">)</span> <span class="nv">=</span> <span class="nn">U</span><span class="p">.</span><span class="n">embed</span> <span class="p">()</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">r</span> <span class="n">:=</span> <span class="n">realIn</span> <span class="mf">13.0</span>
+      <span class="kr">val</span> <span class="nv">s2</span> <span class="p">=</span>
+         <span class="kr">case</span> <span class="n">intOut</span> <span class="p">(</span><span class="n">!r</span><span class="p">)</span> <span class="kr">of</span>
+            <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="s2">"NONE"</span>
+          <span class="p">|</span> <span class="n">SOME</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span>
+      <span class="kr">val</span> <span class="nv">s3</span> <span class="p">=</span>
+         <span class="kr">case</span> <span class="n">realOut</span> <span class="p">(</span><span class="n">!r</span><span class="p">)</span> <span class="kr">of</span>
+            <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="s2">"NONE"</span>
+          <span class="p">|</span> <span class="n">SOME</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">x</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="n">s3</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Applying <code>Test</code> to an appropriate implementation will print</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>13 NONE 13.0</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that two different calls to embed on the same type return
+different embeddings.</p>
+</div>
+<div class="paragraph">
+<p>Standard ML does not have explicit support for universal types;
+however, there are at least two ways to implement them.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation_using_exceptions">Implementation Using Exceptions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>While the intended use of SML exceptions is for exception handling, an
+accidental feature of their design is that the <code>exn</code> type is a
+universal type.  The implementation relies on being able to declare
+exceptions locally to a function and on the fact that exceptions are
+<a href="GenerativeException">generative</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">U</span><span class="p">:&gt;</span> <span class="n">UNIVERSAL_TYPE</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">exn</span>
+
+      <span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">embed</span> <span class="p">()</span> <span class="p">=</span>
+         <span class="kr">let</span>
+            <span class="kr">exception</span> <span class="nc">E</span> <span class="kr">of</span> <span class="nd">'a</span>
+            <span class="kr">fun</span> <span class="nf">project</span> <span class="p">(</span><span class="n">e</span><span class="p">:</span> <span class="n">t</span><span class="p">):</span> <span class="nd">'a</span> <span class="n">option</span> <span class="p">=</span>
+               <span class="kr">case</span> <span class="n">e</span> <span class="kr">of</span>
+                  <span class="n">E</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">SOME</span> <span class="n">a</span>
+                <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">NONE</span>
+         <span class="kr">in</span>
+            <span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">project</span><span class="p">)</span>
+         <span class="kr">end</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation_using_functions_and_references">Implementation Using Functions and References</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">U</span><span class="p">:&gt;</span> <span class="n">UNIVERSAL_TYPE</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="p">{</span><span class="n">clear</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">,</span>
+                         <span class="n">store</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">}</span>
+
+      <span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">embed</span> <span class="p">()</span> <span class="p">=</span>
+         <span class="kr">let</span>
+            <span class="kr">val</span> <span class="nv">r</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+            <span class="kr">fun</span> <span class="nf">inject</span> <span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nd">'a</span><span class="p">):</span> <span class="n">t</span> <span class="p">=</span>
+               <span class="n">T</span> <span class="p">{</span><span class="n">clear</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">r</span> <span class="n">:=</span> <span class="n">NONE</span><span class="p">,</span>
+                  <span class="n">store</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">r</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="n">a</span><span class="p">}</span>
+            <span class="kr">fun</span> <span class="nf">project</span> <span class="p">(</span><span class="n">T</span> <span class="p">{</span><span class="n">clear</span><span class="p">,</span> <span class="n">store</span><span class="p">}):</span> <span class="nd">'a</span> <span class="n">option</span> <span class="p">=</span>
+               <span class="kr">let</span>
+                  <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">store</span> <span class="p">()</span>
+                  <span class="kr">val</span> <span class="nv">res</span> <span class="p">=</span> <span class="n">!r</span>
+                  <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">clear</span> <span class="p">()</span>
+               <span class="kr">in</span>
+                  <span class="n">res</span>
+               <span class="kr">end</span>
+         <span class="kr">in</span>
+            <span class="p">(</span><span class="n">inject</span><span class="p">,</span> <span class="n">project</span><span class="p">)</span>
+         <span class="kr">end</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that due to the use of a shared ref cell, the above
+implementation is not thread safe.</p>
+</div>
+<div class="paragraph">
+<p>One could try to simplify the above implementation by eliminating the
+<code>clear</code> function, making <code>type t = unit -&gt; unit</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">U</span><span class="p">:&gt;</span> <span class="n">UNIVERSAL_TYPE</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+
+      <span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">embed</span> <span class="p">()</span> <span class="p">=</span>
+         <span class="kr">let</span>
+            <span class="kr">val</span> <span class="nv">r</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+            <span class="kr">fun</span> <span class="nf">inject</span> <span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nd">'a</span><span class="p">):</span> <span class="n">t</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">r</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="n">a</span>
+            <span class="kr">fun</span> <span class="nf">project</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">t</span><span class="p">):</span> <span class="nd">'a</span> <span class="n">option</span> <span class="p">=</span> <span class="p">(</span><span class="n">r</span> <span class="n">:=</span> <span class="n">NONE</span><span class="p">;</span> <span class="n">f</span> <span class="p">();</span> <span class="n">!r</span><span class="p">)</span>
+         <span class="kr">in</span>
+            <span class="p">(</span><span class="n">inject</span><span class="p">,</span> <span class="n">project</span><span class="p">)</span>
+         <span class="kr">end</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>While correct, this approach keeps the contents of the ref cell alive
+longer than necessary, which could cause a space leak.  The problem is
+in <code>project</code>, where the call to <code>f</code> stores some value in some ref cell
+<code>r'</code>.  Perhaps <code>r'</code> is the same ref cell as <code>r</code>, but perhaps not.  If
+we do not clear <code>r'</code> before returning from <code>project</code>, then <code>r'</code> will
+keep the value alive, even though it is useless.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="PropertyList">PropertyList</a>: Lisp-style property lists implemented with a universal type</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/UniversalType.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/UniversalType.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

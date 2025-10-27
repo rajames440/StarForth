@@ -1,0 +1,4 @@
+EXE=""
+CC="cc"
+GMP_INC_DIR=""
+GMP_LIB_DIR=""

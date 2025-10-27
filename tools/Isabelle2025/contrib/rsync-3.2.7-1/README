@@ -1,0 +1,15 @@
+This is rsync 3.2.7 from https://github.com/WayneD/rsync/archive/refs/tags
+
+The distribution has been built like this:
+
+  cd src
+  ./configure --disable-acl-support --disable-lz4 --disable-md2man --disable-openssl --disable-xattr-support --disable-xxhash --disable-zstd
+  make
+
+See also:
+  * https://github.com/WayneD/rsync
+  * https://rsync.samba.org
+
+
+        Makarius
+        28-Mar-2024

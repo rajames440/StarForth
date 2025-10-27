@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CompileTimeOptions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CompileTimeOptions</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton&#8217;s compile-time options control the name of the output file, the
+verbosity of compile-time messages, and whether or not certain
+optimizations are performed.  They also can specify which intermediate
+files are saved and can stop the compilation process early, at some
+intermediate pass, in which case compilation can be resumed by passing
+the generated files to MLton.  MLton uses the input file suffix to
+determine the type of input program.  The possibilities are <code>.c</code>,
+<code>.mlb</code>, <code>.o</code>, <code>.s</code>, and <code>.sml</code>.</p>
+</div>
+<div class="paragraph">
+<p>With no arguments, MLton prints the version number and exits.  For a
+usage message, run MLton with an invalid switch, e.g.  <code>mlton -z</code>.  In
+the explanation below and in the usage message, for flags that take a
+number of choices (e.g. <code>{true|false}</code>), the first value listed is the
+default.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options">Options</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><code>-align <em>n</em></code></p>
+<div class="paragraph">
+<p>Aligns object in memory by the specified alignment (<code>4</code> or <code>8</code>).
+The default varies depending on architecture.</p>
+</div>
+</li>
+<li>
+<p><code>-as-opt <em>option</em></code></p>
+<div class="paragraph">
+<p>Pass <em>option</em> to <code>cc</code> when compiling assembler code.  If you wish to
+pass an option to the assembler, you must use <code>cc</code>&rsquo;s <code>-Wa,</code> syntax.</p>
+</div>
+</li>
+<li>
+<p><code>-cc <em>cc</em></code></p>
+<div class="paragraph">
+<p>Specify the executable for the C compiler.  The C compiler is also invoked to
+compile assembly (<code>.s</code> files) to object code (<code>.o</code> files) and to link object
+code into an executable.</p>
+</div>
+</li>
+<li>
+<p><code>-cc-opt <em>option</em></code></p>
+<div class="paragraph">
+<p>Pass <em>option</em> to <code>cc</code> when compiling C code.</p>
+</div>
+</li>
+<li>
+<p><code>-codegen {native|amd64|c|llvm|x86}</code></p>
+<div class="paragraph">
+<p>Generate native object code via amd64 assembly, C code, LLVM code, or
+x86 code or C code.  With <code>-codegen native</code> (<code>-codegen amd64</code> or
+<code>-codegen x86</code>), MLton typically compiles more quickly and generates
+better code.</p>
+</div>
+</li>
+<li>
+<p><code>-const <em>name</em> <em>value</em></code></p>
+<div class="paragraph">
+<p>Set the value of a compile-time constant.  Here is a list of
+available constants, their default values, and what they control.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Exn.keepHistory {false|true}</code></p>
+<div class="paragraph">
+<p>Enable <code>MLton.Exn.history</code>.  See <a href="MLtonExn">MLtonExn</a> for details.  There is a
+performance cost to setting this to <code>true</code>, both in memory usage of
+exceptions and in run time, because of additional work that must be
+performed at each exception construction, raise, and handle.</p>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>-default-ann <em>ann</em></code></p>
+<div class="paragraph">
+<p>Specify default <a href="MLBasisAnnotations">ML Basis annotations</a>.  For
+example, <code>-default-ann 'warnUnused true'</code> causes unused variable
+warnings to be enabled by default.  A default is overridden by the
+corresponding annotation in an ML Basis file.</p>
+</div>
+</li>
+<li>
+<p><code>-default-type <em>type</em></code></p>
+<div class="paragraph">
+<p>Specify the default binding for a primitive type.  For example,
+<code>-default-type word64</code> causes the top-level type <code>word</code> and the
+top-level structure <code>Word</code> in the <a href="BasisLibrary">Basis Library</a> to be
+equal to <code>Word64.word</code> and <code>Word64:WORD</code>, respectively.  Similarly,
+<code>-default-type intinf</code> causes the top-level type <code>int</code> and the
+top-level structure <code>Int</code> in the <a href="BasisLibrary">Basis Library</a> to be
+equal to <code>IntInf.int</code> and <code>IntInf:INTEGER</code>, respectively.</p>
+</div>
+</li>
+<li>
+<p><code>-disable-ann <em>ann</em></code></p>
+<div class="paragraph">
+<p>Ignore the specified <a href="MLBasisAnnotations">ML Basis annotation</a> in
+every ML Basis file.  For example, to see <em>all</em> match and unused
+warnings, compile with</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>-default-ann 'warnUnused true'
+-disable-ann forceUsed
+-disable-ann nonexhaustiveMatch
+-disable-ann redundantMatch
+-disable-ann warnUnused</pre>
+</div>
+</div>
+</li>
+<li>
+<p><code>-export-header <em>file</em></code></p>
+<div class="paragraph">
+<p>Write C prototypes to <em>file</em> for all of the functions in the program
+<a href="CallingFromCToSML">exported from SML to C</a>.</p>
+</div>
+</li>
+<li>
+<p><code>-ieee-fp {false|true}</code></p>
+<div class="paragraph">
+<p>Cause the x86 native code generator to be pedantic about following the
+IEEE floating point standard.  By default, it is not, because of the
+performance cost.  This only has an effect with <code>-codegen x86</code>.</p>
+</div>
+</li>
+<li>
+<p><code>-inline <em>n</em></code></p>
+<div class="paragraph">
+<p>Set the inlining threshold used in the optimizer.  The threshold is an
+approximate measure of code size of a procedure.  The default is
+<code>320</code>.</p>
+</div>
+</li>
+<li>
+<p><code>-keep {g|o}</code></p>
+<div class="paragraph">
+<p>Save intermediate files.  If no <code>-keep</code> argument is given, then only
+the output file is saved.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>g</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">generated <code>.c</code> and <code>.s</code> files passed to <code>cc</code> and generated <code>.ll</code> files passed to <code>llvm-as</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>o</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">object (<code>.o</code>) files</p></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p><code>-link-opt <em>option</em></code></p>
+<div class="paragraph">
+<p>Pass <em>option</em> to <code>cc</code> when linking.  You can use this to specify
+library search paths, e.g. <code>-link-opt -Lpath</code>, and libraries to link
+with, e.g., <code>-link-opt -lfoo</code>, or even both at the same time,
+e.g. <code>-link-opt '-Lpath -lfoo'</code>.  If you wish to pass an option to the
+linker, you must use <code>cc</code>&rsquo;s <code>-Wl,</code> syntax, e.g.,
+<code>-link-opt '-Wl,--export-dynamic'</code>.</p>
+</div>
+</li>
+<li>
+<p><code>-llvm-as <em>llvm-as</em></code></p>
+<div class="paragraph">
+<p>Specify the executable for the LLVM <code>.ll</code> to <code>.bc</code> assembler;
+can be used to select a specific version of the tool (e.g., <code>-llvm-as llvm-as-14</code>).</p>
+</div>
+</li>
+<li>
+<p><code>-llvm-as-opt <em>option</em></code></p>
+<div class="paragraph">
+<p>Pass <em>option</em> to <code>llvm-as</code> when assembling (<code>.ll</code> to <code>.bc</code>) LLVM code.</p>
+</div>
+</li>
+<li>
+<p><code>-llvm-llc <em>llc</em></code></p>
+<div class="paragraph">
+<p>Specify the executable for the LLVM <code>.bc</code> to <code>.o</code> system compiler;
+can be used to select a specific version of the tool (e.g., <code>-llvm-as llc-14</code>).</p>
+</div>
+</li>
+<li>
+<p><code>-llvm-llc-opt <em>option</em></code></p>
+<div class="paragraph">
+<p>Pass <em>option</em> to <code>llc</code> when compiling (<code>.bc</code> to <code>.o</code>) LLVM code.</p>
+</div>
+</li>
+<li>
+<p><code>-llvm-opt <em>opt</em></code></p>
+<div class="paragraph">
+<p>Specify the executable for the LLVM <code>.bc</code> to <code>.bc</code> optimizer;
+can be used to select a specific version of the tool (e.g., <code>-llvm-opt opt-14</code>).</p>
+</div>
+</li>
+<li>
+<p><code>-llvm-opt-opt <em>option</em></code></p>
+<div class="paragraph">
+<p>Pass <em>option</em> to <code>opt</code> when optimizing (<code>.bc</code> to <code>.bc</code>) LLVM code.</p>
+</div>
+</li>
+<li>
+<p><code>-mlb-path-map <em>file</em></code></p>
+<div class="paragraph">
+<p>Use <em>file</em> as an <a href="MLBasisPathMap">ML Basis path map</a> to define
+additional MLB path variables.  Multiple uses of <code>-mlb-path-map</code> and
+<code>-mlb-path-var</code> are allowed, with variable definitions in later path
+maps taking precedence over earlier ones.</p>
+</div>
+</li>
+<li>
+<p><code>-mlb-path-var <em>name</em> <em>value</em></code></p>
+<div class="paragraph">
+<p>Define an additional MLB path variable.  Multiple uses of
+<code>-mlb-path-map</code> and <code>-mlb-path-var</code> are allowed, with variable
+definitions in later path maps taking precedence over earlier ones.</p>
+</div>
+</li>
+<li>
+<p><code>-output <em>file</em></code></p>
+<div class="paragraph">
+<p>Specify the name of the final output file. The default name is the
+input file name with its suffix removed and an appropriate, possibly
+empty, suffix added.</p>
+</div>
+</li>
+<li>
+<p><code>-profile {no|alloc|count|time}</code></p>
+<div class="paragraph">
+<p>Produce an executable that gathers <a href="Profiling">profiling</a> data.  When
+such an executable is run, it produces an <code>mlmon.out</code> file.</p>
+</div>
+</li>
+<li>
+<p><code>-profile-branch {false|true}</code></p>
+<div class="paragraph">
+<p>If true, the profiler will separately gather profiling data for each
+branch of a function definition, <code>case</code> expression, and <code>if</code>
+expression.</p>
+</div>
+</li>
+<li>
+<p><code>-profile-stack {false|true}</code></p>
+<div class="paragraph">
+<p>If <code>true</code>, the executable will gather profiling data for all functions
+on the stack, not just the currently executing function.  See
+<a href="ProfilingTheStack">ProfilingTheStack</a>.</p>
+</div>
+</li>
+<li>
+<p><code>-profile-val {false|true}</code></p>
+<div class="paragraph">
+<p>If <code>true</code>, the profiler will separately gather profiling data for each
+(expansive) <code>val</code> declaration.</p>
+</div>
+</li>
+<li>
+<p><code>-runtime <em>arg</em></code></p>
+<div class="paragraph">
+<p>Pass argument to the runtime system via <code>@MLton</code>.  See
+<a href="RunTimeOptions">RunTimeOptions</a>.  The argument will be processed before other
+<code>@MLton</code> command line switches.  Multiple uses of <code>-runtime</code> are
+allowed, and will pass all the arguments in order.  If the same
+runtime switch occurs more than once, then the last setting will take
+effect.  There is no need to supply the leading <code>@MLton</code> or the
+trailing <code>--</code>; these will be supplied automatically.</p>
+</div>
+<div class="paragraph">
+<p>An argument to <code>-runtime</code> may contain spaces, which will cause the
+argument to be treated as a sequence of words by the runtime.  For
+example the command line:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>mlton -runtime 'ram-slop 0.4' foo.sml</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will cause <code>foo</code> to run as if it had been called like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>foo @MLton ram-slop 0.4 --</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An executable created with <code>-runtime stop</code> doesn&#8217;t process any
+<code>@MLton</code> arguments.  This is useful to create an executable, e.g.,
+<code>echo</code>, that must treat <code>@MLton</code> like any other command-line argument.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton -runtime stop echo.sml
+% echo @MLton --
+@MLton --</pre>
+</div>
+</div>
+</li>
+<li>
+<p><code>-show-basis <em>file</em></code></p>
+<div class="paragraph">
+<p>Pretty print to <em>file</em> the basis defined by the input program.  See
+<a href="ShowBasis">ShowBasis</a>.</p>
+</div>
+</li>
+<li>
+<p><code>-show-def-use <em>file</em></code></p>
+<div class="paragraph">
+<p>Output def-use information to <em>file</em>.  Each identifier that is defined
+appears on a line, followed on subsequent lines by the position of
+each use.</p>
+</div>
+</li>
+<li>
+<p><code>-stop {f|g|o|tc}</code></p>
+<div class="paragraph">
+<p>Specify when to stop.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>f</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">list of files on stdout (only makes sense when input is <code>foo.mlb</code>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>g</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">generated <code>.c</code> and <code>.s</code> files</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>o</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">object (<code>.o</code>) files</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>tc</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">after type checking</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>If you compile with <code>-stop g</code> or <code>-stop o</code>, you can resume compilation
+by running MLton on the generated <code>.c</code> and <code>.s</code> or <code>.o</code> files.</p>
+</div>
+</li>
+<li>
+<p><code>-target {self|<em>&#8230;&#8203;</em>}</code></p>
+<div class="paragraph">
+<p>Generate an executable that runs on the specified platform.  The
+default is <code>self</code>, which means to compile for the machine that MLton
+is running on.  To use any other target, you must first install a
+<a href="CrossCompiling">cross compiler</a>.</p>
+</div>
+</li>
+<li>
+<p><code>-target-as-opt <em>target</em> <em>option</em></code></p>
+<div class="paragraph">
+<p>Like <code>-as-opt</code>, this passes <em>option</em> to <code>cc</code> when compliling
+assembler code, except it only passes <em>option</em> when the target
+architecture, operating system, or arch-os pair is <em>target</em>.</p>
+</div>
+</li>
+<li>
+<p><code>-target-cc-opt <em>target</em> <em>option</em></code></p>
+<div class="paragraph">
+<p>Like <code>-cc-opt</code>, this passes <em>option</em> to <code>cc</code> when compiling C code,
+except it only passes <em>option</em> when the target architecture, operating
+system, or arch-os pair is <em>target</em>.</p>
+</div>
+</li>
+<li>
+<p><code>-target-link-opt <em>target</em> <em>option</em></code></p>
+<div class="paragraph">
+<p>Like <code>-link-opt</code>, this passes <em>option</em> to <code>cc</code> when linking, except
+it only passes <em>option</em> when the target architecture, operating
+system, or arch-os pair is <em>target</em>.</p>
+</div>
+</li>
+<li>
+<p><code>-verbose {0|1|2|3}</code></p>
+<div class="paragraph">
+<p>How verbose to be about what passes are running.  The default is <code>0</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">silent</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">calls to compiler, assembler, and linker</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1, plus intermediate compiler passes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>3</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2, plus some data structure sizes</p></td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Mar 14 20:47:58 2024 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CompileTimeOptions.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CompileTimeOptions.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

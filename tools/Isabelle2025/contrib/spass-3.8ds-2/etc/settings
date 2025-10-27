@@ -1,0 +1,4 @@
+# -*- shell-script -*- :mode=shellscript:
+
+SPASS_HOME="$COMPONENT/$ISABELLE_PLATFORM64"
+SPASS_VERSION="3.8ds"

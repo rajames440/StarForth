@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ForeignFunctionInterface</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ForeignFunctionInterface</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton&#8217;s foreign function interface (FFI) extends Standard ML and makes
+it easy to take the address of C global objects, access C global
+variables, call from SML to C, and call from C to SML.  MLton also
+provides <a href="MLNLFFI">ML-NLFFI</a>, which is a higher-level FFI for calling
+C functions and manipulating C data from SML.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_overview">Overview</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="ForeignFunctionInterfaceTypes">Foreign Function Interface Types</a></p>
+</li>
+<li>
+<p><a href="ForeignFunctionInterfaceSyntax">Foreign Function Interface Syntax</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_importing_code_into_sml">Importing Code into SML</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="CallingFromSMLToC">Calling From SML To C</a></p>
+</li>
+<li>
+<p><a href="CallingFromSMLToCFunctionPointer">Calling From SML To C Function Pointer</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exporting_code_from_sml">Exporting Code from SML</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="CallingFromCToSML">Calling From C To SML</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_system_libraries">Building System Libraries</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="LibrarySupport">Library Support</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ForeignFunctionInterface.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ForeignFunctionInterface.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

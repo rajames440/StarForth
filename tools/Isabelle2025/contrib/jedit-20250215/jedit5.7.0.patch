@@ -1,0 +1,1947 @@
+diff -Nru -- jedit5.7.0/doc/Contents jedit5.7.0-patched/doc/Contents
+--- jedit5.7.0/doc/Contents	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/doc/Contents	2025-02-15 15:00:56.000865627 +0100
+@@ -0,0 +1,4 @@
++Original jEdit Documentation
++  jedit-manual    jEdit User's Guide
++  jedit-changes   jEdit Version History
++
+diff -Nru -- jedit5.7.0/doc/jedit-changes jedit5.7.0-patched/doc/jedit-changes
+--- jedit5.7.0/doc/jedit-changes	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/doc/jedit-changes	2025-02-15 15:00:10.944570000 +0100
+@@ -0,0 +1,152 @@
++jEdit 5.7 version history
++       (changes since jEdit 5.6.0)
++:encoding=UTF-8:
++
++{{{ Version 5.7.0
++
++Thanks to Björn Kautler, Matthieu Casanova, Dale Anson, and Eric Le Lay
++for contributing to this release.
++
++{{{ Bug Fixes
++
++- Support arm64 Java installations in the macOS launcher (#4123 - Björn Kautler)
++
++- Do not forward the --verbose parameter in the macOS launcher to jEdit
++  during investigating startup problems (Björn Kautler)
++
++- Show Temurin download link in macOS launcher if no compatible Java version
++  was found instead of java.com and oracle.com where Java 8 is promoted
++  (Björn Kautler)
++
++- Support Java installations with paths that are not following the old naming
++  conventions regarding their version in the macOS launcher (Björn Kautler)
++
++- Bundle the new MacOS 1.5 plugin instead of the old MacOSX 1.3 plugin
++  to become compatible with newer Java versions (Björn Kautler)
++
++- Fix NullPointerException during saving autosave settings if no previous
++  autosave directory was set (Björn Kautler)
++
++- BeanShell snippets and macros now work consistently and not suddenly change
++  behaviour anymore just because some BeanShell snippet defined a class.
++  This now disables reflective access to otherwise inaccessible fields through
++  simple syntax though, that used to work after a snippet with a class
++  definition was loaded. (#4118 - Björn Kautler)
++
++- Fix the installation of plugins trying to use invalid file names
++  (Björn Kautler)
++
++- VFSManager.canReadFile() was returning true only for directories
++  (#4102 - Matthieu Casanova)
++
++- Allow user to choose filename when printing to pdf
++  (partial fix for #4115 - Dale Anson)
++
++- Key handling in the Errors dialog uses current keymap (#4128 - Eric Le Lay)
++
++- Delete at the end of the line does not delete newline on java20, java21
++  (#4125 - Eric Le Lay)
++
++- Freeze when deleting a directory and some children (race condition)
++  (#4132 - Eric Le Lay)
++
++}}}
++{{{ Miscellaneous
++
++- Improve logging of startup errors in the macOS launcher with --verbose option
++  (Björn Kautler)
++
++- Update launch4j to version 3.50 and also search in PATH environment
++  variable for a Java runtime from the EXE launcher (Björn Kautler)
++
++- Update macOS app bundler to version 1.3.0 (Björn Kautler)
++
++- Status bar design updated with the ability to add widgets to the left
++  and the right of the bar (Matthieu Casanova)
++
++- Make building possible when using Java 15+ (Björn Kautler)
++
++}}}
++{{{ API Changes
++
++- Added new methods in SegmentBuffer for append and insert text
++  (Matthieu Casanova)
++
++- New service org.jedit.util.CleanerService replacing use of finalize()
++  (Matthieu Casanova)
++
++- New methods JEditBuffer.getWordWrap() and JeditBuffer.setWordWrap()
++  (Matthieu Casanova)
++
++- New method DialogChooser.openChooserWindow() showing a chooser dialog
++  (Matthieu Casanova)
++
++- New method DialogChooser.openListChooserWindow() showing a chooser dialog list
++  (Matthieu Casanova)
++
++- New method Buffer.setLineSeparator() (Matthieu Casanova)
++
++- New method Buffer.reloadWithEncoding() (Matthieu Casanova)
++
++- New method StatusBar.updateEvent() (Matthieu Casanova)
++
++- New method BufferSet.contains() (Matthieu Casanova)
++
++- Deprecated methods removed
++    StandardUtilities.objectsEqual()
++    TextArea.showPopupMenu()
++    Mode.acceptFilename()
++    OperatingSystem.isDOSDerived()
++    OperatingSystem.hasJava17()
++    MiscUtilities.getFileNameNoExtension()
++    GUIUtilities.prettifyMenuLabel()
++    GUIUtilities.setAutoMnemonic()
++    GUIUtilities.parseColor()
++    GUIUtilities.parseStyle()
++    GUIUtilities.adjustForScreenBounds()
++    GUIUtilities.requestFocus()
++    GUIUtilities.isPopupTrigger()
++    GUIUtilities.isMiddleButton()
++    GUIUtilities.isRightButton()
++    GUIUtilities.getScreenBounds()
++    GUIUtilities.showPopupMenu()
++    GUIUtilities.showPopupMenu()
++    GUIUtilities.isAncestorOf()
++    GUIUtilities.getParentDialog()
++    GUIUtilities.setEnabledRecursively()
++    GUIUtilities.setButtonContentMargin()
++    GUIUtilities.makeSameSize()
++    GUIUtilities.defaultTableCellSize()
++    GUIUtilities.defaultColumnWidth()
++    GUIUtilities.defaultRowHeight()
++    Buffer.getFile()
++    VFSManager.runInAWTThread()
++    VFSManager.runInWorkThread() (Matthieu Casanova)
++
++}}}
++{{{ Editing
++
++- Never mark empty untitled buffers dirty, independent of settings
++  (Björn Kautler)
++
++- Never mark buffers dirty if contents are unchanged is now also properly
++  supported for untitled buffers (Björn Kautler)
++
++- New edit mode for Dockerfile (Matthieu Casanova)
++
++- New edit mode for QDoc (Dale Anson)
++
++- Status bar encoding widget allow to choose between updating the encoding
++  or reloading with a new encoding (Matthieu Casanova)
++
++- Updated java mode for new keywords introduced up to Java 17. (Dale Anson)
++
++- Add match index to beanshell replace context (#554 - Eric Le Lay)
++
++}}}
++
++}}}
++
++jEdit buffer local properties:
++:maxLineLen=80:wrap=hard:autoIndent=simple:noTabs=true:indentSize=2:tabSize=2:
++:folding=explicit:collapseFolds=2:
+Binary files jedit5.7.0/doc/jedit-manual.pdf and jedit5.7.0-patched/doc/jedit-manual.pdf differ
+Binary files jedit5.7.0/jars/Code2HTML.jar and jedit5.7.0-patched/jars/Code2HTML.jar differ
+Binary files jedit5.7.0/jars/CommonControls.jar and jedit5.7.0-patched/jars/CommonControls.jar differ
+Binary files jedit5.7.0/jars/Console.jar and jedit5.7.0-patched/jars/Console.jar differ
+Binary files jedit5.7.0/jars/ErrorList.jar and jedit5.7.0-patched/jars/ErrorList.jar differ
+Binary files jedit5.7.0/jars/Highlight.jar and jedit5.7.0-patched/jars/Highlight.jar differ
+Binary files jedit5.7.0/jars/jsr305-3.0.2.jar and jedit5.7.0-patched/jars/jsr305-3.0.2.jar differ
+Binary files jedit5.7.0/jars/kappalayout.jar and jedit5.7.0-patched/jars/kappalayout.jar differ
+Binary files jedit5.7.0/jars/MacOS.jar and jedit5.7.0-patched/jars/MacOS.jar differ
+Binary files jedit5.7.0/jars/Navigator.jar and jedit5.7.0-patched/jars/Navigator.jar differ
+Binary files jedit5.7.0/jars/SideKick.jar and jedit5.7.0-patched/jars/SideKick.jar differ
+diff -Nru -- jedit5.7.0/jEdit/macros/Emacs/Emacs_Insert_File.bsh jedit5.7.0-patched/jEdit/macros/Emacs/Emacs_Insert_File.bsh
+--- jedit5.7.0/jEdit/macros/Emacs/Emacs_Insert_File.bsh	2024-08-03 19:53:28.000000000 +0200
++++ jedit5.7.0-patched/jEdit/macros/Emacs/Emacs_Insert_File.bsh	2025-02-15 15:00:19.222441407 +0100
+@@ -14,7 +14,7 @@
+     else
+         path = dirname (path);
+     result = GUIUtilities.showVFSFileDialog(view, path, VFSBrowser.OPEN_DIALOG, false);
+-    if (result != null)
++    if (result.length > 0)
+         buffer.insertFile (view, result[0]);
+ }
+ 
+diff -Nru -- jedit5.7.0/jEdit/macros/Emacs/Emacs_Next_Line.bsh jedit5.7.0-patched/jEdit/macros/Emacs/Emacs_Next_Line.bsh
+--- jedit5.7.0/jEdit/macros/Emacs/Emacs_Next_Line.bsh	2024-08-03 19:53:28.000000000 +0200
++++ jedit5.7.0-patched/jEdit/macros/Emacs/Emacs_Next_Line.bsh	2025-02-15 15:00:19.223441391 +0100
+@@ -12,16 +12,13 @@
+ 
+ void emacsNextLine(View view){
+ 
+-	// need access to textArea.lastLinePartial
+-	setAccessibility(true);
+-
+ 	int first = textArea.getFirstLine();
+ 	int caretLine = textArea.getScreenLineOfOffset(textArea.getCaretPosition());
+ 	int visibleLines = textArea.getVisibleLines();
+ 	int electricScroll = textArea.getElectricScroll();
+ 
+ 	if(caretLine != -1 && caretLine+1 >= 
+-			(visibleLines - (electricScroll + (textArea.lastLinePartial ? 1 : 0))))
++			(visibleLines - (electricScroll + (textArea.isLastLinePartial() ? 1 : 0))))
+ 	{
+ 		int newFirst = (first + (visibleLines - electricScroll) / 2);
+ 		textArea.setFirstLine(newFirst);
+diff -Nru -- jedit5.7.0/jEdit/macros/Emacs/Emacs_Previous_Line.bsh jedit5.7.0-patched/jEdit/macros/Emacs/Emacs_Previous_Line.bsh
+--- jedit5.7.0/jEdit/macros/Emacs/Emacs_Previous_Line.bsh	2024-08-03 19:53:28.000000000 +0200
++++ jedit5.7.0-patched/jEdit/macros/Emacs/Emacs_Previous_Line.bsh	2025-02-15 15:00:19.223441391 +0100
+@@ -12,9 +12,6 @@
+ 
+ void emacsPreviousLine(View view){
+ 
+-	// need access to textArea.lastLinePartial
+-	setAccessibility(true);
+-
+ 	int first = textArea.getFirstLine();
+ 	int caretLine = textArea.getScreenLineOfOffset(textArea.getCaretPosition());
+ 	int visibleLines = textArea.getVisibleLines();
+diff -Nru -- jedit5.7.0/jEdit/macros/Emacs/EmacsUtil.bsh jedit5.7.0-patched/jEdit/macros/Emacs/EmacsUtil.bsh
+--- jedit5.7.0/jEdit/macros/Emacs/EmacsUtil.bsh	2024-08-03 19:53:28.000000000 +0200
++++ jedit5.7.0-patched/jEdit/macros/Emacs/EmacsUtil.bsh	2025-02-15 15:00:19.223441391 +0100
+@@ -31,6 +31,7 @@
+         buf.append (c);
+         if (c == '\n')
+             break;
++        i++;
+     }
+     
+     return buf.toString();
+@@ -266,6 +267,8 @@
+ int findBeginningOfSentence()
+ {
+     caret = textArea.getCaretPosition() - 1;
++    if (caret < 0)
++        caret = 0;
+     if (charAt (caret) == '.')
+         caret--;
+ 
+diff -Nru -- jedit5.7.0/jEdit/modes/catalog jedit5.7.0-patched/jEdit/modes/catalog
+--- jedit5.7.0/jEdit/modes/catalog	2024-08-03 19:53:28.000000000 +0200
++++ jedit5.7.0-patched/jEdit/modes/catalog	2025-02-15 15:00:50.800947038 +0100
+@@ -201,7 +201,6 @@
+         FILE_NAME_GLOB="*.prg" />
+ 
+ <MODE NAME="freemarker"		FILE="freemarker.xml"
+-        FILE_NAME_GLOB="*.ftl"
+         FIRST_LINE_GLOB="&lt;\#ftl*"/>
+ 
+ <MODE NAME="gcbasic" 		FILE="gcbasic.xml"
+@@ -280,6 +279,16 @@
+ <MODE NAME="io"			FILE="io.xml"
+         FILE_NAME_GLOB="*.io" />
+ 
++<MODE NAME="isabelle" FILE="isabelle.xml" FILE_NAME_GLOB="{*.thy,ROOT0.ML,ROOT.ML}"/>
++
++<MODE NAME="isabelle-ml" FILE="isabelle-ml.xml" FILE_NAME_GLOB="*.ML"/>
++
++<MODE NAME="isabelle-news" FILE="isabelle-news.xml"/>
++
++<MODE NAME="isabelle-options" FILE="isabelle-options.xml"/>
++
++<MODE NAME="isabelle-root" FILE="isabelle-root.xml" FILE_NAME_GLOB="ROOT"/>
++
+ <MODE NAME="jamon"
+       FILE="jamon.xml"
+       FILE_NAME_GLOB="*.jamon" />
+@@ -378,8 +387,6 @@
+ <MODE NAME="mxml"		FILE="mxml.xml"
+         FILE_NAME_GLOB="*.mxml" />
+ 
+-<MODE NAME="ml"			FILE="ml.xml"
+-        FILE_NAME_GLOB="*.{sml,ml}" />
+ 
+ <MODE NAME="modula3"		FILE="modula3.xml"
+         FILE_NAME_GLOB="*.[im]3" />
+@@ -621,6 +628,8 @@
+ <MODE NAME="smi-mib"		FILE="smi-mib.xml"
+         FILE_NAME_GLOB="*{.mib,-MIB.txt}" />
+ 
++<MODE NAME="sml" FILE="sml.xml" FILE_NAME_GLOB="*.{sml,sig}"/>
++
+ <MODE NAME="sqr"		FILE="sqr.xml"
+         FILE_NAME_GLOB="*.{sqr,sqc}" />
+ 
+diff -Nru -- jedit5.7.0/jEdit/modes/isabelle-ml.xml jedit5.7.0-patched/jEdit/modes/isabelle-ml.xml
+--- jedit5.7.0/jEdit/modes/isabelle-ml.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/jEdit/modes/isabelle-ml.xml	2025-02-15 15:00:50.786947257 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle/ML mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/jEdit/modes/isabelle-news.xml jedit5.7.0-patched/jEdit/modes/isabelle-news.xml
+--- jedit5.7.0/jEdit/modes/isabelle-news.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/jEdit/modes/isabelle-news.xml	2025-02-15 15:00:50.785947273 +0100
+@@ -0,0 +1,13 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle NEWS mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/jEdit/modes/isabelle-options.xml jedit5.7.0-patched/jEdit/modes/isabelle-options.xml
+--- jedit5.7.0/jEdit/modes/isabelle-options.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/jEdit/modes/isabelle-options.xml	2025-02-15 15:00:50.786947257 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle options mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/jEdit/modes/isabelle-root.xml jedit5.7.0-patched/jEdit/modes/isabelle-root.xml
+--- jedit5.7.0/jEdit/modes/isabelle-root.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/jEdit/modes/isabelle-root.xml	2025-02-15 15:00:50.786947257 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle session root mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/jEdit/modes/isabelle.xml jedit5.7.0-patched/jEdit/modes/isabelle.xml
+--- jedit5.7.0/jEdit/modes/isabelle.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/jEdit/modes/isabelle.xml	2025-02-15 15:00:50.785947273 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle theory mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/jEdit/modes/sml.xml jedit5.7.0-patched/jEdit/modes/sml.xml
+--- jedit5.7.0/jEdit/modes/sml.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/jEdit/modes/sml.xml	2025-02-15 15:00:50.786947257 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Standard ML mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/browser/VFSBrowser.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/browser/VFSBrowser.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/browser/VFSBrowser.java	2024-08-03 19:53:15.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/browser/VFSBrowser.java	2025-02-15 15:00:19.317439919 +0100
+@@ -1195,6 +1195,7 @@
+ 		VFSFile[] selectedFiles = browserView.getSelectedFiles();
+ 
+ 		Buffer buffer = null;
++		String bufferMarker = null;
+ 
+ check_selected:
+ 		for (VFSFile file : selectedFiles)
+@@ -1244,7 +1245,10 @@
+ 				}
+ 
+ 				if (_buffer != null)
++				{
+ 					buffer = _buffer;
++					bufferMarker = file.getPathMarker();
++				}
+ 			}
+ 			// otherwise if a file is selected in OPEN_DIALOG or
+ 			// SAVE_DIALOG mode, just let the listener(s)
+@@ -1253,21 +1257,30 @@
+ 
+ 		if(buffer != null)
+ 		{
++			View gotoView = null;
++
+ 			switch(mode)
+ 			{
+ 			case M_OPEN:
+ 				view.setBuffer(buffer);
++				gotoView = view;
+ 				break;
+ 			case M_OPEN_NEW_VIEW:
+-				jEdit.newView(view,buffer,false);
++				gotoView = jEdit.newView(view,buffer,false);
+ 				break;
+ 			case M_OPEN_NEW_PLAIN_VIEW:
+-				jEdit.newView(view,buffer,true);
++				gotoView = jEdit.newView(view,buffer,true);
+ 				break;
+ 			case M_OPEN_NEW_SPLIT:
+ 				view.splitHorizontally().setBuffer(buffer);
++				gotoView = view;
+ 				break;
+ 			}
++
++			if (gotoView != null && bufferMarker != null)
++			{
++				jEdit.gotoMarker(gotoView, buffer, bufferMarker);
++			}
+ 		}
+ 
+ 		Object[] listeners = listenerList.getListenerList();
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/buffer/JEditBuffer.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/buffer/JEditBuffer.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/buffer/JEditBuffer.java	2024-08-03 19:53:15.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/buffer/JEditBuffer.java	2025-02-15 15:00:19.238441156 +0100
+@@ -2054,29 +2054,23 @@
+ 			{
+ 				Segment seg = new Segment();
+ 				newFoldLevel = foldHandler.getFoldLevel(this,i,seg);
+-				if(newFoldLevel != lineMgr.getFoldLevel(i))
++				if(Debug.FOLD_DEBUG)
++					Log.log(Log.DEBUG,this,i + " fold level changed");
++				changed = true;
++				// Update preceding fold levels if necessary
++				List<Integer> precedingFoldLevels =
++					foldHandler.getPrecedingFoldLevels(
++						this,i,seg,newFoldLevel);
++				if (precedingFoldLevels != null)
+ 				{
+-					if(Debug.FOLD_DEBUG)
+-						Log.log(Log.DEBUG,this,i + " fold level changed");
+-					changed = true;
+-					// Update preceding fold levels if necessary
+-					if (i == firstInvalidFoldLevel)
++					int j = i;
++					for (Integer foldLevel: precedingFoldLevels)
+ 					{
+-						List<Integer> precedingFoldLevels =
+-							foldHandler.getPrecedingFoldLevels(
+-								this,i,seg,newFoldLevel);
+-						if (precedingFoldLevels != null)
+-						{
+-							int j = i;
+-							for (Integer foldLevel: precedingFoldLevels)
+-							{
+-								j--;
+-								lineMgr.setFoldLevel(j, foldLevel);
+-							}
+-							if (j < firstUpdatedFoldLevel)
+-								firstUpdatedFoldLevel = j;
+-						}
++						j--;
++						lineMgr.setFoldLevel(j, foldLevel);
+ 					}
++					if (j < firstUpdatedFoldLevel)
++						firstUpdatedFoldLevel = j;
+ 				}
+ 				lineMgr.setFoldLevel(i,newFoldLevel);
+ 			}
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/bufferio/BufferIORequest.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/bufferio/BufferIORequest.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/bufferio/BufferIORequest.java	2024-08-03 19:53:19.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/bufferio/BufferIORequest.java	2025-02-15 15:00:19.252440937 +0100
+@@ -357,7 +357,7 @@
+ 
+ 		Segment lineSegment = new Segment();
+ 		String newline = buffer.getStringProperty(JEditBuffer.LINESEP);
+-		if(newline == null)
++		if(newline == null || newline.isEmpty())
+ 			newline = System.getProperty("line.separator");
+ 
+ 		final int bufferLineCount = buffer.getLineCount();
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/Buffer.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/Buffer.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/Buffer.java	2024-08-03 19:53:15.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/Buffer.java	2025-02-15 15:00:19.252440937 +0100
+@@ -1236,6 +1236,7 @@
+ 	 */
+ 	public void setLineSeparator(String lineSep)
+ 	{
++		lineSep = org.jedit.misc.LineSepType.fromSeparator(lineSep).getSeparator();
+ 		setProperty(LINESEP, lineSep);
+ 		setDirty(true);
+ 		propertiesChanged();
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/gui/FloatingWindowContainer.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/gui/FloatingWindowContainer.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/gui/FloatingWindowContainer.java	2024-08-03 19:53:18.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/gui/FloatingWindowContainer.java	2025-02-15 15:00:19.216441501 +0100
+@@ -45,14 +45,15 @@
+  * @version $Id: FloatingWindowContainer.java 25333 2020-05-10 09:40:02Z kpouer $
+  * @since jEdit 4.0pre1
+  */
+-public class FloatingWindowContainer extends JFrame implements DockableWindowContainer, PropertyChangeListener
+-{
++public class FloatingWindowContainer extends JDialog implements DockableWindowContainer, PropertyChangeListener {
+ 	private String dockableName;
+ 
+ 	//{{{ FloatingWindowContainer constructor
+ 	public FloatingWindowContainer(DockableWindowManagerImpl dockableWindowManager,
+ 		boolean clone)
+ 	{
++		super(dockableWindowManager.getView());
++
+ 		this.dockableWindowManager = dockableWindowManager;
+ 
+ 		dockableWindowManager.addPropertyChangeListener(this);
+@@ -87,7 +88,6 @@
+ 		pack();
+ 		Container parent = dockableWindowManager.getView();
+ 		GUIUtilities.loadGeometry(this, parent, dockableName);
+-		GUIUtilities.addSizeSaver(this, parent, dockableName);
+ 		KeyListener listener = dockableWindowManager.closeListener(dockableName);
+ 		addKeyListener(listener);
+ 		getContentPane().addKeyListener(listener);
+@@ -154,8 +154,11 @@
+ 	@Override
+ 	public void dispose()
+ 	{
+-		entry.container = null;
+-		entry.win = null;
++		GUIUtilities.saveGeometry(this, dockableWindowManager.getView(), dockableName);
++		if (entry != null) {
++			entry.container = null;
++			entry.win = null;
++		}
+ 		super.dispose();
+ 	} //}}}
+ 
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/gui/PanelWindowContainer.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/gui/PanelWindowContainer.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/gui/PanelWindowContainer.java	2024-08-03 19:53:16.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/gui/PanelWindowContainer.java	2025-02-15 15:00:19.267440702 +0100
+@@ -53,6 +53,7 @@
+ import javax.swing.JComponent;
+ import javax.swing.JPanel;
+ import javax.swing.JPopupMenu;
++import javax.swing.JMenuItem;
+ import javax.swing.JToggleButton;
+ import javax.swing.UIManager;
+ import javax.swing.border.Border;
+@@ -164,6 +165,7 @@
+ 		{
+ 			button = new JToggleButton();	
+ 			button.setMargin(new Insets(1,1,1,1));
++            button.setFont(new JMenuItem().getFont());
+ 		}
+ 		GenericGUIUtilities.setButtonContentMargin(button, new Insets(6,6,6,6));
+ 		button.setRequestFocusEnabled(false);
+@@ -683,8 +685,6 @@
+ 			renderHints = new RenderingHints(
+ 				RenderingHints.KEY_ANTIALIASING,
+ 				RenderingHints.VALUE_ANTIALIAS_ON);
+-			renderHints.put(RenderingHints.KEY_FRACTIONALMETRICS,
+-				RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+ 			renderHints.put(RenderingHints.KEY_RENDERING,
+ 				RenderingHints.VALUE_RENDER_QUALITY);
+ 		} //}}}
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/gui/StatusBar.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/gui/StatusBar.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/gui/StatusBar.java	2024-08-03 19:53:16.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/gui/StatusBar.java	2025-02-15 15:00:19.259440827 +0100
+@@ -225,8 +225,11 @@
+ 			else
+ 				this.message.setText(" ");
+ 		}
+-		else
+-			this.message.setText(message);
++		else {
++			Exception exn = new Exception();
++			if (!exn.getStackTrace()[1].getClassName().startsWith("sidekick."))
++				this.message.setText(message);
++		}
+ 	} //}}}
+ 
+ 	//{{{ setMessageComponent() method
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/GUIUtilities.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/GUIUtilities.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/GUIUtilities.java	2024-08-03 19:53:15.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/GUIUtilities.java	2025-02-15 15:00:19.260440812 +0100
+@@ -1094,9 +1094,7 @@
+ 				return new Font("Monospaced", Font.PLAIN, 12);
+ 			}
+ 			else {
+-				Font font2 =
+-					new Font(OperatingSystem.isWindows() ? "Lucida Console" : "Monospaced",
+-						Font.PLAIN, font1.getSize());
++				Font font2 = new Font("Isabelle DejaVu Sans Mono", Font.PLAIN, font1.getSize());
+ 				FontRenderContext frc = new FontRenderContext(null, true, false);
+ 				float scale =
+ 					font1.getLineMetrics("", frc).getHeight() / font2.getLineMetrics("", frc).getHeight();
+@@ -1619,6 +1617,21 @@
+ 	}
+ 	//}}}
+ 
++	//{{{ isPopupTrigger() method
++	/**
++	 * Returns if the specified event is the popup trigger event.
++	 * This implements precisely defined behavior, as opposed to
++	 * MouseEvent.isPopupTrigger().
++	 * @param evt The event
++	 * @since jEdit 3.2pre8
++	 * @deprecated use {@link GenericGUIUtilities#requestFocus(Window, Component)}
++	 */
++	@Deprecated
++	public static boolean isPopupTrigger(MouseEvent evt)
++	{
++		return GenericGUIUtilities.isPopupTrigger(evt);
++	} //}}}
++
+ 	//{{{ init() method
+ 	static void init()
+ 	{
+Binary files jedit5.7.0/jEdit/org/gjt/sp/jedit/icons/themes/classic/32x32/apps/isabelle.gif and jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/icons/themes/classic/32x32/apps/isabelle.gif differ
+Binary files jedit5.7.0/jEdit/org/gjt/sp/jedit/icons/themes/tango/32x32/apps/isabelle.gif and jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/icons/themes/tango/32x32/apps/isabelle.gif differ
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/io/VFSFile.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/io/VFSFile.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/io/VFSFile.java	2024-08-03 19:53:14.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/io/VFSFile.java	2025-02-15 15:00:19.317439919 +0100
+@@ -302,6 +302,12 @@
+ 		}
+ 	} //}}}
+ 
++	//{{{ getPathMarker() method (for jEdit.gotoMarker)
++	public String getPathMarker()
++	{
++		return null;
++	} //}}}
++
+ 	//{{{ getPath() method
+ 	public String getPath()
+ 	{
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/io/VFSManager.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/io/VFSManager.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/io/VFSManager.java	2024-08-03 19:53:14.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/io/VFSManager.java	2025-02-15 15:00:19.301440170 +0100
+@@ -339,6 +339,18 @@
+ 
+ 				if(vfsUpdates.size() == 1)
+ 				{
++					// slowdown race concerning Buffer.isLoading() status
++					// of Buffer.save() + Buffer.finishSaving()
++					// versus Buffer.load() + "runnable"
++					try
++					{
++						Thread.sleep(100);
++					}
++					catch(InterruptedException ie)
++					{
++						Thread.currentThread().interrupt();
++					}
++
+ 					// we were the first to add an update;
+ 					// add update sending runnable to AWT
+ 					// thread
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/jEdit.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/jEdit.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/jEdit.java	2024-08-03 19:53:14.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/jEdit.java	2025-02-15 15:00:19.318439904 +0100
+@@ -4233,7 +4233,7 @@
+ 	} //}}}
+ 
+ 	//{{{ gotoMarker() method
+-	private static void gotoMarker(final View view, final Buffer buffer,
++	public static void gotoMarker(final View view, final Buffer buffer,
+ 		final String marker)
+ 	{
+ 		AwtRunnableQueue.INSTANCE.runAfterIoTasks(new Runnable()
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/MiscUtilities.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/MiscUtilities.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/MiscUtilities.java	2024-08-03 19:53:15.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/MiscUtilities.java	2025-02-15 15:00:19.281440483 +0100
+@@ -131,6 +131,21 @@
+ 	static final Pattern winPattern = Pattern.compile(winPatternString);
+ 
+ 
++	private static Map<String,String> environ =
++		Collections.synchronizedMap(new HashMap(System.getenv()));
++
++	public static String getenv(String varName)
++	{
++		return environ.get(varName);
++	}
++
++	public static void putenv(String varName, String value)
++	{
++		if (value == null) environ.remove(varName);
++		else environ.put(varName, value);
++	}
++	
++
+ 	/** A helper function for expandVariables when handling Windows paths on non-windows systems.
+ 	*/
+ 	private static String win2unix(String winPath)
+@@ -140,7 +155,7 @@
+ 		if (m.find())
+ 		{
+ 			String varName = m.group(2);
+-			String expansion = jEdit.systemManager.getenv(varName);
++			String expansion = getenv(varName);
+ 			if (expansion != null)
+ 			{
+ 				expansion = Matcher.quoteReplacement(expansion);
+@@ -182,7 +197,7 @@
+ 				return arg;
+ 		}
+ 		String varName = m.group(2);
+-		String expansion = jEdit.systemManager.getenv(varName);
++		String expansion = getenv(varName);
+ 		if (expansion == null) {
+ 			if (varName.equalsIgnoreCase("jedit_settings") && jEdit.getSettingsDirectory() != null) {
+ 				expansion = jEdit.getSettingsDirectory();
+@@ -192,7 +207,7 @@
+ 				varName = varName.toUpperCase();
+ 				String uparg = arg.toUpperCase();
+ 				m = p.matcher(uparg);
+-				expansion = System.getenv(varName);
++				expansion = getenv(varName);
+ 			}
+ 		}
+ 		if (expansion != null) {
+@@ -1674,13 +1689,11 @@
+ 		//{{{ VarCompressor constructor
+ 		VarCompressor()
+ 		{
+-			ProcessBuilder pb = new ProcessBuilder();
+-			Map<String, String> env = pb.environment();
+ 			if (OperatingSystem.isUnix())
+ 				prefixMap.put(System.getProperty("user.home"), "~");
+ 			if (jEdit.getSettingsDirectory() != null)
+ 				prefixMap.put(jEdit.getSettingsDirectory(), "JEDIT_SETTINGS");
+-			for (Map.Entry<String, String> entry: env.entrySet())
++			for (Map.Entry<String, String> entry: environ.entrySet())
+ 			{
+ 				String k = entry.getKey();
+ 				if (k.equalsIgnoreCase("pwd") || k.equalsIgnoreCase("oldpwd")) continue;
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/options/AppearanceOptionPane.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/options/AppearanceOptionPane.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/options/AppearanceOptionPane.java	2024-08-03 19:53:15.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/options/AppearanceOptionPane.java	2025-02-15 15:00:19.245441047 +0100
+@@ -414,7 +414,9 @@
+ 
+ 		// adjust swing properties for button, menu, and label, and list and
+ 		// textfield fonts
+-		setFonts();
++		if (!jEdit.getProperty("lookAndFeel").startsWith("com.formdev.flatlaf.")) {
++			setFonts();
++		}
+ 
+ 		// This is handled a little differently from other jEdit settings
+ 		// as this flag needs to be known very early in the
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/syntax/Chunk.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/syntax/Chunk.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/syntax/Chunk.java	2024-08-03 19:53:18.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/syntax/Chunk.java	2025-02-15 15:00:19.230441281 +0100
+@@ -332,9 +332,9 @@
+ 	//{{{ Package private members
+ 
+ 	//{{{ Instance variables
+-	SyntaxStyle style;
++	public SyntaxStyle style;
+ 	// set up after init()
+-	float width;
++	public float width;
+ 	//}}}
+ 
+ 	//{{{ Chunk constructor
+@@ -584,8 +584,8 @@
+ 	// this is either style.getBackgroundColor() or
+ 	// styles[defaultID].getBackgroundColor()
+ 	private Color background;
+-	private char[] chars;
+-	private String str;
++	public char[] chars;
++	public String str;
+ 	private GlyphData glyphData;
+ 	//}}}
+ 
+@@ -926,6 +926,11 @@
+ 		}
+ 
+ 		@Override
++		public GlyphData computeIfAbsent(GlyphKey key, java.util.function.Function<? super GlyphKey, ? extends GlyphData> f) {
++			synchronized (this) { return super.computeIfAbsent(key, f); }
++		}
++
++		@Override
+ 		protected boolean removeEldestEntry(Map.Entry<GlyphKey, GlyphData> eldest)
+ 		{
+ 			return size() > capacity;
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/textarea/TextArea.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/textarea/TextArea.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/textarea/TextArea.java	2024-08-03 19:53:18.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/textarea/TextArea.java	2025-02-15 15:00:19.231441266 +0100
+@@ -919,6 +919,11 @@
+ 		return chunkCache.getLineInfo(screenLine).physicalLine;
+ 	} //}}}
+ 
++        public Chunk getChunksOfScreenLine(int screenLine)
++        {
++                return chunkCache.getLineInfo(screenLine).chunks;
++        }
++
+ 	//{{{ getScreenLineOfOffset() method
+ 	/**
+ 	 * Returns the screen (wrapped) line containing the specified offset.
+@@ -1627,8 +1632,8 @@
+ 		}
+ 
+ 		// Scan backwards, trying to find a bracket
+-		String openBrackets = "([{«‹⟨⌈⌊⦇⟦⦃⟪";
+-		String closeBrackets = ")]}»›⟩⌉⌋⦈⟧⦄⟫";
++		String openBrackets = "([{«‹⟨⌈⌊⦇⟦⦃⟪⦉";
++		String closeBrackets = ")]}»›⟩⌉⌋⦈⟧⦄⟫⦊";
+ 		int count = 1;
+ 		char openBracket = '\0';
+ 		char closeBracket = '\0';
+@@ -4983,6 +4988,7 @@
+ 	final Point offsetXY;
+ 
+ 	boolean lastLinePartial;
++	public boolean isLastLinePartial() { return lastLinePartial; }
+ 
+ 	boolean blink;
+ 	//}}}
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/TextUtilities.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/TextUtilities.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/TextUtilities.java	2024-08-03 19:53:20.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/TextUtilities.java	2025-02-15 15:00:19.231441266 +0100
+@@ -115,6 +115,8 @@
+ 		case '⦄': if (direction != null) direction[0] = false; return '⦃';
+ 		case '⟪': if (direction != null) direction[0] = true;  return '⟫';
+ 		case '⟫': if (direction != null) direction[0] = false; return '⟪';
++		case '⦉': if (direction != null) direction[0] = true;  return '⦊';
++		case '⦊': if (direction != null) direction[0] = false; return '⦉';
+ 		default:  return '\0';
+ 		}
+ 	} //}}}
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/jedit/View.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/View.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/View.java	2024-08-03 19:53:15.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/View.java	2025-02-15 15:00:19.290440342 +0100
+@@ -1264,15 +1264,10 @@
+ 
+ 		StringBuilder title = new StringBuilder();
+ 
+-		/* On Mac OS X, apps are not supposed to show their name in the
+-		title bar. */
+-		if(!OperatingSystem.isMacOS())
+-		{
+-			if (userTitle != null)
+-				title.append(userTitle);
+-			else
+-				title.append(jEdit.getProperty("view.title"));
+-		}
++		if (userTitle != null)
++			title.append(userTitle);
++		else
++			title.append(jEdit.getProperty("view.title"));
+ 
+ 		for(int i = 0; i < buffers.size(); i++)
+ 		{
+diff -Nru -- jedit5.7.0/jEdit/org/gjt/sp/util/SyntaxUtilities.java jedit5.7.0-patched/jEdit/org/gjt/sp/util/SyntaxUtilities.java
+--- jedit5.7.0/jEdit/org/gjt/sp/util/SyntaxUtilities.java	2024-08-03 19:53:21.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/util/SyntaxUtilities.java	2025-02-15 15:00:19.231441266 +0100
+@@ -357,8 +357,28 @@
+ 			}
+ 		}
+ 
+-		return styles;
++		styles[0] =
++			new SyntaxStyle(org.gjt.sp.jedit.jEdit.getColorProperty("view.fgColor", Color.BLACK),
++				null, new Font(family, 0, size));
++		return _styleExtender.extendStyles(styles);
+ 	} //}}}
+ 
++	/**
++	 * Extended styles derived from the user-specified style array.
++	 */
++
++	public static class StyleExtender
++	{
++		public SyntaxStyle[] extendStyles(SyntaxStyle[] styles)
++		{
++			return styles;
++		}
++	}
++	volatile private static StyleExtender _styleExtender = new StyleExtender();
++	public static void setStyleExtender(StyleExtender ext)
++	{
++		_styleExtender = ext;
++	}
++
+ 	private SyntaxUtilities(){}
+ }
+diff -Nru -- jedit5.7.0/jEdit/org/jedit/localization/jedit_en.props jedit5.7.0-patched/jEdit/org/jedit/localization/jedit_en.props
+--- jedit5.7.0/jEdit/org/jedit/localization/jedit_en.props	2024-08-03 19:53:22.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/jedit/localization/jedit_en.props	2025-02-15 15:00:19.274440593 +0100
+@@ -1282,8 +1282,7 @@
+ 	The most likely reason is that the JAR file is corrupt; try\n\
+ 	reinstalling it. See Utilities->Troubleshooting->Activity Log\n\
+ 	for a full stack trace.
+-plugin-error.start-error=Cannot start: {0}\n\
+-	Try updating to a newer version of the plugin.
++plugin-error.start-error=Cannot start: {0}
+ plugin-error.already-loaded=Two copies installed. Please remove one of the \
+ 	two copies.
+ plugin-error.dep-jdk=Requires Java {0} or later, but you only have version {1}.
+diff -Nru -- jedit5.7.0/jEdit/properties/jEdit.props jedit5.7.0-patched/jEdit/properties/jEdit.props
+--- jedit5.7.0/jEdit/properties/jEdit.props	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/jEdit/properties/jEdit.props	2025-02-15 15:00:50.781947336 +0100
+@@ -0,0 +1,360 @@
++#jEdit properties
++autoReloadDialog=false
++buffer.deepIndent=false
++buffer.encoding=UTF-8-Isabelle
++buffer.indentSize=2
++buffer.lineSeparator=\n
++buffer.maxLineLen=100
++buffer.noTabs=true
++buffer.sidekick.keystroke-parse=false
++buffer.tabSize=2
++buffer.undoCount=1000
++close-docking-area.shortcut2=C+e C+CIRCUMFLEX
++complete-word.shortcut=
++console.dock-position=floating
++console.encoding=UTF-8
++console.font=Isabelle DejaVu Sans Mono
++console.fontsize=14
++delete-line.shortcut=A+d
++delete.shortcut2=C+d
++encoding.opt-out.Big5=true
++encoding.opt-out.Big5-HKSCS=true
++encoding.opt-out.CESU-8=true
++encoding.opt-out.EUC-JP=true
++encoding.opt-out.EUC-KR=true
++encoding.opt-out.GB18030=true
++encoding.opt-out.GB2312=true
++encoding.opt-out.GBK=true
++encoding.opt-out.IBM-Thai=true
++encoding.opt-out.IBM00858=true
++encoding.opt-out.IBM01140=true
++encoding.opt-out.IBM01141=true
++encoding.opt-out.IBM01142=true
++encoding.opt-out.IBM01143=true
++encoding.opt-out.IBM01144=true
++encoding.opt-out.IBM01145=true
++encoding.opt-out.IBM01146=true
++encoding.opt-out.IBM01147=true
++encoding.opt-out.IBM01148=true
++encoding.opt-out.IBM01149=true
++encoding.opt-out.IBM037=true
++encoding.opt-out.IBM1026=true
++encoding.opt-out.IBM1047=true
++encoding.opt-out.IBM273=true
++encoding.opt-out.IBM277=true
++encoding.opt-out.IBM278=true
++encoding.opt-out.IBM280=true
++encoding.opt-out.IBM284=true
++encoding.opt-out.IBM285=true
++encoding.opt-out.IBM290=true
++encoding.opt-out.IBM297=true
++encoding.opt-out.IBM420=true
++encoding.opt-out.IBM424=true
++encoding.opt-out.IBM437=true
++encoding.opt-out.IBM500=true
++encoding.opt-out.IBM775=true
++encoding.opt-out.IBM850=true
++encoding.opt-out.IBM852=true
++encoding.opt-out.IBM855=true
++encoding.opt-out.IBM857=true
++encoding.opt-out.IBM860=true
++encoding.opt-out.IBM861=true
++encoding.opt-out.IBM862=true
++encoding.opt-out.IBM863=true
++encoding.opt-out.IBM864=true
++encoding.opt-out.IBM865=true
++encoding.opt-out.IBM866=true
++encoding.opt-out.IBM868=true
++encoding.opt-out.IBM869=true
++encoding.opt-out.IBM870=true
++encoding.opt-out.IBM871=true
++encoding.opt-out.IBM918=true
++encoding.opt-out.ISO-2022-CN=true
++encoding.opt-out.ISO-2022-JP=true
++encoding.opt-out.ISO-2022-JP-2=true
++encoding.opt-out.ISO-2022-KR=true
++encoding.opt-out.ISO-8859-13=true
++encoding.opt-out.ISO-8859-16=true
++encoding.opt-out.ISO-8859-2=true
++encoding.opt-out.ISO-8859-3=true
++encoding.opt-out.ISO-8859-4=true
++encoding.opt-out.ISO-8859-5=true
++encoding.opt-out.ISO-8859-6=true
++encoding.opt-out.ISO-8859-7=true
++encoding.opt-out.ISO-8859-8=true
++encoding.opt-out.ISO-8859-9=true
++encoding.opt-out.JIS_X0201=true
++encoding.opt-out.JIS_X0212-1990=true
++encoding.opt-out.KOI8-R=true
++encoding.opt-out.KOI8-U=true
++encoding.opt-out.Shift_JIS=true
++encoding.opt-out.TIS-620=true
++encoding.opt-out.UTF-16=true
++encoding.opt-out.UTF-16BE=true
++encoding.opt-out.UTF-16LE=true
++encoding.opt-out.UTF-32=true
++encoding.opt-out.UTF-32BE=true
++encoding.opt-out.UTF-32LE=true
++encoding.opt-out.X-UTF-32BE-BOM=true
++encoding.opt-out.X-UTF-32LE-BOM=true
++encoding.opt-out.windows-1250=true
++encoding.opt-out.windows-1251=true
++encoding.opt-out.windows-1253=true
++encoding.opt-out.windows-1254=true
++encoding.opt-out.windows-1255=true
++encoding.opt-out.windows-1256=true
++encoding.opt-out.windows-1257=true
++encoding.opt-out.windows-1258=true
++encoding.opt-out.windows-31j=true
++encoding.opt-out.x-Big5-HKSCS-2001=true
++encoding.opt-out.x-Big5-Solaris=true
++encoding.opt-out.x-EUC-TW=true
++encoding.opt-out.x-IBM1006=true
++encoding.opt-out.x-IBM1025=true
++encoding.opt-out.x-IBM1046=true
++encoding.opt-out.x-IBM1097=true
++encoding.opt-out.x-IBM1098=true
++encoding.opt-out.x-IBM1112=true
++encoding.opt-out.x-IBM1122=true
++encoding.opt-out.x-IBM1123=true
++encoding.opt-out.x-IBM1124=true
++encoding.opt-out.x-IBM1129=true
++encoding.opt-out.x-IBM1166=true
++encoding.opt-out.x-IBM1364=true
++encoding.opt-out.x-IBM1381=true
++encoding.opt-out.x-IBM1383=true
++encoding.opt-out.x-IBM29626C=true
++encoding.opt-out.x-IBM300=true
++encoding.opt-out.x-IBM33722=true
++encoding.opt-out.x-IBM737=true
++encoding.opt-out.x-IBM833=true
++encoding.opt-out.x-IBM834=true
++encoding.opt-out.x-IBM856=true
++encoding.opt-out.x-IBM874=true
++encoding.opt-out.x-IBM875=true
++encoding.opt-out.x-IBM921=true
++encoding.opt-out.x-IBM922=true
++encoding.opt-out.x-IBM930=true
++encoding.opt-out.x-IBM933=true
++encoding.opt-out.x-IBM935=true
++encoding.opt-out.x-IBM937=true
++encoding.opt-out.x-IBM939=true
++encoding.opt-out.x-IBM942=true
++encoding.opt-out.x-IBM942C=true
++encoding.opt-out.x-IBM943=true
++encoding.opt-out.x-IBM943C=true
++encoding.opt-out.x-IBM948=true
++encoding.opt-out.x-IBM949=true
++encoding.opt-out.x-IBM949C=true
++encoding.opt-out.x-IBM950=true
++encoding.opt-out.x-IBM964=true
++encoding.opt-out.x-IBM970=true
++encoding.opt-out.x-ISCII91=true
++encoding.opt-out.x-ISO-2022-CN-CNS=true
++encoding.opt-out.x-ISO-2022-CN-GB=true
++encoding.opt-out.x-JIS0208=true
++encoding.opt-out.x-JISAutoDetect=true
++encoding.opt-out.x-Johab=true
++encoding.opt-out.x-MS932_0213=true
++encoding.opt-out.x-MS950-HKSCS=true
++encoding.opt-out.x-MS950-HKSCS-XP=true
++encoding.opt-out.x-MacArabic=true
++encoding.opt-out.x-MacCentralEurope=true
++encoding.opt-out.x-MacCroatian=true
++encoding.opt-out.x-MacCyrillic=true
++encoding.opt-out.x-MacDingbat=true
++encoding.opt-out.x-MacGreek=true
++encoding.opt-out.x-MacHebrew=true
++encoding.opt-out.x-MacIceland=true
++encoding.opt-out.x-MacRoman=true
++encoding.opt-out.x-MacRomania=true
++encoding.opt-out.x-MacSymbol=true
++encoding.opt-out.x-MacThai=true
++encoding.opt-out.x-MacTurkish=true
++encoding.opt-out.x-MacUkraine=true
++encoding.opt-out.x-PCK=true
++encoding.opt-out.x-SJIS_0213=true
++encoding.opt-out.x-UTF-16LE-BOM=true
++encoding.opt-out.x-euc-jp-linux=true
++encoding.opt-out.x-eucJP-Open=true
++encoding.opt-out.x-iso-8859-11=true
++encoding.opt-out.x-mswin-936=true
++encoding.opt-out.x-windows-50220=true
++encoding.opt-out.x-windows-50221=true
++encoding.opt-out.x-windows-874=true
++encoding.opt-out.x-windows-949=true
++encoding.opt-out.x-windows-950=true
++encoding.opt-out.x-windows-iso2022jp=true
++encodingDetectors=BOM XML-PI buffer-local-property
++end.shortcut=
++expand-abbrev.shortcut2=CA+SPACE
++expand-folds.shortcut=
++fallbackEncodings=UTF-8 ISO-8859-15 US-ASCII
++firstTime=false
++focus-buffer-switcher.shortcut2=A+CIRCUMFLEX
++foldPainter=Circle
++gatchan.highlight.overview=false
++helpviewer.font=Isabelle DejaVu Serif
++helpviewer.fontsize=12
++home.shortcut=
++hypersearch-results.dock-position=right
++insert-newline-indent.shortcut=
++insert-newline.shortcut=
++isabelle-debugger.dock-position=floating
++isabelle-documentation.dock-position=left
++isabelle-export-browser.label=Browse theory exports
++isabelle-output.dock-position=bottom
++isabelle-output.height=174
++isabelle-output.width=412
++isabelle-query.dock-position=bottom
++isabelle-session-browser.label=Browse session information
++isabelle-simplifier-trace.dock-position=floating
++isabelle-sledgehammer.dock-position=bottom
++isabelle-state.dock-position=right
++isabelle-symbols.dock-position=bottom
++isabelle-theories.dock-position=right
++isabelle.antiquoted_cartouche.label=Make antiquoted cartouche
++isabelle.complete-word.label=Complete word
++isabelle.complete.label=Complete Isabelle text
++isabelle.complete.shortcut2=C+b
++isabelle.control-bold.label=Control bold
++isabelle.control-bold.shortcut=C+e RIGHT
++isabelle.control-emph.label=Control emphasized
++isabelle.control-emph.shortcut=C+e LEFT
++isabelle.control-reset.label=Control reset
++isabelle.control-reset.shortcut=C+e BACK_SPACE
++isabelle.control-sub.label=Control subscript
++isabelle.control-sub.shortcut=C+e DOWN
++isabelle.control-sup.label=Control superscript
++isabelle.control-sup.shortcut=C+e UP
++isabelle.decrease-font-size.label=Decrease font size
++isabelle.decrease-font-size.shortcut2=C+SUBTRACT
++isabelle.decrease-font-size.shortcut=C+MINUS
++isabelle.decrease-font-size2.label=Decrease font size (clone)
++isabelle.draft.label=Show draft in browser
++isabelle.exclude-word-permanently.label=Exclude word permanently
++isabelle.exclude-word.label=Exclude word
++isabelle.first-error.label=Go to first error
++isabelle.first-error.shortcut=CS+a
++isabelle.goto-entity.label=Go to definition of formal entity at caret
++isabelle.goto-entity.shortcut=CS+d
++isabelle.include-word-permanently.label=Include word permanently
++isabelle.include-word.label=Include word
++isabelle.increase-font-size.label=Increase font size
++isabelle.increase-font-size.shortcut2=C+ADD
++isabelle.increase-font-size.shortcut=C+PLUS
++isabelle.increase-font-size2.label=Increase font size (clone)
++isabelle.increase-font-size2.shortcut=C+EQUALS
++isabelle.java-monitor.label=Java/VM monitor
++isabelle.last-error.label=Go to last error
++isabelle.last-error.shortcut=CS+z
++isabelle.message.label=Show message
++isabelle.message.shortcut=CS+m
++isabelle.newline.label=Newline with indentation of Isabelle keywords
++isabelle.newline.shortcut=ENTER
++isabelle.next-error.label=Go to next error
++isabelle.next-error.shortcut=CS+n
++isabelle.options.label=Isabelle options
++isabelle.prev-error.label=Go to previous error
++isabelle.prev-error.shortcut=CS+p
++isabelle.preview.label=Show preview in browser
++isabelle.reset-continuous-checking.label=Reset continuous checking
++isabelle.reset-font-size.label=Reset font size
++isabelle.reset-node-required.label=Reset node required
++isabelle.reset-words.label=Reset non-permanent words
++isabelle.select-entity.label=Select all occurences of formal entity at caret
++isabelle.select-entity.shortcut=CS+ENTER
++isabelle.select-structure.label=Select structure around selection or caret
++isabelle.select-structure.shortcut=C+7
++isabelle.set-continuous-checking.label=Set continuous checking
++isabelle.set-node-required.label=Set node required
++isabelle.toggle-breakpoint.label=Toggle Breakpoint
++isabelle.toggle-continuous-checking.label=Toggle continuous checking
++isabelle.toggle-continuous-checking.shortcut=C+e ENTER
++isabelle.toggle-node-required.label=Toggle node required
++isabelle.toggle-node-required.shortcut=C+e SPACE
++isabelle.tooltip.label=Show tooltip
++isabelle.tooltip.shortcut=CS+b
++isabelle.update-state.label=Update state output
++isabelle.update-state.shortcut=S+ENTER
++lang.usedefaultlocale=false
++largefilemode=full
++line-end.shortcut=END
++line-home.shortcut=HOME
++logo.icon.medium=32x32/apps/isabelle.gif
++lookAndFeel=com.formdev.flatlaf.FlatLightLaf
++match-bracket.shortcut2=C+9
++metal.primary.font=Isabelle DejaVu Sans
++metal.primary.fontsize=12
++metal.secondary.font=Isabelle DejaVu Sans
++metal.secondary.fontsize=12
++navigator.showOnToolbar=true
++new-file-in-mode.shortcut=
++next-bracket.shortcut2=C+e C+9
++options.shortcuts.deletekeymap.label=Delete
++options.shortcuts.duplicatekeymap.dialog.title=Keymap name
++options.shortcuts.duplicatekeymap.label=Duplicate
++options.shortcuts.resetkeymap.dialog.title=Reset keymap
++options.shortcuts.resetkeymap.label=Reset
++options.textarea.lineSpacing=1
++plugin-blacklist.MacOSX.jar=true
++plugin.MacOSXPlugin.altDispatcher=false
++plugin.MacOSXPlugin.disableOption=true
++prev-bracket.shortcut2=C+e C+8
++print.font=Isabelle DejaVu Sans Mono
++print.glyphVector=true
++recent-buffer.shortcut2=C+CIRCUMFLEX
++restore.remote=false
++restore=false
++search.subdirs.toggle=true
++select-block.shortcut2=C+8
++sidekick-tree.dock-position=right
++sidekick.auto-complete-popup-get-focus=true
++sidekick.buffer-save-parse=true
++sidekick.complete-delay=0
++sidekick.complete-instant.toggle=false
++sidekick.complete-popup.accept-characters=\\t
++sidekick.complete-popup.insert-characters=
++sidekick.persistentFilter=true
++sidekick.showFilter=true
++sidekick.splitter.location=721
++systrayicon=false
++tip.show=false
++toggle-full-screen.shortcut2=S+F11
++toggle-multi-select.shortcut2=C+NUMBER_SIGN
++toggle-rect-select.shortcut2=A+NUMBER_SIGN
++twoStageSave=false
++vfs.browser.dock-position=left
++vfs.favorite.0.type=1
++vfs.favorite.0=$ISABELLE_HOME
++vfs.favorite.1.type=1
++vfs.favorite.1=$ISABELLE_HOME_USER
++vfs.favorite.2.type=1
++vfs.favorite.2=$JEDIT_HOME
++vfs.favorite.3.type=1
++vfs.favorite.3=$JEDIT_SETTINGS
++vfs.favorite.4.type=1
++vfs.favorite.4=isabelle-export:
++vfs.favorite.5.type=1
++vfs.favorite.5=isabelle-session:
++view.antiAlias=subpixel HRGB
++view.blockCaret=true
++view.caretBlink=false
++view.docking.framework=PIDE
++view.eolMarkers=false
++view.extendedState=0
++view.font=Isabelle DejaVu Sans Mono
++view.fontsize=18
++view.fracFontMetrics=false
++view.gutter.font=Isabelle DejaVu Sans Mono
++view.gutter.fontsize=12
++view.gutter.lineNumbers=false
++view.gutter.selectionAreaWidth=18
++view.height=850
++view.middleMousePaste=true
++view.showToolbar=true
++view.status.memory.background=#666699
++view.status=( mode , fold , encoding ) locked wrap multiSelect rectSelect overwrite lineSep buffersets task-monitor java-status ml-status errors clock
++view.thickCaret=true
++view.width=1200
++xml-insert-closing-tag.shortcut=
+diff -Nru -- jedit5.7.0/jEdit/test/org/gjt/sp/jedit/MiscUtilitiesTest.java jedit5.7.0-patched/jEdit/test/org/gjt/sp/jedit/MiscUtilitiesTest.java
+--- jedit5.7.0/jEdit/test/org/gjt/sp/jedit/MiscUtilitiesTest.java	2024-08-03 19:53:29.000000000 +0200
++++ jedit5.7.0-patched/jEdit/test/org/gjt/sp/jedit/MiscUtilitiesTest.java	2025-02-15 15:00:19.282440467 +0100
+@@ -167,56 +167,6 @@
+ 	}
+ 
+ 	@Test
+-	public void expandVariablesEnvWindowsAsWindows() throws Exception
+-	{
+-		jEdit.systemManager = Mockito.mock(SystemManager.class);
+-		var captor = ArgumentCaptor.forClass(String.class);
+-		var value = "c:\\home\\jEdit";
+-		Mockito.when(jEdit.systemManager.getenv(captor.capture())).thenReturn(value);
+-		updateOS(WINDOWS_NT);
+-		var key = "jEdit_TEST";
+-		assertEquals(value, MiscUtilities.expandVariables('%' + key + '%'));
+-		assertEquals(captor.getValue(), key);
+-	}
+-	@Test
+-	public void expandVariablesEnvWindowsAsUnix() throws Exception
+-	{
+-		jEdit.systemManager = Mockito.mock(SystemManager.class);
+-		var captor = ArgumentCaptor.forClass(String.class);
+-		var value = "c:\\home\\jEdit";
+-		Mockito.when(jEdit.systemManager.getenv(captor.capture())).thenReturn(value);
+-		updateOS(UNIX);
+-		var key = "jEdit_TEST";
+-		assertEquals(value, MiscUtilities.expandVariables('%' + key + '%'));
+-		assertEquals(captor.getValue(), key);
+-	}
+-
+-	@Test
+-	public void expandVariablesEnvUnix() throws Exception
+-	{
+-		jEdit.systemManager = Mockito.mock(SystemManager.class);
+-		var captor = ArgumentCaptor.forClass(String.class);
+-		var value = "c:\\home\\jEdit";
+-		Mockito.when(jEdit.systemManager.getenv(captor.capture())).thenReturn(value);
+-		updateOS(UNIX);
+-		var key = "jEdit_TEST";
+-		assertEquals(value, MiscUtilities.expandVariables('$' + key));
+-		assertEquals(captor.getValue(), key);
+-	}
+-
+-	@Test
+-	public void expandVariablesEnvUnix2() throws Exception
+-	{
+-		jEdit.systemManager = Mockito.mock(SystemManager.class);
+-		var captor = ArgumentCaptor.forClass(String.class);
+-		var value = "c:\\home\\jEdit";
+-		Mockito.when(jEdit.systemManager.getenv(captor.capture())).thenReturn(value);
+-		updateOS(UNIX);
+-		var key = "jEdit_TEST";
+-		assertEquals(value, MiscUtilities.expandVariables("${" + key + '}'));
+-	}
+-
+-	@Test
+ 	public void expandVariablesEnvUnixNoMatch() throws Exception
+ 	{
+ 		updateOS(UNIX);
+Binary files jedit5.7.0/jedit.jar and jedit5.7.0-patched/jedit.jar differ
+diff -Nru -- jedit5.7.0/macros/Emacs/Emacs_Insert_File.bsh jedit5.7.0-patched/macros/Emacs/Emacs_Insert_File.bsh
+--- jedit5.7.0/macros/Emacs/Emacs_Insert_File.bsh	2025-02-15 15:00:11.486562508 +0100
++++ jedit5.7.0-patched/macros/Emacs/Emacs_Insert_File.bsh	2025-02-15 15:00:19.222441407 +0100
+@@ -14,7 +14,7 @@
+     else
+         path = dirname (path);
+     result = GUIUtilities.showVFSFileDialog(view, path, VFSBrowser.OPEN_DIALOG, false);
+-    if (result != null)
++    if (result.length > 0)
+         buffer.insertFile (view, result[0]);
+ }
+ 
+diff -Nru -- jedit5.7.0/macros/Emacs/Emacs_Next_Line.bsh jedit5.7.0-patched/macros/Emacs/Emacs_Next_Line.bsh
+--- jedit5.7.0/macros/Emacs/Emacs_Next_Line.bsh	2025-02-15 15:00:11.486562508 +0100
++++ jedit5.7.0-patched/macros/Emacs/Emacs_Next_Line.bsh	2025-02-15 15:00:19.223441391 +0100
+@@ -12,16 +12,13 @@
+ 
+ void emacsNextLine(View view){
+ 
+-	// need access to textArea.lastLinePartial
+-	setAccessibility(true);
+-
+ 	int first = textArea.getFirstLine();
+ 	int caretLine = textArea.getScreenLineOfOffset(textArea.getCaretPosition());
+ 	int visibleLines = textArea.getVisibleLines();
+ 	int electricScroll = textArea.getElectricScroll();
+ 
+ 	if(caretLine != -1 && caretLine+1 >= 
+-			(visibleLines - (electricScroll + (textArea.lastLinePartial ? 1 : 0))))
++			(visibleLines - (electricScroll + (textArea.isLastLinePartial() ? 1 : 0))))
+ 	{
+ 		int newFirst = (first + (visibleLines - electricScroll) / 2);
+ 		textArea.setFirstLine(newFirst);
+diff -Nru -- jedit5.7.0/macros/Emacs/Emacs_Previous_Line.bsh jedit5.7.0-patched/macros/Emacs/Emacs_Previous_Line.bsh
+--- jedit5.7.0/macros/Emacs/Emacs_Previous_Line.bsh	2025-02-15 15:00:11.487562492 +0100
++++ jedit5.7.0-patched/macros/Emacs/Emacs_Previous_Line.bsh	2025-02-15 15:00:19.223441391 +0100
+@@ -12,9 +12,6 @@
+ 
+ void emacsPreviousLine(View view){
+ 
+-	// need access to textArea.lastLinePartial
+-	setAccessibility(true);
+-
+ 	int first = textArea.getFirstLine();
+ 	int caretLine = textArea.getScreenLineOfOffset(textArea.getCaretPosition());
+ 	int visibleLines = textArea.getVisibleLines();
+diff -Nru -- jedit5.7.0/macros/Emacs/EmacsUtil.bsh jedit5.7.0-patched/macros/Emacs/EmacsUtil.bsh
+--- jedit5.7.0/macros/Emacs/EmacsUtil.bsh	2025-02-15 15:00:11.485562523 +0100
++++ jedit5.7.0-patched/macros/Emacs/EmacsUtil.bsh	2025-02-15 15:00:19.223441391 +0100
+@@ -31,6 +31,7 @@
+         buf.append (c);
+         if (c == '\n')
+             break;
++        i++;
+     }
+     
+     return buf.toString();
+@@ -266,6 +267,8 @@
+ int findBeginningOfSentence()
+ {
+     caret = textArea.getCaretPosition() - 1;
++    if (caret < 0)
++        caret = 0;
+     if (charAt (caret) == '.')
+         caret--;
+ 
+diff -Nru -- jedit5.7.0/modes/catalog jedit5.7.0-patched/modes/catalog
+--- jedit5.7.0/modes/catalog	2025-02-15 15:00:11.384564104 +0100
++++ jedit5.7.0-patched/modes/catalog	2025-02-15 15:00:50.800947038 +0100
+@@ -201,7 +201,6 @@
+         FILE_NAME_GLOB="*.prg" />
+ 
+ <MODE NAME="freemarker"		FILE="freemarker.xml"
+-        FILE_NAME_GLOB="*.ftl"
+         FIRST_LINE_GLOB="&lt;\#ftl*"/>
+ 
+ <MODE NAME="gcbasic" 		FILE="gcbasic.xml"
+@@ -280,6 +279,16 @@
+ <MODE NAME="io"			FILE="io.xml"
+         FILE_NAME_GLOB="*.io" />
+ 
++<MODE NAME="isabelle" FILE="isabelle.xml" FILE_NAME_GLOB="{*.thy,ROOT0.ML,ROOT.ML}"/>
++
++<MODE NAME="isabelle-ml" FILE="isabelle-ml.xml" FILE_NAME_GLOB="*.ML"/>
++
++<MODE NAME="isabelle-news" FILE="isabelle-news.xml"/>
++
++<MODE NAME="isabelle-options" FILE="isabelle-options.xml"/>
++
++<MODE NAME="isabelle-root" FILE="isabelle-root.xml" FILE_NAME_GLOB="ROOT"/>
++
+ <MODE NAME="jamon"
+       FILE="jamon.xml"
+       FILE_NAME_GLOB="*.jamon" />
+@@ -378,8 +387,6 @@
+ <MODE NAME="mxml"		FILE="mxml.xml"
+         FILE_NAME_GLOB="*.mxml" />
+ 
+-<MODE NAME="ml"			FILE="ml.xml"
+-        FILE_NAME_GLOB="*.{sml,ml}" />
+ 
+ <MODE NAME="modula3"		FILE="modula3.xml"
+         FILE_NAME_GLOB="*.[im]3" />
+@@ -621,6 +628,8 @@
+ <MODE NAME="smi-mib"		FILE="smi-mib.xml"
+         FILE_NAME_GLOB="*{.mib,-MIB.txt}" />
+ 
++<MODE NAME="sml" FILE="sml.xml" FILE_NAME_GLOB="*.{sml,sig}"/>
++
+ <MODE NAME="sqr"		FILE="sqr.xml"
+         FILE_NAME_GLOB="*.{sqr,sqc}" />
+ 
+diff -Nru -- jedit5.7.0/modes/isabelle-ml.xml jedit5.7.0-patched/modes/isabelle-ml.xml
+--- jedit5.7.0/modes/isabelle-ml.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/modes/isabelle-ml.xml	2025-02-15 15:00:50.786947257 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle/ML mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/modes/isabelle-news.xml jedit5.7.0-patched/modes/isabelle-news.xml
+--- jedit5.7.0/modes/isabelle-news.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/modes/isabelle-news.xml	2025-02-15 15:00:50.785947273 +0100
+@@ -0,0 +1,13 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle NEWS mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/modes/isabelle-options.xml jedit5.7.0-patched/modes/isabelle-options.xml
+--- jedit5.7.0/modes/isabelle-options.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/modes/isabelle-options.xml	2025-02-15 15:00:50.786947257 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle options mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/modes/isabelle-root.xml jedit5.7.0-patched/modes/isabelle-root.xml
+--- jedit5.7.0/modes/isabelle-root.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/modes/isabelle-root.xml	2025-02-15 15:00:50.786947257 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle session root mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/modes/isabelle.xml jedit5.7.0-patched/modes/isabelle.xml
+--- jedit5.7.0/modes/isabelle.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/modes/isabelle.xml	2025-02-15 15:00:50.785947273 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Isabelle theory mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;?⇩\^&lt;&gt;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/modes/sml.xml jedit5.7.0-patched/modes/sml.xml
+--- jedit5.7.0/modes/sml.xml	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/modes/sml.xml	2025-02-15 15:00:50.786947257 +0100
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE MODE SYSTEM "xmode.dtd">
++
++<!-- Standard ML mode -->
++<MODE>
++  <PROPS>
++    <PROPERTY NAME="noWordSep" VALUE="_&apos;"/>
++    <PROPERTY NAME="unalignedOpenBrackets" VALUE="([{«‹⟨⌈⌊⦇⟦⦃⟪⦉"/>
++    <PROPERTY NAME="unalignedCloseBrackets" VALUE=")]}»›⟩⌉⌋⦈⟧⦄⟫⦊"/>
++    <PROPERTY NAME="tabSize" VALUE="2"/>
++    <PROPERTY NAME="indentSize" VALUE="2"/>
++    <PROPERTY NAME="commentStart" VALUE="(*"/>
++    <PROPERTY NAME="commentEnd" VALUE="*)"/>
++  </PROPS>
++</MODE>
+diff -Nru -- jedit5.7.0/properties/jEdit.props jedit5.7.0-patched/properties/jEdit.props
+--- jedit5.7.0/properties/jEdit.props	1970-01-01 01:00:00.000000000 +0100
++++ jedit5.7.0-patched/properties/jEdit.props	2025-02-15 15:00:50.781947336 +0100
+@@ -0,0 +1,360 @@
++#jEdit properties
++autoReloadDialog=false
++buffer.deepIndent=false
++buffer.encoding=UTF-8-Isabelle
++buffer.indentSize=2
++buffer.lineSeparator=\n
++buffer.maxLineLen=100
++buffer.noTabs=true
++buffer.sidekick.keystroke-parse=false
++buffer.tabSize=2
++buffer.undoCount=1000
++close-docking-area.shortcut2=C+e C+CIRCUMFLEX
++complete-word.shortcut=
++console.dock-position=floating
++console.encoding=UTF-8
++console.font=Isabelle DejaVu Sans Mono
++console.fontsize=14
++delete-line.shortcut=A+d
++delete.shortcut2=C+d
++encoding.opt-out.Big5=true
++encoding.opt-out.Big5-HKSCS=true
++encoding.opt-out.CESU-8=true
++encoding.opt-out.EUC-JP=true
++encoding.opt-out.EUC-KR=true
++encoding.opt-out.GB18030=true
++encoding.opt-out.GB2312=true
++encoding.opt-out.GBK=true
++encoding.opt-out.IBM-Thai=true
++encoding.opt-out.IBM00858=true
++encoding.opt-out.IBM01140=true
++encoding.opt-out.IBM01141=true
++encoding.opt-out.IBM01142=true
++encoding.opt-out.IBM01143=true
++encoding.opt-out.IBM01144=true
++encoding.opt-out.IBM01145=true
++encoding.opt-out.IBM01146=true
++encoding.opt-out.IBM01147=true
++encoding.opt-out.IBM01148=true
++encoding.opt-out.IBM01149=true
++encoding.opt-out.IBM037=true
++encoding.opt-out.IBM1026=true
++encoding.opt-out.IBM1047=true
++encoding.opt-out.IBM273=true
++encoding.opt-out.IBM277=true
++encoding.opt-out.IBM278=true
++encoding.opt-out.IBM280=true
++encoding.opt-out.IBM284=true
++encoding.opt-out.IBM285=true
++encoding.opt-out.IBM290=true
++encoding.opt-out.IBM297=true
++encoding.opt-out.IBM420=true
++encoding.opt-out.IBM424=true
++encoding.opt-out.IBM437=true
++encoding.opt-out.IBM500=true
++encoding.opt-out.IBM775=true
++encoding.opt-out.IBM850=true
++encoding.opt-out.IBM852=true
++encoding.opt-out.IBM855=true
++encoding.opt-out.IBM857=true
++encoding.opt-out.IBM860=true
++encoding.opt-out.IBM861=true
++encoding.opt-out.IBM862=true
++encoding.opt-out.IBM863=true
++encoding.opt-out.IBM864=true
++encoding.opt-out.IBM865=true
++encoding.opt-out.IBM866=true
++encoding.opt-out.IBM868=true
++encoding.opt-out.IBM869=true
++encoding.opt-out.IBM870=true
++encoding.opt-out.IBM871=true
++encoding.opt-out.IBM918=true
++encoding.opt-out.ISO-2022-CN=true
++encoding.opt-out.ISO-2022-JP=true
++encoding.opt-out.ISO-2022-JP-2=true
++encoding.opt-out.ISO-2022-KR=true
++encoding.opt-out.ISO-8859-13=true
++encoding.opt-out.ISO-8859-16=true
++encoding.opt-out.ISO-8859-2=true
++encoding.opt-out.ISO-8859-3=true
++encoding.opt-out.ISO-8859-4=true
++encoding.opt-out.ISO-8859-5=true
++encoding.opt-out.ISO-8859-6=true
++encoding.opt-out.ISO-8859-7=true
++encoding.opt-out.ISO-8859-8=true
++encoding.opt-out.ISO-8859-9=true
++encoding.opt-out.JIS_X0201=true
++encoding.opt-out.JIS_X0212-1990=true
++encoding.opt-out.KOI8-R=true
++encoding.opt-out.KOI8-U=true
++encoding.opt-out.Shift_JIS=true
++encoding.opt-out.TIS-620=true
++encoding.opt-out.UTF-16=true
++encoding.opt-out.UTF-16BE=true
++encoding.opt-out.UTF-16LE=true
++encoding.opt-out.UTF-32=true
++encoding.opt-out.UTF-32BE=true
++encoding.opt-out.UTF-32LE=true
++encoding.opt-out.X-UTF-32BE-BOM=true
++encoding.opt-out.X-UTF-32LE-BOM=true
++encoding.opt-out.windows-1250=true
++encoding.opt-out.windows-1251=true
++encoding.opt-out.windows-1253=true
++encoding.opt-out.windows-1254=true
++encoding.opt-out.windows-1255=true
++encoding.opt-out.windows-1256=true
++encoding.opt-out.windows-1257=true
++encoding.opt-out.windows-1258=true
++encoding.opt-out.windows-31j=true
++encoding.opt-out.x-Big5-HKSCS-2001=true
++encoding.opt-out.x-Big5-Solaris=true
++encoding.opt-out.x-EUC-TW=true
++encoding.opt-out.x-IBM1006=true
++encoding.opt-out.x-IBM1025=true
++encoding.opt-out.x-IBM1046=true
++encoding.opt-out.x-IBM1097=true
++encoding.opt-out.x-IBM1098=true
++encoding.opt-out.x-IBM1112=true
++encoding.opt-out.x-IBM1122=true
++encoding.opt-out.x-IBM1123=true
++encoding.opt-out.x-IBM1124=true
++encoding.opt-out.x-IBM1129=true
++encoding.opt-out.x-IBM1166=true
++encoding.opt-out.x-IBM1364=true
++encoding.opt-out.x-IBM1381=true
++encoding.opt-out.x-IBM1383=true
++encoding.opt-out.x-IBM29626C=true
++encoding.opt-out.x-IBM300=true
++encoding.opt-out.x-IBM33722=true
++encoding.opt-out.x-IBM737=true
++encoding.opt-out.x-IBM833=true
++encoding.opt-out.x-IBM834=true
++encoding.opt-out.x-IBM856=true
++encoding.opt-out.x-IBM874=true
++encoding.opt-out.x-IBM875=true
++encoding.opt-out.x-IBM921=true
++encoding.opt-out.x-IBM922=true
++encoding.opt-out.x-IBM930=true
++encoding.opt-out.x-IBM933=true
++encoding.opt-out.x-IBM935=true
++encoding.opt-out.x-IBM937=true
++encoding.opt-out.x-IBM939=true
++encoding.opt-out.x-IBM942=true
++encoding.opt-out.x-IBM942C=true
++encoding.opt-out.x-IBM943=true
++encoding.opt-out.x-IBM943C=true
++encoding.opt-out.x-IBM948=true
++encoding.opt-out.x-IBM949=true
++encoding.opt-out.x-IBM949C=true
++encoding.opt-out.x-IBM950=true
++encoding.opt-out.x-IBM964=true
++encoding.opt-out.x-IBM970=true
++encoding.opt-out.x-ISCII91=true
++encoding.opt-out.x-ISO-2022-CN-CNS=true
++encoding.opt-out.x-ISO-2022-CN-GB=true
++encoding.opt-out.x-JIS0208=true
++encoding.opt-out.x-JISAutoDetect=true
++encoding.opt-out.x-Johab=true
++encoding.opt-out.x-MS932_0213=true
++encoding.opt-out.x-MS950-HKSCS=true
++encoding.opt-out.x-MS950-HKSCS-XP=true
++encoding.opt-out.x-MacArabic=true
++encoding.opt-out.x-MacCentralEurope=true
++encoding.opt-out.x-MacCroatian=true
++encoding.opt-out.x-MacCyrillic=true
++encoding.opt-out.x-MacDingbat=true
++encoding.opt-out.x-MacGreek=true
++encoding.opt-out.x-MacHebrew=true
++encoding.opt-out.x-MacIceland=true
++encoding.opt-out.x-MacRoman=true
++encoding.opt-out.x-MacRomania=true
++encoding.opt-out.x-MacSymbol=true
++encoding.opt-out.x-MacThai=true
++encoding.opt-out.x-MacTurkish=true
++encoding.opt-out.x-MacUkraine=true
++encoding.opt-out.x-PCK=true
++encoding.opt-out.x-SJIS_0213=true
++encoding.opt-out.x-UTF-16LE-BOM=true
++encoding.opt-out.x-euc-jp-linux=true
++encoding.opt-out.x-eucJP-Open=true
++encoding.opt-out.x-iso-8859-11=true
++encoding.opt-out.x-mswin-936=true
++encoding.opt-out.x-windows-50220=true
++encoding.opt-out.x-windows-50221=true
++encoding.opt-out.x-windows-874=true
++encoding.opt-out.x-windows-949=true
++encoding.opt-out.x-windows-950=true
++encoding.opt-out.x-windows-iso2022jp=true
++encodingDetectors=BOM XML-PI buffer-local-property
++end.shortcut=
++expand-abbrev.shortcut2=CA+SPACE
++expand-folds.shortcut=
++fallbackEncodings=UTF-8 ISO-8859-15 US-ASCII
++firstTime=false
++focus-buffer-switcher.shortcut2=A+CIRCUMFLEX
++foldPainter=Circle
++gatchan.highlight.overview=false
++helpviewer.font=Isabelle DejaVu Serif
++helpviewer.fontsize=12
++home.shortcut=
++hypersearch-results.dock-position=right
++insert-newline-indent.shortcut=
++insert-newline.shortcut=
++isabelle-debugger.dock-position=floating
++isabelle-documentation.dock-position=left
++isabelle-export-browser.label=Browse theory exports
++isabelle-output.dock-position=bottom
++isabelle-output.height=174
++isabelle-output.width=412
++isabelle-query.dock-position=bottom
++isabelle-session-browser.label=Browse session information
++isabelle-simplifier-trace.dock-position=floating
++isabelle-sledgehammer.dock-position=bottom
++isabelle-state.dock-position=right
++isabelle-symbols.dock-position=bottom
++isabelle-theories.dock-position=right
++isabelle.antiquoted_cartouche.label=Make antiquoted cartouche
++isabelle.complete-word.label=Complete word
++isabelle.complete.label=Complete Isabelle text
++isabelle.complete.shortcut2=C+b
++isabelle.control-bold.label=Control bold
++isabelle.control-bold.shortcut=C+e RIGHT
++isabelle.control-emph.label=Control emphasized
++isabelle.control-emph.shortcut=C+e LEFT
++isabelle.control-reset.label=Control reset
++isabelle.control-reset.shortcut=C+e BACK_SPACE
++isabelle.control-sub.label=Control subscript
++isabelle.control-sub.shortcut=C+e DOWN
++isabelle.control-sup.label=Control superscript
++isabelle.control-sup.shortcut=C+e UP
++isabelle.decrease-font-size.label=Decrease font size
++isabelle.decrease-font-size.shortcut2=C+SUBTRACT
++isabelle.decrease-font-size.shortcut=C+MINUS
++isabelle.decrease-font-size2.label=Decrease font size (clone)
++isabelle.draft.label=Show draft in browser
++isabelle.exclude-word-permanently.label=Exclude word permanently
++isabelle.exclude-word.label=Exclude word
++isabelle.first-error.label=Go to first error
++isabelle.first-error.shortcut=CS+a
++isabelle.goto-entity.label=Go to definition of formal entity at caret
++isabelle.goto-entity.shortcut=CS+d
++isabelle.include-word-permanently.label=Include word permanently
++isabelle.include-word.label=Include word
++isabelle.increase-font-size.label=Increase font size
++isabelle.increase-font-size.shortcut2=C+ADD
++isabelle.increase-font-size.shortcut=C+PLUS
++isabelle.increase-font-size2.label=Increase font size (clone)
++isabelle.increase-font-size2.shortcut=C+EQUALS
++isabelle.java-monitor.label=Java/VM monitor
++isabelle.last-error.label=Go to last error
++isabelle.last-error.shortcut=CS+z
++isabelle.message.label=Show message
++isabelle.message.shortcut=CS+m
++isabelle.newline.label=Newline with indentation of Isabelle keywords
++isabelle.newline.shortcut=ENTER
++isabelle.next-error.label=Go to next error
++isabelle.next-error.shortcut=CS+n
++isabelle.options.label=Isabelle options
++isabelle.prev-error.label=Go to previous error
++isabelle.prev-error.shortcut=CS+p
++isabelle.preview.label=Show preview in browser
++isabelle.reset-continuous-checking.label=Reset continuous checking
++isabelle.reset-font-size.label=Reset font size
++isabelle.reset-node-required.label=Reset node required
++isabelle.reset-words.label=Reset non-permanent words
++isabelle.select-entity.label=Select all occurences of formal entity at caret
++isabelle.select-entity.shortcut=CS+ENTER
++isabelle.select-structure.label=Select structure around selection or caret
++isabelle.select-structure.shortcut=C+7
++isabelle.set-continuous-checking.label=Set continuous checking
++isabelle.set-node-required.label=Set node required
++isabelle.toggle-breakpoint.label=Toggle Breakpoint
++isabelle.toggle-continuous-checking.label=Toggle continuous checking
++isabelle.toggle-continuous-checking.shortcut=C+e ENTER
++isabelle.toggle-node-required.label=Toggle node required
++isabelle.toggle-node-required.shortcut=C+e SPACE
++isabelle.tooltip.label=Show tooltip
++isabelle.tooltip.shortcut=CS+b
++isabelle.update-state.label=Update state output
++isabelle.update-state.shortcut=S+ENTER
++lang.usedefaultlocale=false
++largefilemode=full
++line-end.shortcut=END
++line-home.shortcut=HOME
++logo.icon.medium=32x32/apps/isabelle.gif
++lookAndFeel=com.formdev.flatlaf.FlatLightLaf
++match-bracket.shortcut2=C+9
++metal.primary.font=Isabelle DejaVu Sans
++metal.primary.fontsize=12
++metal.secondary.font=Isabelle DejaVu Sans
++metal.secondary.fontsize=12
++navigator.showOnToolbar=true
++new-file-in-mode.shortcut=
++next-bracket.shortcut2=C+e C+9
++options.shortcuts.deletekeymap.label=Delete
++options.shortcuts.duplicatekeymap.dialog.title=Keymap name
++options.shortcuts.duplicatekeymap.label=Duplicate
++options.shortcuts.resetkeymap.dialog.title=Reset keymap
++options.shortcuts.resetkeymap.label=Reset
++options.textarea.lineSpacing=1
++plugin-blacklist.MacOSX.jar=true
++plugin.MacOSXPlugin.altDispatcher=false
++plugin.MacOSXPlugin.disableOption=true
++prev-bracket.shortcut2=C+e C+8
++print.font=Isabelle DejaVu Sans Mono
++print.glyphVector=true
++recent-buffer.shortcut2=C+CIRCUMFLEX
++restore.remote=false
++restore=false
++search.subdirs.toggle=true
++select-block.shortcut2=C+8
++sidekick-tree.dock-position=right
++sidekick.auto-complete-popup-get-focus=true
++sidekick.buffer-save-parse=true
++sidekick.complete-delay=0
++sidekick.complete-instant.toggle=false
++sidekick.complete-popup.accept-characters=\\t
++sidekick.complete-popup.insert-characters=
++sidekick.persistentFilter=true
++sidekick.showFilter=true
++sidekick.splitter.location=721
++systrayicon=false
++tip.show=false
++toggle-full-screen.shortcut2=S+F11
++toggle-multi-select.shortcut2=C+NUMBER_SIGN
++toggle-rect-select.shortcut2=A+NUMBER_SIGN
++twoStageSave=false
++vfs.browser.dock-position=left
++vfs.favorite.0.type=1
++vfs.favorite.0=$ISABELLE_HOME
++vfs.favorite.1.type=1
++vfs.favorite.1=$ISABELLE_HOME_USER
++vfs.favorite.2.type=1
++vfs.favorite.2=$JEDIT_HOME
++vfs.favorite.3.type=1
++vfs.favorite.3=$JEDIT_SETTINGS
++vfs.favorite.4.type=1
++vfs.favorite.4=isabelle-export:
++vfs.favorite.5.type=1
++vfs.favorite.5=isabelle-session:
++view.antiAlias=subpixel HRGB
++view.blockCaret=true
++view.caretBlink=false
++view.docking.framework=PIDE
++view.eolMarkers=false
++view.extendedState=0
++view.font=Isabelle DejaVu Sans Mono
++view.fontsize=18
++view.fracFontMetrics=false
++view.gutter.font=Isabelle DejaVu Sans Mono
++view.gutter.fontsize=12
++view.gutter.lineNumbers=false
++view.gutter.selectionAreaWidth=18
++view.height=850
++view.middleMousePaste=true
++view.showToolbar=true
++view.status.memory.background=#666699
++view.status=( mode , fold , encoding ) locked wrap multiSelect rectSelect overwrite lineSep buffersets task-monitor java-status ml-status errors clock
++view.thickCaret=true
++view.width=1200
++xml-insert-closing-tag.shortcut=

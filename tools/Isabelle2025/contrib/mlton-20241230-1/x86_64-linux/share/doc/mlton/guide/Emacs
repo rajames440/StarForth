@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Emacs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Emacs</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_sml_modes">SML modes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are a few Emacs modes for SML.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://elpa.gnu.org/packages/sml-mode.html" class="bare">https://elpa.gnu.org/packages/sml-mode.html</a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/ide/emacs/mlton.el"><code>mlton.el</code></a> contains the Emacs lisp that <a href="StephenWeeks">StephenWeeks</a> uses to interact with MLton (in addition to using <code>sml-mode</code>).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mlb_modes">MLB modes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There is a mode for editing <a href="MLBasis">ML Basis</a> files.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/ide/emacs/esml-mlb-mode.el"><code>esml-mlb-mode.el</code></a> (plus other files)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_completion">Completion</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MatthewFluet/company-mlton"><code>company-mlton</code></a></p>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><a href="https://github.com/MatthewFluet/company-mlton"><code>company-mlton</code></a> is a
+<a href="https://company-mode.github.io/"><code>company-mode</code></a> completion back-end for
+MLton/Standard ML. It provides completion for Standard ML keywords and for
+Standard ML (long) identifiers. Candidate completion identifiers for the latter
+are loaded from a basis file created by <code>mlton</code> using <code>-show-basis file</code> or
+<code>(<strong>#showBasis "file"</strong>)</code>.</p>
+</div>
+</blockquote>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_definitions_and_uses">Definitions and uses</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There is a mode that supports the precise def-use information that
+MLton can output.  It highlights definitions and uses and provides
+commands for navigation (e.g., <code>jump-to-def</code>, <code>jump-to-next</code>,
+<code>list-all-refs</code>).  It can be handy, for example, for navigating in the
+MLton compiler source code.  See <a href="EmacsDefUseMode">EmacsDefUseMode</a> for further
+information.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_in_the_background">Building in the background</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Tired of manually starting/stopping/restarting builds after editing
+files?  Now you don&#8217;t have to.  See <a href="EmacsBgBuildMode">EmacsBgBuildMode</a> for further
+information.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_error_messages">Error messages</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton&#8217;s error messages are not among those that the Emacs <code>next-error</code>
+parser natively understands.  The easiest way to fix this is to add
+the following to your <code>.emacs</code> to teach Emacs to recognize MLton&#8217;s
+error messages.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="cl"><span class="p">(</span><span class="nb">require</span> <span class="ss">'compile</span><span class="p">)</span>
+<span class="p">(</span><span class="nv">add-to-list</span> <span class="ss">'compilation-error-regexp-alist</span> <span class="ss">'mlton</span><span class="p">)</span>
+<span class="p">(</span><span class="nv">add-to-list</span> <span class="ss">'compilation-error-regexp-alist-alist</span>
+             <span class="o">'</span><span class="p">(</span><span class="nv">mlton</span>
+               <span class="s">"^[[:space:]]*\\(\\(?:\\(Error\\)\\|\\(Warning\\)\\|\\(\\(?:\\(?:defn\\|spec\\) at\\)\\|\\(?:escape \\(?:from\\|to\\)\\)\\|\\(?:scoped at\\)\\)\\): \\(.+\\) \\([0-9]+\\)\\.\\([0-9]+\\)\\(?:-\\([0-9]+\\)\\.\\([0-9]+\\)\\)?\\.?\\)$"</span>
+               <span class="mi">5</span> <span class="p">(</span><span class="mi">6</span> <span class="o">.</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">7</span> <span class="o">.</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="o">.</span> <span class="mi">4</span><span class="p">)</span> <span class="mi">1</span><span class="p">))</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Emacs.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Emacs.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>DefinitionOfStandardML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>DefinitionOfStandardML</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p><a href="References#MilnerEtAl97">The Definition of Standard ML (Revised)</a> is a
+terse and formal specification of <a href="StandardML">Standard ML</a>&rsquo;s syntax
+and semantics.  The language specified by this book is often referred
+to as SML 97. You can check its syntax
+<a href="http://www.mpi-sws.org/~rossberg/sml.html">grammar</a> online (thanks to
+Andreas Rossberg).</p>
+</div>
+<div class="paragraph">
+<p><a href="References#MilnerEtAl90">The Definition of Standard ML</a> is an older
+version of the definition, published in 1990. The accompanying
+<a href="References#MilnerTofte91">Commentary</a> introduces and explains the notation
+and approach. The same notation is used in the SML 97 definition, so it
+is worth keeping the older definition and its commentary at hand if you
+intend a close study of the definition.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/DefinitionOfStandardML.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/DefinitionOfStandardML.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

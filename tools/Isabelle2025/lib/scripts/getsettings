@@ -1,0 +1,140 @@
+# -*- shell-script -*- :mode=shellscript:
+#
+# Author: Makarius
+#
+# Static Isabelle environment for root of process tree.
+
+export ISABELLE_HOME
+
+export BASH_ENV="$ISABELLE_HOME/lib/scripts/getfunctions"
+source "$BASH_ENV"
+
+
+if [ -z "$ISABELLE_SETTINGS_PRESENT" ]
+then
+
+export ISABELLE_SETTINGS_PRESENT=true
+
+set -o allexport
+
+#sane environment defaults (notably on macOS)
+if [ "$ISABELLE_APP" = true -a -x /usr/libexec/path_helper ]; then
+  eval $(/usr/libexec/path_helper -s)
+fi
+
+#Cygwin vs. POSIX
+if [ "$OSTYPE" = cygwin ]
+then
+  unset INI_DIR
+
+  TMPDIR="$(cygpath -u "$LOCALAPPDATA")/Temp"
+  TMP="$TMPDIR"
+  TEMP="$TMPDIR"
+
+  if [ -z "$USER_HOME" ]; then
+    USER_HOME="$(cygpath -u "$USERPROFILE")"
+  fi
+
+  CYGWIN_ROOT="$(platform_path "/")"
+  ISABELLE_ROOT="$(platform_path "$ISABELLE_HOME")"
+
+  ISABELLE_CLASSPATH="$(cygpath -i -u -p "$CLASSPATH")"
+  export CLASSPATH=""
+else
+  if [ -z "$USER_HOME" ]; then
+    USER_HOME="$HOME"
+  fi
+
+  ISABELLE_ROOT="$ISABELLE_HOME"
+
+  ISABELLE_CLASSPATH="$CLASSPATH"
+  export CLASSPATH=""
+fi
+
+#init cumulative settings
+ISABELLE_FONTS=""
+ISABELLE_FONTS_HIDDEN=""
+ISABELLE_SCALA_SERVICES=""
+ISABELLE_DIRECTORIES=""
+
+#main executables
+ISABELLE_TOOL="$ISABELLE_HOME/bin/isabelle"
+PATH="$ISABELLE_HOME/bin:$PATH"
+
+#platform
+source "$ISABELLE_HOME/lib/scripts/isabelle-platform"
+if [ -z "$ISABELLE_PLATFORM_FAMILY" ]; then
+  echo 1>&2 "Failed to determine hardware and operating system type!"
+  exit 2
+fi
+
+if [ -z "$ISABELLE_IDENTIFIER" -a -f "$ISABELLE_HOME/etc/ISABELLE_IDENTIFIER" ]
+then
+  ISABELLE_IDENTIFIER="$(cat "$ISABELLE_HOME/etc/ISABELLE_IDENTIFIER")"
+fi
+
+ISABELLE_NAME="${ISABELLE_IDENTIFIER:-Isabelle}"
+
+ISABELLE_HOSTNAME="$(hostname -s 2>/dev/null || uname -n)"
+
+
+# components
+
+ISABELLE_COMPONENTS=""
+ISABELLE_COMPONENTS_MISSING=""
+
+#main components
+init_component "$ISABELLE_HOME"
+[ -d "$ISABELLE_HOME/Admin" ] && init_component "$ISABELLE_HOME/Admin"
+if [ -d "$ISABELLE_HOME_USER" ]; then
+  init_component "$ISABELLE_HOME_USER"
+else
+  mkdir -p "$ISABELLE_HOME_USER"
+  chmod $(umask -S) "$ISABELLE_HOME_USER"
+fi
+
+#POLYML_EXE
+case "$ISABELLE_PLATFORM_FAMILY" in
+  windows*)
+    POLYML_EXE="$ML_HOME/poly.exe"
+    ;;
+  *)
+    POLYML_EXE="$ML_HOME/poly"
+    ;;
+esac
+
+#ML system identifier
+if [ -z "$ML_PLATFORM" ]; then
+  ML_IDENTIFIER="$ML_SYSTEM"
+else
+  ML_IDENTIFIER="${ML_SYSTEM}_${ML_PLATFORM}"
+fi
+
+#enforce ISABELLE_OCAMLFIND
+if [ -d "$ISABELLE_OPAM_ROOT/$ISABELLE_OCAML_VERSION/bin" ]; then
+  ISABELLE_OCAMLFIND="$ISABELLE_HOME/lib/scripts/ocamlfind"
+fi
+
+#enforce ISABELLE_GHC
+if [ -f "$ISABELLE_STACK_ROOT/ISABELLE_GHC_EXE-$ISABELLE_PLATFORM_FAMILY" ]; then
+  if [ -f "$(cat "$ISABELLE_STACK_ROOT/ISABELLE_GHC_EXE-$ISABELLE_PLATFORM_FAMILY")" ]; then
+    ISABELLE_GHC="$ISABELLE_HOME/lib/scripts/ghc"
+    ISABELLE_GHC_STACK=true
+  fi
+fi
+
+#enforce JAVA_HOME
+if [ -d "$ISABELLE_JDK_HOME/jre" ]
+then
+  export JAVA_HOME="$ISABELLE_JDK_HOME/jre"
+else
+  export JAVA_HOME="$ISABELLE_JDK_HOME"
+fi
+
+if [ -e "$ISABELLE_SETUP_JAR" ]; then
+  ISABELLE_SETUP_CLASSPATH="$(isabelle_jdk java -classpath "$(platform_path "$SCALA_INTERFACES:$ISABELLE_SETUP_JAR")" isabelle.setup.Setup classpath 2>/dev/null)"
+fi
+
+set +o allexport
+
+fi

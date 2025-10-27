@@ -1,0 +1,15 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ISABELLE_MLTON_HOME="$COMPONENT"
+
+if [ -d "$ISABELLE_MLTON_HOME/${ISABELLE_APPLE_PLATFORM64:-$ISABELLE_PLATFORM64}" ]; then
+  ISABELLE_MLTON="$ISABELLE_MLTON_HOME/${ISABELLE_APPLE_PLATFORM64:-$ISABELLE_PLATFORM64}/bin/mlton"
+  case "$ISABELLE_PLATFORM_FAMILY" in
+    linux*)
+      ISABELLE_MLTON_OPTIONS="-pi-style npi"
+      ;;
+    *)
+      ISABELLE_MLTON_OPTIONS=""
+      ;;
+  esac
+fi

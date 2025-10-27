@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ShowBasisDirective</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ShowBasisDirective</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>A comment of the form</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="c">(*</span><span class="cm">#showBasis "&lt;file&gt;"*)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is recognized as a directive to save the current basis (i.e., environment) to
+<code>&lt;file&gt;</code> (in the same format as the <code>-show-basis &lt;file&gt;</code> <a href="CompileTimeOptions">compile-time option</a>).  The <code>&lt;file&gt;</code> is interpreted relative to the source file
+in which it appears.  The comment is lexed as a distinct token and is parsed as
+a structure-level declaration.  [Note that treating the directive as a top-level
+declaration would prohibit using it inside a functor body, which would make the
+feature significantly less useful in the context of the MLton compiler sources
+(with its nearly fully functorial style).]</p>
+</div>
+<div class="paragraph">
+<p>This feature is meant to facilitate auto-completion via
+<a href="https://github.com/MatthewFluet/company-mlton"><code>company-mlton</code></a> and similar
+tools.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ShowBasisDirective.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ShowBasisDirective.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

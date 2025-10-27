@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>LambdaFree</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>LambdaFree</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">LambdaFree</a> is an analysis pass for the <a href="SXML">SXML</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="ClosureConvert">ClosureConvert</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass descends the entire <a href="SXML">SXML</a> program and attaches a property
+to each <code>Lambda</code> <code>PrimExp.t</code> in the program.  Then, you can use
+<code>lambdaFree</code> and <code>lambdaRec</code> to get free variables of that <code>Lambda</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/closure-convert/lambda-free.sig"><code>lambda-free.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/closure-convert/lambda-free.fun"><code>lambda-free.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For <code>Lambda</code>-s bound in a <code>Fun</code> dec, <code>lambdaFree</code> gives the union of
+the frees of the entire group of mutually recursive functions.  Hence,
+<code>lambdaFree</code> for every <code>Lambda</code> in a single <code>Fun</code> dec is the same.
+Furthermore, for a <code>Lambda</code> bound in a <code>Fun</code> dec, <code>lambdaRec</code> gives
+the list of other functions bound in the same dec defining that
+<code>Lambda</code>.</p>
+</div>
+<div class="paragraph">
+<p>For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>val rec f = fn x =&gt; ... y ... g ... f ...
+and g = fn z =&gt; ... f ... w ...</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>lambdaFree(fn x =&gt;) = [y, w]
+lambdaFree(fn z =&gt;) = [y, w]
+lambdaRec(fn x =&gt;) = [g, f]
+lambdaRec(fn z =&gt;) = [f]</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/LambdaFree.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/LambdaFree.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

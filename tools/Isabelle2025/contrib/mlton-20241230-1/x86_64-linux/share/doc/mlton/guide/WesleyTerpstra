@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>WesleyTerpstra</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>WesleyTerpstra</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Wesley W. Terpstra is a PhD student at the Technische Universitat Darmstadt (Germany).</p>
+</div>
+<div class="paragraph">
+<p>Research interests</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Distributed systems (P2P)</p>
+</li>
+<li>
+<p>Number theory (Error-correcting codes)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>My interest in SML is centered on the fact the the language is able to directly express ideas from number theory which are important for my work. Modules and Functors seem to be a very natural basis for implementing many algebraic structures. MLton provides an ideal platform for actual implementation as it is fast and has unboxed words.</p>
+</div>
+<div class="paragraph">
+<p>Things I would like from MLton in the future:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Some better optimization of mathematical expressions</p>
+</li>
+<li>
+<p>IPv6 and multicast support</p>
+</li>
+<li>
+<p>A complete GUI toolkit like mGTK</p>
+</li>
+<li>
+<p>More supported platforms so that applications written under MLton have a wider audience</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/WesleyTerpstra.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/WesleyTerpstra.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

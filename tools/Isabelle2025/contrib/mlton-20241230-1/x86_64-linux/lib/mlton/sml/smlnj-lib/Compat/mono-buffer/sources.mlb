@@ -1,0 +1,10 @@
+local
+   $(SML_LIB)/basis/basis.mlb
+   mono-buffer.sig
+   mono-buffer.fun
+   mono-buffer.sml
+in
+   signature MONO_BUFFER
+   structure Word8Buffer
+   structure CharBuffer
+end

@@ -1,0 +1,27 @@
+This is CSDP 6.1.1 from
+https://github.com/coin-or/Csdp/archive/releases/6.1.1.tar.gz
+
+Makefile flags have been changed for various platforms as follows:
+
+  * arm64-linux:
+    CFLAGS=-O3 -ansi -Wall -DNOSHORTS -DBIT64 -DUSESIGTERM -DUSEGETTIME -I../include
+    LIBS=-static -L../lib -lsdp -llapack -lblas -lgfortran -lm
+
+  * x86_64-linux:
+    CFLAGS=-O3 -ansi -Wall -DNOSHORTS -DBIT64 -DUSESIGTERM -DUSEGETTIME -I../include
+    LIBS=-static -L../lib -lsdp -llapack -lblas -lgfortran -lquadmath -lm
+
+  * x86_64-darwin:
+    CFLAGS=-O3 -Wall -DNOSHORTS -DBIT64 -DUSESIGTERM -DUSEGETTIME -I../include
+    LIBS=-L../lib -lsdp -llapack -lblas -lm
+
+
+The distribution has been built like this:
+
+    cd src && make
+
+Only the bare "solver/csdp" program is used for Isabelle.
+
+
+    Makarius
+    10-Oct-2020

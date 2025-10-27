@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# usage
+
+function usage()
+{
+  echo 
+  echo "Usage: $(basename $0) TARGET"
+  echo
+  echo "  Supported targets are:"
+  echo
+  echo "    arm64-darwin"
+  echo "    arm64-linux"
+  echo "    x86_64-darwin"
+  echo "    x86_64-linux"
+  echo "    x86_64-windows"
+  echo
+  exit 1
+}
+
+# setup
+
+[ "$#" -eq 0 ] && { echo "Error: missing target."; usage; }
+
+target="$1"
+library="$target/libsha1.so"
+test_sha1="test_sha1"
+
+CC="gcc"
+LD="gcc"
+CFLAGS="-fPIC -I."
+LDFLAGS="-fPIC -shared"
+
+case "$target" in
+  arm64-darwin | arm64-linux | x86_64-darwin | x86_64-linux)
+    ;;
+  x86_64-windows)
+    PATH="/mingw64/bin:$PATH"
+    CFLAGS="-I. -m64"
+    LDFLAGS="-shared"
+    library="$target/sha1.dll"
+    test_sha1="test_sha1.exe"
+    ;;
+  *)
+    echo "Error: unsupported target: '$target'"
+    usage
+    ;;
+esac
+
+
+# building
+
+[ -d "$target" ] || { mkdir $target; }
+
+echo "Compiling library ..."
+$CC $CFLAGS -c -o sha1.o sha1.c
+[ "$?" -ne 0 ] && { exit 1; }
+
+echo "Linking library ..."
+$LD $LDFLAGS -o $library sha1.o
+[ "$?" -ne 0 ] && { exit 1; }
+
+
+# testing
+
+if [ "$target" != x86_64-windows ]; then
+
+echo "Building tests ..."
+$CC $CFLAGS -o $test_sha1 test_sha1.c -ldl
+[ "$?" -ne 0 ] && { exit 1; }
+
+echo "Running tests ..."
+./$test_sha1 $library
+[ "$?" -ne 0 ] && { exit 1; }
+
+rm test_sha1 sha1.o
+
+fi

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#
+# Author: Makarius
+#
+# DESCRIPTION: setup OCaml for Isabelle via OPAM
+
+isabelle ocaml_setup_base && isabelle_opam install -y zarith

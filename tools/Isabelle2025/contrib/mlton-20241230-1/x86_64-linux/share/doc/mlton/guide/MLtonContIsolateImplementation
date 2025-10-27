@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonContIsolateImplementation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonContIsolateImplementation</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>As noted before, it is fairly easy to get the operational behavior of <code>isolate</code> with just <code>callcc</code> and <code>throw</code>, but establishing the right space behavior is trickier.  Here, we show how to start from the obvious, but inefficient, implementation of <code>isolate</code> using only <code>callcc</code> and <code>throw</code>, and 'derive' an equivalent, but more efficient, implementation of <code>isolate</code> using MLton&#8217;s primitive stack capture and copy operations.  This isn&#8217;t a formal derivation, as we are not formally showing the equivalence of the programs (though I believe that they are all equivalent, modulo the space behavior).</p>
+</div>
+<div class="paragraph">
+<p>Here is a direct implementation of isolate using only <code>callcc</code> and <code>throw</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">=&gt;</span>
+  <span class="n">callcc</span>
+  <span class="p">(</span><span class="kr">fn</span> <span class="n">k1</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k2</span> <span class="p">=&gt;</span> <span class="n">throw</span> <span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">))</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">f</span> <span class="n">x</span> <span class="p">;</span> <span class="nn">Exit</span><span class="p">.</span><span class="n">topLevelSuffix</span> <span class="p">())</span>
+              <span class="kr">handle</span> <span class="n">exn</span> <span class="p">=&gt;</span> <span class="nn">MLtonExn</span><span class="p">.</span><span class="n">topLevelHandler</span> <span class="n">exn</span>
+   <span class="kr">in</span>
+      <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: return from (wrapped) func"</span>
+   <span class="kr">end</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We use the standard nested <code>callcc</code> trick to return a continuation that is ready to receive an argument, execute the isolated function, and exit the program.  Both <code>Exit.topLevelSuffix</code> and <code>MLtonExn.topLevelHandler</code> will terminate the program.</p>
+</div>
+<div class="paragraph">
+<p>Throwing to an isolated function will execute the function in a 'semantically' empty context, in the sense that we never re-execute the 'original' continuation of the call to isolate (i.e., the context that was in place at the time <code>isolate</code> was called).  However, we assume that the compiler isn&#8217;t able to recognize that the 'original' continuation is unused; for example, while we (the programmer) know that <code>Exit.topLevelSuffix</code> and <code>MLtonExn.topLevelHandler</code> will terminate the program, the compiler may only see opaque calls to unknown foreign-functions.  So, that original continuation (in its entirety) is part of the continuation returned by <code>isolate</code> and throwing to the continuation returned by <code>isolate</code> will execute <code>f x</code> (with the exit wrapper) in the context of that original continuation.  Thus, the garbage collector will retain  everything reachable from that original continuation during the evaluation of <code>f x</code>, even though it is 'semantically' garbage.</p>
+</div>
+<div class="paragraph">
+<p>Note that this space-leak is independent of the implementation of continuations (it arises in both MLton&#8217;s stack copying implementation of continuations and would arise in SML/NJ&#8217;s CPS-translation implementation); we are only assuming that the implementation can&#8217;t 'see' the program termination, and so must retain the original continuation (and anything reachable from it).</p>
+</div>
+<div class="paragraph">
+<p>So, we need an 'empty' continuation in which to execute <code>f x</code>.  (No surprise there, as that is the written description of <code>isolate</code>.)  To do this, we capture a top-level continuation and throw to that in order to execute <code>f x</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+<span class="kr">val</span> <span class="nv">base</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="n">callcc</span>
+  <span class="p">(</span><span class="kr">fn</span> <span class="n">k1</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">th</span> <span class="p">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k2</span> <span class="p">=&gt;</span> <span class="n">throw</span> <span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">))</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">th</span> <span class="p">()</span> <span class="p">;</span> <span class="nn">Exit</span><span class="p">.</span><span class="n">topLevelSuffix</span> <span class="p">())</span>
+              <span class="kr">handle</span> <span class="n">exn</span> <span class="p">=&gt;</span> <span class="nn">MLtonExn</span><span class="p">.</span><span class="n">topLevelHandler</span> <span class="n">exn</span>
+   <span class="kr">in</span>
+      <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: return from (wrapped) func"</span>
+   <span class="kr">end</span><span class="p">)</span>
+<span class="kr">in</span>
+<span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">=&gt;</span>
+  <span class="n">callcc</span>
+  <span class="p">(</span><span class="kr">fn</span> <span class="n">k1</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k2</span> <span class="p">=&gt;</span> <span class="n">throw</span> <span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">))</span>
+   <span class="kr">in</span>
+      <span class="n">throw</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">x</span><span class="p">)</span>
+   <span class="kr">end</span><span class="p">)</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We presume that <code>base</code> is evaluated 'early' in the program.  There is a subtlety here, because one needs to believe that this <code>base</code> continuation (which technically corresponds to the entire rest of the program evaluation) 'works' as an empty context; in particular, we want it to be the case that executing <code>f x</code> in the <code>base</code> context retains less space than executing <code>f x</code> in the context in place at the call to <code>isolate</code> (as occurred in the previous implementation of <code>isolate</code>).  This isn&#8217;t particularly easy to believe if one takes a normal substitution-based operational semantics, because it seems that the context captured and bound to <code>base</code> is arbitrarily large.  However, this context is mostly unevaluated code; the only heap-allocated values that are reachable from it are those that were evaluated before the evaluation of <code>base</code> (and used in the program after the evaluation of <code>base</code>).  Assuming that <code>base</code> is evaluated 'early' in the program, we conclude that there are few heap-allocated values reachable from its continuation.  In contrast, the previous implementation of <code>isolate</code> could capture a context that has many heap-allocated values reachable from it (because we could evaluate <code>isolate f</code> 'late' in the program and 'deep' in a call stack), which would all remain reachable during the evaluation of
+<code>f x</code>.  [We&#8217;ll return to this point later, as it is taking a slightly MLton-esque view of the evaluation of a program, and may not apply as strongly to other implementations (e.g., SML/NJ).]</p>
+</div>
+<div class="paragraph">
+<p>Now, once we throw to <code>base</code> and begin executing <code>f x</code>, only the heap-allocated values reachable from <code>f</code> and <code>x</code> and the few heap-allocated values reachable from <code>base</code> are retained by the garbage collector.  So, it seems that <code>base</code> 'works' as an empty context.</p>
+</div>
+<div class="paragraph">
+<p>But, what about the continuation returned from <code>isolate f</code>?  Note that the continuation returned by <code>isolate</code> is one that receives an argument <code>x</code> and then
+throws to <code>base</code> to evaluate <code>f x</code>.  If we used a CPS-translation implementation (and assume sufficient beta-contractions to eliminate administrative redexes), then the original continuation passed to <code>isolate</code> (i.e., the continuation bound to <code>k1</code>) will not be free in the continuation returned by <code>isolate f</code>.  Rather, the only free variables in the continuation returned by <code>isolate f</code> will be <code>base</code> and <code>f</code>, so the only heap-allocated values reachable from the continuation returned by <code>isolate f</code> will be those values reachable from <code>base</code> (assumed to be few) and those values reachable from <code>f</code> (necessary in order to execute <code>f</code> at some later point).</p>
+</div>
+<div class="paragraph">
+<p>But, MLton doesn&#8217;t use a CPS-translation implementation.  Rather, at each call to <code>callcc</code> in the body of <code>isolate</code>, MLton will copy the current execution stack.  Thus, <code>k2</code> (the continuation returned by <code>isolate f</code>) will include execution stack at the time of the call to <code>isolate f</code>&#8201;&#8212;&#8201;that is, it will include the 'original' continuation of the call to <code>isolate f</code>.  Thus, the heap-allocated values reachable from the continuation returned by <code>isolate f</code> will include those values reachable from <code>base</code>, those values reachable from <code>f</code>, and those values reachable from the original continuation of the call to <code>isolate f</code>.  So, just holding on to the continuation returned by <code>isolate f</code> will retain all of the heap-allocated values live at the time <code>isolate f</code> was called.  This leaks space, since, 'semantically', the
+continuation returned by <code>isolate f</code> only needs the heap-allocated values reachable from <code>f</code> (and <code>base</code>).</p>
+</div>
+<div class="paragraph">
+<p>In practice, this probably isn&#8217;t a significant issue.  A common use of <code>isolate</code> is implement <code>abort</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">abort</span> <span class="n">th</span> <span class="p">=</span> <span class="n">throw</span> <span class="p">(</span><span class="n">isolate</span> <span class="n">th</span><span class="p">,</span> <span class="p">())</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The continuation returned by <code>isolate th</code> is dead immediately after being thrown to&#8201;&#8212;&#8201;the continuation isn&#8217;t retained, so neither is the 'semantic'
+garbage it would have retained.</p>
+</div>
+<div class="paragraph">
+<p>But, it is easy enough to 'move' onto the 'empty' context <code>base</code> the capturing of the context that we want to be returned by <code>isolate f</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+<span class="kr">val</span> <span class="nv">base</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="n">callcc</span>
+  <span class="p">(</span><span class="kr">fn</span> <span class="n">k1</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">th</span> <span class="p">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k2</span> <span class="p">=&gt;</span> <span class="n">throw</span> <span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">))</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">th</span> <span class="p">()</span> <span class="p">;</span> <span class="nn">Exit</span><span class="p">.</span><span class="n">topLevelSuffix</span> <span class="p">())</span>
+              <span class="kr">handle</span> <span class="n">exn</span> <span class="p">=&gt;</span> <span class="nn">MLtonExn</span><span class="p">.</span><span class="n">topLevelHandler</span> <span class="n">exn</span>
+   <span class="kr">in</span>
+      <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: return from (wrapped) func"</span>
+   <span class="kr">end</span><span class="p">)</span>
+<span class="kr">in</span>
+<span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">=&gt;</span>
+  <span class="n">callcc</span>
+  <span class="p">(</span><span class="kr">fn</span> <span class="n">k1</span> <span class="p">=&gt;</span>
+   <span class="n">throw</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span>
+          <span class="kr">let</span>
+             <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k2</span> <span class="p">=&gt;</span> <span class="n">throw</span> <span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">))</span>
+          <span class="kr">in</span>
+             <span class="n">throw</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">x</span><span class="p">)</span>
+          <span class="kr">end</span><span class="p">))</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This implementation now has the right space behavior; the continuation returned by <code>isolate f</code> will only retain the heap-allocated values reachable from <code>f</code> and from <code>base</code>.  (Technically, the continuation will retain two copies of the stack that was in place at the time <code>base</code> was evaluated, but we are assuming that that stack small.)</p>
+</div>
+<div class="paragraph">
+<p>One minor inefficiency of this implementation (given MLton&#8217;s implementation of continuations) is that every <code>callcc</code> and <code>throw</code> entails copying a stack (albeit, some of them are small).  We can avoid this in the evaluation of <code>base</code> by using a reference cell, because <code>base</code> is evaluated at the top-level:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+<span class="kr">val</span> <span class="nv">base</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">option</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">let</span>
+     <span class="kr">val</span> <span class="nv">baseRef</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">option</span> <span class="n">t</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+     <span class="kr">val</span> <span class="nv">th</span> <span class="p">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">base</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="n">k</span><span class="p">;</span> <span class="n">NONE</span><span class="p">))</span>
+  <span class="kr">in</span>
+     <span class="kr">case</span> <span class="n">th</span> <span class="kr">of</span>
+        <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">case</span> <span class="n">!baseRef</span> <span class="kr">of</span>
+                    <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: missing base"</span>
+                  <span class="p">|</span> <span class="n">SOME</span> <span class="n">base</span> <span class="p">=&gt;</span> <span class="n">base</span><span class="p">)</span>
+      <span class="p">|</span> <span class="n">SOME</span> <span class="n">th</span> <span class="p">=&gt;</span> <span class="kr">let</span>
+                      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">th</span> <span class="p">()</span> <span class="p">;</span> <span class="nn">Exit</span><span class="p">.</span><span class="n">topLevelSuffix</span> <span class="p">())</span>
+                              <span class="kr">handle</span> <span class="n">exn</span> <span class="p">=&gt;</span> <span class="nn">MLtonExn</span><span class="p">.</span><span class="n">topLevelHandler</span> <span class="n">exn</span>
+                   <span class="kr">in</span>
+                      <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: return from (wrapped)
+                      func"</span>
+                   <span class="kr">end</span>
+  <span class="kr">end</span>
+<span class="kr">in</span>
+<span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">=&gt;</span>
+  <span class="n">callcc</span>
+  <span class="p">(</span><span class="kr">fn</span> <span class="n">k1</span> <span class="p">=&gt;</span>
+   <span class="n">throw</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">SOME</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span>
+          <span class="kr">let</span>
+             <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k2</span> <span class="p">=&gt;</span> <span class="n">throw</span> <span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">))</span>
+          <span class="kr">in</span>
+             <span class="n">throw</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">SOME</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">x</span><span class="p">))</span>
+          <span class="kr">end</span><span class="p">)))</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now, to evaluate <code>base</code>, we only copy the stack once (instead of 3 times).  Because we don&#8217;t have a dummy continuation around to initialize the reference cell, the reference cell holds a continuation <code>option</code>.  To distinguish between the original evaluation of <code>base</code> (when we want to return the continuation) and the subsequent evaluations of <code>base</code> (when we want to evaluate a thunk), we capture a <code>(unit -&gt; unit) option</code> continuation.</p>
+</div>
+<div class="paragraph">
+<p>This seems to be as far as we can go without exploiting the concrete implementation of continuations in <a href="MLtonCont">MLtonCont</a>.  Examining the implementation, we note that the type of
+continuations is given by</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and the implementation of <code>throw</code> is given by</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="nf">throw'</span> <span class="p">(</span><span class="n">k</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">):</span> <span class="nd">'b</span> <span class="p">=</span>
+  <span class="p">(</span><span class="n">k</span> <span class="n">v</span><span class="p">;</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.throw': return from continuation"</span><span class="p">)</span>
+
+<span class="kr">fun</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="nf">throw</span> <span class="p">(</span><span class="n">k</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nd">'a</span><span class="p">):</span> <span class="nd">'b</span> <span class="p">=</span> <span class="n">throw'</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Suffice to say, a continuation is simply a function that accepts a thunk to yield the thrown value and the body of the function performs the actual throw. Using this knowledge, we can create a dummy continuation to initialize <code>baseRef</code> and greatly simplify the body of <code>isolate</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+<span class="kr">val</span> <span class="nv">base</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">option</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">let</span>
+     <span class="kr">val</span> <span class="nv">baseRef</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">option</span> <span class="n">t</span> <span class="n">ref</span> <span class="p">=</span>
+        <span class="n">ref</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: missing base"</span><span class="p">)</span>
+     <span class="kr">val</span> <span class="nv">th</span> <span class="p">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">baseRef</span> <span class="n">:=</span> <span class="n">k</span><span class="p">;</span> <span class="n">NONE</span><span class="p">))</span>
+  <span class="kr">in</span>
+     <span class="kr">case</span> <span class="n">th</span> <span class="kr">of</span>
+        <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">!baseRef</span>
+      <span class="p">|</span> <span class="n">SOME</span> <span class="n">th</span> <span class="p">=&gt;</span> <span class="kr">let</span>
+                      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">th</span> <span class="p">()</span> <span class="p">;</span> <span class="nn">Exit</span><span class="p">.</span><span class="n">topLevelSuffix</span> <span class="p">())</span>
+                              <span class="kr">handle</span> <span class="n">exn</span> <span class="p">=&gt;</span> <span class="nn">MLtonExn</span><span class="p">.</span><span class="n">topLevelHandler</span> <span class="n">exn</span>
+                   <span class="kr">in</span>
+                      <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: return from (wrapped)
+                      func"</span>
+                   <span class="kr">end</span>
+  <span class="kr">end</span>
+<span class="kr">in</span>
+<span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">=&gt;</span>
+  <span class="kr">fn</span> <span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=&gt;</span>
+  <span class="n">throw</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">v</span><span class="p">))</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that this implementation of <code>isolate</code> makes it clear that the continuation returned by <code>isolate f</code> only retains the heap-allocated values reachable from <code>f</code> and <code>base</code>.  It also retains only one copy of the stack that was in place at the time <code>base</code> was evaluated.  Finally, it completely avoids making any copies of the stack that is in place at the time <code>isolate f</code> is evaluated; indeed, <code>isolate f</code> is a constant-time operation.</p>
+</div>
+<div class="paragraph">
+<p>Next, suppose we limited ourselves to capturing <code>unit</code> continuations with <code>callcc</code>.  We can&#8217;t pass the thunk to be evaluated in the 'empty' context directly, but we can use a reference cell.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+<span class="kr">val</span> <span class="nv">thRef</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+<span class="kr">val</span> <span class="nv">base</span><span class="p">:</span> <span class="n">unit</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">let</span>
+     <span class="kr">val</span> <span class="nv">baseRef</span><span class="p">:</span> <span class="n">unit</span> <span class="n">t</span> <span class="n">ref</span> <span class="p">=</span>
+        <span class="n">ref</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: missing base"</span><span class="p">)</span>
+     <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k</span> <span class="p">=&gt;</span> <span class="n">baseRef</span> <span class="n">:=</span> <span class="n">k</span><span class="p">)</span>
+  <span class="kr">in</span>
+     <span class="kr">case</span> <span class="n">!thRef</span> <span class="kr">of</span>
+        <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">!baseRef</span>
+      <span class="p">|</span> <span class="n">SOME</span> <span class="n">th</span> <span class="p">=&gt;</span>
+           <span class="kr">let</span>
+              <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">thRef</span> <span class="n">:=</span> <span class="n">NONE</span>
+              <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">th</span> <span class="p">()</span> <span class="p">;</span> <span class="nn">Exit</span><span class="p">.</span><span class="n">topLevelSuffix</span> <span class="p">())</span>
+                      <span class="kr">handle</span> <span class="n">exn</span> <span class="p">=&gt;</span> <span class="nn">MLtonExn</span><span class="p">.</span><span class="n">topLevelHandler</span> <span class="n">exn</span>
+           <span class="kr">in</span>
+              <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: return from (wrapped) func"</span>
+           <span class="kr">end</span>
+  <span class="kr">end</span>
+<span class="kr">in</span>
+<span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span>
+  <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">=&gt;</span>
+  <span class="kr">fn</span> <span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=&gt;</span>
+  <span class="kr">let</span>
+     <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">thRef</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">v</span><span class="p">)</span>
+  <span class="kr">in</span>
+     <span class="n">throw</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">())</span>
+  <span class="kr">end</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that it is important to set <code>thRef</code> to <code>NONE</code> before evaluating the thunk, so that the garbage collector doesn&#8217;t retain all the heap-allocated values reachable from <code>f</code> and <code>v</code> during the evaluation of <code>f (v ())</code>.  This is because <code>thRef</code> is still live during the evaluation of the thunk; in particular, it was allocated before the evaluation of <code>base</code> (and used after), and so is retained by continuation on which the thunk is evaluated.</p>
+</div>
+<div class="paragraph">
+<p>This implementation can be easily adapted to use MLton&#8217;s primitive stack copying operations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+<span class="kr">val</span> <span class="nv">thRef</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+<span class="kr">val</span> <span class="nv">base</span><span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">preThread</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">copyCurrent</span> <span class="p">()</span>
+   <span class="kr">in</span>
+      <span class="kr">case</span> <span class="n">!thRef</span> <span class="kr">of</span>
+         <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">savedPre</span> <span class="p">()</span>
+       <span class="p">|</span> <span class="n">SOME</span> <span class="n">th</span> <span class="p">=&gt;</span>
+            <span class="kr">let</span>
+               <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">thRef</span> <span class="n">:=</span> <span class="n">NONE</span>
+               <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">th</span> <span class="p">()</span> <span class="p">;</span> <span class="nn">Exit</span><span class="p">.</span><span class="n">topLevelSuffix</span> <span class="p">())</span>
+                       <span class="kr">handle</span> <span class="n">exn</span> <span class="p">=&gt;</span> <span class="nn">MLtonExn</span><span class="p">.</span><span class="n">topLevelHandler</span> <span class="n">exn</span>
+            <span class="kr">in</span>
+               <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: return from (wrapped) func"</span>
+            <span class="kr">end</span>
+   <span class="kr">end</span>
+<span class="kr">in</span>
+<span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">=&gt;</span>
+   <span class="kr">fn</span> <span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">thRef</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">v</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">new</span> <span class="p">=</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">copy</span> <span class="n">base</span>
+   <span class="kr">in</span>
+      <span class="nn">Thread</span><span class="p">.</span><span class="n">switchTo</span> <span class="n">new</span>
+   <span class="kr">end</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In essence, <code>Thread.copyCurrent</code> copies the current execution stack and stores it in an implicit reference cell in the runtime system, which is fetchable with <code>Thread.savedPre</code>.  When we are ready to throw to the isolated function, <code>Thread.copy</code> copies the saved execution stack (because the stack is modified in place during execution, we need to retain a pristine copy in case the isolated function itself throws to other isolated functions) and <code>Thread.switchTo</code> abandons the current execution stack, installing the newly copied execution stack.</p>
+</div>
+<div class="paragraph">
+<p>The actual implementation of <code>MLton.Cont.isolate</code> simply adds some <code>Thread.atomicBegin</code> and <code>Thread.atomicEnd</code> commands, which effectively protect the global <code>thRef</code> and accommodate the fact that <code>Thread.switchTo</code> does an implicit <code>Thread.atomicEnd</code> (used for leaving a signal handler thread).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+<span class="kr">val</span> <span class="nv">thRef</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+<span class="kr">val</span> <span class="nv">base</span><span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">preThread</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">copyCurrent</span> <span class="p">()</span>
+   <span class="kr">in</span>
+      <span class="kr">case</span> <span class="n">!thRef</span> <span class="kr">of</span>
+         <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">savedPre</span> <span class="p">()</span>
+       <span class="p">|</span> <span class="n">SOME</span> <span class="n">th</span> <span class="p">=&gt;</span>
+            <span class="kr">let</span>
+               <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">thRef</span> <span class="n">:=</span> <span class="n">NONE</span>
+               <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="n">atomicEnd</span> <span class="c">(*</span><span class="cm"> Match 1 *)</span>
+               <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">(</span><span class="n">th</span> <span class="p">()</span> <span class="p">;</span> <span class="nn">Exit</span><span class="p">.</span><span class="n">topLevelSuffix</span> <span class="p">())</span>
+                       <span class="kr">handle</span> <span class="n">exn</span> <span class="p">=&gt;</span> <span class="nn">MLtonExn</span><span class="p">.</span><span class="n">topLevelHandler</span> <span class="n">exn</span>
+            <span class="kr">in</span>
+               <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"MLton.Cont.isolate: return from (wrapped) func"</span>
+            <span class="kr">end</span>
+   <span class="kr">end</span>
+<span class="kr">in</span>
+<span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">=&gt;</span>
+   <span class="kr">fn</span> <span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="n">atomicBegin</span> <span class="c">(*</span><span class="cm"> Match 1 *)</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">thRef</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">v</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">new</span> <span class="p">=</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">copy</span> <span class="n">base</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="n">atomicBegin</span> <span class="c">(*</span><span class="cm"> Match 2 *)</span>
+   <span class="kr">in</span>
+      <span class="nn">Thread</span><span class="p">.</span><span class="n">switchTo</span> <span class="n">new</span> <span class="c">(*</span><span class="cm"> Match 2 *)</span>
+   <span class="kr">end</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is perhaps interesting to note that the above implementation was originally 'derived' by specializing implementations of the <a href="MLtonThread">MLtonThread</a> <code>new</code>, <code>prepare</code>, and <code>switch</code> functions as if their only use was in the following implementation of <code>isolate</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">=&gt;</span>
+   <span class="kr">fn</span> <span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">th</span> <span class="p">=</span> <span class="p">(</span><span class="n">f</span> <span class="p">(</span><span class="n">v</span> <span class="p">())</span> <span class="p">;</span> <span class="nn">Exit</span><span class="p">.</span><span class="n">topLevelSuffix</span> <span class="p">())</span>
+               <span class="kr">handle</span> <span class="n">exn</span> <span class="p">=&gt;</span> <span class="nn">MLtonExn</span><span class="p">.</span><span class="n">topLevelHandler</span> <span class="n">exn</span>
+      <span class="kr">val</span> <span class="nv">t</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Thread</span><span class="p">.</span><span class="n">prepare</span> <span class="p">(</span><span class="nn">MLton</span><span class="p">.</span><span class="nn">Thread</span><span class="p">.</span><span class="n">new</span> <span class="n">th</span><span class="p">,</span> <span class="p">())</span>
+   <span class="kr">in</span>
+      <span class="nn">MLton</span><span class="p">.</span><span class="nn">Thread</span><span class="p">.</span><span class="n">switch</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">t</span><span class="p">)</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It was pleasant to discover that it could equally well be 'derived' starting from the <code>callcc</code> and <code>throw</code> implementation.</p>
+</div>
+<div class="paragraph">
+<p>As a final comment, we noted that the degree to which the context of <code>base</code> could be considered 'empty' (i.e., retaining few heap-allocated values) depended upon a slightly MLton-esque view.  In particular, MLton does not heap allocate executable code.  So, although the <code>base</code> context keeps a lot of unevaluated code 'live', such code is not heap allocated.  In a system like SML/NJ, that does heap allocate executable code, one might want it to be the case that after throwing to an isolated function, the garbage collector retains only the code necessary to evaluate the function, and not any code that was necessary to evaluate the <code>base</code> context.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonContIsolateImplementation.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonContIsolateImplementation.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

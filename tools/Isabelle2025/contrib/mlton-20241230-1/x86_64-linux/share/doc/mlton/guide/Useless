@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Useless</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Useless</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">Useless</a> is an optimization pass for the <a href="SSA">SSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>builds some kind of dependence graph where</p>
+<div class="ulist">
+<ul>
+<li>
+<p>a value of ground type is useful if it is an arg to a primitive</p>
+</li>
+<li>
+<p>a tuple is useful if it contains a useful component</p>
+</li>
+<li>
+<p>a constructor is useful if it contains a useful component or is used in a <code>Case</code> transfer</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If a useful tuple is coerced to another useful tuple, then all of
+their components must agree (exactly).  It is trivial to convert a
+useful value to a useless one.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/useless.fun"><code>useless.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is also trivial to convert a useful tuple to one of its useful
+components&#8201;&#8212;&#8201;but this seems hard.</p>
+</div>
+<div class="paragraph">
+<p>Suppose that you have a <code>ref</code>/<code>array</code>/<code>vector</code> that is useful, but the
+components aren&#8217;t&#8201;&#8212;&#8201;then the components are converted to type <code>unit</code>,
+and any primitive args must be as well.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Useless.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Useless.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,24 @@
+This distribution of SPASS 3.8ds, described in Blanchette, Popescu, Wand, and
+Weidenbach's ITP 2012 paper "More SPASS with Isabelle", has been compiled from
+sources available at https://www.cs.vu.nl/~jbe248/spass-3.8ds-src.tar.gz
+via "make".
+
+The Windows/Cygwin compilation required commenting out the line
+
+    #include "execinfo.h"
+
+in "misc.c" as well as most of the body of the "misc_DumpCore" function.
+
+The latest official SPASS sources can be downloaded from
+http://www.spass-prover.org/. Be aware, however, that the official SPASS
+releases are not compatible with Isabelle.
+
+
+Viel SPASS!
+
+
+    Jasmin Blanchette
+    16-May-2018
+
+    Makarius
+    09-Oct-2020

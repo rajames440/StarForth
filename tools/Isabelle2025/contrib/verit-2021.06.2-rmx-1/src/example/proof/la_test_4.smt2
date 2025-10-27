@@ -1,0 +1,20 @@
+(echo "Example to test la_generic proof output. Run without prepro.")
+(set-logic QF_LRA)
+
+(declare-const t0 Real)
+(declare-const t1 Real)
+(declare-const t2 Real)
+(declare-const t3 Real)
+(declare-const t4 Real)
+(declare-const t5 Real)
+(declare-const  x Real)
+
+
+(echo "This works.")
+(assert (and (<= t0 0.0)
+             (<= 3.0 (* 1 t4))
+             (<= t4 (* 2 t0))
+))
+; (assert (and (<= (* 2.0 t0) 0.0)
+(check-sat)
+(exit)

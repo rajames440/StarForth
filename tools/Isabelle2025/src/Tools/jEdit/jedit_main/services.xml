@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!DOCTYPE SERVICES SYSTEM "services.dtd">
+
+<SERVICES>
+  <SERVICE CLASS="org.gjt.sp.jedit.buffer.FoldHandler" NAME="isabelle">
+    new isabelle.jedit_main.Fold_Handler();
+  </SERVICE>
+  <SERVICE CLASS="org.gjt.sp.jedit.gui.DynamicContextMenuService" NAME="Spell_Checker">
+    new isabelle.jedit_main.Context_Menu();
+  </SERVICE>
+  <SERVICE NAME="isabelle-export" CLASS="org.gjt.sp.jedit.io.VFS">
+    new isabelle.jedit_main.Isabelle_Export_VFS();
+  </SERVICE>
+  <SERVICE NAME="isabelle-session" CLASS="org.gjt.sp.jedit.io.VFS">
+    new isabelle.jedit_main.Isabelle_Session_VFS();
+  </SERVICE>
+  <SERVICE NAME="isabelle" CLASS="sidekick.SideKickParser">
+    new isabelle.jedit_main.Isabelle_Sidekick_Default();
+  </SERVICE>
+  <SERVICE NAME="isabelle-context" CLASS="sidekick.SideKickParser">
+    new isabelle.jedit_main.Isabelle_Sidekick_Context();
+  </SERVICE>
+  <SERVICE NAME="isabelle-markup" CLASS="sidekick.SideKickParser">
+    new isabelle.jedit_main.Isabelle_Sidekick_Markup();
+  </SERVICE>
+  <SERVICE NAME="isabelle-ml" CLASS="sidekick.SideKickParser">
+    new isabelle.jedit_main.Isabelle_Sidekick_ML();
+  </SERVICE>
+  <SERVICE NAME="isabelle-sml" CLASS="sidekick.SideKickParser">
+    new isabelle.jedit_main.Isabelle_Sidekick_SML();
+  </SERVICE>
+  <SERVICE NAME="isabelle-news" CLASS="sidekick.SideKickParser">
+    new isabelle.jedit_main.Isabelle_Sidekick_News();
+  </SERVICE>
+  <SERVICE NAME="isabelle-options" CLASS="sidekick.SideKickParser">
+    new isabelle.jedit_main.Isabelle_Sidekick_Options();
+  </SERVICE>
+  <SERVICE NAME="isabelle-root" CLASS="sidekick.SideKickParser">
+    new isabelle.jedit_main.Isabelle_Sidekick_Root();
+  </SERVICE>
+  <SERVICE NAME="bibtex" CLASS="sidekick.SideKickParser">
+    new isabelle.jedit_main.Isabelle_Sidekick_Bibtex();
+  </SERVICE>
+  <SERVICE CLASS="console.Shell" NAME="Scala">
+    new isabelle.jedit_main.Scala_Console();
+  </SERVICE>
+  <SERVICE CLASS="isabelle.jedit.Active$Handler" NAME="misc">
+    new isabelle.jedit_main.Active_Misc_Handler();
+  </SERVICE>
+  <SERVICE CLASS="isabelle.jedit.Active$Handler" NAME="graphview">
+    new isabelle.jedit_main.Graphview_Dockable_Handler()
+  </SERVICE>
+  <SERVICE CLASS="org.gjt.sp.jedit.gui.statusbar.StatusWidgetFactory" NAME="java-status">
+    new isabelle.jedit_main.Status_Widget_Java_Factory();
+  </SERVICE>
+  <SERVICE CLASS="org.gjt.sp.jedit.gui.statusbar.StatusWidgetFactory" NAME="ml-status">
+    new isabelle.jedit_main.Status_Widget_ML_Factory();
+  </SERVICE>
+</SERVICES>

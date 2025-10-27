@@ -1,0 +1,13 @@
+diff -ru jedit5.7.0/jEdit/org/jedit/localization/jedit_en.props jedit5.7.0-patched/jEdit/org/jedit/localization/jedit_en.props
+--- jedit5.7.0/jEdit/org/jedit/localization/jedit_en.props	2024-08-03 19:53:22.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/jedit/localization/jedit_en.props	2024-10-29 11:50:54.066016546 +0100
+@@ -1282,8 +1282,7 @@
+ 	The most likely reason is that the JAR file is corrupt; try\n\
+ 	reinstalling it. See Utilities->Troubleshooting->Activity Log\n\
+ 	for a full stack trace.
+-plugin-error.start-error=Cannot start: {0}\n\
+-	Try updating to a newer version of the plugin.
++plugin-error.start-error=Cannot start: {0}
+ plugin-error.already-loaded=Two copies installed. Please remove one of the \
+ 	two copies.
+ plugin-error.dep-jdk=Requires Java {0} or later, but you only have version {1}.

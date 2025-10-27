@@ -1,0 +1,8 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ISABELLE_FLATLAF_HOME="$COMPONENT"
+
+classpath "$ISABELLE_FLATLAF_HOME/lib/flatlaf-3.5.4-no-natives.jar"
+
+isabelle_scala_service "isabelle.FlatLightLaf"
+isabelle_scala_service "isabelle.FlatDarkLaf"

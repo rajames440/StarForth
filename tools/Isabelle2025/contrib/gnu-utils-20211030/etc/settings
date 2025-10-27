@@ -1,0 +1,12 @@
+# -*- shell-script -*- :mode=shellscript:
+
+case "$ISABELLE_PLATFORM_FAMILY" in
+  macos)
+    ISABELLE_PRINTENV="$COMPONENT/${ISABELLE_APPLE_PLATFORM64:-$ISABELLE_PLATFORM64}/printenv"
+    ISABELLE_TAR="$COMPONENT/${ISABELLE_APPLE_PLATFORM64:-$ISABELLE_PLATFORM64}/tar"
+    ;;
+  *)
+    ISABELLE_PRINTENV="$(type -P printenv)"
+    ISABELLE_TAR="$(type -P tar)"
+    ;;
+esac

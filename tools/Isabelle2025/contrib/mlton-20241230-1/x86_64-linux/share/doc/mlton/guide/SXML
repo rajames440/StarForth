@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SXML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SXML</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">SXML</a> is an <a href="IntermediateLanguage">IntermediateLanguage</a>, translated from <a href="XML">XML</a> by
+<a href="Monomorphise">Monomorphise</a>, optimized by <a href="SXMLSimplify">SXMLSimplify</a>, and translated by
+<a href="ClosureConvert">ClosureConvert</a> to <a href="SSA">SSA</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>SXML is a simply-typed version of <a href="XML">XML</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/sxml.sig"><code>sxml.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/sxml.fun"><code>sxml.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/sxml-tree.sig"><code>sxml-tree.sig</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_checking">Type Checking</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">SXML</a> shares the type checker for <a href="XML">XML</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are only two differences between <a href="XML">XML</a> and <a href="#">SXML</a>.  First,
+<a href="#">SXML</a> <code>val</code>, <code>fun</code>, and <code>datatype</code> declarations always have an
+empty list of type variables.  Second, <a href="#">SXML</a> variable references
+always have an empty list of type arguments.  Constructors uses can
+only have a nonempty list of type arguments if the constructor is a
+primitive.</p>
+</div>
+<div class="paragraph">
+<p>Although we could rely on the type system to enforce these constraints
+by parameterizing the <a href="XML">XML</a> signature, <a href="StephenWeeks">StephenWeeks</a> did so in a
+previous version of the compiler, and the software engineering gains
+were not worth the effort.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SXML.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SXML.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

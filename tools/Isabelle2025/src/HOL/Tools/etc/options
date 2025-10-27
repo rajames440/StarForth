@@ -1,0 +1,75 @@
+(* :mode=isabelle-options: *)
+
+section "Automatically tried tools"
+
+public option auto_time_start : real = 1.0
+  -- "initial delay for automatically tried tools (seconds)"
+
+public option auto_time_limit : real = 2.0
+  -- "time limit for automatically tried tools (seconds > 0)"
+
+public option auto_nitpick : bool = false
+  -- "run Nitpick automatically"
+
+public option auto_sledgehammer : bool = false
+  -- "run Sledgehammer automatically"
+
+public option auto_methods : bool = false
+  -- "try standard proof methods automatically"
+
+public option auto_quickcheck : bool = true
+  -- "run Quickcheck automatically"
+
+public option auto_solve_direct : bool = true
+  -- "run solve_direct automatically"
+
+
+section "Miscellaneous Tools"
+
+public option sledgehammer_provers : string = "cvc5 verit z3 e spass vampire zipperposition"
+  -- "provers for Sledgehammer (separated by blanks)"
+
+public option sledgehammer_timeout : int = 30
+  -- "provers will be interrupted after this time (in seconds)"
+
+public option SystemOnTPTP : string = "https://tptp.org/cgi-bin/SystemOnTPTPFormReply"
+  -- "URL for SystemOnTPTP service"
+
+public option MaSh : string = "sml"
+  -- "machine learning algorithm to use by Sledgehammer (nb_knn, nb, knn, none)"
+
+public option kodkod_scala : bool = false
+  -- "invoke Nitpick/Kodkod via Isabelle/Scala (instead of external process)"
+
+public option kodkod_max_threads : int = 0
+  -- "default max_threads for Nitpick/Kodkod (0: maximum of Java/Scala platform)"
+
+
+section "Mirabelle"
+
+option mirabelle_dry_run : bool = false
+  -- "initialize the actions, print on which goals they would be run, and finalize the actions"
+
+option mirabelle_timeout : real = 30
+  -- "timeout in seconds for each action"
+
+option mirabelle_stride : int = 1
+  -- "run actions on every nth goal (0: uniform distribution)"
+
+option mirabelle_max_calls : int = 0
+  -- "max. no. of calls to each action (0: unbounded)"
+
+option mirabelle_randomize : int = 0
+  -- "seed to randomize the goals before selection (0: no randomization)"
+
+option mirabelle_output_dir : string = "mirabelle"
+  -- "output directory for log files and generated artefacts"
+
+option mirabelle_parallel_group_size : int = 0
+  -- "number of actions to perform in parallel (0: unbounded)"
+
+option mirabelle_actions : string = ""
+  -- "Mirabelle actions (outer syntax, separated by semicolons)"
+
+option mirabelle_theories : string = ""
+  -- "Mirabelle theories (names with optional line range, separated by commas)"

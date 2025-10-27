@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>NumericLiteral</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>NumericLiteral</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Numeric literals in <a href="StandardML">Standard ML</a> can be written in either
+decimal or hexadecimal notation.  Sometimes it can be convenient to
+write numbers down in other bases.  Fortunately, using <a href="Fold">Fold</a>, it is
+possible to define a concise syntax for numeric literals that allows
+one to write numeric constants in any base and of various types
+(<code>int</code>, <code>IntInf.int</code>, <code>word</code>, and more).</p>
+</div>
+<div class="paragraph">
+<p>We will define constants <code>I</code>, <code>II</code>, <code>W</code>, and <code>`</code> so
+that, for example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">I</span> <span class="mi">10</span> <span class="n">`</span><span class="mi">1</span><span class="n">`</span><span class="mi">2</span><span class="n">`</span><span class="mi">3</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>denotes <code>123:int</code> in base 10, while</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">II</span> <span class="mi">8</span> <span class="n">`</span><span class="mi">2</span><span class="n">`</span><span class="mi">3</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>denotes <code>19:IntInf.int</code> in base 8, and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">W</span> <span class="mi">2</span> <span class="n">`</span><span class="mi">1</span><span class="n">`</span><span class="mi">1</span><span class="n">`</span><span class="mi">0</span><span class="n">`</span><span class="mi">1</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>denotes <code>0w13: word</code>.</p>
+</div>
+<div class="paragraph">
+<p>Here is the code.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Num</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">make</span> <span class="p">(</span><span class="kr">op</span> <span class="n">*</span><span class="p">,</span> <span class="kr">op</span> <span class="n">+</span><span class="p">,</span> <span class="n">i2x</span><span class="p">)</span> <span class="n">iBase</span> <span class="p">=</span>
+          <span class="kr">let</span>
+             <span class="kr">val</span> <span class="nv">xBase</span> <span class="p">=</span> <span class="n">i2x</span> <span class="n">iBase</span>
+          <span class="kr">in</span>
+             <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span>
+                <span class="p">((</span><span class="n">i2x</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="kr">fn</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="p">=&gt;</span>
+                     <span class="kr">if</span> <span class="mi">0</span> <span class="n">&lt;=</span> <span class="n">i</span> <span class="kr">andalso</span> <span class="n">i</span> <span class="n">&lt;</span> <span class="n">iBase</span> <span class="kr">then</span>
+                        <span class="n">x</span> <span class="n">*</span> <span class="n">xBase</span> <span class="n">+</span> <span class="n">i2x</span> <span class="n">i</span>
+                     <span class="kr">else</span>
+                        <span class="kr">raise</span> <span class="n">Fail</span> <span class="p">(</span><span class="n">concat</span>
+                                       <span class="p">[</span><span class="s2">"Num: "</span><span class="p">,</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span><span class="p">,</span>
+                                        <span class="s2">" is not a valid</span><span class="si">\
+                                        \</span><span class="s2"> digit in base "</span><span class="p">,</span>
+                                        <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">iBase</span><span class="p">])),</span>
+                 <span class="n">fst</span><span class="p">)</span>
+          <span class="kr">end</span>
+
+      <span class="kr">fun</span> <span class="nf">I</span>  <span class="n">?</span> <span class="p">=</span> <span class="n">make</span> <span class="p">(</span><span class="kr">op</span> <span class="n">*</span><span class="p">,</span> <span class="kr">op</span> <span class="n">+</span><span class="p">,</span> <span class="n">id</span><span class="p">)</span> <span class="n">?</span>
+      <span class="kr">fun</span> <span class="nf">II</span> <span class="n">?</span> <span class="p">=</span> <span class="n">make</span> <span class="p">(</span><span class="kr">op</span> <span class="n">*</span><span class="p">,</span> <span class="kr">op</span> <span class="n">+</span><span class="p">,</span> <span class="nn">IntInf</span><span class="p">.</span><span class="n">fromInt</span><span class="p">)</span> <span class="n">?</span>
+      <span class="kr">fun</span> <span class="nf">W</span>  <span class="n">?</span> <span class="p">=</span> <span class="n">make</span> <span class="p">(</span><span class="kr">op</span> <span class="n">*</span><span class="p">,</span> <span class="kr">op</span> <span class="n">+</span><span class="p">,</span> <span class="nn">Word</span><span class="p">.</span><span class="n">fromInt</span><span class="p">)</span> <span class="n">?</span>
+
+      <span class="kr">fun</span> <span class="nf">`</span> <span class="n">?</span> <span class="p">=</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span> <span class="p">=&gt;</span>
+                               <span class="p">(</span><span class="n">step</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">step</span><span class="p">))</span> <span class="n">?</span>
+
+      <span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="mi">10</span>
+      <span class="kr">val</span> <span class="nv">b</span> <span class="p">=</span> <span class="mi">11</span>
+      <span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="mi">12</span>
+      <span class="kr">val</span> <span class="nv">d</span> <span class="p">=</span> <span class="mi">13</span>
+      <span class="kr">val</span> <span class="nv">e</span> <span class="p">=</span> <span class="mi">14</span>
+      <span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="mi">15</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">fst</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">_)</span> <span class="p">=</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The idea is for the fold to start with zero and to construct the
+result one digit at a time, with each stepper multiplying the previous
+result by the base and adding the next digit.  The code is abstracted
+in two different ways for extra generality.  First, the <code>make</code>
+function abstracts over the various primitive operations (addition,
+multiplication, etc) that are needed to construct a number.  This
+allows the same code to be shared for constants <code>I</code>, <code>II</code>, <code>W</code> used to
+write down the various numeric types.  It also allows users to add new
+constants for additional numeric types, by supplying the necessary
+arguments to make.</p>
+</div>
+<div class="paragraph">
+<p>Second, the step function, <code>`</code>, is abstracted over the actual
+construction operation, which is created by make, and passed along the
+fold.  This allows the same constant, <code>`</code>, to be used for all
+numeric types.  The alternative approach, having a different step
+function for each numeric type, would be more painful to use.</p>
+</div>
+<div class="paragraph">
+<p>On the surface, it appears that the code checks the digits dynamically
+to ensure they are valid for the base.  However, MLton will simplify
+everything away at compile time, leaving just the final numeric
+constant.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/NumericLiteral.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/NumericLiteral.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

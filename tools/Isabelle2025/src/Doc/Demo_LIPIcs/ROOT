@@ -1,0 +1,12 @@
+chapter Doc  (*Isabelle documentation*)
+
+session Demo_LIPIcs (doc) = HOL +
+  options [
+    document_variants = "demo_lipics",  (*Isabelle documentation*)
+    document_build = "lipics_pdflatex"  (*or: "lipics" for LuaLaTeX*)
+  ]
+  theories
+    Document
+  document_files
+    "root.bib"
+    "root.tex"

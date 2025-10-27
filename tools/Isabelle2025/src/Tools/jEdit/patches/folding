@@ -1,0 +1,47 @@
+diff -ru jedit5.7.0/jEdit/org/gjt/sp/jedit/buffer/JEditBuffer.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/buffer/JEditBuffer.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/buffer/JEditBuffer.java	2024-08-03 19:53:15.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/buffer/JEditBuffer.java	2024-10-29 11:50:54.062016616 +0100
+@@ -2054,29 +2054,23 @@
+ 			{
+ 				Segment seg = new Segment();
+ 				newFoldLevel = foldHandler.getFoldLevel(this,i,seg);
+-				if(newFoldLevel != lineMgr.getFoldLevel(i))
++				if(Debug.FOLD_DEBUG)
++					Log.log(Log.DEBUG,this,i + " fold level changed");
++				changed = true;
++				// Update preceding fold levels if necessary
++				List<Integer> precedingFoldLevels =
++					foldHandler.getPrecedingFoldLevels(
++						this,i,seg,newFoldLevel);
++				if (precedingFoldLevels != null)
+ 				{
+-					if(Debug.FOLD_DEBUG)
+-						Log.log(Log.DEBUG,this,i + " fold level changed");
+-					changed = true;
+-					// Update preceding fold levels if necessary
+-					if (i == firstInvalidFoldLevel)
++					int j = i;
++					for (Integer foldLevel: precedingFoldLevels)
+ 					{
+-						List<Integer> precedingFoldLevels =
+-							foldHandler.getPrecedingFoldLevels(
+-								this,i,seg,newFoldLevel);
+-						if (precedingFoldLevels != null)
+-						{
+-							int j = i;
+-							for (Integer foldLevel: precedingFoldLevels)
+-							{
+-								j--;
+-								lineMgr.setFoldLevel(j, foldLevel);
+-							}
+-							if (j < firstUpdatedFoldLevel)
+-								firstUpdatedFoldLevel = j;
+-						}
++						j--;
++						lineMgr.setFoldLevel(j, foldLevel);
+ 					}
++					if (j < firstUpdatedFoldLevel)
++						firstUpdatedFoldLevel = j;
+ 				}
+ 				lineMgr.setFoldLevel(i,newFoldLevel);
+ 			}

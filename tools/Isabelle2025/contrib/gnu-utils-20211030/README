@@ -1,0 +1,13 @@
+These are some GNU utilities for macOS, which are provided by default
+on Linux and Windows/Cygwin.  The executables have been built using
+standard "./configure && make" on the original sources:
+
+  https://ftp.gnu.org/gnu/coreutils/coreutils-8.32.tar.xz
+  https://ftp.gnu.org/gnu/tar/tar-1.32.tar.gz
+
+For x86_64-darwin the reference platform is macOS 10.13 High Sierra,
+for arm64-darwin it is macOS 11.x Big Sur.
+
+
+        Makarius
+        30-Oct-2021

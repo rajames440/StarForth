@@ -1,0 +1,22 @@
+This is JOrtho 1.0 from http://sourceforge.net/projects/jortho
+
+The included dictionaries are derived from SCOWL 7.1
+http://wordlist.sourceforge.net -- following to the script
+speller/make-aspell-dict:
+
+  export LANG=C
+  export LC_ALL=C
+  export LC_CTYPE=C
+  export LC_COLLATE=C
+
+  ./mk-list en_US 60 > en_US
+  ./mk-list en_GB-ise 60 > en_GB-ise
+  ./mk-list en_GB-ize 60 > en_GB-ize
+  ./mk-list en_CA 60 > en_CA
+
+  cat en_US en_GB-ise en_GB-ize en_CA | sort -u > en
+  gzip en_US en_GB-ise en_GB-ize en_CA en
+
+
+  Makarius
+  15-Apr-2014

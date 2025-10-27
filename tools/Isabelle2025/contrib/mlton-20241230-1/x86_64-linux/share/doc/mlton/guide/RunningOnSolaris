@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RunningOnSolaris</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RunningOnSolaris</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton runs fine on Solaris.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">Notes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>You must install the <code>binutils</code>, <code>gcc</code>, and <code>make</code> packages.  You
+can find out how to get these at
+<a href="http://www.sunfreeware.com">sunfreeware.com</a>.</p>
+</li>
+<li>
+<p>Making the documentation requires that you install <code>latex</code> and
+<code>dvips</code>, which are available in the <code>tetex</code> package.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_known_issues">Known issues</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Bootstrapping on the <a href="RunningOnSparc">Sparc architecture</a> is so slow
+as to be impractical (many hours on a 500MHz UltraSparc).  For this
+reason, we strongly recommend building with a
+<a href="CrossCompiling">cross compiler</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnAMD64">RunningOnAMD64</a></p>
+</li>
+<li>
+<p><a href="RunningOnSparc">RunningOnSparc</a></p>
+</li>
+<li>
+<p><a href="RunningOnX86">RunningOnX86</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RunningOnSolaris.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RunningOnSolaris.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

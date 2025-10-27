@@ -1,0 +1,5 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ISABELLE_XZ_HOME="$COMPONENT"
+
+classpath "$ISABELLE_XZ_HOME/lib/xz-1.10.jar"

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>TypeConstructor</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>TypeConstructor</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>In <a href="StandardML">Standard ML</a>, a type constructor is a function from
+types to types.  Type constructors can be <em>nullary</em>, meaning that
+they take no arguments, as in <code>char</code>, <code>int</code>, and <code>real</code>.
+Type constructors can be <em>unary</em>, meaning that they take one
+argument, as in <code>array</code>, <code>list</code>, and <code>vector</code>.  A program
+can define a new type constructor in two ways: a <code>type</code> definition
+or a <code>datatype</code> declaration.  User-defined type constructors can
+can take any number of arguments.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="n">int</span> <span class="n">*</span> <span class="n">real</span>            <span class="c">(*</span><span class="cm"> 0 arguments *)</span>
+<span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">*</span> <span class="n">int</span>                    <span class="c">(*</span><span class="cm"> 1 argument *)</span>
+<span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span>  <span class="c">(*</span><span class="cm"> 2 arguments *)</span>
+<span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span>  <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span>  <span class="c">(*</span><span class="cm"> 3 arguments *)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here are the syntax rules for type constructor application.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Type constructor application is written in postfix.  So, one writes
+<code>int list</code>, not <code>list int</code>.</p>
+</li>
+<li>
+<p>Unary type constructors drop the parens, so one writes
+<code>int list</code>, not <code>(int) list</code>.</p>
+</li>
+<li>
+<p>Nullary type constructors drop the argument entirely, so one writes
+<code>int</code>, not <code>() int</code>.</p>
+</li>
+<li>
+<p>N-ary type constructors use tuple notation; for example,
+<code>(int, real) t</code>.</p>
+</li>
+<li>
+<p>Type constructor application associates to the left.  So,
+<code>int ref list</code> is the same as <code>(int ref) list</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/TypeConstructor.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/TypeConstructor.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

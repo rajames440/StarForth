@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ManualPage</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ManualPage</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton is run from the command line with a collection of options
+followed by a file name and a list of files to compile, assemble, and
+link with.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>mlton [option ...] file.{c|mlb|o|sml} [file.{c|o|s|S} ...]</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The simplest case is to run <code>mlton foo.sml</code>, where <code>foo.sml</code> contains
+a valid SML program, in which case MLton compiles the program to
+produce an executable <code>foo</code>.  Since MLton does not support separate
+compilation, the program must be the entire program you wish to
+compile.  However, the program may refer to signatures and structures
+defined in the <a href="BasisLibrary">Basis Library</a>.</p>
+</div>
+<div class="paragraph">
+<p>Larger programs, spanning many files, can be compiled with the
+<a href="MLBasis">ML Basis system</a>.  In this case, <code>mlton foo.mlb</code> will
+compile the complete SML program described by the basis <code>foo.mlb</code>,
+which may specify both SML files and additional bases.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps">Next Steps</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="CompileTimeOptions">CompileTimeOptions</a></p>
+</li>
+<li>
+<p><a href="RunTimeOptions">RunTimeOptions</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ManualPage.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ManualPage.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+# -*- shell-script -*- :mode=shellscript:
+#
+# determine general hardware and operating system type for Isabelle system tools
+#
+
+ISABELLE_PLATFORM_FAMILY=""
+ISABELLE_PLATFORM64=""
+ISABELLE_APPLE_PLATFORM64=""
+ISABELLE_WINDOWS_PLATFORM32=""
+ISABELLE_WINDOWS_PLATFORM64=""
+
+case $(uname -s) in
+  Linux)
+    ISABELLE_PLATFORM_FAMILY="linux"
+    case $(uname -m) in
+      aarch64)
+        ISABELLE_PLATFORM64=arm64-linux
+        ;;
+      *)
+        ISABELLE_PLATFORM64=x86_64-linux
+        ;;
+    esac
+    ;;
+  Darwin)
+    ISABELLE_PLATFORM_FAMILY="macos"
+    ISABELLE_PLATFORM64=x86_64-darwin
+    case $(uname -a) in
+      *arm64*|*ARM64*)
+        ISABELLE_APPLE_PLATFORM64=arm64-darwin
+        ;;
+      *)
+        ;;
+    esac
+    ;;
+  CYGWIN_NT*)
+    ISABELLE_PLATFORM_FAMILY="windows"
+    ISABELLE_WINDOWS_PLATFORM32="x86-windows"
+    ISABELLE_WINDOWS_PLATFORM64="x86_64-windows"
+    ISABELLE_PLATFORM64=x86_64-cygwin
+    ;;
+esac

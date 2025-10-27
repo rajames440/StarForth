@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>AST</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>AST</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">AST</a> is the <a href="IntermediateLanguage">IntermediateLanguage</a> produced by the <a href="FrontEnd">FrontEnd</a>
+and translated by <a href="Elaborate">Elaborate</a> to <a href="CoreML">CoreML</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The abstract syntax tree produced by the <a href="FrontEnd">FrontEnd</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ast/ast-programs.sig"><code>ast-programs.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ast/ast-programs.fun"><code>ast-programs.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ast/ast-modules.sig"><code>ast-modules.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ast/ast-modules.fun"><code>ast-modules.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ast/ast-core.sig"><code>ast-core.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ast/ast-core.fun"><code>ast-core.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/tree/master/mlton/ast"><code>ast</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_checking">Type Checking</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="#">AST</a> <a href="IntermediateLanguage">IntermediateLanguage</a> has no independent type
+checker. Type inference is performed on an AST program as part of
+<a href="Elaborate">Elaborate</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_source_locations">Source locations</h3>
+<div class="paragraph">
+<p>MLton makes use of a relatively clean method for annotating the
+abstract syntax tree with source location information.  Every source
+program phrase is "wrapped" with the <code>WRAPPED</code> interface:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">WRAPPED</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">node'</span>
+      <span class="kr">type</span> <span class="kt">obj</span>
+
+      <span class="kr">val</span> <span class="nv">dest</span><span class="p">:</span> <span class="n">obj</span> <span class="p">-&gt;</span> <span class="n">node'</span> <span class="n">*</span> <span class="nn">Region</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">makeRegion'</span><span class="p">:</span> <span class="n">node'</span> <span class="n">*</span> <span class="nn">SourcePos</span><span class="p">.</span><span class="n">t</span> <span class="n">*</span> <span class="nn">SourcePos</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">obj</span>
+      <span class="kr">val</span> <span class="nv">makeRegion</span><span class="p">:</span> <span class="n">node'</span> <span class="n">*</span> <span class="nn">Region</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">obj</span>
+      <span class="kr">val</span> <span class="nv">node</span><span class="p">:</span> <span class="n">obj</span> <span class="p">-&gt;</span> <span class="n">node'</span>
+      <span class="kr">val</span> <span class="nv">region</span><span class="p">:</span> <span class="n">obj</span> <span class="p">-&gt;</span> <span class="nn">Region</span><span class="p">.</span><span class="n">t</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The key idea is that <code>node'</code> is the type of an unannotated syntax
+phrase and <code>obj</code> is the type of its annotated counterpart. In the
+implementation, every <code>node'</code> is annotated with a <code>Region.t</code>
+(<a href="https://github.com/MLton/mlton/blob/master/mlton/control/region.sig"><code>region.sig</code></a>,
+<a href="https://github.com/MLton/mlton/blob/master/mlton/control/region.sml"><code>region.sml</code></a>), which describes the
+syntax phrase&#8217;s left source position and right source position, where
+<code>SourcePos.t</code> (<a href="https://github.com/MLton/mlton/blob/master/mlton/control/source-pos.sig"><code>source-pos.sig</code></a>,
+<a href="https://github.com/MLton/mlton/blob/master/mlton/control/source-pos.sml"><code>source-pos.sml</code></a>) denotes a
+particular file, line, and column.  A typical use of the <code>WRAPPED</code>
+interface is illustrated by the following code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">node</span> <span class="p">=</span>
+   <span class="nc">App</span> <span class="kr">of</span> <span class="p">{</span><span class="n">con</span><span class="p">:</span> <span class="nn">Longcon</span><span class="p">.</span><span class="n">t</span><span class="p">,</span> <span class="n">arg</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="n">wasInfix</span><span class="p">:</span> <span class="n">bool</span><span class="p">}</span>
+ <span class="p">|</span> <span class="nc">Const</span> <span class="kr">of</span> <span class="nn">Const</span><span class="p">.</span><span class="n">t</span>
+ <span class="p">|</span> <span class="nc">Constraint</span> <span class="kr">of</span> <span class="n">t</span> <span class="n">*</span> <span class="nn">Type</span><span class="p">.</span><span class="n">t</span>
+ <span class="p">|</span> <span class="nc">FlatApp</span> <span class="kr">of</span> <span class="n">t</span> <span class="n">vector</span>
+ <span class="p">|</span> <span class="nc">Layered</span> <span class="kr">of</span> <span class="p">{</span><span class="n">constraint</span><span class="p">:</span> <span class="nn">Type</span><span class="p">.</span><span class="n">t</span> <span class="n">option</span><span class="p">,</span>
+               <span class="n">fixop</span><span class="p">:</span> <span class="nn">Fixop</span><span class="p">.</span><span class="n">t</span><span class="p">,</span>
+               <span class="n">pat</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span>
+               <span class="n">var</span><span class="p">:</span> <span class="nn">Var</span><span class="p">.</span><span class="n">t</span><span class="p">}</span>
+ <span class="p">|</span> <span class="nc">List</span> <span class="kr">of</span> <span class="n">t</span> <span class="n">vector</span>
+ <span class="p">|</span> <span class="nc">Paren</span> <span class="kr">of</span> <span class="n">t</span>
+ <span class="p">|</span> <span class="nc">Or</span> <span class="kr">of</span> <span class="n">t</span> <span class="n">vector</span>
+ <span class="p">|</span> <span class="nc">Record</span> <span class="kr">of</span> <span class="p">{</span><span class="n">flexible</span><span class="p">:</span> <span class="n">bool</span><span class="p">,</span>
+              <span class="n">items</span><span class="p">:</span> <span class="p">(</span><span class="nn">Record</span><span class="p">.</span><span class="nn">Field</span><span class="p">.</span><span class="n">t</span> <span class="n">*</span> <span class="nn">Region</span><span class="p">.</span><span class="n">t</span> <span class="n">*</span> <span class="nn">Item</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="n">vector</span><span class="p">}</span>
+ <span class="p">|</span> <span class="nc">Tuple</span> <span class="kr">of</span> <span class="n">t</span> <span class="n">vector</span>
+ <span class="p">|</span> <span class="nc">Var</span> <span class="kr">of</span> <span class="p">{</span><span class="n">fixop</span><span class="p">:</span> <span class="nn">Fixop</span><span class="p">.</span><span class="n">t</span><span class="p">,</span>
+           <span class="n">name</span><span class="p">:</span> <span class="nn">Longvid</span><span class="p">.</span><span class="n">t</span><span class="p">}</span>
+ <span class="p">|</span> <span class="nc">Vector</span> <span class="kr">of</span> <span class="n">t</span> <span class="n">vector</span>
+ <span class="p">|</span> <span class="nc">Wild</span>
+
+<span class="kr">include</span> <span class="nn">WRAPPED</span> <span class="kr">sharing</span> <span class="kr">type</span> <span class="kt">node'</span> <span class="p">=</span> <span class="n">node</span>
+                <span class="kr">sharing</span> <span class="kr">type</span> <span class="kt">obj</span> <span class="p">=</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Thus, AST nodes are cleanly separated from source locations.  By way
+of contrast, consider the approach taken by <a href="SMLNJ">SML/NJ</a> (and also
+by the <a href="CKitLibrary">CKit Library</a>).  Each datatype denoting a syntax
+phrase dedicates a special constructor for annotating source
+locations:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">pat</span> <span class="p">=</span> <span class="nc">WildPat</span>                             <span class="c">(*</span><span class="cm"> empty pattern *)</span>
+             <span class="p">|</span> <span class="nc">AppPat</span> <span class="kr">of</span> <span class="p">{</span><span class="n">constr</span><span class="p">:</span><span class="n">pat</span><span class="p">,</span><span class="n">argument</span><span class="p">:</span><span class="n">pat</span><span class="p">}</span> <span class="c">(*</span><span class="cm"> application *)</span>
+             <span class="p">|</span> <span class="nc">MarkPat</span> <span class="kr">of</span> <span class="n">pat</span> <span class="n">*</span> <span class="n">region</span>             <span class="c">(*</span><span class="cm"> mark a pattern *)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The main drawback of this approach is that static type checking is not
+sufficient to guarantee that the AST emitted from the front-end is
+properly annotated.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/AST.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/AST.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

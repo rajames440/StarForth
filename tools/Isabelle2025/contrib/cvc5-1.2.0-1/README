@@ -1,0 +1,9 @@
+This distribution of cvc5 was assembled from official downloads from
+https://github.com/cvc5/cvc5/releases/download --- the static.zip variants
+for macOS, Linux, and Windows, with ARM64 support on macOS and Linux.
+
+The downloaded files were renamed and made executable.
+
+
+        Makarius
+        08-Jan-2025

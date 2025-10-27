@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Bugs20070826</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Bugs20070826</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Here are the known bugs in <a href="Release20070826">MLton 20070826</a>, listed
+in reverse chronological order of date reported.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a id="bug25"></a>
+Bug in the mark-compact garbage collector where the C library&#8217;s <code>memcpy</code> was used to move objects during the compaction phase; this could lead to heap corruption and segmentation faults with newer versions of gcc and/or glibc, which assume that src and dst in a <code>memcpy</code> do not overlap.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r7461&amp;type=commits"><code>r7461</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug24"></a>
+Bug in elaboration of <code>datatype</code> declarations with <code>withtype</code> bindings.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r7434&amp;type=commits"><code>r7434</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug23"></a>
+Performance bug in <a href="RefFlatten">RefFlatten</a> optimization pass.</p>
+<div class="paragraph">
+<p>Thanks to Reactive Systems for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r7379&amp;type=commits"><code>r7379</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug22"></a>
+Performance bug in <a href="SimplifyTypes">SimplifyTypes</a> optimization pass.</p>
+<div class="paragraph">
+<p>Thanks to Reactive Systems for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revisions <a href="https://github.com/MLton/mlton/search?q=SVN`r7377&amp;type=commits"><code>r7377</code></a> and <a href="https://github.com/MLton/mlton/search?q=SVN`r7378&amp;type=commits"><code>r7378</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug21"></a>
+Bug in amd64 codegen register allocation of indirect C calls.</p>
+<div class="paragraph">
+<p>Thanks to David Hansel for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r7368&amp;type=commits"><code>r7368</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug20"></a>
+Bug in <code>IntInf.scan</code> and <code>IntInf.fromString</code> where leading spaces were only accepted if the stream had an explicit sign character.</p>
+<div class="paragraph">
+<p>Thanks to David Hansel for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revisions <a href="https://github.com/MLton/mlton/search?q=SVN`r7227&amp;type=commits"><code>r7227</code></a> and <a href="https://github.com/MLton/mlton/search?q=SVN`r7230&amp;type=commits"><code>r7230</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug19"></a>
+Bug in <code>IntInf.~&gt;&gt;</code> that could cause a <code>glibc</code> assertion.</p>
+<div class="paragraph">
+<p>Fixed by revisions <a href="https://github.com/MLton/mlton/search?q=SVN`r7083&amp;type=commits"><code>r7083</code></a>, <a href="https://github.com/MLton/mlton/search?q=SVN`r7084&amp;type=commits"><code>r7084</code></a>, and <a href="https://github.com/MLton/mlton/search?q=SVN+r7085&amp;type=commits"><code>r7085</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug18"></a>
+Bug in the return type of <code>MLton.Process.reap</code>.</p>
+<div class="paragraph">
+<p>Thanks to Risto Saarelma for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r7029&amp;type=commits"><code>r7029</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug17"></a>
+Bug in <code>MLton.size</code> and <code>MLton.share</code> when tracing the current stack.</p>
+<div class="paragraph">
+<p>Fixed by revisions <a href="https://github.com/MLton/mlton/search?q=SVN`r6978&amp;type=commits"><code>r6978</code></a>, <a href="https://github.com/MLton/mlton/search?q=SVN`r6981&amp;type=commits"><code>r6981</code></a>, <a href="https://github.com/MLton/mlton/search?q=SVN`r6988&amp;type=commits"><code>r6988</code></a>, <a href="https://github.com/MLton/mlton/search?q=SVN`r6989&amp;type=commits"><code>r6989</code></a>, and <a href="https://github.com/MLton/mlton/search?q=SVN+r6990&amp;type=commits"><code>r6990</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug16"></a>
+Bug in nested <code>_export</code>/<code>_import</code> functions.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6919&amp;type=commits"><code>r6919</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug15"></a>
+Bug in the name mangling of <code>_import</code>-ed functions with the <code>stdcall</code> convention.</p>
+<div class="paragraph">
+<p>Thanks to Lars Bergstrom for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6672&amp;type=commits"><code>r6672</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug14"></a>
+Bug in Windows code to page the heap to disk when unable to grow the heap to a desired size.</p>
+<div class="paragraph">
+<p>Thanks to Sami Evangelista for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revisions <a href="https://github.com/MLton/mlton/search?q=SVN`r6600&amp;type=commits"><code>r6600</code></a> and <a href="https://github.com/MLton/mlton/search?q=SVN`r6624&amp;type=commits"><code>r6624</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug13"></a>
+Bug in \*NIX code to page the heap to disk when unable to grow the heap to a desired size.</p>
+<div class="paragraph">
+<p>Thanks to Nicolas Bertolotti for the bug report and patch.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revisions <a href="https://github.com/MLton/mlton/search?q=SVN`r6596&amp;type=commits"><code>r6596</code></a> and <a href="https://github.com/MLton/mlton/search?q=SVN`r6600&amp;type=commits"><code>r6600</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug12"></a>
+Space-safety bug in pass to <a href="RefFlatten">flatten refs</a> into containing data structure.</p>
+<div class="paragraph">
+<p>Thanks to Daniel Spoonhower for the bug report and initial diagnosis and patch.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6395&amp;type=commits"><code>r6395</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug11"></a>
+Bug in the frontend that rejected <code>op longvid</code> patterns and expressions.</p>
+<div class="paragraph">
+<p>Thanks to Florian Weimer for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6347&amp;type=commits"><code>r6347</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug10"></a>
+Bug in the <a href="https://smlfamily.github.io/Basis/imperative-io.html#SIG:IMPERATIVE_IO.canInput:VAL"><code>IMPERATIVE_IO.canInput</code></a> function of the <a href="BasisLibrary">Basis Library</a> implementation.</p>
+<div class="paragraph">
+<p>Thanks to Ville Laurikari for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6261&amp;type=commits"><code>r6261</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug09"></a>
+Bug in algebraic simplification of real primitives.  <a href="https://smlfamily.github.io/Basis/real.html#SIG:REAL.\|@LTE\|:VAL"> <code>Real<em>&lt;N&gt;</em>.&lt;=(x, x)</code></a> is <code>false</code> when <code>x</code> is NaN.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6242&amp;type=commits"><code>r6242</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug08"></a>
+Bug in the FFI visible representation of <code>Int16.int ref</code> (and references of other primitive types smaller than 32-bits) on big-endian platforms.</p>
+<div class="paragraph">
+<p>Thanks to Dave Herman for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6267&amp;type=commits"><code>r6267</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug07"></a>
+Bug in type inference of flexible records.  This would later cause the compiler to raise the <code>TypeError</code> exception.</p>
+<div class="paragraph">
+<p>Thanks to Wesley Terpstra for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6229&amp;type=commits"><code>r6229</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug06"></a>
+Bug in cross-compilation of <code>gdtoa</code> library.</p>
+<div class="paragraph">
+<p>Thanks to Wesley Terpstra for the bug report and patch.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6620&amp;type=commits"><code>r6620</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug05"></a>
+Bug in pass to <a href="RefFlatten">flatten refs</a> into containing data structure.</p>
+<div class="paragraph">
+<p>Thanks to Ruy Ley-Wild for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6191&amp;type=commits"><code>r6191</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug04"></a>
+Bug in the handling of weak pointers by the mark-compact garbage collector.</p>
+<div class="paragraph">
+<p>Thanks to Sean McLaughlin for the bug report and Florian Weimer for the initial diagnosis.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6183&amp;type=commits"><code>r6183</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug03"></a>
+Bug in the elaboration of structures with signature constraints.  This would later cause the compiler to raise the <code>TypeError</code> exception.</p>
+<div class="paragraph">
+<p>Thanks to Vesa Karvonen for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6046&amp;type=commits"><code>r6046</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug02"></a>
+Bug in the interaction of <code>_export</code>-ed functions and signal handlers.</p>
+<div class="paragraph">
+<p>Thanks to Sean McLaughlin for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6013&amp;type=commits"><code>r6013</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug01"></a>
+Bug in the implementation of <code>_export</code>-ed functions using the <code>char</code> type, leading to a linker error.</p>
+<div class="paragraph">
+<p>Thanks to Katsuhiro Ueno for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r5999&amp;type=commits"><code>r5999</code></a>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Bugs20070826.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Bugs20070826.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

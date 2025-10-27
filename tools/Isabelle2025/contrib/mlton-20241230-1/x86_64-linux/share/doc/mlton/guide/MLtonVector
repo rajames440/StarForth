@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonVector</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonVector</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_VECTOR</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">val</span> <span class="nv">create</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="p">{</span><span class="n">done</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">vector</span><span class="p">,</span>
+                          <span class="n">sub</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">,</span>
+                          <span class="n">update</span><span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">}</span>
+      <span class="kr">val</span> <span class="nv">unfoldi</span><span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">*</span> <span class="p">(</span><span class="n">int</span> <span class="n">*</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">vector</span> <span class="n">*</span> <span class="nd">'b</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>create n</code></p>
+<div class="paragraph">
+<p>initiates the construction a vector <em>v</em> of length <code>n</code>, returning
+functions to manipulate the vector.  The <code>done</code> function may be called
+to return the created vector; it is an error to call <code>done</code> before all
+entries have been initialized; it is an error to call <code>done</code> after
+having called <code>done</code>.  The <code>sub</code> function may be called to return an
+initialized vector entry; it is not an error to call <code>sub</code> after
+having called <code>done</code>.  The <code>update</code> function may be called to
+initialize a vector entry; it is an error to call <code>update</code> after
+having called <code>done</code>.  One must initialize vector entries in order
+from lowest to highest; that is, before calling <code>update (i, x)</code>, one
+must have already called <code>update (j, x)</code> for all <code>j</code> in <code>[0, i)</code>.  The
+<code>done</code>, <code>sub</code>, and <code>update</code> functions are all constant-time
+operations.</p>
+</div>
+</li>
+<li>
+<p><code>unfoldi (n, b, f)</code></p>
+<div class="paragraph">
+<p>constructs a vector <em>v</em> of length <code>n</code>, whose elements <em>v<sub>i</sub></em> are
+determined by the equations <em>b<sub>0</sub> = b</em> and
+<em>(v<sub>i</sub>, b<sub>i+1</sub>) = f (i, b<sub>i</sub>)</em>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonVector.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonVector.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

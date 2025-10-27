@@ -1,0 +1,569 @@
+
+ann
+  "nonexhaustiveBind ignore" "nonexhaustiveMatch ignore"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+in
+
+local
+  basis l14 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb
+    end
+  basis l4 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+  basis l53 =
+    bas
+      (* $/ml-lpt-lib.cm ====> *) $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l4
+   in
+      signature gs_0 = ORD_MAP
+   end
+   local
+      open l4
+   in
+      functor gs_1 = RedBlackMapFn
+   end
+   local
+      open l4
+   in
+      structure gs_2 = Atom
+   end
+   local
+      open l14
+   in
+      structure gs_3 = CharVectorSlice
+   end
+   local
+      open l14
+   in
+      structure gs_4 = TextIO
+   end
+   local
+      open l14
+   in
+      structure gs_5 = Char
+      structure gs_6 = CharArray
+      structure gs_7 = CharVector
+      structure gs_8 = FixedInt
+      structure gs_9 = General
+      structure gs_10 = Int
+      structure gs_11 = Int32
+      structure gs_12 = Int64
+      structure gs_13 = IntInf
+      structure gs_14 = LargeInt
+      structure gs_15 = LargeReal
+      structure gs_16 = LargeWord
+      structure gs_17 = OS
+      structure gs_18 = Position
+      structure gs_19 = Real
+      structure gs_20 = Real64
+      structure gs_21 = RealArray
+      structure gs_22 = RealArraySlice
+      structure gs_23 = RealVector
+      structure gs_24 = RealVectorSlice
+      structure gs_25 = SMLofNJ
+      structure gs_26 = Socket
+      structure gs_27 = String
+      structure gs_28 = Substring
+      structure gs_29 = SysWord
+      structure gs_30 = Time
+      structure gs_31 = Word
+      structure gs_32 = Word32
+      structure gs_33 = Word64
+      structure gs_34 = Word8
+   end
+   local
+      open l53
+   in
+      structure gs_35 = AntlrStreamPos
+   end
+   local
+      open l53
+   in
+      functor gs_36 = AntlrErrHandler
+   end
+   local
+      open l14
+   in
+      structure gs_37 = List
+   end
+   local
+      open l53
+   in
+      signature gs_38 = ANTLR_LEXER
+   end
+   local
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4-utils.sml
+   in
+      structure gs_39 = HTML4Utils
+   end
+   local
+      signature ANTLR_LEXER = gs_38
+      functor AntlrErrHandler = gs_36
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure HTML4Utils = gs_39
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure List = gs_37
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4.g.sml
+   in
+      functor gs_40 = HTML4ParseFn
+      structure gs_41 = HTML4Tokens
+   end
+   local
+      signature ANTLR_LEXER = gs_38
+      functor AntlrErrHandler = gs_36
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure List = gs_37
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4-attr.g.sml
+   in
+      functor gs_42 = HTML4AttrParseFn
+      structure gs_43 = HTML4AttrTokens
+   end
+   local
+      open l14
+   in
+      structure gs_44 = Vector
+   end
+   local
+      open l53
+   in
+      structure gs_45 = UTF8
+   end
+   local
+      open l53
+   in
+      structure gs_46 = ULexBuffer
+   end
+   local
+      structure AntlrStreamPos = gs_35
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      functor HTML4AttrParseFn = gs_42
+      structure HTML4AttrTokens = gs_43
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure List = gs_37
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure TextIO = gs_4
+      structure Time = gs_30
+      structure ULexBuffer = gs_46
+      structure UTF8 = gs_45
+      structure Vector = gs_44
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4-attr.l.sml
+   in
+      structure gs_47 = HTML4AttrLexer
+   end
+   local
+      structure AntlrStreamPos = gs_35
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure CharVectorSlice = gs_3
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure HTML4AttrLexer = gs_47
+      functor HTML4AttrParseFn = gs_42
+      structure HTML4AttrTokens = gs_43
+      functor HTML4ParseFn = gs_40
+      structure HTML4Tokens = gs_41
+      structure HTML4Utils = gs_39
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      signature ORD_MAP = gs_0
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      functor RedBlackMapFn = gs_1
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure TextIO = gs_4
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4-token-utils.sml
+   in
+      structure gs_48 = HTML4TokenUtils
+   end
+   local
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4.sig
+   in
+      signature gs_49 = HTML4
+   end
+   local
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      signature HTML4 = gs_49
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4.sml
+   in
+      structure gs_50 = HTML4
+   end
+   local
+      open l14
+   in
+      structure gs_51 = Option
+   end
+   local
+      open l14
+   in
+      structure gs_52 = StringCvt
+   end
+   local
+      structure AntlrStreamPos = gs_35
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure HTML4TokenUtils = gs_48
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure List = gs_37
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure StringCvt = gs_52
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure TextIO = gs_4
+      structure Time = gs_30
+      structure ULexBuffer = gs_46
+      structure UTF8 = gs_45
+      structure Vector = gs_44
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4.l.sml
+   in
+      structure gs_53 = HTML4Lexer
+   end
+   local
+      structure AntlrStreamPos = gs_35
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure HTML4 = gs_50
+      structure HTML4Lexer = gs_53
+      functor HTML4ParseFn = gs_40
+      structure HTML4TokenUtils = gs_48
+      structure HTML4Tokens = gs_41
+      structure HTML4Utils = gs_39
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure OS = gs_17
+      structure Option = gs_51
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure TextIO = gs_4
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4-parser.sml
+   in
+      structure gs_54 = HTML4Parser
+   end
+   local
+      open l4
+   in
+      structure gs_55 = Format
+   end
+   local
+      structure Atom = gs_2
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure Format = gs_55
+      structure General = gs_9
+      structure HTML4 = gs_50
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure List = gs_37
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      html4-print.sml
+   in
+      structure gs_56 = HTML4Print
+   end
+   local
+      structure Atom = gs_2
+      structure HTML4 = gs_50
+      html4-entities.sml
+   in
+      structure gs_57 = HTML4Entities
+   end
+   local
+      structure Atom = gs_2
+      html4-attrs.sml
+   in
+      structure gs_58 = HTML4Attrs
+   end
+in
+   signature HTML4 = gs_49
+   structure HTML4 = gs_50
+   structure HTML4Attrs = gs_58
+   structure HTML4Entities = gs_57
+   structure HTML4Parser = gs_54
+   structure HTML4Print = gs_56
+   structure HTML4TokenUtils = gs_48
+   structure HTML4Tokens = gs_41
+   structure HTML4Utils = gs_39
+end
+end
+
+end

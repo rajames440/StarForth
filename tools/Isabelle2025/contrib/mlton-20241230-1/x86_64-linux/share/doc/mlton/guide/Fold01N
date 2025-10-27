@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Fold01N</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Fold01N</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A common use pattern of <a href="Fold">Fold</a> is to define a variable-arity
+function that combines multiple arguments together using a binary
+function.  It is slightly tricky to do this directly using fold,
+because of the special treatment required for the case of zero or one
+argument.  Here is a structure, <code>Fold01N</code>, that solves the problem
+once and for all, and eases the definition of such functions.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Fold01N</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">fold</span> <span class="p">{</span><span class="n">finish</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">zero</span><span class="p">}</span> <span class="p">=</span>
+         <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">((</span><span class="n">id</span><span class="p">,</span> <span class="n">finish</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">zero</span><span class="p">,</span> <span class="n">start</span><span class="p">),</span>
+                    <span class="kr">fn</span> <span class="p">(</span><span class="n">finish</span><span class="p">,</span> <span class="p">_,</span> <span class="n">p</span><span class="p">,</span> <span class="p">_)</span> <span class="p">=&gt;</span> <span class="n">finish</span> <span class="p">(</span><span class="n">p</span> <span class="p">()))</span>
+
+      <span class="kr">fun</span> <span class="nf">step0</span> <span class="p">{</span><span class="n">combine</span><span class="p">,</span> <span class="n">input</span><span class="p">}</span> <span class="p">=</span>
+         <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(_,</span> <span class="n">finish</span><span class="p">,</span> <span class="p">_,</span> <span class="n">f</span><span class="p">)</span> <span class="p">=&gt;</span>
+                     <span class="p">(</span><span class="n">finish</span><span class="p">,</span>
+                      <span class="n">finish</span><span class="p">,</span>
+                      <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">input</span><span class="p">,</span>
+                      <span class="kr">fn</span> <span class="n">x'</span> <span class="p">=&gt;</span> <span class="n">combine</span> <span class="p">(</span><span class="n">f</span> <span class="n">input</span><span class="p">,</span> <span class="n">x'</span><span class="p">)))</span>
+
+      <span class="kr">fun</span> <span class="nf">step1</span> <span class="p">{</span><span class="n">combine</span><span class="p">}</span> <span class="n">z</span> <span class="n">input</span> <span class="p">=</span>
+         <span class="n">step0</span> <span class="p">{</span><span class="n">combine</span> <span class="p">=</span> <span class="n">combine</span><span class="p">,</span> <span class="n">input</span> <span class="p">=</span> <span class="n">input</span><span class="p">}</span> <span class="n">z</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If one has a value <code>zero</code>, and functions <code>start</code>, <code>c</code>, and <code>finish</code>,
+then one can define a variable-arity function <code>f</code> and stepper
+<code>`</code> as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold01N</span><span class="p">.</span><span class="n">fold</span> <span class="p">{</span><span class="n">finish</span> <span class="p">=</span> <span class="n">finish</span><span class="p">,</span> <span class="n">start</span> <span class="p">=</span> <span class="n">start</span><span class="p">,</span> <span class="n">zero</span> <span class="p">=</span> <span class="n">zero</span><span class="p">}</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">`</span> <span class="p">=</span> <span class="nv">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold01N</span><span class="p">.</span><span class="n">step1</span> <span class="p">{</span><span class="n">combine</span> <span class="p">=</span> <span class="n">c</span><span class="p">}</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One can then use the fold equation to prove the following equations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span> <span class="n">$</span> <span class="p">=</span> <span class="n">zero</span>
+<span class="n">f</span> <span class="n">`a1</span> <span class="n">$</span> <span class="p">=</span> <span class="n">finish</span> <span class="p">(</span><span class="n">start</span> <span class="n">a1</span><span class="p">)</span>
+<span class="n">f</span> <span class="n">`a1</span> <span class="n">`a2</span> <span class="n">$</span> <span class="p">=</span> <span class="n">finish</span> <span class="p">(</span><span class="n">c</span> <span class="p">(</span><span class="n">start</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">))</span>
+<span class="n">f</span> <span class="n">`a1</span> <span class="n">`a2</span> <span class="n">`a3</span> <span class="n">$</span> <span class="p">=</span> <span class="n">finish</span> <span class="p">(</span><span class="n">c</span> <span class="p">(</span><span class="n">c</span> <span class="p">(</span><span class="n">start</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">),</span> <span class="n">a3</span><span class="p">))</span>
+<span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For an example of <code>Fold01N</code>, see <a href="VariableArityPolymorphism">VariableArityPolymorphism</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_typing_fold01n">Typing Fold01N</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here is the signature for <code>Fold01N</code>.  We use a trick to avoid having
+to duplicate the definition of some rather complex types in both the
+signature and the structure.  We first define the types in a
+structure.  Then, we define them via type re-definitions in the
+signature, and via <code>open</code> in the full structure.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Fold01N</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'input</span><span class="p">,</span> <span class="nd">'accum1</span><span class="p">,</span> <span class="nd">'accum2</span><span class="p">,</span> <span class="nd">'answer</span><span class="p">,</span> <span class="nd">'zero</span><span class="p">,</span>
+            <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span>
+         <span class="p">((</span><span class="nd">'zero</span> <span class="p">-&gt;</span> <span class="nd">'zero</span><span class="p">)</span>
+          <span class="n">*</span> <span class="p">(</span><span class="nd">'accum2</span> <span class="p">-&gt;</span> <span class="nd">'answer</span><span class="p">)</span>
+          <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'zero</span><span class="p">)</span>
+          <span class="n">*</span> <span class="p">(</span><span class="nd">'input</span> <span class="p">-&gt;</span> <span class="nd">'accum1</span><span class="p">),</span>
+          <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">*</span> <span class="nd">'c</span> <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">*</span> <span class="nd">'d</span><span class="p">,</span>
+          <span class="nd">'b</span><span class="p">,</span>
+          <span class="nd">'e</span><span class="p">)</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">t</span>
+
+       <span class="kr">type</span> <span class="p">(</span><span class="nd">'input1</span><span class="p">,</span> <span class="nd">'accum1</span><span class="p">,</span> <span class="nd">'input2</span><span class="p">,</span> <span class="nd">'accum2</span><span class="p">,</span>
+            <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">)</span> <span class="kt">step0</span> <span class="p">=</span>
+         <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">*</span> <span class="nd">'c</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'input1</span> <span class="p">-&gt;</span> <span class="nd">'accum1</span><span class="p">),</span>
+          <span class="nd">'b</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'accum1</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'input2</span> <span class="p">-&gt;</span> <span class="nd">'accum2</span><span class="p">),</span>
+          <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">)</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span>
+
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'accum1</span><span class="p">,</span> <span class="nd">'input</span><span class="p">,</span> <span class="nd">'accum2</span><span class="p">,</span>
+            <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'g</span><span class="p">)</span> <span class="kt">step1</span> <span class="p">=</span>
+         <span class="p">(</span><span class="nd">'a</span><span class="p">,</span>
+          <span class="nd">'b</span> <span class="n">*</span> <span class="nd">'c</span> <span class="n">*</span> <span class="nd">'d</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'accum1</span><span class="p">),</span>
+          <span class="nd">'c</span> <span class="n">*</span> <span class="nd">'c</span> <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'accum1</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'input</span> <span class="p">-&gt;</span> <span class="nd">'accum2</span><span class="p">),</span>
+          <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'g</span><span class="p">)</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span>
+   <span class="kr">end</span>
+
+<span class="kr">signature</span> <span class="nn">FOLD_01N</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'g</span><span class="p">,</span> <span class="nd">'h</span><span class="p">,</span> <span class="nd">'i</span><span class="p">,</span> <span class="nd">'j</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span>
+         <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'g</span><span class="p">,</span> <span class="nd">'h</span><span class="p">,</span> <span class="nd">'i</span><span class="p">,</span> <span class="nd">'j</span><span class="p">)</span> <span class="nn">Fold01N</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'g</span><span class="p">,</span> <span class="nd">'h</span><span class="p">,</span> <span class="nd">'i</span><span class="p">,</span> <span class="nd">'j</span><span class="p">)</span> <span class="kt">step0</span> <span class="p">=</span>
+         <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'g</span><span class="p">,</span> <span class="nd">'h</span><span class="p">,</span> <span class="nd">'i</span><span class="p">,</span> <span class="nd">'j</span><span class="p">)</span> <span class="nn">Fold01N</span><span class="p">.</span><span class="n">step0</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'g</span><span class="p">,</span> <span class="nd">'h</span><span class="p">,</span> <span class="nd">'i</span><span class="p">,</span> <span class="nd">'j</span><span class="p">)</span> <span class="kt">step1</span> <span class="p">=</span>
+         <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'g</span><span class="p">,</span> <span class="nd">'h</span><span class="p">,</span> <span class="nd">'i</span><span class="p">,</span> <span class="nd">'j</span><span class="p">)</span> <span class="nn">Fold01N</span><span class="p">.</span><span class="n">step1</span>
+
+      <span class="kr">val</span> <span class="nv">fold</span><span class="p">:</span>
+         <span class="p">{</span><span class="n">finish</span><span class="p">:</span> <span class="nd">'accum2</span> <span class="p">-&gt;</span> <span class="nd">'answer</span><span class="p">,</span>
+          <span class="n">start</span><span class="p">:</span> <span class="nd">'input</span> <span class="p">-&gt;</span> <span class="nd">'accum1</span><span class="p">,</span>
+          <span class="n">zero</span><span class="p">:</span> <span class="nd">'zero</span><span class="p">}</span>
+         <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'input</span><span class="p">,</span> <span class="nd">'accum1</span><span class="p">,</span> <span class="nd">'accum2</span><span class="p">,</span> <span class="nd">'answer</span><span class="p">,</span> <span class="nd">'zero</span><span class="p">,</span>
+             <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">)</span> <span class="n">t</span>
+
+      <span class="kr">val</span> <span class="nv">step0</span><span class="p">:</span>
+         <span class="p">{</span><span class="n">combine</span><span class="p">:</span> <span class="nd">'accum1</span> <span class="n">*</span> <span class="nd">'input2</span> <span class="p">-&gt;</span> <span class="nd">'accum2</span><span class="p">,</span>
+          <span class="n">input</span><span class="p">:</span> <span class="nd">'input1</span><span class="p">}</span>
+         <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'input1</span><span class="p">,</span> <span class="nd">'accum1</span><span class="p">,</span> <span class="nd">'input2</span><span class="p">,</span> <span class="nd">'accum2</span><span class="p">,</span>
+             <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">)</span> <span class="n">step0</span>
+
+      <span class="kr">val</span> <span class="nv">step1</span><span class="p">:</span>
+         <span class="p">{</span><span class="n">combine</span><span class="p">:</span> <span class="nd">'accum1</span> <span class="n">*</span> <span class="nd">'input</span> <span class="p">-&gt;</span> <span class="nd">'accum2</span><span class="p">}</span>
+         <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'accum1</span><span class="p">,</span> <span class="nd">'input</span><span class="p">,</span> <span class="nd">'accum2</span><span class="p">,</span>
+             <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">,</span> <span class="nd">'e</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'g</span><span class="p">)</span> <span class="n">step1</span>
+   <span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">Fold01N</span><span class="p">:</span> <span class="n">FOLD_01N</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">open</span> <span class="nn">Fold01N</span>
+
+      <span class="kr">fun</span> <span class="nf">fold</span> <span class="p">{</span><span class="n">finish</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">zero</span><span class="p">}</span> <span class="p">=</span>
+         <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">((</span><span class="n">id</span><span class="p">,</span> <span class="n">finish</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">zero</span><span class="p">,</span> <span class="n">start</span><span class="p">),</span>
+                    <span class="kr">fn</span> <span class="p">(</span><span class="n">finish</span><span class="p">,</span> <span class="p">_,</span> <span class="n">p</span><span class="p">,</span> <span class="p">_)</span> <span class="p">=&gt;</span> <span class="n">finish</span> <span class="p">(</span><span class="n">p</span> <span class="p">()))</span>
+
+      <span class="kr">fun</span> <span class="nf">step0</span> <span class="p">{</span><span class="n">combine</span><span class="p">,</span> <span class="n">input</span><span class="p">}</span> <span class="p">=</span>
+         <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(_,</span> <span class="n">finish</span><span class="p">,</span> <span class="p">_,</span> <span class="n">f</span><span class="p">)</span> <span class="p">=&gt;</span>
+                     <span class="p">(</span><span class="n">finish</span><span class="p">,</span>
+                      <span class="n">finish</span><span class="p">,</span>
+                      <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">input</span><span class="p">,</span>
+                      <span class="kr">fn</span> <span class="n">x'</span> <span class="p">=&gt;</span> <span class="n">combine</span> <span class="p">(</span><span class="n">f</span> <span class="n">input</span><span class="p">,</span> <span class="n">x'</span><span class="p">)))</span>
+
+      <span class="kr">fun</span> <span class="nf">step1</span> <span class="p">{</span><span class="n">combine</span><span class="p">}</span> <span class="n">z</span> <span class="n">input</span> <span class="p">=</span>
+         <span class="n">step0</span> <span class="p">{</span><span class="n">combine</span> <span class="p">=</span> <span class="n">combine</span><span class="p">,</span> <span class="n">input</span> <span class="p">=</span> <span class="n">input</span><span class="p">}</span> <span class="n">z</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Fold01N.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Fold01N.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

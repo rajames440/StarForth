@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CompilerOverview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CompilerOverview</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>The following table shows the overall structure of the compiler.
+<a href="IntermediateLanguage">IntermediateLanguage</a>s are shown in the center column.  The names
+of compiler passes are listed in the left and right columns.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top" colspan="3"><p class="tableblock"><strong>Compiler Overview</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><em>Translation Passes</em></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><em><a href="IntermediateLanguage">IntermediateLanguage</a></em></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><em>Optimization Passes</em></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="FrontEnd">FrontEnd</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="AST">AST</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="Elaborate">Elaborate</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="CoreML">CoreML</a></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="CoreMLSimplify">CoreMLSimplify</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="Defunctorize">Defunctorize</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="XML">XML</a></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="XMLSimplify">XMLSimplify</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="Monomorphise">Monomorphise</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="SXML">SXML</a></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="SXMLSimplify">SXMLSimplify</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="ClosureConvert">ClosureConvert</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="SSA">SSA</a></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="SSASimplify">SSASimplify</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="ToSSA2">ToSSA2</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="SSA2">SSA2</a></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="SSA2Simplify">SSA2Simplify</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="ToRSSA">ToRSSA</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="RSSA">RSSA</a></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="RSSASimplify">RSSASimplify</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="ToMachine">ToMachine</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="Machine">Machine</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="Codegen">Codegen</a></p></td>
+<td class="tableblock halign-center valign-top"></td>
+<td class="tableblock halign-center valign-top"></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The <code>Compile</code> functor (<a href="https://github.com/MLton/mlton/blob/master/mlton/main/compile.sig"><code>compile.sig</code></a>,
+<a href="https://github.com/MLton/mlton/blob/master/mlton/main/compile.fun"><code>compile.fun</code></a>), controls the
+high-level view of the compiler passes, from <a href="FrontEnd">FrontEnd</a> to code
+generation.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CompilerOverview.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CompilerOverview.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

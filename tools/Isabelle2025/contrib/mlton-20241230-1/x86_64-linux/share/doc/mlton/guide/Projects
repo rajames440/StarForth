@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Projects</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Projects</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>We have lots of ideas for projects to improve MLton, many of which we
+do not have time to implement, or at least haven&#8217;t started on yet.
+Here is a list of some of those improvements, ranging from the easy (1
+week) to the difficult (several months).  If you have any interest in
+working on one of these, or some other improvement to MLton not listed
+here, please send mail to
+<a href="mailto:MLton-devel@mlton.org"><code>MLton-devel@mlton.org</code></a>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Port to new platform: Windows (native, not Cygwin or MinGW), &#8230;&#8203;</p>
+</li>
+<li>
+<p>Source-level debugger</p>
+</li>
+<li>
+<p>Heap profiler</p>
+</li>
+<li>
+<p>Interfaces to libraries: OpenGL, Gtk+, D-BUS, &#8230;&#8203;</p>
+</li>
+<li>
+<p>More libraries written in SML (see <a href="https://github.com/MLton/mltonlib"><code>mltonlib</code></a>)</p>
+</li>
+<li>
+<p>Additional constant types: <code>structure Real80: REAL</code>, &#8230;&#8203;</p>
+</li>
+<li>
+<p>An IDE (possibly integrated with <a href="Eclipse">Eclipse</a>)</p>
+</li>
+<li>
+<p>Port MLRISC and use for code generation</p>
+</li>
+<li>
+<p>Optimizations</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Improved closure representation</p>
+<div class="paragraph">
+<p>Right now, MLton&#8217;s closure conversion algorithm uses a simple flat closure to represent each function.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2003-October/024570.html" class="bare">http://www.mlton.org/pipermail/mlton/2003-October/024570.html</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton-user/2007-July/001150.html" class="bare">http://www.mlton.org/pipermail/mlton-user/2007-July/001150.html</a></p>
+</li>
+<li>
+<p><a href="References#ShaoAppel94">ShaoAppel94</a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Elimination of array bounds checks in loops</p>
+</li>
+<li>
+<p>Elimination of overflow checks on array index computations</p>
+</li>
+<li>
+<p>Common-subexpression elimination of repeated array subscripts</p>
+</li>
+<li>
+<p>Loop-invariant code motion, especially for tuple selects</p>
+</li>
+<li>
+<p>Partial redundancy elimination</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2006-April/028598.html" class="bare">http://www.mlton.org/pipermail/mlton/2006-April/028598.html</a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Loop unrolling, especially for small loops</p>
+</li>
+<li>
+<p>Auto-vectorization, for MMX/SSE/3DNow!/AltiVec (see the <a href="http://gcc.gnu.org/projects/tree-ssa/vectorization.html">work done on GCC</a>)</p>
+</li>
+<li>
+<p>Optimize <code>MLton_eq</code>: pointer equality is necessarily false when one of the arguments is freshly allocated in the block</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Analyses</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Uncaught exception analysis</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Projects.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Projects.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

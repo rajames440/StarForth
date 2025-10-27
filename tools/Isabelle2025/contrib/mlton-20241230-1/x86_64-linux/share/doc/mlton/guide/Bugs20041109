@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Bugs20041109</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Bugs20041109</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Here are the known bugs in <a href="Release20041109">MLton 20041109</a>, listed
+in reverse chronological order of date reported.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a id="bug17"></a>
+<code>MLton.Finalizable.touch</code> doesn&#8217;t necessarily keep values alive
+long enough.  Our SVN has a patch to the compiler.  You must rebuild
+the compiler in order for the patch to take effect.</p>
+<div class="paragraph">
+<p>Thanks to Florian Weimer for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug16"></a>
+A bug in an optimization pass may incorrectly transform a program
+to flatten ref cells into their containing data structure, yielding a
+type-error in the transformed program.  Our CVS has a
+<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/ssa/ref-flatten.fun.diff?r1=1.35&amp;r2=1.37">patch</a>
+to the compiler.  You must rebuild the compiler in order for the
+patch to take effect.</p>
+<div class="paragraph">
+<p>Thanks to <a href="VesaKarvonen">VesaKarvonen</a> for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug15"></a>
+A bug in the front end mistakenly allows unary constructors to be
+used without an argument in patterns.  For example, the following
+program is accepted, and triggers a large internal error.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">f</span> <span class="n">x</span> <span class="p">=</span> <span class="kr">case</span> <span class="n">x</span> <span class="kr">of</span> <span class="n">SOME</span> <span class="p">=&gt;</span> <span class="n">true</span> <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">false</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We have fixed the problem in our CVS.</p>
+</div>
+<div class="paragraph">
+<p>Thanks to William Lovas for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug14"></a>
+A bug in <code>Posix.IO.{getlk,setlk,setlkw}</code> causes a link-time error:
+<code>undefined reference to Posix_IO_FLock_typ</code>
+Our CVS has a
+<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/posix/primitive.sml.diff?r1=1.34&amp;r2=1.35">patch</a>
+to the Basis Library implementation.</p>
+<div class="paragraph">
+<p>Thanks to Adam Chlipala for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug13"></a>
+A bug can cause programs compiled with <code>-profile alloc</code> to
+segfault.  Our CVS has a
+<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/backend/ssa-to-rssa.fun.diff?r1=1.106&amp;r2=1.107">patch</a>
+to the compiler.  You must rebuild the compiler in order for the
+patch to take effect.</p>
+<div class="paragraph">
+<p>Thanks to John Reppy for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug12"></a>
+A bug in an optimization pass may incorrectly flatten ref cells
+into their containing data structure, breaking the sharing between
+the cells.  Our CVS has a
+<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/ssa/ref-flatten.fun.diff?r1=1.32&amp;r2=1.33">patch</a>
+to the compiler.  You must rebuild the compiler in order for the
+patch to take effect.</p>
+<div class="paragraph">
+<p>Thanks to Paul Govereau for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug11"></a>
+Some arrays or vectors, such as <code>(char * char) vector</code>, are
+incorrectly implemented, and will conflate the first and second
+components of each element.  Our CVS has a
+<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/backend/packed-representation.fun.diff?r1=1.32&amp;r2=1.33">patch</a>
+to the compiler.  You must rebuild the compiler in order for the
+patch to take effect.</p>
+<div class="paragraph">
+<p>Thanks to Scott Cruzen for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug10"></a>
+<code>Socket.Ctl.getLINGER</code> and <code>Socket.Ctl.setLINGER</code>
+mistakenly raise <code>Subscript</code>.
+Our CVS has a
+<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/net/socket.sml.diff?r1=1.14&amp;r2=1.15">patch</a>
+to the Basis Library implementation.</p>
+<div class="paragraph">
+<p>Thanks to Ray Racine for reporting the bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug09"></a>
+<a href="ConcurrentML">CML</a> <code>Mailbox.send</code> makes a call in the wrong atomic context.
+Our CVS has a <a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/lib/cml/core-cml/mailbox.sml.diff?r1=1.3&amp;r2=1.4">patch</a>
+to the CML implementation.</p>
+</li>
+<li>
+<p><a id="bug08"></a>
+<code>OS.Path.joinDirFile</code> and <code>OS.Path.toString</code> did not
+raise <code>InvalidArc</code> when they were supposed to.  They now do.
+Our CVS has a <a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/system/path.sml.diff?r1=1.8&amp;r2=1.11">patch</a>
+to the Basis Library implementation.</p>
+<div class="paragraph">
+<p>Thanks to Andreas Rossberg for reporting the bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug07"></a>
+The front end incorrectly disallows sequences of expressions
+(separated by semicolons) after a topdec has already been processed.
+For example, the following is incorrectly rejected.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">ignore</span> <span class="n">x</span><span class="p">;</span>
+<span class="n">ignore</span> <span class="n">x</span><span class="p">;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We have fixed the problem in our CVS.</p>
+</div>
+<div class="paragraph">
+<p>Thanks to Andreas Rossberg for reporting the bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug06"></a>
+The front end incorrectly disallows expansive <code>val</code>
+declarations that bind a type variable that doesn&#8217;t occur in the
+type of the value being bound.   For example, the following is
+incorrectly rejected.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nd">'a</span> <span class="nv">x</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">exception</span> <span class="nc">E</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="kr">in</span> <span class="p">()</span> <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We have fixed the problem in our CVS.</p>
+</div>
+<div class="paragraph">
+<p>Thanks to Andreas Rossberg for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug05"></a>
+The x86 codegen fails to account for the possibility that a 64-bit
+move could interfere with itself (as simulated by 32-bit moves).  We
+have fixed the problem in our CVS.</p>
+<div class="paragraph">
+<p>Thanks to Scott Cruzen for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug04"></a>
+<code>NetHostDB.scan</code> and <code>NetHostDB.fromString</code> incorrectly
+raise an exception on internet addresses whose last component is a
+zero, e.g <code>0.0.0.0</code>.  Our CVS has a
+<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/net/net-host-db.sml.diff?r1=1.12&amp;r2=1.13">patch</a> to the Basis Library implementation.</p>
+<div class="paragraph">
+<p>Thanks to Scott Cruzen for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug03"></a>
+<code>StreamIO.inputLine</code> has an off-by-one error causing it to drop
+the first character after a newline in some situations.  Our CVS has a
+<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/io/stream-io.fun.diff?r1=text&amp;tr1=1.29&amp;r2=text&amp;tr2=1.30&amp;diff_format=h">patch</a>.
+to the Basis Library implementation.</p>
+<div class="paragraph">
+<p>Thanks to Scott Cruzen for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug02"></a>
+<code>BinIO.getInstream</code> and <code>TextIO.getInstream</code> are
+implemented incorrectly.  This also impacts the behavior of
+<code>BinIO.scanStream</code> and <code>TextIO.scanStream</code>.  If you (directly
+or indirectly) realize a <code>TextIO.StreamIO.instream</code> and do not
+(directly or indirectly) call <code>TextIO.setInstream</code> with a derived
+stream, you may lose input data.  We have fixed the problem in our
+CVS.</p>
+<div class="paragraph">
+<p>Thanks to <a href="WesleyTerpstra">WesleyTerpstra</a> for reporting this bug.</p>
+</div>
+</li>
+<li>
+<p><a id="bug01"></a>
+<code>Posix.ProcEnv.setpgid</code> doesn&#8217;t work.  If you compile a program
+that uses it, you will get a link time error</p>
+<div class="listingblock">
+<div class="content">
+<pre>undefined reference to `Posix_ProcEnv_setpgid'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The bug is due to <code>Posix_ProcEnv_setpgid</code> being omitted from the
+ MLton runtime.  We fixed the problem in our CVS by adding the
+ following definition to <code>runtime/Posix/ProcEnv/ProcEnv.c</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="n">Int</span> <span class="nf">Posix_ProcEnv_setpgid</span> <span class="p">(</span><span class="n">Pid</span> <span class="n">p</span><span class="p">,</span> <span class="n">Gid</span> <span class="n">g</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">setpgid</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">g</span><span class="p">);</span>
+<span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Thanks to Tom Murphy for reporting this bug.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Bugs20041109.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Bugs20041109.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

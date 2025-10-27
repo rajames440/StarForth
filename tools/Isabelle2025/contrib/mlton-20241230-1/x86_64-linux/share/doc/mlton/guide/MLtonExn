@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonExn</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonExn</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_EXN</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">val</span> <span class="nv">addExnMessager</span><span class="p">:</span> <span class="p">(</span><span class="n">exn</span> <span class="p">-&gt;</span> <span class="n">string</span> <span class="n">option</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">history</span><span class="p">:</span> <span class="n">exn</span> <span class="p">-&gt;</span> <span class="n">string</span> <span class="n">list</span>
+
+      <span class="kr">val</span> <span class="nv">defaultTopLevelHandler</span><span class="p">:</span> <span class="n">exn</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+      <span class="kr">val</span> <span class="nv">getTopLevelHandler</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="n">exn</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">setTopLevelHandler</span><span class="p">:</span> <span class="p">(</span><span class="n">exn</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">topLevelHandler</span><span class="p">:</span> <span class="n">exn</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>addExnMessager f</code></p>
+<div class="paragraph">
+<p>adds <code>f</code> as a pretty-printer to be used by <code>General.exnMessage</code> for
+converting exceptions to strings.  Messagers are tried in order from
+most recently added to least recently added.</p>
+</div>
+</li>
+<li>
+<p><code>history e</code></p>
+<div class="paragraph">
+<p>returns call stack at the point that <code>e</code> was first raised.  Each
+element of the list is a file position.  The elements are in reverse
+chronological order, i.e. the function called last is at the front of
+the list.</p>
+</div>
+<div class="paragraph">
+<p><code>history e</code> will return <code>[]</code> unless the program is compiled with
+<code>-const 'Exn.keepHistory true'</code>.</p>
+</div>
+</li>
+<li>
+<p><code>defaultTopLevelHandler e</code></p>
+<div class="paragraph">
+<p>function that behaves as the default top level handler; that is, print
+out the unhandled exception message for <code>e</code> and exit.</p>
+</div>
+</li>
+<li>
+<p><code>getTopLevelHandler ()</code></p>
+<div class="paragraph">
+<p>get the top level handler.</p>
+</div>
+</li>
+<li>
+<p><code>setTopLevelHandler f</code></p>
+<div class="paragraph">
+<p>set the top level handler to the function <code>f</code>.  The function <code>f</code>
+should not raise an exception or return normally.</p>
+</div>
+</li>
+<li>
+<p><code>topLevelHandler e</code></p>
+<div class="paragraph">
+<p>behaves as if the top level handler received the exception <code>e</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonExn.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonExn.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>EmacsDefUseMode</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>EmacsDefUseMode</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton provides an <a href="CompileTimeOptions">option</a>,
+<code>-show-def-use <em>file</em></code>, to output precise (giving exact source
+locations) and accurate (including all uses and no false data)
+whole-program def-use information to a file.  Unlike typical tags
+facilities, the information includes local variables and distinguishes
+between different definitions even when they have the same name.  The
+def-use Emacs mode uses the information to provide navigation support,
+which can be particularly useful while reading SML programs compiled
+with MLton (such as the MLton compiler itself).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_screen_capture">Screen Capture</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Note the highlighting and the type displayed in the minibuffer.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="EmacsDefUseMode.attachments/def-use-capture.png" alt="def use capture">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_features">Features</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Highlights definitions and uses.  Different colors for definitions, unused definitions, and uses.</p>
+</li>
+<li>
+<p>Shows types (with highlighting) of variable definitions in the minibuffer.</p>
+</li>
+<li>
+<p>Navigation: <code>jump-to-def</code>, <code>jump-to-next</code>, and <code>jump-to-prev</code>.  These work precisely (no searching involved).</p>
+</li>
+<li>
+<p>Can list, visit and mark all references to a definition (within a program).</p>
+</li>
+<li>
+<p>Automatically reloads updated def-use files.</p>
+</li>
+<li>
+<p>Automatically loads previously used def-use files at startup.</p>
+</li>
+<li>
+<p>Supports both <a href="http://www.gnu.org/software/emacs/">Gnu Emacs</a> and <a href="http://www.xemacs.org">XEmacs</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_download">Download</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There is no separate package for the def-use mode although the mode
+has been relatively stable for some time already.  To install the mode
+you need to get the Emacs Lisp, <code>*.el</code>, files from MLton&#8217;s repository:
+<a href="https://github.com/MLton/mlton/tree/master/ide/emacs"><code>emacs</code></a>.  The easiest way to get the files
+is to use <a href="Git">Git</a> to access MLton&#8217;s <a href="Sources">sources</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_setup">Setup</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The easiest way to load def-use mode is to first tell Emacs where to
+find the files.  For example, add</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="cl"><span class="p">(</span><span class="nv">add-to-list</span> <span class="ss">'load-path</span> <span class="p">(</span><span class="nv">file-truename</span> <span class="s">"path-to-the-el-files"</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to your <code>~/.emacs</code> or <code>~/.xemacs/init.el</code>.  You&#8217;ll probably
+also want to start <code>def-use-mode</code> automatically by adding</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="cl"><span class="p">(</span><span class="nb">require</span> <span class="ss">'esml-du-mlton</span><span class="p">)</span>
+<span class="p">(</span><span class="nv">def-use-mode</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to your Emacs init file.  Once the def-use mode is activated, you
+should see the <code>DU</code> indicator on the mode line.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To use def-use mode one typically first sets up the program&#8217;s makefile
+or build script so that the def-use information is saved each time the
+program is compiled.  In addition to the <code>-show-def-use <em>file</em></code>
+option, the <code>-prefer-abs-paths true</code> expert option is required.
+Note that the time it takes to save the information is small (compared
+to type-checking), so it is recommended to simply add the options to
+the MLton invocation that compiles the program.  However, it is only
+necessary to type check the program (or library), so one can specify
+the <code>-stop tc</code> option.  For example, suppose you have a program
+defined by an MLB file named <code>my-prg.mlb</code>, you can save the def-use
+information to the file <code>my-prg.du</code> by invoking MLton as:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>mlton -prefer-abs-paths true -show-def-use my-prg.du -stop tc my-prg.mlb</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Finally, one needs to tell the mode where to find the def-use
+information.  This is done with the <code>esml-du-mlton</code> command.  For
+example, to load the <code>my-prg.du</code> file, one would type:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>M-x esml-du-mlton my-prg.du</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After doing all of the above, find an SML file covered by the
+previously saved and loaded def-use information, and place the cursor
+at some variable (definition or use, it doesn&#8217;t matter).  You should
+see the variable being highlighted.  (Note that specifications in
+signatures do not define variables.)</p>
+</div>
+<div class="paragraph">
+<p>You might also want to setup and use the
+<a href="EmacsBgBuildMode">Bg-Build mode</a> to start builds automatically.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_types">Types</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>-show-def-use</code> output was extended to include types of variable
+definitions in revision <a href="https://github.com/MLton/mlton/search?q=SVN+r6333&amp;type=commits"><code>r6333</code></a>.  To get good type names, the
+types must be in scope at the end of the program.  If you are using the
+<a href="MLBasis">ML Basis</a> system, this means that the root MLB-file for your
+application should not wrap the libraries used in the application inside
+<code>local &#8230;&#8203; in &#8230;&#8203; end</code>, because that would remove them from the scope before
+the end of the program.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/EmacsDefUseMode.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/EmacsDefUseMode.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

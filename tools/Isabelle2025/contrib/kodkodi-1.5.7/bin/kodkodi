@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+export CLASSPATH="$KODKODI_CLASSPATH:$CLASSPATH"
+
+exec "$ISABELLE_TOOL" java $KODKODI_JAVA_OPT isabelle.kodkodi.Kodkodi "$@"

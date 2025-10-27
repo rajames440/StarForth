@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Release20130715</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Release20130715</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an archived public release of MLton, version 20130715.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_the_last_public_release">Changes since the last public release</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Compiler.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Cosmetic improvements to type-error messages.</p>
+</li>
+<li>
+<p>Removed features:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Bytecode codegen: The bytecode codegen had not seen significant use and it was not well understood by any of the active developers.</p>
+</li>
+<li>
+<p>Support for <code>.cm</code> files as input: The <a href="MLBasis">ML Basis system</a> provides much better infrastructure for "programming in the very large" than the (very) limited support for CM.  The <code>cm2mlb</code> tool (available in the source distribution) can be used to convert CM projects to MLB projects, preserving the CM scoping of module identifiers.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Bug fixes: see <a href="https://raw.github.com/MLton/mlton/on-20130715-release/doc/changelog"><code>changelog</code></a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Runtime.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Bug fixes: see <a href="https://raw.github.com/MLton/mlton/on-20130715-release/doc/changelog"><code>changelog</code></a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Language.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Interpret <code>(*#line line:col "file" *)</code> directives as relative file names.</p>
+</li>
+<li>
+<p><a href="MLBasisAnnotations">ML Basis annotations</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>resolveScope</code></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="BasisLibrary">Basis Library</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Improved performance of <code>String.concatWith</code>.</p>
+</li>
+<li>
+<p>Use bit operations for <code>REAL.class</code> and other low-level operations.</p>
+</li>
+<li>
+<p>Support additional variables with <code>Posix.ProcEnv.sysconf</code>.</p>
+</li>
+<li>
+<p>Bug fixes: see <a href="https://raw.github.com/MLton/mlton/on-20130715-release/doc/changelog"><code>changelog</code></a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="MLtonStructure">MLton structure</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Removed: <code>MLton.Socket</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Updated: <a href="CKitLibrary">ckit library</a>, <a href="MLRISCLibrary">MLRISC library</a>, <a href="SMLNJLibrary">SML/NJ library</a></p>
+</li>
+<li>
+<p>Added: <a href="MLLPTLibrary">MLLPT library</a></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Tools.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>mllex</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Generate <code>(*#line line:col "file.lex" *)</code> directives with simple (relative) file names, rather than absolute paths.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>mlyacc</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Generate <code>(*#line line:col "file.grm" *)</code> directives with simple (relative) file names, rather than absolute paths.</p>
+</li>
+<li>
+<p>Fixed bug in comment-handling in lexer.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a complete list of changes and bug fixes since
+<a href="Release20100608">Release20100608</a>, see the
+<a href="https://raw.github.com/MLton/mlton/on-20130715-release/doc/changelog"><code>changelog</code></a> and
+<a href="Bugs20100608">Bugs20100608</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20130715_binary_packages">20130715 binary packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>AMD64 (aka "x86-64" or "x64")</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-macports.tgz">Darwin (.tgz)</a> 11.4 (Mac OS X Lion), dynamically linked against <a href="GMP">GMP</a> in <code>/opt/local/lib</code> (suitable for <a href="http://macports.org">MacPorts</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-static.tgz">Darwin (.tgz)</a> 11.4 (Mac OS X Lion), statically linked against <a href="GMP">GMP</a> (but requires <a href="GMP">GMP</a> for generated executables)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-linux.tgz">Linux</a>, glibc 2.15</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>X86</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.x86-linux.tgz">Linux</a>, glibc 2.15</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20130715_source_packages">20130715 source packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715.src.tgz">mlton-20130715.src.tgz</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_downstream_packages">Downstream packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://packages.debian.org/search?keywords=mlton&amp;searchon=names&amp;suite=all&amp;section=all">Debian</a></p>
+</li>
+<li>
+<p><a href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all">FreeBSD</a></p>
+</li>
+<li>
+<p><a href="https://admin.fedoraproject.org/pkgdb/acls/name/mlton">Fedora</a></p>
+</li>
+<li>
+<p><a href="http://packages.ubuntu.com/search?suite=default&amp;section=all&amp;arch=any&amp;searchon=names&amp;keywords=mlton">Ubuntu</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Bugs20130715">Bugs20130715</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/guide/20130715/">MLton Guide (20130715)</a>.</p>
+<div class="paragraph">
+<p>A snapshot of the MLton website at the time of release.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Release20130715.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Release20130715.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

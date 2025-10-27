@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>DefineTypeBeforeUse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>DefineTypeBeforeUse</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p><a href="StandardML">Standard ML</a> requires types to be defined before they are
+used.  Because of type inference, the use of a type can be implicit;
+hence, this requirement is more subtle than it might appear.  For
+example, the following program is not type correct, because the type
+of <code>r</code> is <code>t option ref</code>, but <code>t</code> is defined after <code>r</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">r</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+<span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">r</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="n">A</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton reports the following error, indicating that the type defined on
+line 2 is used on line 1.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 3.10-3.20.
+  Function applied to incorrect argument.
+    expects: _ * [???] option
+    but got: _ * [t] option
+    in: := (r, SOME A)
+    note: type would escape its scope: t
+    escape from: z.sml 2.10-2.10
+    escape to: z.sml 1.1-1.16
+Warning: z.sml 1.5-1.5.
+  Type of variable was not inferred and could not be generalized: r.
+    type: ??? option ref
+    in: val r = ref NONE</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>While the above example is benign, the following example shows how to
+cast an integer to a function by (implicitly) using a type before it
+is defined.  In the example, the ref cell <code>r</code> is of type
+<code>t option ref</code>, where <code>t</code> is defined <em>after</em> <code>r</code>, as a parameter to
+functor <code>F</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">r</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+<span class="kr">functor</span> <span class="nn">F</span> <span class="p">(</span><span class="kr">type</span> <span class="kt">t</span>
+           <span class="kr">val</span> <span class="nv">x</span><span class="p">:</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">r</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="n">x</span>
+      <span class="kr">fun</span> <span class="nf">get</span> <span class="p">()</span> <span class="p">=</span> <span class="n">valOf</span> <span class="p">(</span><span class="n">!r</span><span class="p">)</span>
+   <span class="kr">end</span>
+<span class="kr">structure</span> <span class="nn">S1</span> <span class="p">=</span> <span class="n">F</span> <span class="p">(</span><span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+                  <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">())</span>
+<span class="kr">structure</span> <span class="nn">S2</span> <span class="p">=</span> <span class="n">F</span> <span class="p">(</span><span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">int</span>
+                  <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">13</span><span class="p">)</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="nn">S1</span><span class="p">.</span><span class="n">get</span> <span class="p">()</span> <span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton reports the following error.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Warning: z.sml 1.5-1.5.
+  Type of variable was not inferred and could not be generalized: r.
+    type: ??? option ref
+    in: val r = ref NONE
+Error: z.sml 5.16-5.26.
+  Function applied to incorrect argument.
+    expects: _ * [???] option
+    but got: _ * [t] option
+    in: := (r, SOME x)
+    note: type would escape its scope: t
+    escape from: z.sml 2.17-2.17
+    escape to: z.sml 1.1-1.16
+Warning: z.sml 6.11-6.13.
+  Type of variable was not inferred and could not be generalized: get.
+    type: unit -&gt; ???
+    in: fun get () = (valOf (! r))
+Error: z.sml 12.10-12.18.
+  Function not of arrow type.
+    function: [unit]
+    in: (S1.get ()) ()</pre>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/DefineTypeBeforeUse.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/DefineTypeBeforeUse.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

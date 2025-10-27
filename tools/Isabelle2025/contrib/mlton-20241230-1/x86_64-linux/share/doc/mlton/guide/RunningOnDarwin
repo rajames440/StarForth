@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RunningOnDarwin</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RunningOnDarwin</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton runs fine on Darwin (and on Mac OS X).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">Notes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>MLton requires the <a href="GMP">GMP</a> library, which is available via
+<a href="https://brew.sh/">Homebrew</a>, <a href="http://www.macports.com">MacPorts</a>,
+and <a href="http://www.finkproject.org">Fink</a>.
+n</p>
+</li>
+<li>
+<p>For Intel-based Macs, MLton targets the <a href="RunningOnAMD64">AMD64
+architecture</a> on Darwin 10 (Mac OS X Snow Leopard) and higher and
+targets the <a href="RunningOnX86">x86 architecture</a> on Darwin 8 (Mac OS X
+Tiger) and Darwin 9 (Mac OS X Leopard).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_known_issues">Known issues</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Executables that save and load worlds on Darwin 11 (Mac OS X Lion)
+and higher should be compiled with <code>-link-opt -fno-PIE</code> ; see
+<a href="MLtonWorld">MLtonWorld</a> for more details.</p>
+</li>
+<li>
+<p><a href="ProfilingTime">ProfilingTime</a> may give inaccurate results on multi-processor
+machines.  The <code>SIGPROF</code> signal, used to sample the profiled program,
+is supposed to be delivered 100 times a second (i.e., at 10000us
+intervals), but there can be delays of over 1 minute between the
+delivery of consecutive <code>SIGPROF</code> signals.  A more complete
+description may be found
+<a href="http://lists.apple.com/archives/Unix-porting/2007/Aug/msg00000.html">here</a>
+and
+<a href="http://lists.apple.com/archives/Darwin-dev/2007/Aug/msg00045.html">here</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnAMD64">RunningOnAMD64</a></p>
+</li>
+<li>
+<p><a href="RunningOnPowerPC">RunningOnPowerPC</a></p>
+</li>
+<li>
+<p><a href="RunningOnX86">RunningOnX86</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RunningOnDarwin.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RunningOnDarwin.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

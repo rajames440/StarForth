@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonPlatform</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonPlatform</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_PLATFORM</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">structure</span> <span class="nn">Arch</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">Alpha</span> <span class="p">|</span> <span class="nc">AMD64</span> <span class="p">|</span> <span class="nc">ARM</span> <span class="p">|</span> <span class="nc">ARM64</span> <span class="p">|</span> <span class="nc">HPPA</span> <span class="p">|</span> <span class="nc">IA64</span> <span class="p">|</span> <span class="nc">m68k</span>
+                       <span class="p">|</span> <span class="nc">MIPS</span> <span class="p">|</span> <span class="nc">PowerPC</span> <span class="p">|</span> <span class="nc">PowerPC64</span> <span class="p">|</span> <span class="nc">S390</span> <span class="p">|</span> <span class="nc">Sparc</span> <span class="p">|</span> <span class="nc">X86</span>
+
+            <span class="kr">val</span> <span class="nv">fromString</span><span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="n">t</span> <span class="n">option</span>
+            <span class="kr">val</span> <span class="nv">host</span><span class="p">:</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">toString</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">string</span>
+         <span class="kr">end</span>
+
+      <span class="kr">structure</span> <span class="nn">OS</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">AIX</span> <span class="p">|</span> <span class="nc">Cygwin</span> <span class="p">|</span> <span class="nc">Darwin</span> <span class="p">|</span> <span class="nc">FreeBSD</span> <span class="p">|</span> <span class="nc">Hurd</span> <span class="p">|</span> <span class="nc">HPUX</span>
+                       <span class="p">|</span> <span class="nc">Linux</span> <span class="p">|</span> <span class="nc">MinGW</span> <span class="p">|</span> <span class="nc">NetBSD</span> <span class="p">|</span> <span class="nc">OpenBSD</span> <span class="p">|</span> <span class="nc">Solaris</span>
+
+            <span class="kr">val</span> <span class="nv">fromString</span><span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="n">t</span> <span class="n">option</span>
+            <span class="kr">val</span> <span class="nv">host</span><span class="p">:</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">toString</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">string</span>
+         <span class="kr">end</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>datatype Arch.t</code></p>
+<div class="paragraph">
+<p>processor architectures</p>
+</div>
+</li>
+<li>
+<p><code>Arch.fromString a</code></p>
+<div class="paragraph">
+<p>converts from string to architecture.  Case insensitive.</p>
+</div>
+</li>
+<li>
+<p><code>Arch.host</code></p>
+<div class="paragraph">
+<p>the architecture for which the program is compiled.</p>
+</div>
+</li>
+<li>
+<p><code>Arch.toString</code></p>
+<div class="paragraph">
+<p>string for architecture.</p>
+</div>
+</li>
+<li>
+<p><code>datatype OS.t</code></p>
+<div class="paragraph">
+<p>operating systems</p>
+</div>
+</li>
+<li>
+<p><code>OS.fromString</code></p>
+<div class="paragraph">
+<p>converts from string to operating system.  Case insensitive.</p>
+</div>
+</li>
+<li>
+<p><code>OS.host</code></p>
+<div class="paragraph">
+<p>the operating system for which the program is compiled.</p>
+</div>
+</li>
+<li>
+<p><code>OS.toString</code></p>
+<div class="paragraph">
+<p>string for operating system.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonPlatform.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonPlatform.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

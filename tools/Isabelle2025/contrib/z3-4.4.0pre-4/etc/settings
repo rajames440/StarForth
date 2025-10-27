@@ -1,0 +1,11 @@
+# -*- shell-script -*- :mode=shellscript:
+
+Z3_HOME="$COMPONENT/${ISABELLE_WINDOWS_PLATFORM32:-$ISABELLE_PLATFORM64}"
+Z3_VERSION="4.4.0pre"
+
+Z3_SOLVER="$Z3_HOME/z3"
+
+if [ -e "$Z3_HOME" ]
+then
+  Z3_INSTALLED="yes"
+fi

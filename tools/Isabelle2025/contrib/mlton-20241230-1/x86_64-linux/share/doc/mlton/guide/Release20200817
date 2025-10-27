@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Release20200817</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Release20200817</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an archived public release of MLton, version 20200817.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_mlton_20200722">Changes since <a href="Release20200722">MLton 20200722</a></h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Compiler.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Fixed bug in <code>RssaShrink</code> optimization that would result in an unbound
+variable and an internal compiler error.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Fixes for Solaris and MinGW platforms.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a complete list of changes and bug fixes since
+<a href="Release20180207">Release20180207</a>, see the
+<a href="https://github.com/MLton/mlton/blob/on-20200817-release/CHANGELOG.adoc"><code>CHANGELOG.adoc</code></a> and
+<a href="Bugs20180207">Bugs20180207</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_mlton_20180207">Changes since <a href="Release20180207">MLton 20180207</a></h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Compiler.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added expert <code>-pi-style {default|npi|pic|pie}</code> and
+<code>-native-pic {false|true}</code> options, which can be used to override a
+target-determined default.</p>
+</li>
+<li>
+<p>Fix a number of instances of excessive live data during
+compilation.</p>
+</li>
+<li>
+<p>Disable <code>Zone</code> SSA optimization pass by default; the <code>Zone</code> pass
+is known to not be safe-for-space.</p>
+</li>
+<li>
+<p>Statically allocate and initialize some global objects.</p>
+</li>
+<li>
+<p>Many updates and improvements to C and LLVM codegens.</p>
+</li>
+<li>
+<p>Add new <code>BounceVars</code> RSSA optimization pass to split the live
+ranges of RSSA variables.</p>
+</li>
+<li>
+<p>Improve <code>RssaShrink</code> optimization.</p>
+</li>
+<li>
+<p>Add support for alternate globalization strategies in
+<code>ConstantPropagation</code>.</p>
+</li>
+<li>
+<p>Strengthen <code>Useless</code> optimization with respect to a number of
+primitives.</p>
+</li>
+<li>
+<p>Add new <code>DuplicateGlobals</code> and <code>SplitTypes</code> SSA optimization
+passes.</p>
+</li>
+<li>
+<p>Introduce new <code>Overflow</code>-checking primitives and remove old
+<code>Overflow</code>-checking primitives and special-case code required (e.g.,
+<code>Arith</code> transfers in IRs) to support them.</p>
+</li>
+<li>
+<p>Add parsers for XML, SXML, SSA, and SSA2 IRs.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Runtime.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Detect and report incompatible use of ASLR/PIE on <code>load-world</code>.</p>
+</li>
+<li>
+<p>Added support for RISC-V architecture.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Language.</p>
+</li>
+<li>
+<p>Libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Basis Library.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Change <code>OS.IO.poll</code> to not be restarted when interrupted by a
+signal.  (This is consistent with <code>Socket.select</code>.)</p>
+</li>
+<li>
+<p>Add <code>MLton.sizeAll: unit -&gt; IntInf.int</code> that returns the size
+of reachable live data.</p>
+</li>
+<li>
+<p>Change type of <code>MLton.size</code> from <code>'a -&gt; int</code> to
+<code>'a -&gt; IntInf.int</code>, because with 64-bit systems, the size of a
+single object can exceed that representable by a signed 32-bit
+integer.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Tools.</p>
+</li>
+<li>
+<p>Other.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Updates to simplify porting MLton.</p>
+</li>
+<li>
+<p>Support parallel build (i.e., <code>make -j</code>).  This mainly supports
+platforms/packagers that use a parallel <code>make</code> by default; it does
+not obtain significant build speedups.</p>
+</li>
+<li>
+<p>Various updates to <code>Makefile</code>-s.  See <code>Makefile.config</code> for
+common and user-customizable configuration.</p>
+</li>
+<li>
+<p>Characterize MLton-LICENSE as an instance of the Historical
+Permission Notice and Disclaimer (HPND) license, rather than
+BSD-style.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a complete list of changes and bug fixes since
+<a href="Release20180207">Release20180207</a>, see the
+<a href="https://github.com/MLton/mlton/blob/on-20200817-release/CHANGELOG.adoc"><code>CHANGELOG.adoc</code></a> and
+<a href="Bugs20180207">Bugs20180207</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20200817_binary_packages">20200817 binary packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>AMD64 (aka "x86-64" or "x64")</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-19.6.gmp-homebrew.tgz">Darwin (.tgz)</a> 19.6 (Mac OS X Catalina), dynamically linked against <a href="GMP">GMP</a> in <code>/usr/local/lib</code> (suitable for <a href="https://brew.sh/">Homebrew</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-19.6.gmp-static.tgz">Darwin (.tgz)</a> 19.6 (Mac OS X Catalina), statically linked against <a href="GMP">GMP</a> (but requires <a href="GMP">GMP</a> for generated executables)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-17.7.gmp-homebrew.tgz">Darwin (.tgz)</a> 17.7 (Mac OS X High Sierra), dynamically linked against <a href="GMP">GMP</a> in <code>/usr/local/lib</code> (suitable for <a href="https://brew.sh/">Homebrew</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-17.7.gmp-static.tgz">Darwin (.tgz)</a> 17.7 (Mac OS X High Sierra), statically linked against <a href="GMP">GMP</a> (but requires <a href="GMP">GMP</a> for generated executables)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-linux.tgz">Linux (.tgz)</a>, glibc 2.27 (Ubuntu 18.04)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-amd64-mingw.tgz">MinGW (.tgz)</a>, gcc 10.1.0, statically linked against <a href="GMP">GMP</a>; contributed by Bernard Berthomieu; see <a href="http://projects.laas.fr/tina/software.php" class="bare">http://projects.laas.fr/tina/software.php</a> for details and installation instructions</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-amd64-mingw-gmp-dynamic.tgz">MinGW (.tgz)</a>, gcc 10.1.0, dynamically linked against <a href="GMP">GMP</a>; contributed by Bernard Berthomieu; see <a href="http://projects.laas.fr/tina/software.php" class="bare">http://projects.laas.fr/tina/software.php</a> for details and installation instructions</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-amd64-solaris-gmp-dynamic.tgz">Solaris (.tgz)</a> 11.4, dynamically linked against <a href="GMP">GMP</a>; contributed by Bernard Berthomieu</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>x86</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-x86-mingw.tgz">MinGW (.tgz)</a>, gcc 10.1.0, statically linked against <a href="GMP">GMP</a>; contributed by Bernard Berthomieu; see <a href="http://projects.laas.fr/tina/software.php" class="bare">http://projects.laas.fr/tina/software.php</a> for details and installation instructions</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-x86-mingw-gmp-dynamic.tgz">MinGW (.tgz)</a>, gcc 10.1.0, dynamically linked against <a href="GMP">GMP</a>; contributed by Bernard Berthomieu; see <a href="http://projects.laas.fr/tina/software.php" class="bare">http://projects.laas.fr/tina/software.php</a> for details and installation instructions</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-x86-solaris-gmp-dynamic.tgz">Solaris (.tgz)</a> 11.4, dynamically linked against <a href="GMP">GMP</a>; contributed by Bernard Berthomieu</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_binary_packages_available_at_other_sites">Binary packages available at other sites</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://projects.laas.fr/tina/software.php">TINA toolbox</a>: Includes binary
+releases for: amd64-darwin Mac OS X Sierra (both statically and dynamically
+linked against <a href="GMP">GMP</a>), amd64-linux Ubuntu 14 (both statically and
+dynamically linked against <a href="GMP">GMP</a>), amd64-mingw and x86-mingw MSys2 (both
+statically and dynamically linked against <a href="GMP">GMP</a>), amd64-solaris and
+x86-solaris Solaris 11.4 (both statically and dynamically linked against
+<a href="GMP">GMP</a>), and x86-linux Ubuntu 16 (both statically and dynamically linked
+against <a href="GMP">GMP</a>).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20200817_source_packages">20200817 source packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817.src.tgz">mlton-20200817.src.tgz</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Bugs20200817">Bugs20200817</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/guide/20200817/">MLton Guide (20200817)</a>.</p>
+<div class="paragraph">
+<p>A snapshot of the MLton website at the time of release.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Mon Dec 30 06:58:02 2024 -0500 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Release20200817.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Release20200817.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

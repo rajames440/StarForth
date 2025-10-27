@@ -1,0 +1,673 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
+in
+
+local
+  basis l8 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb
+    end
+  basis l183 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+  basis l4 =
+    bas
+      (* $MLRISC.cm(=(proxyLib.cm):.)/MLRISC.cm =??=> *) MLRISC.mlb
+    end
+  basis l57 =
+    bas
+      (* $Control.cm(=(proxyLib.cm):.)/Control.cm =??=> *) Control.mlb
+    end
+  basis l16 =
+    bas
+      (* $Lib.cm(=(proxyLib.cm):.)/Lib.cm =??=> *) Lib.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l4
+   in
+      signature gs_0 = INSTRUCTION_EMITTER
+   end
+   local
+      open l8
+   in
+      structure gs_1 = TextIO
+   end
+   local
+      open l4
+   in
+      signature gs_2 = ASM_STREAM
+      structure gs_3 = AsmStream
+   end
+   local
+      open l16
+   in
+      structure gs_4 = Annotations
+   end
+   local
+      open l8
+   in
+      structure gs_5 = Char
+      structure gs_6 = CharArray
+      structure gs_7 = CharVector
+      structure gs_8 = FixedInt
+      structure gs_9 = General
+      structure gs_10 = Int
+      structure gs_11 = Int32
+      structure gs_12 = Int64
+      structure gs_13 = IntInf
+      structure gs_14 = LargeInt
+      structure gs_15 = LargeReal
+      structure gs_16 = LargeWord
+      structure gs_17 = OS
+      structure gs_18 = Position
+      structure gs_19 = Real
+      structure gs_20 = Real64
+      structure gs_21 = RealArray
+      structure gs_22 = RealArraySlice
+      structure gs_23 = RealVector
+      structure gs_24 = RealVectorSlice
+      structure gs_25 = SMLofNJ
+      structure gs_26 = Socket
+      structure gs_27 = String
+      structure gs_28 = Substring
+      structure gs_29 = SysWord
+      structure gs_30 = Time
+      structure gs_31 = Word
+      structure gs_32 = Word32
+      structure gs_33 = Word64
+      structure gs_34 = Word8
+   end
+   local
+      open l4
+   in
+      signature gs_35 = ASM_FORMAT_UTIL
+      structure gs_36 = AsmFormatUtil
+   end
+   local
+      open l57
+   in
+      signature gs_37 = MLRISC_ERROR_MSG
+      structure gs_38 = MLRiscErrorMsg
+   end
+   local
+      open l4
+   in
+      structure gs_39 = CellsBasis
+   end
+   local
+      open l4
+   in
+      structure gs_40 = AsmFlags
+   end
+   local
+      open l4
+   in
+      signature gs_41 = MLTREE_EVAL
+   end
+   local
+      open l4
+   in
+      signature gs_42 = INSTRUCTION_STREAM
+   end
+   local
+      open l4
+   in
+      signature gs_43 = REGION
+   end
+   local
+      open l4
+   in
+      signature gs_44 = CONSTANT
+   end
+   local
+      open l4
+   in
+      signature gs_45 = MLTREE
+   end
+   local
+      open l4
+   in
+      signature gs_46 = CELLS_BASIS
+   end
+   local
+      open l4
+   in
+      structure gs_47 = Label
+   end
+   local
+      open l4
+   in
+      functor gs_48 = Cells
+   end
+   local
+      open l4
+   in
+      signature gs_49 = CELLS
+   end
+   local
+      signature CELLS = gs_49
+      functor Cells = gs_48
+      structure CellsBasis = gs_39
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscErrorMsg = gs_38
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      ../alpha/instructions/alphaCells.sml
+   in
+      signature gs_50 = ALPHACELLS
+      structure gs_51 = AlphaCells
+   end
+   local
+      signature ALPHACELLS = gs_50
+      structure AlphaCells = gs_51
+      structure Annotations = gs_4
+      signature CELLS_BASIS = gs_46
+      signature CONSTANT = gs_44
+      structure CellsBasis = gs_39
+      structure Label = gs_47
+      signature MLTREE = gs_45
+      signature REGION = gs_43
+      ../alpha/instructions/alphaInstr.sml
+   in
+      signature gs_52 = ALPHAINSTR
+      functor gs_53 = AlphaInstr
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      functor AlphaInstr = gs_53
+      structure CellsBasis = gs_39
+      ../alpha/instructions/alphaShuffle.sig
+   in
+      signature gs_54 = ALPHASHUFFLE
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      signature ALPHASHUFFLE = gs_54
+      signature ASM_FORMAT_UTIL = gs_35
+      signature ASM_STREAM = gs_2
+      functor AlphaInstr = gs_53
+      structure Annotations = gs_4
+      structure AsmFlags = gs_40
+      structure AsmFormatUtil = gs_36
+      structure AsmStream = gs_3
+      structure CellsBasis = gs_39
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      signature INSTRUCTION_EMITTER = gs_0
+      signature INSTRUCTION_STREAM = gs_42
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscErrorMsg = gs_38
+      signature MLTREE_EVAL = gs_41
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure TextIO = gs_1
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      ../alpha/emit/alphaAsm.sml
+   in
+      functor gs_55 = AlphaAsmEmitter
+   end
+   local
+      signature ALPHACELLS = gs_50
+      signature ALPHAINSTR = gs_52
+      structure AlphaCells = gs_51
+      functor AlphaInstr = gs_53
+      signature CELLS_BASIS = gs_46
+      structure CellsBasis = gs_39
+      signature MLTREE = gs_45
+      ../alpha/mltree/alphaPseudoInstr.sig
+   in
+      signature gs_56 = ALPHA_PSEUDO_INSTR
+   end
+   local
+      open l4
+   in
+      signature gs_57 = SDI_JUMPS
+   end
+   local
+      open l8
+   in
+      structure gs_58 = Option
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      signature ALPHASHUFFLE = gs_54
+      functor AlphaInstr = gs_53
+      structure CellsBasis = gs_39
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscErrorMsg = gs_38
+      signature MLTREE_EVAL = gs_41
+      structure OS = gs_17
+      structure Option = gs_58
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      signature SDI_JUMPS = gs_57
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      ../alpha/backpatch/alphaJumps.sml
+   in
+      functor gs_59 = AlphaJumps
+   end
+   local
+      open l4
+   in
+      functor gs_60 = MLTreeMult
+   end
+   local
+      open l4
+   in
+      functor gs_61 = MLTreeGen
+   end
+   local
+      open l4
+   in
+      structure gs_62 = MLRiscAnnotations
+   end
+   local
+      open l8
+   in
+      structure gs_63 = List
+   end
+   local
+      open l4
+   in
+      signature gs_64 = MLTREECOMP
+      signature gs_65 = MLTREE_EXTENSION_COMP
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      signature ALPHA_PSEUDO_INSTR = gs_56
+      functor AlphaInstr = gs_53
+      structure CellsBasis = gs_39
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure Label = gs_47
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      structure List = gs_63
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscAnnotations = gs_62
+      structure MLRiscErrorMsg = gs_38
+      signature MLTREECOMP = gs_64
+      signature MLTREE_EXTENSION_COMP = gs_65
+      functor MLTreeGen = gs_61
+      functor MLTreeMult = gs_60
+      structure OS = gs_17
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      ../alpha/mltree/alpha.sml
+   in
+      functor gs_66 = Alpha
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      functor AlphaInstr = gs_53
+      structure CellsBasis = gs_39
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscErrorMsg = gs_38
+      ../alpha/ra/alphaRewrite.sml
+   in
+      functor gs_67 = AlphaRewrite
+   end
+   local
+      open l4
+   in
+      signature gs_68 = ARCH_SPILL_INSTR
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      signature ARCH_SPILL_INSTR = gs_68
+      functor AlphaInstr = gs_53
+      functor AlphaRewrite = gs_67
+      structure CellsBasis = gs_39
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscErrorMsg = gs_38
+      ../alpha/ra/alphaSpillInstr.sml
+   in
+      functor gs_69 = AlphaSpillInstr
+   end
+   local
+      open l4
+   in
+      signature gs_70 = INSN_PROPERTIES
+   end
+   local
+      open l4
+   in
+      signature gs_71 = MLTREE_HASH
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      functor AlphaInstr = gs_53
+      structure CellsBasis = gs_39
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      signature INSN_PROPERTIES = gs_70
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure Label = gs_47
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscErrorMsg = gs_38
+      signature MLTREE_EVAL = gs_41
+      signature MLTREE_HASH = gs_71
+      structure OS = gs_17
+      structure Option = gs_58
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      ../alpha/instructions/alphaProps.sml
+   in
+      functor gs_72 = AlphaProps
+   end
+   local
+      open l4
+   in
+      functor gs_73 = Shuffle
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      signature ALPHASHUFFLE = gs_54
+      functor AlphaInstr = gs_53
+      structure CellsBasis = gs_39
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscErrorMsg = gs_38
+      structure Option = gs_58
+      functor Shuffle = gs_73
+      ../alpha/instructions/alphaShuffle.sml
+   in
+      functor gs_74 = AlphaShuffle
+   end
+   local
+      open l4
+   in
+      signature gs_75 = PSEUDO_OPS_BASIS
+   end
+   local
+      open l4
+   in
+      functor gs_76 = GasPseudoOps
+   end
+   local
+      open l4
+   in
+      functor gs_77 = PseudoOpsLittle
+   end
+   local
+      open l183
+   in
+      structure gs_78 = Format
+   end
+   local
+      open l4
+   in
+      structure gs_79 = PseudoOpsBasisTyp
+   end
+   local
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure Format = gs_78
+      functor GasPseudoOps = gs_76
+      structure General = gs_9
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscErrorMsg = gs_38
+      signature MLTREE = gs_45
+      signature MLTREE_EVAL = gs_41
+      structure OS = gs_17
+      signature PSEUDO_OPS_BASIS = gs_75
+      structure Position = gs_18
+      structure PseudoOpsBasisTyp = gs_79
+      functor PseudoOpsLittle = gs_77
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      ../alpha/flowgraph/alphaGasPseudoOps.sml
+   in
+      functor gs_80 = AlphaGasPseudoOps
+   end
+   local
+      open l4
+   in
+      signature gs_81 = CODE_STRING
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      functor AlphaInstr = gs_53
+      signature CODE_STRING = gs_81
+      structure CellsBasis = gs_39
+      structure Char = gs_5
+      structure CharArray = gs_6
+      structure CharVector = gs_7
+      structure FixedInt = gs_8
+      structure General = gs_9
+      signature INSTRUCTION_EMITTER = gs_0
+      signature INSTRUCTION_STREAM = gs_42
+      structure Int = gs_10
+      structure Int32 = gs_11
+      structure Int64 = gs_12
+      structure IntInf = gs_13
+      structure Label = gs_47
+      structure LargeInt = gs_14
+      structure LargeReal = gs_15
+      structure LargeWord = gs_16
+      signature MLRISC_ERROR_MSG = gs_37
+      structure MLRiscErrorMsg = gs_38
+      signature MLTREE_EVAL = gs_41
+      structure OS = gs_17
+      structure Option = gs_58
+      structure Position = gs_18
+      structure Real = gs_19
+      structure Real64 = gs_20
+      structure RealArray = gs_21
+      structure RealArraySlice = gs_22
+      structure RealVector = gs_23
+      structure RealVectorSlice = gs_24
+      structure SMLofNJ = gs_25
+      structure Socket = gs_26
+      structure String = gs_27
+      structure Substring = gs_28
+      structure SysWord = gs_29
+      structure Time = gs_30
+      structure Word = gs_31
+      structure Word32 = gs_32
+      structure Word64 = gs_33
+      structure Word8 = gs_34
+      ../alpha/emit/alphaMC.sml
+   in
+      functor gs_82 = AlphaMCEmitter
+   end
+   local
+      open l4
+   in
+      signature gs_83 = FREQUENCY_PROPERTIES
+   end
+   local
+      open l16
+   in
+      signature gs_84 = PROBABILITY
+      structure gs_85 = Probability
+   end
+   local
+      signature ALPHAINSTR = gs_52
+      functor AlphaInstr = gs_53
+      signature FREQUENCY_PROPERTIES = gs_83
+      structure MLRiscAnnotations = gs_62
+      signature PROBABILITY = gs_84
+      structure Probability = gs_85
+      ../alpha/instructions/alphaFreqProps.sml
+   in
+      functor gs_86 = AlphaFreqProps
+   end
+in
+   signature ALPHACELLS = gs_50
+   signature ALPHAINSTR = gs_52
+   signature ALPHASHUFFLE = gs_54
+   signature ALPHA_PSEUDO_INSTR = gs_56
+   functor Alpha = gs_66
+   functor AlphaAsmEmitter = gs_55
+   structure AlphaCells = gs_51
+   functor AlphaFreqProps = gs_86
+   functor AlphaGasPseudoOps = gs_80
+   functor AlphaInstr = gs_53
+   functor AlphaJumps = gs_59
+   functor AlphaMCEmitter = gs_82
+   functor AlphaProps = gs_72
+   functor AlphaRewrite = gs_67
+   functor AlphaShuffle = gs_74
+   functor AlphaSpillInstr = gs_69
+end
+end
+
+end

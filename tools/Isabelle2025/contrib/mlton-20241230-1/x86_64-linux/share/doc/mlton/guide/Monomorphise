@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Monomorphise</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Monomorphise</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">Monomorphise</a> is a translation pass from the <a href="XML">XML</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a> to the <a href="SXML">SXML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Monomorphisation eliminates polymorphic values and datatype
+declarations by duplicating them for each type at which they are used.</p>
+</div>
+<div class="paragraph">
+<p>Consider the following <a href="XML">XML</a> program.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="nd">'a</span>
+<span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">f</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="n">T</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">1</span>
+<span class="kr">val</span> <span class="nv">b</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">2</span>
+<span class="kr">val</span> <span class="nv">z</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The result of monomorphising this program is the following <a href="SXML">SXML</a> program:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t1</span> <span class="p">=</span> <span class="nc">T1</span> <span class="kr">of</span> <span class="n">int</span>
+<span class="kr">datatype</span> <span class="kt">t2</span> <span class="p">=</span> <span class="nc">T2</span> <span class="kr">of</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span>
+<span class="kr">fun</span> <span class="nf">f1</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">int</span><span class="p">)</span> <span class="p">=</span> <span class="n">T1</span> <span class="n">x</span>
+<span class="kr">fun</span> <span class="nf">f2</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span><span class="p">)</span> <span class="p">=</span> <span class="n">T2</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="n">f1</span> <span class="mi">1</span>
+<span class="kr">val</span> <span class="nv">b</span> <span class="p">=</span> <span class="n">f1</span> <span class="mi">2</span>
+<span class="kr">val</span> <span class="nv">z</span> <span class="p">=</span> <span class="n">f2</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/monomorphise.sig"><code>monomorphise.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/monomorphise.fun"><code>monomorphise.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The monomorphiser works by making one pass over the entire program.
+On the way down, it creates a cache for each variable declared in a
+polymorphic declaration that maps a lists of type arguments to a new
+variable name.  At a variable reference, it consults the cache (based
+on the types the variable is applied to).  If there is already an
+entry in the cache, it is used.  If not, a new entry is created.  On
+the way up, the monomorphiser duplicates a variable declaration for
+each entry in the cache.</p>
+</div>
+<div class="paragraph">
+<p>As with variables, the monomorphiser records all of the type at which
+constructors are used.  After the entire program is processed, the
+monomorphiser duplicates each datatype declaration and its associated
+constructors.</p>
+</div>
+<div class="paragraph">
+<p>The monomorphiser duplicates all of the functions declared in a
+<code>fun</code> declaration as a unit.  Consider the following program</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">f</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="n">g</span> <span class="n">x</span>
+<span class="kr">and</span> <span class="nf">g</span> <span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="n">f</span> <span class="n">y</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">13</span>
+<span class="kr">val</span> <span class="nv">b</span> <span class="p">=</span> <span class="n">g</span> <span class="mi">14</span>
+<span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and its monomorphisation</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">f1</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">int</span><span class="p">)</span> <span class="p">=</span> <span class="n">g1</span> <span class="n">x</span>
+<span class="kr">and</span> <span class="nf">g1</span> <span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">int</span><span class="p">)</span> <span class="p">=</span> <span class="n">f1</span> <span class="n">y</span>
+<span class="kr">fun</span> <span class="nf">f2</span> <span class="p">(</span><span class="n">x</span> <span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span><span class="p">)</span> <span class="p">=</span> <span class="n">g2</span> <span class="n">x</span>
+<span class="kr">and</span> <span class="nf">g2</span> <span class="p">(</span><span class="n">y</span> <span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span><span class="p">)</span> <span class="p">=</span> <span class="n">f2</span> <span class="n">y</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="n">f1</span> <span class="mi">13</span>
+<span class="kr">val</span> <span class="nv">b</span> <span class="p">=</span> <span class="n">g1</span> <span class="mi">14</span>
+<span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="n">f2</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pathological_datatype_declarations">Pathological datatype declarations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>SML allows a pathological polymorphic datatype declaration in which
+recursive uses of the defined type constructor are applied to
+different type arguments than the definition.  This has been
+disallowed by others on type theoretic grounds.  A canonical example
+is the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span>
+<span class="kr">val</span> <span class="nv">z</span> <span class="p">:</span> <span class="n">int</span> <span class="n">t</span> <span class="p">=</span> <span class="n">B</span> <span class="p">(</span><span class="n">B</span> <span class="p">(</span><span class="n">A</span> <span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The presence of the recursion in the datatype declaration might appear
+to cause the need for the monomorphiser to create an infinite number
+of types.  However, due to the absence of polymorphic recursion in
+SML, there are in fact only a finite number of instances of such types
+in any given program.  The monomorphiser translates the above program
+to the following one.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t1</span> <span class="p">=</span> <span class="nc">B1</span> <span class="kr">of</span> <span class="n">t2</span>
+<span class="kr">datatype</span> <span class="kt">t2</span> <span class="p">=</span> <span class="nc">B2</span> <span class="kr">of</span> <span class="n">t3</span>
+<span class="kr">datatype</span> <span class="kt">t3</span> <span class="p">=</span> <span class="nc">A3</span> <span class="kr">of</span> <span class="p">(</span><span class="n">int</span> <span class="n">*</span> <span class="n">int</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="n">int</span> <span class="n">*</span> <span class="n">int</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">z</span> <span class="p">:</span> <span class="n">int</span> <span class="n">t</span> <span class="p">=</span> <span class="n">B1</span> <span class="p">(</span><span class="n">B2</span> <span class="p">(</span><span class="n">A3</span> <span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is crucial that the monomorphiser be allowed to drop unused
+constructors from datatype declarations in order for the translation
+to terminate.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Monomorphise.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Monomorphise.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

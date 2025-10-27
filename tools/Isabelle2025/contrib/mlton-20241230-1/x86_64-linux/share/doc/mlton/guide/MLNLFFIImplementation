@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLNLFFIImplementation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLNLFFIImplementation</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>MLton&#8217;s implementation(s) of the <a href="MLNLFFI">MLNLFFI</a> library differs from the
+SML/NJ implementation in two important ways:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>MLton cannot utilize the <code>Unsafe.cast</code> "cheat" described in Section
+3.7 of <a href="References#Blume01">Blume01</a>.  (MLton&#8217;s representation of
+<a href="Closure">closures</a> and
+<a href="PackedRepresentation">aggressive representation</a> optimizations make
+an <code>Unsafe.cast</code> even more "unsafe" than in other implementations.)</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph">
+<p>We have considered two solutions:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>One solution is to utilize an additional type parameter (as
+described in Section 3.7 of <a href="References#Blume01">Blume01</a>):</p>
+<div class="quoteblock">
+<blockquote>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">C</span> <span class="p">=</span> <span class="kr">sig</span>
+    <span class="kr">type</span> <span class="p">(</span><span class="nd">'t</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="kt">obj</span>
+    <span class="kr">eqtype</span> <span class="p">(</span><span class="nd">'t</span><span class="p">,</span> <span class="nd">'f</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="kt">obj'</span>
+    <span class="err">...</span>
+    <span class="kr">type</span> <span class="p">(</span><span class="nd">'o</span><span class="p">,</span> <span class="nd">'f</span><span class="p">)</span> <span class="kt">ptr</span>
+    <span class="kr">eqtype</span> <span class="p">(</span><span class="nd">'o</span><span class="p">,</span> <span class="nd">'f</span><span class="p">)</span> <span class="kt">ptr'</span>
+    <span class="err">...</span>
+    <span class="kr">type</span> <span class="nd">'f</span> <span class="kt">fptr</span>
+    <span class="kr">type</span> <span class="nd">'f</span> <span class="kt">ptr'</span>
+    <span class="err">...</span>
+    <span class="kr">structure</span> <span class="nn">T</span> <span class="p">:</span> <span class="kr">sig</span>
+        <span class="kr">type</span> <span class="p">(</span><span class="nd">'t</span><span class="p">,</span> <span class="nd">'f</span><span class="p">)</span> <span class="kt">typ</span>
+        <span class="err">...</span>
+    <span class="kr">end</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The rule for <code>('t, 'f, 'c) obj</code>,<code>('t, 'f, 'c) ptr</code>, and also <code>('t, 'f)
+T.typ</code> is that whenever <code>F fptr</code> occurs within the instantiation of
+<code>'t</code>, then <code>'f</code> must be instantiated to <code>F</code>.  In all other cases, <code>'f</code>
+will be instantiated to <code>unit</code>.</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>(In the actual MLton implementation, an abstract type <code>naf</code>
+(not-a-function) is used instead of <code>unit</code>.)</p>
+</div>
+<div class="paragraph">
+<p>While this means that type-annotated programs may not type-check under
+both the SML/NJ implementation and the MLton implementation, this
+should not be a problem in practice.  Tools, like <code>ml-nlffigen</code>, which
+are necessarily implementation dependent (in order to make
+<a href="CallingFromSMLToCFunctionPointer">calls through a C function
+pointer</a>), may be easily extended to emit the additional type
+parameter.  Client code which uses such generated glue-code (e.g.,
+Section 1 of <a href="References#Blume01">Blume01</a>) need rarely write type-annotations,
+thanks to the magic of type inference.</p>
+</div>
+</li>
+<li>
+<p>The above implementation suffers from two disadvantages.</p>
+<div class="paragraph">
+<p>First, it changes the MLNLFFI Library interface, meaning that the same
+program may not type-check under both the SML/NJ implementation and
+the MLton implementation (though, in light of type inference and the
+richer <code>MLRep</code> structure provided by MLton, this point is mostly
+moot).</p>
+</div>
+<div class="paragraph">
+<p>Second, it appears to unnecessarily duplicate type information.  For
+example, an external C variable of type <code>int (* f[3])(int)</code> (that is,
+an array of three function pointers), would be represented by the SML
+type <code>(((sint -&gt; sint) fptr, dec dg3) arr, sint -&gt; sint, rw) obj</code>.
+One might well ask why the <code>'f</code> instantiation (<code>sint -&gt; sint</code> in this
+case) cannot be <em>extracted</em> from the <code>'t</code> instantiation
+(<code>((sint -&gt; sint) fptr, dec dg3) arr</code> in this case), obviating the
+need for a separate <em>function-type</em> type argument.  There are a number
+of components to an complete answer to this question.  Foremost is the
+fact that <a href="StandardML">Standard ML</a> supports neither (general)
+type-level functions nor intensional polymorphism.</p>
+</div>
+<div class="paragraph">
+<p>A more direct answer for MLNLFFI is that in the SML/NJ implemention,
+the definition of the types <code>('t, 'c) obj</code> and <code>('t, 'c) ptr</code> are made
+in such a way that the type variables <code>'t</code> and <code>'c</code> are <a href="PhantomType">phantom</a> (not contributing to the run-time representation of an
+<code>('t, 'c) obj</code> or <code>('t, 'c) ptr</code> value), despite the fact that the
+types <code>((sint -&gt; sint) fptr, rw) ptr</code> and
+<code>((double -&gt; double) fptr, rw) ptr</code> necessarily carry distinct (and
+type incompatible) run-time (C-)type information (RTTI), corresponding
+to the different calling conventions of the two C functions.  The
+<code>Unsafe.cast</code> "cheat" overcomes the type incompatibility without
+introducing a new type variable (as in the first solution above).</p>
+</div>
+<div class="paragraph">
+<p>Hence, the reason that <em>function-type</em> type cannot be extracted from
+the <code>'t</code> type variable instantiation is that the type of the
+representation of RTTI doesn&#8217;t even <em>see</em> the (phantom) <code>'t</code> type
+variable.  The solution which presents itself is to give up on the
+phantomness of the <code>'t</code> type variable, making it available to the
+representation of RTTI.</p>
+</div>
+<div class="paragraph">
+<p>This is not without some small drawbacks.  Because many of the types
+used to instantiate <code>'t</code> carry more structure than is strictly
+necessary for <code>'t</code>&rsquo;s RTTI, it is sometimes necessary to wrap and
+unwrap RTTI to accommodate the additional structure.  (In the other
+implementations, the corresponding operations can pass along the RTTI
+unchanged.)  However, these coercions contribute minuscule overhead;
+in fact, in a majority of cases, MLton&#8217;s optimizations will completely
+eliminate the RTTI from the final program.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The implementation distributed with MLton uses the second solution.</p>
+</div>
+<div class="paragraph">
+<p>Bonus question: Why can&#8217;t one use a <a href="UniversalType">universal type</a>
+to eliminate the use of <code>Unsafe.cast</code>?</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Answer: ???</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p>MLton (in both of the above implementations) provides a richer
+<code>MLRep</code> structure, utilizing <code>Int<em>&lt;N&gt;</em></code> and <code>Word<em>&lt;N&gt;</em></code>
+structures.</p>
+<div class="openblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">MLRep</span> <span class="p">=</span> <span class="kr">struct</span>
+    <span class="kr">structure</span> <span class="nn">Char</span> <span class="p">=</span>
+       <span class="kr">struct</span>
+          <span class="kr">structure</span> <span class="nn">Signed</span> <span class="p">=</span> <span class="n">Int8</span>
+          <span class="kr">structure</span> <span class="nn">Unsigned</span> <span class="p">=</span> <span class="n">Word8</span>
+          <span class="c">(*</span><span class="cm"> word-style bit-operations on integers... *)</span>
+          <span class="kr">structure</span> <span class="n">&lt;&lt;SignedBitops#&gt;&gt;</span> <span class="p">=</span> <span class="n">IntBitOps</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">I</span> <span class="p">=</span> <span class="n">Signed</span>
+                                             <span class="kr">structure</span> <span class="nn">W</span> <span class="p">=</span> <span class="n">Unsigned</span><span class="p">)</span>
+       <span class="kr">end</span>
+    <span class="kr">structure</span> <span class="nn">Short</span> <span class="p">=</span>
+       <span class="kr">struct</span>
+          <span class="kr">structure</span> <span class="nn">Signed</span> <span class="p">=</span> <span class="n">Int16</span>
+          <span class="kr">structure</span> <span class="nn">Unsigned</span> <span class="p">=</span> <span class="n">Word16</span>
+          <span class="c">(*</span><span class="cm"> word-style bit-operations on integers... *)</span>
+          <span class="kr">structure</span> <span class="n">&lt;&lt;SignedBitops#&gt;&gt;</span> <span class="p">=</span> <span class="n">IntBitOps</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">I</span> <span class="p">=</span> <span class="n">Signed</span>
+                                             <span class="kr">structure</span> <span class="nn">W</span> <span class="p">=</span> <span class="n">Unsigned</span><span class="p">)</span>
+       <span class="kr">end</span>
+    <span class="kr">structure</span> <span class="nn">Int</span> <span class="p">=</span>
+       <span class="kr">struct</span>
+          <span class="kr">structure</span> <span class="nn">Signed</span> <span class="p">=</span> <span class="n">Int32</span>
+          <span class="kr">structure</span> <span class="nn">Unsigned</span> <span class="p">=</span> <span class="n">Word32</span>
+          <span class="c">(*</span><span class="cm"> word-style bit-operations on integers... *)</span>
+          <span class="kr">structure</span> <span class="n">&lt;&lt;SignedBitops#&gt;&gt;</span> <span class="p">=</span> <span class="n">IntBitOps</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">I</span> <span class="p">=</span> <span class="n">Signed</span>
+                                             <span class="kr">structure</span> <span class="nn">W</span> <span class="p">=</span> <span class="n">Unsigned</span><span class="p">)</span>
+       <span class="kr">end</span>
+    <span class="kr">structure</span> <span class="nn">Long</span> <span class="p">=</span>
+       <span class="kr">struct</span>
+          <span class="kr">structure</span> <span class="nn">Signed</span> <span class="p">=</span> <span class="n">Int32</span>
+          <span class="kr">structure</span> <span class="nn">Unsigned</span> <span class="p">=</span> <span class="n">Word32</span>
+          <span class="c">(*</span><span class="cm"> word-style bit-operations on integers... *)</span>
+          <span class="kr">structure</span> <span class="n">&lt;&lt;SignedBitops#&gt;&gt;</span> <span class="p">=</span> <span class="n">IntBitOps</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">I</span> <span class="p">=</span> <span class="n">Signed</span>
+                                             <span class="kr">structure</span> <span class="nn">W</span> <span class="p">=</span> <span class="n">Unsigned</span><span class="p">)</span>
+       <span class="kr">end</span>
+    <span class="kr">structure</span> <span class="n">&lt;&lt;LongLong#&gt;&gt;</span> <span class="p">=</span>
+       <span class="kr">struct</span>
+          <span class="kr">structure</span> <span class="nn">Signed</span> <span class="p">=</span> <span class="n">Int64</span>
+          <span class="kr">structure</span> <span class="nn">Unsigned</span> <span class="p">=</span> <span class="n">Word64</span>
+          <span class="c">(*</span><span class="cm"> word-style bit-operations on integers... *)</span>
+          <span class="kr">structure</span> <span class="n">&lt;&lt;SignedBitops#&gt;&gt;</span> <span class="p">=</span> <span class="n">IntBitOps</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">I</span> <span class="p">=</span> <span class="n">Signed</span>
+                                             <span class="kr">structure</span> <span class="nn">W</span> <span class="p">=</span> <span class="n">Unsigned</span><span class="p">)</span>
+       <span class="kr">end</span>
+    <span class="kr">structure</span> <span class="nn">Float</span> <span class="p">=</span> <span class="n">Real32</span>
+    <span class="kr">structure</span> <span class="nn">Double</span> <span class="p">=</span> <span class="n">Real64</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This would appear to be a better interface, even when an
+implementation must choose <code>Int32</code> and <code>Word32</code> as the representation
+for smaller C-types.</p>
+</div>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLNLFFIImplementation.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLNLFFIImplementation.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

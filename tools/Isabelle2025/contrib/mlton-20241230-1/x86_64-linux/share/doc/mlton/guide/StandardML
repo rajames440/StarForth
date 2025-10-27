@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>StandardML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>StandardML</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_sml_resources">SML Resources</a></li>
+<li><a href="#_aspects_of_sml">Aspects of SML</a></li>
+<li><a href="#_using_sml">Using SML</a></li>
+<li><a href="#_programming_in_sml">Programming in SML</a></li>
+<li><a href="#_notes">Notes</a></li>
+<li><a href="#_related_languages">Related Languages</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Standard ML (SML) is a programming language that combines excellent
+support for rapid prototyping, modularity, and development of large
+programs, with performance approaching that of C.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sml_resources">SML Resources</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="StandardMLTutorials">Tutorials</a></p>
+</li>
+<li>
+<p><a href="StandardMLBooks">Books</a></p>
+</li>
+<li>
+<p><a href="StandardMLImplementations">Implementations</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_aspects_of_sml">Aspects of SML</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="DefineTypeBeforeUse">DefineTypeBeforeUse</a></p>
+</li>
+<li>
+<p><a href="EqualityType">EqualityType</a></p>
+</li>
+<li>
+<p><a href="EqualityTypeVariable">EqualityTypeVariable</a></p>
+</li>
+<li>
+<p><a href="GenerativeDatatype">GenerativeDatatype</a></p>
+</li>
+<li>
+<p><a href="GenerativeException">GenerativeException</a></p>
+</li>
+<li>
+<p><a href="Identifier">Identifier</a></p>
+</li>
+<li>
+<p><a href="OperatorPrecedence">OperatorPrecedence</a></p>
+</li>
+<li>
+<p><a href="Overloading">Overloading</a></p>
+</li>
+<li>
+<p><a href="PolymorphicEquality">PolymorphicEquality</a></p>
+</li>
+<li>
+<p><a href="TypeVariableScope">TypeVariableScope</a></p>
+</li>
+<li>
+<p><a href="ValueRestriction">ValueRestriction</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_using_sml">Using SML</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Fixpoints">Fixpoints</a></p>
+</li>
+<li>
+<p><a href="ForLoops">ForLoops</a></p>
+</li>
+<li>
+<p><a href="FunctionalRecordUpdate">FunctionalRecordUpdate</a></p>
+</li>
+<li>
+<p><a href="InfixingOperators">InfixingOperators</a></p>
+</li>
+<li>
+<p><a href="Lazy">Lazy</a></p>
+</li>
+<li>
+<p><a href="ObjectOrientedProgramming">ObjectOrientedProgramming</a></p>
+</li>
+<li>
+<p><a href="OptionalArguments">OptionalArguments</a></p>
+</li>
+<li>
+<p><a href="Printf">Printf</a></p>
+</li>
+<li>
+<p><a href="PropertyList">PropertyList</a></p>
+</li>
+<li>
+<p><a href="ReturnStatement">ReturnStatement</a></p>
+</li>
+<li>
+<p><a href="Serialization">Serialization</a></p>
+</li>
+<li>
+<p><a href="StandardMLGotchas">StandardMLGotchas</a></p>
+</li>
+<li>
+<p><a href="StyleGuide">StyleGuide</a></p>
+</li>
+<li>
+<p><a href="TipsForWritingConciseSML">TipsForWritingConciseSML</a></p>
+</li>
+<li>
+<p><a href="UniversalType">UniversalType</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_programming_in_sml">Programming in SML</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Emacs">Emacs</a></p>
+</li>
+<li>
+<p><a href="Enscript">Enscript</a></p>
+</li>
+<li>
+<p><a href="Pygments">Pygments</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">Notes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="StandardMLHistory">History of SML</a></p>
+</li>
+<li>
+<p><a href="Regions">Regions</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_related_languages">Related Languages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Alice">Alice</a></p>
+</li>
+<li>
+<p><a href="FSharp">F#</a></p>
+</li>
+<li>
+<p><a href="OCaml">OCaml</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/StandardML.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/StandardML.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

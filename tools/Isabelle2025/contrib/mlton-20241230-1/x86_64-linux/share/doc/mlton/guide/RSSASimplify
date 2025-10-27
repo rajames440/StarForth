@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RSSASimplify</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RSSASimplify</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>The optimization passes for the <a href="RSSA">RSSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a> are
+collected and controlled by the <code>Backend</code> functor
+(<a href="https://github.com/MLton/mlton/blob/master/mlton/backend/backend.sig"><code>backend.sig</code></a>,
+<a href="https://github.com/MLton/mlton/blob/master/mlton/backend/backend.fun"><code>backend.fun</code></a>).</p>
+</div>
+<div class="paragraph">
+<p>The following optimization pass is implemented:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="BounceVars">BounceVars</a></p>
+</li>
+<li>
+<p><a href="CollectStatics">CollectStatics</a></p>
+</li>
+<li>
+<p><a href="RSSAShrink">RSSAShrink</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The following implementation passes are implemented:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="ImplementHandlers">ImplementHandlers</a></p>
+</li>
+<li>
+<p><a href="ImplementProfiling">ImplementProfiling</a></p>
+</li>
+<li>
+<p><a href="InsertLimitChecks">InsertLimitChecks</a></p>
+</li>
+<li>
+<p><a href="InsertSignalChecks">InsertSignalChecks</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The optimization passes can be controlled from the command-line by the options</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>-diag-pass &lt;pass&gt;</code>&#8201;&#8212;&#8201;keep diagnostic info for pass</p>
+</li>
+<li>
+<p><code>-disable-pass &lt;pass&gt;</code>&#8201;&#8212;&#8201;skip optimization pass (if normally performed)</p>
+</li>
+<li>
+<p><code>-enable-pass &lt;pass&gt;</code>&#8201;&#8212;&#8201;perform optimization pass (if normally skipped)</p>
+</li>
+<li>
+<p><code>-keep-pass &lt;pass&gt;</code>&#8201;&#8212;&#8201;keep the results of pass</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RSSASimplify.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RSSASimplify.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

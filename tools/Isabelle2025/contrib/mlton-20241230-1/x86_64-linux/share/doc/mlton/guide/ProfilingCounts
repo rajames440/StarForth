@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ProfilingCounts</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ProfilingCounts</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>With MLton and <code>mlprof</code>, you can <a href="Profiling">profile</a> your program to
+find out how many times each function is called and how many times
+each branch is taken.  To do so, compile your program with
+<code>-profile count -profile-branch true</code>. For example, suppose that
+<code>tak.sml</code> contains the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Tak</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">tak1</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="p">=</span>
+         <span class="kr">let</span>
+            <span class="kr">fun</span> <span class="nf">tak2</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="p">=</span>
+               <span class="kr">if</span> <span class="n">y</span> <span class="n">&gt;=</span> <span class="n">x</span>
+                  <span class="kr">then</span> <span class="n">z</span>
+               <span class="kr">else</span>
+                  <span class="n">tak1</span> <span class="p">(</span><span class="n">tak2</span> <span class="p">(</span><span class="n">x</span> <span class="n">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
+                        <span class="n">tak2</span> <span class="p">(</span><span class="n">y</span> <span class="n">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span>
+                        <span class="n">tak2</span> <span class="p">(</span><span class="n">z</span> <span class="n">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+         <span class="kr">in</span>
+            <span class="kr">if</span> <span class="n">y</span> <span class="n">&gt;=</span> <span class="n">x</span>
+               <span class="kr">then</span> <span class="n">z</span>
+            <span class="kr">else</span>
+               <span class="n">tak1</span> <span class="p">(</span><span class="n">tak2</span> <span class="p">(</span><span class="n">x</span> <span class="n">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
+                     <span class="n">tak2</span> <span class="p">(</span><span class="n">y</span> <span class="n">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span>
+                     <span class="n">tak2</span> <span class="p">(</span><span class="n">z</span> <span class="n">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+         <span class="kr">end</span>
+   <span class="kr">end</span>
+
+<span class="kr">val</span> <span class="nv">rec</span> <span class="n">f</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="p">()</span>
+    <span class="p">|</span> <span class="mi">~1</span> <span class="p">=&gt;</span> <span class="n">print</span> <span class="s2">"this branch is not taken</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="nn">Tak</span><span class="p">.</span><span class="n">tak1</span> <span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="p">;</span> <span class="n">f</span> <span class="p">(</span><span class="n">n-</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">5000</span>
+
+<span class="kr">fun</span> <span class="nf">uncalled</span> <span class="p">()</span> <span class="p">=</span> <span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Compile with count profiling and run the program.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton -profile count -profile-branch true tak.sml
+% ./tak</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Display the profiling data, along with raw counts and file positions.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlprof -raw true -show-line true tak mlmon.out
+623,610,002 ticks
+            function               cur       raw
+--------------------------------- ----- -------------
+Tak.tak1.tak2  tak.sml: 5         38.2% (238,530,000)
+Tak.tak1.tak2.&lt;true&gt;  tak.sml: 7  27.5% (171,510,000)
+Tak.tak1  tak.sml: 3              10.7%  (67,025,000)
+Tak.tak1.&lt;true&gt;  tak.sml: 14      10.7%  (67,025,000)
+Tak.tak1.tak2.&lt;false&gt;  tak.sml: 9 10.7%  (67,020,000)
+Tak.tak1.&lt;false&gt;  tak.sml: 16      2.0%  (12,490,000)
+f  tak.sml: 23                     0.0%       (5,001)
+f.&lt;branch&gt;  tak.sml: 25            0.0%       (5,000)
+f.&lt;branch&gt;  tak.sml: 23            0.0%           (1)
+uncalled  tak.sml: 29              0.0%           (0)
+f.&lt;branch&gt;  tak.sml: 24            0.0%           (0)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Branches are displayed with lexical nesting followed by <code>&lt;branch&gt;</code>
+where the function name would normally be, or <code>&lt;true&gt;</code> or <code>&lt;false&gt;</code>
+for if-expressions.  It is best to run <code>mlprof</code> with <code>-show-line true</code>
+to help identify the branch.</p>
+</div>
+<div class="paragraph">
+<p>One use of <code>-profile count</code> is as a code-coverage tool, to help find
+code in your program that hasn&#8217;t been tested.  For this reason,
+<code>mlprof</code> displays functions and branches even if they have a count of
+zero.  As the above output shows, the branch on line 24 was never
+taken and the function defined on line 29 was never called.  To see
+zero counts, it is best to run <code>mlprof</code> with <code>-raw true</code>, since some
+code (e.g. the branch on line 23 above) will show up with <code>0.0%</code> but
+may still have been executed and hence have a nonzero raw count.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ProfilingCounts.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ProfilingCounts.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

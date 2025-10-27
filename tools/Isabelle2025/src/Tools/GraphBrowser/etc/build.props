@@ -1,0 +1,25 @@
+title = graph browser
+module = $ISABELLE_HOME/lib/classes/isabelle_graphbrowser.jar
+javac_options = -source 8 -target 8
+sources = \
+  awt/Border.java \
+  awt/MessageDialog.java \
+  awt/TextFrame.java \
+  graphbrowser/AWTFontMetrics.java \
+  graphbrowser/AbstractFontMetrics.java \
+  graphbrowser/Box.java \
+  graphbrowser/Console.java \
+  graphbrowser/DefaultFontMetrics.java \
+  graphbrowser/Directory.java \
+  graphbrowser/DummyVertex.java \
+  graphbrowser/Graph.java \
+  graphbrowser/GraphBrowser.java \
+  graphbrowser/GraphBrowserFrame.java \
+  graphbrowser/GraphView.java \
+  graphbrowser/NormalVertex.java \
+  graphbrowser/ParseError.java \
+  graphbrowser/Region.java \
+  graphbrowser/Spline.java \
+  graphbrowser/TreeBrowser.java \
+  graphbrowser/TreeNode.java \
+  graphbrowser/Vertex.java

@@ -1,0 +1,23 @@
+local
+  $(SML_LIB)/basis/basis.mlb
+  mono-vector.sig
+  mono-vector.fun
+  mono-vector-slice.sig
+  mono-vector-slice.fun
+  mono-array.sig
+  mono-array.fun
+  mono-array-slice.sig
+  mono-array-slice.fun
+
+  mono-vector-slice.sml
+in
+  signature MONO_VECTOR_EXT
+  functor MonoVectorExtFn
+  signature MONO_VECTOR_SLICE_EXT
+  functor MonoVectorSliceExtFn
+  functor MonoArrayExtFn
+  signature MONO_ARRAY_EXT
+  signature MONO_ARRAY_SLICE_EXT
+  functor MonoArraySliceExtFn
+  structure Word8VectorSlice
+end

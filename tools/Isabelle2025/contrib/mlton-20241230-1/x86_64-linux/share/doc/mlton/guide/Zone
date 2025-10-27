@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Zone</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Zone</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">Zone</a> is an optimization pass for the <a href="SSA2">SSA2</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSA2Simplify">SSA2Simplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass breaks large <a href="SSA2">SSA2</a> functions into zones, which are
+connected subgraphs of the dominator tree.  For each zone, at the node
+that dominates the zone (the "zone root"), it places a tuple
+collecting all of the live variables at that node.  It replaces any
+variables used in that zone with offsets from the tuple.  The goal is
+to decrease the liveness information in large <a href="SSA">SSA</a> functions.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/zone.fun"><code>zone.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Compute strongly-connected components to avoid put tuple constructions
+in loops.</p>
+</div>
+<div class="paragraph">
+<p>There are two (expert) flags that govern the use of this pass</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>-max-function-size &lt;n&gt;</code></p>
+</li>
+<li>
+<p><code>-zone-cut-depth &lt;n&gt;</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Zone splitting only works when the number of basic blocks in a
+function is greater than <code>n</code>.  The <code>n</code> used to cut the dominator tree
+is set by <code>-zone-cut-depth</code>.</p>
+</div>
+<div class="paragraph">
+<p>There is currently no attempt to be safe-for-space.  That is, the
+tuples are not restricted to containing only "small" values.</p>
+</div>
+<div class="paragraph">
+<p>In the <code>HOL</code> program, the particular problem is the main function,
+which has 161,783 blocks and 257,519 variables&#8201;&#8212;&#8201;the product of those
+two numbers being about 41 billion.  Now, we&#8217;re not likely going to
+need that much space since we use a sparse representation.  But even
+1/100th would really hurt.  And of course this rules out bit vectors.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Zone.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Zone.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

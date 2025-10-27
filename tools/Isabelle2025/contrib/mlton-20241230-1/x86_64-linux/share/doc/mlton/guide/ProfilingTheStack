@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ProfilingTheStack</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ProfilingTheStack</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>For all forms of <a href="Profiling">Profiling</a>, you can gather counts for all
+functions on the stack, not just the currently executing function.  To
+do so, compile your program with <code>-profile-stack true</code>.  For example,
+suppose that <code>list-rev.sml</code> contains the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">append</span> <span class="p">(</span><span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">case</span> <span class="n">l1</span> <span class="kr">of</span>
+      <span class="p">[]</span> <span class="p">=&gt;</span> <span class="n">l2</span>
+    <span class="p">|</span> <span class="n">x</span> <span class="n">::</span> <span class="n">l1</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="n">::</span> <span class="n">append</span> <span class="p">(</span><span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span>
+
+<span class="kr">fun</span> <span class="nf">rev</span> <span class="n">l</span> <span class="p">=</span>
+   <span class="kr">case</span> <span class="n">l</span> <span class="kr">of</span>
+      <span class="p">[]</span> <span class="p">=&gt;</span> <span class="p">[]</span>
+    <span class="p">|</span> <span class="n">x</span> <span class="n">::</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="n">append</span> <span class="p">(</span><span class="n">rev</span> <span class="n">l</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">])</span>
+
+<span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="nn">List</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="mi">1</span> <span class="n">+</span> <span class="n">hd</span> <span class="p">(</span><span class="n">rev</span> <span class="n">l</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Compile with stack profiling and then run the program.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton -profile alloc -profile-stack true list-rev.sml
+% ./list-rev</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Display the profiling data.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlprof -show-line true list-rev mlmon.out
+6,030,136 bytes allocated (108,336 bytes by GC)
+       function          cur  stack  GC
+----------------------- ----- ----- ----
+append  list-rev.sml: 1 97.6% 97.6% 1.4%
+&lt;gc&gt;                     1.8%  0.0% 1.8%
+&lt;main&gt;                   0.4% 98.2% 1.8%
+rev  list-rev.sml: 6     0.2% 97.6% 1.8%</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the above table, we see that <code>rev</code>, defined on line 6 of
+<code>list-rev.sml</code>, is only responsible for 0.2% of the allocation, but is
+on the stack while 97.6% of the allocation is done by the user program
+and while 1.8% of the allocation is done by the garbage collector.</p>
+</div>
+<div class="paragraph">
+<p>The run-time performance impact of <code>-profile-stack true</code> can be
+noticeable since there is some extra bookkeeping at every nontail call
+and return.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ProfilingTheStack.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ProfilingTheStack.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

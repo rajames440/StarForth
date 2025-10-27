@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>License</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>License</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_web_site">Web Site</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In order to allow the maximum freedom for the future use of the
+content in this web site, we require that contributions to the web
+site be dedicated to the public domain.  That means that you can only
+add works that are already in the public domain, or that you must hold
+the copyright on the work that you agree to dedicate the work to the
+public domain.</p>
+</div>
+<div class="paragraph">
+<p>By contributing to this web site, you agree to dedicate your
+contribution to the public domain.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_software">Software</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>As of 20050812, MLton software is licensed under the HPND-style
+license below.  The Historical Permission Notice and Disclaimer (HPND)
+license is an <a href="https://opensource.org/licenses/HPND">open source</a> and
+<a href="https://www.gnu.org/licenses/license-list.en.html#HPND">free software</a>
+license.  By contributing code to the project, you agree to release
+the code under this license.  Contributors can retain copyright to
+their contributions by asserting copyright in their code.
+Contributors may also add to the list of copyright holders in
+<code>doc/license/MLton-LICENSE</code>, which appears below.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="text">This is the license for MLton, a whole-program optimizing compiler for
+the Standard ML programming language.  The license is an instance of
+the Historical Permission Notice and Disclaimer (HPND) license, which
+is an open source (https://opensource.org/licenses/HPND) and
+free software (https://www.gnu.org/licenses/license-list.en.html#HPND)
+license.  Send comments and questions to MLton@mlton.org.
+
+MLton COPYRIGHT NOTICE, LICENSE AND DISCLAIMER.
+
+Copyright (C) 1999-2024 Henry Cejtin, Matthew Fluet, Suresh
+   Jagannathan, and Stephen Weeks.
+Copyright (C) 1997-2000 by the NEC Research Institute
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both the copyright notice and this permission notice and warranty
+disclaimer appear in supporting documentation, and that the name of
+the above copyright holders, or their entities, not be used in
+advertising or publicity pertaining to distribution of the software
+without specific, written prior permission.
+
+The above copyright holders disclaim all warranties with regard to
+this software, including all implied warranties of merchantability and
+fitness. In no event shall the above copyright holders be liable for
+any special, indirect or consequential damages or any damages
+whatsoever resulting from loss of use, data or profits, whether in an
+action of contract, negligence or other tortious action, arising out
+of or in connection with the use or performance of this software.</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/License.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/License.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

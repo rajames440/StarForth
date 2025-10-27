@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Bugs20210117</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Bugs20210117</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Here are the known bugs in <a href="Release20210117">MLton 20210117</a>, listed
+in reverse chronological order of date reported.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a id="bug02"></a>
+Bug with amd64 and LLVM codegens calling C functions with signed 8-bit and 16-bit arguments.</p>
+<div class="paragraph">
+<p>Fixed by commits <a href="https://github.com/MLton/mlton/commit/286a54cc0"><code>286a54cc0</code></a> and <a href="https://github.com/MLton/mlton/commit/c4502bdfb"><code>c4502bdfb</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug01"></a>
+Bug with <code>-profile time</code> leading to a segmentation fault.</p>
+<div class="paragraph">
+<p>Thanks to Byron Zhong for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by commit <a href="https://github.com/MLton/mlton/commit/737a4b6e0"><code>737a4b6e0</code></a>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Wed Mar 16 16:13:22 2022 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Bugs20210117.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Bugs20210117.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

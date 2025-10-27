@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>FirstClassPolymorphism</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>FirstClassPolymorphism</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>First-class polymorphism is the ability to treat polymorphic functions
+just like other values: pass them as arguments, store them in data
+structures, etc.  Although <a href="StandardML">Standard ML</a> does have
+polymorphic functions, it does not support first-class polymorphism.</p>
+</div>
+<div class="paragraph">
+<p>For example, the following declares and uses the polymorphic function
+<code>id</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">id</span> <span class="mi">13</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">id</span> <span class="s2">"foo"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If SML supported first-class polymorphism, we could write the
+following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">useId</span> <span class="n">id</span> <span class="p">=</span> <span class="p">(</span><span class="n">id</span> <span class="mi">13</span><span class="p">;</span> <span class="n">id</span> <span class="s2">"foo"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>However, this does not type check.  MLton reports the following error.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 1.24-1.31.
+  Function applied to incorrect argument.
+    expects: [int]
+    but got: [string]
+    in: id "foo"</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The error message arises because MLton infers from <code>id 13</code> that <code>id</code>
+accepts an integer argument, but that <code>id "foo"</code> is passing a string.</p>
+</div>
+<div class="paragraph">
+<p>Using explicit types sheds some light on the problem.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">useId</span> <span class="p">(</span><span class="n">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="p">(</span><span class="n">id</span> <span class="mi">13</span><span class="p">;</span> <span class="n">id</span> <span class="s2">"foo"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On this, MLton reports the following errors.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 1.29-1.33.
+  Function applied to incorrect argument.
+    expects: ['a]
+    but got: [int]
+    in: id 13
+Error: z.sml 1.36-1.43.
+  Function applied to incorrect argument.
+    expects: ['a]
+    but got: [string]
+    in: id "foo"</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The errors arise because the argument <code>id</code> is <em>not</em> polymorphic;
+rather, it is monomorphic, with type <code>'a -&gt; 'a</code>.  It is perfectly
+valid to apply <code>id</code> to a value of type <code>'a</code>, as in the following</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">useId</span> <span class="p">(</span><span class="n">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="n">id</span> <span class="n">x</span>  <span class="c">(*</span><span class="cm"> type correct *)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So, what is the difference between the type specification on <code>id</code> in
+the following two declarations?</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">fun</span> <span class="nf">useId</span> <span class="p">(</span><span class="n">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="p">(</span><span class="n">id</span> <span class="mi">13</span><span class="p">;</span> <span class="n">id</span> <span class="s2">"foo"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>While the type specifications on <code>id</code> look identical, they mean
+different things.  The difference can be made clearer by explicitly
+<a href="TypeVariableScope">scoping the type variables</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nd">'a</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span>
+<span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">useId</span> <span class="p">(</span><span class="n">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="p">(</span><span class="n">id</span> <span class="mi">13</span><span class="p">;</span> <span class="n">id</span> <span class="s2">"foo"</span><span class="p">)</span>  <span class="c">(*</span><span class="cm"> type error *)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In <code>val 'a id</code>, the type variable scoping means that for any <code>'a</code>,
+<code>id</code> has type <code>'a -&gt; 'a</code>.  Hence, <code>id</code> can be applied to arguments of
+type <code>int</code>, <code>real</code>, etc.  Similarly, in <code>fun 'a useId</code>, the scoping
+means that <code>useId</code> is a polymorphic function that for any <code>'a</code> takes a
+function of type <code>'a -&gt; 'a</code> and does something.  Thus, <code>useId</code> could
+be applied to a function of type <code>int -&gt; int</code>, <code>real -&gt; real</code>, etc.</p>
+</div>
+<div class="paragraph">
+<p>One could imagine an extension of SML that allowed scoping of type
+variables at places other than <code>fun</code> or <code>val</code> declarations, as in the
+following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>fun useId (id: ('a).'a -&gt; 'a) = (id 13; id "foo")  (* not SML *)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Such an extension would need to be thought through very carefully, as
+it could cause significant complications with <a href="TypeInference">TypeInference</a>,
+possible even undecidability.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/FirstClassPolymorphism.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/FirstClassPolymorphism.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

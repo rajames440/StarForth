@@ -1,0 +1,43 @@
+Subject: Announcing Isabelle2025
+To: isabelle-users@cl.cam.ac.uk
+
+Isabelle2025 is now available.
+
+This version introduces many changes over Isabelle2024: see the
+NEWS file for further details. Here are various details:
+
+* Inner syntax: markup for blocks and type information about constants.
+
+* Inner syntax: more scalable pretty-printing, based on bytes (blobs).
+
+* Inner syntax: more efficient folding of term abbreviations.
+
+* Inner syntax: more robust "no_syntax" declarations via bundles.
+
+* HOL: various improvements of theory libraries.
+
+* HOL: updates and improvements of Sledgehammer and external provers.
+
+* HOL: various improvements to code generation.
+
+* Isabelle/jEdit: various improvements to Output, including Search.
+
+* Isabelle/VSCode: various improvements, concerning markup, completions etc.
+
+* Document preparation: more markup for term output.
+
+* ML: value-oriented pretty printing using explicit Pretty.output_ops.
+
+* System: Find_Facts full-text search engine, with web interface.
+
+* System: Build_Manager in Isabelle/Scala, as replacement for Jenkins.
+
+* System: more scalable type isabelle.Bytes, allow messages of many GiB.
+
+
+You may get Isabelle2025 from the following mirror sites:
+
+  Cambridge (UK)       https://www.cl.cam.ac.uk/research/hvg/Isabelle
+  Munich (Germany)     https://isabelle.in.tum.de
+  Sydney (Australia)   https://proofcraft.systems/isabelle/index.html
+  Potsdam, NY (USA)    https://mirror.clarkson.edu/isabelle

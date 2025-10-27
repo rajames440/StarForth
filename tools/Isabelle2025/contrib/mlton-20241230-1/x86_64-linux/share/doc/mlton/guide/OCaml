@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>OCaml</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>OCaml</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="http://caml.inria.fr/">OCaml</a> is a variant of <a href="ML">ML</a> and is similar to
+<a href="StandardML">Standard ML</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ocaml_and_sml">OCaml and SML</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here&#8217;s a comparison of some aspects of the OCaml and SML languages.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Standard ML has a formal <a href="DefinitionOfStandardML">Definition</a>, while
+OCaml is specified by its lone implementation and informal
+documentation.</p>
+</li>
+<li>
+<p>Standard ML has a number of <a href="StandardMLImplementations">compilers</a>,
+while OCaml has only one.</p>
+</li>
+<li>
+<p>OCaml has built-in support for object-oriented programming, while
+Standard ML does not (however, see <a href="ObjectOrientedProgramming">ObjectOrientedProgramming</a>).</p>
+</li>
+<li>
+<p>Andreas Rossberg has a
+<a href="http://www.mpi-sws.org/%7Erossberg/sml-vs-ocaml.html">side-by-side
+comparison</a> of the syntax of SML and OCaml.</p>
+</li>
+<li>
+<p>Adam Chlipala has a
+<a href="http://adam.chlipala.net/mlcomp">point-by-point comparison</a> of OCaml
+and SML.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ocaml_and_mlton">OCaml and MLton</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here&#8217;s a comparison of some aspects of OCaml and MLton.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Performance</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Both OCaml and MLton have excellent performance.</p>
+</li>
+<li>
+<p>MLton performs extensive <a href="WholeProgramOptimization">WholeProgramOptimization</a>, which can
+provide substantial improvements in large, modular programs.</p>
+</li>
+<li>
+<p>MLton uses native types, like 32-bit integers, without any penalty
+due to tagging or boxing.  OCaml uses 31-bit integers with a penalty
+due to tagging, and 32-bit integers with a penalty due to boxing.</p>
+</li>
+<li>
+<p>MLton uses native types, like 64-bit floats, without any penalty
+due to boxing.  OCaml, in some situations, boxes 64-bit floats.</p>
+</li>
+<li>
+<p>MLton represents arrays of all types unboxed.  In OCaml, only
+arrays of 64-bit floats are unboxed, and then only when it is
+syntactically apparent.</p>
+</li>
+<li>
+<p>MLton represents records compactly by reordering and packing the
+fields.</p>
+</li>
+<li>
+<p>In MLton, polymorphic and monomorphic code have the same
+performance.  In OCaml, polymorphism can introduce a performance
+penalty.</p>
+</li>
+<li>
+<p>In MLton, module boundaries have no impact on performance.  In
+OCaml, moving code between modules can cause a performance penalty.</p>
+</li>
+<li>
+<p>MLton&#8217;s <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> is simpler than OCaml&#8217;s.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Tools</p>
+<div class="ulist">
+<ul>
+<li>
+<p>OCaml has a debugger, while MLton does not.</p>
+</li>
+<li>
+<p>OCaml supports separate compilation, while MLton does not.</p>
+</li>
+<li>
+<p>OCaml compiles faster than MLton.</p>
+</li>
+<li>
+<p>MLton supports profiling of both time and allocation.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Libraries</p>
+<div class="ulist">
+<ul>
+<li>
+<p>OCaml has more available libraries.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Community</p>
+<div class="ulist">
+<ul>
+<li>
+<p>OCaml has a larger community than MLton.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/OCaml.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/OCaml.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RSSA</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RSSA</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">RSSA</a> is an <a href="IntermediateLanguage">IntermediateLanguage</a>, translated from <a href="SSA2">SSA2</a> by
+<a href="ToRSSA">ToRSSA</a>, optimized by <a href="RSSASimplify">RSSASimplify</a>, and translated by
+<a href="ToMachine">ToMachine</a> to <a href="Machine">Machine</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">RSSA</a> is a <a href="IntermediateLanguage">IntermediateLanguage</a> that makes representation
+decisions explicit.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/backend/rssa.sig"><code>rssa.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/backend/rssa.fun"><code>rssa.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_checking">Type Checking</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The new type language is aimed at expressing bit-level control over
+layout and associated packing of data representations.  There are
+singleton types that denote constants, other atomic types for things
+like integers and reals, and arbitrary sum types and sequence (tuple)
+types.  The big change to the type system is that type checking is now
+based on subtyping, not type equality.  So, for example, the singleton
+type <code>0xFFFFEEBB</code> whose only inhabitant is the eponymous constant is a
+subtype of the type <code>Word32</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>SSA is an abbreviation for Static Single Assignment.  The <a href="#">RSSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a> is a variant of SSA.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RSSA.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RSSA.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

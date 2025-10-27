@@ -1,0 +1,5 @@
+(* :mode=isabelle-options: *)
+
+section "Find Facts"
+
+option find_facts_database_name : string = "local"

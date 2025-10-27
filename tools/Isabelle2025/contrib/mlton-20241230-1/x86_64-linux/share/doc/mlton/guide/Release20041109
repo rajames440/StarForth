@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Release20041109</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Release20041109</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an archived public release of MLton, version 20041109.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_the_last_public_release">Changes since the last public release</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>New platforms:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>x86: FreeBSD 5.x, OpenBSD</p>
+</li>
+<li>
+<p>PowerPC: Darwin (MacOSX)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Support for the <a href="MLBasis">ML Basis system</a>, a new mechanism supporting programming in the very large, separate delivery of library sources, and more.</p>
+</li>
+<li>
+<p>Support for dynamic libraries.</p>
+</li>
+<li>
+<p>Support for <a href="ConcurrentML">ConcurrentML</a> (CML).</p>
+</li>
+<li>
+<p>New structures: <code>Int2</code>, <code>Int3</code>, &#8230;&#8203;, <code>Int31</code> and <code>Word2</code>, <code>Word3</code>, &#8230;&#8203;, <code>Word31</code>.</p>
+</li>
+<li>
+<p>Front-end bug fixes and improvements.</p>
+</li>
+<li>
+<p>A new form of profiling with <code>-profile count</code>, which can be used to test code coverage.</p>
+</li>
+<li>
+<p>A bytecode generator, available via <code>-codegen bytecode</code>.</p>
+</li>
+<li>
+<p>Representation improvements:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Tuples and datatypes are packed to decrease space usage.</p>
+</li>
+<li>
+<p>Ref cells may be unboxed into their containing object.</p>
+</li>
+<li>
+<p>Arrays of tuples may represent the tuples unboxed.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a complete list of changes and bug fixes since 20040227, see the
+<a href="https://raw.github.com/MLton/mlton/on-20041109-release/doc/changelog"><code>changelog</code></a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Bugs20041109">Bugs20041109</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Release20041109.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Release20041109.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

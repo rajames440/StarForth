@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CallingFromSMLToCFunctionPointer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CallingFromSMLToCFunctionPointer</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Just as MLton can <a href="CallingFromSMLToC">directly call C functions</a>, it
+is possible to make indirect function calls; that is, function calls
+through a function pointer.  MLton extends the syntax of SML to allow
+expressions like the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>_import * : MLton.Pointer.t -&gt; real * char -&gt; int;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This expression denotes a function of type</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nn">MLton</span><span class="p">.</span><span class="nn">Pointer</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="n">*</span> <span class="n">char</span> <span class="p">-&gt;</span> <span class="n">int</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>whose behavior is implemented by calling the C function at the address
+denoted by the <code>MLton.Pointer.t</code> argument, and supplying the C
+function two arguments, a <code>double</code> and an <code>int</code>.  The C function
+pointer may be obtained, for example, by the dynamic linking loader
+(<code>dlopen</code>, <code>dlsym</code>, &#8230;&#8203;).</p>
+</div>
+<div class="paragraph">
+<p>The general form of an indirect <code>_import</code> expression is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>_import * attr... : cPtrTy -&gt; cFuncTy;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The type and the semicolon are not optional.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example">Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This example uses <code>dlopen</code> and friends (imported using normal
+<code>_import</code>) to dynamically load the math library (<code>libm</code>) and call the
+<code>cos</code> function. Suppose <code>iimport.sml</code> contains the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">DYN_LINK</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">hndl</span>
+      <span class="kr">type</span> <span class="kt">mode</span>
+      <span class="kr">type</span> <span class="kt">fptr</span>
+
+      <span class="kr">val</span> <span class="nv">dlopen</span> <span class="p">:</span> <span class="n">string</span> <span class="n">*</span> <span class="n">mode</span> <span class="p">-&gt;</span> <span class="n">hndl</span>
+      <span class="kr">val</span> <span class="nv">dlsym</span> <span class="p">:</span> <span class="n">hndl</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="n">fptr</span>
+      <span class="kr">val</span> <span class="nv">dlclose</span> <span class="p">:</span> <span class="n">hndl</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+
+      <span class="kr">val</span> <span class="nv">RTLD_LAZY</span> <span class="p">:</span> <span class="n">mode</span>
+      <span class="kr">val</span> <span class="nv">RTLD_NOW</span> <span class="p">:</span> <span class="n">mode</span>
+   <span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">DynLink</span> <span class="p">:&gt;</span> <span class="n">DYN_LINK</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="kt">hndl</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Pointer</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">type</span> <span class="kt">mode</span> <span class="p">=</span> <span class="nn">Word32</span><span class="p">.</span><span class="n">word</span>
+      <span class="kr">type</span> <span class="kt">fptr</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Pointer</span><span class="p">.</span><span class="n">t</span>
+
+      <span class="c">(*</span><span class="cm"> These symbols come from a system libray, so the default import scope
+       * of external is correct.
+       *)</span>
+      <span class="kr">val</span> <span class="nv">dlopen</span> <span class="p">=</span>
+         <span class="p">_</span><span class="n">import</span> <span class="s2">"dlopen"</span> <span class="p">:</span> <span class="n">string</span> <span class="n">*</span> <span class="n">mode</span> <span class="p">-&gt;</span> <span class="n">hndl</span><span class="p">;</span>
+      <span class="kr">val</span> <span class="nv">dlerror</span> <span class="p">=</span>
+         <span class="p">_</span><span class="n">import</span> <span class="s2">"dlerror"</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Pointer</span><span class="p">.</span><span class="n">t</span><span class="p">;</span>
+      <span class="kr">val</span> <span class="nv">dlsym</span> <span class="p">=</span>
+         <span class="p">_</span><span class="n">import</span> <span class="s2">"dlsym"</span> <span class="p">:</span> <span class="n">hndl</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="n">fptr</span><span class="p">;</span>
+      <span class="kr">val</span> <span class="nv">dlclose</span> <span class="p">=</span>
+         <span class="p">_</span><span class="n">import</span> <span class="s2">"dlclose"</span> <span class="p">:</span> <span class="n">hndl</span> <span class="p">-&gt;</span> <span class="nn">Int32</span><span class="p">.</span><span class="n">int</span><span class="p">;</span>
+
+      <span class="kr">val</span> <span class="nv">RTLD_LAZY</span> <span class="p">=</span> <span class="mh">0wx00001</span> <span class="c">(*</span><span class="cm"> Lazy function call binding.  *)</span>
+      <span class="kr">val</span> <span class="nv">RTLD_NOW</span>  <span class="p">=</span> <span class="mh">0wx00002</span> <span class="c">(*</span><span class="cm"> Immediate function call binding.  *)</span>
+
+      <span class="kr">val</span> <span class="nv">dlerror</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span>
+         <span class="kr">let</span>
+            <span class="kr">val</span> <span class="nv">addr</span> <span class="p">=</span> <span class="n">dlerror</span> <span class="p">()</span>
+         <span class="kr">in</span>
+            <span class="kr">if</span> <span class="n">addr</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Pointer</span><span class="p">.</span><span class="n">null</span>
+               <span class="kr">then</span> <span class="n">NONE</span>
+               <span class="kr">else</span> <span class="kr">let</span>
+                       <span class="kr">fun</span> <span class="nf">loop</span> <span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">cs</span><span class="p">)</span> <span class="p">=</span>
+                          <span class="kr">let</span>
+                             <span class="kr">val</span> <span class="nv">w</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Pointer</span><span class="p">.</span><span class="n">getWord8</span> <span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+                             <span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="nn">Byte</span><span class="p">.</span><span class="n">byteToChar</span> <span class="n">w</span>
+                          <span class="kr">in</span>
+                             <span class="kr">if</span> <span class="n">c</span> <span class="p">=</span> <span class="sc">#"</span><span class="se">\000</span><span class="sc">"</span>
+                                <span class="kr">then</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">implode</span> <span class="p">(</span><span class="n">rev</span> <span class="n">cs</span><span class="p">))</span>
+                                <span class="kr">else</span> <span class="n">loop</span> <span class="p">(</span><span class="n">index</span> <span class="n">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">c::cs</span><span class="p">)</span>
+                          <span class="kr">end</span>
+                    <span class="kr">in</span>
+                       <span class="n">loop</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="kr">end</span>
+         <span class="kr">end</span>
+
+      <span class="kr">val</span> <span class="nv">dlopen</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span> <span class="p">=&gt;</span>
+         <span class="kr">let</span>
+            <span class="kr">val</span> <span class="nv">filename</span> <span class="p">=</span> <span class="n">filename</span> <span class="n">^</span> <span class="s2">"</span><span class="se">\000</span><span class="s2">"</span>
+            <span class="kr">val</span> <span class="nv">hndl</span> <span class="p">=</span> <span class="n">dlopen</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+         <span class="kr">in</span>
+            <span class="kr">if</span> <span class="n">hndl</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Pointer</span><span class="p">.</span><span class="n">null</span>
+               <span class="kr">then</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="p">(</span><span class="kr">case</span> <span class="n">dlerror</span> <span class="p">()</span> <span class="kr">of</span>
+                                   <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="s2">"???"</span>
+                                 <span class="p">|</span> <span class="n">SOME</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="n">s</span><span class="p">)</span>
+               <span class="kr">else</span> <span class="n">hndl</span>
+         <span class="kr">end</span>
+
+      <span class="kr">val</span> <span class="nv">dlsym</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">hndl</span><span class="p">,</span> <span class="n">symbol</span><span class="p">)</span> <span class="p">=&gt;</span>
+         <span class="kr">let</span>
+            <span class="kr">val</span> <span class="nv">symbol</span> <span class="p">=</span> <span class="n">symbol</span> <span class="n">^</span> <span class="s2">"</span><span class="se">\000</span><span class="s2">"</span>
+            <span class="kr">val</span> <span class="nv">fptr</span> <span class="p">=</span> <span class="n">dlsym</span> <span class="p">(</span><span class="n">hndl</span><span class="p">,</span> <span class="n">symbol</span><span class="p">)</span>
+         <span class="kr">in</span>
+            <span class="kr">case</span> <span class="n">dlerror</span> <span class="p">()</span> <span class="kr">of</span>
+               <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">fptr</span>
+             <span class="p">|</span> <span class="n">SOME</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="n">s</span>
+         <span class="kr">end</span>
+
+      <span class="kr">val</span> <span class="nv">dlclose</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">hndl</span> <span class="p">=&gt;</span>
+         <span class="kr">if</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Platform</span><span class="p">.</span><span class="nn">OS</span><span class="p">.</span><span class="n">host</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">Platform</span><span class="p">.</span><span class="nn">OS</span><span class="p">.</span><span class="n">Darwin</span>
+            <span class="kr">then</span> <span class="p">()</span>  <span class="c">(*</span><span class="cm"> Darwin reports the following error message if you
+                      * try to close a dynamic library.
+                      *   "dynamic libraries cannot be closed"
+                      * So, we disable dlclose on Darwin.
+                      *)</span>
+         <span class="kr">else</span>
+            <span class="kr">let</span>
+               <span class="kr">val</span> <span class="nv">res</span> <span class="p">=</span> <span class="n">dlclose</span> <span class="n">hndl</span>
+            <span class="kr">in</span>
+               <span class="kr">if</span> <span class="n">res</span> <span class="p">=</span> <span class="mi">0</span>
+                  <span class="kr">then</span> <span class="p">()</span>
+               <span class="kr">else</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="p">(</span><span class="kr">case</span> <span class="n">dlerror</span> <span class="p">()</span> <span class="kr">of</span>
+                                   <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="s2">"???"</span>
+                                 <span class="p">|</span> <span class="n">SOME</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="n">s</span><span class="p">)</span>
+            <span class="kr">end</span>
+   <span class="kr">end</span>
+
+<span class="kr">val</span> <span class="nv">dll</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">open</span> <span class="nn">MLton</span><span class="err">.</span><span class="nn">Platform</span><span class="p">.</span><span class="n">OS</span>
+   <span class="kr">in</span>
+      <span class="kr">case</span> <span class="n">host</span> <span class="kr">of</span>
+         <span class="n">Cygwin</span> <span class="p">=&gt;</span> <span class="s2">"cygwin1.dll"</span>
+       <span class="p">|</span> <span class="n">Darwin</span> <span class="p">=&gt;</span> <span class="s2">"libm.dylib"</span>
+       <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="s2">"libm.so"</span>
+   <span class="kr">end</span>
+
+<span class="kr">val</span> <span class="nv">hndl</span> <span class="p">=</span> <span class="nn">DynLink</span><span class="p">.</span><span class="n">dlopen</span> <span class="p">(</span><span class="n">dll</span><span class="p">,</span> <span class="nn">DynLink</span><span class="p">.</span><span class="n">RTLD_LAZY</span><span class="p">)</span>
+
+<span class="kr">local</span>
+   <span class="kr">val</span> <span class="nv">double_to_double</span> <span class="p">=</span>
+      <span class="p">_</span><span class="n">import</span> <span class="n">*</span> <span class="p">:</span> <span class="nn">DynLink</span><span class="p">.</span><span class="n">fptr</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">real</span><span class="p">;</span>
+   <span class="kr">val</span> <span class="nv">cos_fptr</span> <span class="p">=</span> <span class="nn">DynLink</span><span class="p">.</span><span class="n">dlsym</span> <span class="p">(</span><span class="n">hndl</span><span class="p">,</span> <span class="s2">"cos"</span><span class="p">)</span>
+<span class="kr">in</span>
+   <span class="kr">val</span> <span class="nv">cos</span> <span class="p">=</span> <span class="n">double_to_double</span> <span class="n">cos_fptr</span>
+<span class="kr">end</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="s2">"    Math.cos(2.0) = "</span><span class="p">,</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="nn">Math</span><span class="p">.</span><span class="n">cos</span> <span class="mf">2.0</span><span class="p">),</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span>
+                       <span class="s2">"libm.so::cos(2.0) = "</span><span class="p">,</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="n">cos</span> <span class="mf">2.0</span><span class="p">),</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">DynLink</span><span class="p">.</span><span class="n">dlclose</span> <span class="n">hndl</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Compile and run <code>iimport.sml</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton -default-ann 'allowFFI true'    \
+        -target-link-opt linux -ldl     \
+        -target-link-opt solaris -ldl   \
+         iimport.sml
+% iimport
+    Math.cos(2.0) = ~0.416146836547
+libm.so::cos(2.0) = ~0.416146836547</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This example also shows the <code>-target-link-opt</code> option, which uses the
+switch when linking only when on the specified platform.  Compile with
+<code>-verbose 1</code> to see in more detail what&#8217;s being passed to <code>gcc</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_download">Download</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://raw.github.com/MLton/mlton/master/doc/examples/ffi/iimport.sml"><code>iimport.sml</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CallingFromSMLToCFunctionPointer.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CallingFromSMLToCFunctionPointer.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonFinalizable</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonFinalizable</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_FINALIZABLE</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">addFinalizer</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">finalizeBefore</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">new</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">touch</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">withValue</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'b</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A <em>finalizable</em> value is a container to which finalizers can be
+attached.  A container holds a value, which is reachable as long as
+the container itself is reachable.  A <em>finalizer</em> is a function that
+runs at some point after garbage collection determines that the
+container to which it is attached has become
+<a href="Reachability">unreachable</a>.  A finalizer is treated like a signal
+handler, in that it runs asynchronously in a separate thread, with
+signals blocked, and will not interrupt a critical section (see
+<a href="MLtonThread">MLtonThread</a>).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>addFinalizer (v, f)</code></p>
+<div class="paragraph">
+<p>adds <code>f</code> as a finalizer to <code>v</code>.  This means that sometime after the
+last call to <code>withValue</code> on <code>v</code> completes and <code>v</code> becomes unreachable,
+<code>f</code> will be called with the value of <code>v</code>.</p>
+</div>
+</li>
+<li>
+<p><code>finalizeBefore (v1, v2)</code></p>
+<div class="paragraph">
+<p>ensures that <code>v1</code> will be finalized before <code>v2</code>.  A cycle of values
+<code>v</code> = <code>v1</code>, &#8230;&#8203;, <code>vn</code> = <code>v</code> with <code>finalizeBefore (vi, vi+1)</code> will
+result in none of the <code>vi</code> being finalized.</p>
+</div>
+</li>
+<li>
+<p><code>new x</code></p>
+<div class="paragraph">
+<p>creates a new finalizable value, <code>v</code>, with value <code>x</code>.  The finalizers
+of <code>v</code> will run sometime after the last call to <code>withValue</code> on <code>v</code>
+when the garbage collector determines that <code>v</code> is unreachable.</p>
+</div>
+</li>
+<li>
+<p><code>touch v</code></p>
+<div class="paragraph">
+<p>ensures that <code>v</code>&rsquo;s finalizers will not run before the call to <code>touch</code>.</p>
+</div>
+</li>
+<li>
+<p><code>withValue (v, f)</code></p>
+<div class="paragraph">
+<p>returns the result of applying <code>f</code> to the value of <code>v</code> and ensures
+that <code>v</code>&rsquo;s finalizers will not run before <code>f</code> completes.  The call to
+<code>f</code> is a nontail call.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example">Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Suppose that <code>finalizable.sml</code> contains the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">CLIST</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">cons</span><span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">sing</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">sum</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">int</span>
+   <span class="kr">end</span>
+
+<span class="kr">functor</span> <span class="nn">CList</span> <span class="p">(</span><span class="kr">structure</span> <span class="nn">F</span><span class="p">:</span> <span class="n">MLTON_FINALIZABLE</span>
+               <span class="kr">structure</span> <span class="nn">P</span><span class="p">:</span> <span class="n">MLTON_POINTER</span>
+               <span class="kr">structure</span> <span class="nn">Prim</span><span class="p">:</span>
+                  <span class="kr">sig</span>
+                     <span class="kr">val</span> <span class="nv">cons</span><span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span>
+                     <span class="kr">val</span> <span class="nv">free</span><span class="p">:</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+                     <span class="kr">val</span> <span class="nv">sing</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span>
+                     <span class="kr">val</span> <span class="nv">sum</span><span class="p">:</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">int</span>
+                  <span class="kr">end</span><span class="p">):</span> <span class="n">CLIST</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span> <span class="nn">F</span><span class="p">.</span><span class="n">t</span>
+
+      <span class="kr">fun</span> <span class="nf">cons</span> <span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">int</span><span class="p">,</span> <span class="n">l</span><span class="p">:</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span>
+         <span class="nn">F</span><span class="p">.</span><span class="n">withValue</span>
+         <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">w'</span> <span class="p">=&gt;</span>
+          <span class="kr">let</span>
+             <span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="nn">F</span><span class="p">.</span><span class="n">new</span> <span class="p">(</span><span class="nn">Prim</span><span class="p">.</span><span class="n">cons</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">w'</span><span class="p">))</span>
+             <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">F</span><span class="p">.</span><span class="n">addFinalizer</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nn">Prim</span><span class="p">.</span><span class="n">free</span><span class="p">)</span>
+             <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">F</span><span class="p">.</span><span class="n">finalizeBefore</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+          <span class="kr">in</span>
+             <span class="n">c</span>
+          <span class="kr">end</span><span class="p">)</span>
+
+      <span class="kr">fun</span> <span class="nf">sing</span> <span class="n">n</span> <span class="p">=</span>
+         <span class="kr">let</span>
+            <span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="nn">F</span><span class="p">.</span><span class="n">new</span> <span class="p">(</span><span class="nn">Prim</span><span class="p">.</span><span class="n">sing</span> <span class="n">n</span><span class="p">)</span>
+            <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">F</span><span class="p">.</span><span class="n">addFinalizer</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nn">Prim</span><span class="p">.</span><span class="n">free</span><span class="p">)</span>
+         <span class="kr">in</span>
+            <span class="n">c</span>
+         <span class="kr">end</span>
+
+      <span class="kr">fun</span> <span class="nf">sum</span> <span class="n">c</span> <span class="p">=</span> <span class="nn">F</span><span class="p">.</span><span class="n">withValue</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nn">Prim</span><span class="p">.</span><span class="n">sum</span><span class="p">)</span>
+   <span class="kr">end</span>
+
+<span class="kr">functor</span> <span class="nn">Test</span> <span class="p">(</span><span class="kr">structure</span> <span class="nn">CList</span><span class="p">:</span> <span class="n">CLIST</span>
+              <span class="kr">structure</span> <span class="nn">MLton</span><span class="p">:</span> <span class="kr">sig</span>
+                                  <span class="kr">structure</span> <span class="nn">GC</span><span class="p">:</span>
+                                     <span class="kr">sig</span>
+                                        <span class="kr">val</span> <span class="nv">collect</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+                                     <span class="kr">end</span>
+                               <span class="kr">end</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">f</span> <span class="n">n</span> <span class="p">=</span>
+         <span class="kr">if</span> <span class="n">n</span> <span class="p">=</span> <span class="mi">1</span>
+            <span class="kr">then</span> <span class="p">()</span>
+         <span class="kr">else</span>
+            <span class="kr">let</span>
+               <span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="nn">Array</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">)</span>
+               <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">Array</span><span class="p">.</span><span class="n">sub</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="n">+</span> <span class="nn">Array</span><span class="p">.</span><span class="n">sub</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="kr">in</span>
+               <span class="n">f</span> <span class="p">(</span><span class="n">n</span> <span class="n">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="kr">end</span>
+
+      <span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="nn">CList</span><span class="p">.</span><span class="n">sing</span> <span class="mi">2</span>
+      <span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="nn">CList</span><span class="p">.</span><span class="n">cons</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">l</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="nn">CList</span><span class="p">.</span><span class="n">cons</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">l</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="nn">CList</span><span class="p">.</span><span class="n">cons</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">l</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="nn">CList</span><span class="p">.</span><span class="n">cons</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">l</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="nn">CList</span><span class="p">.</span><span class="n">cons</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">l</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="nn">CList</span><span class="p">.</span><span class="n">cons</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">l</span><span class="p">)</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">GC</span><span class="p">.</span><span class="n">collect</span> <span class="p">()</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">100</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="s2">"listSum(l) = "</span><span class="p">,</span>
+                             <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="nn">CList</span><span class="p">.</span><span class="n">sum</span> <span class="n">l</span><span class="p">),</span>
+                             <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="nn">GC</span><span class="p">.</span><span class="n">collect</span> <span class="p">()</span>
+      <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">100</span>
+   <span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">CList</span> <span class="p">=</span>
+   <span class="n">CList</span> <span class="p">(</span><span class="kr">structure</span> <span class="nn">F</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="n">Finalizable</span>
+          <span class="kr">structure</span> <span class="nn">P</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="n">Pointer</span>
+          <span class="kr">structure</span> <span class="nn">Prim</span> <span class="p">=</span>
+             <span class="kr">struct</span>
+                <span class="kr">val</span> <span class="nv">cons</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"listCons"</span><span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span><span class="p">;</span>
+                <span class="kr">val</span> <span class="nv">free</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"listFree"</span><span class="p">:</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">;</span>
+                <span class="kr">val</span> <span class="nv">sing</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"listSing"</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span><span class="p">;</span>
+                <span class="kr">val</span> <span class="nv">sum</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"listSum"</span><span class="p">:</span> <span class="nn">P</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">;</span>
+             <span class="kr">end</span><span class="p">)</span>
+
+<span class="kr">structure</span> <span class="nn">S</span> <span class="p">=</span> <span class="n">Test</span> <span class="p">(</span><span class="kr">structure</span> <span class="nn">CList</span> <span class="p">=</span> <span class="n">CList</span>
+                    <span class="kr">structure</span> <span class="nn">MLton</span> <span class="p">=</span> <span class="n">MLton</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Suppose that <code>cons.c</code> contains the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span>
+<span class="k">typedef</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">uint</span><span class="p">;</span>
+
+<span class="k">typedef</span> <span class="k">struct</span> <span class="n">Cons</span> <span class="p">{</span>
+        <span class="k">struct</span> <span class="n">Cons</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+        <span class="kt">int</span> <span class="n">value</span><span class="p">;</span>
+<span class="p">}</span> <span class="o">*</span><span class="n">Cons</span><span class="p">;</span>
+
+<span class="n">Cons</span> <span class="nf">listCons</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">,</span> <span class="n">Cons</span> <span class="n">c</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">Cons</span> <span class="n">res</span><span class="p">;</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="n">Cons</span><span class="p">)</span> <span class="n">malloc</span> <span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">res</span><span class="p">));</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"0x%08x = listCons (%d)</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="p">(</span><span class="n">uint</span><span class="p">)</span><span class="n">res</span><span class="p">,</span> <span class="n">n</span><span class="p">);</span>
+        <span class="n">res</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">c</span><span class="p">;</span>
+        <span class="n">res</span><span class="o">-&gt;</span><span class="n">value</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">Cons</span> <span class="nf">listSing</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">Cons</span> <span class="n">res</span><span class="p">;</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="n">Cons</span><span class="p">)</span> <span class="n">malloc</span> <span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">res</span><span class="p">));</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"0x%08x = listSing (%d)</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="p">(</span><span class="n">uint</span><span class="p">)</span><span class="n">res</span><span class="p">,</span> <span class="n">n</span><span class="p">);</span>
+        <span class="n">res</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+        <span class="n">res</span><span class="o">-&gt;</span><span class="n">value</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">listFree</span> <span class="p">(</span><span class="n">Cons</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"listFree (0x%08x)</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="p">(</span><span class="n">uint</span><span class="p">)</span><span class="n">p</span><span class="p">);</span>
+        <span class="n">free</span> <span class="p">(</span><span class="n">p</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">listSum</span> <span class="p">(</span><span class="n">Cons</span> <span class="n">c</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kt">int</span> <span class="n">res</span><span class="p">;</span>
+
+        <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"listSum</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(;</span> <span class="n">c</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="n">c</span> <span class="o">=</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span>
+                <span class="n">res</span> <span class="o">+=</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+<span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can compile these to create an executable with</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton -default-ann 'allowFFI true' finalizable.sml cons.c</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Running this executable will create output like the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% finalizable
+0x08072890 = listSing (2)
+0x080728a0 = listCons (2)
+0x080728b0 = listCons (2)
+0x080728c0 = listCons (2)
+0x080728d0 = listCons (2)
+0x080728e0 = listCons (2)
+0x080728f0 = listCons (2)
+listSum
+listSum(l) = 14
+listFree (0x080728f0)
+listFree (0x080728e0)
+listFree (0x080728d0)
+listFree (0x080728c0)
+listFree (0x080728b0)
+listFree (0x080728a0)
+listFree (0x08072890)</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_synchronous_finalizers">Synchronous Finalizers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Finalizers in MLton are asynchronous.  That is, they run at an
+unspecified time, interrupting the user program.  It is also possible,
+and sometimes useful, to have synchronous finalizers, where the user
+program explicitly decides when to run enabled finalizers.  We have
+considered this in MLton, and it seems possible, but there are some
+unresolved design issues.  See the thread at</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2004-September/016570.html" class="bare">http://www.mlton.org/pipermail/mlton/2004-September/016570.html</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="References#Boehm03">Boehm03</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonFinalizable.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonFinalizable.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

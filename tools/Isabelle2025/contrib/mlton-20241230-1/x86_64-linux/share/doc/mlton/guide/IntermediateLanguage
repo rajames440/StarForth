@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>IntermediateLanguage</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>IntermediateLanguage</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>MLton uses a number of intermediate languages in translating from the input source program to low-level code.  Here is a list in the order which they are translated to.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="AST">AST</a>.  Pretty close to the source.</p>
+</li>
+<li>
+<p><a href="CoreML">CoreML</a>.  Explicitly typed, no module constructs.</p>
+</li>
+<li>
+<p><a href="XML">XML</a>.  Polymorphic, <a href="HigherOrder">HigherOrder</a>.</p>
+</li>
+<li>
+<p><a href="SXML">SXML</a>.  SimplyTyped, <a href="HigherOrder">HigherOrder</a>.</p>
+</li>
+<li>
+<p><a href="SSA">SSA</a>.  SimplyTyped, <a href="FirstOrder">FirstOrder</a>.</p>
+</li>
+<li>
+<p><a href="SSA2">SSA2</a>.  SimplyTyped, <a href="FirstOrder">FirstOrder</a>.</p>
+</li>
+<li>
+<p><a href="RSSA">RSSA</a>.  Explicit data representations.</p>
+</li>
+<li>
+<p><a href="Machine">Machine</a>.  Untyped abstract machine.</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/IntermediateLanguage.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/IntermediateLanguage.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SimplifyTypes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SimplifyTypes</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">SimplifyTypes</a> is an optimization pass for the <a href="SSA">SSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass computes a "cardinality" of each datatype, which is an
+abstraction of the number of values of the datatype.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Zero</code> means the datatype has no values (except for bottom).</p>
+</li>
+<li>
+<p><code>One</code> means the datatype has one value (except for bottom).</p>
+</li>
+<li>
+<p><code>Many</code> means the datatype has many values.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This pass removes all datatypes whose cardinality is <code>Zero</code> or <code>One</code>
+and removes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>components of tuples</p>
+</li>
+<li>
+<p>function args</p>
+</li>
+<li>
+<p>constructor args</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>which are such datatypes.</p>
+</div>
+<div class="paragraph">
+<p>This pass marks constructors as one of:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Useless</code>: it never appears in a <code>ConApp</code>.</p>
+</li>
+<li>
+<p><code>Transparent</code>: it is the only variant in its datatype and its argument type does not contain any uses of <code>array</code> or <code>vector</code>.</p>
+</li>
+<li>
+<p><code>Useful</code>: otherwise</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This pass also removes <code>Useless</code> and <code>Transparent</code> constructors.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/simplify-types.fun"><code>simplify-types.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass must happen before polymorphic equality is implemented because</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>it will make polymorphic equality faster because some types are simpler</p>
+</li>
+<li>
+<p>it removes uses of polymorphic equality that must return true</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>We must keep track of <code>Transparent</code> constructors whose argument type
+uses <code>array</code> because of datatypes like the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="n">t</span> <span class="n">array</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Such a datatype has <code>Cardinality.Many</code>, but we cannot eliminate the
+datatype and replace the lhs by the rhs, i.e. we must keep the
+circularity around.</p>
+</div>
+<div class="paragraph">
+<p>Must do similar things for <code>vectors</code>.</p>
+</div>
+<div class="paragraph">
+<p>Also, to eliminate as many <code>Transparent</code> constructors as possible, for
+something like the following,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="n">u</span> <span class="n">array</span>
+     <span class="kr">and</span> <span class="kt">u</span> <span class="p">=</span> <span class="nc">U</span> <span class="kr">of</span> <span class="n">t</span> <span class="n">vector</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>we (arbitrarily) expand one of the datatypes first.  The result will
+be something like</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">u</span> <span class="p">=</span> <span class="nc">U</span> <span class="kr">of</span> <span class="n">u</span> <span class="n">array</span> <span class="n">array</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where all uses of <code>t</code> are replaced by <code>u array</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SimplifyTypes.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SimplifyTypes.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

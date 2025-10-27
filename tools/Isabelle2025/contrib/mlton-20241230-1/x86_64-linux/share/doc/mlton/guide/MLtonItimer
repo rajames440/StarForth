@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonItimer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonItimer</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_ITIMER</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span>
+         <span class="nc">Prof</span>
+       <span class="p">|</span> <span class="nc">Real</span>
+       <span class="p">|</span> <span class="nc">Virtual</span>
+
+      <span class="kr">val</span> <span class="nv">set</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="p">{</span><span class="n">interval</span><span class="p">:</span> <span class="nn">Time</span><span class="p">.</span><span class="n">time</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nn">Time</span><span class="p">.</span><span class="n">time</span><span class="p">}</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">signal</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Posix</span><span class="p">.</span><span class="nn">Signal</span><span class="p">.</span><span class="n">signal</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>set (t, {interval, value})</code></p>
+<div class="paragraph">
+<p>sets the interval timer (using <code>setitimer</code>) specified by <code>t</code> to the
+given <code>interval</code> and <code>value</code>.</p>
+</div>
+</li>
+<li>
+<p><code>signal t</code></p>
+<div class="paragraph">
+<p>returns the signal corresponding to <code>t</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonItimer.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonItimer.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

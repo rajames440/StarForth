@@ -1,0 +1,8 @@
+This is OpenJDK 21.0.6 based on downloads by Azul, see also
+https://www.azul.com/downloads/?package=jdk
+
+The main license is GPL2, but some modules are covered by other (more liberal)
+licenses, see legal/* for details.
+
+Linux, Windows, macOS all work uniformly, depending on platform-specific
+subdirectories.

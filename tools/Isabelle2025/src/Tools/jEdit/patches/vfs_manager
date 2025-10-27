@@ -1,0 +1,22 @@
+diff -ru jedit5.7.0/jEdit/org/gjt/sp/jedit/io/VFSManager.java jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/io/VFSManager.java
+--- jedit5.7.0/jEdit/org/gjt/sp/jedit/io/VFSManager.java	2024-08-03 19:53:14.000000000 +0200
++++ jedit5.7.0-patched/jEdit/org/gjt/sp/jedit/io/VFSManager.java	2024-10-29 11:50:54.062016616 +0100
+@@ -339,6 +339,18 @@
+ 
+ 				if(vfsUpdates.size() == 1)
+ 				{
++					// slowdown race concerning Buffer.isLoading() status
++					// of Buffer.save() + Buffer.finishSaving()
++					// versus Buffer.load() + "runnable"
++					try
++					{
++						Thread.sleep(100);
++					}
++					catch(InterruptedException ie)
++					{
++						Thread.currentThread().interrupt();
++					}
++
+ 					// we were the first to add an update;
+ 					// add update sending runnable to AWT
+ 					// thread

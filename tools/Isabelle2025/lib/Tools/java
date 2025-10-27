@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#
+# Author: Makarius
+#
+# DESCRIPTION: invoke Java within the Isabelle environment
+
+eval "declare -a JAVA_ARGS=($ISABELLE_JAVA_SYSTEM_OPTIONS)"
+
+classpath "$ISABELLE_SETUP_CLASSPATH"; unset ISABELLE_SETUP_CLASSPATH
+classpath "$CLASSPATH"; export CLASSPATH=""
+
+isabelle_java java "${JAVA_ARGS[@]}" \
+  -classpath "$(platform_path "$ISABELLE_CLASSPATH")" "$@"

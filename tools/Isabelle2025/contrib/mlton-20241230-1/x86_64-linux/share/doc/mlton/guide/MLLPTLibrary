@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLLPTLibrary</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLLPTLibrary</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The
+<a href="http://smlnj-gforge.cs.uchicago.edu/projects/ml-lpt/">ML-LPT Library</a>
+is a support library for the <a href="MLULex">MLULex</a> scanner generator and the
+<a href="MLAntlr">MLAntlr</a> parser generator.  The ML-LPT Library is distributed with
+SML/NJ.</p>
+</div>
+<div class="paragraph">
+<p>As of 20241214, MLton includes the ML-LPT Library synchronized with
+SML/NJ version 110.99.6.1.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>You can import the ML-LPT Library into an MLB file with:</p>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">MLB file</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/mllpt-lib/mllpt-lib.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>If you are porting a project from SML/NJ&#8217;s <a href="CompilationManager">CompilationManager</a> to
+MLton&#8217;s <a href="MLBasis">ML Basis system</a> using <code>cm2mlb</code>, note that the
+following map is included by default:</p>
+<div class="listingblock">
+<div class="content">
+<pre># MLLPT Library
+$ml-lpt-lib.cm                          $(SML_LIB)/mllpt-lib
+$ml-lpt-lib.cm/ml-lpt-lib.cm            $(SML_LIB)/mllpt-lib/mllpt-lib.mlb</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will automatically convert a <code>$/mllpt-lib.cm</code> import in an input
+<code>.cm</code> file into a <code>$(SML_LIB)/mllpt-lib/mllpt-lib.mlb</code> import in the
+output <code>.mlb</code> file.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details">Details</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_patch">Patch</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/lib/mllpt-lib/ml-lpt.patch"><code>ml-lpt.patch</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Sat Dec 14 15:29:31 2024 -0500 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLLPTLibrary.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLLPTLibrary.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

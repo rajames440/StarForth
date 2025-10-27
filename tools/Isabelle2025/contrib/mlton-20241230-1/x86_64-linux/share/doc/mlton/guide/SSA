@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SSA</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SSA</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">SSA</a> is an <a href="IntermediateLanguage">IntermediateLanguage</a>, translated from <a href="SXML">SXML</a> by
+<a href="ClosureConvert">ClosureConvert</a>, optimized by <a href="SSASimplify">SSASimplify</a>, and translated by
+<a href="ToSSA2">ToSSA2</a> to <a href="SSA2">SSA2</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">SSA</a> is a <a href="FirstOrder">FirstOrder</a>, <a href="SimplyTyped">SimplyTyped</a> <a href="IntermediateLanguage">IntermediateLanguage</a>.
+It is the main <a href="IntermediateLanguage">IntermediateLanguage</a> used for optimizations.</p>
+</div>
+<div class="paragraph">
+<p>An <a href="#">SSA</a> program consists of a collection of datatype declarations,
+a sequence of global statements, and a collection of functions, along
+with a distinguished "main" function.  Each function consists of a
+collection of basic blocks, where each basic block is a sequence of
+statements ending with some control transfer.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa.sig"><code>ssa.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa.fun"><code>ssa.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa-tree.sig"><code>ssa-tree.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa-tree.fun"><code>ssa-tree.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_checking">Type Checking</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Type checking (<a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/type-check.sig"><code>type-check.sig</code></a>,
+<a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/type-check.fun"><code>type-check.fun</code></a>) of a <a href="#">SSA</a> program
+verifies the following:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>no duplicate definitions (tycons, cons, vars, labels, funcs)</p>
+</li>
+<li>
+<p>no out of scope references (tycons, cons, vars, labels, funcs)</p>
+</li>
+<li>
+<p>variable definitions dominate variable uses</p>
+</li>
+<li>
+<p>case transfers are exhaustive and irredundant</p>
+</li>
+<li>
+<p><code>Enter</code>/<code>Leave</code> profile statements match</p>
+</li>
+<li>
+<p>"traditional" well-typedness</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>SSA is an abbreviation for Static Single Assignment.</p>
+</div>
+<div class="paragraph">
+<p>For some initial design discussion, see the thread at:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://mlton.org/pipermail/mlton/2001-August/019689.html" class="bare">http://mlton.org/pipermail/mlton/2001-August/019689.html</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For some retrospectives, see the threads at:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://mlton.org/pipermail/mlton/2003-January/023054.html" class="bare">http://mlton.org/pipermail/mlton/2003-January/023054.html</a></p>
+</li>
+<li>
+<p><a href="http://mlton.org/pipermail/mlton/2007-February/029597.html" class="bare">http://mlton.org/pipermail/mlton/2007-February/029597.html</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SSA.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SSA.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

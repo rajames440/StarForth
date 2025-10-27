@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+# Author: Jasmin Blanchette
+#
+# DESCRIPTION: translate between TPTP formats
+
+
+PRG="$(basename "$0")"
+
+function usage() {
+  echo
+  echo "Usage: isabelle $PRG FORMAT FILE"
+  echo
+  echo "  Translates TPTP input file to the specified format (\"FOF\", \"TF0\", \"TH0\", or \"DFG\")."
+  echo "  Emits the result to standard output."
+  echo
+  exit 1
+}
+
+[ "$#" -ne 2 -o "$1" = "-?" ] && usage
+
+SCRATCH="Scratch_${PRG}_$$_${RANDOM}"
+
+args=("$@")
+
+isabelle build -b HOL-TPTP 2>&1 | grep --line-buffered -v "elapsed time$"
+
+echo "theory $SCRATCH imports \"$TPTP_HOME/ATP_Problem_Import\" begin \
+ML \<open> ATP_Problem_Import.translate_tptp_file @{theory} \"${args[0]}\" \"${args[1]}\" \<close> end" \
+  > /tmp/$SCRATCH.thy
+isabelle process -e "use_thy \"/tmp/$SCRATCH\"; exit 1;" -l HOL-TPTP | grep --line-buffered -v "^###\|^PROOF FAILED for depth\|^Failure node\|inferences so far.  Searching to depth\|^val \|^Loading theory\|^poly.*warning: The type of\|^   monotype.$"

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>PlatformSpecificNotes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>PlatformSpecificNotes</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here are notes about using MLton on the following platforms.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_operating_systems">Operating Systems</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnAIX">AIX</a></p>
+</li>
+<li>
+<p><a href="RunningOnCygwin">Cygwin</a></p>
+</li>
+<li>
+<p><a href="RunningOnDarwin">Darwin</a></p>
+</li>
+<li>
+<p><a href="RunningOnFreeBSD">FreeBSD</a></p>
+</li>
+<li>
+<p><a href="RunningOnHPUX">HPUX</a></p>
+</li>
+<li>
+<p><a href="RunningOnLinux">Linux</a></p>
+</li>
+<li>
+<p><a href="RunningOnMinGW">MinGW</a></p>
+</li>
+<li>
+<p><a href="RunningOnNetBSD">NetBSD</a></p>
+</li>
+<li>
+<p><a href="RunningOnOpenBSD">OpenBSD</a></p>
+</li>
+<li>
+<p><a href="RunningOnSolaris">Solaris</a></p>
+</li>
+<li>
+<p><a href="RunningOnWASI">WASI</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_architectures">Architectures</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnAMD64">AMD64</a></p>
+</li>
+<li>
+<p><a href="RunningOnHPPA">HPPA</a></p>
+</li>
+<li>
+<p><a href="RunningOnPowerPC">PowerPC</a></p>
+</li>
+<li>
+<p><a href="RunningOnPowerPC64">PowerPC64</a></p>
+</li>
+<li>
+<p><a href="RunningOnSparc">Sparc</a></p>
+</li>
+<li>
+<p><a href="RunningOnWASI">WebAssembly</a></p>
+</li>
+<li>
+<p><a href="RunningOnX86">X86</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="PortingMLton">PortingMLton</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Mon Feb 12 11:23:47 2024 -0500 by Adam Goode.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/PlatformSpecificNotes.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/PlatformSpecificNotes.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

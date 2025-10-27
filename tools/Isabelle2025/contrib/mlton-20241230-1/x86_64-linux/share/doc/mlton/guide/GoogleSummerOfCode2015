@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Google Summer of Code (2015)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Google Summer of Code (2015)</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_mentors">Mentors</a></li>
+<li><a href="#_ideas_list">Ideas List</a>
+<ul class="sectlevel2">
+<li><a href="#_design_and_implement_a_heap_profiler">Design and Implement a Heap Profiler</a></li>
+<li><a href="#_garbage_collector_improvements">Garbage Collector Improvements</a></li>
+<li><a href="#_heap_allocated_activation_records">Heap-allocated Activation Records</a></li>
+<li><a href="#_correctly_rounded_floating_point_binary_to_decimal_and_decimal_to_binary_conversion_routines_in_standard_ml">Correctly Rounded Floating-point Binary-to-Decimal and Decimal-to-Binary Conversion Routines in Standard ML</a></li>
+<li><a href="#_implement_source_level_debugging">Implement Source-level Debugging</a></li>
+<li><a href="#_region_based_memory_management">Region Based Memory Management</a></li>
+<li><a href="#_adding_real_time_capabilities">Adding Real-Time Capabilities</a></li>
+<li><a href="#_real_time_garbage_collection">Real-Time Garbage Collection</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_mentors">Mentors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following developers have agreed to serve as mentors for the 2015 Google Summer of Code:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.cs.rit.edu/%7Emtf">Matthew Fluet</a></p>
+</li>
+<li>
+<p><a href="http://www.cse.buffalo.edu/%7Elziarek/">Lukasz (Luke) Ziarek</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ideas_list">Ideas List</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_design_and_implement_a_heap_profiler">Design and Implement a Heap Profiler</h3>
+<div class="paragraph">
+<p>A heap profile is a description of the space usage of a program.  A
+heap profile is concerned with the allocation, retention, and
+deallocation (via garbage collection) of heap data during the
+execution of a program.  A heap profile can be used to diagnose
+performance problems in a functional program that arise from space
+leaks.  This project aims to design and implement a heap profiler for
+MLton compiled programs.</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=583854.582451">GCspy: an adaptable heap visualisation framework</a>; Tony Printezis and Richard Jones</p>
+</li>
+<li>
+<p><a href="http://journals.cambridge.org/action/displayAbstract?aid=1349892">New dimensions in heap profiling</a>; Colin Runciman and Niklas R&ouml;jemo</p>
+</li>
+<li>
+<p><a href="http://www.springerlink.com/content/710501660722gw37/">Heap profiling for space efficiency</a>; Colin Runciman and Niklas R&ouml;jemo</p>
+</li>
+<li>
+<p><a href="http://journals.cambridge.org/action/displayAbstract?aid=1323096">Heap profiling of lazy functional programs</a>; Colin Runciman and David Wakeling</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: C and SML programming experience; some experience with UI and visualization</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_garbage_collector_improvements">Garbage Collector Improvements</h3>
+<div class="paragraph">
+<p>The garbage collector plays a significant role in the performance of
+functional languages.  Garbage collect too often, and program
+performance suffers due to the excessive time spent in the garbage
+collector.  Garbage collect not often enough, and program performance
+suffers due to the excessive space used by the uncollected
+garbage.  One particular issue is ensuring that a program utilizing a
+garbage collector "plays nice" with other processes on the system, by
+not using too much or too little physical memory.  While there are some
+reasonable theoretical results about garbage collections with heaps of
+fixed size, there seems to be insufficient work that really looks
+carefully at the question of dynamically resizing the heap in response
+to the live data demands of the application and, similarly, in
+response to the behavior of the operating system and other
+processes.  This project aims to investigate improvements to the memory
+behavior of MLton compiled programs through better tuning of the
+garbage collector.</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://gchandbook.org/">The Garbage Collection Handbook: The Art of Automatic Memory Management</a>; Richard Jones, Antony Hosking, Eliot Moss</p>
+</li>
+<li>
+<p><a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.24.1020">Dual-Mode Garbage Collection</a>; Patrick Sansom</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=1029873.1029881">Automatic Heap Sizing: Taking Real Memory into Account</a>; Ting Yang, Matthew Hertz, Emery D. Berger, Scott F. Kaplan, and J. Eliot B. Moss</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=1152649.1152652">Controlling Garbage Collection and Heap Growth to Reduce the Execution Time of Java Applications</a>; Tim Brecht, Eshrat Arjomandi, Chang Li, and Hang Pham</p>
+</li>
+<li>
+<p><a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4145125">Isla Vista Heap Sizing: Using Feedback to Avoid Paging</a>; Chris Grzegorczyk, Sunil Soman, Chandra Krintz, and Rich Wolski</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=1806651.1806669">The Economics of Garbage Collection</a>; Jeremy Singer, Richard E. Jones, Gavin Brown, and Mikel Luján</p>
+</li>
+<li>
+<p><a href="http://www.dcs.gla.ac.uk/%7Ejsinger/pdfs/tfp12.pdf">Automated Heap Sizing in the Poly/ML Runtime (Position Paper)</a>; David White, Jeremy Singer, Jonathan Aitken, and David Matthews</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=2555670.2466481">Control Theory for Principled Heap Sizing</a>; David R. White, Jeremy Singer, Jonathan M. Aitken, and Richard E. Jones</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: C programming experience; some operating systems and/or systems programming experience; some compiler and garbage collector experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_heap_allocated_activation_records">Heap-allocated Activation Records</h3>
+<div class="paragraph">
+<p>Activation records (a.k.a., stack frames) are traditionally allocated
+on a stack.  This naturally corresponds to the call-return pattern of
+function invocation.  However, there are some disadvantages to
+stack-allocated activation records.  In a functional programming
+language, functions may be deeply recursive, resulting in call stacks
+that are much larger than typically supported by the operating system;
+hence, a functional programming language implementation will typically
+store its stack in its heap.  Furthermore, a functional programming
+language implementation must handle and recover from stack overflow,
+by allocating a larger stack (again, in its heap) and copying
+activation records from the old stack to the new stack.  In the
+presence of threads, stacks must be allocated in a heap and, in the
+presence of a garbage collector, should be garbage collected when
+unreachable.  While heap-allocated activation records avoid many of
+these disadvantages, they have not been widely implemented.  This
+project aims to implement and evaluate heap-allocated activation
+records in the MLton compiler.</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://journals.cambridge.org/action/displayAbstract?aid=1295104">Empirical and Analytic Study of Stack Versus Heap Cost for Languages with Closures</a>; Andrew W. Appel and Zhong Shao</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=182590.156783">Space-efficient closure representations</a>; Zhong Shao and Andrew W. Appel</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=93548.93554">Representing control in the presence of first-class continuations</a>; R. Hieb, R. Kent Dybvig, and Carl Bruggeman</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; some middle- and back-end compiler experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_correctly_rounded_floating_point_binary_to_decimal_and_decimal_to_binary_conversion_routines_in_standard_ml">Correctly Rounded Floating-point Binary-to-Decimal and Decimal-to-Binary Conversion Routines in Standard ML</h3>
+<div class="paragraph">
+<p>The
+<a href="http://en.wikipedia.org/wiki/IEEE_754-2008">IEEE Standard for Floating-Point Arithmetic (IEEE 754)</a>
+is the de facto representation for floating-point computation.
+However, it is a <em>binary</em> (base 2) representation of floating-point
+values, while many applications call for input and output of
+floating-point values in <em>decimal</em> (base 10) representation.  The
+<em>decimal-to-binary</em> conversion problem takes a decimal floating-point
+representation (e.g., a string like <code>"0.1"</code>) and returns the best
+binary floating-point representation of that number.  The
+<em>binary-to-decimal</em> conversion problem takes a binary floating-point
+representation and returns a decimal floating-point representation
+using the smallest number of digits that allow the decimal
+floating-point representation to be converted to the original binary
+floating-point representation.  For both conversion routines, "best"
+is dependent upon the current floating-point rounding mode.</p>
+</div>
+<div class="paragraph">
+<p>MLton uses David Gay&#8217;s
+<a href="http://www.netlib.org/fp/gdtoa.tgz">gdtoa library</a> for floating-point
+conversions.  While this is an exellent library, it generalizes the
+decimal-to-binary and binary-to-decimal conversion routines beyond
+what is required by the
+<a href="http://standardml.org/Basis/">Standard ML Basis Library</a> and induces an
+external dependency on the compiler.  Native implementations of these
+conversion routines in Standard ML would obviate the dependency on the
+<code>gdtoa</code> library, while also being able to take advantage of Standard
+ML features in the implementation (e.g., the published algorithms
+often require use of infinite precision arithmetic, which is provided
+by the <code>IntInf</code> structure in Standard ML, but is provided in an ad hoc
+fasion in the <code>gdtoa</code> library).</p>
+</div>
+<div class="paragraph">
+<p>This project aims to develop a native implementation of the conversion
+routines in Standard ML.</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://dl.acm.org/citation.cfm?doid=103162.103163">What every computer scientist should know about floating-point arithmetic</a>; David Goldberg</p>
+</li>
+<li>
+<p><a href="http://dl.acm.org/citation.cfm?doid=93542.93559">How to print floating-point numbers accurately</a>; Guy L. Steele, Jr. and Jon L. White</p>
+</li>
+<li>
+<p><a href="http://dl.acm.org/citation.cfm?doid=93542.93557">How to read floating point numbers accurately</a>; William D. Clinger</p>
+</li>
+<li>
+<p><a href="http://cm.bell-labs.com/cm/cs/doc/90/4-10.ps.gz">Correctly Rounded Binary-Decimal and Decimal-Binary Conversions</a>; David Gay</p>
+</li>
+<li>
+<p><a href="http://dl.acm.org/citation.cfm?doid=249069.231397">Printing floating-point numbers quickly and accurately</a>; Robert G. Burger and R. Kent Dybvig</p>
+</li>
+<li>
+<p><a href="http://dl.acm.org/citation.cfm?doid=1806596.1806623">Printing floating-point numbers quickly and accurately with integers</a>; Florian Loitsch</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; algorithm design and implementation</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_implement_source_level_debugging">Implement Source-level Debugging</h3>
+<div class="paragraph">
+<p>Debugging is a fact of programming life.  Unfortunately, most SML
+implementations (including MLton) provide little to no source-level
+debugging support.  This project aims to add basic to intermediate
+source-level debugging support to the MLton compiler.  MLton already
+supports source-level profiling, which can be used to attribute bytes
+allocated or time spent in source functions.  It should be relatively
+straightforward to leverage this source-level information into basic
+source-level debugging support, with the ability to set/unset
+breakpoints and step through declarations and functions.  It may be
+possible to also provide intermediate source-level debugging support,
+with the ability to inspect in-scope variables of basic types (e.g.,
+types compatible with MLton&#8217;s foreign function interface).</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://mlton.org/HowProfilingWorks">MLton&#8201;&#8212;&#8201;How Profiling Works</a></p>
+</li>
+<li>
+<p><a href="http://mlton.org/ForeignFunctionInterfaceTypes">MLton&#8201;&#8212;&#8201;Foreign Function Interface Types</a></p>
+</li>
+<li>
+<p><a href="http://dwarfstd.org/">DWARF Debugging Standard</a></p>
+</li>
+<li>
+<p><a href="http://sourceware.org/gdb/current/onlinedocs/stabs/index.html">STABS Debugging Format</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; some compiler experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_region_based_memory_management">Region Based Memory Management</h3>
+<div class="paragraph">
+<p>Region based memory management is an alternative automatic memory
+management scheme to garbage collection.  Regions can be inferred by
+the compiler (e.g., Cyclone and MLKit) or provided to the programmer
+through a library.  Since many students do not have extensive
+experience with compilers we plan on adopting the later approach.
+Creating a viable region based memory solution requires the removal of
+the GC and changes to the allocator.  Additionally, write barriers
+will be necessary to ensure references between two ML objects is never
+established if the left hand side of the assignment has a longer
+lifetime than the right hand side.  Students will need to come up with
+an appropriate interface for creating, entering, and exiting regions
+(examples include RTSJ scoped memory and SCJ scoped memory).</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>Cyclone</p>
+</li>
+<li>
+<p>MLKit</p>
+</li>
+<li>
+<p>RTSJ + SCJ scopes</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; C programming experience; some compiler and garbage collector experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adding_real_time_capabilities">Adding Real-Time Capabilities</h3>
+<div class="paragraph">
+<p>This project focuses on exposing real-time APIs from a real-time OS
+kernel at the SML level.  This will require mapping the current MLton
+(or <a href="http://multimlton.cs.purdue.edu">MultiMLton</a>) threading framework
+to real-time threads that the RTOS provides.  This will include
+associating priorities with MLton threads and building priority based
+scheduling algorithms.  Additionally, support for perdioc, aperiodic,
+and sporadic tasks should be supported.  A real-time SML library will
+need to be created to provide a forward facing interface for
+programmers.  Stretch goals include reworking the MLton <code>atomic</code>
+statement and associated synchronization primitives built on top of
+the MLton <code>atomic</code> statement.</p>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; C programming experience; real-time experience a plus but not required</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_real_time_garbage_collection">Real-Time Garbage Collection</h3>
+<div class="paragraph">
+<p>This project focuses on modifications to the MLton GC to support
+real-time garbage collection.  We will model the real-time GC on the
+Schism RTGC.  The first task will be to create a fixed size runtime
+object representation.  Large structures will need to be represented
+as a linked lists of fixed sized objects.  Arrays and vectors will be
+transferred into dense trees.  Compaction and copying can therefore be
+removed from the GC algorithms that MLton currently supports.  Lastly,
+the GC will be made concurrent, allowing for the execution of the GC
+threads as the lowest priority task in the system.  Stretch goals
+include a priority aware mechanism for the GC to signal to real-time
+ML threads that it needs to scan their stack and identification of
+places where the stack is shallow to bound priority inversion during
+this procedure.</p>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: C programming experience; garbage collector experience a plus but not required</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/GoogleSummerOfCode2015.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/GoogleSummerOfCode2015.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

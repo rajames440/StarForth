@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CallGraph</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CallGraph</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>For easier visualization of <a href="Profiling">profiling</a> data, <code>mlprof</code> can
+create a call graph of the program in dot format, from which you can
+use the <a href="http://www.research.att.com/sw/tools/graphviz/">graphviz</a>
+software package to create a PostScript or PNG graph.  For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>mlprof -call-graph foo.dot foo mlmon.out</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will create <code>foo.dot</code> with a complete call graph.  For each source
+function, there will be one node in the graph that contains the
+function name (and source position with <code>-show-line true</code>), as
+well as the percentage of ticks.  If you want to create a call graph
+for your program without any profiling data, you can simply call
+<code>mlprof</code> without any <code>mlmon.out</code> files, as in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>mlprof -call-graph foo.dot foo</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Because SML has higher-order functions, the call graph is is dependent
+on MLton&#8217;s analysis of which functions call each other.  This analysis
+depends on many implementation details and might display spurious
+edges that a human could conclude are impossible.  However, in
+practice, the call graphs tend to be very accurate.</p>
+</div>
+<div class="paragraph">
+<p>Because call graphs can get big, <code>mlprof</code> provides the <code>-keep</code> option
+to specify the nodes that you would like to see.  This option also
+controls which functions appear in the table that <code>mlprof</code> prints.
+The argument to <code>-keep</code> is an expression describing a set of source
+functions (i.e. graph nodes).  The expression <em>e</em> should be of the
+following form.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>all</code></p>
+</li>
+<li>
+<p><code>"<em>s</em>"</code></p>
+</li>
+<li>
+<p><code>(and <em>e &#8230;&#8203;</em>)</code></p>
+</li>
+<li>
+<p><code>(from <em>e</em>)</code></p>
+</li>
+<li>
+<p><code>(not <em>e</em>)</code></p>
+</li>
+<li>
+<p><code>(or <em>e</em>)</code></p>
+</li>
+<li>
+<p><code>(pred <em>e</em>)</code></p>
+</li>
+<li>
+<p><code>(succ <em>e</em>)</code></p>
+</li>
+<li>
+<p><code>(thresh <em>x</em>)</code></p>
+</li>
+<li>
+<p><code>(thresh-gc <em>x</em>)</code></p>
+</li>
+<li>
+<p><code>(thresh-stack <em>x</em>)</code></p>
+</li>
+<li>
+<p><code>(to <em>e</em>)</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In the grammar, <code>all</code> denotes the set of all nodes.  <code>"<em>s</em>"</code> is
+a regular expression denoting the set of functions whose name
+(followed by a space and the source position) has a prefix matching
+the regexp.  The <code>and</code>, <code>not</code>, and <code>or</code> expressions denote
+intersection, complement, and union, respectively.  The <code>pred</code> and
+<code>succ</code> expressions add the set of immediate predecessors or successors
+to their argument, respectively.  The <code>from</code> and <code>to</code> expressions
+denote the set of nodes that have paths from or to the set of nodes
+denoted by their arguments, respectively.  Finally, <code>thresh</code>,
+<code>thresh-gc</code>, and <code>thresh-stack</code> denote the set of nodes whose
+percentage of ticks, gc ticks, or stack ticks, respectively, is
+greater than or equal to the real number <em>x</em>.</p>
+</div>
+<div class="paragraph">
+<p>For example, if you want to see the entire call graph for a program,
+you can use <code>-keep all</code> (this is the default).  If you want to see
+all nodes reachable from function <code>foo</code> in your program, you would
+use <code>-keep '(from "foo")'</code>.  Or, if you want to see all the
+functions defined in subdirectory <code>bar</code> of your project that used
+at least 1% of the ticks, you would use</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>-keep '(and ".*/bar/" (thresh 1.0))'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To see all functions with ticks above a threshold, you can also use
+<code>-thresh x</code>, which is an abbreviation for <code>-keep '(thresh x)'</code>.  You
+can not use multiple <code>-keep</code> arguments or both <code>-keep</code> and <code>-thresh</code>.
+When you use <code>-keep</code> to display a subset of the functions, <code>mlprof</code>
+will add dashed edges to the call graph to indicate a path in the
+original call graph from one function to another.</p>
+</div>
+<div class="paragraph">
+<p>When compiling with <code>-profile-stack true</code>, you can use <code>mlprof -gray
+true</code> to make the nodes darker or lighter depending on whether their
+stack percentage is higher or lower.</p>
+</div>
+<div class="paragraph">
+<p>MLton&#8217;s optimizer may duplicate source functions for any of a number
+of reasons (functor duplication, monomorphisation, polyvariance,
+inlining).  By default, all duplicates of a function are treated as
+one.  If you would like to treat the duplicates separately, you can
+use <code>mlprof -split <em>regexp</em></code>, which will cause all duplicates of
+functions whose name has a prefix matching the regular expression to
+be treated separately.  This can be especially useful for higher-order
+utility functions like <code>General.o</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_caveats">Caveats</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Technically speaking, <code>mlprof</code> produces a call-stack graph rather than
+a call graph, because it describes the set of possible call stacks.
+The difference is in how tail calls are displayed.  For example if <code>f</code>
+nontail calls <code>g</code> and <code>g</code> tail calls <code>h</code>, then the call-stack graph
+has edges from <code>f</code> to <code>g</code> and <code>f</code> to <code>h</code>, while the call graph has
+edges from <code>f</code> to <code>g</code> and <code>g</code> to <code>h</code>.  That is, a tail call from <code>g</code>
+to <code>h</code> removes <code>g</code> from the call stack and replaces it with <code>h</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CallGraph.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CallGraph.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

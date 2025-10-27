@@ -1,0 +1,204 @@
+# -*- shell-script -*- :mode=shellscript:
+#
+# Isabelle system settings.
+#
+# Important notes:
+#   * See the "system" manual for explanations on Isabelle settings
+#   * User settings go into $ISABELLE_HOME_USER/etc/settings
+#   * DO NOT EDIT the repository copy of this file!
+#   * DO NOT COPY this file into the $ISABELLE_HOME_USER directory!
+
+###
+### Isabelle/Scala
+###
+
+ISABELLE_JAVA_SYSTEM_OPTIONS="-server -Dfile.encoding=UTF-8 -Disabelle.threads=0"
+
+ISABELLE_TOOL_JAVA_OPTIONS="-Djava.awt.headless=true -Xms512m -Xmx4g -Xss16m"
+
+ISABELLE_JAVAC_OPTIONS="-encoding UTF-8 -Xlint:-options -deprecation -source 21 -target 21"
+ISABELLE_SCALAC_OPTIONS="-encoding UTF-8 -feature -java-output-version 21 -source 3.3 -old-syntax -no-indent -color never -pagewidth 78 -J-Xms512m -J-Xmx4g -J-Xss16m"
+
+ISABELLE_SCALA_JAR="$ISABELLE_HOME/lib/classes/isabelle.jar"
+
+#paranoia settings -- avoid intrusion of alien options
+unset "_JAVA_OPTIONS"
+unset "JAVA_TOOL_OPTIONS"
+
+#paranoia settings -- avoid problems of Java/Swing versus XIM/IBus etc.
+unset XMODIFIERS
+
+
+###
+### Interactive sessions (cf. isabelle console)
+###
+
+ISABELLE_LINE_EDITOR="rlwrap"
+
+
+###
+### Batch sessions (cf. isabelle build)
+###
+
+ISABELLE_BUILD_OPTIONS=""
+
+
+###
+### Document preparation (cf. isabelle latex)
+###
+
+case "$ISABELLE_PLATFORM_FAMILY" in
+  windows*)
+    ISABELLE_PDFLATEX="pdflatex -interaction=nonstopmode -c-style-errors"
+    ;;
+  *)
+    ISABELLE_PDFLATEX="pdflatex -interaction=nonstopmode -file-line-error"
+    ;;
+esac
+
+ISABELLE_LUALATEX="lualatex --interaction=nonstopmode --file-line-error"
+ISABELLE_BIBTEX="bibtex"
+ISABELLE_MAKEINDEX="makeindex -c -q"
+ISABELLE_EPSTOPDF="epstopdf"
+
+
+###
+### Misc path settings
+###
+
+isabelle_directory '~'
+isabelle_directory '$ISABELLE_HOME_USER'
+isabelle_directory '~~'
+isabelle_directory '$ISABELLE_COMPONENTS_BASE'
+
+ISABELLE_COMPONENT_REPOSITORY="https://isabelle.sketis.net/components"
+ISABELLE_COMPONENTS_BASE="$USER_HOME/.isabelle/contrib"
+
+# The place for user configuration, heap files, etc.
+if [ -z "$ISABELLE_IDENTIFIER" ]; then
+  ISABELLE_HOME_USER="$USER_HOME/.isabelle"
+else
+  ISABELLE_HOME_USER="$USER_HOME/.isabelle/$ISABELLE_IDENTIFIER"
+fi
+
+# Where to look for isabelle tools (multiple dirs separated by ':').
+ISABELLE_TOOLS="$ISABELLE_HOME/lib/Tools"
+
+# Location for temporary files (should be on a local file system).
+case "$ISABELLE_PLATFORM_FAMILY" in
+  windows*)
+    ISABELLE_TMP_PREFIX="$TMPDIR/isabelle"
+    ;;
+  *)
+    ISABELLE_TMP_PREFIX="/tmp/isabelle-${USER:-$LOGNAME}"
+    ;;
+esac
+
+# Heap locations.
+ISABELLE_HEAPS="$ISABELLE_HOME_USER/heaps"
+ISABELLE_HEAPS_SYSTEM="$ISABELLE_HOME/heaps"
+
+# HTML browser info.
+ISABELLE_BROWSER_INFO="$ISABELLE_HOME_USER/browser_info"
+ISABELLE_BROWSER_INFO_SYSTEM="$ISABELLE_HOME/browser_info"
+ISABELLE_BROWSER_INFO_LIBRARY="$ISABELLE_HOME/lib/browser_info.db"
+
+# Site settings check -- just to make it a little bit harder to copy this file verbatim!
+[ -n "$ISABELLE_SITE_SETTINGS_PRESENT" ] && \
+  { echo >&2 "### Isabelle site settings already present!  Maybe copied etc/settings in full?"; }
+ISABELLE_SITE_SETTINGS_PRESENT=true
+
+
+###
+### Default logic
+###
+
+ISABELLE_LOGIC=HOL
+
+
+###
+### Docs and external files
+###
+
+# Where to look for docs (multiple dirs separated by ':').
+ISABELLE_DOCS="$ISABELLE_HOME/doc"
+
+ISABELLE_DOCS_RELEASE_NOTES="~~/ANNOUNCE:~~/README:~~/NEWS:~~/COPYRIGHT:~~/CONTRIBUTORS:~~/contrib/README:~~/src/Tools/jEdit/README:~~/README_REPOSITORY"
+ISABELLE_DOCS_EXAMPLES="~~/src/HOL/Examples/Seq.thy:~~/src/HOL/Examples/Drinker.thy:~~/src/HOL/Examples/Ackermann.thy:~~/src/HOL/Examples/ML.thy:~~/src/Tools/SML/Examples.thy:~~/src/Pure/ROOT.ML"
+
+# "open" within desktop environment (potentially asynchronous)
+case "$ISABELLE_PLATFORM_FAMILY" in
+  linux*)
+    ISABELLE_OPEN="xdg-open"
+    ;;
+  macos*)
+    ISABELLE_OPEN="open"
+    ;;
+  windows*)
+    ISABELLE_OPEN="cygstart"
+    ;;
+esac
+
+PDF_VIEWER="$ISABELLE_OPEN"
+
+ISABELLE_EXTERNAL_FILES="bmp:eps:gif:jpeg:jpg:pdf:png:xmp"
+
+
+###
+### Registry
+###
+
+isabelle_registry "$ISABELLE_HOME/etc/registry.toml?"
+isabelle_registry "$ISABELLE_HOME_USER/etc/registry.toml?"
+
+
+###
+### Symbol rendering
+###
+
+ISABELLE_SYMBOLS="$ISABELLE_HOME/etc/symbols:$ISABELLE_HOME_USER/etc/symbols?"
+
+
+###
+### OCaml
+###
+
+ISABELLE_OPAM_ROOT="$USER_HOME/.opam"
+
+ISABELLE_OCAML_VERSION="ocaml-base-compiler.4.14.1"
+
+
+###
+### Haskell
+###
+
+ISABELLE_STACK_ROOT="$USER_HOME/.stack"
+
+ISABELLE_STACK_RESOLVER="lts-22.43"
+
+ISABELLE_GHC_VERSION="ghc-9.6.6"
+
+
+###
+### .Net / Fsharp
+###
+
+ISABELLE_DOTNET_VERSION="8.0.203"
+
+
+###
+### Go
+###
+
+ISABELLE_GO_VERSION="1.22.1"
+
+
+###
+### Misc settings
+###
+
+ISABELLE_GNUPLOT="gnuplot"
+ISABELLE_FONTFORGE="fontforge"
+
+#ISABELLE_SMLNJ="/usr/bin/sml"
+#ISABELLE_SWIPL="/usr/bin/swipl"

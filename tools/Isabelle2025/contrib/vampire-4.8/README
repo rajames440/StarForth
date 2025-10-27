@@ -1,0 +1,8 @@
+This Isabelle component provides Vampire 4.8 using the
+original sources from https://github.com/vprover/vampire/archive/refs/tags/v4.8HO4Sledgahammer.tar.gz
+
+The executables have been built via "cmake . && make"
+
+
+        Makarius
+        25-Oct-2023

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ProfilingAllocation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ProfilingAllocation</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>With MLton and <code>mlprof</code>, you can <a href="Profiling">profile</a> your program to
+find out how many bytes each function allocates.  To do so, compile
+your program with <code>-profile alloc</code>.  For example, suppose that
+<code>list-rev.sml</code> is the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">append</span> <span class="p">(</span><span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">case</span> <span class="n">l1</span> <span class="kr">of</span>
+      <span class="p">[]</span> <span class="p">=&gt;</span> <span class="n">l2</span>
+    <span class="p">|</span> <span class="n">x</span> <span class="n">::</span> <span class="n">l1</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="n">::</span> <span class="n">append</span> <span class="p">(</span><span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">)</span>
+
+<span class="kr">fun</span> <span class="nf">rev</span> <span class="n">l</span> <span class="p">=</span>
+   <span class="kr">case</span> <span class="n">l</span> <span class="kr">of</span>
+      <span class="p">[]</span> <span class="p">=&gt;</span> <span class="p">[]</span>
+    <span class="p">|</span> <span class="n">x</span> <span class="n">::</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="n">append</span> <span class="p">(</span><span class="n">rev</span> <span class="n">l</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">])</span>
+
+<span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="nn">List</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="mi">1</span> <span class="n">+</span> <span class="n">hd</span> <span class="p">(</span><span class="n">rev</span> <span class="n">l</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Compile and run <code>list-rev</code> as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton -profile alloc list-rev.sml
+% ./list-rev
+% mlprof -show-line true list-rev mlmon.out
+6,030,136 bytes allocated (108,336 bytes by GC)
+       function          cur
+----------------------- -----
+append  list-rev.sml: 1 97.6%
+&lt;gc&gt;                     1.8%
+&lt;main&gt;                   0.4%
+rev  list-rev.sml: 6     0.2%</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The data shows that most of the allocation is done by the <code>append</code>
+function defined on line 1 of <code>list-rev.sml</code>.  The table also shows
+how special functions like <code>gc</code> and <code>main</code> are handled: they are
+printed with surrounding brackets.  C functions are displayed
+similarly.  In this example, the allocation done by the garbage
+collector is due to stack growth, which is usually the case.</p>
+</div>
+<div class="paragraph">
+<p>The run-time performance impact of allocation profiling is noticeable,
+because it inserts additional C calls for object allocation.</p>
+</div>
+<div class="paragraph">
+<p>Compile with <code>-profile alloc -profile-branch true</code> to find out how
+much allocation is done in each branch of a function; see
+<a href="ProfilingCounts">ProfilingCounts</a> for more details on <code>-profile-branch</code>.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ProfilingAllocation.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ProfilingAllocation.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

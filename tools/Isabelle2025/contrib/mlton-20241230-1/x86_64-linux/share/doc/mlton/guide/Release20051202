@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Release20051202</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Release20051202</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an archived public release of MLton, version 20051202.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_the_last_public_release">Changes since the last public release</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>The <a href="License">MLton license</a> is now BSD-style instead of the GPL.</p>
+</li>
+<li>
+<p>New platforms: <a href="RunningOnMinGW">X86/MinGW</a> and HPPA/Linux.</p>
+</li>
+<li>
+<p>Improved and expanded documentation, based on the MLton wiki.</p>
+</li>
+<li>
+<p>Compiler.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>improved exception history.</p>
+</li>
+<li>
+<p><a href="CompileTimeOptions">Command-line switches</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>-as-opt</code>, <code>-mlb-path-map</code>, <code>-target-as-opt</code>, <code>-target-cc-opt</code>.</p>
+</li>
+<li>
+<p>Removed: <code>-native</code>, <code>-sequence-unit</code>, <code>-warn-match</code>, <code>-warn-unused</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Language.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="ForeignFunctionInterface">FFI</a> syntax changes and extensions.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>_symbol</code>.</p>
+</li>
+<li>
+<p>Changed: <code>_export</code>, <code>_import</code>.</p>
+</li>
+<li>
+<p>Removed: <code>_ffi</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="MLBasisAnnotations">ML Basis annotations</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>allowFFI</code>, <code>nonexhaustiveExnMatch</code>, <code>nonexhaustiveMatch</code>, <code>redundantMatch</code>, <code>sequenceNonUnit</code>.</p>
+</li>
+<li>
+<p>Deprecated: <code>allowExport</code>, <code>allowImport</code>, <code>sequenceUnit</code>, <code>warnMatch</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Basis Library.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>Int1</code>, <code>Word1</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="MLtonStructure">MLton structure</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>Process.create</code>, <code>ProcEnv.setgroups</code>, <code>Rusage.measureGC</code>, <code>Socket.fdToSock</code>, <code>Socket.Ctl.getError</code>.</p>
+</li>
+<li>
+<p>Changed: <code>MLton.Platform.Arch</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <a href="CKitLibrary">ckit</a>, <a href="MLNLFFI">ML-NLFFI library</a>, <a href="SMLNJLibrary">SML/NJ library</a>.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Tools.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Updates of <code>mllex</code> and <code>mlyacc</code> from SML/NJ.</p>
+</li>
+<li>
+<p>Added <a href="MLNLFFI">mlnlffigen</a>.</p>
+</li>
+<li>
+<p><a href="Profiling">Profiling</a> supports better inclusion/exclusion of code.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a complete list of changes and bug fixes since
+<a href="Release20041109">Release20041109</a>, see the
+<a href="https://raw.github.com/MLton/mlton/on-20051202-release/doc/changelog"><code>changelog</code></a> and
+<a href="Bugs20041109">Bugs20041109</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20051202_binary_packages">20051202 binary packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>x86</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.i386-cygwin.tgz">Cygwin</a> 1.5.18-1</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.i386-freebsd.tbz">FreeBSD</a> 5.4</p>
+</li>
+<li>
+<p>Linux</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton_20051202-1_i386.deb">Debian</a> sid</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton_20051202-1_i386.stable.deb">Debian</a> stable (Sarge)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.i386.rpm">RedHat</a> 7.1-9.3 FC1-FC4</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.i386-linux.tgz">tgz</a> for other distributions (glibc 2.3)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.i386-mingw.tgz">MinGW</a></p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.i386-netbsd.tgz">NetBSD</a> 2.0.2</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.i386-openbsd.tgz">OpenBSD</a> 3.7</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>PowerPC</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.powerpc-darwin.tgz">Darwin</a> 7.9.0 (Mac OS X)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Sparc</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.sparc-solaris.tgz">Solaris</a> 8</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20051202_source_packages">20051202 source packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.src.tgz">source tgz</a></p>
+</li>
+<li>
+<p>Debian <a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton_20051202-1.dsc">dsc</a>, <a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton_20051202-1.diff.gz">diff.gz</a>, <a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton_20051202.orig.tar.gz">orig.tar.gz</a></p>
+</li>
+<li>
+<p>RedHat <a href="http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.src.rpm">source rpm</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_packages_available_at_other_sites">Packages available at other sites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://packages.debian.org/cgi-bin/search_packages.pl?searchon=names&amp;version=all&amp;exact=1&amp;keywords=mlton">Debian</a></p>
+</li>
+<li>
+<p><a href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all">FreeBSD</a></p>
+</li>
+<li>
+<p>Fedora Core <a href="http://fedoraproject.org/extras/4/i386/repodata/repoview/mlton-0-20051202-8.fc4.html">4</a> <a href="http://fedoraproject.org/extras/5/i386/repodata/repoview/mlton-0-20051202-8.fc5.html">5</a></p>
+</li>
+<li>
+<p><a href="http://packages.ubuntu.com/dapper/devel/mlton">Ubuntu</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Bugs20051202">Bugs20051202</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/guide/20051202/">MLton Guide (20051202)</a>.</p>
+<div class="paragraph">
+<p>A snapshot of the MLton wiki at the time of release.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Release20051202.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Release20051202.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

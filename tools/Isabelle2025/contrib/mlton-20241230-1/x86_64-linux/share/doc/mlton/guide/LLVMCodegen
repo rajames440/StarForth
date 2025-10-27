@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>LLVMCodegen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>LLVMCodegen</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="#">LLVMCodegen</a> is a <a href="Codegen">code generator</a> that translates the
+<a href="Machine">Machine</a> <a href="IntermediateLanguage">IntermediateLanguage</a> to <a href="LLVM">LLVM</a> assembly, which is
+further optimized and compiled to native object code by the <a href="LLVM">LLVM</a>
+toolchain.</p>
+</div>
+<div class="paragraph">
+<p>In benchmarks performed on the <a href="RunningOnAMD64">AMD64</a> architecture,
+code size with this generator is usually slightly smaller than either
+the <a href="AMD64Codegen">native</a> or the <a href="CCodegen">C</a> code generators. Compile
+time is worse than <a href="AMD64Codegen">native</a>, but slightly better than
+<a href="CCodegen">C</a>. Run time is often better than either <a href="AMD64Codegen">native</a>
+or <a href="CCodegen">C</a>.</p>
+</div>
+<div class="paragraph">
+<p>The <a href="#">LLVMCodegen</a> works by generating text LLVM IR (<code>.ll</code> files) and
+compiling it to object code (<code>.o</code> files) using the LLVM command-line tools:
+<code>llvm-as</code> (<code>.ll</code> to <code>.bc</code> assembler), <code>opt</code> (<code>.bc</code> to <code>.bc</code> optimizer), and
+<code>llc</code> (<code>.bc</code> to <code>.o</code> system compiler).  The <code>-llvm-as &lt;llvm-as&gt;</code>,
+<code>-llvm-opt &lt;opt&gt;</code>, and <code>-llvm-llc &lt;llc&gt;</code>
+<a href="CompileTimeOptions">compile-time options</a> can be used to specify the
+executables to be used when invoking the LLVM command-line tools, which can be
+used to select a specific version of the LLVM command-line tools (e.g.,
+<code>-llvm-as llvm-as-14 -llvm-opt opt-14 -llvm-llc llc-14</code>).</p>
+</div>
+<div class="paragraph">
+<p><a href="Release20210117">MLton 20210117</a> requires LLVM 13 or 14, as it invokes <code>opt</code>
+using the
+<a href="https://releases.llvm.org/14.0.0/docs/ReleaseNotes.html#changes-to-the-llvm-ir:">"legacy
+pass manager"</a>.</p>
+</div>
+<div class="paragraph">
+<p>As of 20230522, MLton requires LLVM 14, as it invokes <code>opt</code> using the
+<a href="https://releases.llvm.org/14.0.0/docs/ReleaseNotes.html#changes-to-the-llvm-ir:">"new
+pass manager"</a>.</p>
+</div>
+<div class="paragraph">
+<p>As of 20240809, MLton requires LLVM 15, as it generates LLVM IR using
+<a href="https://releases.llvm.org/15.0.0/docs/ReleaseNotes.html#changes-to-the-llvm-ir:">"opaque
+pointers"</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/codegen/llvm-codegen/llvm-codegen.sig"><code>llvm-codegen.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/codegen/llvm-codegen/llvm-codegen.fun"><code>llvm-codegen.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="#">LLVMCodegen</a> was initially developed by Brian Leibig (see
+<a href="References#Leibig13">An LLVM Back-end for MLton</a>).</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Fri Aug 9 06:29:19 2024 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/LLVMCodegen.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/LLVMCodegen.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

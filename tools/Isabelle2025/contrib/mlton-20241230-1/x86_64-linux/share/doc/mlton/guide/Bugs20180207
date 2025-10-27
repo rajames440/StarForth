@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Bugs20180207</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Bugs20180207</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Here are the known bugs in <a href="Release20180207">MLton 20180207</a>, listed
+in reverse chronological order of date reported.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a id="bug04"></a>
+Bug in <code>CML.sync</code> with multiple enabled events.</p>
+<div class="paragraph">
+<p>Thanks to James Cooper for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by commit <a href="https://github.com/MLton/mlton/commit/0de07d039"><code>0de07d039</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug03"></a>
+Bug in <a href="SimplifyTypes">SimplifyTypes</a> <a href="SSA">SSA</a> optimization pass.</p>
+<div class="paragraph">
+<p>Fixed by commit <a href="https://github.com/MLton/mlton/commit/ef0f05961"><code>ef0f05961</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug02"></a>
+Bugs in <code>MLton.size</code> and <code>MLton.share</code>; calling <code>MLton.size</code> or <code>MLton.share</code>
+with a non-pointer variant of an object type that could be represented by either
+a pointer or a non-pointer (e.g., the <code>NONE</code> variant of an <code>int list option</code>)
+would segfault.</p>
+<div class="paragraph">
+<p>Fixed by commit <a href="https://github.com/MLton/mlton/commit/31689bc27"><code>31689bc27</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug01"></a>
+Latent bug in <code>MLton.GC.collect</code>; an explicit <code>MLton.GC.collect</code> call was passed
+<code>0</code> bytes requested rather than the bytes required by the return block(s).</p>
+<div class="paragraph">
+<p>Fixed by commit <a href="https://github.com/MLton/mlton/commit/1f4daa14d"><code>1f4daa14d</code></a>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Bugs20180207.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Bugs20180207.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

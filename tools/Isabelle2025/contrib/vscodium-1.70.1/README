@@ -1,0 +1,9 @@
+This is VSCodium 1.70.1 from https://github.com/VSCodium/vscodium.git
+
+It has been built from sources using "isabelle build_vscodium". This applies
+a few changes required for Isabelle/VSCode, see "patches" directory for a
+formal record.
+
+
+        Makarius
+        29-Aug-2022

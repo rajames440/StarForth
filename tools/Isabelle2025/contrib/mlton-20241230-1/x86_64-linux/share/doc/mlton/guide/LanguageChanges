@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>LanguageChanges</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>LanguageChanges</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>We are sometimes asked to modify MLton to change the language it
+compiles.  In short, we are conservative about making such changes.
+There are a number of reasons for this.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="DefinitionOfStandardML">The Definition of Standard ML</a> is an
+extremely high standard of specification.  The value of the Definition
+would be significantly diluted by changes that are not specified at an
+equally high level, and the dilution increases with the complexity of
+the language change and its interaction with other language features.</p>
+</li>
+<li>
+<p>The SML community is small and there are a number of
+<a href="StandardMLImplementations">SML implementations</a>.  Without an
+agreed-upon standard, it becomes very difficult to port programs
+between compilers, and the community would be balkanized.</p>
+</li>
+<li>
+<p>Our main goal is to enable programmers to be as effective as
+possible with MLton/SML.  There are a number of improvements other
+than language changes that we could spend our time on that would
+provide more benefit to programmers.</p>
+</li>
+<li>
+<p>The more the language that MLton compiles changes over time, the
+more difficult it is to use MLton as a stable platform for serious
+program development.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Despite these drawbacks, we have extended SML in a couple of cases.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="ForeignFunctionInterface">Foreign function interface</a></p>
+</li>
+<li>
+<p><a href="MLBasis">ML Basis system</a></p>
+</li>
+<li>
+<p><a href="SuccessorML">Successor ML features</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>We allow these language extensions because they provide functionality
+that is impossible to achieve without them or have non-trivial
+community support.  The Definition does not define a foreign function
+interface.  So, we must either extend the language or greatly restrict
+the class of programs that can be written.  Similarly, the Definition
+does not provide a mechanism for namespace control at the module
+level, making it impossible to deliver packaged libraries and have a
+hope of users using them without name clashes.  The ML Basis system
+addresses this problem.  We have also provided a formal specification
+of the ML Basis system at the level of the Definition.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2004-August/016165.html" class="bare">http://www.mlton.org/pipermail/mlton/2004-August/016165.html</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton-user/2004-December/000320.html" class="bare">http://www.mlton.org/pipermail/mlton-user/2004-December/000320.html</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/LanguageChanges.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/LanguageChanges.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

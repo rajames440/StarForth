@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Identifier</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Identifier</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>In <a href="StandardML">Standard ML</a>, there are syntactically two kinds of
+identifiers.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Alphanumeric: starts with a letter or prime (<code>'</code>) and is followed by letters, digits, primes and underbars (<code>_</code>).</p>
+<div class="paragraph">
+<p>Examples: <code>abc</code>, <code>ABC123</code>, <code>Abc_123</code>, <code>'a</code>.</p>
+</div>
+</li>
+<li>
+<p>Symbolic: a sequence of the following</p>
+<div class="listingblock">
+<div class="content">
+<pre> ! % &amp; $ # + - / : &lt; = &gt; ? @ | ~ ` ^ | *</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Examples: <code>+=</code>, <code>&lt;=</code>, <code>&gt;&gt;</code>, <code>$</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>With the exception of <code>=</code>, reserved words can not be identifiers.</p>
+</div>
+<div class="paragraph">
+<p>There are a number of different classes of identifiers, some of which
+have additional syntactic rules.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Identifiers not starting with a prime.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>value identifier (includes variables and constructors)</p>
+</li>
+<li>
+<p>type constructor</p>
+</li>
+<li>
+<p>structure identifier</p>
+</li>
+<li>
+<p>signature identifier</p>
+</li>
+<li>
+<p>functor identifier</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Identifiers starting with a prime.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>type variable</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Identifiers not starting with a prime and numeric labels (<code>1</code>, <code>2</code>, &#8230;&#8203;).</p>
+<div class="ulist">
+<ul>
+<li>
+<p>record label</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Identifier.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Identifier.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

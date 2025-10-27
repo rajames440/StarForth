@@ -1,0 +1,41 @@
+chapter Pure
+
+session Pure =
+  description "
+    The Pure logical framework.
+  "
+  options [threads = 1, export_proofs, export_standard_proofs, prune_proofs = false]
+  theories [export_theory]
+    Pure (global)
+  theories
+    ML_Bootstrap (global)
+    Sessions
+
+session "Pure-Examples" in Examples = Pure +
+  description "
+    Notable Examples for Isabelle/Pure.
+  "
+  theories
+    First_Order_Logic
+    Higher_Order_Logic
+  document_files
+    "root.bib"
+    "root.tex"
+
+session "Pure-ex" in ex = Pure +
+  description "
+    Miscellaneous examples and experiments for Isabelle/Pure.
+  "
+  options [document_heading_prefix = ""]
+  sessions
+    "Pure-Examples"
+  theories [document = false]
+    Def
+    Def_Examples
+    Guess
+    Guess_Examples
+  theories
+    Alternative_Headings
+    Alternative_Headings_Examples
+  document_files
+    "root.tex"

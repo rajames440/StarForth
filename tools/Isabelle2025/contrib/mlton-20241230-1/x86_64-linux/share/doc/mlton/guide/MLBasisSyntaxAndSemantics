@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLBasisSyntaxAndSemantics</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLBasisSyntaxAndSemantics</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>An <a href="MLBasis">ML Basis</a> (MLB) file should have the <code>.mlb</code> suffix and
+should contain a basis declaration.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_syntax">Syntax</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A basis declaration (<code><em>basdec</em></code>) must be one of the following forms.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>basis</code> <code><em>basid</em></code> <code>=</code> <code><em>basexp</em></code> (<code>and</code> <code><em>basid</em></code> <code>=</code> <code><em>basexp</em></code>)<sup>*</sup></p>
+</li>
+<li>
+<p><code>open</code> <code><em>basid<sub>1</sub></em></code> &#8230;&#8203; <code><em>basid<sub>n</sub></em></code></p>
+</li>
+<li>
+<p><code>local</code> <code><em>basdec</em></code> <code>in</code> <code><em>basdec</em></code> <code>end</code></p>
+</li>
+<li>
+<p><code><em>basdec</em></code> [<code>;</code>] <code><em>basdec</em></code></p>
+</li>
+<li>
+<p><code>structure</code> <code><em>strid</em></code> [<code>=</code> <code><em>strid</em></code>]  (<code>and</code> <code><em>strid</em></code>[<code>=</code> <code><em>strid</em></code>])<sup>*</sup></p>
+</li>
+<li>
+<p><code>signature</code> <code><em>sigid</em></code> [<code>=</code> <code><em>sigid</em></code>]  (<code>and</code> <code><em>sigid</em></code> [<code>=</code> <code><em>sigid</em></code>])<sup>*</sup></p>
+</li>
+<li>
+<p><code>functor</code> <code><em>funid</em></code> [<code>=</code> <code><em>funid</em></code>]  (<code>and</code> <code><em>funid</em></code> [<code>=</code> <code><em>funid</em></code>])<sup>*</sup></p>
+</li>
+<li>
+<p><code><em>path</em>.sml</code>, <code><em>path</em>.sig</code>, or <code><em>path</em>.fun</code></p>
+</li>
+<li>
+<p><code><em>path</em>.mlb</code></p>
+</li>
+<li>
+<p><code>ann</code> <code>"<em>ann</em>"</code> <code>in</code> <code><em>basdec</em></code> <code>end</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A basis expression (<code><em>basexp</em></code>) must be of one the following forms.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>bas</code> <code><em>basdec</em></code> <code>end</code></p>
+</li>
+<li>
+<p><code><em>basid</em></code></p>
+</li>
+<li>
+<p><code>let</code> <code><em>basdec</em></code> <code>in</code> <code><em>basexp</em></code> <code>end</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Nested SML-style comments (enclosed with <code>(*</code> and <code>*)</code>) are ignored
+(but <a href="LineDirective">LineDirective</a>s are recognized).</p>
+</div>
+<div class="paragraph">
+<p>Paths can be relative or absolute.  Relative paths are relative to the
+directory containing the MLB file.  Paths may include path variables
+and are expanded according to a <a href="MLBasisPathMap">path map</a>.  Unquoted
+paths may include alpha-numeric characters and the symbols <code>-</code> and
+<code>_</code>, along with the arc separator <code>/</code> and extension separator
+<code>.</code>.  More complicated paths, including paths with spaces, may be
+included by quoting the path with <code>"</code>.  A quoted path is lexed as an
+SML string constant.</p>
+</div>
+<div class="paragraph">
+<p><a href="MLBasisAnnotations">Annotations</a> allow a library author to
+control options that affect the elaboration of SML source files.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_semantics">Semantics</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There is a <a href="MLBasis.attachments/mlb-formal.pdf">formal semantics</a> for
+ML Basis files in the style of the
+<a href="DefinitionOfStandardML">Definition</a>.  Here, we give an informal
+explanation.</p>
+</div>
+<div class="paragraph">
+<p>An SML structure is a collection of types, values, and other
+structures.  Similarly, a basis is a collection, but of more kinds of
+objects: types, values, structures, fixities, signatures, functors,
+and other bases.</p>
+</div>
+<div class="paragraph">
+<p>A basis declaration denotes a basis.  A structure, signature, or
+functor declaration denotes a basis containing the corresponding
+module.  Sequencing of basis declarations merges bases, with later
+definitions taking precedence over earlier ones, just like sequencing
+of SML declarations.  Local declarations provide name hiding, just
+like SML local declarations.  A reference to an SML source file causes
+the file to be elaborated in the basis extant at the point of
+reference.  A reference to an MLB file causes the basis denoted by
+that MLB file to be imported&#8201;&#8212;&#8201;the basis at the point of reference
+does <em>not</em> affect the imported basis.</p>
+</div>
+<div class="paragraph">
+<p>Basis expressions and basis identifiers allow binding a basis to a
+name.</p>
+</div>
+<div class="paragraph">
+<p>An MLB file is elaborated starting in an empty basis.  Each MLB file
+is elaborated and evaluated only once, with the result being cached.
+Subsequent references use the cached value.  Thus, any observable
+effects due to evaluation are not duplicated if the MLB file is
+referred to multiple times.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLBasisSyntaxAndSemantics.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLBasisSyntaxAndSemantics.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ToMachine</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ToMachine</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">ToMachine</a> is a translation pass from the <a href="RSSA">RSSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a> to the <a href="Machine">Machine</a> <a href="IntermediateLanguage">IntermediateLanguage</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass converts from a <a href="RSSA">RSSA</a> program into a <a href="Machine">Machine</a> program.</p>
+</div>
+<div class="paragraph">
+<p>It uses <a href="AllocateVariables">AllocateVariables</a>, <a href="Chunkify">Chunkify</a>, and <a href="ParallelMove">ParallelMove</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/backend/backend.sig"><code>backend.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/backend/backend.fun"><code>backend.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Because the MLton runtime system is shared by all <a href="Codegen">codegens</a>, it is most
+convenient to decide on stack layout <em>before</em> any <a href="Codegen">codegen</a> takes over.
+In particular, we compute all the stack frame info for each <a href="RSSA">RSSA</a>
+function, including stack size, <a href="GarbageCollection">garbage collector</a>
+masks for each frame, etc.  To do so, the <a href="Machine">Machine</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a> imagines an abstract machine with an infinite
+number of temporaries of every size.  A liveness analysis
+determines, for each variable, whether or not it is live across a
+point where the runtime system might take over (for example, any
+garbage collection point) or a non-tail call to another <a href="RSSA">RSSA</a>
+function.  Those that are live go on the stack, while those that
+aren&#8217;t live go into temporaries.  From this information, we know
+all we need to about each stack frame.  On the downside, nothing
+further on is allowed to change this stack info; it is set in stone.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ToMachine.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ToMachine.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

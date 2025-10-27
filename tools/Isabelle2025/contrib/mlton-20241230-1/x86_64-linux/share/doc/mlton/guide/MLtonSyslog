@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonSyslog</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonSyslog</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_SYSLOG</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">openflag</span>
+
+      <span class="kr">val</span> <span class="nv">CONS</span>     <span class="p">:</span> <span class="n">openflag</span>
+      <span class="kr">val</span> <span class="nv">NDELAY</span>   <span class="p">:</span> <span class="n">openflag</span>
+      <span class="kr">val</span> <span class="nv">NOWAIT</span>   <span class="p">:</span> <span class="n">openflag</span>
+      <span class="kr">val</span> <span class="nv">ODELAY</span>   <span class="p">:</span> <span class="n">openflag</span>
+      <span class="kr">val</span> <span class="nv">PERROR</span>   <span class="p">:</span> <span class="n">openflag</span>
+      <span class="kr">val</span> <span class="nv">PID</span>      <span class="p">:</span> <span class="n">openflag</span>
+
+      <span class="kr">type</span> <span class="kt">facility</span>
+
+      <span class="kr">val</span> <span class="nv">AUTHPRIV</span> <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">CRON</span>     <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">DAEMON</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">KERN</span>     <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">LOCAL0</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">LOCAL1</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">LOCAL2</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">LOCAL3</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">LOCAL4</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">LOCAL5</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">LOCAL6</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">LOCAL7</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">LPR</span>      <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">MAIL</span>     <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">NEWS</span>     <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">SYSLOG</span>   <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">USER</span>     <span class="p">:</span> <span class="n">facility</span>
+      <span class="kr">val</span> <span class="nv">UUCP</span>     <span class="p">:</span> <span class="n">facility</span>
+
+      <span class="kr">type</span> <span class="kt">loglevel</span>
+
+      <span class="kr">val</span> <span class="nv">EMERG</span>    <span class="p">:</span> <span class="n">loglevel</span>
+      <span class="kr">val</span> <span class="nv">ALERT</span>    <span class="p">:</span> <span class="n">loglevel</span>
+      <span class="kr">val</span> <span class="nv">CRIT</span>     <span class="p">:</span> <span class="n">loglevel</span>
+      <span class="kr">val</span> <span class="nv">ERR</span>      <span class="p">:</span> <span class="n">loglevel</span>
+      <span class="kr">val</span> <span class="nv">WARNING</span>  <span class="p">:</span> <span class="n">loglevel</span>
+      <span class="kr">val</span> <span class="nv">NOTICE</span>   <span class="p">:</span> <span class="n">loglevel</span>
+      <span class="kr">val</span> <span class="nv">INFO</span>     <span class="p">:</span> <span class="n">loglevel</span>
+      <span class="kr">val</span> <span class="nv">DEBUG</span>    <span class="p">:</span> <span class="n">loglevel</span>
+
+      <span class="kr">val</span> <span class="nv">closelog</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">log</span><span class="p">:</span> <span class="n">loglevel</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">openlog</span><span class="p">:</span> <span class="n">string</span> <span class="n">*</span> <span class="n">openflag</span> <span class="n">list</span> <span class="n">*</span> <span class="n">facility</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>MLton.Syslog</code> is a complete interface to the system logging
+facilities.  See <code>man 3 syslog</code> for more details.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>closelog ()</code></p>
+<div class="paragraph">
+<p>closes the connection to the system logger.</p>
+</div>
+</li>
+<li>
+<p><code>log (l, s)</code></p>
+<div class="paragraph">
+<p>logs message <code>s</code> at a loglevel <code>l</code>.</p>
+</div>
+</li>
+<li>
+<p><code>openlog (name, flags, facility)</code></p>
+<div class="paragraph">
+<p>opens a connection to the system logger. <code>name</code> will be prefixed to
+each message, and is typically set to the program name.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonSyslog.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonSyslog.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

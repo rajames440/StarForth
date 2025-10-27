@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RunningOnNetBSD</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RunningOnNetBSD</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton runs fine on <a href="http://www.netbsd.org/">NetBSD</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installing_the_correct_packages_for_netbsd">Installing the correct packages for NetBSD</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The NetBSD system installs 3rd party packages by a mechanism known as
+pkgsrc. This is a tree of Makefiles which when invoked downloads the
+source code, builds a package and installs it on the system. In order
+to run MLton on NetBSD, you will have to install several packages for
+it to work:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>shells/bash</code></p>
+</li>
+<li>
+<p><code>devel/gmp</code></p>
+</li>
+<li>
+<p><code>devel/gmake</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In order to get graphical call-graphs of profiling information, you
+will need the additional package</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>graphics/graphviz</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To build the documentation for MLton, you will need the addtional
+package</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>textproc/asciidoc</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tips_for_compiling_and_using_mlton_on_netbsd">Tips for compiling and using MLton on NetBSD</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton can be a memory-hog on computers with little memory.  While
+640Mb of RAM ought to be enough to self-compile MLton one might want
+to do some tuning to the NetBSD VM subsystem in order to succeed.  The
+notes presented here is what <a href="JesperLouisAndersen">JesperLouisAndersen</a> uses for
+compiling MLton on his laptop.</p>
+</div>
+<div class="sect2">
+<h3 id="_the_netbsd_vm_subsystem">The NetBSD VM subsystem</h3>
+<div class="paragraph">
+<p>NetBSD uses a VM subsystem named
+<a href="http://www.ccrc.wustl.edu/pub/chuck/tech/uvm/">UVM</a>.
+<a href="http://www.selonen.org/arto/netbsd/vm_tune.html">Tuning the VM system</a>
+can be done via the <code>sysctl(8)</code>-interface with the "VM" MIB set.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tuning_the_netbsd_vm_subsystem_for_mlton">Tuning the NetBSD VM subsystem for MLton</h3>
+<div class="paragraph">
+<p>MLton uses a lot of anonymous pages when it is running. Thus, we will
+need to tune up the default of 80 for anonymous pages.  Setting</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>sysctl -w vm.anonmax=95
+sysctl -w vm.anonmin=50
+sysctl -w vm.filemin=2
+sysctl -w vm.execmin=2
+sysctl -w vm.filemax=4
+sysctl -w vm.execmax=4</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>makes it less likely for the VM system to swap out anonymous pages.
+For a full explanation of the above flags, see the documentation.</p>
+</div>
+<div class="paragraph">
+<p>The result is that my laptop goes from a MLton compile where it swaps
+a lot to a MLton compile with no swapping.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RunningOnNetBSD.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RunningOnNetBSD.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

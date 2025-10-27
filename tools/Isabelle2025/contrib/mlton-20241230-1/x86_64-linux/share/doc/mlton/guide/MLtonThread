@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonThread</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonThread</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_THREAD</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">structure</span> <span class="nn">AtomicState</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">NonAtomic</span> <span class="p">|</span> <span class="nc">Atomic</span> <span class="kr">of</span> <span class="n">int</span>
+         <span class="kr">end</span>
+
+      <span class="kr">val</span> <span class="nv">atomically</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+      <span class="kr">val</span> <span class="nv">atomicBegin</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">atomicEnd</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">atomicState</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nn">AtomicState</span><span class="p">.</span><span class="n">t</span>
+
+      <span class="kr">structure</span> <span class="nn">Runnable</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">type</span> <span class="kt">t</span>
+         <span class="kr">end</span>
+
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">atomicSwitch</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+      <span class="kr">val</span> <span class="nv">new</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">prepend</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">prepare</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">switch</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>MLton.Thread</code> provides access to MLton&#8217;s user-level thread
+implementation (i.e. not OS-level threads).  Threads are lightweight
+data structures that represent a paused computation.  Runnable threads
+are threads that will begin or continue computing when <code>switch</code>-ed to.
+<code>MLton.Thread</code> does not include a default scheduling mechanism, but it
+can be used to implement both preemptive and non-preemptive threads.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>type AtomicState.t</code></p>
+<div class="paragraph">
+<p>the type of atomic states.</p>
+</div>
+</li>
+<li>
+<p><code>atomically f</code></p>
+<div class="paragraph">
+<p>runs <code>f</code> in a critical section.</p>
+</div>
+</li>
+<li>
+<p><code>atomicBegin ()</code></p>
+<div class="paragraph">
+<p>begins a critical section.</p>
+</div>
+</li>
+<li>
+<p><code>atomicEnd ()</code></p>
+<div class="paragraph">
+<p>ends a critical section.</p>
+</div>
+</li>
+<li>
+<p><code>atomicState ()</code></p>
+<div class="paragraph">
+<p>returns the current atomic state.</p>
+</div>
+</li>
+<li>
+<p><code>type Runnable.t</code></p>
+<div class="paragraph">
+<p>the type of threads that can be resumed.</p>
+</div>
+</li>
+<li>
+<p><code>type 'a t</code></p>
+<div class="paragraph">
+<p>the type of threads that expect a value of type <code>'a</code>.</p>
+</div>
+</li>
+<li>
+<p><code>atomicSwitch f</code></p>
+<div class="paragraph">
+<p>like <code>switch</code>, but assumes an atomic calling context.  Upon
+<code>switch</code>-ing back to the current thread, an implicit <code>atomicEnd</code> is
+performed.</p>
+</div>
+</li>
+<li>
+<p><code>new f</code></p>
+<div class="paragraph">
+<p>creates a new thread that, when run, applies <code>f</code> to the value given to
+the thread.  <code>f</code> must terminate by `switch`ing to another thread or
+exiting the process.</p>
+</div>
+</li>
+<li>
+<p><code>prepend (t, f)</code></p>
+<div class="paragraph">
+<p>creates a new thread (destroying <code>t</code> in the process) that first
+applies <code>f</code> to the value given to the thread and then continues with
+<code>t</code>.  This is a constant time operation.</p>
+</div>
+</li>
+<li>
+<p><code>prepare (t, v)</code></p>
+<div class="paragraph">
+<p>prepares a new runnable thread (destroying <code>t</code> in the process) that
+will evaluate <code>t</code> on <code>v</code>.</p>
+</div>
+</li>
+<li>
+<p><code>switch f</code></p>
+<div class="paragraph">
+<p>applies <code>f</code> to the current thread to get <code>rt</code>, and then start running
+thread <code>rt</code>.  It is an error for <code>f</code> to perform another <code>switch</code>.  <code>f</code>
+is guaranteed to run atomically.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_of_non_preemptive_threads">Example of non-preemptive threads</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Queue</span><span class="p">:</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">new</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">enque</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">deque</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">option</span>
+   <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="p">{</span><span class="n">front</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">list</span> <span class="n">ref</span><span class="p">,</span> <span class="n">back</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">list</span> <span class="n">ref</span><span class="p">}</span>
+
+      <span class="kr">fun</span> <span class="nf">new</span> <span class="p">()</span> <span class="p">=</span> <span class="n">T</span> <span class="p">{</span><span class="n">front</span> <span class="p">=</span> <span class="n">ref</span> <span class="p">[],</span> <span class="n">back</span> <span class="p">=</span> <span class="n">ref</span> <span class="p">[]}</span>
+
+      <span class="kr">fun</span> <span class="nf">enque</span> <span class="p">(</span><span class="n">T</span> <span class="p">{</span><span class="n">back</span><span class="p">,</span> <span class="p">...},</span> <span class="n">x</span><span class="p">)</span> <span class="p">=</span> <span class="n">back</span> <span class="n">:=</span> <span class="n">x</span> <span class="n">::</span> <span class="n">!back</span>
+
+      <span class="kr">fun</span> <span class="nf">deque</span> <span class="p">(</span><span class="n">T</span> <span class="p">{</span><span class="n">front</span><span class="p">,</span> <span class="n">back</span><span class="p">})</span> <span class="p">=</span>
+         <span class="kr">case</span> <span class="n">!front</span> <span class="kr">of</span>
+            <span class="p">[]</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">case</span> <span class="n">!back</span> <span class="kr">of</span>
+                      <span class="p">[]</span> <span class="p">=&gt;</span> <span class="n">NONE</span>
+                    <span class="p">|</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="kr">let</span> <span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="n">rev</span> <span class="n">l</span>
+                           <span class="kr">in</span> <span class="kr">case</span> <span class="n">l</span> <span class="kr">of</span>
+                              <span class="p">[]</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"deque"</span>
+                            <span class="p">|</span> <span class="n">x</span> <span class="n">::</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">back</span> <span class="n">:=</span> <span class="p">[];</span> <span class="n">front</span> <span class="n">:=</span> <span class="n">l</span><span class="p">;</span> <span class="n">SOME</span> <span class="n">x</span><span class="p">)</span>
+                           <span class="kr">end</span><span class="p">)</span>
+          <span class="p">|</span> <span class="n">x</span> <span class="n">::</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">front</span> <span class="n">:=</span> <span class="n">l</span><span class="p">;</span> <span class="n">SOME</span> <span class="n">x</span><span class="p">)</span> 
+   <span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">Thread</span><span class="p">:</span>
+   <span class="kr">sig</span>
+      <span class="kr">val</span> <span class="nv">exit</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+      <span class="kr">val</span> <span class="nv">run</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">spawn</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">yield</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+   <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">open</span> <span class="nn">MLton</span>
+      <span class="kr">open</span> <span class="nn">Thread</span>
+
+      <span class="kr">val</span> <span class="nv">topLevel</span><span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+
+      <span class="kr">local</span>
+         <span class="kr">val</span> <span class="nv">threads</span><span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="nn">Queue</span><span class="p">.</span><span class="n">t</span> <span class="p">=</span> <span class="nn">Queue</span><span class="p">.</span><span class="n">new</span> <span class="p">()</span>
+      <span class="kr">in</span>
+         <span class="kr">fun</span> <span class="nf">ready</span> <span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">:</span> <span class="n">unit</span> <span class="p">=</span>
+            <span class="nn">Queue</span><span class="p">.</span><span class="n">enque</span><span class="p">(</span><span class="n">threads</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+         <span class="kr">fun</span> <span class="nf">next</span> <span class="p">()</span> <span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="p">=</span>
+            <span class="kr">case</span> <span class="nn">Queue</span><span class="p">.</span><span class="n">deque</span> <span class="n">threads</span> <span class="kr">of</span>
+               <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">valOf</span> <span class="p">(</span><span class="n">!topLevel</span><span class="p">)</span>
+             <span class="p">|</span> <span class="n">SOME</span> <span class="n">t</span> <span class="p">=&gt;</span> <span class="n">t</span>
+      <span class="kr">end</span>
+
+      <span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">exit</span> <span class="p">():</span> <span class="nd">'a</span> <span class="p">=</span> <span class="n">switch</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">next</span> <span class="p">())</span>
+
+      <span class="kr">fun</span> <span class="nf">new</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">):</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="p">=</span>
+         <span class="nn">Thread</span><span class="p">.</span><span class="n">prepare</span>
+         <span class="p">(</span><span class="nn">Thread</span><span class="p">.</span><span class="n">new</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">((</span><span class="n">f</span> <span class="p">()</span> <span class="kr">handle</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">exit</span> <span class="p">())</span>
+                                <span class="p">;</span> <span class="n">exit</span> <span class="p">())),</span>
+          <span class="p">())</span>
+
+      <span class="kr">fun</span> <span class="nf">schedule</span> <span class="n">t</span> <span class="p">=</span> <span class="p">(</span><span class="n">ready</span> <span class="n">t</span><span class="p">;</span> <span class="n">next</span> <span class="p">())</span>
+
+      <span class="kr">fun</span> <span class="nf">yield</span> <span class="p">():</span> <span class="n">unit</span> <span class="p">=</span> <span class="n">switch</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">t</span> <span class="p">=&gt;</span> <span class="n">schedule</span> <span class="p">(</span><span class="nn">Thread</span><span class="p">.</span><span class="n">prepare</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">())))</span>
+
+      <span class="kr">val</span> <span class="nv">spawn</span> <span class="p">=</span> <span class="n">ready</span> <span class="n">o</span> <span class="n">new</span>
+
+      <span class="kr">fun</span> <span class="nf">run</span><span class="p">():</span> <span class="n">unit</span> <span class="p">=</span>
+         <span class="p">(</span><span class="n">switch</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">t</span> <span class="p">=&gt;</span>
+                  <span class="p">(</span><span class="n">topLevel</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="p">(</span><span class="nn">Thread</span><span class="p">.</span><span class="n">prepare</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">()))</span>
+                   <span class="p">;</span> <span class="n">next</span><span class="p">()))</span>
+          <span class="p">;</span> <span class="n">topLevel</span> <span class="n">:=</span> <span class="n">NONE</span><span class="p">)</span>
+   <span class="kr">end</span>
+
+<span class="kr">val</span> <span class="nv">rec</span> <span class="n">loop</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="p">()</span>
+    <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">print</span><span class="p">(</span><span class="n">concat</span><span class="p">[</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">n</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span>
+            <span class="p">;</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">yield</span><span class="p">()</span>
+            <span class="p">;</span> <span class="n">loop</span><span class="p">(</span><span class="n">n</span> <span class="n">-</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="kr">val</span> <span class="nv">rec</span> <span class="n">loop'</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="p">()</span>
+    <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="nn">Thread</span><span class="p">.</span><span class="n">spawn</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">loop</span> <span class="n">n</span><span class="p">);</span> <span class="n">loop'</span> <span class="p">(</span><span class="n">n</span> <span class="n">-</span> <span class="mi">2</span><span class="p">))</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">spawn</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">loop'</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">run</span> <span class="p">()</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="s2">"success</span><span class="se">\n</span><span class="s2">"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_of_preemptive_threads">Example of preemptive threads</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Queue</span><span class="p">:</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">new</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">enque</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">deque</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">option</span>
+   <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="p">{</span><span class="n">front</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">list</span> <span class="n">ref</span><span class="p">,</span> <span class="n">back</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">list</span> <span class="n">ref</span><span class="p">}</span>
+
+      <span class="kr">fun</span> <span class="nf">new</span> <span class="p">()</span> <span class="p">=</span> <span class="n">T</span> <span class="p">{</span><span class="n">front</span> <span class="p">=</span> <span class="n">ref</span> <span class="p">[],</span> <span class="n">back</span> <span class="p">=</span> <span class="n">ref</span> <span class="p">[]}</span>
+
+      <span class="kr">fun</span> <span class="nf">enque</span> <span class="p">(</span><span class="n">T</span> <span class="p">{</span><span class="n">back</span><span class="p">,</span> <span class="p">...},</span> <span class="n">x</span><span class="p">)</span> <span class="p">=</span> <span class="n">back</span> <span class="n">:=</span> <span class="n">x</span> <span class="n">::</span> <span class="n">!back</span>
+
+      <span class="kr">fun</span> <span class="nf">deque</span> <span class="p">(</span><span class="n">T</span> <span class="p">{</span><span class="n">front</span><span class="p">,</span> <span class="n">back</span><span class="p">})</span> <span class="p">=</span>
+         <span class="kr">case</span> <span class="n">!front</span> <span class="kr">of</span>
+            <span class="p">[]</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">case</span> <span class="n">!back</span> <span class="kr">of</span>
+                      <span class="p">[]</span> <span class="p">=&gt;</span> <span class="n">NONE</span>
+                    <span class="p">|</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="kr">let</span> <span class="kr">val</span> <span class="nv">l</span> <span class="p">=</span> <span class="n">rev</span> <span class="n">l</span>
+                           <span class="kr">in</span> <span class="kr">case</span> <span class="n">l</span> <span class="kr">of</span>
+                              <span class="p">[]</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"deque"</span>
+                            <span class="p">|</span> <span class="n">x</span> <span class="n">::</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">back</span> <span class="n">:=</span> <span class="p">[];</span> <span class="n">front</span> <span class="n">:=</span> <span class="n">l</span><span class="p">;</span> <span class="n">SOME</span> <span class="n">x</span><span class="p">)</span>
+                           <span class="kr">end</span><span class="p">)</span>
+          <span class="p">|</span> <span class="n">x</span> <span class="n">::</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">front</span> <span class="n">:=</span> <span class="n">l</span><span class="p">;</span> <span class="n">SOME</span> <span class="n">x</span><span class="p">)</span>
+   <span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">Thread</span><span class="p">:</span>
+   <span class="kr">sig</span>
+      <span class="kr">val</span> <span class="nv">exit</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+      <span class="kr">val</span> <span class="nv">run</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">spawn</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">yield</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+   <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">open</span> <span class="nn">Posix</span><span class="err">.</span><span class="n">Signal</span>
+      <span class="kr">open</span> <span class="nn">MLton</span>
+      <span class="kr">open</span> <span class="nn">Itimer</span> <span class="nn">Signal</span> <span class="nn">Thread</span>
+
+      <span class="kr">val</span> <span class="nv">topLevel</span><span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="n">option</span> <span class="n">ref</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">NONE</span>
+
+      <span class="kr">local</span>
+         <span class="kr">val</span> <span class="nv">threads</span><span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="nn">Queue</span><span class="p">.</span><span class="n">t</span> <span class="p">=</span> <span class="nn">Queue</span><span class="p">.</span><span class="n">new</span> <span class="p">()</span>
+      <span class="kr">in</span>
+         <span class="kr">fun</span> <span class="nf">ready</span> <span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">:</span> <span class="n">unit</span> <span class="p">=</span>
+            <span class="nn">Queue</span><span class="p">.</span><span class="n">enque</span><span class="p">(</span><span class="n">threads</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+         <span class="kr">fun</span> <span class="nf">next</span> <span class="p">()</span> <span class="p">:</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="p">=</span>
+            <span class="kr">case</span> <span class="nn">Queue</span><span class="p">.</span><span class="n">deque</span> <span class="n">threads</span> <span class="kr">of</span>
+               <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">valOf</span> <span class="p">(</span><span class="n">!topLevel</span><span class="p">)</span>
+             <span class="p">|</span> <span class="n">SOME</span> <span class="n">t</span> <span class="p">=&gt;</span> <span class="n">t</span>
+      <span class="kr">end</span>
+
+      <span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">exit</span> <span class="p">():</span> <span class="nd">'a</span> <span class="p">=</span> <span class="n">switch</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">next</span> <span class="p">())</span>
+
+      <span class="kr">fun</span> <span class="nf">new</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">):</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="p">=</span>
+         <span class="nn">Thread</span><span class="p">.</span><span class="n">prepare</span>
+         <span class="p">(</span><span class="nn">Thread</span><span class="p">.</span><span class="n">new</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">((</span><span class="n">f</span> <span class="p">()</span> <span class="kr">handle</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">exit</span> <span class="p">())</span>
+                                <span class="p">;</span> <span class="n">exit</span> <span class="p">())),</span>
+          <span class="p">())</span>
+
+      <span class="kr">fun</span> <span class="nf">schedule</span> <span class="n">t</span> <span class="p">=</span> <span class="p">(</span><span class="n">ready</span> <span class="n">t</span><span class="p">;</span> <span class="n">next</span> <span class="p">())</span>
+
+      <span class="kr">fun</span> <span class="nf">yield</span> <span class="p">():</span> <span class="n">unit</span> <span class="p">=</span> <span class="n">switch</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">t</span> <span class="p">=&gt;</span> <span class="n">schedule</span> <span class="p">(</span><span class="nn">Thread</span><span class="p">.</span><span class="n">prepare</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">())))</span>
+
+      <span class="kr">val</span> <span class="nv">spawn</span> <span class="p">=</span> <span class="n">ready</span> <span class="n">o</span> <span class="n">new</span>
+
+      <span class="kr">fun</span> <span class="nf">setItimer</span> <span class="n">t</span> <span class="p">=</span>
+         <span class="nn">Itimer</span><span class="p">.</span><span class="n">set</span> <span class="p">(</span><span class="nn">Itimer</span><span class="p">.</span><span class="n">Real</span><span class="p">,</span>
+                     <span class="p">{</span><span class="n">value</span> <span class="p">=</span> <span class="n">t</span><span class="p">,</span>
+                      <span class="n">interval</span> <span class="p">=</span> <span class="n">t</span><span class="p">})</span>
+
+      <span class="kr">fun</span> <span class="nf">run</span> <span class="p">():</span> <span class="n">unit</span> <span class="p">=</span>
+         <span class="p">(</span><span class="n">switch</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">t</span> <span class="p">=&gt;</span>
+                  <span class="p">(</span><span class="n">topLevel</span> <span class="n">:=</span> <span class="n">SOME</span> <span class="p">(</span><span class="nn">Thread</span><span class="p">.</span><span class="n">prepare</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">()))</span>
+                   <span class="p">;</span> <span class="n">new</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">setHandler</span> <span class="p">(</span><span class="n">alrm</span><span class="p">,</span> <span class="nn">Handler</span><span class="p">.</span><span class="n">handler</span> <span class="n">schedule</span><span class="p">)</span>
+                                    <span class="p">;</span> <span class="n">setItimer</span> <span class="p">(</span><span class="nn">Time</span><span class="p">.</span><span class="n">fromMilliseconds</span> <span class="mi">20</span><span class="p">)))))</span>
+          <span class="p">;</span> <span class="n">setItimer</span> <span class="nn">Time</span><span class="p">.</span><span class="n">zeroTime</span>
+          <span class="p">;</span> <span class="n">ignore</span> <span class="n">alrm</span>
+          <span class="p">;</span> <span class="n">topLevel</span> <span class="n">:=</span> <span class="n">NONE</span><span class="p">)</span>
+   <span class="kr">end</span>
+
+<span class="kr">val</span> <span class="nv">rec</span> <span class="n">delay</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="p">()</span>
+    <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="n">delay</span> <span class="p">(</span><span class="n">n</span> <span class="n">-</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="kr">val</span> <span class="nv">rec</span> <span class="n">loop</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="p">()</span>
+    <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">delay</span> <span class="mi">500000</span><span class="p">;</span> <span class="n">loop</span> <span class="p">(</span><span class="n">n</span> <span class="n">-</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="kr">val</span> <span class="nv">rec</span> <span class="n">loop'</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="p">()</span>
+    <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="nn">Thread</span><span class="p">.</span><span class="n">spawn</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">loop</span> <span class="n">n</span><span class="p">);</span> <span class="n">loop'</span> <span class="p">(</span><span class="n">n</span> <span class="n">-</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">spawn</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">loop'</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">Thread</span><span class="p">.</span><span class="n">run</span> <span class="p">()</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="s2">"success</span><span class="se">\n</span><span class="s2">"</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonThread.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonThread.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SureshJagannathan</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SureshJagannathan</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>I am an Associate Professor at the <a href="http://www.cs.purdue.edu/">Department of Computer Science</a> at Purdue University.
+My research focus is in programming language design and implementation, concurrency,
+and distributed systems.  I am interested in various aspects of MLton, mostly related to (in no particular order): (1) control-flow analysis (2) representation
+strategies (e.g., flattening), (3) IR formats, and (4) extensions for distributed programming.</p>
+</div>
+<div class="paragraph">
+<p>Please see my <a href="http://www.cs.purdue.edu/homes/suresh/index.html">Home page</a> for more details.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SureshJagannathan.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SureshJagannathan.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

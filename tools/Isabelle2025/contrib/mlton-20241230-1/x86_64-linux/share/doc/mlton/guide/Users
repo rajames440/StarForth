@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Users</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Users</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here is a list of companies, projects, and courses that use or have
+used MLton.  If you use MLton and are not here, please add your
+project with a brief description and a link.  Thanks.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_companies">Companies</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.hardcoreprocessing.com/">Hardcore Processing</a> uses MLton as a <a href="http://www.hardcoreprocessing.com/Freeware/MLTonWin32.html">crosscompiler from Linux to Windows</a> for graphics and game software.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.cex3d.net/">CEX3D Converter</a>, a conversion program for 3D objects.</p>
+</li>
+<li>
+<p><a href="http://www.hardcoreprocessing.com/company/showreel/index.html">Interactive Showreel</a>, which contains a crossplatform GUI-toolkit and a realtime renderer for a subset of RenderMan written in Standard ML.</p>
+</li>
+<li>
+<p>various <a href="http://www.hardcoreprocessing.com/entertainment/index.html">games</a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/products/polyspace/">MathWorks/PolySpace Technologies</a> builds their product that detects runtime errors in embedded systems based on abstract interpretation.</p>
+</li>
+<li>
+<p><a href="http://www.reactive-systems.com/">Reactive Systems</a> uses MLton to build Reactis, a model-based testing and validation package used in the automotive and aerospace industries.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_projects">Projects</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www-ia.hiof.no/%7Erolando/adate_intro.html">ADATE</a>, Automatic Design of Algorithms Through Evolution, a system for automatic programming i.e., inductive inference of algorithms. ADATE can automatically generate non-trivial and novel algorithms written in Standard ML.</p>
+</li>
+<li>
+<p><a href="http://types.bu.edu/reports/Dim`Wes`Mul`Tur`Wel+Con:TIC-2000-LNCS.html">CIL</a>, a compiler for SML based on intersection and union types.</p>
+</li>
+<li>
+<p><a href="http://www.cs.cmu.edu/%7Econcert/">ConCert</a>, a project investigating certified code for grid computing.</p>
+</li>
+<li>
+<p><a href="http://hcoop.sourceforge.net/">Cooperative Internet hosting tools</a></p>
+</li>
+<li>
+<p><a href="http://www.fantasy-coders.de/projects/gh/">Guugelhupf</a>, a simple search engine.</p>
+</li>
+<li>
+<p><a href="http://www.mpi-sws.org/%7Erossberg/hamlet/">HaMLet</a>, a model implementation of Standard ML.</p>
+</li>
+<li>
+<p><a href="https://github.com/heron-solver/heron">Heron</a>, a discrete-event simulation solver for polychronous timed systems</p>
+</li>
+<li>
+<p><a href="http://code.google.com/p/kepler-code/">KeplerCode</a>, independent verification of the computational aspects of proofs of the Kepler conjecture and the Dodecahedral conjecture.</p>
+</li>
+<li>
+<p><a href="http://www.gilith.com/research/metis/">Metis</a>, a first-order prover (used in the <a href="http://hol.sourceforge.net/">HOL4 theorem prover</a> and the <a href="http://isabelle.in.tum.de/">Isabelle theorem prover</a>).</p>
+</li>
+<li>
+<p><a href="http://tom7misc.cvs.sourceforge.net/viewvc/tom7misc/net/mlftpd/">mlftpd</a>, an ftp daemon written in SML.  <a href="TomMurphy">TomMurphy</a> is also working on <a href="http://tom7misc.cvs.sourceforge.net/viewvc/tom7misc/net/">replacements for standard network services</a> in SML.  He also uses MLton to build his entries (<a href="http://www.cs.cmu.edu/%7Etom7/icfp2001/">2001</a>, <a href="http://www.cs.cmu.edu/%7Etom7/icfp2002/">2002</a>, <a href="http://www.cs.cmu.edu/%7Etom7/icfp2004/">2004</a>, <a href="http://www.cs.cmu.edu/%7Etom7/icfp2005/">2005</a>) in the annual ICFP programming contest.</p>
+</li>
+<li>
+<p><a href="http://www.informatik.uni-freiburg.de/proglang/research/software/mlope/">MLOPE</a>, an offline partial evaluator for Standard ML.</p>
+</li>
+<li>
+<p><a href="http://www.ida.liu.se/%7Epelab/rml/">RML</a>, a system for developing, compiling and debugging and teaching structural operational semantics (SOS) and natural semantics specifications.</p>
+</li>
+<li>
+<p><a href="http://www.macs.hw.ac.uk/ultra/skalpel/index.html">Skalpel</a>, a type-error slicer for SML</p>
+</li>
+<li>
+<p><a href="http://www.cs.cmu.edu/%7Etom7/ssapre/">SSA PRE</a>, an implementation of Partial Redundancy Elimination for MLton.</p>
+</li>
+<li>
+<p><a href="Stabilizers">Stabilizers</a>, a modular checkpointing abstraction for concurrent functional programs.</p>
+</li>
+<li>
+<p><a href="http://ttic.uchicago.edu/%7Epl/sa-sml/">Self-Adjusting SML</a>, self-adjusting computation, a model of computing where programs can automatically adjust to changes to their data.</p>
+</li>
+<li>
+<p><a href="http://faculty.ist.unomaha.edu/winter/ShiftLab/TL_web/TL_index.html">TL System</a>, providing general-purpose support for rewrite-based transformation over elements belonging to a (user-defined) domain language.</p>
+</li>
+<li>
+<p><a href="http://projects.laas.fr/tina/">Tina</a> (Time Petri net Analyzer)</p>
+</li>
+<li>
+<p><a href="http://www.twelf.org/">Twelf</a> an implementation of the LF logical framework.</p>
+</li>
+<li>
+<p><a href="http://www.cs.indiana.edu/%7Errnewton/wavescope/">WaveScript/WaveScript</a>, a sensor network project; the WaveScript compiler can generate SML (MLton) code.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_courses">Courses</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.eecs.harvard.edu/%7Enr/cs152/">Harvard CS-152</a>, undergraduate programming languages.</p>
+</li>
+<li>
+<p><a href="http://www.ia-stud.hiof.no/%7Erolando/PL/">Høgskolen i Østfold IAI30202</a>, programming languages.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Users.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Users.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

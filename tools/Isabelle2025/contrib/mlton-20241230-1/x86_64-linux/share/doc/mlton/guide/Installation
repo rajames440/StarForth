@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Installation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Installation</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton runs on a variety of platforms and is distributed in both source and
+binary form.</p>
+</div>
+<div class="paragraph">
+<p>A <code>.tgz</code> or <code>.tbz</code> binary package can be extracted at any location, yielding
+<code>README.adoc</code> (this file), <code>CHANGELOG.adoc</code>, <code>LICENSE</code>, <code>Makefile</code>, <code>bin/</code>,
+<code>lib/</code>, and <code>share/</code>.  The compiler and tools can be executed in-place (e.g.,
+<code>./bin/mlton</code>).</p>
+</div>
+<div class="paragraph">
+<p>A small set of <code>Makefile</code> variables can be used to customize the binary package
+via <code>make update</code>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>CC</code>: Specify C compiler.  Can be used for alternative tools (e.g.,
+<code>CC=clang</code> or <code>CC=gcc-7</code>).</p>
+</li>
+<li>
+<p><code>WITH_GMP_DIR</code>, <code>WITH_GMP_INC_DIR</code>, <code>WITH_GMP_LIB_DIR</code>: Specify GMP include
+and library paths, if not on default search paths.  (If <code>WITH_GMP_DIR</code> is
+set, then <code>WITH_GMP_INC_DIR</code> defaults to <code>$(WITH_GMP_DIR)/include</code> and
+<code>WITH_GMP_LIB_DIR</code> defaults to <code>$(WITH_GMP_DIR)/lib</code>.)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">$</span> <span class="n">make</span> <span class="n">CC</span><span class="p">=</span><span class="n">clang</span> <span class="n">WITH_GMP_DIR=/opt/gmp</span> <span class="n">update</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On typical platforms, installing MLton (after optionally performing
+<code>make update</code>) to <code>/usr/local</code> can be accomplished via:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">$</span> <span class="n">make</span> <span class="n">install</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A small set of <code>Makefile</code> variables can be used to customize the installation:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>PREFIX</code>: Specify the installation prefix.</p>
+</li>
+<li>
+<p><code>CC</code>: Specify C compiler.  Can be used for alternative tools (e.g.,
+<code>CC=clang</code> or <code>CC=gcc-7</code>).</p>
+</li>
+<li>
+<p><code>WITH_GMP_DIR</code>, <code>WITH_GMP_INC_DIR</code>, <code>WITH_GMP_LIB_DIR</code>: Specify GMP include
+and library paths, if not on default search paths.  (If <code>WITH_GMP_DIR</code> is
+set, then <code>WITH_GMP_INC_DIR</code> defaults to <code>$(WITH_GMP_DIR)/include</code> and
+<code>WITH_GMP_LIB_DIR</code> defaults to <code>$(WITH_GMP_DIR)/lib</code>.)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">$</span> <span class="n">make</span> <span class="n">PREFIX=/opt/mlton</span> <span class="n">install</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Installation of MLton creates the following files and directories.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code><em>prefix</em>/bin/mllex</code></p>
+<div class="paragraph">
+<p>The <a href="MLLex">MLLex</a> lexer generator.</p>
+</div>
+</li>
+<li>
+<p><code><em>prefix</em>/bin/mlnlffigen</code></p>
+<div class="paragraph">
+<p>The <a href="MLNLFFI">ML-NLFFI</a> tool.</p>
+</div>
+</li>
+<li>
+<p><code><em>prefix</em>/bin/mlprof</code></p>
+<div class="paragraph">
+<p>A <a href="Profiling">Profiling</a> tool.</p>
+</div>
+</li>
+<li>
+<p><code><em>prefix</em>/bin/mlton</code></p>
+<div class="paragraph">
+<p>A script to call the compiler.  This script may be moved anywhere,
+however, it makes use of files in <code><em>prefix</em>/lib/mlton</code>.</p>
+</div>
+</li>
+<li>
+<p><code><em>prefix</em>/bin/mlyacc</code></p>
+<div class="paragraph">
+<p>The <a href="MLYacc">MLYacc</a> parser generator.</p>
+</div>
+</li>
+<li>
+<p><code><em>prefix</em>/lib/mlton</code></p>
+<div class="paragraph">
+<p>Directory containing libraries and include files needed during compilation.</p>
+</div>
+</li>
+<li>
+<p><code><em>prefix</em>/share/man/man1/{mllex,mlnlffigen,mlprof,mlton,mlyacc}.1</code></p>
+<div class="paragraph">
+<p>Man pages.</p>
+</div>
+</li>
+<li>
+<p><code><em>prefix</em>/share/doc/mlton</code></p>
+<div class="paragraph">
+<p>Directory containing the user guide for MLton, mllex, and mlyacc, as
+well as example SML programs (in the <code>examples</code> directory), and license
+information.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hello_world">Hello, World!</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Once you have installed MLton, create a file called <code>hello-world.sml</code>
+with the following contents.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>print "Hello, world!\n";</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now create an executable, <code>hello-world</code>, with the following command.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>mlton hello-world.sml</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can now run <code>hello-world</code> to verify that it works.  There are more
+small examples in <code><em>prefix</em>/share/doc/mlton/examples</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installation_on_cygwin">Installation on Cygwin</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When installing the Cygwin <code>tgz</code>, you should use Cygwin&#8217;s <code>bash</code> and
+<code>tar</code>.  The use of an archiving tool that is not aware of Cygwin&#8217;s
+mounts will put the files in the wrong place.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Installation.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Installation.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

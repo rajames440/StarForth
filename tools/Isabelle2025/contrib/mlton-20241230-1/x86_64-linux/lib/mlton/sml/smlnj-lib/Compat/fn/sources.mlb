@@ -1,0 +1,8 @@
+local
+  $(SML_LIB)/basis/basis.mlb
+  fn.sig
+  fn.sml
+in
+  signature FN
+  structure Fn
+end

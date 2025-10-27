@@ -1,0 +1,9 @@
+This Isabelle component provides Minisat 2.2.1 using the
+sources from https://github.com/stp/minisat/archive/releases/2.2.1.tar.gz
+
+The executables have been built via "make r"; macOS requires to
+remove options "--static" and "-Wl,-soname,..." from the Makefile.
+
+
+        Makarius
+        07-Oct-2021

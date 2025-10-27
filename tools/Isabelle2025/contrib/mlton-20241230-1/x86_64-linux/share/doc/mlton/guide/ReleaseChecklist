@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ReleaseChecklist</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ReleaseChecklist</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_advance_preparation_for_release">Advance preparation for release</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Update <code>./CHANGELOG.adoc</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Write entries for missing notable commits.</p>
+</li>
+<li>
+<p>Write summary of changes from previous release.</p>
+</li>
+<li>
+<p>Update with estimated release date.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Update <code>./README.adoc</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Check features and description.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Update <code>man/{mlton,mlprof}.1</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Check compile-time and run-time options in <code>man/mlton.1</code>.</p>
+</li>
+<li>
+<p>Check options in <code>man/mlprof.1</code>.</p>
+</li>
+<li>
+<p>Update with estimated release date.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Update <code>doc/guide</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Synchronize <a href="Features">Features</a> page with <code>./README.adoc</code>.</p>
+</li>
+<li>
+<p>Update <a href="Credits">Credits</a> page with acknowledgements.</p>
+</li>
+<li>
+<p>Create <strong>ReleaseYYYYMM??</strong> page (i.e., forthcoming release) based on <strong>ReleaseXXXXLLCC</strong> (i.e., previous release).</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Update summary from <code>./CHANGELOG.adoc</code>.</p>
+</li>
+<li>
+<p>Update links to estimated release date.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Create <strong>BugsYYYYMM??</strong> page based on <strong>BugsXXXXLLCC</strong>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Update links to estimated release date.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Spell check pages.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Ensure that all updates are pushed to <code>master</code> branch of <a href="https://github.com/MLton/mlton"><code>mlton</code></a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prepare_sources_for_tagging">Prepare sources for tagging</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Update <code>./CHANGELOG.adoc</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Update with proper release date.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Update <code>man/{mlton,mlprof}.1</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Update with proper release date.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Update <code>doc/guide</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Rename <strong>ReleaseYYYYMM??</strong> to <strong>ReleaseYYYYMMDD</strong> with proper release date.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Update links with proper release date.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Rename <strong>BugsYYYYMM??</strong> to <strong>BugsYYYYMMDD</strong> with proper release date.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Update links with proper release date.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Update <strong>ReleaseXXXXLLCC</strong>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Change intro to <code>This is an archived public release of MLton, version XXXXLLCC.</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Update <a href="Home">Home</a> with note of new release.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Change <code>What&#8217;s new?</code> text to <code>Please try out our new release, <a href="ReleaseYYYYMMDD">MLton YYYYMMDD</a></code>.</p>
+</li>
+<li>
+<p>Update <code>Download</code> link with proper release date.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Update <a href="Releases">Releases</a> with new release.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Ensure that all updates are pushed to <code>master</code> branch of <a href="https://github.com/MLton/mlton"><code>mlton</code></a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tag_sources">Tag sources</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Shell commands:</p>
+<div class="listingblock">
+<div class="content">
+<pre>git clone http://github.com/MLton/mlton mlton.git
+cd mlton.git
+git checkout master
+git tag -a -m "Tagging ${YYYYMMDD} release" on-${YYYYMMDD}-release master
+git push origin on-${YYYYMMDD}-release</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_packaging">Packaging</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_sourceforge_frs">SourceForge FRS</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Create <strong>YYYYMMDD</strong> directory:</p>
+<div class="listingblock">
+<div class="content">
+<pre>sftp user@frs.sourceforge.net:/home/frs/project/mlton/mlton
+sftp&gt; mkdir YYYYMMDD
+sftp&gt; quit</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_source_release">Source release</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Create <code>mlton-YYYYMMDD.src.tgz</code>:</p>
+<div class="listingblock">
+<div class="content">
+<pre>git clone http://github.com/MLton/mlton mlton
+cd mlton
+git checkout on-${YYYYMMDD}-release
+make MLTON_VERSION=${YYYYMMDD} source-release
+cd ..</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>wget https://github.com/MLton/mlton/archive/on-${YYYYMMDD}-release.tar.gz
+tar xzvf on-${YYYYMMDD}-release.tar.gz
+cd mlton-on-${YYYYMMDD}-release
+make MLTON_VERSION=${YYYYMMDD} source-release
+cd ..</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Upload <code>mlton-YYYYMMDD.src.tgz</code>:</p>
+<div class="listingblock">
+<div class="content">
+<pre>scp mlton-${YYYYMMDD}.src.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlton/${YYYYMMDD}/</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Update <strong>ReleaseYYYYMMDD</strong> with <code>mlton-YYYYMMDD.src.tgz</code> link.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_binary_releases">Binary releases</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Build and create <code>mlton-YYYYMMDD-1.ARCH-OS.tgz</code>:</p>
+<div class="listingblock">
+<div class="content">
+<pre>wget http://sourceforge.net/projects/mlton/files/mlton/${YYYYMMDD}/mlton-${YYYYMMDD}.src.tgz
+tar xzvf mlton-${YYYYMMDD}.src.tgz
+cd mlton-${YYYYMMDD}
+make binary-release</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Upload <code>mlton-YYYYMMDD-1.ARCH-OS.tgz</code>:</p>
+<div class="listingblock">
+<div class="content">
+<pre>scp mlton-${YYYYMMDD}-1.ARCH-OS.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlton/${YYYYMMDD}/</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Update <strong>ReleaseYYYYMMDD</strong> with <code>mlton-YYYYMMDD-1.ARCH-OS.tgz</code> link.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_website">Website</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><code>guide/YYYYMMDD</code> gets a copy of <code>doc/guide/localhost</code>.</p>
+</li>
+<li>
+<p>Shell commands:</p>
+<div class="listingblock">
+<div class="content">
+<pre>wget http://sourceforge.net/projects/mlton/files/mlton/${YYYYMMDD}/mlton-${YYYYMMDD}.src.tgz
+tar xzvf mlton-${YYYYMMDD}.src.tgz
+cd mlton-${YYYYMMDD}
+cd doc/guide
+cp -prf localhost ${YYYYMMDD}
+tar czvf guide-${YYYYMMDD}.tgz ${YYYYMMDD}
+rsync -avzP --delete -e ssh ${YYYYMMDD} user@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
+rsync -avzP --delete -e ssh guide-${YYYYMMDD}.tgz user@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_announce_release">Announce release</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Mail announcement to:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="mailto:MLton-devel@mlton.org"><code>MLton-devel@mlton.org</code></a></p>
+</li>
+<li>
+<p><a href="mailto:MLton-user@mlton.org"><code>MLton-user@mlton.org</code></a></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_misc">Misc.</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Generate new <a href="Performance">Performance</a> numbers.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ReleaseChecklist.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ReleaseChecklist.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

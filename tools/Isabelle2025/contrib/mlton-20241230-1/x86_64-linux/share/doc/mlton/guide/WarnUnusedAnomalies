@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>WarnUnusedAnomalies</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>WarnUnusedAnomalies</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>The <code>warnUnused</code> <a href="MLBasisAnnotations">MLBasis annotation</a> can be used
+to report unused identifiers.  This can be useful for catching bugs
+and for code maintenance (e.g., eliminating dead code).  However, the
+<code>warnUnused</code> annotation can sometimes behave in counter-intuitive
+ways.  This page gives some of the anomalies that have been reported.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Functions whose only uses are recursive uses within their bodies are
+not warned as unused:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+<span class="kr">fun</span> <span class="nf">foo</span> <span class="p">()</span> <span class="p">=</span> <span class="n">foo</span> <span class="p">()</span> <span class="p">:</span> <span class="n">unit</span>
+<span class="kr">val</span> <span class="nv">bar</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">fun</span> <span class="nf">baz</span> <span class="p">()</span> <span class="p">=</span> <span class="n">baz</span> <span class="p">()</span> <span class="p">:</span> <span class="n">unit</span> <span class="kr">in</span> <span class="n">baz</span> <span class="kr">end</span>
+<span class="kr">in</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Warning: z.sml 3.5.
+  Unused variable: bar.</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Components of actual functor argument that are necessary to match
+the functor argument signature but are unused in the body of the
+functor are warned as unused:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">Warning</span> <span class="p">(</span><span class="kr">type</span> <span class="kt">t</span> <span class="kr">val</span> <span class="nv">x</span> <span class="p">:</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="n">x</span>
+<span class="kr">end</span>
+<span class="kr">structure</span> <span class="nn">X</span> <span class="p">=</span> <span class="n">Warning</span> <span class="p">(</span><span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">int</span> <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">1</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Warning: z.sml 4.29.
+  Unused type: t.</pre>
+</div>
+</div>
+</li>
+<li>
+<p>No component of a functor result is warned as unused.  In the
+following, the only uses of <code>f2</code> are to match the functor argument
+signatures of <code>functor G</code> and <code>functor H</code> and there are no uses of
+<code>z</code>:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">F</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">X</span> <span class="p">:</span> <span class="kr">sig</span> <span class="kr">type</span> <span class="kt">t</span> <span class="kr">end</span><span class="p">)</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">X</span><span class="p">.</span><span class="n">t</span>
+   <span class="kr">fun</span> <span class="nf">f1</span> <span class="p">(_</span> <span class="p">:</span> <span class="nn">X</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="p">()</span>
+   <span class="kr">fun</span> <span class="nf">f2</span> <span class="p">(_</span> <span class="p">:</span> <span class="nn">X</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="p">()</span>
+   <span class="kr">val</span> <span class="nv">z</span> <span class="p">=</span> <span class="p">()</span>
+<span class="kr">end</span>
+<span class="kr">functor</span> <span class="nn">G</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">Y</span> <span class="p">:</span> <span class="kr">sig</span>
+                           <span class="kr">type</span> <span class="kt">t</span>
+                           <span class="kr">val</span> <span class="nv">f1</span> <span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+                           <span class="kr">val</span> <span class="nv">f2</span> <span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+                           <span class="kr">val</span> <span class="nv">z</span> <span class="p">:</span> <span class="n">unit</span>
+                        <span class="kr">end</span><span class="p">)</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">fun</span> <span class="nf">g</span> <span class="p">(</span><span class="n">x</span> <span class="p">:</span> <span class="nn">Y</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="nn">Y</span><span class="p">.</span><span class="n">f1</span> <span class="n">x</span>
+<span class="kr">end</span>
+<span class="kr">functor</span> <span class="nn">H</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">Y</span> <span class="p">:</span> <span class="kr">sig</span>
+                           <span class="kr">type</span> <span class="kt">t</span>
+                           <span class="kr">val</span> <span class="nv">f1</span> <span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+                           <span class="kr">val</span> <span class="nv">f2</span> <span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+                           <span class="kr">val</span> <span class="nv">z</span> <span class="p">:</span> <span class="n">unit</span>
+                        <span class="kr">end</span><span class="p">)</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">fun</span> <span class="nf">h</span> <span class="p">(</span><span class="n">x</span> <span class="p">:</span> <span class="nn">Y</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="nn">Y</span><span class="p">.</span><span class="n">f1</span> <span class="n">x</span>
+<span class="kr">end</span>
+<span class="kr">functor</span> <span class="nn">Z</span><span class="p">()</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">structure</span> <span class="nn">S</span> <span class="p">=</span> <span class="n">F</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">X</span> <span class="p">=</span> <span class="kr">struct</span> <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">unit</span> <span class="kr">end</span><span class="p">)</span>
+   <span class="kr">structure</span> <span class="nn">SG</span> <span class="p">=</span> <span class="n">G</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">Y</span> <span class="p">=</span> <span class="n">S</span><span class="p">)</span>
+   <span class="kr">structure</span> <span class="nn">SH</span> <span class="p">=</span> <span class="n">H</span><span class="p">(</span><span class="kr">structure</span> <span class="nn">Y</span> <span class="p">=</span> <span class="n">S</span><span class="p">)</span>
+<span class="kr">end</span>
+<span class="kr">structure</span> <span class="nn">U</span> <span class="p">=</span> <span class="n">Z</span><span class="p">()</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">U</span><span class="p">.</span><span class="nn">SG</span><span class="p">.</span><span class="n">g</span> <span class="p">()</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">U</span><span class="p">.</span><span class="nn">SH</span><span class="p">.</span><span class="n">h</span> <span class="p">()</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/WarnUnusedAnomalies.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/WarnUnusedAnomalies.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# -*- shell-script -*- :mode=shellscript:
+
+JORTHO_HOME="$COMPONENT"
+JORTHO_DICTIONARIES="$JORTHO_HOME/dictionaries/en.gz:$JORTHO_HOME/dictionaries/en_US.gz:$JORTHO_HOME/dictionaries/en_GB-ise.gz:$JORTHO_HOME/dictionaries/en_GB-ize.gz:$JORTHO_HOME/dictionaries/en_CA.gz"
+
+classpath "$JORTHO_HOME/jortho.jar"

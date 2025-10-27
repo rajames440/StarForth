@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SSASimplify</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SSASimplify</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>The optimization passes for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a> are
+collected and controlled by the <code>Simplify</code> functor
+(<a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/simplify.sig"><code>simplify.sig</code></a>,
+<a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/simplify.fun"><code>simplify.fun</code></a>).</p>
+</div>
+<div class="paragraph">
+<p>The following optimization passes are implemented:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="CombineConversions">CombineConversions</a></p>
+</li>
+<li>
+<p><a href="CommonArg">CommonArg</a></p>
+</li>
+<li>
+<p><a href="CommonBlock">CommonBlock</a></p>
+</li>
+<li>
+<p><a href="CommonSubexp">CommonSubexp</a></p>
+</li>
+<li>
+<p><a href="ConstantPropagation">ConstantPropagation</a></p>
+</li>
+<li>
+<p><a href="Contify">Contify</a></p>
+</li>
+<li>
+<p><a href="DuplicateGlobals">DuplicateGlobals</a></p>
+</li>
+<li>
+<p><a href="Flatten">Flatten</a></p>
+</li>
+<li>
+<p><a href="Inline">Inline</a></p>
+</li>
+<li>
+<p><a href="IntroduceLoops">IntroduceLoops</a></p>
+</li>
+<li>
+<p><a href="KnownCase">KnownCase</a></p>
+</li>
+<li>
+<p><a href="LocalFlatten">LocalFlatten</a></p>
+</li>
+<li>
+<p><a href="LocalRef">LocalRef</a></p>
+</li>
+<li>
+<p><a href="LoopInvariant">LoopInvariant</a></p>
+</li>
+<li>
+<p><a href="LoopUnroll">LoopUnroll</a></p>
+</li>
+<li>
+<p><a href="LoopUnswitch">LoopUnswitch</a></p>
+</li>
+<li>
+<p><a href="Redundant">Redundant</a></p>
+</li>
+<li>
+<p><a href="RedundantTests">RedundantTests</a></p>
+</li>
+<li>
+<p><a href="RemoveUnused">RemoveUnused</a></p>
+</li>
+<li>
+<p><a href="ShareZeroVec">ShareZeroVec</a></p>
+</li>
+<li>
+<p><a href="SimplifyTypes">SimplifyTypes</a></p>
+</li>
+<li>
+<p><a href="SplitTypes">SplitTypes</a></p>
+</li>
+<li>
+<p><a href="Useless">Useless</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The following implementation passes are implemented:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="PolyEqual">PolyEqual</a></p>
+</li>
+<li>
+<p><a href="PolyHash">PolyHash</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>There are additional analysis and rewrite passes that augment many of the other optimization passes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Multi">Multi</a></p>
+</li>
+<li>
+<p><a href="Restore">Restore</a></p>
+</li>
+<li>
+<p><a href="Shrink">Shrink</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The optimization passes can be controlled from the command-line by the options:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>-diag-pass &lt;pass&gt;</code>&#8201;&#8212;&#8201;keep diagnostic info for pass</p>
+</li>
+<li>
+<p><code>-disable-pass &lt;pass&gt;</code>&#8201;&#8212;&#8201;skip optimization pass (if normally performed)</p>
+</li>
+<li>
+<p><code>-enable-pass &lt;pass&gt;</code>&#8201;&#8212;&#8201;perform optimization pass (if normally skipped)</p>
+</li>
+<li>
+<p><code>-keep-pass &lt;pass&gt;</code>&#8201;&#8212;&#8201;keep the results of pass</p>
+</li>
+<li>
+<p><code>-loop-passes &lt;n&gt;</code>&#8201;&#8212;&#8201;loop optimization passes</p>
+</li>
+<li>
+<p><code>-ssa-passes &lt;passes&gt;</code>&#8201;&#8212;&#8201;ssa optimization passes</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Wed Mar 13 12:45:42 2024 -0400 by Colin McDonald.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SSASimplify.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SSASimplify.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

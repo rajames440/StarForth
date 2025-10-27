@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>EqualityType</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>EqualityType</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>An equality type is a type to which <a href="PolymorphicEquality">PolymorphicEquality</a> can be
+applied.  The <a href="DefinitionOfStandardML">Definition</a> and the
+<a href="BasisLibrary">Basis Library</a> precisely spell out which types are
+equality types.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>bool</code>, <code>char</code>, <code>IntInf.int</code>, <code>Int<em>&lt;N&gt;</em>.int</code>, <code>string</code>, and <code>Word<em>&lt;N&gt;</em>.word</code> are equality types.</p>
+</li>
+<li>
+<p>for any <code>t</code>, both <code>t array</code> and <code>t ref</code> are equality types.</p>
+</li>
+<li>
+<p>if <code>t</code> is an equality type, then <code>t list</code>, and <code>t vector</code> are equality types.</p>
+</li>
+<li>
+<p>if <code>t1</code>, &#8230;&#8203;, <code>tn</code> are equality types, then <code>t1 * &#8230;&#8203; * tn</code> and <code>{l1: t1, &#8230;&#8203;, ln: tn}</code> are equality types.</p>
+</li>
+<li>
+<p>if <code>t1</code>, &#8230;&#8203;, <code>tn</code> are equality types and <code>t</code> <a href="AdmitsEquality">AdmitsEquality</a>, then <code>(t1, &#8230;&#8203;, tn) t</code> is an equality type.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To check that a type t is an equality type, use the following idiom.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">S</span><span class="p">:</span> <span class="kr">sig</span> <span class="kr">eqtype</span> <span class="kt">t</span> <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">...</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notably, <code>exn</code> and <code>real</code> are not equality types.  Neither is <code>t1 -&gt; t2</code>, for any <code>t1</code> and <code>t2</code>.</p>
+</div>
+<div class="paragraph">
+<p>Equality on arrays and ref cells is by identity, not structure.
+For example, <code>ref 13 = ref 13</code> is <code>false</code>.
+On the other hand, equality for lists, strings, and vectors is by
+structure, not identity.  For example, the following equalities hold.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="p">=</span> <span class="mi">1</span> <span class="n">::</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="s2">"foo"</span> <span class="p">=</span> <span class="n">concat</span> <span class="p">[</span><span class="s2">"f"</span><span class="p">,</span> <span class="s2">"o"</span><span class="p">,</span> <span class="s2">"o"</span><span class="p">]</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="nn">Vector</span><span class="p">.</span><span class="n">fromList</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="p">=</span> <span class="nn">Vector</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span> <span class="n">+</span> <span class="mi">1</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/EqualityType.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/EqualityType.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

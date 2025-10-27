@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Contact</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Contact</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_mailing_lists">Mailing lists</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are three mailing lists available.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="mailto:MLton-user@mlton.org"><code>MLton-user@mlton.org</code></a></p>
+<div class="paragraph">
+<p>MLton user community discussion</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://lists.sourceforge.net/lists/listinfo/mlton-user">subscribe</a>
+<a href="https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-user">archive (SourceForge; current)</a>,
+<a href="http://www.mlton.org/pipermail/mlton-user/">archive (PiperMail; through 201110)</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p><a href="mailto:MLton-devel@mlton.org"><code>MLton-devel@mlton.org</code></a></p>
+<div class="paragraph">
+<p>MLton developer community discussion</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://lists.sourceforge.net/lists/listinfo/mlton-devel">subscribe</a>
+<a href="https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-devel">archive (SourceForge; current)</a>,
+<a href="http://www.mlton.org/pipermail/mlton-devel/">archive (PiperMail; through 201110)</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p><a href="mailto:MLton-commit@mlton.org"><code>MLton-commit@mlton.org</code></a></p>
+<div class="paragraph">
+<p>MLton code commits</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://lists.sourceforge.net/lists/listinfo/mlton-commit">subscribe</a></p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-commit">archive (SourceForge; current)</a>,
+<a href="http://www.mlton.org/pipermail/mlton-commit/">archive (PiperMail; through 201110)</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_mailing_list_policies">Mailing list policies</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Both mailing lists are unmoderated.  However, the mailing lists are
+configured to discard all spam, to hold all non-subscriber posts
+for moderation, to accept all subscriber posts, and to admin approve
+subscription requests.  Please contact
+<a href="mailto:matthew.fluet@gmail.com">Matthew Fluet</a> if it appears that your
+messages are being discarded as spam.</p>
+</li>
+<li>
+<p>Large messages (over 256K) should not be sent.  Rather, please send
+an email containing the discussion text and a link to any large files.</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Discussions started on the mailing lists should stay on the mailing
+lists.  Private replies may be bounced to the mailing list for the
+benefit of those following the discussion.</p>
+</li>
+<li>
+<p>Discussions started on
+<a href="mailto:MLton-user@mlton.org"><code>MLton-user@mlton.org</code></a> may be migrated to
+<a href="mailto:MLton-devel@mlton.org"><code>MLton-devel@mlton.org</code></a>, particularly
+when the discussion shifts from how to use MLton to how to modify
+MLton (e.g., to fix a bug identified by the initial discussion).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_irc">IRC</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Some MLton developers and users are in channel <code>#sml</code> on <a href="http://freenode.net" class="bare">http://freenode.net</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Contact.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Contact.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

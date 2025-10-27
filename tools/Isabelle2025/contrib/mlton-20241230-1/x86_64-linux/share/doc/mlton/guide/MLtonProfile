@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonProfile</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonProfile</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_PROFILE</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">structure</span> <span class="nn">Data</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">type</span> <span class="kt">t</span>
+
+            <span class="kr">val</span> <span class="nv">equals</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+            <span class="kr">val</span> <span class="nv">free</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+            <span class="kr">val</span> <span class="nv">malloc</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">write</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+         <span class="kr">end</span>
+
+      <span class="kr">val</span> <span class="nv">isOn</span><span class="p">:</span> <span class="n">bool</span>
+      <span class="kr">val</span> <span class="nv">withData</span><span class="p">:</span> <span class="nn">Data</span><span class="p">.</span><span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>MLton.Profile</code> provides <a href="Profiling">Profiling</a> control from within the
+program, allowing you to profile individual portions of your
+program. With <code>MLton.Profile</code>, you can create many units of profiling
+data (essentially, mappings from functions to counts) during a run of
+a program, switch between them while the program is running, and
+output multiple <code>mlmon.out</code> files.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>isOn</code></p>
+<div class="paragraph">
+<p>a compile-time constant that is false only when compiling <code>-profile no</code>.</p>
+</div>
+</li>
+<li>
+<p><code>type Data.t</code></p>
+<div class="paragraph">
+<p>the type of a unit of profiling data.  In order to most efficiently
+execute non-profiled programs, when compiling <code>-profile no</code> (the
+default), <code>Data.t</code> is equivalent to <code>unit ref</code>.</p>
+</div>
+</li>
+<li>
+<p><code>Data.equals (x, y)</code></p>
+<div class="paragraph">
+<p>returns true if the <code>x</code> and <code>y</code> are the same unit of profiling data.</p>
+</div>
+</li>
+<li>
+<p><code>Data.free x</code></p>
+<div class="paragraph">
+<p>frees the memory associated with the unit of profiling data <code>x</code>.  It
+is an error to free the current unit of profiling data or to free a
+previously freed unit of profiling data.  When compiling
+<code>-profile no</code>, <code>Data.free x</code> is a no-op.</p>
+</div>
+</li>
+<li>
+<p><code>Data.malloc ()</code></p>
+<div class="paragraph">
+<p>returns a new unit of profiling data.  Each unit of profiling data is
+allocated from the process address space (but is <em>not</em> in the MLton
+heap) and consumes memory proportional to the number of source
+functions.  When compiling <code>-profile no</code>, <code>Data.malloc ()</code> is
+equivalent to allocating a new <code>unit ref</code>.</p>
+</div>
+</li>
+<li>
+<p><code>write (x, f)</code></p>
+<div class="paragraph">
+<p>writes the accumulated ticks in the unit of profiling data <code>x</code> to file
+<code>f</code>.  It is an error to write a previously freed unit of profiling
+data.  When compiling <code>-profile no</code>, <code>write (x, f)</code> is a no-op.  A
+profiled program will always write the current unit of profiling data
+at program exit to a file named <code>mlmon.out</code>.</p>
+</div>
+</li>
+<li>
+<p><code>withData (d, f)</code></p>
+<div class="paragraph">
+<p>runs <code>f</code> with <code>d</code> as the unit of profiling data, and returns the
+result of <code>f</code> after restoring the current unit of profiling data.
+When compiling <code>-profile no</code>, <code>withData (d, f)</code> is equivalent to
+<code>f ()</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example">Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here is an example, taken from the <code>examples/profiling</code> directory,
+showing how to profile the executions of the <code>fib</code> and <code>tak</code> functions
+separately.  Suppose that <code>fib-tak.sml</code> contains the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Profile</span> <span class="p">=</span> <span class="nn">MLton</span><span class="p">.</span><span class="n">Profile</span>
+
+<span class="kr">val</span> <span class="nv">fibData</span> <span class="p">=</span> <span class="nn">Profile</span><span class="p">.</span><span class="nn">Data</span><span class="p">.</span><span class="n">malloc</span> <span class="p">()</span>
+<span class="kr">val</span> <span class="nv">takData</span> <span class="p">=</span> <span class="nn">Profile</span><span class="p">.</span><span class="nn">Data</span><span class="p">.</span><span class="n">malloc</span> <span class="p">()</span>
+
+<span class="kr">fun</span> <span class="nf">wrap</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="n">x</span> <span class="p">=</span>
+   <span class="nn">Profile</span><span class="p">.</span><span class="n">withData</span> <span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">x</span><span class="p">)</span>
+
+<span class="kr">val</span> <span class="nv">rec</span> <span class="n">fib</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="mi">0</span>
+    <span class="p">|</span> <span class="mi">1</span> <span class="p">=&gt;</span> <span class="mi">1</span>
+    <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="n">fib</span> <span class="p">(</span><span class="n">n</span> <span class="n">-</span> <span class="mi">1</span><span class="p">)</span> <span class="n">+</span> <span class="n">fib</span> <span class="p">(</span><span class="n">n</span> <span class="n">-</span> <span class="mi">2</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">fib</span> <span class="p">=</span> <span class="n">wrap</span> <span class="p">(</span><span class="n">fib</span><span class="p">,</span> <span class="n">fibData</span><span class="p">)</span>
+
+<span class="kr">fun</span> <span class="nf">tak</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">if</span> <span class="n">not</span> <span class="p">(</span><span class="n">y</span> <span class="n">&lt;</span> <span class="n">x</span><span class="p">)</span>
+      <span class="kr">then</span> <span class="n">z</span>
+   <span class="kr">else</span> <span class="n">tak</span> <span class="p">(</span><span class="n">tak</span> <span class="p">(</span><span class="n">x</span> <span class="n">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span>
+             <span class="n">tak</span> <span class="p">(</span><span class="n">y</span> <span class="n">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span>
+             <span class="n">tak</span> <span class="p">(</span><span class="n">z</span> <span class="n">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+<span class="kr">val</span> <span class="nv">tak</span> <span class="p">=</span> <span class="n">wrap</span> <span class="p">(</span><span class="n">tak</span><span class="p">,</span> <span class="n">takData</span><span class="p">)</span>
+
+<span class="kr">val</span> <span class="nv">rec</span> <span class="n">f</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="p">()</span>
+    <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">fib</span> <span class="mi">38</span><span class="p">;</span> <span class="n">f</span> <span class="p">(</span><span class="n">n-</span><span class="mi">1</span><span class="p">))</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">f</span> <span class="mi">2</span>
+
+<span class="kr">val</span> <span class="nv">rec</span> <span class="n">g</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="mi">0</span> <span class="p">=&gt;</span> <span class="p">()</span>
+    <span class="p">|</span> <span class="n">n</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">tak</span> <span class="p">(</span><span class="mi">18</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">);</span> <span class="n">g</span> <span class="p">(</span><span class="n">n-</span><span class="mi">1</span><span class="p">))</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">g</span> <span class="mi">500</span>
+
+<span class="kr">fun</span> <span class="nf">done</span> <span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span> <span class="p">=</span>
+   <span class="p">(</span><span class="nn">Profile</span><span class="p">.</span><span class="nn">Data</span><span class="p">.</span><span class="n">write</span> <span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+    <span class="p">;</span> <span class="nn">Profile</span><span class="p">.</span><span class="nn">Data</span><span class="p">.</span><span class="n">free</span> <span class="n">data</span><span class="p">)</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">done</span> <span class="p">(</span><span class="n">fibData</span><span class="p">,</span> <span class="s2">"mlmon.fib.out"</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">done</span> <span class="p">(</span><span class="n">takData</span><span class="p">,</span> <span class="s2">"mlmon.tak.out"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Compile and run the program.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton -profile time fib-tak.sml
+% ./fib-tak</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Separately display the profiling data for <code>fib</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlprof fib-tak mlmon.fib.out
+5.77 seconds of CPU time (0.00 seconds GC)
+function   cur
+--------- -----
+fib       96.9%
+&lt;unknown&gt;  3.1%</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and for <code>tak</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlprof fib-tak mlmon.tak.out
+0.68 seconds of CPU time (0.00 seconds GC)
+function  cur
+-------- ------
+tak      100.0%</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Combine the data for <code>fib</code> and <code>tak</code> by calling <code>mlprof</code>
+with multiple <code>mlmon.out</code> files.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlprof fib-tak mlmon.fib.out mlmon.tak.out mlmon.out
+6.45 seconds of CPU time (0.00 seconds GC)
+function   cur
+--------- -----
+fib       86.7%
+tak       10.5%
+&lt;unknown&gt;  2.8%</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonProfile.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonProfile.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

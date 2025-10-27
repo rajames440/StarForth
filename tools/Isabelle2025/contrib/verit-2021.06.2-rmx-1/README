@@ -1,0 +1,12 @@
+This is veriT 2021.06.2-rmx from
+https://verit.loria.fr/download/2021.06.2/verit-2021.06.2-rmx.tar.gz
+
+It has been built from sources like this:
+
+  cd src
+  ./configure
+  make
+
+
+        Makarius
+        19-Nov-2021

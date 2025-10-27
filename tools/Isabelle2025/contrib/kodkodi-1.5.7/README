@@ -1,0 +1,38 @@
+Kodkodi version 1.5.6
+25 Aug 2020
+
+The pre-built Java libraries are located in the "jar" subdirectory.
+Precompiled JNI libraries of MiniSat, CryptoMiniSat, Lingeling, and
+Plingeling (also available at http://alloy.mit.edu/kodkod/) are
+located in "jni". Kodkodi's source files in "src" are covered by the
+license found in the file "LICENSES/Kodkodi". The Kodkodi manual is
+called "manual/kodkodi.pdf".
+
+This package includes the following third-party tools in source and/or
+binary form:
+
+  * ANTLR 3.1.1 runtime ("jar/antlr-runtime-3.1.1.jar"):
+    Custom subset of http://www.antlr.org/download/antlr-3.1.1.jar.
+
+  * Kodkod 1.5 ("jar/kodkod-1.5.jar"):
+    Downloaded from http://alloy.mit.edu/kodkod/release/kodkod.jar.
+
+  * SAT4J 2.3 ("jar/sat4j-2.3"):
+    Extracted from
+    http://forge.ow2.org/project/download.php?group_id=228&file_id=16503.
+
+  * JNI versions of MiniSat 1.14/2.2.0, CryptoMiniSat 2.9.1, and
+    Lingeling/Plingeling 276 ("jni/*"):
+    Most of these come from
+    http://alloy.mit.edu/kodkod/release/linux_x86_32.zip,
+    http://alloy.mit.edu/kodkod/release/linux_x86_64.zip, and
+    http://alloy.mit.edu/kodkod/release/darwin_x86_64.zip. The Cygwin
+    and ".jnilib" Mac OS X MiniSat libraries were taken from Alloy
+    4.1.10, previously available at
+    http://alloy.mit.edu/alloy4/alloy4.jar. The SAT solver sources are
+    available as part of
+    http://alloy.mit.edu/kodkod/release/kodkod-1.5.zip.
+
+Each of these tools comes with its own license, which can be found in
+the "LICENSES" directory. Be aware that zChaff is licensed for
+"internal, noncommercial, research purposes only."

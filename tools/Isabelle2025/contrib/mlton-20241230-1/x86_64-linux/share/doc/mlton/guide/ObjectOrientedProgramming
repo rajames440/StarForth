@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ObjectOrientedProgramming</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ObjectOrientedProgramming</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="StandardML">Standard ML</a> does not have explicit support for
+object-oriented programming.  Here are some papers that show how to
+express certain object-oriented concepts in SML.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="References#Berthomieu00">OO Programming styles in ML</a></p>
+</li>
+<li>
+<p><a href="References#ThorupTofte94">Object-oriented programming and Standard ML</a></p>
+</li>
+<li>
+<p><a href="References#LarsenNiss04">mGTK: An SML binding of Gtk+</a></p>
+</li>
+<li>
+<p><a href="References#FluetPucella06">Phantom Types and Subtyping</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The question of OO programming in SML comes up every now and then.
+The following discusses a simple object-oriented (OO) programming
+technique in Standard ML.  The reader is assumed to be able to read
+Java and SML code.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_motivation">Motivation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>SML doesn&#8217;t provide subtyping, but it does provide parametric
+polymorphism, which can be used to encode some forms of subtyping.
+Most articles on OO programming in SML concentrate on such encoding
+techniques.  While those techniques are interesting&#8201;&#8212;&#8201;and it is
+recommended to read such articles&#8201;&#8212;&#8201;and sometimes useful, it seems
+that basically all OO gurus agree that (deep) subtyping (or
+inheritance) hierarchies aren&#8217;t as practical as they were thought to
+be in the early OO days.  "Good", flexible, "OO" designs tend to have
+a flat structure</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>         Interface
+             ^
+             |
+- - -+-------+-------+- - -
+     |       |       |
+   ImplA   ImplB   ImplC</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and deep inheritance hierarchies</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>ClassA
+  ^
+  |
+ClassB
+  ^
+  |
+ClassC
+  ^
+  |</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>tend to be signs of design mistakes.  There are good underlying
+reasons for this, but a thorough discussion is not in the scope of
+this article.  However, the point is that perhaps the encoding of
+subtyping is not as important as one might believe.  In the following
+we ignore subtyping and rather concentrate on a very simple and basic
+dynamic dispatch technique.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_dynamic_dispatch_using_a_recursive_record_of_functions">Dynamic Dispatch Using a Recursive Record of Functions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Quite simply, the basic idea is to implement a "virtual function
+table" using a record that is wrapped inside a (possibly recursive)
+datatype.  Let&#8217;s first take a look at a simple concrete example.</p>
+</div>
+<div class="paragraph">
+<p>Consider the following Java interface:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>public interface Counter {
+  public void inc();
+  public int get();
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can translate the <code>Counter</code> interface to SML as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">counter</span> <span class="p">=</span> <span class="nc">Counter</span> <span class="kr">of</span> <span class="p">{</span><span class="n">inc</span> <span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">,</span> <span class="n">get</span> <span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each value of type <code>counter</code> can be thought of as an object that
+responds to two messages <code>inc</code> and <code>get</code>.  To actually send messages
+to a counter, it is useful to define auxiliary functions</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+   <span class="kr">fun</span> <span class="nf">mk</span> <span class="n">m</span> <span class="p">(</span><span class="n">Counter</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="n">m</span> <span class="n">t</span> <span class="p">()</span>
+<span class="kr">in</span>
+   <span class="kr">val</span> <span class="nv">cGet</span> <span class="p">=</span> <span class="n">mk</span><span class="nl">#get</span>
+   <span class="kr">val</span> <span class="nv">cInc</span> <span class="p">=</span> <span class="n">mk</span><span class="nl">#inc</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>that basically extract the "function table" <code>t</code> from a counter object
+and then select the specified method <code>m</code> from the table.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s then implement a simple function that increments a counter until a
+given maximum is reached:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">incUpto</span> <span class="n">counter</span> <span class="n">max</span> <span class="p">=</span> <span class="kr">while</span> <span class="n">cGet</span> <span class="n">counter</span> <span class="n">&lt;</span> <span class="n">max</span> <span class="kr">do</span> <span class="n">cInc</span> <span class="n">counter</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can easily verify that the above code compiles even without any
+concrete implementation of a counter, thus it is clear that it doesn&#8217;t
+depend on a particular counter implementation.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s then implement a couple of counters.  First consider the
+following Java class implementing the <code>Counter</code> interface given earlier.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>public class BasicCounter implements Counter {
+  private int cnt;
+  public BasicCounter(int initialCnt) { this.cnt = initialCnt; }
+  public void inc() { this.cnt += 1; }
+  public int get() { return this.cnt; }
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can translate the above to SML as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">newBasicCounter</span> <span class="n">initialCnt</span> <span class="p">=</span> <span class="kr">let</span>
+       <span class="kr">val</span> <span class="nv">cnt</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">initialCnt</span>
+    <span class="kr">in</span>
+       <span class="n">Counter</span> <span class="p">{</span><span class="n">inc</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">cnt</span> <span class="n">:=</span> <span class="n">!cnt</span> <span class="n">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">get</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">!cnt</span><span class="p">}</span>
+    <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The SML function <code>newBasicCounter</code> can be described as a constructor
+function for counter objects of the <code>BasicCounter</code> "class".  We can
+also have other counter implementations.  Here is the constructor for
+a counter decorator that logs messages:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">newLoggedCounter</span> <span class="n">counter</span> <span class="p">=</span>
+    <span class="n">Counter</span> <span class="p">{</span><span class="n">inc</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">print</span> <span class="s2">"inc</span><span class="se">\n</span><span class="s2">"</span> <span class="p">;</span> <span class="n">cInc</span> <span class="n">counter</span><span class="p">),</span>
+             <span class="n">get</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">print</span> <span class="s2">"get</span><span class="se">\n</span><span class="s2">"</span> <span class="p">;</span> <span class="n">cGet</span> <span class="n">counter</span><span class="p">)}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>incUpto</code> function works just as well with objects of either
+class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">aCounter</span> <span class="p">=</span> <span class="n">newBasicCounter</span> <span class="mi">0</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">incUpto</span> <span class="n">aCounter</span> <span class="mi">5</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">print</span> <span class="p">(</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="n">cGet</span> <span class="n">aCounter</span><span class="p">)</span> <span class="n">^</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="kr">val</span> <span class="nv">aCounter</span> <span class="p">=</span> <span class="n">newLoggedCounter</span> <span class="p">(</span><span class="n">newBasicCounter</span> <span class="mi">0</span><span class="p">)</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">incUpto</span> <span class="n">aCounter</span> <span class="mi">5</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">print</span> <span class="p">(</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="n">cGet</span> <span class="n">aCounter</span><span class="p">)</span> <span class="n">^</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In general, a dynamic dispatch interface is represented as a record
+type wrapped inside a datatype.  Each field of the record corresponds
+to a public method or field of the object:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">interface</span> <span class="p">=</span>
+   <span class="nc">Interface</span> <span class="kr">of</span> <span class="p">{</span><span class="n">method</span> <span class="p">:</span> <span class="n">t1</span> <span class="p">-&gt;</span> <span class="n">t2</span><span class="p">,</span>
+                 <span class="n">immutableField</span> <span class="p">:</span> <span class="n">t</span><span class="p">,</span>
+                 <span class="n">mutableField</span> <span class="p">:</span> <span class="n">t</span> <span class="n">ref</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The reason for wrapping the record inside a datatype is that records,
+in SML, can not be recursive.  However, SML datatypes can be
+recursive.  A record wrapped in a datatype can contain fields that
+contain the datatype.  For example, an interface such as <code>Cloneable</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">cloneable</span> <span class="p">=</span> <span class="nc">Cloneable</span> <span class="kr">of</span> <span class="p">{</span><span class="n">clone</span> <span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">cloneable</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>can be represented using recursive datatypes.</p>
+</div>
+<div class="paragraph">
+<p>Like in OO languages, interfaces are abstract and can not be
+instantiated to produce objects.  To be able to instantiate objects,
+the constructors of a concrete class are needed.  In SML, we can
+implement constructors as simple functions from arbitrary arguments to
+values of the interface type.  Such a constructor function can
+encapsulate arbitrary private state and functions using lexical
+closure.  It is also easy to share implementations of methods between
+two or more constructors.</p>
+</div>
+<div class="paragraph">
+<p>While the <code>Counter</code> example is rather trivial, it should not be
+difficult to see that this technique quite simply doesn&#8217;t require a huge
+amount of extra verbiage and is more than usable in practice.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sml_modules_and_dynamic_dispatch">SML Modules and Dynamic Dispatch</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One might wonder about how SML modules and the dynamic dispatch
+technique work together.  Let&#8217;s investigate!  Let&#8217;s use a simple
+dispenser framework as a concrete example.  (Note that this isn&#8217;t
+intended to be an introduction to the SML module system.)</p>
+</div>
+<div class="sect2">
+<h3 id="_programming_with_sml_modules">Programming with SML Modules</h3>
+<div class="paragraph">
+<p>Using SML signatures we can specify abstract data types (ADTs) such as
+dispensers.  Here is a signature for an "abstract" functional (as
+opposed to imperative) dispenser:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">ABSTRACT_DISPENSER</span> <span class="p">=</span> <span class="kr">sig</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+   <span class="kr">val</span> <span class="nv">isEmpty</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+   <span class="kr">val</span> <span class="nv">push</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">pop</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">t</span><span class="p">)</span> <span class="n">option</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The term "abstract" in the name of the signature refers to the fact that
+the signature gives no way to instantiate a dispenser.  It has nothing to
+do with the concept of abstract data types.</p>
+</div>
+<div class="paragraph">
+<p>Using SML functors we can write "generic" algorithms that manipulate
+dispensers of an unknown type.  Here are a couple of very simple
+algorithms:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">DispenserAlgs</span> <span class="p">(</span><span class="n">D</span> <span class="p">:</span> <span class="n">ABSTRACT_DISPENSER</span><span class="p">)</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">open</span> <span class="nn">D</span>
+
+   <span class="kr">fun</span> <span class="nf">pushAll</span> <span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="p">=</span> <span class="n">foldl</span> <span class="n">push</span> <span class="n">d</span> <span class="n">xs</span>
+
+   <span class="kr">fun</span> <span class="nf">popAll</span> <span class="n">d</span> <span class="p">=</span> <span class="kr">let</span>
+          <span class="kr">fun</span> <span class="nf">lp</span> <span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">NONE</span><span class="p">)</span> <span class="p">=</span> <span class="n">rev</span> <span class="n">xs</span>
+            <span class="p">|</span> <span class="nf">lp</span> <span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span> <span class="p">=</span> <span class="n">lp</span> <span class="p">(</span><span class="n">x::xs</span><span class="p">,</span> <span class="n">pop</span> <span class="n">d</span><span class="p">)</span>
+       <span class="kr">in</span>
+          <span class="n">lp</span> <span class="p">([],</span> <span class="n">pop</span> <span class="n">d</span><span class="p">)</span>
+       <span class="kr">end</span>
+
+   <span class="kr">fun</span> <span class="nf">cp</span> <span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span> <span class="p">=</span> <span class="n">pushAll</span> <span class="p">(</span><span class="n">popAll</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As one can easily verify, the above compiles even without any concrete
+dispenser structure.  Functors essentially provide a form a static
+dispatch that one can use to break compile-time dependencies.</p>
+</div>
+<div class="paragraph">
+<p>We can also give a signature for a concrete dispenser</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">DISPENSER</span> <span class="p">=</span> <span class="kr">sig</span>
+   <span class="kr">include</span> <span class="nn">ABSTRACT_DISPENSER</span>
+   <span class="kr">val</span> <span class="nv">empty</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and write any number of concrete structures implementing the signature.
+For example, we could implement stacks</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Stack</span> <span class="p">:&gt;</span> <span class="n">DISPENSER</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">list</span>
+   <span class="kr">val</span> <span class="nv">empty</span> <span class="p">=</span> <span class="p">[]</span>
+   <span class="kr">val</span> <span class="nv">isEmpty</span> <span class="p">=</span> <span class="n">null</span>
+   <span class="kr">val</span> <span class="nv">push</span> <span class="p">=</span> <span class="kr">op</span> <span class="n">::</span>
+   <span class="kr">val</span> <span class="nv">pop</span> <span class="p">=</span> <span class="nn">List</span><span class="p">.</span><span class="n">getItem</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and queues</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Queue</span> <span class="p">:&gt;</span> <span class="n">DISPENSER</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">list</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">list</span>
+   <span class="kr">val</span> <span class="nv">empty</span> <span class="p">=</span> <span class="n">T</span> <span class="p">([],</span> <span class="p">[])</span>
+   <span class="kr">val</span> <span class="nv">isEmpty</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">T</span> <span class="p">([],</span> <span class="p">_)</span> <span class="p">=&gt;</span> <span class="n">true</span> <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">false</span>
+   <span class="kr">val</span> <span class="nv">normalize</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">([],</span> <span class="n">ys</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">rev</span> <span class="n">ys</span><span class="p">,</span> <span class="p">[])</span> <span class="p">|</span> <span class="n">q</span> <span class="p">=&gt;</span> <span class="n">q</span>
+   <span class="kr">fun</span> <span class="nf">push</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">T</span> <span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">))</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="n">normalize</span> <span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">y::ys</span><span class="p">))</span>
+   <span class="kr">val</span> <span class="nv">pop</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">T</span> <span class="p">(</span><span class="n">x::xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">))</span> <span class="p">=&gt;</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">T</span> <span class="p">(</span><span class="n">normalize</span> <span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">)))</span> <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">NONE</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One can now write code that uses either the <code>Stack</code> or the <code>Queue</code>
+dispenser.  One can also instantiate the previously defined functor to
+create functions for manipulating dispensers of a type:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">S</span> <span class="p">=</span> <span class="n">DispenserAlgs</span> <span class="p">(</span><span class="n">Stack</span><span class="p">)</span>
+<span class="kr">val</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="p">=</span> <span class="nn">S</span><span class="p">.</span><span class="n">popAll</span> <span class="p">(</span><span class="nn">S</span><span class="p">.</span><span class="n">pushAll</span> <span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="nn">Stack</span><span class="p">.</span><span class="n">empty</span><span class="p">))</span>
+
+<span class="kr">structure</span> <span class="nn">Q</span> <span class="p">=</span> <span class="n">DispenserAlgs</span> <span class="p">(</span><span class="n">Queue</span><span class="p">)</span>
+<span class="kr">val</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]</span> <span class="p">=</span> <span class="nn">Q</span><span class="p">.</span><span class="n">popAll</span> <span class="p">(</span><span class="nn">Q</span><span class="p">.</span><span class="n">pushAll</span> <span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="nn">Queue</span><span class="p">.</span><span class="n">empty</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There is no dynamic dispatch involved at the module level in SML.  An
+attempt to do dynamic dispatch</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">q</span> <span class="p">=</span> <span class="nn">Q</span><span class="p">.</span><span class="n">push</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nn">Stack</span><span class="p">.</span><span class="n">empty</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will give a type error.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_combining_sml_modules_and_dynamic_dispatch">Combining SML Modules and Dynamic Dispatch</h3>
+<div class="paragraph">
+<p>Let&#8217;s then combine SML modules and the dynamic dispatch technique
+introduced in this article.  First we define an interface for
+dispensers:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Dispenser</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span>
+      <span class="nc">I</span> <span class="kr">of</span> <span class="p">{</span><span class="n">isEmpty</span> <span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">bool</span><span class="p">,</span>
+            <span class="n">push</span> <span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span><span class="p">,</span>
+            <span class="n">pop</span> <span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">t</span><span class="p">)</span> <span class="n">option</span><span class="p">}</span>
+
+   <span class="kr">fun</span> <span class="nf">O</span> <span class="n">m</span> <span class="p">(</span><span class="n">I</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="n">m</span> <span class="n">t</span>
+
+   <span class="kr">fun</span> <span class="nf">isEmpty</span> <span class="n">t</span> <span class="p">=</span> <span class="n">O</span><span class="nl">#isEmpty</span> <span class="n">t</span> <span class="p">()</span>
+   <span class="kr">fun</span> <span class="nf">push</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="n">O</span><span class="nl">#push</span> <span class="n">t</span> <span class="n">v</span>
+   <span class="kr">fun</span> <span class="nf">pop</span> <span class="n">t</span> <span class="p">=</span> <span class="n">O</span><span class="nl">#pop</span> <span class="n">t</span> <span class="p">()</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>Dispenser</code> module, which we can think of as an interface for
+dispensers, implements the <code>ABSTRACT_DISPENSER</code> signature using
+the dynamic dispatch technique, but we leave the signature ascription
+until later.</p>
+</div>
+<div class="paragraph">
+<p>Then we define a <code>DispenserClass</code> functor that makes a "class" out of
+a given dispenser module:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">DispenserClass</span> <span class="p">(</span><span class="n">D</span> <span class="p">:</span> <span class="n">DISPENSER</span><span class="p">)</span> <span class="p">:</span> <span class="n">DISPENSER</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">open</span> <span class="nn">Dispenser</span>
+
+   <span class="kr">fun</span> <span class="nf">make</span> <span class="n">d</span> <span class="p">=</span>
+       <span class="n">I</span> <span class="p">{</span><span class="n">isEmpty</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="nn">D</span><span class="p">.</span><span class="n">isEmpty</span> <span class="n">d</span><span class="p">,</span>
+          <span class="n">push</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">make</span> <span class="p">(</span><span class="nn">D</span><span class="p">.</span><span class="n">push</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">d</span><span class="p">)),</span>
+          <span class="n">pop</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span>
+                   <span class="kr">case</span> <span class="nn">D</span><span class="p">.</span><span class="n">pop</span> <span class="n">d</span> <span class="kr">of</span>
+                      <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">NONE</span>
+                    <span class="p">|</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">make</span> <span class="n">d</span><span class="p">)}</span>
+
+   <span class="kr">val</span> <span class="nv">empty</span> <span class="p">=</span>
+       <span class="n">I</span> <span class="p">{</span><span class="n">isEmpty</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">true</span><span class="p">,</span>
+          <span class="n">push</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">make</span> <span class="p">(</span><span class="nn">D</span><span class="p">.</span><span class="n">push</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nn">D</span><span class="p">.</span><span class="n">empty</span><span class="p">)),</span>
+          <span class="n">pop</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">NONE</span><span class="p">}</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Finally we seal the <code>Dispenser</code> module:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Dispenser</span> <span class="p">:</span> <span class="n">ABSTRACT_DISPENSER</span> <span class="p">=</span> <span class="n">Dispenser</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This isn&#8217;t necessary for type safety, because the unsealed <code>Dispenser</code>
+module does not allow one to break encapsulation, but makes sure that
+only the <code>DispenserClass</code> functor can create dispenser classes
+(because the constructor <code>Dispenser.I</code> is no longer accessible).</p>
+</div>
+<div class="paragraph">
+<p>Using the <code>DispenserClass</code> functor we can turn any concrete dispenser
+module into a dispenser class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">StackClass</span> <span class="p">=</span> <span class="n">DispenserClass</span> <span class="p">(</span><span class="n">Stack</span><span class="p">)</span>
+<span class="kr">structure</span> <span class="nn">QueueClass</span> <span class="p">=</span> <span class="n">DispenserClass</span> <span class="p">(</span><span class="n">Queue</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each dispenser class implements the same dynamic dispatch interface
+and the <code>ABSTRACT_DISPENSER</code> -signature.</p>
+</div>
+<div class="paragraph">
+<p>Because the dynamic dispatch <code>Dispenser</code> module implements the
+<code>ABSTRACT_DISPENSER</code>-signature, we can use it to instantiate the
+<code>DispenserAlgs</code>-functor:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">D</span> <span class="p">=</span> <span class="n">DispenserAlgs</span> <span class="p">(</span><span class="n">Dispenser</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The resulting <code>D</code> module, like the <code>Dispenser</code> module, works with
+any dispenser class and uses dynamic dispatch:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="p">=</span> <span class="nn">D</span><span class="p">.</span><span class="n">popAll</span> <span class="p">(</span><span class="nn">D</span><span class="p">.</span><span class="n">pushAll</span> <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="nn">StackClass</span><span class="p">.</span><span class="n">empty</span><span class="p">))</span>
+<span class="kr">val</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="p">=</span> <span class="nn">D</span><span class="p">.</span><span class="n">popAll</span> <span class="p">(</span><span class="nn">D</span><span class="p">.</span><span class="n">pushAll</span> <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="nn">QueueClass</span><span class="p">.</span><span class="n">empty</span><span class="p">))</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ObjectOrientedProgramming.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ObjectOrientedProgramming.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

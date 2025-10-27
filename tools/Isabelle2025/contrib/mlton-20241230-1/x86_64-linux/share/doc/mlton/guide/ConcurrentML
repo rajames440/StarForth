@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ConcurrentML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ConcurrentML</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="http://cml.cs.uchicago.edu/">Concurrent ML</a> is an SML concurrency
+library based on synchronous message passing.  MLton has an initial
+port of CML from SML/NJ, but is missing a thread-safe wrapper around
+the Basis Library and event-based equivalents to <code>IO</code> and <code>OS</code>
+functions.</p>
+</div>
+<div class="paragraph">
+<p>All of the core CML functionality is present.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">CML</span><span class="p">:</span> <span class="n">CML</span>
+<span class="kr">structure</span> <span class="nn">SyncVar</span><span class="p">:</span> <span class="n">SYNC_VAR</span>
+<span class="kr">structure</span> <span class="nn">Mailbox</span><span class="p">:</span> <span class="n">MAILBOX</span>
+<span class="kr">structure</span> <span class="nn">Multicast</span><span class="p">:</span> <span class="n">MULTICAST</span>
+<span class="kr">structure</span> <span class="nn">SimpleRPC</span><span class="p">:</span> <span class="n">SIMPLE_RPC</span>
+<span class="kr">structure</span> <span class="nn">RunCML</span><span class="p">:</span> <span class="n">RUN_CML</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>RUN_CML</code> signature is minimal.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">RUN_CML</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">val</span> <span class="nv">isRunning</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+      <span class="kr">val</span> <span class="nv">doit</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">*</span> <span class="nn">Time</span><span class="p">.</span><span class="n">time</span> <span class="n">option</span> <span class="p">-&gt;</span> <span class="nn">OS</span><span class="p">.</span><span class="nn">Process</span><span class="p">.</span><span class="n">status</span>
+      <span class="kr">val</span> <span class="nv">shutdown</span><span class="p">:</span> <span class="nn">OS</span><span class="p">.</span><span class="nn">Process</span><span class="p">.</span><span class="n">status</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton&#8217;s <code>RunCML</code> structure does not include all of the cleanup and
+logging operations of SML/NJ&#8217;s <code>RunCML</code> structure.  However, the
+implementation does include the <code>CML.timeOutEvt</code> and <code>CML.atTimeEvt</code>
+functions, and a preemptive scheduler that knows to sleep when there
+are no ready threads and some threads blocked on time events.</p>
+</div>
+<div class="paragraph">
+<p>Because MLton does not wrap the Basis Library for CML, the "right" way
+to call a Basis Library function that is stateful is to wrap the call
+with <code>MLton.Thread.atomically</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>You can import the CML Library into an MLB file with:</p>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">MLB file</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$(SML_LIB)/cml/cml.mlb</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>If you are porting a project from SML/NJ&#8217;s <a href="CompilationManager">CompilationManager</a> to
+MLton&#8217;s <a href="MLBasis">ML Basis system</a> using <code>cm2mlb</code>, note that the
+following map is included by default:</p>
+<div class="listingblock">
+<div class="content">
+<pre># CML Library
+$cml                                    $(SML_LIB)/cml
+$cml/cml.cm                             $(SML_LIB)/cml/cml.mlb</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will automatically convert a <code>$cml/cml.cm</code> import in an input <code>.cm</code> file into a <code>$(SML_LIB)/cml/cml.mlb</code> import in the output <code>.mlb</code> file.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="ConcurrentMLImplementation">ConcurrentMLImplementation</a></p>
+</li>
+<li>
+<p><a href="eXene">eXene</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ConcurrentML.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ConcurrentML.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

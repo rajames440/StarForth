@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>DeepFlatten</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>DeepFlatten</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">DeepFlatten</a> is an optimization pass for the <a href="SSA2">SSA2</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSA2Simplify">SSA2Simplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass flattens into mutable fields of objects and into vectors.</p>
+</div>
+<div class="paragraph">
+<p>For example, an <code>(int * int) ref</code> is represented by a 2 word
+object, and an <code>(int * int) array</code> contains pairs of <code>int</code>-s,
+rather than pointers to pairs of <code>int</code>-s.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/deep-flatten.fun"><code>deep-flatten.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are some performance issues with the deep flatten pass, where it
+consumes an excessive amount of memory.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2005-April/026990.html" class="bare">http://www.mlton.org/pipermail/mlton/2005-April/026990.html</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton-user/2010-June/001626.html" class="bare">http://www.mlton.org/pipermail/mlton-user/2010-June/001626.html</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2010-December/030876.html" class="bare">http://www.mlton.org/pipermail/mlton/2010-December/030876.html</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A number of applications require compilation with
+<code>-disable-pass deepFlatten</code> to avoid exceeding available memory.  It is
+often asked whether the deep flatten pass usually has a significant
+impact on performance.  The standard benchmark suite was run with and
+without the deep flatten pass enabled when the pass was first
+introduced:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2004-August/025760.html" class="bare">http://www.mlton.org/pipermail/mlton/2004-August/025760.html</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The conclusion is that it does not have a significant impact.
+However, these are micro benchmarks; other applications may derive
+greater benefit from the pass.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/DeepFlatten.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/DeepFlatten.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

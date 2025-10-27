@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ScopeInference</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ScopeInference</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Scope inference is an analysis/rewrite pass for the <a href="AST">AST</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="Elaborate">Elaborate</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass adds free type variables to the <code>val</code> or <code>fun</code>
+declaration where they are implicitly scoped.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/scope.sig"><code>scope.sig</code></a>
+<a href="https://github.com/MLton/mlton/blob/master/mlton/elaborate/scope.fun"><code>scope.fun</code></a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Scope inference determines for each type variable, the declaration
+where it is bound.  Scope inference is a direct implementation of the
+specification given in section 4.6 of the
+<a href="DefinitionOfStandardML">Definition</a>.  Recall that a free occurrence
+of a type variable <code>'a</code> in a declaration <code>d</code> is <em>unguarded</em>
+in <code>d</code> if <code>'a</code> is not part of a smaller declaration.  A type
+variable <code>'a</code> is implicitly scoped at <code>d</code> if <code>'a</code> is
+unguarded in <code>d</code> and <code>'a</code> does not occur unguarded in any
+declaration containing <code>d</code>.</p>
+</div>
+<div class="paragraph">
+<p>The first pass of scope inference walks down the tree and renames all
+explicitly bound type variables in order to avoid name collisions.  It
+then walks up the tree and adds to each declaration the set of
+unguarded type variables occurring in that declaration.  At this
+point, if declaration <code>d</code> contains an unguarded type variable
+<code>'a</code> and the immediately containing declaration does not contain
+<code>'a</code>, then <code>'a</code> is implicitly scoped at <code>d</code>.  The final
+pass walks down the tree leaving a <code>'a</code> at the a declaration where
+it is scoped and removing it from all enclosed declarations.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ScopeInference.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ScopeInference.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

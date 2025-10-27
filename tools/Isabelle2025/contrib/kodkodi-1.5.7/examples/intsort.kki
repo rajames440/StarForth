@@ -1,0 +1,14 @@
+solver: "MiniSat"
+bit_width: 6
+univ: u21
+bounds r0 /* Pre.ints */:
+{[A0, A7], [A1, A2], [A2, A4], [A3, A3], [A4, A3], [A5, A8], [A6, A5],
+ [A7, A20], [A8, A18], [A9, A1], [A10, A10], [A11, A5], [A12, A7], [A13, A12],
+ [A14, A2], [A15, A19], [A16, A15], [A17, A13], [A18, A11], [A19, A4]}
+bounds r1 /* Post.ints */: [{}, u20->u21]
+int_bounds:
+[{A0}, {A1}, {A2}, {A3}, {A4}, {A5}, {A6}, {A7}, {A8}, {A9},
+ {A10}, {A11}, {A12}, {A13}, {A14}, {A15}, {A16}, {A17}, {A18}, {A19}, {A20}]
+solve FUNCTION(r1, u20->one u21)
+   && (all [S0 : one univ] | #(r1.S0) = #(r0.S0))
+   && (all [S0 : one u19] | sum(S0.r1) <= sum(Int[sum(S0) + 1].r1));

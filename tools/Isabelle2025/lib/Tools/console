@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#
+# Author: Makarius
+#
+# DESCRIPTION: raw ML process (interactive mode)
+
+isabelle scala_build || exit $?
+
+eval "declare -a JAVA_ARGS=($ISABELLE_TOOL_JAVA_OPTIONS)"
+
+mkdir -p "$ISABELLE_TMP_PREFIX" || exit $?
+
+if type -p "$ISABELLE_LINE_EDITOR" > /dev/null
+then
+  exec "$ISABELLE_LINE_EDITOR" isabelle java "${JAVA_ARGS[@]}" isabelle.ML_Console "$@"
+else
+  echo >&2 "### No line editor: \"$ISABELLE_LINE_EDITOR\""
+  exec isabelle java "${JAVA_ARGS[@]}" isabelle.ML_Console "$@"
+fi

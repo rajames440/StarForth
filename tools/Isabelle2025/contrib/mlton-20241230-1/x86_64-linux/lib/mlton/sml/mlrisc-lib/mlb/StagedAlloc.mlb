@@ -1,0 +1,238 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
+in
+
+local
+  basis l33 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb
+    end
+  basis l51 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l33
+   in
+      structure gs_0 = Char
+      structure gs_1 = CharArray
+      structure gs_2 = CharVector
+      structure gs_3 = FixedInt
+      structure gs_4 = General
+      structure gs_5 = Int
+      structure gs_6 = Int32
+      structure gs_7 = Int64
+      structure gs_8 = IntInf
+      structure gs_9 = LargeInt
+      structure gs_10 = LargeReal
+      structure gs_11 = LargeWord
+      structure gs_12 = OS
+      structure gs_13 = Position
+      structure gs_14 = Real
+      structure gs_15 = Real64
+      structure gs_16 = RealArray
+      structure gs_17 = RealArraySlice
+      structure gs_18 = RealVector
+      structure gs_19 = RealVectorSlice
+      structure gs_20 = SMLofNJ
+      structure gs_21 = Socket
+      structure gs_22 = String
+      structure gs_23 = Substring
+      structure gs_24 = SysWord
+      structure gs_25 = Time
+      structure gs_26 = Word
+      structure gs_27 = Word32
+      structure gs_28 = Word64
+      structure gs_29 = Word8
+   end
+   local
+      open l33
+   in
+      structure gs_30 = List
+   end
+   local
+      ../staged-alloc/allocator/staged-allocation-sig.sml
+   in
+      signature gs_31 = STAGED_ALLOCATION
+   end
+   local
+      ../staged-alloc/conventions/c-loc-kind.sml
+   in
+      structure gs_32 = CLocKind
+   end
+   local
+      structure CLocKind = gs_32
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure List = gs_30
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      signature STAGED_ALLOCATION = gs_31
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../staged-alloc/conventions/x86-c-fn.sml
+   in
+      functor gs_33 = X86CConventionFn
+   end
+   local
+      open l51
+   in
+      structure gs_34 = IntBinaryMap
+   end
+   local
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntBinaryMap = gs_34
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure List = gs_30
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      signature STAGED_ALLOCATION = gs_31
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../staged-alloc/allocator/staged-allocation-fn.sml
+   in
+      functor gs_35 = StagedAllocationFn
+   end
+   local
+      structure CLocKind = gs_32
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure List = gs_30
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      signature STAGED_ALLOCATION = gs_31
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../staged-alloc/conventions/sparc-c-fn.sml
+   in
+      functor gs_36 = SparcCConventionFn
+   end
+   local
+      structure CLocKind = gs_32
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure List = gs_30
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      signature STAGED_ALLOCATION = gs_31
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      ../staged-alloc/conventions/x86-64-c-fn.sml
+   in
+      functor gs_37 = X86_64CConventionFn
+   end
+in
+   structure CLocKind = gs_32
+   signature STAGED_ALLOCATION = gs_31
+   functor SparcCConventionFn = gs_36
+   functor StagedAllocationFn = gs_35
+   functor X86CConventionFn = gs_33
+   functor X86_64CConventionFn = gs_37
+end
+end
+
+end

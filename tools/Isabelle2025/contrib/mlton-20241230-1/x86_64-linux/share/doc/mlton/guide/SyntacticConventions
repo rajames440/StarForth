@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SyntacticConventions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SyntacticConventions</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_general">General</a></li>
+<li><a href="#_identifiers">Identifiers</a></li>
+<li><a href="#_types">Types</a></li>
+<li><a href="#_core">Core</a></li>
+<li><a href="#_signatures">Signatures</a></li>
+<li><a href="#_structures">Structures</a></li>
+<li><a href="#_functors">Functors</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here are a number of syntactic conventions useful for programming in
+SML.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_general">General</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>A line of code never exceeds 80 columns.</p>
+</li>
+<li>
+<p>Only split a syntactic entity across multiple lines if it doesn&#8217;t fit on one line within 80 columns.</p>
+</li>
+<li>
+<p>Use alphabetical order wherever possible.</p>
+</li>
+<li>
+<p>Avoid redundant parentheses.</p>
+</li>
+<li>
+<p>When using <code>:</code>, there is no space before the colon, and a single space after it.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_identifiers">Identifiers</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Variables, record labels and type constructors begin with and use
+small letters, using capital letters to separate words.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">cost</span>
+<span class="n">maxValue</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Variables that represent collections of objects (lists, arrays,
+vectors, &#8230;&#8203;) are often suffixed with an <code>s</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">xs</span>
+<span class="n">employees</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Constructors, structure identifiers, and functor identifiers begin
+with a capital letter.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">Queue</span>
+<span class="n">LinkedList</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Signature identifiers are in all capitals, using <code>_</code> to separate
+words.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">LIST</span>
+<span class="n">BINARY_HEAP</span></code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_types">Types</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Alphabetize record labels.  In a record type, there are spaces after
+colons and commas, but not before colons or commas, or at the
+delimiters <code>{</code> and <code>}</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">{</span><span class="n">bar</span><span class="p">:</span> <span class="n">int</span><span class="p">,</span> <span class="n">foo</span><span class="p">:</span> <span class="n">int</span><span class="p">}</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Only split a record type across multiple lines if it doesn&#8217;t fit on
+one line. If a record type must be split over multiple lines, put one
+field per line.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">{</span><span class="n">bar</span><span class="p">:</span> <span class="n">int</span><span class="p">,</span>
+ <span class="n">foo</span><span class="p">:</span> <span class="n">real</span> <span class="n">*</span> <span class="n">real</span><span class="p">,</span>
+ <span class="n">zoo</span><span class="p">:</span> <span class="n">bool</span><span class="p">}</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>In a tuple type, there are spaces before and after each <code>*</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">int</span> <span class="n">*</span> <span class="n">bool</span> <span class="n">*</span> <span class="n">real</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Only split a tuple type across multiple lines if it doesn&#8217;t fit on
+one line.  In a tuple type split over multiple lines, there is one
+type per line, and the <code>*</code>-s go at the beginning of the lines.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">int</span>
+<span class="n">*</span> <span class="n">bool</span>
+<span class="n">*</span> <span class="n">real</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It may also be useful to parenthesize to make the grouping more
+apparent.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">int</span>
+ <span class="n">*</span> <span class="n">bool</span>
+ <span class="n">*</span> <span class="n">real</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>In an arrow type split over multiple lines, put the arrow at the
+beginning of its line.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">int</span> <span class="n">*</span> <span class="n">real</span>
+<span class="p">-&gt;</span> <span class="n">bool</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It may also be useful to parenthesize to make the grouping more
+apparent.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">int</span> <span class="n">*</span> <span class="n">real</span>
+ <span class="p">-&gt;</span> <span class="n">bool</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Avoid redundant parentheses.</p>
+</li>
+<li>
+<p>Arrow types associate to the right, so write</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">a</span> <span class="p">-&gt;</span> <span class="n">b</span> <span class="p">-&gt;</span> <span class="n">c</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>not</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">a</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="n">b</span> <span class="p">-&gt;</span> <span class="n">c</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Type constructor application associates to the left, so write</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">int</span> <span class="n">ref</span> <span class="n">list</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>not</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">int</span> <span class="n">ref</span><span class="p">)</span> <span class="n">list</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Type constructor application binds more tightly than a tuple type,
+so write</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">int</span> <span class="n">list</span> <span class="n">*</span> <span class="n">bool</span> <span class="n">list</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>not</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">int</span> <span class="n">list</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="n">bool</span> <span class="n">list</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Tuple types bind more tightly than arrow types, so write</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">int</span> <span class="n">*</span> <span class="n">bool</span> <span class="p">-&gt;</span> <span class="n">real</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>not</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">int</span> <span class="n">*</span> <span class="n">bool</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">real</span></code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_core">Core</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>A core expression or declaration split over multiple lines does not
+contain any blank lines.</p>
+</li>
+<li>
+<p>A record field selector has no space between the <code>#</code> and the record
+label.  So, write</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nl">#foo</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>not</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nl"># foo</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A tuple has a space after each comma, but not before, and not at the
+delimiters <code>(</code> and <code>)</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">,</span> <span class="n">e3</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A tuple split over multiple lines has one element per line, and the
+commas go at the end of the lines.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">e1</span><span class="p">,</span>
+ <span class="n">e2</span><span class="p">,</span>
+ <span class="n">e3</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A list has a space after each comma, but not before, and not at the
+delimiters <code>[</code> and <code>]</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">[</span><span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">,</span> <span class="n">e3</span><span class="p">]</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A list split over multiple lines has one element per line, and the
+commas at the end of the lines.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">[</span><span class="n">e1</span><span class="p">,</span>
+ <span class="n">e2</span><span class="p">,</span>
+ <span class="n">e3</span><span class="p">]</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A record has spaces before and after <code>=</code>, a space after each comma,
+but not before, and not at the delimiters <code>{</code> and <code>}</code>.  Field names
+appear in alphabetical order.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">{</span><span class="n">bar</span> <span class="p">=</span> <span class="mi">13</span><span class="p">,</span> <span class="n">foo</span> <span class="p">=</span> <span class="n">true</span><span class="p">}</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A sequence expression has a space after each semicolon, but not before.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">e1</span><span class="p">;</span> <span class="n">e2</span><span class="p">;</span> <span class="n">e3</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A sequence expression split over multiple lines has one expression
+per line, and the semicolons at the beginning of lines.  Lisp and
+Scheme programmers may find this hard to read at first.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">e1</span>
+ <span class="p">;</span> <span class="n">e2</span>
+ <span class="p">;</span> <span class="n">e3</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><em>Rationale</em>: this makes it easy to visually spot the beginning of each
+expression, which becomes more valuable as the expressions themselves
+are split across multiple lines.</p>
+</div>
+</li>
+<li>
+<p>An application expression has a space between the function and the
+argument.  There are no parens unless the argument is a tuple (in
+which case the parens are really part of the tuple, not the
+application).</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span> <span class="n">a</span>
+<span class="n">f</span> <span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a3</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Avoid redundant parentheses.  Application associates to left, so
+write</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span> <span class="n">a1</span> <span class="n">a2</span> <span class="n">a3</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>not</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">((</span><span class="n">f</span> <span class="n">a1</span><span class="p">)</span> <span class="n">a2</span><span class="p">)</span> <span class="n">a3</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Infix operators have a space before and after the operator.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">x</span> <span class="n">+</span> <span class="n">y</span>
+<span class="n">x</span> <span class="n">*</span> <span class="n">y</span> <span class="n">-</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Avoid redundant parentheses.  Use <a href="OperatorPrecedence">OperatorPrecedence</a>.  So, write</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">x</span> <span class="n">+</span> <span class="n">y</span> <span class="n">*</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>not</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">x</span> <span class="n">+</span> <span class="p">(</span><span class="n">y</span> <span class="n">*</span> <span class="n">z</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>An <code>andalso</code> expression split over multiple lines has the <code>andalso</code>
+at the beginning of subsequent lines.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">e1</span>
+<span class="kr">andalso</span> <span class="n">e2</span>
+<span class="kr">andalso</span> <span class="n">e3</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>case</code> expression is indented as follows</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">case</span> <span class="n">e1</span> <span class="kr">of</span>
+   <span class="n">p1</span> <span class="p">=&gt;</span> <span class="n">e1</span>
+ <span class="p">|</span> <span class="n">p2</span> <span class="p">=&gt;</span> <span class="n">e2</span>
+ <span class="p">|</span> <span class="n">p3</span> <span class="p">=&gt;</span> <span class="n">e3</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>datatype</code>&rsquo;s constructors are alphabetized.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="p">|</span> <span class="nc">C</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>datatype</code> declaration has a space before and after each <code>|</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">A</span> <span class="p">|</span> <span class="nc">B</span> <span class="kr">of</span> <span class="n">int</span> <span class="p">|</span> <span class="nc">C</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>datatype</code> split over multiple lines has one constructor per line,
+with the <code>|</code> at the beginning of lines and the constructors beginning
+3 columns to the right of the <code>datatype</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="kt">t</span> <span class="p">=</span>
+   <span class="nc">A</span>
+ <span class="p">|</span> <span class="nc">B</span>
+ <span class="p">|</span> <span class="nc">C</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>fun</code> declaration may start its body on the subsequent line,
+indented 3 spaces.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">f</span> <span class="n">x</span> <span class="n">y</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">z</span> <span class="p">=</span> <span class="n">x</span> <span class="n">+</span> <span class="n">y</span> <span class="n">+</span> <span class="n">z</span>
+   <span class="kr">in</span>
+      <span class="n">z</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>An <code>if</code> expression is indented as follows.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">if</span> <span class="n">e1</span>
+   <span class="kr">then</span> <span class="n">e2</span>
+<span class="kr">else</span> <span class="n">e3</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A sequence of <code>if</code>-<code>then</code>-<code>else</code>-s is indented as follows.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">if</span> <span class="n">e1</span>
+   <span class="kr">then</span> <span class="n">e2</span>
+<span class="kr">else</span> <span class="kr">if</span> <span class="n">e3</span>
+   <span class="kr">then</span> <span class="n">e4</span>
+<span class="kr">else</span> <span class="kr">if</span> <span class="n">e5</span>
+   <span class="kr">then</span> <span class="n">e6</span>
+<span class="kr">else</span> <span class="n">e7</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>let</code> expression has the <code>let</code>, <code>in</code>, and <code>end</code> on their own
+lines, starting in the same column.  Declarations and the body are
+indented 3 spaces.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">let</span>
+   <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">13</span>
+   <span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="mi">14</span>
+<span class="kr">in</span>
+   <span class="n">x</span> <span class="n">+</span> <span class="n">y</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>local</code> declaration has the <code>local</code>, <code>in</code>, and <code>end</code> on their own
+lines, starting in the same column.  Declarations are indented 3
+spaces.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">local</span>
+   <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">13</span>
+<span class="kr">in</span>
+   <span class="kr">val</span> <span class="nv">y</span> <span class="p">=</span> <span class="n">x</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>An <code>orelse</code> expression split over multiple lines has the <code>orelse</code> at
+the beginning of subsequent lines.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">e1</span>
+<span class="kr">orelse</span> <span class="n">e2</span>
+<span class="kr">orelse</span> <span class="n">e3</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>val</code> declaration has a space before and after the <code>=</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">p</span> <span class="p">=</span> <span class="n">e</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>val</code> declaration can start the expression on the subsequent line,
+indented 3 spaces.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">p</span> <span class="p">=</span>
+   <span class="kr">if</span> <span class="n">e1</span> <span class="kr">then</span> <span class="n">e2</span> <span class="kr">else</span> <span class="n">e3</span></code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_signatures">Signatures</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>A <code>signature</code> declaration is indented as follows.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">FOO</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">val</span> <span class="nv">x</span><span class="p">:</span> <span class="n">int</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><em>Exception</em>: a signature declaration in a file to itself can omit the
+indentation to save horizontal space.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">FOO</span> <span class="p">=</span>
+<span class="kr">sig</span>
+
+<span class="kr">val</span> <span class="nv">x</span><span class="p">:</span> <span class="n">int</span>
+
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this case, there should be a blank line after the <code>sig</code> and before
+the <code>end</code>.</p>
+</div>
+</li>
+<li>
+<p>A <code>val</code> specification has a space after the colon, but not before.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">x</span><span class="p">:</span> <span class="n">int</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><em>Exception</em>: in the case of operators (like <code>+</code>), there is a space
+before the colon to avoid lexing the colon as part of the operator.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">+</span> <span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Alphabetize specifications in signatures.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">sig</span>
+   <span class="kr">val</span> <span class="nv">x</span><span class="p">:</span> <span class="n">int</span>
+   <span class="kr">val</span> <span class="nv">y</span><span class="p">:</span> <span class="n">bool</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_structures">Structures</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>A <code>structure</code> declaration has a space on both sides of the <code>=</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Foo</span> <span class="p">=</span> <span class="n">Bar</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>A <code>structure</code> declaration split over multiple lines is indented as
+follows.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">S</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">13</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><em>Exception</em>: a structure declaration in a file to itself can omit the
+indentation to save horizontal space.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">S</span> <span class="p">=</span>
+<span class="kr">struct</span>
+
+<span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="mi">13</span>
+
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this case, there should be a blank line after the <code>struct</code> and
+before the <code>end</code>.</p>
+</div>
+</li>
+<li>
+<p>Declarations in a <code>struct</code> are separated by blank lines.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">struct</span>
+   <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span>
+      <span class="kr">let</span>
+         <span class="n">y</span> <span class="p">=</span> <span class="mi">13</span>
+      <span class="kr">in</span>
+         <span class="n">y</span> <span class="n">+</span> <span class="mi">1</span>
+      <span class="kr">end</span>
+
+   <span class="kr">val</span> <span class="nv">z</span> <span class="p">=</span> <span class="mi">14</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functors">Functors</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>A <code>functor</code> declaration has spaces after each <code>:</code> (or <code>:&gt;</code>) but not
+before, and a space before and after the <code>=</code>.  It is indented as
+follows.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">Foo</span> <span class="p">(</span><span class="n">S</span><span class="p">:</span> <span class="n">FOO_ARG</span><span class="p">):</span> <span class="n">FOO</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+       <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="nn">S</span><span class="p">.</span><span class="n">x</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><em>Exception</em>: a functor declaration in a file to itself can omit the
+indentation to save horizontal space.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">Foo</span> <span class="p">(</span><span class="n">S</span><span class="p">:</span> <span class="n">FOO_ARG</span><span class="p">):</span> <span class="n">FOO</span> <span class="p">=</span>
+<span class="kr">struct</span>
+
+<span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="nn">S</span><span class="p">.</span><span class="n">x</span>
+
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this case, there should be a blank line after the <code>struct</code>
+and before the <code>end</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SyntacticConventions.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SyntacticConventions.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,958 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bigstrut}
+\usepackage{color}
+\usepackage{mathpazo}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{supertabular}
+\usepackage{url}
+\usepackage[scaled=.85]{beramono}
+
+\oddsidemargin=4.6mm
+\evensidemargin=4.6mm
+\textwidth=150mm
+\topmargin=4.6mm
+\headheight=0mm
+\headsep=0mm
+\textheight=234mm
+
+\begin{document}
+
+    \title{Clubbing Cods \\[\smallskipamount]
+    \Large A User's Guide to Kodkodi 1.5.7}
+    \author{Jasmin Christian Blanchette \\
+    {\normalsize Institut f\"ur Informatik, Technische Universit\"at M\"unchen}}
+
+    \maketitle
+
+    \tableofcontents
+
+    \setlength{\parskip}{.7em plus .2em minus .1em}
+    \setlength{\parindent}{0pt}
+    \setlength{\abovedisplayskip}{\parskip}
+    \setlength{\abovedisplayshortskip}{.9\parskip}
+    \setlength{\belowdisplayskip}{\parskip}
+    \setlength{\belowdisplayshortskip}{.9\parskip}
+
+% General-purpose enum environment with correct spacing
+    \newenvironment{enum}%
+    {\begin{list}{}{%
+        \setlength{\topsep}{.1\parskip}%
+        \setlength{\partopsep}{.1\parskip}%
+        \setlength{\itemsep}{\parskip}%
+        \advance\itemsep by-\parsep}}
+    {\end{list}}
+
+    \def\pre{\begingroup\vskip0pt plus1ex\advance\leftskip by\leftmargin
+    \advance\rightskip by\leftmargin}
+    \def\post{\vskip0pt plus1ex\endgroup}
+
+    \def\prew{\pre\advance\rightskip by-\leftmargin}
+    \def\postw{\post}
+
+    \def\cpp{C\nobreak\raisebox{.1ex}{+}\nobreak\raisebox{.1ex}{+}}
+
+
+    \section{Introduction}
+    \label{introduction}
+
+    Kodkodi is a front-end for the Java library Kodkod \cite{torlak-jackson-2007}, a
+    highly-optimized relational model finder developed by the Software Design Group
+    at MIT. Kodkod is based on SAT solving and supports first-order logic with
+    relations, transitive closure, and partial instances. Kodkod forms the basis of
+    version 4 of the Alloy Analyzer \cite{jackson-2006}. The Kodkodi
+    front-end is designed to make the Kodkod library available to other programming
+    languages than Java.
+
+    \newbox\boxA
+    \setbox\boxA=\hbox{\texttt{NOSPAM}}
+
+    This manual explains the concrete syntax supported by Kodkodi. It also explains
+    how to install the tool on your workstation. If you use Kodkodi in conjunction
+    with Nitpick for Isabelle/HOL \cite{nitpick-2009}, read the installation
+    instructions in the Nitpick manual \cite{blanchette-2009}.
+
+    Comments and bug reports concerning Kodkodi or this manual should be directed to
+    \texttt{blan{\color{white}NOSPAM}\kern-\wd\boxA{}chette@\allowbreak
+    in.\allowbreak tum.\allowbreak de}.
+
+%\vskip2.5\smallskipamount
+%
+%\textbf{Acknowledgment.} The author would like to thank Mark Summerfield for
+%suggesting several textual improvements.
+
+
+    \section{Installing the Tool}
+    \label{installing-the-tool}
+
+    To install Kodkodi, download and extract the archive
+    \url{http://isabelle.in.tum.de/~blanchet/kodkodi-1.5.0.tgz}. The \texttt{.jar}
+    files for Kodkodi, the Kodkod library, the portable SAT4J solver, and the ANTLR
+    3.1.1 runtimes are located in the \texttt{jar} subdirectory. Kodkodi
+    requires a Java 1.6 virtual machine, normally called \texttt{java}. To run
+    Kodkodi, you must add the \texttt{.jar} files in this directory to the Java
+    classpath (e.g., by setting the \texttt{CLASSPATH} environment variable) and
+    execute
+
+    \pre
+    \ttfamily\small java isabelle.kodkodi.Kodkodi
+    \post
+
+    To recompile Kodkodi, you need a Java compiler and the ANTLR 3.1.1 parser
+    generator tools.
+
+    For better performance, it is recommended to install a C or \cpp{} SAT solver.
+    Kodkodi already includes binary versions of MiniSat, CryptoMiniSat, and
+    Lingeling for various platforms in the \texttt{jni} subdirectory. Follow the
+    instructions on Kodkod's home page \cite{kodkod-2009} to install other SAT
+    solvers integrated using the JNI, or install a command-line solver of your
+    choice and specify it using the \texttt{External} or \texttt{ExternalV2}
+    described in \S\ref{kodkod-options}.
+
+
+    \section{First Steps}
+    \label{first-steps}
+
+    Kodkodi takes its input from standard input and writes its output to standard
+    output (on success) or standard error (on failure). Examples are provided in the
+    \texttt{examples} directory. When invoked with wrong command-line arguments,
+    Kodkodi displays the usage text:
+%
+    \pre
+    \ttfamily\small
+    Usage: java isabelle.kodkodi.Kodkodi [options] \\
+    options: \\
+    \hbox{}~~-help~~~~~~~~~~~~~~~Show usage and exit \\
+    \hbox{}~~-verbose~~~~~~~~~~~~Produce more output \\
+    \hbox{}~~-solve-all~~~~~~~~~~Output all solutions for each problem \\
+    \hbox{}~~-prove~~~~~~~~~~~~~~Output minimal unsatisfiable core \\
+    \hbox{}~~-max-solutions~~~~~~Maximum number of solutions to generate (default:~$\infty$) \\
+    \hbox{}~~-clean-up-inst~~~~~~Remove trivial parts of instance from output \\
+    \hbox{}~~-max-msecs <num>~~~~Maximum running time in milliseconds \\
+    \hbox{}~~-max-threads <num>~~Maximum number of simultaneous threads \\ \hbox{}~~~~~~~~~~~~~~~~~~~~~~(default:~$\left<\textit{machine-dependent-value}\right>$) \\
+    \hbox{}~~-server~~~~~~~~~~~~~Run as TCP server \\
+    \hbox{}~~-port <number>~~~~~~Listen to specified port (default:~9128)
+    \post
+
+    Example input files are provided in the \texttt{examples} directory:
+
+    \pre
+    \ttfamily\small
+    \$ \textbf{export JAVA\_LIBRARY\_PATH=jni/x86-linux:\$JAVA\_LIBRARY\_PATH} \\
+    \$ \textbf{isabelle.kodkodi.Kodkodi < examples/pigeonhole.kki} \\
+    \slshape *** PROBLEM 1 *** \\[2\smallskipamount]
+    ---OUTCOME--- \\
+    UNSATISFIABLE \\[2\smallskipamount]
+    ---STATS--- \\
+    p cnf 54 68 \\
+    primary variables:~6 \\
+    parsing time:~65 ms \\
+    translation time:~92 ms \\
+    solving time:~0 ms
+    \post
+
+    (Replace \texttt{x86-linux} with the appropriate platform.)
+
+    The output is to be interpreted as follows:
+%
+    \begin{itemize}
+        \item The two numbers following \texttt{p~cnf} indicate the number of
+        propositional variables and CNF clauses.
+        \item The primary variables are those variables that encode Kodkod relations.
+        (The other variables are auxiliary variables.)
+        \item The time spent on a problem is divided between parsing time (the time
+        Kodkodi took to convert the text file into a Kodkod abstract syntax tree),
+        translation time (the time Kodkod took to convert the abstract syntax tree into
+        a SAT problem), and solving time (the time the SAT solver took to solve the
+        problem).
+    \end{itemize}
+%
+    To obtain all the solutions instead of only the first solution to a problem or
+    set of problems, pass the \texttt{-solve-all} option. To obtain only the first
+    $n$~solutions, pass \texttt{-max-solutions~$n$}.
+
+
+    \section{Input Format}
+    \label{input-format}
+
+    Kodkodi's input format is modeled after the output format of the
+    \texttt{toString()} implementations found in the Kodkod library. The operator
+    that are available in Alloy 4 are given the same precedences as they have there.
+
+    The grammar is expressed using a variant of Extended Backus-Naur Form. The
+    actual grammar used by Kodkodi is written using ANTLR and can be found in the
+    file \texttt{src/Kodkodi.g}.
+
+    \subsection{Lexical Issues}
+    \label{lexical-issues}
+
+%%% TODO: ADD C comments
+    The grammar is based on the following lexical units, or tokens:
+%
+    $$\small\begin{aligned}
+                \textit{WHITESPACE} & \,::=\, (\verb*| | \mid \textbf{\char`\\n} \mid \textbf{\char`\\r} \mid \textbf{\char`\\t} \mid \textbf{\char`\\v})^+ \\
+                \textit{INLINE\_COMMENT} & \,::=\, \verb|//|\, {\sim}(\textbf{\char`\\n})^*\,(\textbf{\char`\\n} \mid \textbf{eof}) \\
+                \textit{BLOCK\_COMMENT} & \,::=\, \verb|/*| .^+ \verb|*/| \\
+                \textit{NUM} & \,::=\, [\verb|+| \mid \verb|-|]\, (\verb|0| \mid \verb|1| \mid \ldots \mid \verb|9|)^+ \\
+                \textit{STR\_LITERAL} & \,::=\, \verb|"|\, {\sim}(\verb|"| \mid \textbf{\char`\\n})^*\, \verb|"| \\
+                \textit{ATOM\_NAME} & \,::=\, \verb|A|\; \textit{NAT} \\
+                \textit{UNIV\_NAME} & \,::=\, \verb|u|\; \textit{NAT} \\
+                \textit{OFF\_UNIV\_NAME} & \,::=\, \verb|u|\; \textit{NAT}\; @\; \textit{NAT} \\
+                \textit{TUPLE\_NAME} & \,::=\, (\verb|P| \mid \verb|T|\; \textit{NAT}\; \verb|_|)\, \textit{NAT} \\
+                \textit{RELATION\_NAME} & \,::=\, (\verb|s| \mid \verb|r| \mid \verb|m|\; \textit{NAT}\; \verb|_|) \,\textit{NAT} \\
+                \textit{VARIABLE\_NAME} & \,::=\, (\verb|S| \mid \verb|R| \mid \verb|M|\; \textit{NAT}\; \verb|_|) \,\textit{NAT} \;\verb|'|^? \\
+                \textit{TUPLE\_REG} & \,::=\, \verb|$|\, (\verb|A| \mid \verb|P| \mid \verb|T|\; \textit{NAT}\; \verb|_|) \,\textit{NAT} \\
+                \textit{TUPLE\_SET\_REG} & \,::=\, \verb|$|\, (\verb|a| \mid \verb|p| \mid \verb|t|\; \textit{NAT}\; \verb|_|) \,\textit{NAT} \\
+                \textit{FORMULA\_REG} & \,::=\, \verb|$f|\; \textit{NAT} \\
+                \textit{REL\_EXPR\_REG} & \,::=\, \verb|$e|\; \textit{NAT} \\
+                \textit{INT\_EXPR\_REG} & \,::=\, \verb|$i|\; \textit{NAT}
+    \end{aligned}$$
+%
+    \textit{NAT} abbreviates $\verb|0| \mid (\verb|1| \mid \ldots \mid \verb|9|)\,
+    (\verb|0| \mid \ldots \mid \verb|9|)^*$.
+%
+    Whitespace and comments are ignored, except as token separators. In addition to
+    the tokens listed above, various keywords and operators are recognized as
+    tokens. These are shown in bold.
+
+    The table below describes the lexical conventions adopted for naming atoms,
+    tuples, relations, variables, and registers.
+
+    \begin{center}
+        \small
+        \begin{supertabular}{l|c|p{89mm}} %% TYPESETTING
+            Token Name & Syntax & Description \\[.4ex]
+            \hline
+            \strut\vphantom{$A^{B^{C^{D}}}$}%
+            \textit{ATOM\_NAME} & \texttt{A}$j$ & Atom at index $j$ in the universe\bigstrut \\
+            \textit{UNIV\_NAME} & \texttt{u}$n$ & Set of atoms $\{\texttt{A0}, \ldots, \texttt{A}(n - 1)\}$\bigstrut \\
+            \textit{OFF\_UNIV\_NAME} & \texttt{u}$n$\texttt{@}$j$ & Set of atoms $\{\texttt{A}j, \ldots, \texttt{A}(j + n - 1)\}$\bigstrut \\
+            \bigstrut\textit{TUPLE\_NAME} & \texttt{P}$j$ & Pair at index $j$ in the pair space associated with the universe\bigstrut \\
+            \bigstrut & \texttt{T}$n$\texttt{\_}$j$ & $n$-tuple at index $j$ in the $n$-tuple space
+            associated with the universe ($n \ge 3$)\bigstrut \\
+            \textit{RELATION\_NAME} & \texttt{s}$j$ & Plain set number $j$\bigstrut \\
+            & \texttt{s}$j$\texttt{'} & Primed set number $j$\bigstrut \\
+            & \texttt{r}$j$ & Plain binary relation number $j$\bigstrut \\
+            & \texttt{r}$j$\texttt{'} & Primed binary relation number $j$\bigstrut \\
+            & \texttt{m}$n$\texttt{\_}$j$ & Plain $n$-ary multirelation number $j$ ($n \ge 3$)\bigstrut \\
+            & \texttt{m}$n$\texttt{\_}$j$\texttt{'} & Primed $n$-ary multirelation number $j$ ($n \ge 3$)\bigstrut \\
+            \textit{VARIABLE\_NAME} & \texttt{S}$j$ & Plain set variable number $j$\bigstrut \\
+            & \texttt{S}$j$\texttt{'} & Primed set variable number $j$\bigstrut \\
+            & \texttt{R}$j$ & Plain binary relation variable number $j$\bigstrut \\
+            & \texttt{R}$j$\texttt{'} & Primed binary relation variable number $j$\bigstrut \\
+            \bigstrut & \texttt{M}$n$\texttt{\_}$j$ &Plain $n$-ary multirelation variable number
+            $j$ ($n \ge 3$)\bigstrut \\
+            \bigstrut & \texttt{M}$n$\texttt{\_}$j$\texttt{'} & Primed $n$-ary multirelation variable
+            number $j$ ($n \ge 3$)\bigstrut \\
+            \textit{TUPLE\_REG} & \texttt{\$A}$j$ & One-tuple register number $j$\bigstrut \\
+            & \texttt{\$P}$j$ & Pair register number $j$\bigstrut \\
+            & \texttt{\$T}$n$\texttt{\_}$j$ & $n$-tuple register number $j$ ($n \ge 3$)\bigstrut \\
+            \textit{TUPLE\_SET\_REG} & \texttt{\$a}$j$ & One-tuple set register number $j$\bigstrut \\
+            & \texttt{\$p}$j$ & Pair set register number $j$\bigstrut \\
+            & \texttt{\$t}$n$\texttt{\_}$j$ & $n$-tuple set register number $j$ ($n \ge 3$)\bigstrut \\
+            \textit{FORMULA\_REG} & \texttt{\$f}$j$ & Formula register number $j$\bigstrut \\
+            \textit{REL\_EXPR\_REG} & \texttt{\$e}$j$ & Relational expression register number $j$\bigstrut \\
+            \textit{INT\_EXPR\_REG} & \texttt{\$i}$j$ & Integer expression register number $j$\bigstrut \\
+        \end{supertabular}
+    \end{center}
+
+    The primed versions of relations and variables are provided for syntactic
+    convenience. They behave exactly as the unprimed versions, except that they live
+    in a different namespace.
+
+    \subsection{Overall Structure}
+    \label{overall-structure}
+
+    This section presents the overall structure of Kodkodi input files.
+
+    \subsubsection{Problems}
+    \label{problems}
+%
+    $$\small\begin{aligned}
+                \textit{problems} & \,::=\, \textit{problem}^*
+    \end{aligned}$$
+%
+    Kodkodi takes a list of ``problems'' as input.
+
+    \subsubsection{Problem}
+    \label{problem}
+
+    $$\small\begin{aligned}
+                \textit{problem} \,::=\, {}& \textit{option}^*\
+                \textit{univ\_spec}\
+                \textit{tuple\_reg\_directive}^*\
+                \textit{bound\_spec}^*\
+                \textit{int\_bound\_spec}^? \\[-.2ex] %% TYPESETTING
+                & \textit{expr\_reg\_directive}^*\ \textit{solve\_directive}
+    \end{aligned}$$
+%
+    A problem consists of three main parts: a universe specification, a set of bound
+    specifications, and a Kodkod formula to satisfy supplied in a ``solve''
+    directive.
+
+    Example:
+
+    \pre
+    \ttfamily\small
+    univ:~u1 \\
+    bounds s0:~\{A0\} \\
+    solve all [S0 :~one s0, S1 :~one s0] | S0 = S1;
+    \post
+
+    \subsubsection{Kodkod Options}
+    \label{kodkod-options}
+
+    $$\small\begin{aligned}
+                \textit{option} \,::=\ {}& \texttt{solver}\; \verb|:|\; \textit{STR\_LITERAL}\, (\verb|,|\; \textit{STR\_LITERAL})^*\; \mid {} \\
+                & \texttt{symmetry\_breaking}\; \verb|:|\; \textit{NUM}\; \mid \\
+                & \texttt{sharing}\; \verb|:|\; \textit{NUM}\; \mid \\
+                & \texttt{bit\_width}\; \verb|:|\; \textit{NUM}\; \mid \\
+                & \texttt{skolem\_depth}\; \verb|:|\; \textit{NUM}\; \mid \\
+                & \texttt{flatten}\; \verb|:|\; (\verb|true| \mid \verb|false|)\; \mid \\
+                & \texttt{delay}\; \verb|:|\; \textit{NUM}
+    \end{aligned}$$
+%
+    Kodkod supports various options, documented in the \texttt{kodkod.\allowbreak
+    engine.\allowbreak config.\allowbreak Options} class \cite{kodkod-2009-options}.
+    The following solvers are supported:
+
+    \pre
+    \ttfamily\small
+    solver:~"CryptoMiniSat" \\
+    solver:~"DefaultSAT4J" \\
+    solver:~"LightSAT4J" \\
+    solver:~"Lingeling" \\
+    solver:~"MiniSat" \\
+    solver:~"MiniSatProver" \\
+    solver:~"ZChaffMincost" \\
+    solver:~"SAT4J" "instance" \\
+    solver:~"External", "executable", "cnf\_file", \\
+    ~~~~~~~~"arg\_1", $\ldots$, "arg\_n" \\
+    solver:~"ExternalV2", "executable", "temp\_input", "temp\_output", \\
+    ~~~~~~~~"sat\_marker", "var\_marker", "unsat\_marker", "arg\_1", $\ldots$, "arg\_n"
+    \post
+
+    For \verb|"External"|, the optional arguments \verb|"arg_1"|, \ldots,
+    \verb|"arg_n"| are passed before the input file name. For \verb|"ExternalV2"|,
+    they are passed after.
+
+    The \verb|delay| option specifies a delay (expressed in milliseconds) between
+    solving a problem and exiting, if the \verb|-exit-on-success| command-line
+    option is specified. This can be used to grant additional time to other threads
+    so that they have a chance to finish.
+
+    \subsubsection{Universe Specification}
+    \label{universe-specification}
+
+    $$\small\begin{aligned}
+                \textit{univ\_spec} \,::=\, {} & \verb|univ|\; \verb|:|\; \textit{UNIV\_NAME}
+    \end{aligned}$$
+%
+    The universe specification fixes the universe's uninterpreted atoms. Kodkodi
+    requires that the atoms are numbered consecutively from \texttt{A0} to
+    \texttt{A}$(n - 1)$.
+
+    Examples:
+
+    \pre
+    \ttfamily\small
+    univ:~u2 \\
+    univ:~u100
+    \post
+
+    \subsubsection{Relation Bound Specifications}
+    \label{relation-bound-specifications}
+
+    $$\small\begin{aligned}
+                \textit{bound\_spec} \,::=\, {}& \verb|bounds|\; \textit{RELATION\_NAME}\; (\verb|,|\; \textit{RELATION\_NAME})\; \verb|:| \\[-.2ex] %% TYPESETTING
+                & ( \textit{tuple\_set} \mid \verb|[|\; \textit{tuple\_set}\; \verb|,| \; \textit{tuple\_set}\; \verb|]| )
+    \end{aligned}$$
+%
+    A relational bound specification gives a lower and an upper bound for the given relations. If only one bound is specified, it is taken as both lower and upper bound. The lower bound must be a subset of the upper bound.
+
+    Examples:
+
+    \pre
+    \ttfamily\small
+    bounds s0:~\{A0\} \\
+    bounds r2:~[\{\}, \{A0 ..\ A9\} -> \{A10 ..\ A19\}]
+    \post
+
+    \subsubsection{Integer Bound Specification}
+    \label{integer-bound-specification}
+
+    $$\small\begin{aligned}
+                \textit{int\_bound\_spec} &\,::=\, \verb|int_bounds|\; \verb|:|\; \textit{int\_bound\_seq}\; (\verb|,|\; \textit{int\_bound\_seq})^* \\
+                \textit{int\_bound\_seq} & \,::=\, [\textit{NUM}\;\verb|:|]\;\verb|[|\; \textit{tuple\_set}\; (\verb|,|\; \textit{tuple\_set})^*\; \verb|]|
+    \end{aligned}$$
+%
+    An integer bound specification establishes a correspondence between integers and
+    sets of atoms that represent that integer in relational expressions. The syntax
+    makes it possible to specify the bounds of consecutive integers in sequence.
+
+    Example:
+
+    \pre
+    \ttfamily\small
+    int\_bounds:~[\{A0\}, \{A1\}], 10:~[\{A2\}, \{A3\}, \{A4\}]
+    \post
+
+    In the above example, \verb|0| is bounded by \verb|{A0}|, \verb|1| is bounded by
+    \verb|{A1}|, \verb|10| is bounded by \verb|{A2}|, \verb|11| is bounded by
+    \verb|{A11}|, and \verb|12| is bounded by \verb|{A4}|.
+
+    \subsubsection{Solve Directive}
+    \label{solve-directive}
+
+    $$\small\begin{aligned}
+                \textit{solve\_directive} \,::=\, {}& \verb|solve|\; \textit{formula}\; \verb|;|
+    \end{aligned}$$
+%
+    The ``solve'' directive tells Kodkod to try to satisfy the given formula.
+
+    Example:
+
+    \pre
+    \ttfamily\small
+    solve all [S0 :~one s0, S1 :~one s0] | !~S0 = S1 => no S0.r0 \& S1.r0
+    \post
+
+    \subsection{Register Directives}
+    \label{register-directives}
+
+    Registers make it possible to use a complex syntactic construct several times
+    without duplicating it. They also help reduce Kodkod's memory usage and running
+    time.
+
+    \subsubsection{Tuple Register Directives}
+    \label{tuple-register-directives}
+
+    $$\small\begin{aligned}
+                \textit{tuple\_reg\_directive} \,::=\, {}
+                & \textit{TUPLE\_REG}\; \verb|:=|\; \textit{tuple} \mid {} \\
+                & \textit{TUPLE\_SET\_REG}\; \verb|:=|\; \textit{tuple\_set}
+    \end{aligned}$$
+%
+    A tuple register directive assigns a value to a tuple or tuple set register.
+
+    Examples:
+
+    \pre
+    \ttfamily\small
+    \$P0 := [A0, A0] \\
+    \$P1 := [A1, A1] \\
+    \$t4\_0 := \{\$P0, \$P1\} -> \{\$P0, \$P1\}
+    \post
+
+    \subsubsection{Expression Register Directives}
+    \label{expression-register-directives}
+
+    $$\small\begin{aligned}
+                \textit{expr\_reg\_directive} \,::=\, {}
+                & \textit{FORMULA\_REG}\; \verb|:=|\; \textit{formula} \mid {} \\
+                & \textit{REL\_EXPR\_REG}\; \verb|:=|\; \textit{rel\_expr} \mid {} \\
+                & \textit{INT\_EXPR\_REG}\; \verb|:=|\; \textit{int\_expr}
+    \end{aligned}$$
+%
+    Formulas, relational expressions, and integer expressions can also be assigned
+    to registers using an expression register directive. An alternative is to use
+    the \verb|let| binder inside an expression.
+
+    Examples:
+
+    \pre
+    \ttfamily\small
+    \$f0 := all [S0 :~one s0] | s0 in univ \\
+    \$e5 := (s0 \& s1).r1 + (s0 \& s2).r2 \\
+    \$i14 := 2 * \#(\$e5) + 1
+    \post
+
+    \subsection{Tuple Language}
+    \label{tuple-language}
+
+    Kodkod supports partial solutions in the form of bounds on relations. The bound
+    specifications involve tuples and tuple sets.
+
+    \subsubsection{Tuples}
+    \label{tuples}
+
+    $$\small\begin{aligned}
+                \textit{tuple} \,::=\,{}
+                & \verb|[|\; \textit{ATOM\_NAME}\; (\verb|,|\; \textit{ATOM\_NAME})^*\; \verb|]| \mid {} \\
+                & \textit{ATOM\_NAME} \mid {} \\
+                & \textit{TUPLE\_NAME} \mid {} \\
+                & \textit{TUPLE\_REG}
+    \end{aligned}$$
+%
+    An $n$-tuple is normally specified using the syntax \texttt{[A\textit{j}$_1$,
+        $\ldots$, A\textit{j}$_n$]}. The brackets are optional when $n = 1$.
+    Alternatively, tuples can be specified using an index in the $n$-tuple space.
+    For example, given the universe \verb|u10|, the name \verb|P27| refers to the
+    pair \verb|[A2, A7]|.
+
+    Examples:
+
+    \pre
+    \ttfamily\small
+    [A0, A1, A5, A20] \\
+    A0 \\
+    P5 \\
+    \$P14
+    \post
+
+    \subsubsection{Tuple Sets}
+    \label{tuple-sets}
+
+    $$\small\begin{aligned}
+                \textit{tuple\_set} \,::=\,{}
+                & \textit{tuple\_set}\; (\verb|+| \mid \verb|-|)\; \textit{tuple\_set} \mid \\
+                & \textit{tuple\_set}\; \verb|&|\; \textit{tuple\_set} \mid \\
+                & \textit{tuple\_set}\; \verb|->|\; \textit{tuple\_set} \mid \\
+                & \textit{tuple\_set}\; \verb|[|\; \textit{NUM}\; \verb|]| \mid \\
+                & \verb|{|\; \textit{tuple}\; (\verb|,|\; \textit{tuple})^*\; \verb|}| \mid \\
+                & \verb|{|\; \textit{tuple}\; \verb|..|\; \textit{tuple}\; \verb|}| \mid \\
+                & \verb|{|\; \textit{tuple}\; \verb|#|\; \textit{tuple}\; \verb|}| \mid \\
+                & \verb|none| \mid \\
+                & \verb|all| \mid \\
+                & \textit{UNIV\_NAME} \mid \\
+                & \textit{OFF\_UNIV\_NAME} \mid \\
+                & \textit{TUPLE\_SET\_REG} \mid \\
+                & \verb|(|\; \textit{tuple\_set}\; \verb|)|
+    \end{aligned}$$
+%
+    Tuple sets can be constructed in several ways. The \verb|+|, \verb|-|, and
+    \verb|&| operators denote the union, difference, and intersection of two tuple
+    sets, respectively. The \verb|->| operator denotes the Cartesian product of two
+    tuple sets. The \verb|[]| operator projects the tuple set onto the given
+    dimension. Tuple sets can be specified exhaustively by listing all their tuples.
+    If all the tuples have consecutive indices, the range operator \verb|..| can be
+    used. Alternatively, if all the tuples occupy a rectangular, cubic, etc., area
+    in the tuple space, they can be specified by passing the lowest and highest
+    corner of the area to the \verb|#| operator. Finally, \verb|none| is a synonym
+    for \verb|{}|, and \verb|all| denotes the complete tuple set (whose arity is
+    deduced from the context).
+
+    Examples:
+
+    \pre
+    \ttfamily\small
+    \{A1\} \\
+    \{A1, A2\} -> \{A3, A4\} \\
+    \{[A1, A2] {.}{.} [A3, A4]\} \\
+    \{[A1, A2] \# [A3, A4]\} \\
+    \$p14
+    \post
+
+    \subsubsection{Tuple Set Operator Precedences and Associativities}
+    \label{tuple-set-operator-precedences-and-associativities}
+
+    The operator precedences and associativities are given in the table below. Fully
+    bracketed operators are not listed.
+
+    \begin{center}
+        \small
+        \begin{supertabular}{c|l|l|l} %% TYPESETTING
+            Level & Operator Class & Arity & Associativity \\[.4ex]
+            \hline
+            \strut\vphantom{$A^{B^{C^{D}}}$}%
+            1 & \verb|+|~~~\verb|-| & Binary & Left-associative\bigstrut \\
+            2 & \verb|&| & Binary & Associative\bigstrut \\
+            3 & \verb|->| & Binary & Associative\bigstrut \\
+            4 & \verb|[]| & Binary & Left-associative\bigstrut \\
+        \end{supertabular}
+    \end{center}
+
+    \subsection{Expression Language}
+    \label{expression-language}
+
+    Kodkod supports three types of expression: Boolean expressions (formulas),
+    relational expressions, and integer expressions.
+
+    \subsubsection{Formulas}
+    \label{formulas}
+
+    $$\small\begin{aligned}
+                \textit{formula} \,::=\, {}
+                & (\verb|all| \mid \verb|some|)\; \textit{decls}\; \verb!|!\; \textit{formula} \mid {} \\
+                & \verb|let|\; \textit{assigns}\; \verb!|!\; \textit{formula} \mid {} \\
+                & \verb|if|\; \textit{formula}\; \verb|then|\; \textit{formula}\; \verb|else|\; \textit{formula} \mid {} \\
+                & \textit{formula}\; \verb!||!\; \textit{formula} \mid {} \\
+                & \textit{formula}\; \verb|<=>|\; \textit{formula} \mid {} \\
+                & \textit{formula}\; \verb|=>|\; \textit{formula} \mid {} \\
+                & \textit{formula}\; \verb|&&|\; \textit{formula} \mid {} \\
+                & \verb|!|\; \textit{formula} \mid {} \\
+                & \verb|ACYCLIC|\; \verb|(|\; \textit{RELATION\_NAME}\; \verb|)| \mid {} \\
+                & \verb|FUNCTION|\; \verb|(|\; \textit{RELATION\_NAME}\; \verb|,|\; \textit{rel\_expr}\; \verb|->|\; (\verb|one| \mid \verb|lone|)\; \textit{rel\_expr}\; \verb|)| \mid {} \\
+                & \verb|TOTAL_ORDERING|\; \verb|(|\; \textit{RELATION\_NAME}\; \verb|,|\; \\[-.2ex] %% TYPESETTING
+                &\qquad (\textit{UNIV\_NAME} \mid \textit{OFF\_UNIV\_NAME} \mid \textit{RELATION\_NAME})\; \verb|,|\; \\[-.2ex] %% TYPESETTING
+                &\qquad (\textit{ATOM\_NAME} \mid \textit{RELATION\_NAME})\;\verb|,|\; \\[-.2ex] %% TYPESETTING
+                &\qquad (\textit{ATOM\_NAME} \mid \textit{RELATION\_NAME})\; \verb|)| \mid {} \\
+                & \textit{rel\_expr}\; (\verb|in| \mid \verb|=|)\; \textit{rel\_expr} \mid {} \\
+                & \textit{int\_expr}\; (\verb|=| \mid \verb|<| \mid \verb|<=| \mid \verb|>| \mid \verb|>=|)\; \textit{int\_expr} \mid {} \\
+                & (\verb|no| \mid \verb|lone| \mid \verb|one| \mid \verb|some|)\; \textit{rel\_expr} \mid {} \\
+                & \verb|false| \mid {} \\
+                & \verb|true| \mid {} \\
+                & \textit{FORMULA\_REG} \mid {} \\
+                & (\; \textit{formula}\; )
+    \end{aligned}$$
+%
+    A formula, or Boolean expression, specifies a constraint involving relations and integers.
+
+    Example:
+
+    \pre
+    \ttfamily\small
+    some [S0 :~some s0] | if S0 in s1 then !\$f1 else \$i0 <= \$i1
+    \post
+
+    \subsubsection{Relational Expressions}
+    \label{relational-expressions}
+
+    $$\small\begin{aligned}
+                \textit{rel\_expr} \,::=\, {}
+                & \verb|let|\; \textit{assigns}\; \verb!|!\; \textit{rel\_expr} \mid {} \\
+                & \verb|if|\; \textit{formula}\; \verb|then|\; \textit{rel\_expr}\; \verb|else|\; \textit{rel\_expr} \mid {} \\
+                & \textit{rel\_expr}\; (\verb|+| \mid \verb|-|)\; \textit{rel\_expr} \mid {} \\
+                & \textit{rel\_expr}\; \verb|++|\; \textit{rel\_expr} \mid {} \\
+                & \textit{rel\_expr}\; \verb|&|\; \textit{rel\_expr} \mid {} \\
+                & \textit{rel\_expr}\; \verb|->|\; \textit{rel\_expr} \mid {} \\
+                & \textit{rel\_expr}\; \verb|\|\; \textit{rel\_expr} \mid {} \\
+                & \textit{rel\_expr}\; \verb|(|\; \textit{rel\_expr}\; (\verb|,| \textit{rel\_expr})^*\; \verb|)| \mid {} \\
+                & \textit{rel\_expr}\; \verb|[|\; \textit{int\_expr}\; (\verb|,|\; \textit{int\_expr})^*\; \verb|]| \mid {} \\
+                & \textit{rel\_expr}\; \verb|.|\; \textit{rel\_expr} \mid {} \\
+                & (\verb|^| \mid \verb|*| \mid \verb|~|)\; \textit{rel\_expr} \mid {} \\
+                & \verb|{|\; \textit{decls}\; \verb!|!\; \textit{formula}\; \verb|}| \mid {} \\
+                & (\verb|Bits| \mid \verb|Int|)\; \verb|[|\; \textit{int\_expr} \;\verb|]| \mid {} \\
+                & \verb|iden| \mid {} \\
+                & \verb|ints| \mid {} \\
+                & \verb|none| \mid {} \\
+                & \verb|univ| \mid {} \\
+                & \textit{ATOM\_NAME} \mid {} \\
+                & \textit{UNIV\_NAME} \mid {} \\
+                & \textit{OFF\_UNIV\_NAME} \mid {} \\
+                & \textit{RELATION\_NAME} \mid {} \\
+                & \textit{VARIABLE\_NAME} \mid {} \\
+                & \textit{REL\_EXPR\_REG} \mid {} \\
+                & \verb|(|\; \textit{rel\_expr}\; \verb|)|
+    \end{aligned}$$
+%
+    A relational expression denotes a relation (set, binary relation, or
+    multirelation). Nearly all operators are identical to those offered by Kodkod,
+    which in turn are modeled after those provided by Alloy. Notable exceptions are
+    the conditional expression \verb|if| \ldots \verb|then| \ldots \verb|else| \ldots; the \texttt{\textit{r}} \verb|\| \textit{\textit{s}} operator, which is
+    a shorthand for \verb|if| \verb|no| \texttt{\textit{r}} \verb|then| \texttt{\textit{s}} \verb|else| \texttt{\textit{r}}; and finally \texttt{\textit{r}(\textit{s}$_1$,} \texttt{$\ldots$,} \texttt{\textit{s}$_n$)},
+    which is equivalent to
+    \texttt{\textit{s}$_n$.($\ldots$(\textit{s}$_1$.r)$\ldots$)}.
+
+    Example:
+
+    \pre
+    \ttfamily\small
+    if \#(s0) > 5 then s0.r0 + s1.r1 else none
+    \post
+
+    \subsubsection{Integer Expressions}
+    \label{integer-expressions}
+
+    $$\small\begin{aligned}
+                \textit{int\_expr} \,::=\,{}
+                & \verb|sum|\; \textit{decls}\; \verb!|!\; \textit{int\_expr} \mid {} \\
+                & \verb|let|\; \textit{assigns}\; \verb!|!\; \textit{int\_expr} \mid {} \\
+                & \verb|if|\; \textit{formula}\; \verb|then|\; \textit{int\_expr}\; \verb|else|\; \textit{int\_expr} \mid {} \\
+                & \textit{int\_expr}\; (\verb|<<| \mid \verb|>>| \mid \verb|>>>|)\; \textit{int\_expr} \mid {} \\
+                & \textit{int\_expr}\; (\verb|+| \mid \verb|-|)\; \textit{int\_expr} \mid {} \\
+                & \textit{int\_expr}\; (\verb|*| \mid \verb|/| \mid \verb|%|)\; \textit{int\_expr} \mid {} \\
+                & (\verb|#| \mid \verb|sum|)\; \verb|(|\; \textit{rel\_expr} \verb|)| \mid {} \\
+                & \textit{int\_expr}\; \verb!|! \;\textit{int\_expr} \mid {} \\
+                & \textit{int\_expr}\; \verb|^| \;\textit{int\_expr} \mid {} \\
+                & \textit{int\_expr}\; \verb|&| \;\textit{int\_expr} \mid {} \\
+                & (\verb|~| \mid \verb|-| \mid \verb|abs| \mid \verb|sgn|)\; \textit{int\_expr} \mid {} \\
+                & \textit{NUM} \mid {} \\
+                & \textit{INT\_EXPR\_REG} \mid {} \\
+                & \verb|(|\; \textit{int\_expr}\; \verb|)|
+    \end{aligned}$$
+%
+    An integer expression denotes an integer.
+
+    Example:
+
+    \pre
+    \ttfamily\small
+    (sum [S0 :~one s0] | \#(S0) * (\#(S0) + 1) / 2) \% 10
+    \post
+
+    \subsubsection{Declarations}
+    \label{declarations}
+
+    $$\small\begin{aligned}
+                \textit{decls} & \,::=\, \verb|[|\; \textit{decl}\; (\verb|,|\; \textit{decl})^*\; \verb|]| \\
+                \textit{decl} & \,::=\, \textit{VARIABLE\_NAME}\; \verb|:|\; (\verb|no| \mid \verb|lone| \mid \verb|one| \mid \verb|some| \mid \verb|set|)\; \textit{rel\_expr}
+    \end{aligned}$$
+%
+    The \verb|all|, \verb|some|, and \verb|sum| quantifiers take a list of variable
+    declarations.
+
+    Example:
+
+    \pre
+    \ttfamily\small
+    [S0 :~set s0, S1 :~one s1]
+    \post
+
+    \subsubsection{Assignments}
+    \label{assignments}
+
+    $$\small\begin{aligned}
+                \textit{assigns} \,::=\,{} & \verb|[|\; \textit{assign}\; (\verb|,|\; \textit{assign})^*\;\verb|]| \\
+                \textit{assign} \,::=\,{} & \textit{FORMULA\_REG}\; \verb|:=|\; \textit{formula} \mid {} \\
+                & \textit{REL\_EXPR\_REG}\; \verb|:=|\; \textit{rel\_expr} \mid {} \\
+                & \textit{INT\_EXPR\_REG}\; \verb|:=|\; \textit{int\_expr}
+    \end{aligned}$$
+%
+    The \verb|let| binder takes a list of register assignments.
+
+    Example:
+
+    \pre
+    \ttfamily\small
+    [\$f0 := all [S0 :~one s0] | s0 in univ, \$i14 := 2 * \#(\$e5) + 1]
+    \post
+
+    \subsubsection{Operator Precedences and Associativities}
+    \label{operator-precedences-and-associativities}
+
+    The operator precedences and associativities are given in the table below. Fully
+    bracketed operators are not listed.
+
+    \begin{center}
+        \small
+        \begin{supertabular}{c|l|l|l} %% TYPESETTING
+            Level & Operator Class & Arity & Associativity \\[.4ex]
+            \hline
+            \strut\vphantom{$A^{B^{C^{D}}}$}%
+%1 & \verb|+|~~\verb|-| & Binary & Left-associative\bigstrut \\
+            1 & \verb!all |   some |   sum |! & Binary/Ternary & Right-associative\bigstrut \\
+            & \verb!let |   if then else! & &\bigstrut \\
+            2 & \verb!||! & Binary & Associative\bigstrut \\
+            3 & \verb|<=>| & Binary & Associative\bigstrut \\
+            4 & \verb|=>| & Binary & Right-associative\bigstrut \\
+            5 & \verb|&&| & Binary & Associative\bigstrut \\
+            6 & \verb|!| & Unary & N/A\bigstrut \\
+            7 & \verb|in   =   <   <=   >   >=| & Binary & N/A\bigstrut \\
+            8 & \verb|no   lone   one   some| & Unary & N/A\bigstrut \\
+            9 & \verb|<<   >>   >>>| & Binary & Left-associative\bigstrut \\
+            10 & \verb|+   -| & Binary & Left-associative\bigstrut \\
+            11 & \verb|*   /   %| & Binary & Left-associative\bigstrut \\
+            12 & \verb|++| & Binary & Associative\bigstrut \\
+            13 & \verb!|   ^   &! & Binary & Associative\bigstrut \\
+            14 & \verb|->| & Binary & Associative\bigstrut \\
+            15 & \verb|\| & Binary & Associative\bigstrut \\
+            16 & \verb|(,)| & Binary & Left-associative\bigstrut \\
+            17 & \verb|[,]| & Binary & Left-associative\bigstrut \\
+            18 & \verb|.| & Binary & Left-associative\bigstrut \\
+            19 & \verb|^   *   ~   -   abs   sgn| & Unary & N/A\bigstrut \\
+        \end{supertabular}
+    \end{center}
+
+    \subsection{Comments}
+    \label{comments}
+
+    Comments may be specified as in \cpp, that is, either as a one line comment
+    starting with \verb|//| or as a block starting with \verb|/*| and ending with
+    \verb|*/|.
+
+    Examples:
+
+    \pre
+    \ttfamily\small
+    /* \\
+    ~~Copyright 2009 Gnomovision, Inc. \\
+    */ \\[2\smallskipamount]
+    univ:~u99999 // Don't panic!
+    \post
+
+
+    \section{Case Study: Sorting Using Alloy and Kodkodi}
+    \label{case-study-sorting-using-alloy-and-kodkodi}
+
+    Although Kodkodi's syntax is similar to Alloy's, there are a few important
+    conceptual differences. Consider the following Alloy specification of integer
+    sorting:
+
+    \pre
+    \ttfamily\small
+    abstract sig IntSeq \{ \\
+    ~~ints :~seq Int \\
+    \} \\[2\smallskipamount]
+    pred isSorted [s :~IntSeq] \{ \\
+    ~~all i :~s.ints.inds - s.ints.lastIdx | s.ints[i] <= s.ints[i + 1] \\
+    \} \\
+    pred isPermutation [pre, post :~IntSeq] \{ \\
+    ~~all p :~Int | \#\{pre.ints.p\} = \#\{post.ints.p\} \\
+    \} \\[2\smallskipamount]
+    one sig Pre extends IntSeq \{\} \\
+    one sig Post extends IntSeq \{\} \\[2\smallskipamount]
+    fact \{ \\
+    ~~Pre.ints[0] = 7 \&\& Pre.ints[1] = 2 \&\& \\
+    ~~Pre.ints[2] = 4 \&\& Pre.ints[3] = 3 \&\& \\
+    ~~Pre.ints[4] = 3 \&\& Pre.ints[5] = 8 \&\& \\
+    ~~Pre.ints[6] = 5 \&\& Pre.ints[7] = 20 \&\& \\
+    ~~Pre.ints[8] = 18 \&\& Pre.ints[9] = 1 \&\& \\
+    ~~Pre.ints[10] = 10 \&\& Pre.ints[11] = 5 \&\& \\
+    ~~Pre.ints[12] = 7 \&\& Pre.ints[13] = 12 \&\& \\
+    ~~Pre.ints[14] = 2 \&\& Pre.ints[15] = 19 \&\& \\
+    ~~Pre.ints[16] = 15 \&\& Pre.ints[17] = 13 \&\& \\
+    ~~Pre.ints[18] = 11 \&\& Pre.ints[19] = 4 \\
+    \} \\[2\smallskipamount]
+    run \{ Pre.isPerm[Post] \&\& Post.isSorted \} for 20 seq, 6 int
+    \post
+
+    There are two main approaches to representing this in Kodkod:
+
+    \begin{enum}
+        \item[1.] \textsl{We could tell the Alloy Analyzer to generate Kodkod-based Java
+        code, call \texttt{\textsl{toString()}} on the abstract syntax tree, and fiddle
+        a little bit with the output to make it comply with Kodkodi's input syntax.}
+
+        From an Alloy specification, we can generate Java code by chosing ``Output
+        Kodkod to file'' as the SAT Solver in the Alloy Analyzer's ``Options'' menu.
+
+        Unfortunately, for the example above, the generated code is too large for the
+        Java compiler, which simply bails out. In general, we would need to rename the
+        atoms and relations so that they follow Kodkodi's strict naming conventions and
+        change a few syntactic items.
+
+        \item[2.]
+        \textsl{We ignore the Alloy model and start from scratch in Kodkodi.}
+
+        This gives a specification like the following:
+
+        \pre
+        \ttfamily\small
+        solver:~"MiniSat" \\
+        bit\_width:~6 \\
+        univ:~u21 \\
+        bounds r0 /* Pre.ints */: \\
+        \{[A0, A7], [A1, A2], [A2, A4], [A3, A3], [A4, A3], [A5, A8], [A6, A5],
+        [A7, A20], [A8, A18], [A9, A1], [A10, A10], [A11, A5], [A12, A7], [A13, A12],
+        [A14, A2], [A15, A19], [A16, A15], [A17, A13], [A18, A11], [A19, A4]\} \\
+        bounds r1 /* Post.ints */:~[\{\}, u20->u21] \\
+        int\_bounds:~[\{A0\}, \{A1\}, \{A2\}, \{A3\}, \{A4\}, \{A5\}, \{A6\}, \{A7\},
+        \{A8\}, \{A9\}, \{A10\}, \{A11\}, \{A12\}, \{A13\}, \{A14\}, \{A15\}, \{A16\},
+        \{A17\}, \{A18\}, \{A19\}, \{A20\}] \\
+        solve FUNCTION(r1, u20->one u21) \\
+        \&\& (all [S0 :~one univ] | \#(r1.S0) = \#(r0.S0)) \\
+        \&\& (all [S0 :~one u19] | sum(S0.r1) <= sum(Int[sum(S0) + 1].r1));
+        \post
+
+        The first two lines,
+
+        \pre
+        \ttfamily\small
+        solver:~"MiniSat" \\
+        bit\_width:~6
+        \post
+
+        are configuration options. Then we specify that the universe should consist of
+        exactly 21 atoms:
+
+        \pre
+        \ttfamily\small
+        univ:~u21
+        \post
+
+        The atoms are called \texttt{A0} to \texttt{A20}. Next, we specify the values
+        for the \texttt{Pre.ints} relation as a Kodkod bound:
+
+        \pre
+        \ttfamily\small
+        bounds r0 /* Pre.ints */: \\
+        \{[A0, A7], [A1, A2], [A2, A4], [A3, A3], [A4, A3], [A5, A8], [A6, A5],
+        [A7, A20], [A8, A18], [A9, A1], [A10, A10], [A11, A5], [A12, A7], [A13, A12],
+        [A14, A2], [A15, A19], [A16, A15], [A17, A13], [A18, A11], [A19, A4]\}
+        \post
+
+        In Kodkodi, all binary relations must be called \texttt{r$j$}, where $j$ is a
+        natural number. The comment is there to remind us that \texttt{r0} corresponds
+        to \texttt{Pre.ints} in the Alloy specification.
+
+        \pre
+        \ttfamily\small
+        bounds r1 /* Post.ints */:~[\{\}, u20->u21]
+        \post
+
+        For \texttt{Post.ints}, we specify the empty set \texttt{\{\}} as the lower
+        bound and the Cartesian product \texttt{\{A0 {..}~A19\}->\{A0 {.{.}}~A20\}} as
+        the upper bound.
+
+        \pre
+        \ttfamily\small
+        int\_bounds:~[\{A0\}, \{A1\}, \{A2\}, \{A3\}, \{A4\}, \{A5\}, \{A6\}, \{A7\},
+        \{A8\}, \{A9\}, \{A10\}, \{A11\}, \{A12\}, \{A13\}, \{A14\}, \{A15\}, \{A16\},
+        \{A17\}, \{A18\}, \{A19\}, \{A20\}]
+        \post
+
+        Since we need the integers for addition, we must associate atoms with the
+        integers we need. Here we simply let \texttt{A0} represent \texttt{0},
+        \texttt{A1} represent \texttt{1}, and so on.
+
+        \pre
+        \ttfamily\small
+        solve FUNCTION(r1, u20->one u21) \\
+        \&\& (all [S0 :~one univ] | \#(r1.S0) = \#(r0.S0)) \\
+        \&\& (all [S0 :~one u19] | sum(S0.r1) <= sum(Int[sum(S0) + 1].r1));
+        \post
+
+        Finally, we specify the formula to solve. The first line ensures that
+        \texttt{r1} (i.e., \texttt{Post.ints}) is a function rather than an arbitrary
+        relation. The second and third lines are adapted directly from the Alloy
+        specification.
+
+        Sorting [7, 2, 4, 3, 3, 8, 5, 20, 18, 1, 10, 5, 7, 12, 2, 19, 15, 13, 11, 4]
+        should give [1, 2, 2, 3, 3, 4, 4, 5, 5, 7, 7, 8, 10, 11, 12, 13, 15, 18, 19,
+        20]. Let us verify that this is the case by running Kodkodi:
+
+        \pre
+        \ttfamily\small\slshape
+        *** PROBLEM 1 *** \\[2\smallskipamount]
+        ---OUTCOME--- \\
+        SATISFIABLE \\[2\smallskipamount]
+        ---INSTANCE--- \\
+        relations:~\{r0=[[A0, A7], [A1, A2], [A2, A4], [A3, A3], [A4, A3], [A5, A8],
+        [A6, A5], [A7, A20], [A8, A18], [A9, A1], [A10, A10], [A11, A5], [A12, A7],
+        [A13, A12], [A14, A2], [A15, A19], [A16, A15], [A17, A13], [A18, A11], [A19,
+        A4]], r1=[[A0, A1], [A1, A2], [A2, A2], [A3, A3], [A4, A3], [A5, A4], [A6, A4],
+        [A7, A5], [A8, A5], [A9, A7], [A10, A7], [A11, A8], [A12, A10], [A13, A11],
+        [A14, A12], [A15, A13], [A16, A15], [A17, A18], [A18, A19], [A19, A20]]\}
+        \\[2\smallskipamount]
+        ---STATS--- \\
+        p cnf 8166 29484 \\
+        primary variables:~420 \\
+        parsing time:~72 ms \\
+        translation time:~359 ms \\
+        solving time:~434 ms
+        \post
+
+        The result is correct.
+    \end{enum}
+
+
+    \section{Known Bugs and Limitations}
+    \label{known-bugs-and-limitations}
+
+    Here are the known bugs and limitations in Kodkodi at the time of writing:
+
+    \begin{enum}
+        \item[$\bullet$] The \texttt{-server} command-line option, which makes Kodkodi
+        run as a TCP server, is limited to a single connection. Furthermore, any error
+        occurring when processing one problem breaks the connection.
+    \end{enum}
+
+    \let\em=\sl
+    \bibliography{kodkodi}{}
+    \bibliographystyle{abbrv}
+
+\end{document}

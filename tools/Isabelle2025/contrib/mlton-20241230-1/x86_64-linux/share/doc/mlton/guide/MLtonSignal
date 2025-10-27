@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonSignal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonSignal</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_SIGNAL</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="nn">Posix</span><span class="p">.</span><span class="nn">Signal</span><span class="p">.</span><span class="n">signal</span>
+      <span class="kr">type</span> <span class="kt">signal</span> <span class="p">=</span> <span class="n">t</span>
+
+      <span class="kr">structure</span> <span class="nn">Handler</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">type</span> <span class="kt">t</span>
+
+            <span class="kr">val</span> <span class="nv">default</span><span class="p">:</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">handler</span><span class="p">:</span> <span class="p">(</span><span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">ignore</span><span class="p">:</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">isDefault</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+            <span class="kr">val</span> <span class="nv">isIgnore</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+            <span class="kr">val</span> <span class="nv">simple</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">t</span>
+         <span class="kr">end</span>
+
+      <span class="kr">structure</span> <span class="nn">Mask</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">type</span> <span class="kt">t</span>
+
+            <span class="kr">val</span> <span class="nv">all</span><span class="p">:</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">allBut</span><span class="p">:</span> <span class="n">signal</span> <span class="n">list</span> <span class="p">-&gt;</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">block</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+            <span class="kr">val</span> <span class="nv">getBlocked</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">isMember</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="n">signal</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+            <span class="kr">val</span> <span class="nv">none</span><span class="p">:</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">setBlocked</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+            <span class="kr">val</span> <span class="nv">some</span><span class="p">:</span> <span class="n">signal</span> <span class="n">list</span> <span class="p">-&gt;</span> <span class="n">t</span>
+            <span class="kr">val</span> <span class="nv">unblock</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+         <span class="kr">end</span>
+
+      <span class="kr">val</span> <span class="nv">getHandler</span><span class="p">:</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Handler</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">handled</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nn">Mask</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">prof</span><span class="p">:</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">restart</span><span class="p">:</span> <span class="n">bool</span> <span class="n">ref</span>
+      <span class="kr">val</span> <span class="nv">setHandler</span><span class="p">:</span> <span class="n">t</span> <span class="n">*</span> <span class="nn">Handler</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">suspend</span><span class="p">:</span> <span class="nn">Mask</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">vtalrm</span><span class="p">:</span> <span class="n">t</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Signals handlers are functions from (runnable) threads to (runnable)
+threads.  When a signal arrives, the corresponding signal handler is
+invoked, its argument being the thread that was interrupted by the
+signal.  The signal handler runs asynchronously, in its own thread.
+The signal handler returns the thread that it would like to resume
+execution (this is often the thread that it was passed).  It is an
+error for a signal handler to raise an exception that is not handled
+within the signal handler itself.</p>
+</div>
+<div class="paragraph">
+<p>A signal handler is never invoked while the running thread is in a
+critical section (see <a href="MLtonThread">MLtonThread</a>).  Invoking a signal handler
+implicitly enters a critical section and the normal return of a signal
+handler implicitly exits the critical section; hence, a signal handler
+is never interrupted by another signal handler.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>type t</code></p>
+<div class="paragraph">
+<p>the type of signals.</p>
+</div>
+</li>
+<li>
+<p><code>type Handler.t</code></p>
+<div class="paragraph">
+<p>the type of signal handlers.</p>
+</div>
+</li>
+<li>
+<p><code>Handler.default</code></p>
+<div class="paragraph">
+<p>handles the signal with the default action.</p>
+</div>
+</li>
+<li>
+<p><code>Handler.handler f</code></p>
+<div class="paragraph">
+<p>returns a handler <code>h</code> such that when a signal <code>s</code> is handled by <code>h</code>,
+<code>f</code> will be passed the thread that was interrupted by <code>s</code> and should
+return the thread that will resume execution.</p>
+</div>
+</li>
+<li>
+<p><code>Handler.ignore</code></p>
+<div class="paragraph">
+<p>is a handler that will ignore the signal.</p>
+</div>
+</li>
+<li>
+<p><code>Handler.isDefault</code></p>
+<div class="paragraph">
+<p>returns true if the handler is the default handler.</p>
+</div>
+</li>
+<li>
+<p><code>Handler.isIgnore</code></p>
+<div class="paragraph">
+<p>returns true if the handler is the ignore handler.</p>
+</div>
+</li>
+<li>
+<p><code>Handler.simple f</code></p>
+<div class="paragraph">
+<p>returns a handler that executes <code>f ()</code> and does not switch threads.</p>
+</div>
+</li>
+<li>
+<p><code>type Mask.t</code></p>
+<div class="paragraph">
+<p>the type of signal masks, which are sets of blocked signals.</p>
+</div>
+</li>
+<li>
+<p><code>Mask.all</code></p>
+<div class="paragraph">
+<p>a mask of all signals.</p>
+</div>
+</li>
+<li>
+<p><code>Mask.allBut l</code></p>
+<div class="paragraph">
+<p>a mask of all signals except for those in <code>l</code>.</p>
+</div>
+</li>
+<li>
+<p><code>Mask.block m</code></p>
+<div class="paragraph">
+<p>blocks all signals in <code>m</code>.</p>
+</div>
+</li>
+<li>
+<p><code>Mask.getBlocked ()</code></p>
+<div class="paragraph">
+<p>gets the signal mask <code>m</code>, i.e. a signal is blocked if and only if it
+is in <code>m</code>.</p>
+</div>
+</li>
+<li>
+<p><code>Mask.isMember (m, s)</code></p>
+<div class="paragraph">
+<p>returns true if the signal <code>s</code> is in <code>m</code>.</p>
+</div>
+</li>
+<li>
+<p><code>Mask.none</code></p>
+<div class="paragraph">
+<p>a mask of no signals.</p>
+</div>
+</li>
+<li>
+<p><code>Mask.setBlocked m</code></p>
+<div class="paragraph">
+<p>sets the signal mask to <code>m</code>, i.e. a signal is blocked if and only if
+it is in <code>m</code>.</p>
+</div>
+</li>
+<li>
+<p><code>Mask.some l</code></p>
+<div class="paragraph">
+<p>a mask of the signals in <code>l</code>.</p>
+</div>
+</li>
+<li>
+<p><code>Mask.unblock m</code></p>
+<div class="paragraph">
+<p>unblocks all signals in <code>m</code>.</p>
+</div>
+</li>
+<li>
+<p><code>getHandler s</code></p>
+<div class="paragraph">
+<p>returns the current handler for signal <code>s</code>.</p>
+</div>
+</li>
+<li>
+<p><code>handled ()</code></p>
+<div class="paragraph">
+<p>returns the signal mask <code>m</code> corresponding to the currently handled
+signals; i.e., a signal is handled if and only if it is in <code>m</code>.</p>
+</div>
+</li>
+<li>
+<p><code>prof</code></p>
+<div class="paragraph">
+<p><code>SIGPROF</code>, the profiling signal.</p>
+</div>
+</li>
+<li>
+<p><code>restart</code></p>
+<div class="paragraph">
+<p>dynamically determines the behavior of interrupted system calls; when
+<code>true</code>, interrupted system calls are restarted; when <code>false</code>,
+interrupted system calls raise <code>OS.SysError</code>.</p>
+</div>
+</li>
+<li>
+<p><code>setHandler (s, h)</code></p>
+<div class="paragraph">
+<p>sets the handler for signal <code>s</code> to <code>h</code>.</p>
+</div>
+</li>
+<li>
+<p><code>suspend m</code></p>
+<div class="paragraph">
+<p>temporarily sets the signal mask to <code>m</code> and suspends until an unmasked
+signal is received and handled, at which point <code>suspend</code> resets the
+mask and returns.</p>
+</div>
+</li>
+<li>
+<p><code>vtalrm</code></p>
+<div class="paragraph">
+<p><code>SIGVTALRM</code>, the signal for virtual timers.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_interruptible_system_calls">Interruptible System Calls</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Signal handling interacts in a non-trivial way with those functions in
+the <a href="BasisLibrary">Basis Library</a> that correspond directly to
+interruptible system calls (a subset of those functions that may raise
+<code>OS.SysError</code>).  The desire is that these functions should have
+predictable semantics.  The principal concerns are:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>System calls that are interrupted by signals should, by default, be
+restarted; the alternative is to raise</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nn">OS</span><span class="p">.</span><span class="n">SysError</span> <span class="p">(</span><span class="nn">Posix</span><span class="p">.</span><span class="nn">Error</span><span class="p">.</span><span class="n">errorMsg</span> <span class="nn">Posix</span><span class="p">.</span><span class="nn">Error</span><span class="p">.</span><span class="n">intr</span><span class="p">,</span>
+             <span class="n">SOME</span> <span class="nn">Posix</span><span class="p">.</span><span class="nn">Error</span><span class="p">.</span><span class="n">intr</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This behavior is determined dynamically by the value of <code>Signal.restart</code>.</p>
+</div>
+</li>
+<li>
+<p>Signal handlers should always get a chance to run (when outside a
+critical region).  If a system call is interrupted by a signal, then
+the signal handler will run before the call is restarted or
+<code>OS.SysError</code> is raised; that is, before the <code>Signal.restart</code> check.</p>
+</li>
+<li>
+<p>A system call that must be restarted while in a critical section
+will be restarted with the handled signals blocked (and the previously
+blocked signals remembered).  This encourages the system call to
+complete, allowing the program to make progress towards leaving the
+critical section where the signal can be handled.  If the system call
+completes, the set of blocked signals are restored to those previously
+blocked.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonSignal.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonSignal.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonRusage</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonRusage</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_RUSAGE</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">{</span><span class="n">utime</span><span class="p">:</span> <span class="nn">Time</span><span class="p">.</span><span class="n">time</span><span class="p">,</span> <span class="c">(*</span><span class="cm"> user time *)</span>
+                <span class="n">stime</span><span class="p">:</span> <span class="nn">Time</span><span class="p">.</span><span class="n">time</span><span class="p">}</span> <span class="c">(*</span><span class="cm"> system time *)</span>
+
+      <span class="kr">val</span> <span class="nv">measureGC</span><span class="p">:</span> <span class="n">bool</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">rusage</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="p">{</span><span class="n">children</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="n">gc</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="n">self</span><span class="p">:</span> <span class="n">t</span><span class="p">}</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>type t</code></p>
+<div class="paragraph">
+<p>corresponds to a subset of the C <code>struct rusage</code>.</p>
+</div>
+</li>
+<li>
+<p><code>measureGC b</code></p>
+<div class="paragraph">
+<p>controls whether garbage collection time is separately measured during
+program execution.  This affects the behavior of both <code>rusage</code> and
+<code>Timer.checkCPUTimes</code>, both of which will return gc times of zero with
+<code>measureGC false</code>.  Garbage collection time is always measured when
+either <code>gc-messages</code> or <code>gc-summary</code> is given as a
+<a href="RunTimeOptions">runtime system option</a>.</p>
+</div>
+</li>
+<li>
+<p><code>rusage ()</code></p>
+<div class="paragraph">
+<p>corresponds to the C <code>getrusage</code> function.  It returns the resource
+usage of the exited children, the garbage collector, and the process
+itself.  The <code>self</code> component includes the usage of the <code>gc</code>
+component, regardless of whether <code>measureGC</code> is <code>true</code> or <code>false</code>.  If
+<code>rusage</code> is used in a program, either directly, or indirectly via the
+<code>Timer</code> structure, then <code>measureGC true</code> is automatically called at
+the start of the program (it can still be disable by user code later).</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonRusage.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonRusage.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

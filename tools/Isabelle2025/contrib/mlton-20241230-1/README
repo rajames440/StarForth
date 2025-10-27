@@ -1,0 +1,12 @@
+This is the MLton SML compiler from
+https://sourceforge.net/projects/mlton using following downloads:
+
+  arm64-darwin.macos-14_gmp-static.tgz
+  amd64-darwin.macos-13_gmp-static.tgz
+  amd64-linux.ubuntu-20.04_static.tgz
+
+Windows and Linux ARM are unsupported.
+
+
+        Makarius
+        03-Feb-2025

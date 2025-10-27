@@ -1,0 +1,7 @@
+This the Isabelle/VSCode extension as VSIX package
+
+It has been produced from the sources in $ISABELLE_HOME/src/Tools/extension/.
+
+
+        Makarius
+        02-Oct-2024

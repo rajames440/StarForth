@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Lazy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Lazy</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>In a lazy (or non-strict) language, the arguments to a function are
+not evaluated before calling the function.  Instead, the arguments are
+suspended and only evaluated by the function if needed.</p>
+</div>
+<div class="paragraph">
+<p><a href="StandardML">Standard ML</a> is an eager (or strict) language, not a lazy
+language.  However, it is easy to delay evaluation of an expression in
+SML by creating a <em>thunk</em>, which is a nullary function.  In SML, a
+thunk is written <code>fn () =&gt; e</code>.  Another essential feature of laziness
+is <em>memoization</em>, meaning that once a suspended argument is evaluated,
+subsequent references look up the value.  We can express this in SML
+with a function that maps a thunk to a memoized thunk.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">LAZY</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">val</span> <span class="nv">lazy</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is easy to implement in SML.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Lazy</span><span class="p">:</span> <span class="n">LAZY</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">lazy</span> <span class="p">(</span><span class="n">th</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">):</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span>
+         <span class="kr">let</span>
+            <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">lazy_result</span> <span class="p">=</span> <span class="nc">Unevaluated</span> <span class="kr">of</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span>
+                                    <span class="p">|</span> <span class="nc">Evaluated</span> <span class="kr">of</span> <span class="nd">'a</span>
+                                    <span class="p">|</span> <span class="nc">Failed</span> <span class="kr">of</span> <span class="n">exn</span>
+
+            <span class="kr">val</span> <span class="nv">r</span> <span class="p">=</span> <span class="n">ref</span> <span class="p">(</span><span class="n">Unevaluated</span> <span class="n">th</span><span class="p">)</span>
+         <span class="kr">in</span>
+            <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span>
+               <span class="kr">case</span> <span class="n">!r</span> <span class="kr">of</span>
+                   <span class="n">Unevaluated</span> <span class="n">th</span> <span class="p">=&gt;</span> <span class="kr">let</span>
+                                       <span class="kr">val</span> <span class="nv">a</span>  <span class="p">=</span> <span class="n">th</span> <span class="p">()</span>
+                                           <span class="kr">handle</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">r</span> <span class="n">:=</span> <span class="n">Failed</span> <span class="n">x</span><span class="p">;</span> <span class="kr">raise</span> <span class="n">x</span><span class="p">)</span>
+                                       <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span>         <span class="n">r</span> <span class="n">:=</span> <span class="n">Evaluated</span> <span class="n">a</span>
+                                     <span class="kr">in</span>
+                                       <span class="n">a</span>
+                                     <span class="kr">end</span>
+                 <span class="p">|</span> <span class="n">Evaluated</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span>
+                 <span class="p">|</span> <span class="n">Failed</span> <span class="n">x</span>    <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">x</span>
+         <span class="kr">end</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Lazy.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Lazy.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

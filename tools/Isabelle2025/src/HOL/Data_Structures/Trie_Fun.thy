@@ -1,0 +1,67 @@
+section \<open>Tries via Functions\<close>
+
+theory Trie_Fun
+imports
+  Set_Specs
+begin
+
+text \<open>A trie where each node maps a key to sub-tries via a function.
+Nice abstract model. Not efficient because of the function space.\<close>
+
+datatype 'a trie = Nd bool "'a \<Rightarrow> 'a trie option"
+
+definition empty :: "'a trie" where
+[simp]: "empty = Nd False (\<lambda>_. None)"
+
+fun isin :: "'a trie \<Rightarrow> 'a list \<Rightarrow> bool" where
+"isin (Nd b m) [] = b" |
+"isin (Nd b m) (k # xs) = (case m k of None \<Rightarrow> False | Some t \<Rightarrow> isin t xs)"
+
+fun insert :: "'a list \<Rightarrow> 'a trie \<Rightarrow> 'a trie" where
+"insert [] (Nd b m) = Nd True m" |
+"insert (x#xs) (Nd b m) =
+   (let s = (case m x of None \<Rightarrow> empty | Some t \<Rightarrow> t) in Nd b (m(x := Some(insert xs s))))"
+
+fun delete :: "'a list \<Rightarrow> 'a trie \<Rightarrow> 'a trie" where
+"delete [] (Nd b m) = Nd False m" |
+"delete (x#xs) (Nd b m) = Nd b
+   (case m x of
+      None \<Rightarrow> m |
+      Some t \<Rightarrow> m(x := Some(delete xs t)))"
+
+text \<open>Use (a tuned version of) @{const isin} as an abstraction function:\<close>
+
+lemma isin_case: "isin (Nd b m) xs =
+  (case xs of
+   [] \<Rightarrow> b |
+   x # ys \<Rightarrow> (case m x of None \<Rightarrow> False | Some t \<Rightarrow> isin t ys))"
+by(cases xs)auto
+
+definition set_trie :: "'a trie \<Rightarrow> 'a list set" where
+[simp]: "set_trie t = {xs. isin t xs}"
+
+lemma isin_set_trie: "isin t xs = (xs \<in> set_trie t)"
+by simp
+
+lemma set_trie_insert: "set_trie (insert xs t) = set_trie t \<union> {xs}"
+by (induction xs t rule: insert.induct)
+   (auto simp: isin_case split!: if_splits option.splits list.splits)
+
+lemma set_trie_delete: "set_trie (delete xs t) = set_trie t - {xs}"
+by (induction xs t rule: delete.induct)
+   (auto simp: isin_case split!: if_splits option.splits list.splits)
+
+interpretation S: Set
+where empty = empty and isin = isin and insert = insert and delete = delete
+and set = set_trie and invar = "\<lambda>_. True"
+proof (standard, goal_cases)
+  case 1 show ?case by (simp add: isin_case split: list.split)
+next
+  case 2 show ?case by(rule isin_set_trie)
+next
+  case 3 show ?case by(rule set_trie_insert)
+next
+  case 4 show ?case by(rule set_trie_delete)
+qed (rule TrueI)+
+
+end

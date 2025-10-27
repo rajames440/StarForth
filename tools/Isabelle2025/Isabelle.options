@@ -1,0 +1,14 @@
+# Java runtime options
+-server
+-Dfile.encoding=UTF-8
+-Disabelle.threads=0
+-Dsun.java2d.metal=false
+-Duser.language=en
+-Dawt.useSystemAAFontSettings=on
+-Dswing.aatext=true
+-Dapple.laf.useScreenMenuBar=true
+-Dapple.awt.application.name=Isabelle2025
+-Xms512m
+-Xmx4g
+-Xss16m
+-Disabelle.jedit_server=Isabelle2025

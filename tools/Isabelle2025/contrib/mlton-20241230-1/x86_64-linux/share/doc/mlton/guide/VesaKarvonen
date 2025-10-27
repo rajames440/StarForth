@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>VesaKarvonen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>VesaKarvonen</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Vesa Karvonen is a student at the <a href="http://www.cs.helsinki.fi/index.en.html">University of Helsinki</a>.
+His interests lie in programming techniques that allow complex programs to be expressed
+clearly and concisely and the design and implementation of programming languages.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="VesaKarvonen.attachments/vesa-in-mlton-t-shirt.jpg" alt="vesa in mlton t shirt">
+</div>
+</div>
+<div class="paragraph">
+<p>Things he&#8217;d like to see for SML and hopes to be able to contribute towards:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A practical tool for documenting libraries. Preferably one that is
+based on extracting the documentation from source code comments.</p>
+</li>
+<li>
+<p>A good IDE. Possibly an enhanced SML mode (<code>esml-mode</code>) for Emacs.
+Google for <a href="http://www.google.com/search?&amp;q=SLIME+video">SLIME video</a> to
+get an idea of what he&#8217;d like to see. Some specific notes:</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>show type at point</p>
+</li>
+<li>
+<p>robust, consistent indentation</p>
+</li>
+<li>
+<p>show documentation</p>
+</li>
+<li>
+<p>jump to definition (see <a href="EmacsDefUseMode">EmacsDefUseMode</a>)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p><a href="EmacsBgBuildMode">EmacsBgBuildMode</a> has also been written for working with MLton.</p>
+</div>
+</li>
+<li>
+<p>Documented and cataloged libraries. Perhaps something like
+<a href="http://www.boost.org">Boost</a>, but for SML libraries.  Here is a partial
+list of libraries, tools, and frameworks Vesa is or has been working
+on:</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>Asynchronous Programming Library (<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/async/unstable/README"><code>README</code></a>)</p>
+</li>
+<li>
+<p>Extended Basis Library (<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/README"><code>README</code></a>)</p>
+</li>
+<li>
+<p>Generic Programming Library (<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/generic/unstable/README"><code>README</code></a>)</p>
+</li>
+<li>
+<p>Pretty Printing Library (<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/prettier/unstable/README"><code>README</code></a>)</p>
+</li>
+<li>
+<p>Random Generator Library (<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/random/unstable/README"><code>README</code></a>)</p>
+</li>
+<li>
+<p>RPC (Remote Procedure Call) Library (<a href="https://github.com/MLton/mltonlib/blob/master/org/mlton/vesak/rpc-lib/unstable/README"><code>README</code></a>)</p>
+</li>
+<li>
+<p><a href="http://www.libsdl.org/">SDL</a> Binding (<a href="https://github.com/MLton/mltonlib/blob/master/org/mlton/vesak/sdl/unstable/README"><code>README</code></a>)</p>
+</li>
+<li>
+<p>Unit Testing Library (<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/unit-test/unstable/README"><code>README</code></a>)</p>
+</li>
+<li>
+<p>Use Library (<a href="https://github.com/MLton/mltonlib/blob/master/org/mlton/vesak/use-lib/unstable/README"><code>README</code></a>)</p>
+</li>
+<li>
+<p>Windows Library (<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/windows/unstable/README"><code>README</code></a>)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that most of these libraries have been ported to several <a href="StandardMLImplementations">SML implementations</a>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/VesaKarvonen.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/VesaKarvonen.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

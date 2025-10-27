@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+"$CVC5_HOME/cvc5-bin" "$@"

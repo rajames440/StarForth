@@ -1,0 +1,163 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+in
+
+local
+  basis l4 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb
+    end
+  basis l8 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l4
+   in
+      structure gs_0 = Word8Vector
+   end
+   local
+      open l8
+   in
+      structure gs_1 = Random
+   end
+   local
+      open l4
+   in
+      structure gs_2 = Char
+      structure gs_3 = CharArray
+      structure gs_4 = CharVector
+      structure gs_5 = FixedInt
+      structure gs_6 = General
+      structure gs_7 = Int
+      structure gs_8 = Int32
+      structure gs_9 = Int64
+      structure gs_10 = IntInf
+      structure gs_11 = LargeInt
+      structure gs_12 = LargeReal
+      structure gs_13 = LargeWord
+      structure gs_14 = OS
+      structure gs_15 = Position
+      structure gs_16 = Real
+      structure gs_17 = Real64
+      structure gs_18 = RealArray
+      structure gs_19 = RealArraySlice
+      structure gs_20 = RealVector
+      structure gs_21 = RealVectorSlice
+      structure gs_22 = SMLofNJ
+      structure gs_23 = Socket
+      structure gs_24 = String
+      structure gs_25 = Substring
+      structure gs_26 = SysWord
+      structure gs_27 = Time
+      structure gs_28 = Word
+      structure gs_29 = Word32
+      structure gs_30 = Word64
+      structure gs_31 = Word8
+   end
+   local
+      open l4
+   in
+      structure gs_32 = Word8VectorSlice
+   end
+   local
+      open l4
+   in
+      structure gs_33 = List
+   end
+   local
+      open l4
+   in
+      structure gs_34 = StringCvt
+   end
+   local
+      structure Char = gs_2
+      structure CharArray = gs_3
+      structure CharVector = gs_4
+      structure FixedInt = gs_5
+      structure General = gs_6
+      structure Int = gs_7
+      structure Int32 = gs_8
+      structure Int64 = gs_9
+      structure IntInf = gs_10
+      structure LargeInt = gs_11
+      structure LargeReal = gs_12
+      structure LargeWord = gs_13
+      structure List = gs_33
+      structure OS = gs_14
+      structure Position = gs_15
+      structure Real = gs_16
+      structure Real64 = gs_17
+      structure RealArray = gs_18
+      structure RealArraySlice = gs_19
+      structure RealVector = gs_20
+      structure RealVectorSlice = gs_21
+      structure SMLofNJ = gs_22
+      structure Socket = gs_23
+      structure String = gs_24
+      structure StringCvt = gs_34
+      structure Substring = gs_25
+      structure SysWord = gs_26
+      structure Time = gs_27
+      structure Word = gs_28
+      structure Word32 = gs_29
+      structure Word64 = gs_30
+      structure Word8 = gs_31
+      structure Word8Vector = gs_0
+      structure Word8VectorSlice = gs_32
+      uuid.sml
+   in
+      structure gs_35 = UUID
+   end
+   local
+      structure Char = gs_2
+      structure CharArray = gs_3
+      structure CharVector = gs_4
+      structure FixedInt = gs_5
+      structure General = gs_6
+      structure Int = gs_7
+      structure Int32 = gs_8
+      structure Int64 = gs_9
+      structure IntInf = gs_10
+      structure LargeInt = gs_11
+      structure LargeReal = gs_12
+      structure LargeWord = gs_13
+      structure OS = gs_14
+      structure Position = gs_15
+      structure Random = gs_1
+      structure Real = gs_16
+      structure Real64 = gs_17
+      structure RealArray = gs_18
+      structure RealArraySlice = gs_19
+      structure RealVector = gs_20
+      structure RealVectorSlice = gs_21
+      structure SMLofNJ = gs_22
+      structure Socket = gs_23
+      structure String = gs_24
+      structure Substring = gs_25
+      structure SysWord = gs_26
+      structure Time = gs_27
+      structure UUID = gs_35
+      structure Word = gs_28
+      structure Word32 = gs_29
+      structure Word64 = gs_30
+      structure Word8 = gs_31
+      structure Word8Vector = gs_0
+      gen-uuid.sml
+   in
+      structure gs_36 = GenUUID
+   end
+in
+   structure GenUUID = gs_36
+   structure UUID = gs_35
+end
+end
+
+end

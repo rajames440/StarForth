@@ -1,0 +1,4 @@
+# -*- shell-script -*- :mode=shellscript:
+
+FIND_FACTS_WEB_ASSETS_DIR="$COMPONENT/web"
+FIND_FACTS_WEB_ASSETS="roboto.css:text/css; charset=utf-8,roboto-latin-300-normal.woff:font/woff,roboto-latin-400-normal.woff:font/woff,roboto-latin-500-normal.woff:font/woff,material-components-web-elm.min.js:text/javascript; charset=utf-8,material-components-web-elm.min.css:text/css; charset=utf-8"

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>PolyEqual</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>PolyEqual</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">PolyEqual</a> is an optimization pass for the <a href="SSA">SSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass implements polymorphic equality.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/poly-equal.fun"><code>poly-equal.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For each datatype, tycon, and vector type, it builds and equality
+function and translates calls to <code>MLton_equal</code> into calls to that
+function.</p>
+</div>
+<div class="paragraph">
+<p>Also generates calls to <code>Word_equal</code>.</p>
+</div>
+<div class="paragraph">
+<p>For tuples, it does the equality test inline; i.e., it does not create
+a separate equality function for each tuple type.</p>
+</div>
+<div class="paragraph">
+<p>All equality functions are created only if necessary, i.e., if
+equality is actually used at a type.</p>
+</div>
+<div class="paragraph">
+<p>Optimizations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>for datatypes that are enumerations, do not build a case dispatch,
+just use <code>MLton_eq</code>, as the backend will represent these as ints</p>
+</li>
+<li>
+<p>deep equality always does an <code>MLton_eq</code> test first</p>
+</li>
+<li>
+<p>If one argument to <code>=</code> is a constant and the type will get
+translated to an <code>IntOrPointer</code>, then just use <code>eq</code> instead of the
+full equality.  This is important for implementing code like the
+following efficiently:</p>
+<div class="listingblock">
+<div class="content">
+<pre>if x = 0  ...    (* where x is of type IntInf.int *)</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Also convert pointer equality on scalar types to type specific
+primitives.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/PolyEqual.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/PolyEqual.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

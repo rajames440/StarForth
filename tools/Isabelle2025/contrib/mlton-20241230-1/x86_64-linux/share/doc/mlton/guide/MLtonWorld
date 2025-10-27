@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonWorld</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonWorld</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_WORLD</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">datatype</span> <span class="kt">status</span> <span class="p">=</span> <span class="nc">Clone</span> <span class="p">|</span> <span class="nc">Original</span>
+
+      <span class="kr">val</span> <span class="nv">load</span><span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+      <span class="kr">val</span> <span class="nv">save</span><span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="n">status</span>
+      <span class="kr">val</span> <span class="nv">saveThread</span><span class="p">:</span> <span class="n">string</span> <span class="n">*</span> <span class="nn">Thread</span><span class="p">.</span><span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>datatype status</code></p>
+<div class="paragraph">
+<p>specifies whether a world is original or restarted (a clone).</p>
+</div>
+</li>
+<li>
+<p><code>load f</code></p>
+<div class="paragraph">
+<p>loads the saved computation from file <code>f</code>.</p>
+</div>
+</li>
+<li>
+<p><code>save f</code></p>
+<div class="paragraph">
+<p>saves the entire state of the computation to the file <code>f</code>.  The
+computation can then be restarted at a later time using <code>World.load</code>
+or the <code>load-world</code> <a href="RunTimeOptions">runtime option</a>.  The call to
+<code>save</code> in the original computation returns <code>Original</code> and the call in
+the restarted world returns <code>Clone</code>.</p>
+</div>
+</li>
+<li>
+<p><code>saveThread (f, rt)</code></p>
+<div class="paragraph">
+<p>saves the entire state of the computation to the file <code>f</code> that will
+resume with thread <code>rt</code> upon restart.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">Notes</h2>
+<div class="sectionbody">
+<div id="ASLR" class="paragraph">
+<p>Executables that save and load worlds are incompatible with
+<a href="http://en.wikipedia.org/wiki/Address_space_layout_randomization">address space layout randomization (ASLR)</a>
+of the executable (though, not of shared libraries).  The state of a
+computation includes addresses into the code and data segments of the
+executable (e.g., static runtime-system data, return addresses); such
+addresses are invalid when interpreted by the executable loaded at a
+different base address.</p>
+</div>
+<div class="paragraph">
+<p>Executables that save and load worlds should be compiled with an
+option to suppress the generation of position-independent executables.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnDarwin">Darwin 11 (Mac OS X Lion) and higher</a> : <code>-link-opt -fno-PIE</code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example">Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Suppose that <code>save-world.sml</code> contains the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">open</span> <span class="nn">MLton</span><span class="err">.</span><span class="n">World</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span>
+   <span class="kr">case</span> <span class="n">save</span> <span class="s2">"world"</span> <span class="kr">of</span>
+      <span class="n">Original</span> <span class="p">=&gt;</span> <span class="n">print</span> <span class="s2">"I am the original</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="p">|</span> <span class="n">Clone</span> <span class="p">=&gt;</span> <span class="n">print</span> <span class="s2">"I am the clone</span><span class="se">\n</span><span class="s2">"</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then, if we compile <code>save-world.sml</code> and run it, the <code>Original</code>
+branch will execute, and a file named <code>world</code> will be created.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton save-world.sml
+% ./save-world
+I am the original</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can then load <code>world</code> using the <code>load-world</code>
+<a href="RunTimeOptions">run time option</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% ./save-world @MLton load-world world --
+I am the clone</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonWorld.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonWorld.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

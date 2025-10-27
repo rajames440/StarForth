@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+	"http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+
+<head>
+<title>The PolyML.SaveState structure</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="docstyle.css" rel="stylesheet" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+<ul class="nav">
+	<li><a href="PolyMLProfiling.html">Previous</a></li>
+	<li><a href="PolyMLStructure.html">Up</a></li>
+	<li><a href="PolyMLStatistics.html">Next</a></li>
+</ul>
+
+<h2><font face="Arial"><strong>PolyML.SaveState structure</strong></font></h2>
+
+<p>The <span class="identifier">PolyML.SaveState</span> structure provides a way 
+  for a program to save changes without the expense of exporting and building 
+  a new executable. Unlike the PolyML.export function which saves the complete 
+  state it is possible with the functions in this structure to save just the modifications. 
+  In addition it avoids the need for a linker which is needed to turn an exported 
+  object file into an executable. Because only the modifications are saved a saved 
+  state can only be loaded into the executable that created it.</p>
+<PRE class="mainsig"><STRONG>structure</STRONG> SaveState:
+<STRONG>sig</STRONG>
+    <strong>val</strong> saveState : string -&gt; unit
+    <strong>val</strong> loadState : string -&gt; unit
+    <strong>val</strong> saveChild : string * int -&gt; unit
+    <strong>val</strong> renameParent : {child: string, newParent: string} -&gt; unit
+    <strong>val</strong> showHierarchy : unit -&gt; string list
+    <strong>val</strong> showParent : string -&gt; string option
+    <strong>val</strong> loadHierarchy: string list -&gt; unit
+    <strong>structure</strong> Tags:
+    <strong>sig</strong>
+        <strong>val</strong> fixityTag: (string * NameSpace.Infixes.fixity) Universal.tag
+        <strong>val</strong> functorTag: (string * NameSpace.Functors.functorVal) Universal.tag
+        <strong>val</strong> signatureTag: (string * NameSpace.Signatures.signatureVal) Universal.tag
+        <strong>val</strong> structureTag: (string * NameSpace.Structures.structureVal) Universal.tag
+        <strong>val</strong> typeTag: (string * NameSpace.TypeConstrs.typeConstr) Universal.tag
+        <strong>val</strong> valueTag: (string * NameSpace.Values.value) Universal.tag
+        <strong>val</strong> startupTag: (unit -> unit) Universal.tag
+    <strong>end</strong>
+    <strong>val</strong> loadModule: string -&gt; unit
+    <strong>val</strong> loadModuleBasic: string -&gt; Universal.universal list
+    <strong>val</strong> saveModule:
+           string *
+           {functors: string list,
+             onStartup: (unit -> unit) option,
+             sigs: string list, structs: string list} -&gt; unit
+    <strong>val</strong> saveModuleBasic: string * Universal.universal list -&gt; unit
+<strong>end</strong></PRE>
+<h3><font face="Arial, Helvetica, sans-serif">Simple Saved State</font></h3>
+<p>For many purposes the simple saved state is sufficient. This is created with 
+  <span class="identifier">saveState</span> and loaded with <span class="identifier">loadState</span>.</p>
+<PRE class="entrycode"><STRONG>val</STRONG> saveState : string -&gt; unit</PRE>
+<div class="entrytext"> Saves the current state to a file whose 
+  name is given as the argument. It saves the current values of all the mutable 
+  data (i.e. refs and arrays) that were present in the executable together with 
+  any other data that is now reachable from it</div>
+<PRE class="entrycode"><STRONG>val</STRONG> loadState : string -&gt; unit</PRE>
+<div class="entrytext"> 
+  <p>Loads a saved state file. This overwrites any changes made before the load 
+    with the contents of the load file. It does not affect mutables created since 
+    the session began nor does it affect function arguments or local variables.</p>
+</div>
+<h3><font face="Arial, Helvetica, sans-serif">Hierarchical Saved States</font></h3>
+<p>The single level saved state created by <span class="identifier">saveState</span> 
+  contains all the data that is accessible by the program apart from immutable 
+  data present in the executable. Hierarchical saved states extend this idea by 
+  allowing a program to save only the data that is not present in a previously 
+  loaded state. Saving a state that contains only the new data creates a &quot;<em>child</em>&quot; 
+  of the existing saved state which is the &quot;<em>parent</em>&quot;. When the 
+  child is loaded in a new session the parent must also be loaded in order to 
+  provide the full state. Since the parent may itself be a child of another saved 
+  state this forms a chain of related saved states. A particular parent may have 
+  several children depending on it. When <span class="identifier">loadState</span> 
+  is called with a file name that refers to a child saved state it automatically 
+  loads the parents using information held in each file.</p>
+<p>The run-time system retains information about the last file that was loaded 
+  or saved and its parents. The information is updated whenever loadState, saveState 
+  or saveChild are called.</p>
+<PRE class="entrycode"><strong>val</strong> showHierarchy : unit -&gt; string list</PRE>
+<div class="entrytext"> 
+  <p>Returns a list of the file names in the current hierarchy. The first item 
+    in the list is the top-most saved state, the next is the immediate child of 
+    that state and so on. The last item will be the file name that was actually 
+    given as argument to <span class="identifier">loadState</span>, <span class="identifier">saveState</span> 
+    or <span class="identifier">saveChild</span>.</p>
+</div>
+
+<PRE class="entrycode"><STRONG>val</STRONG> saveChild : string * int -&gt; unit</PRE>
+<div class="entrytext"> 
+    
+  <p><span class="identifier">saveChild (f, n)</span> writes out a saved state 
+    to file name f at hierarchy level n. n may be between zero and the current 
+    hierarchy level, inclusive. <span class="identifier">saveState(f)</span> is 
+    equivalent to <span class="identifier">saveChild(f, 0)</span>. Typically, 
+    <span class="identifier">saveChild</span> will be called with a new file name 
+    and a value for n which is the length of the current hierarchy list. This 
+    will make a new child which contains only the information added since the 
+    last call to <span class="identifier">loadState</span>, <span class="identifier">saveState</span> 
+    or <span class="identifier">saveChild</span>. However, it is possible to use 
+    a different value and this will cause the saved state to include data from 
+    other saved states of the same or deeper hierarchy.</p>
+</div>
+
+<PRE class="entrycode"><strong>val</strong> renameParent : {child: string, newParent: string} -&gt; unit
+<strong>val</strong> showParent : string -&gt; string option</PRE>
+<div class="entrytext"> 
+  <p>A child saved state contains the file name of its parent so that when the 
+    child is loaded the parent can be loaded automatically. If the parent file 
+    is moved for any reason <span class="identifier">renameParent</span> can be 
+    used to modify the parent file name held in a child so that it can be loaded 
+    from the new location. <span class="identifier">showParent</span> returns 
+    the current value of the parent file name for a child saved state. If the 
+    saved state has no parent <span class="identifier">showParent</span> returns 
+    <span class="identifier">NONE</span>.</p>
+</div>
+
+<h3><font face="Arial, Helvetica, sans-serif">Modules</font></h3>
+<p> A module is a collection of bindings, primarily structures, signatures and 
+  functors, that can be saved and later reloaded. It is similar to a saved state 
+  in that a module can only be loaded into the same executable that saved it. 
+  However, it is possible to load multiple modules without them interfering.</p>
+<p>The module system is designed with two different levels. The high-level functions, 
+  <span class="identifier">loadModule</span> and <span class="identifier">saveModule</span> are likely to be useful for most purposes while the 
+  lower-level functions, <span class="identifier">loadModuleBasic</span> and <span class="identifier">saveModuleBasic</span> will only be required 
+  in special circumstances.</p>
+<PRE class="entrycode"><STRONG>val</STRONG> loadModule : string -&gt; unit</PRE>
+<div class="entrytext"> 
+  <p><span class="identifier">loadModule</span> takes the name of a module and loads it into memory.  The start-up function, if any is executed and if
+  it returns successfully the structures, signatures and other components are added to the name-space.
+  The module name can either be a file path if it contains a directory separator e.g. ./foo or it is looked up in the path given by POLYMODPATH.</p>
+</div>
+<PRE class="entrycode"><STRONG>val</STRONG> saveModule : string *
+           {sigs: string list, structs: string list, functors: string list,
+            onStartup: (unit -> unit) option} -&gt; unit</PRE>
+<div class="entrytext"> 
+  <p><span class="identifier">saveModule</span> takes a file name and names of 
+    structures, signature and functors, together with an optional &quot;on-start-up&quot; 
+    function and writes them out as a package.</p>
+</div>
+<PRE class="entrycode"><STRONG>val</STRONG> loadModuleBasic : string -&gt; Universal.universal list</PRE>
+<div class="entrytext"> 
+  <p><span class="identifier">loadModuleBasic</span> is the low-level version 
+    of <span class="identifier">loadModule</span>. The module name is interpreted 
+    in the same way and the module is loaded into memory but instead of executing 
+    any start-up function or adding components to the name-space the list of the 
+    components as a list of <span class="identifier"><a href="Universal.html#universal">Universal.universal</a></span> 
+    values is returned. It is up to the caller how to interpret the result.</p>
+</div>
+<PRE class="entrycode"><STRONG>val</STRONG> saveModuleBasic: string * Universal.universal list -&gt; unit</PRE>
+<div class="entrytext"> 
+  <p><span class="identifier">saveModuleBasic</span> is the low-level version 
+    of <span class="identifier">saveModule</span>. It takes a file name and a 
+    list of <span class="identifier"><a href="Universal.html#universal">Universal.universal</a></span> 
+    values and saves the result as a module. The entries in the list can contain 
+    anything. However if the resulting module is loaded with <span class="identifier">loadModule</span> 
+    certain values will be treated specially. Values tagged using the tags listed 
+    in the <span class="identifier">Tags</span> structure will be added to the 
+    name space or in the case of the <span class="identifier">startUpTag</span>, executed as a start-up function. 
+    In particular <span class="identifier">saveModuleBasic</span> must be used if the module should load values 
+    or types rather than structures, functors or signatures.</p>
+</div>
+
+<ul class="nav">
+	<li><a href="PolyMLNameSpace.html">Previous</a></li>
+	<li><a href="PolyMLStructure.html">Up</a></li>
+	<li><a href="PolyMLProfiling.html">Next</a></li>
+</ul>
+</body>
+</html>

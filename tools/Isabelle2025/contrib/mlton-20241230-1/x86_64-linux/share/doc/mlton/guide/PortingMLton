@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>PortingMLton</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>PortingMLton</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Porting MLton to a new target platform (architecture or OS) involves
+the following steps.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Make the necessary changes to the scripts, runtime system,
+<a href="BasisLibrary">Basis Library</a> implementation, and compiler.</p>
+</li>
+<li>
+<p>Get the regressions working using a cross compiler.</p>
+</li>
+<li>
+<p>Bootstrap MLton on the target.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>MLton has a native code generator only for AMD64 and X86, so, if you
+are porting to another architecture, you must use the C code
+generator.  These notes do not cover building a new native code
+generator.</p>
+</div>
+<div class="paragraph">
+<p>Some of the following steps will not be necessary if MLton already
+supports the architecture or operating system being ported to.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_code_to_change">What code to change</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Scripts.</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>In <code>bin/platform</code>, add new cases to define <code>$HOST_OS</code> and <code>$HOST_ARCH</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p>Runtime system.</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph">
+<p>The goal of this step is to be able to successfully run <code>make</code> in the
+<code>runtime</code> directory on the target machine.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>In <code>platform.h</code>, add a new case to include <code>platform/&lt;arch&gt;.h</code> and <code>platform/&lt;os&gt;.h</code>.</p>
+</li>
+<li>
+<p>In <code>platform/&lt;arch&gt;.h</code>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>define <code>MLton_Platform_Arch_host</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>In <code>platform/&lt;os&gt;.h</code>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>include platform-specific includes.</p>
+</li>
+<li>
+<p>define <code>MLton_Platform_OS_host</code>.</p>
+</li>
+<li>
+<p>define all of the <code>HAS_*</code> macros.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>In <code>platform/&lt;os&gt;.c</code> implement any platform-dependent functions that the runtime needs.</p>
+</li>
+<li>
+<p>Add rounding mode control to <code>basis/Real/IEEEReal.c</code> for the new arch (if not <code>HAS_FEROUND</code>)</p>
+</li>
+<li>
+<p>Build and install the <a href="GMP">GMP</a> development library.  This varies from platform to platform.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p>Basis Library implementation (<code>basis-library/*</code>)</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>In <code>primitive/prim-mlton.sml</code>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Add a new variant to the <code>MLton.Platform.Arch.t</code> datatype.</p>
+</li>
+<li>
+<p>modify the constants that define <code>MLton.Platform.Arch.host</code> to match with <code>MLton_Platform_Arch_host</code>, as set in <code>runtime/platform/&lt;arch&gt;.h</code>.</p>
+</li>
+<li>
+<p>Add a new variant to the <code>MLton.Platform.OS.t</code> datatype.</p>
+</li>
+<li>
+<p>modify the constants that define <code>MLton.Platform.OS.host</code> to match with <code>MLton_Platform_OS_host</code>, as set in <code>runtime/platform/&lt;os&gt;.h</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>In <code>mlton/platform.{sig,sml}</code> add a new variant.</p>
+</li>
+<li>
+<p>In <code>sml-nj/sml-nj.sml</code>, modify <code>getOSKind</code>.</p>
+</li>
+<li>
+<p>Look at all the uses of <code>MLton.Platform</code> in the Basis Library implementation and see if you need to do anything special.  You might use the following command to see where to look.</p>
+<div class="listingblock">
+<div class="content">
+<pre>find basis-library -type f | xargs grep 'MLton\.Platform'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If in doubt, leave the code alone and wait to see what happens when you run the regression tests.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p>Compiler.</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>In <code>lib/stubs/mlton-stubs/platform.sig</code> add any new variants, as was done in the Basis Library.</p>
+</li>
+<li>
+<p>In <code>lib/stubs/mlton-stubs/mlton.sml</code> add any new variants in <code>MLton.Platform</code>, as was done in the Basis Library.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The string used to identify a particular architecture or operating
+system must be the same (except for possibly case of letters) in the
+scripts, runtime, Basis Library implementation, and compiler (stubs).
+In <code>mlton/main/main.fun</code>, MLton itself uses the conversions to and
+from strings:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>MLton.Platform.{Arch,OS}.{from,to}String</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the there is a mismatch, you may see the error message
+<code>strange arch</code> or <code>strange os</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_running_the_regressions_with_a_cross_compiler">Running the regressions with a cross compiler</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When porting to a new platform, it is always best to get all (or as
+many as possible) of the regressions working before moving to a self
+compile.  It is easiest to do this by modifying and rebuilding the
+compiler on a working machine and then running the regressions with a
+cross compiler.  It is not easy to build a gcc cross compiler, so we
+recommend generating the C and assembly on a working machine (using
+MLton&#8217;s <code>-target</code> and <code>-stop g</code> flags, copying the generated files to
+the target machine, then compiling and linking there.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Remake the compiler on a working machine.</p>
+</li>
+<li>
+<p>Use <code>bin/add-cross</code> to add support for the new target.  In particular, this should create <code>build/lib/mlton/targets/&lt;target&gt;/</code> with the platform-specific necessary cross-compilation information.</p>
+</li>
+<li>
+<p>Run the regression tests with the cross-compiler.  To cross-compile all the tests, do</p>
+<div class="listingblock">
+<div class="content">
+<pre>bin/regression -cross &lt;target&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will create all the executables.  Then, copy <code>bin/regression</code> and
+the <code>regression</code> directory to the target machine, and do</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>bin/regression -run-only &lt;target&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This should run all the tests.</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Repeat this step, interleaved with appropriate compiler modifications,
+until all the regressions pass.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bootstrap">Bootstrap</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The idea for bootstrapping MLton on a new platform is as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>send the current sources to a remote machine (using ssh)</p>
+</li>
+<li>
+<p>build the MLton runtime system on the remote machine</p>
+</li>
+<li>
+<p>receive the built runtime system from the remote machine as a new target on
+the host machine</p>
+</li>
+<li>
+<p>build bootstrap compiler sources on the host machine for the new target</p>
+</li>
+<li>
+<p>send the boostrap sources to the remote machine</p>
+</li>
+<li>
+<p>build the boostrap compiler on the remote machine using the boostrap
+compiler sources</p>
+</li>
+<li>
+<p>complete the MLton build on the remote machine with the boostrap compiler to
+obtain a boot package</p>
+</li>
+<li>
+<p>build MLton on the remote machine from clean sources using the boot package</p>
+</li>
+<li>
+<p>receive the built binary release from the remote machine</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The <code>remote-bootstrap</code> goal of the root <code>Makefile</code> automates this process; see
+comments in the root <code>Makefile</code>.  Here is an example bootstrapping on an OpenBSD
+machine (named <code>thunder</code>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ make REMOTE_MACHINE=thunder REMOTE_MAKE=gmake REMOTE_MAKEFLAGS=WITH_GMP_DIR=/usr/local remote-bootstrap</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once you&#8217;ve got a compiler on the target machine, you should test it by running
+all the regressions normally and by running a couple rounds of self compiles.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2002-October/013110.html" class="bare">http://www.mlton.org/pipermail/mlton/2002-October/013110.html</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2004-July/016029.html" class="bare">http://www.mlton.org/pipermail/mlton/2004-July/016029.html</a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/issues/296" class="bare">https://github.com/MLton/mlton/issues/296</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/PortingMLton.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/PortingMLton.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

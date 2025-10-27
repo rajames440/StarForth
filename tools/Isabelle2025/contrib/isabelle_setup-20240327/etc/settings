@@ -1,0 +1,4 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ISABELLE_SETUP_JAR="$COMPONENT/lib/isabelle_setup.jar"
+classpath "$ISABELLE_SETUP_JAR"

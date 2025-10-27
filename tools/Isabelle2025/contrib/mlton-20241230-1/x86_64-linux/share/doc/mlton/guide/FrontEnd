@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>FrontEnd</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>FrontEnd</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">FrontEnd</a> is a translation pass from source to the <a href="AST">AST</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass performs lexing and parsing to produce an abstract syntax
+tree.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/front-end/front-end.sig"><code>front-end.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/front-end/front-end.fun"><code>front-end.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The lexer is produced by <a href="MLLex">MLLex</a> from
+<a href="https://github.com/MLton/mlton/blob/master/mlton/front-end/ml.lex"><code>ml.lex</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>The parser is produced by <a href="MLYacc">MLYacc</a> from
+<a href="https://github.com/MLton/mlton/blob/master/mlton/front-end/ml.grm"><code>ml.grm</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>The specifications for the lexer and parser were originally taken from
+<a href="SMLNJ">SML/NJ</a> (version 109.32), but have been heavily modified
+since then.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/FrontEnd.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/FrontEnd.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

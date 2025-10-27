@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>DeadCode</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>DeadCode</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">DeadCode</a> is an optimization pass for the <a href="CoreML">CoreML</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="CoreMLSimplify">CoreMLSimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass eliminates declarations from the
+<a href="BasisLibrary">Basis Library</a> not needed by the user program.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/core-ml/dead-code.sig"><code>dead-code.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/core-ml/dead-code.fun"><code>dead-code.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In order to compile small programs rapidly, a pass of dead code
+elimination is run in order to eliminate as much of the Basis Library
+as possible.  The dead code elimination algorithm used is not safe in
+general, and only works because the Basis Library implementation has
+special properties:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>it terminates</p>
+</li>
+<li>
+<p>it performs no I/O</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The dead code elimination includes the minimal set of
+declarations from the Basis Library so that there are no free
+variables in the user program (or remaining Basis Library
+implementation).  It has a special hack to include all
+bindings of the form:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"> <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="p">...</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There is an <a href="MLBasisAnnotations">ML Basis annotation</a>,
+<code>deadCode true</code>, that governs which code is subject to this unsafe
+dead-code elimination.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/DeadCode.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/DeadCode.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

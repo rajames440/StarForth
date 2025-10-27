@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ArrayLiteral</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ArrayLiteral</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p><a href="StandardML">Standard ML</a> does not have a syntax for array literals or
+vector literals.  The only way to write down an array is like</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nn">Array</span><span class="p">.</span><span class="n">fromList</span> <span class="p">[</span><span class="n">w</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>No SML compiler produces efficient code for the above expression.  The
+generated code allocates a list and then converts it to an array.  To
+alleviate this, one could write down the same array using
+<code>Array.tabulate</code>, or even using <code>Array.array</code> and <code>Array.update</code>, but
+that is syntactically unwieldy.</p>
+</div>
+<div class="paragraph">
+<p>Fortunately, using <a href="Fold">Fold</a>, it is possible to define constants <code>A</code>,
+and <code>`</code> so that one can write down an array like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">A</span> <span class="n">`w</span> <span class="n">`x</span> <span class="n">`y</span> <span class="n">`z</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is as syntactically concise as the <code>fromList</code> expression.
+Furthermore, MLton, at least, will generate the efficient code as if
+one had written down a use of <code>Array.array</code> followed by four uses of
+<code>Array.update</code>.</p>
+</div>
+<div class="paragraph">
+<p>Along with <code>A</code> and <code>`</code>, one can define a constant <code>V</code> that makes
+it possible to define vector literals with the same syntax, e.g.,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">V</span> <span class="n">`w</span> <span class="n">`x</span> <span class="n">`y</span> <span class="n">`z</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the same element indicator, <code>`</code>, serves for both array
+and vector literals.  Of course, the <code>$</code> is the end-of-arguments
+marker always used with <a href="Fold">Fold</a>.  The only difference between an
+array literal and vector literal is the <code>A</code> or <code>V</code> at the beginning.</p>
+</div>
+<div class="paragraph">
+<p>Here is the implementation of <code>A</code>, <code>V</code>, and <code>`</code>.  We place them
+in a structure and use signature abstraction to hide the type of the
+accumulator.  See <a href="Fold">Fold</a> for more on this technique.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Literal</span><span class="p">:&gt;</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">z</span>
+      <span class="kr">val</span> <span class="nv">A</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">z</span><span class="p">,</span> <span class="nd">'a</span> <span class="n">z</span><span class="p">,</span> <span class="nd">'a</span> <span class="n">array</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">V</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">z</span><span class="p">,</span> <span class="nd">'a</span> <span class="n">z</span><span class="p">,</span> <span class="nd">'a</span> <span class="n">vector</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">`</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'a</span> <span class="n">z</span><span class="p">,</span> <span class="nd">'a</span> <span class="n">z</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span>
+   <span class="kr">end</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">z</span> <span class="p">=</span> <span class="n">int</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">option</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">array</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span>
+
+      <span class="kr">val</span> <span class="nv">A</span> <span class="p">=</span>
+         <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+         <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span>
+         <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">NONE</span><span class="p">,</span> <span class="n">ignore</span><span class="p">),</span>
+          <span class="kr">fn</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span> <span class="p">=&gt;</span>
+          <span class="kr">case</span> <span class="n">opt</span> <span class="kr">of</span>
+             <span class="n">NONE</span> <span class="p">=&gt;</span>
+                <span class="nn">Array</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"array0"</span><span class="p">)</span>
+           <span class="p">|</span> <span class="n">SOME</span> <span class="n">x</span> <span class="p">=&gt;</span>
+                <span class="kr">let</span>
+                   <span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="nn">Array</span><span class="p">.</span><span class="n">array</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+                   <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">fill</span> <span class="n">a</span>
+                <span class="kr">in</span>
+                   <span class="n">a</span>
+                <span class="kr">end</span><span class="p">)</span>
+         <span class="n">z</span>
+
+      <span class="kr">val</span> <span class="nv">V</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">post</span> <span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="nn">Array</span><span class="p">.</span><span class="n">vector</span><span class="p">)</span> <span class="n">z</span>
+
+      <span class="kr">val</span> <span class="nv">`</span> <span class="p">=</span>
+         <span class="nv">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+         <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span>
+         <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">fill</span><span class="p">))</span> <span class="p">=&gt;</span>
+          <span class="p">(</span><span class="n">i</span> <span class="n">+</span> <span class="mi">1</span><span class="p">,</span>
+           <span class="n">SOME</span> <span class="n">x</span><span class="p">,</span>
+           <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="nn">Array</span><span class="p">.</span><span class="n">update</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span> <span class="n">fill</span> <span class="n">a</span><span class="p">)))</span>
+         <span class="n">z</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The idea of the code is for the fold to accumulate a count of the
+number of elements, a sample element, and a function that fills in all
+the elements.  When the fold is complete, the finishing function
+allocates the array, applies the fill function, and returns the array.
+The only difference between <code>A</code> and <code>V</code> is at the very end; <code>A</code> just
+returns the array, while <code>V</code> converts it to a vector using
+post-composition, which is further described on the <a href="Fold">Fold</a> page.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ArrayLiteral.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ArrayLiteral.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

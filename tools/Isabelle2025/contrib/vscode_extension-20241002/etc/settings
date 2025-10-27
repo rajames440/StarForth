@@ -1,0 +1,3 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ISABELLE_VSCODE_VSIX="$COMPONENT/isabelle-2.0.0.vsix"

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CrossCompiling</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CrossCompiling</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton&#8217;s <code>-target</code> flag directs MLton to cross compile a program for
+another platform.  By default, MLton is only able to compile for the
+platform that it is running on.  In order to use MLton as a cross
+compiler, you need to do two things.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Build the MLton runtime system for the target using a remote
+machine.</p>
+</li>
+<li>
+<p>Install or build the appropriate cross-compiler toolchain on the
+host so that the C compiler(s) can compile to the target.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>To make the terminology clear, we refer to the <em>host</em> as the machine
+MLton is running on and the <em>target</em> as the machine that MLton is
+compiling for.</p>
+</div>
+<div class="paragraph">
+<p>To build the MLton runtime system for the target, use the
+<code>remote-add-cross</code> goal of the root <code>Makefile</code>; see comments in
+the root <code>Makefile</code>.  The <code>remote-add-cross</code> goal uses <code>ssh</code> to
+build the runtime system on a remote machine.  Building the runtime
+system requires compiling and executing programs that determine
+characteristics of the platform, which is why it isn&#8217;t currently
+feasible to build the runtime system on the host machine using a
+cross-compiler toolchain.</p>
+</div>
+<div class="paragraph">
+<p>Here is an example adding a <code>sparc-sun-solaris</code> cross-compile target
+using the remote machine <code>blade</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% make CROSS_TARGET=sparc-sun-solaris REMOTE_MACHINE=blade remote-add-cross</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once you have both the MLton runtime system and a cross-compiler
+toolchain for the target, you should be able to cross compile SML
+programs.  For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>mlton -target sparc-sun-solaris hello-world.sml</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will create <code>hello-world</code>, which you should be able to run on a Sparc
+Solaris machine.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_cross_compiling_alternatives">Cross-compiling alternatives</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Building and maintaining a cross-compiler toolchain is complex.  You
+may find it simpler to use <code>mlton -keep g</code> to generate the files on
+the host, then copy the files to the target, and then use <code>gcc</code> or
+<code>mlton</code> on the target to compile the files.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Dec 30 16:07:41 2021 +1100 by Evgeny Ermakov.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CrossCompiling.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CrossCompiling.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

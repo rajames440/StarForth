@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>JesperLouisAndersen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>JesperLouisAndersen</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Jesper Louis Andersen is an undergraduate student at DIKU, the department of computer science, Copenhagen university. His contributions to MLton are few, though he has made the port of MLton to the NetBSD and OpenBSD platforms.</p>
+</div>
+<div class="paragraph">
+<p>His general interests in computer science are compiler theory, language theory, algorithms and datastructures and programming. His assets are his general knowledge of UNIX systems, knowledge of system administration, knowledge of operating system kernels; NetBSD in particular.</p>
+</div>
+<div class="paragraph">
+<p>He was employed by the university as a system administrator for 2 years, which has set him back somewhat in his studies. Currently he is trying to learn mathematics (real analysis, general topology, complex functional analysis and algebra).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_projects_using_mlton">Projects using MLton</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_a_register_allocator">A register allocator</h3>
+<div class="paragraph">
+<p>For internal use at a compiler course at DIKU. It is written in the literate programming style and implements the <em>Iterated Register Coalescing</em> algorithm by Lal George and Andrew Appel <a href="http://citeseer.ist.psu.edu/george96iterated.html" class="bare">http://citeseer.ist.psu.edu/george96iterated.html</a>. The status of the project is that it is unfinished. Most of the basic parts of the algorithm is done, but the interface to the students (simple) datatype takes some conversion.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_a_configuration_management_system_in_sml">A configuration management system in SML</h3>
+<div class="paragraph">
+<p>At this time, only loose plans exists for this. The plan is to build a Configuration Management system on the principles of the OpenCM system, see <a href="http://www.opencm.org/docs.html" class="bare">http://www.opencm.org/docs.html</a>. The basic idea is to unify "naming" and "identity" into one by uniquely identifying all objects managed in the repository by the use of cryptographic checksums. This mantra guides the rest of the system, providing integrity, accessibility and confidentiality.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/JesperLouisAndersen.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/JesperLouisAndersen.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

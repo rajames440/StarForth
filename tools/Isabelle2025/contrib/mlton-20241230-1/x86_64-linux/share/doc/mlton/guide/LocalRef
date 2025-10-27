@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>LocalRef</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>LocalRef</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">LocalRef</a> is an optimization pass for the <a href="SSA">SSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass optimizes <code>ref</code> cells local to a <a href="SSA">SSA</a> function:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>global <code>ref</code>-s only used in one function are moved to the function</p>
+</li>
+<li>
+<p><code>ref</code>-s only created, read from, and written to (i.e., don&#8217;t escape)
+are converted into function local variables</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Uses <a href="Multi">Multi</a> and <a href="Restore">Restore</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/local-ref.fun"><code>local-ref.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Moving a global <code>ref</code> requires the <a href="Multi">Multi</a> analysis, because a
+global <code>ref</code> can only be moved into a function that is executed at
+most once.</p>
+</div>
+<div class="paragraph">
+<p>Conversion of non-escaping <code>ref</code>-s is structured in three phases:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>analysis&#8201;&#8212;&#8201;a variable <code>r = Ref_ref x</code> escapes if</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>r</code> is used in any context besides <code>Ref_assign (r, _)</code> or <code>Ref_deref r</code></p>
+</li>
+<li>
+<p>all uses <code>r</code> reachable from a (direct or indirect) call to <code>Thread_copyCurrent</code> are of the same flavor (either <code>Ref_assign</code> or <code>Ref_deref</code>); this also requires the <a href="Multi">Multi</a> analysis.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>transformation</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>rewrites <code>r = Ref_ref x</code> to <code>r = x</code></p>
+</li>
+<li>
+<p>rewrites <code>_ = Ref_assign (r, y)</code> to <code>r = y</code></p>
+</li>
+<li>
+<p>rewrites <code>z = Ref_deref r</code> to <code>z = r</code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the resulting program violates the SSA condition.</p>
+</div>
+</li>
+<li>
+<p><a href="Restore">Restore</a>&#8201;&#8212;&#8201;restore the SSA condition.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/LocalRef.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/LocalRef.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

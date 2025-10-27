@@ -1,0 +1,23 @@
+This distribution of Scala integrates the following parts:
+
+  * scala 3.3.4:
+    https://github.com/lampepfl/dotty/releases/download/3.3.4/scala3-3.3.4.tar.gz
+
+  * scala-parallel-collections 1.0.4 for Scala 3:
+    https://mvnrepository.com/artifact/org.scala-lang.modules/scala-parallel-collections_3/1.0.4
+
+  * scala-parser-combinators 2.4.0 for Scala 3:
+    https://mvnrepository.com/artifact/org.scala-lang.modules/scala-parser-combinators_3/2.4.0
+
+  * scala-swing 3.0.0 for Scala 3:
+    https://mvnrepository.com/artifact/org.scala-lang.modules/scala-swing_3/3.0.0
+
+  * scala-xml 2.3.0 for Scala 3:
+    https://mvnrepository.com/artifact/org.scala-lang.modules/scala-xml_3/2.3.0
+
+Minor changes to bin/scala and bin/scalac allow an installation location
+with spaces in the directory name.
+
+
+        Makarius
+        28-Oct-2024

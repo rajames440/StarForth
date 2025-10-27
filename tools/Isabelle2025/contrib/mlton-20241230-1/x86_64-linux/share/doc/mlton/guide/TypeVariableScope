@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>TypeVariableScope</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>TypeVariableScope</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In <a href="StandardML">Standard ML</a>, every type variable is <em>scoped</em> (or
+bound) at a particular point in the program.  A type variable can be
+either implicitly scoped or explicitly scoped.  For example, <code>'a</code> is
+implicitly scoped in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and is implicitly scoped in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">=&gt;</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On the other hand, <code>'a</code> is explicitly scoped in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nd">'a</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and is explicitly scoped in</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nd">'a</span> <span class="nv">id</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">=&gt;</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A type variable can be scoped at a <code>val</code> or <code>fun</code> declaration.  An SML
+type checker performs scope inference on each top-level declaration to
+determine the scope of each implicitly scoped type variable.  After
+scope inference, every type variable is scoped at exactly one
+enclosing <code>val</code> or <code>fun</code> declaration.  Scope inference shows that the
+first and second example above are equivalent to the third and fourth
+example, respectively.</p>
+</div>
+<div class="paragraph">
+<p>Section 4.6 of the <a href="DefinitionOfStandardML">Definition</a> specifies
+precisely the scope of an implicitly scoped type variable.  A free
+occurrence of a type variable <code>'a</code> in a declaration <code>d</code> is said to be
+<em>unguarded</em> in <code>d</code> if <code>'a</code> is not part of a smaller declaration.  A
+type variable <code>'a</code> is implicitly scoped at <code>d</code> if <code>'a</code> is unguarded in
+<code>d</code> and <code>'a</code> does not occur unguarded in any declaration containing
+<code>d</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_scope_inference_examples">Scope inference examples</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>In this example,</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>'a</code> is unguarded in <code>val id</code> and does not occur unguarded in any
+containing declaration.  Hence, <code>'a</code> is scoped at <code>val id</code> and the
+declaration is equivalent to the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nd">'a</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>In this example,</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"> <span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="kr">let</span> <span class="kr">exception</span> <span class="nc">E</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="kr">in</span> <span class="n">E</span> <span class="n">x</span> <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>'a</code> is unguarded in <code>val f</code> and does not occur unguarded in any
+containing declaration.  Hence, <code>'a</code> is scoped at <code>val f</code> and the
+declaration is equivalent to the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nd">'a</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="kr">let</span> <span class="kr">exception</span> <span class="nc">E</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="kr">in</span> <span class="n">E</span> <span class="n">x</span> <span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>In this example (taken from the <a href="DefinitionOfStandardML">Definition</a>),</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">x</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">int</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">val</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">z</span> <span class="kr">in</span> <span class="n">id</span> <span class="n">id</span> <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>'a</code> occurs unguarded in <code>val id</code>, but not in <code>val x</code>.  Hence, <code>'a</code> is
+implicitly scoped at <code>val id</code>, and the declaration is equivalent to
+the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">x</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">int</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">val</span> <span class="nd">'a</span> <span class="nv">id</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">z</span> <span class="kr">in</span> <span class="n">id</span> <span class="n">id</span> <span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>In this example,</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">)</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">y</span> <span class="p">=&gt;</span> <span class="n">y</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>'a</code> occurs unguarded in <code>val f</code> and does not occur unguarded in any
+containing declaration.  Hence, <code>'a</code> is implicitly scoped at <code>val f</code>,
+and the declaration is equivalent to the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nd">'a</span> <span class="nv">f</span> <span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span><span class="p">:</span> <span class="nd">'a</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">)</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">y</span> <span class="p">=&gt;</span> <span class="n">y</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This does not type check due to the <a href="ValueRestriction">ValueRestriction</a>.</p>
+</div>
+</li>
+<li>
+<p>In this example,</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">f</span> <span class="n">x</span> <span class="p">=</span>
+  <span class="kr">let</span>
+    <span class="kr">fun</span> <span class="nf">g</span> <span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="kr">if</span> <span class="n">true</span> <span class="kr">then</span> <span class="n">x</span> <span class="kr">else</span> <span class="n">y</span>
+  <span class="kr">in</span>
+    <span class="n">g</span> <span class="n">x</span>
+  <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>'a</code> occurs unguarded in <code>fun g</code>, not in <code>fun f</code>.  Hence, <code>'a</code> is
+implicitly scoped at <code>fun g</code>, and the declaration is equivalent to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">f</span> <span class="n">x</span> <span class="p">=</span>
+  <span class="kr">let</span>
+    <span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">g</span> <span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="kr">if</span> <span class="n">true</span> <span class="kr">then</span> <span class="n">x</span> <span class="kr">else</span> <span class="n">y</span>
+  <span class="kr">in</span>
+    <span class="n">g</span> <span class="n">x</span>
+  <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This fails to type check because <code>x</code> and <code>y</code> must have the same type,
+but the <code>x</code> occurs outside the scope of the type variable <code>'a</code>.  MLton
+reports the following error.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 3.21-3.41.
+  Then and else branches disagree.
+    then: [???]
+    else: ['a]
+    in: if true then x else y
+    note: type would escape its scope: 'a
+    escape to: z.sml 1.1-6.5</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This problem could be fixed either by adding an explicit type
+constraint, as in <code>fun f (x: 'a)</code>, or by explicitly scoping <code>'a</code>, as
+in <code>fun 'a f x = &#8230;&#8203;</code>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_restrictions_on_type_variable_scope">Restrictions on type variable scope</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is not allowed to scope a type variable within a declaration in
+which it is already in scope (see the last restriction listed on page
+9 of the <a href="DefinitionOfStandardML">Definition</a>).  For example, the
+following program is invalid.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">f</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">g</span> <span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="n">y</span>
+   <span class="kr">in</span>
+      <span class="p">()</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton reports the following error.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Error: z.sml 3.11-3.12.
+  Type variable scoped at an outer declaration: 'a.
+    scoped at: z.sml 1.1-6.6</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is an error even if the scoping is implicit.  That is, the
+following program is invalid as well.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">f</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">g</span> <span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span> <span class="n">y</span>
+   <span class="kr">in</span>
+      <span class="p">()</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/TypeVariableScope.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/TypeVariableScope.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

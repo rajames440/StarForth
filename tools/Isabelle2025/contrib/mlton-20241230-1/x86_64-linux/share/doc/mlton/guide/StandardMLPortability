@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>StandardMLPortability</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>StandardMLPortability</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Technically, SML'97 as defined in the
+<a href="DefinitionOfStandardML">Definition</a>
+requires only a minimal initial basis, which, while including the
+types <code>int</code>, <code>real</code>, <code>char</code>, and <code>string</code>, need have
+no operations on those base types.  Hence, the only observable output
+of an SML'97 program is termination or raising an exception.  Most SML
+compilers should agree there, to the degree each agrees with the
+Definition.  See <a href="UnresolvedBugs">UnresolvedBugs</a> for MLton&#8217;s very few corner cases.</p>
+</div>
+<div class="paragraph">
+<p>Realistically, a program needs to make use of the
+<a href="BasisLibrary">Basis Library</a>.
+Within the Basis Library, there are numerous places where the behavior
+is implementation dependent.  For a trivial example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">valOf</span> <span class="p">(</span><span class="nn">Int</span><span class="p">.</span><span class="n">maxInt</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>may either raise the <code>Option</code> exception (if
+<code>Int.maxInt == NONE</code>) or may terminate normally.  The default
+Int/Real/Word sizes are the biggest implementation dependent aspect;
+so, one implementation may raise <code>Overflow</code> while another can
+accommodate the result.  Also, maximum array and vector lengths are
+implementation dependent.  Interfacing with the operating system is a
+bit murky, and implementations surely differ in handling of errors
+there.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/StandardMLPortability.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/StandardMLPortability.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Google Summer of Code (2013)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Google Summer of Code (2013)</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_mentors">Mentors</a></li>
+<li><a href="#_ideas_list">Ideas List</a>
+<ul class="sectlevel2">
+<li><a href="#_implement_a_partial_redundancy_elimination_pre_optimization">Implement a Partial Redundancy Elimination (PRE) Optimization</a></li>
+<li><a href="#_design_and_implement_a_heap_profiler">Design and Implement a Heap Profiler</a></li>
+<li><a href="#_garbage_collector_improvements">Garbage Collector Improvements</a></li>
+<li><a href="#_implement_successorml_language_features">Implement Successor&#160;ML Language Features</a></li>
+<li><a href="#_implement_source_level_debugging">Implement Source-level Debugging</a></li>
+<li><a href="#_simd_primitives">SIMD Primitives</a></li>
+<li><a href="#_rtos_support">RTOS Support</a></li>
+<li><a href="#_region_based_memory_management">Region Based Memory Management</a></li>
+<li><a href="#_integration_of_multi_mlton">Integration of Multi-MLton</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_mentors">Mentors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following developers have agreed to serve as mentors for the 2013 Google Summer of Code:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.cs.rit.edu/%7Emtf">Matthew Fluet</a></p>
+</li>
+<li>
+<p><a href="http://www.cse.buffalo.edu/%7Elziarek/">Lukasz (Luke) Ziarek</a></p>
+</li>
+<li>
+<p><a href="http://www.cs.purdue.edu/homes/suresh/">Suresh Jagannathan</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ideas_list">Ideas List</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_implement_a_partial_redundancy_elimination_pre_optimization">Implement a Partial Redundancy Elimination (PRE) Optimization</h3>
+<div class="paragraph">
+<p>Partial redundancy elimination (PRE) is a program transformation that
+removes operations that are redundant on some, but not necessarily all
+paths, through the program.  PRE can subsume both common subexpression
+elimination and loop-invariant code motion, and is therefore a
+potentially powerful optimization.  However, a na&iuml;ve
+implementation of PRE on a program in static single assignment (SSA)
+form is unlikely to be effective.  This project aims to adapt and
+implement the SSAPRE algorithm(s) of Thomas VanDrunen in MLton&#8217;s SSA
+intermediate language.</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://onlinelibrary.wiley.com/doi/10.1002/spe.618/abstract">Anticipation-based partial redundancy elimination for static single assignment form</a>; Thomas VanDrunen and Antony L. Hosking</p>
+</li>
+<li>
+<p><a href="http://cs.wheaton.edu/%7Etvandrun/writings/thesis.pdf">Partial Redundancy Elimination for Global Value Numbering</a>; Thomas VanDrunen</p>
+</li>
+<li>
+<p><a href="http://www.springerlink.com/content/w06m3cw453nphm1u/">Value-Based Partial Redundancy Elimination</a>; Thomas VanDrunen and Antony L. Hosking</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=319301.319348">Partial redundancy elimination in SSA form</a>; Robert Kennedy, Sun Chan, Shin-Ming Liu, Raymond Lo, Peng Tu, and Fred Chow</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; some middle-end compiler experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_design_and_implement_a_heap_profiler">Design and Implement a Heap Profiler</h3>
+<div class="paragraph">
+<p>A heap profile is a description of the space usage of a program.  A
+heap profile is concerned with the allocation, retention, and
+deallocation (via garbage collection) of heap data during the
+execution of a program.  A heap profile can be used to diagnose
+performance problems in a functional program that arise from space
+leaks.  This project aims to design and implement a heap profiler for
+MLton compiled programs.</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=583854.582451">GCspy: an adaptable heap visualisation framework</a>; Tony Printezis and Richard Jones</p>
+</li>
+<li>
+<p><a href="http://journals.cambridge.org/action/displayAbstract?aid=1349892">New dimensions in heap profiling</a>; Colin Runciman and Niklas R&ouml;jemo</p>
+</li>
+<li>
+<p><a href="http://www.springerlink.com/content/710501660722gw37/">Heap profiling for space efficiency</a>; Colin Runciman and Niklas R&ouml;jemo</p>
+</li>
+<li>
+<p><a href="http://journals.cambridge.org/action/displayAbstract?aid=1323096">Heap profiling of lazy functional programs</a>; Colin Runciman and David Wakeling</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: C and SML programming experience; some experience with UI and visualization</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_garbage_collector_improvements">Garbage Collector Improvements</h3>
+<div class="paragraph">
+<p>The garbage collector plays a significant role in the performance of
+functional languages.  Garbage collect too often, and program
+performance suffers due to the excessive time spent in the garbage
+collector.  Garbage collect not often enough, and program performance
+suffers due to the excessive space used by the uncollected garbage.
+One particular issue is ensuring that a program utilizing a garbage
+collector "plays nice" with other processes on the system, by not
+using too much or too little physical memory.  While there are some
+reasonable theoretical results about garbage collections with heaps of
+fixed size, there seems to be insufficient work that really looks
+carefully at the question of dynamically resizing the heap in response
+to the live data demands of the application and, similarly, in
+response to the behavior of the operating system and other processes.
+This project aims to investigate improvements to the memory behavior of
+MLton compiled programs through better tuning of the garbage
+collector.</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.dcs.gla.ac.uk/%7Ewhited/papers/automated_heap_sizing.pdf">Automated Heap Sizing in the Poly/ML Runtime (Position Paper)</a>; David White, Jeremy Singer, Jonathan Aitken, and David Matthews</p>
+</li>
+<li>
+<p><a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4145125">Isla Vista Heap Sizing: Using Feedback to Avoid Paging</a>; Chris Grzegorczyk, Sunil Soman, Chandra Krintz, and Rich Wolski</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=1152649.1152652">Controlling garbage collection and heap growth to reduce the execution time of Java applications</a>; Tim Brecht, Eshrat Arjomandi, Chang Li, and Hang Pham</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=1065010.1065028">Garbage collection without paging</a>; Matthew Hertz, Yi Feng, and Emery D. Berger</p>
+</li>
+<li>
+<p><a href="http://portal.acm.org/citation.cfm?doid=1029873.1029881">Automatic heap sizing: taking real memory into account</a>; Ting Yang, Matthew Hertz, Emery D. Berger, Scott F. Kaplan, and J. Eliot B. Moss</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: C programming experience; some operating systems and/or systems programming experience; some compiler and garbage collector experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_implement_successorml_language_features">Implement Successor&#160;ML Language Features</h3>
+<div class="paragraph">
+<p>Any programming language, including Standard&#160;ML, can be improved.
+The community has identified a number of modest extensions and
+revisions to the Standard&#160;ML programming language that would
+likely prove useful in practice.  This project aims to implement these
+language features in the MLton compiler.</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://successor-ml.org/index.php?title=Main_Page">Successor&#160;ML</a></p>
+</li>
+<li>
+<p><a href="http://www.mpi-sws.org/%7Erossberg/hamlet/index.html#successor-ml">HaMLet (Successor&#160;ML)</a></p>
+</li>
+<li>
+<p><a href="http://journals.cambridge.org/action/displayAbstract?aid=1322628">A critique of Standard&#160;ML</a>; Andrew W. Appel</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; some front-end compiler experience (i.e., scanners and parsers)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_implement_source_level_debugging">Implement Source-level Debugging</h3>
+<div class="paragraph">
+<p>Debugging is a fact of programming life.  Unfortunately, most SML
+implementations (including MLton) provide little to no source-level
+debugging support.  This project aims to add basic to intermediate
+source-level debugging support to the MLton compiler.  MLton already
+supports source-level profiling, which can be used to attribute bytes
+allocated or time spent in source functions.  It should be relatively
+straightforward to leverage this source-level information into basic
+source-level debugging support, with the ability to set/unset
+breakpoints and step through declarations and functions.  It may be
+possible to also provide intermediate source-level debugging support,
+with the ability to inspect in-scope variables of basic types (e.g.,
+types compatible with MLton&#8217;s foreign function interface).</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://mlton.org/HowProfilingWorks">MLton&#8201;&#8212;&#8201;How Profiling Works</a></p>
+</li>
+<li>
+<p><a href="http://mlton.org/ForeignFunctionInterfaceTypes">MLton&#8201;&#8212;&#8201;Foreign Function Interface Types</a></p>
+</li>
+<li>
+<p><a href="http://dwarfstd.org/">DWARF Debugging Standard</a></p>
+</li>
+<li>
+<p><a href="http://sourceware.org/gdb/current/onlinedocs/stabs/index.html">STABS Debugging Format</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; some compiler experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_simd_primitives">SIMD Primitives</h3>
+<div class="paragraph">
+<p>Most modern processors offer some direct support for SIMD (Single
+Instruction, Multiple Data) operations, such as Intel&#8217;s MMX/SSE
+instructions, AMD&#8217;s 3DNow!  instructions, and IBM&#8217;s AltiVec.  Such
+instructions are particularly useful for multimedia, scientific, and
+cryptographic applications.  This project aims to add preliminary
+support for vector data and vector operations to the MLton compiler.
+Ideally, after surveying SIMD instruction sets and SIMD support in
+other compilers, a core set of SIMD primitives with broad architecture
+and compiler support can be identified.  After adding SIMD primitives
+to the core compiler and carrying them through to the various
+backends, there will be opportunities to design and implement an SML
+library that exposes the primitives to the SML programmer as well as
+opportunities to design and implement auto-vectorization
+optimizations.</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://en.wikipedia.org/wiki/SIMD">SIMD</a></p>
+</li>
+<li>
+<p><a href="http://gcc.gnu.org/projects/tree-ssa/vectorization.html">Auto-vectorization in GCC</a></p>
+</li>
+<li>
+<p><a href="http://llvm.org/docs/Vectorizers.html">Auto-vectorization in LLVM</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; some compiler experience; some computer architecture experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rtos_support">RTOS Support</h3>
+<div class="paragraph">
+<p>This project entails porting the MLton compiler to RTOSs such as:
+RTEMS, RT Linux, and FreeRTOS.  The project will include modifications
+to the MLton build and configuration process.  Students will need to
+extend the MLton configuration process for each of the RTOSs.  The
+MLton compilation process will need to be extended to invoke the C
+cross compilers the RTOSs provide for embedded support.  Test scripts
+for validation will be necessary and these will need to be run in
+emulators for supported architectures.</p>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: C programming experience; some scripting experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_region_based_memory_management">Region Based Memory Management</h3>
+<div class="paragraph">
+<p>Region based memory management is an alternative automatic memory
+management scheme to garbage collection.  Regions can be inferred by
+the compiler (e.g., Cyclone and MLKit) or provided to the programmer
+through a library.  Since many students do not have extensive
+experience with compilers we plan on adopting the later approach.
+Creating a viable region based memory solution requires the removal of
+the GC and changes to the allocator.  Additionally, write barriers
+will be necessary to ensure references between two ML objects is never
+established if the left hand side of the assignment has a longer
+lifetime than the right hand side.  Students will need to come up with
+an appropriate interface for creating, entering, and exiting regions
+(examples include RTSJ scoped memory and SCJ scoped memory).</p>
+</div>
+<div class="paragraph">
+<p>Background:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>Cyclone</p>
+</li>
+<li>
+<p>MLKit</p>
+</li>
+<li>
+<p>RTSJ + SCJ scopes</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; C programming experience; some compiler and garbage collector experience</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_integration_of_multi_mlton">Integration of Multi-MLton</h3>
+<div class="paragraph">
+<p><a href="http://multimlton.cs.purdue.edu">MultiMLton</a> is a compiler and runtime
+environment that targets scalable multicore platforms.  It is an
+extension of MLton.  It combines new language abstractions and
+associated compiler analyses for expressing and implementing various
+kinds of fine-grained parallelism (safe futures, speculation,
+transactions, etc.), along with a sophisticated runtime system tuned
+to efficiently handle large numbers of lightweight threads.  The core
+stable features of MultiMLton will need to be integrated with the
+latest MLton public release.  Certain experimental features, such as
+support for the Intel SCC and distributed runtime will be omitted.
+This project requires students to understand the delta between the
+MultiMLton code base and the MLton code base.  Students will need to
+create build and configuration scripts for MLton to enable MultiMLton
+features.</p>
+</div>
+<div class="paragraph">
+<p>Background</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://multimlton.cs.purdue.edu/mML/Publications.html">MultiMLton&#8201;&#8212;&#8201;Publications</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Recommended Skills: SML programming experience; C programming experience; some compiler experience</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/GoogleSummerOfCode2013.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/GoogleSummerOfCode2013.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

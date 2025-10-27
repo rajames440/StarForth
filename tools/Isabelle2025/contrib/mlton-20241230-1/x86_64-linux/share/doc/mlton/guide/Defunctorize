@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Defunctorize</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Defunctorize</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">Defunctorize</a> is a translation pass from the <a href="CoreML">CoreML</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a> to the <a href="XML">XML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass converts a <a href="CoreML">CoreML</a> program to an <a href="XML">XML</a> program by
+performing:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>linearization</p>
+</li>
+<li>
+<p><a href="MatchCompile">MatchCompile</a></p>
+</li>
+<li>
+<p>polymorphic <code>val</code> dec expansion</p>
+</li>
+<li>
+<p><code>datatype</code> lifting (to the top-level)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/defunctorize/defunctorize.sig"><code>defunctorize.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/defunctorize/defunctorize.fun"><code>defunctorize.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass is grossly misnamed and does not perform defunctorization.</p>
+</div>
+<div class="sect2">
+<h3 id="_datatype_lifting">Datatype Lifting</h3>
+<div class="paragraph">
+<p>This pass moves all <code>datatype</code> declarations to the top level.</p>
+</div>
+<div class="paragraph">
+<p><a href="StandardML">Standard ML</a> <code>datatype</code> declarations can contain type
+variables that are not bound in the declaration itself.  For example,
+the following program is valid.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">f</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">datatype</span> <span class="nd">'b</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span>
+      <span class="kr">val</span> <span class="nv">y</span><span class="p">:</span> <span class="n">int</span> <span class="n">t</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+   <span class="kr">in</span>
+      <span class="mi">13</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Unfortunately, the <code>datatype</code> declaration can not be immediately moved
+to the top level, because that would leave <code>'a</code> free.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'b</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span>
+<span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">f</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">y</span><span class="p">:</span> <span class="n">int</span> <span class="n">t</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+   <span class="kr">in</span>
+      <span class="mi">13</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In order to safely move `datatype`s, this pass must close them, as
+well as add any free type variables as extra arguments to the type
+constructor.  For example, the above program would be translated to
+the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span>
+<span class="kr">fun</span> <span class="nd">'a</span> <span class="nf">f</span> <span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">y</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="n">int</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+   <span class="kr">in</span>
+      <span class="mi">13</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_historical_notes">Historical Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="#">Defunctorize</a> pass originally eliminated
+<a href="StandardML">Standard ML</a> functors by duplicating their body at each
+application.  These duties have been adopted by the <a href="Elaborate">Elaborate</a>
+pass.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Defunctorize.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Defunctorize.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

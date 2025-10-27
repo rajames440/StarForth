@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Enscript</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Enscript</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="http://www.gnu.org/s/enscript/">GNU Enscript</a> converts ASCII files to
+PostScript, HTML, and other output languages, applying language
+sensitive highlighting (similar to <a href="Emacs">Emacs</a>&rsquo;s font lock mode).  Here
+are a few <em>states</em> files for highlighting <a href="StandardML">Standard ML</a>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/ide/enscript/sml_simple.st"><code>sml_simple.st</code></a>&#8201;&#8212;&#8201;Provides highlighting of keywords, string and character constants, and (nested) comments.</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/ide/enscript/sml_verbose.st"><code>sml_verbose.st</code></a>&#8201;&#8212;&#8201;Supersedes
+the above, adding highlighting of numeric constants.  Due to the
+limited parsing available, numeric record labels are highlighted as
+numeric constants, in all contexts.  Likewise, a binding precedence
+separated from <code>infix</code> or <code>infixr</code> by a newline is highlighted as a
+numeric constant and a numeric record label selector separated from
+<code>#</code> by a newline is highlighted as a numeric constant.</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/ide/enscript/sml_fancy.st"><code>sml_fancy.st</code></a>&#8201;&#8212;&#8201;Supersedes the
+above, adding highlighting of type and constructor bindings,
+highlighting of explicit binding of type variables at <code>val</code> and <code>fun</code>
+declarations, and separate highlighting of core and modules level
+keywords.  Due to the limited parsing available, it is assumed that
+the input is a syntactically correct, top-level declaration.</p>
+</li>
+</ul>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/ide/enscript/sml_gaudy.st"><code>sml_gaudy.st</code></a>&#8201;&#8212;&#8201;Supersedes the
+above, adding highlighting of type annotations, in both expressions
+and signatures.  Due to the limited parsing available, it is assumed
+that the input is a syntactically correct, top-level declaration.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_install_and_use">Install and use</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Version 1.6.3 of <a href="http://people.ssh.com/mtr/genscript">GNU Enscript</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Copy all files to <code>/usr/share/enscript/hl/</code> or <code>.enscript/</code> in your home directory.</p>
+</li>
+<li>
+<p>Invoke <code>enscript</code> with <code>--highlight=sml_simple</code> (or <code>--highlight=sml_verbose</code> or <code>--highlight=sml_fancy</code> or <code>--highlight=sml_gaudy</code>).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Version 1.6.1 of <a href="http://people.ssh.com/mtr/genscript">GNU Enscript</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Append <a href="https://github.com/MLton/mlton/blob/master/ide/enscript/sml_all.st"><code>sml_all.st</code></a> to <code>/usr/share/enscript/enscript.st</code></p>
+</li>
+<li>
+<p>Invoke <code>enscript</code> with <code>--pretty-print=sml_simple</code> (or <code>--pretty-print=sml_verbose</code> or <code>--pretty-print=sml_fancy</code> or <code>--pretty-print=sml_gaudy</code>).</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_feedback">Feedback</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Comments and suggestions should be directed to <a href="MatthewFluet">MatthewFluet</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Enscript.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Enscript.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

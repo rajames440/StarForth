@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Release20070826</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Release20070826</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an archived public release of MLton, version 20070826.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_the_last_public_release">Changes since the last public release</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>New platforms:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnAMD64">AMD64</a>/<a href="RunningOnLinux">Linux</a>, <a href="RunningOnAMD64">AMD64</a>/<a href="RunningOnFreeBSD">FreeBSD</a></p>
+</li>
+<li>
+<p><a href="RunningOnHPPA">HPPA</a>/<a href="RunningOnHPUX">HPUX</a></p>
+</li>
+<li>
+<p><a href="RunningOnPowerPC">PowerPC</a>/<a href="RunningOnAIX">AIX</a></p>
+</li>
+<li>
+<p><a href="RunningOnX86">X86</a>/<a href="RunningOnDarwin">Darwin (Mac OS X)</a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Compiler.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Support for 64-bit platforms.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Native amd64 codegen.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="CompileTimeOptions">Compile-time options</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>-codegen amd64</code>, <code>-codegen x86</code>, <code>-default-type <em>type</em></code>, <code>-profile-val {false|true}</code>.</p>
+</li>
+<li>
+<p>Changed: <code>-stop f</code> (file listing now includes <code>.mlb</code> files).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Bytecode codegen.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Support for exception history.</p>
+</li>
+<li>
+<p>Support for profiling.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Language.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="MLBasisAnnotations">ML Basis annotations</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Removed: <code>allowExport</code>, <code>allowImport</code>, <code>sequenceUnit</code>, <code>warnMatch</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="BasisLibrary">Basis Library</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>PackWord16Big</code>, <code>PackWord16Little</code>, <code>PackWord64Big</code>, <code>PackWord64Little</code>.</p>
+</li>
+<li>
+<p>Bug fixes: see <a href="https://raw.github.com/MLton/mlton/on-20070826-release/doc/changelog"><code>changelog</code></a>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="MLtonStructure">MLton structure</a>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <code>MLTON_MONO_ARRAY</code>, <code>MLTON_MONO_VECTOR</code>, <code>MLTON_REAL</code>, <code>MLton.BinIO.tempPrefix</code>, <code>MLton.CharArray</code>, <code>MLton.CharVector</code>, <code>MLton.Exn.defaultTopLevelHandler</code>, <code>MLton.Exn.getTopLevelHandler</code>, <code>MLton.Exn.setTopLevelHandler</code>, <code>MLton.IntInf.BigWord</code>, <code>Mlton.IntInf.SmallInt</code>, <code>MLton.LargeReal</code>, <code>MLton.LargeWord</code>, <code>MLton.Real</code>, <code>MLton.Real32</code>, <code>MLton.Real64</code>, <code>MLton.Rlimit.Rlim</code>, <code>MLton.TextIO.tempPrefix</code>, <code>MLton.Vector.create</code>, <code>MLton.Word.bswap</code>, <code>MLton.Word8.bswap</code>, <code>MLton.Word16</code>, <code>MLton.Word32</code>, <code>MLton.Word64</code>, <code>MLton.Word8Array</code>, <code>MLton.Word8Vector</code>.</p>
+</li>
+<li>
+<p>Changed: <code>MLton.Array.unfoldi</code>, <code>MLton.IntInf.rep</code>, <code>MLton.Rlimit</code>, <code>MLton.Vector.unfoldi</code>.</p>
+</li>
+<li>
+<p>Deprecated: <code>MLton.Socket</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Added: <a href="MLRISCLibrary">MLRISC library</a>.</p>
+</li>
+<li>
+<p>Updated: <a href="CKitLibrary">ckit library</a>, <a href="SMLNJLibrary">SML/NJ library</a>.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Tools.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a complete list of changes and bug fixes since
+<a href="Release20051202">Release20051202</a>, see the
+<a href="https://raw.github.com/MLton/mlton/on-20070826-release/doc/changelog"><code>changelog</code></a> and
+<a href="Bugs20051202">Bugs20051202</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20070826_binary_packages">20070826 binary packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>AMD64</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.amd64-linux.tgz">Linux</a>, glibc 2.3</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>HPPA</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.hppa-hpux1100.tgz">HPUX</a> 11.00 and above, statically linked against <a href="GMP">GMP</a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>PowerPC</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-aix51.tgz">AIX</a> 5.1 and above, statically linked against <a href="GMP">GMP</a></p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-static.tgz">Darwin</a> 8.10 (Mac OS X), statically linked against <a href="GMP">GMP</a></p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-macports.tgz">Darwin</a> 8.10 (Mac OS X), dynamically linked against <a href="GMP">GMP</a> in <code>/opt/local/lib</code> (suitable for <a href="http://macports.org">MacPorts</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Sparc</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.sparc-solaris8.tgz">Solaris</a> 8 and above, statically linked against <a href="GMP">GMP</a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>X86</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-cygwin.tgz">Cygwin</a> 1.5.24-2</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.tgz">Darwin (.tgz)</a> 8.10 (Mac OS X), dynamically linked against <a href="GMP">GMP</a> in <code>/opt/local/lib</code> (suitable for <a href="http://macports.org">MacPorts</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.dmg">Darwin (.dmg)</a> 8.10 (Mac OS X), dynamically linked against <a href="GMP">GMP</a> in <code>/opt/local/lib</code> (suitable for <a href="http://macports.org">MacPorts</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.tgz">Darwin (.tgz)</a> 8.10 (Mac OS X), statically linked against <a href="GMP">GMP</a></p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.dmg">Darwin (.dmg)</a> 8.10 (Mac OS X), statically linked against <a href="GMP">GMP</a></p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-freebsd.tgz">FreeBSD</a></p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-linux.tgz">Linux</a>, glibc 2.3</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-linux.glibc213.gmp-static.tgz">Linux</a>, glibc 2.1, statically linked against <a href="GMP">GMP</a></p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-dll.tgz">MinGW</a>, dynamically linked against <a href="GMP">GMP</a> (requires <code>libgmp-3.dll</code>)</p>
+</li>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-static.tgz">MinGW</a>, statically linked against <a href="GMP">GMP</a></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20070826_source_packages">20070826 source packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.src.tgz">source tgz</a></p>
+</li>
+<li>
+<p>Debian <a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton_20070826-1.dsc">dsc</a>,
+<a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton_20070826-1.diff.gz">diff.gz</a>,
+<a href="http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton_20070826.orig.tar.gz">orig.tar.gz</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_packages_available_at_other_sites">Packages available at other sites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://packages.debian.org/search?keywords=mlton&amp;searchon=names&amp;suite=all&amp;section=all">Debian</a></p>
+</li>
+<li>
+<p><a href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all">FreeBSD</a></p>
+</li>
+<li>
+<p><a href="https://admin.fedoraproject.org/pkgdb/packages/name/mlton">Fedora</a></p>
+</li>
+<li>
+<p><a href="http://packages.ubuntu.com/cgi-bin/search_packages.pl?keywords=mlton&amp;searchon=names&amp;version=all&amp;release=all">Ubuntu</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Bugs20070826">Bugs20070826</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/guide/20070826/">MLton Guide (20070826)</a>.</p>
+<div class="paragraph">
+<p>A snapshot of the MLton wiki at the time of release.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Release20070826.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Release20070826.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLBasisPathMap</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLBasisPathMap</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>An <a href="MLBasis">ML Basis</a> <em>path map</em> describes a map from ML Basis path
+variables (of the form <code>$(VAR)</code>) to file system paths.  ML Basis path
+variables provide a flexible way to refer to libraries while allowing
+them to be moved without changing their clients.</p>
+</div>
+<div class="paragraph">
+<p>The format of an <code>mlb-path-map</code> file is a sequence of lines; each line
+consists of two, white-space delimited tokens.  The first token is a
+path variable <code>VAR</code> and the second token is the path to which the
+variable is mapped.  The path may include path variables, which are
+recursively expanded.</p>
+</div>
+<div class="paragraph">
+<p>The mapping from path variables to paths is initialized by the compiler.
+Additional path maps can be specified with <code>-mlb-path-map</code> and
+individual path variable mappings can be specified with
+<code>-mlb-path-var</code> (see <a href="CompileTimeOptions">CompileTimeOptions</a>).  Configuration files are
+processed from first to last and from top to bottom, later mappings
+take precedence over earlier mappings.</p>
+</div>
+<div class="paragraph">
+<p>The compiler and system-wide configuration file makes the following
+path variables available.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-center valign-top">MLB path variable</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>SML_LIB</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">path to system-wide libraries, usually <code>/usr/lib/mlton/sml</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>TARGET_ARCH</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">string representation of target architecture</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>TARGET_OS</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">string representation of target operating system</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>DEFAULT_INT</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">binding for default int, usually <code>int32</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>DEFAULT_WORD</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">binding for default word, usually <code>word32</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><code>DEFAULT_REAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">binding for default real, usually <code>real64</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLBasisPathMap.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLBasisPathMap.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

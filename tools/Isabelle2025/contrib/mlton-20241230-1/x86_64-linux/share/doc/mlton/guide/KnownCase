@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>KnownCase</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>KnownCase</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">KnownCase</a> is an optimization pass for the <a href="SSA">SSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass duplicates and simplifies <code>Case</code> transfers when the
+constructor of the scrutinee is known.</p>
+</div>
+<div class="paragraph">
+<p>Uses <a href="Restore">Restore</a>.</p>
+</div>
+<div class="paragraph">
+<p>For example, the program</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">rec</span> <span class="n">last</span> <span class="p">=</span>
+  <span class="kr">fn</span> <span class="p">[]</span> <span class="p">=&gt;</span> <span class="mi">0</span>
+   <span class="p">|</span> <span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="p">=&gt;</span> <span class="n">x</span>
+   <span class="p">|</span> <span class="p">_</span> <span class="n">::</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="n">last</span> <span class="n">l</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="mi">1</span> <span class="n">+</span> <span class="n">last</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>gives rise to the <a href="SSA">SSA</a> function</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>fun last_0 (x_142) = loopS_1 ()
+  loopS_1 ()
+    loop_11 (x_142)
+  loop_11 (x_143)
+    case x_143 of
+      nil_1 =&gt; L_73 | ::_0 =&gt; L_74
+  L_73 ()
+    return global_5
+  L_74 (x_145, x_144)
+    case x_145 of
+      nil_1 =&gt; L_75 | _ =&gt; L_76
+  L_75 ()
+    return x_144
+  L_76 ()
+    loop_11 (x_145)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>which is simplified to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>fun last_0 (x_142) = loopS_1 ()
+  loopS_1 ()
+    case x_142 of
+      nil_1 =&gt; L_73 | ::_0 =&gt; L_118
+  L_73 ()
+    return global_5
+  L_118 (x_230, x_229)
+    L_74 (x_230, x_229, x_142)
+  L_74 (x_145, x_144, x_232)
+    case x_145 of
+      nil_1 =&gt; L_75 | ::_0 =&gt; L_114
+  L_75 ()
+    return x_144
+  L_114 (x_227, x_226)
+    L_74 (x_227, x_226, x_145)</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/known-case.fun"><code>known-case.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One interesting aspect of <a href="#">KnownCase</a>, is that it often has the
+effect of unrolling list traversals by one iteration, moving the
+<code>nil</code>/<code>::</code> check to the end of the loop, rather than the beginning.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/KnownCase.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/KnownCase.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

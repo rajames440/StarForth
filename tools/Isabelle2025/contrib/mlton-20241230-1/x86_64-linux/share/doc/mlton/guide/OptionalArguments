@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>OptionalArguments</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>OptionalArguments</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="StandardML">Standard ML</a> does not have built-in support for optional
+arguments.  Nevertheless, using <a href="Fold">Fold</a>, it is easy to define
+functions that take optional arguments.</p>
+</div>
+<div class="paragraph">
+<p>For example, suppose that we have the following definition of a
+function <code>f</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">f</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=</span>
+   <span class="n">concat</span> <span class="p">[</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span><span class="p">,</span> <span class="s2">", "</span><span class="p">,</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">r</span><span class="p">,</span> <span class="s2">", "</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the <code>OptionalArg</code> structure described below, we can define a
+function <code>f'</code>, an optionalized version of <code>f</code>, that takes 0, 1, 2, or
+3 arguments.  Embedded within <code>f'</code> will be default values for <code>i</code>,
+<code>r</code>, and <code>s</code>.  If <code>f'</code> gets no arguments, then all the defaults are
+used.  If <code>f'</code> gets one argument, then that will be used for <code>i</code>.  Two
+arguments will be used for <code>i</code> and <code>r</code> respectively.  Three arguments
+will override all default values.  Calls to <code>f'</code> will look like the
+following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f'</span> <span class="n">$</span>
+<span class="n">f'</span> <span class="n">`</span><span class="mi">2</span> <span class="n">$</span>
+<span class="n">f'</span> <span class="n">`</span><span class="mi">2</span> <span class="n">`</span><span class="mf">3.0</span> <span class="n">$</span>
+<span class="n">f'</span> <span class="n">`</span><span class="mi">2</span> <span class="n">`</span><span class="mf">3.0</span> <span class="n">`</span><span class="s2">"four"</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The optional argument indicator, <code>`</code>, is not special syntax ---
+it is a normal SML value, defined in the <code>OptionalArg</code> structure
+below.</p>
+</div>
+<div class="paragraph">
+<p>Here is the definition of <code>f'</code> using the <code>OptionalArg</code> structure, in
+particular, <code>OptionalArg.make</code> and <code>OptionalArg.D</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f'</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span> <span class="kr">open</span> <span class="nn">OptionalArg</span> <span class="kr">in</span>
+      <span class="n">make</span> <span class="p">(</span><span class="n">D</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">D</span> <span class="mf">2.0</span><span class="p">)</span> <span class="p">(</span><span class="n">D</span> <span class="s2">"three"</span><span class="p">)</span> <span class="n">$</span>
+   <span class="kr">end</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="n">&amp;</span> <span class="n">r</span> <span class="n">&amp;</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="p">))</span>
+   <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The definition of <code>f'</code> is eta expanded as with all uses of fold.  A
+call to <code>OptionalArg.make</code> is supplied with a variable number of
+defaults (in this case, three), the end-of-arguments terminator, <code>$</code>,
+and the function to run, taking its arguments as an n-ary
+<a href="ProductType">product</a>.  In this case, the function simply converts
+the product to an ordinary tuple and calls <code>f</code>.  Often, the function
+body will simply be written directly.</p>
+</div>
+<div class="paragraph">
+<p>In general, the definition of an optional-argument function looks like
+the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+   <span class="kr">let</span> <span class="kr">open</span> <span class="nn">OptionalArg</span> <span class="kr">in</span>
+      <span class="n">make</span> <span class="p">(</span><span class="n">D</span> <span class="n">&lt;default1&gt;</span><span class="p">)</span> <span class="p">(</span><span class="n">D</span> <span class="n">&lt;default2&gt;</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">D</span> <span class="n">&lt;defaultn&gt;</span><span class="p">)</span> <span class="n">$</span>
+   <span class="kr">end</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x1</span> <span class="n">&amp;</span> <span class="n">x2</span> <span class="n">&amp;</span> <span class="p">...</span> <span class="n">&amp;</span> <span class="n">xn</span> <span class="p">=&gt;</span>
+        <span class="n">&lt;function</span> <span class="n">code</span> <span class="n">goes</span> <span class="n">here&gt;</span><span class="p">)</span>
+   <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here is the definition of <code>OptionalArg</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">OptionalArg</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">val</span> <span class="nv">make</span> <span class="p">=</span>
+         <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+         <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span>
+         <span class="p">((</span><span class="n">id</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">x</span><span class="p">),</span>
+          <span class="kr">fn</span> <span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">func</span> <span class="p">=&gt;</span>
+          <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">((</span><span class="n">id</span><span class="p">,</span> <span class="n">d</span> <span class="p">()),</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="p">=&gt;</span>
+                     <span class="kr">let</span>
+                        <span class="kr">val</span> <span class="nv">d</span> <span class="n">&amp;</span> <span class="p">()</span> <span class="p">=</span> <span class="n">r</span> <span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">f</span> <span class="n">d</span><span class="p">)</span>
+                     <span class="kr">in</span>
+                        <span class="n">func</span> <span class="n">d</span>
+                     <span class="kr">end</span><span class="p">))</span>
+         <span class="n">z</span>
+
+      <span class="kr">fun</span> <span class="nf">D</span> <span class="n">d</span> <span class="p">=</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="p">=&gt;</span>
+                            <span class="p">(</span><span class="kr">fn</span> <span class="n">ds</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">d</span> <span class="n">&amp;</span> <span class="n">ds</span><span class="p">),</span>
+                             <span class="kr">fn</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a</span> <span class="n">&amp;</span> <span class="n">b</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">r</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="n">a</span> <span class="n">&amp;</span> <span class="n">x</span><span class="p">,</span> <span class="n">b</span><span class="p">)))</span>
+
+      <span class="kr">val</span> <span class="nv">`</span> <span class="p">=</span>
+         <span class="nv">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+         <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">_</span> <span class="n">&amp;</span> <span class="n">d</span><span class="p">))</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">d</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">x</span> <span class="n">&amp;</span> <span class="n">d</span><span class="p">),</span> <span class="n">d</span><span class="p">))</span>
+         <span class="n">z</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>OptionalArg.make</code> uses a nested fold.  The first <code>fold</code> accumulates
+the default values in a product, associated to the right, and a
+reversal function that converts a product (of the same arity as the
+number of defaults) from right associativity to left associativity.
+The accumulated defaults are used by the second fold, which recurs
+over the product, replacing the appropriate component as it encounters
+optional arguments.  The second fold also constructs a "fill"
+function, <code>f</code>, that is used to reconstruct the product once the
+end-of-arguments is reached.  Finally, the finisher reconstructs the
+product and uses the reversal function to convert the product from
+right associative to left associative, at which point it is passed to
+the user-supplied function.</p>
+</div>
+<div class="paragraph">
+<p>Much of the complexity comes from the fact that while recurring over a
+product from left to right, one wants it to be right-associative,
+e.g., look like</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">a</span> <span class="n">&amp;</span> <span class="p">(</span><span class="n">b</span> <span class="n">&amp;</span> <span class="p">(</span><span class="n">c</span> <span class="n">&amp;</span> <span class="n">d</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>but the user function in the end wants the product to be left
+associative, so that the product argument pattern can be written
+without parentheses (since <code>&amp;</code> is left associative).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_labelled_optional_arguments">Labelled optional arguments</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In addition to the positional optional arguments described above, it
+is sometimes useful to have labelled optional arguments.  These allow
+one to define a function, <code>f</code>, with defaults, say <code>a</code> and <code>b</code>.  Then,
+a caller of <code>f</code> can supply values for <code>a</code> and <code>b</code> by name.  If no
+value is supplied then the default is used.</p>
+</div>
+<div class="paragraph">
+<p>Labelled optional arguments are a simple extension of
+<a href="FunctionalRecordUpdate">FunctionalRecordUpdate</a> using post composition.  Suppose, for
+example, that one wants a function <code>f</code> with labelled optional
+arguments <code>a</code> and <code>b</code> with default values <code>0</code> and <code>0.0</code> respectively.
+If one has a functional-record-update function <code>updateAB</code> for records
+with <code>a</code> and <code>b</code> fields, then one can define <code>f</code> in the following way.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+   <span class="nn">Fold</span><span class="p">.</span><span class="n">post</span>
+   <span class="p">(</span><span class="n">updateAB</span> <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="mf">0.0</span><span class="p">},</span>
+    <span class="kr">fn</span> <span class="p">{</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">}</span> <span class="p">=&gt;</span> <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">a</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span>
+                                <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">b</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">]))</span>
+   <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The idea is that <code>f</code> is the post composition (using <code>Fold.post</code>) of
+the actual code for the function with a functional-record updater that
+starts with the defaults.</p>
+</div>
+<div class="paragraph">
+<p>Here are some example calls to <code>f</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="n">$</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">U</span><span class="nl">#a</span> <span class="mi">13</span><span class="p">)</span> <span class="n">$</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">U</span><span class="nl">#a</span> <span class="mi">13</span><span class="p">)</span> <span class="p">(</span><span class="n">U</span><span class="nl">#b</span> <span class="mf">17.5</span><span class="p">)</span> <span class="n">$</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">U</span><span class="nl">#b</span> <span class="mf">17.5</span><span class="p">)</span> <span class="p">(</span><span class="n">U</span><span class="nl">#a</span> <span class="mi">13</span><span class="p">)</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice that a caller can supply neither of the arguments, either of
+the arguments, or both of the arguments, and in either order.  All
+that matter is that the arguments be labelled correctly (and of the
+right type, of course).</p>
+</div>
+<div class="paragraph">
+<p>Here is another example.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span>
+   <span class="nn">Fold</span><span class="p">.</span><span class="n">post</span>
+   <span class="p">(</span><span class="n">updateBCD</span> <span class="p">{</span><span class="n">b</span> <span class="p">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">d</span> <span class="p">=</span> <span class="s2">"&lt;&gt;"</span><span class="p">},</span>
+    <span class="kr">fn</span> <span class="p">{</span><span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">}</span> <span class="p">=&gt;</span>
+    <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">b</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span>
+                   <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">c</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span>
+                   <span class="n">d</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">]))</span>
+   <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here are some example calls.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="n">$</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">U</span><span class="nl">#d</span> <span class="s2">"goodbye"</span><span class="p">)</span> <span class="n">$</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">U</span><span class="nl">#d</span> <span class="s2">"hello"</span><span class="p">)</span> <span class="p">(</span><span class="n">U</span><span class="nl">#b</span> <span class="mi">17</span><span class="p">)</span> <span class="p">(</span><span class="n">U</span><span class="nl">#c</span> <span class="mf">19.3</span><span class="p">)</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/OptionalArguments.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/OptionalArguments.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>GMP</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>GMP</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="https://gmplib.org">GMP</a> library (GNU Multiple Precision
+arithmetic library) is a library for arbitrary precision integer
+arithmetic.  MLton uses the GMP library to implement the
+<a href="BasisLibrary">Basis Library</a> <code>IntInf</code> module.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_known_issues">Known issues</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>There is a known problem with the GMP library (prior to version
+4.2.x), where it requires a lot of stack space for some computations,
+e.g. <code>IntInf.toString</code> of a million digit number.  If you run with
+stack size limited, you may see a segfault in such programs.  This
+problem is mentioned in the <a href="https://gmplib.org/#FAQ">GMP FAQ</a>, where
+they describe two solutions.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Increase (or unlimit) your stack space.  From your program, use
+<code>setrlimit</code>, or from the shell, use <code>ulimit</code>.</p>
+</li>
+<li>
+<p>Configure and rebuild <code>libgmp</code> with <code>--disable-alloca</code>, which will
+cause it to allocate temporaries using <code>malloc</code> instead of on the
+stack.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>On some platforms, the GMP library may be configured to use one of
+multiple ABIs (Application Binary Interfaces).  For example, on some
+32-bit architectures, GMP may be configured to represent a limb as
+either a 32-bit <code>long</code> or as a 64-bit <code>long long</code>.  Similarly, GMP
+may be configured to use specific CPU features.</p>
+<div class="paragraph">
+<p>In order to efficiently use the GMP library, MLton represents an
+<code>IntInf.int</code> value in a manner compatible with the GMP library&#8217;s
+representation of a limb.  Hence, it is important that MLton and the
+GMP library agree upon the representation of a limb.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>When using a source package of MLton, building will detect the
+GMP library&#8217;s representation of a limb.</p>
+</li>
+<li>
+<p>When using a binary package of MLton that is dynamically linked
+against the GMP library, the build machine and the install machine
+must have the GMP library configured with the same representation of
+a limb.  (On the other hand, the build machine need not have the GMP
+library configured with CPU features compatible with the install
+machine.)</p>
+</li>
+<li>
+<p>When using a binary package of MLton that is statically linked
+against the GMP library, the build machine and the install machine
+need not have the GMP library configured with the same
+representation of a limb.  (On the other hand, the build machine must
+have the GMP library configured with CPU features compatible with
+the install machine.)</p>
+<div class="paragraph">
+<p>However, MLton will be configured with the representation of a limb
+from the GMP library of the build machine.  Executables produced by
+MLton will be incompatible with the GMP library of the install
+machine.  To <em>reconfigure</em> MLton with the representation of a limb
+from the GMP library of the install machine, one must edit:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>/usr/lib/mlton/self/sizes</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>changing the</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>mplimb = ??</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>entry so that <code>??</code> corresponds to the bytes in a limb; and, one must edit:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>/usr/lib/mlton/sml/basis/config/c/arch-os/c-types.sml</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>changing the</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>(* from "gmp.h" *)
+structure C_MPLimb = struct open Word?? type t = word end
+functor C_MPLimb_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word?? (A)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>entries so that <code>??</code> corresponds to the bits in a limb.</p>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/GMP.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/GMP.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

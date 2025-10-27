@@ -1,0 +1,14 @@
+chapter Doc  (*Isabelle documentation*)
+
+session Demo_FoilTeX (doc) = HOL +
+  options [document_variants = "demo_foiltex",  (*Isabelle documentation*)
+    document_build = "pdflatex", document_logo = "FoilTeX"]
+  theories
+    Document
+  document_files (in "$ISABELLE_FOILTEX_HOME")
+    "fltfonts.def"
+    "foil20.clo"
+    "foils.cls"
+  document_files
+    "isabellefoils.sty"
+    "root.tex"

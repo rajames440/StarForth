@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CommonArg</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CommonArg</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">CommonArg</a> is an optimization pass for the <a href="SSA">SSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It optimizes instances of <code>Goto</code> transfers that pass the same
+arguments to the same label; e.g.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_1 ()
+  ...
+  z1 = ?
+  ...
+  L_3 (x, y, z1)
+L_2 ()
+  ...
+  z2 = ?
+  ...
+  L_3 (x, y, z2)
+L_3 (a, b, c)
+  ...</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This code can be simplified to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_1 ()
+  ...
+  z1 = ?
+  ...
+  L_3 (z1)
+L_2 ()
+  ...
+  z2 = ?
+  ...
+  L_3 (z2)
+L_3 (c)
+  a = x
+  b = y</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>which saves a number of resources: time of setting up the arguments
+for the jump to <code>L_3</code>, space (either stack slots or temporaries) for
+the arguments of <code>L_3</code>, etc.  It may also expose some other
+optimizations, if more information is known about <code>x</code> or <code>y</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/common-arg.fun"><code>common-arg.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Three analyses were originally proposed to drive the optimization
+transformation.  Only the <em>Dominator Analysis</em> is currently
+implemented.  (Implementations of the other analyses are available in
+the <a href="Sources">repository history</a>.)</p>
+</div>
+<div class="sect2">
+<h3 id="_syntactic_analysis">Syntactic Analysis</h3>
+<div class="paragraph">
+<p>The simplest analysis I could think of maintains</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>varInfo: Var.t -&gt; Var.t option list ref</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>initialized to <code>[]</code>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>For each variable <code>v</code> bound in a <code>Statement.t</code> or in the
+<code>Function.t</code> args, then <code>List.push(varInfo v, NONE)</code>.</p>
+</li>
+<li>
+<p>For each <code>L (x1, &#8230;&#8203;, xn)</code> transfer where <code>(a1, &#8230;&#8203;, an)</code> are the
+formals of <code>L</code>, then <code>List.push(varInfo ai, SOME xi)</code>.</p>
+</li>
+<li>
+<p>For each block argument a used in an unknown context (e.g.,
+arguments of blocks used as continuations, handlers, arith success,
+runtime return, or case switch labels), then
+<code>List.push(varInfo a, NONE)</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Now, any block argument <code>a</code> such that <code>varInfo a = xs</code>, where all of
+the elements of <code>xs</code> are equal to <code>SOME x</code>, can be optimized by
+setting <code>a = x</code> at the beginning of the block and dropping the
+argument from <code>Goto</code> transfers.</p>
+</div>
+<div class="paragraph">
+<p>That takes care of the example above.  We can clearly do slightly
+better, by changing the transformation criteria to the following: any
+block argument a such that <code>varInfo a = xs</code>, where all of the elements
+of <code>xs</code> are equal to <code>SOME x</code> <em>or</em> are equal to <code>SOME a</code>, can be
+optimized by setting <code>a = x</code> at the beginning of the block and
+dropping the argument from <code>Goto</code> transfers.  This optimizes a case
+like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_1 ()
+  ... z1 = ? ...
+  L_3 (x, y, z1)
+L_2 ()
+  ... z2 = ? ...
+  L_3(x, y, z2)
+L_3 (a, b, c)
+  ... w = ? ...
+  case w of
+    true =&gt; L_4 | false =&gt; L_5
+L_4 ()
+   ...
+   L_3 (a, b, w)
+L_5 ()
+   ...</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where a common argument is passed to a loop (and is invariant through
+the loop).  Of course, the <a href="LoopInvariant">LoopInvariant</a> optimization pass would
+normally introduce a local loop and essentially reduce this to the
+first example, but I have seen this in practice, which suggests that
+some optimizations after <a href="LoopInvariant">LoopInvariant</a> do enough simplifications
+to introduce (new) loop invariant arguments.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fixpoint_analysis">Fixpoint Analysis</h3>
+<div class="paragraph">
+<p>However, the above analysis and transformation doesn&#8217;t cover the cases
+where eliminating one common argument exposes the opportunity to
+eliminate other common arguments.  For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>L_1 ()
+  ...
+  L_3 (x)
+L_2 ()
+  ...
+  L_3 (x)
+L_3 (a)
+  ...
+  L_5 (a)
+L_4 ()
+  ...
+  L_5 (x)
+L_5 (b)
+  ...</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One pass of analysis and transformation would eliminate the argument
+to <code>L_3</code> and rewrite the <code>L_5(a)</code> transfer to <code>L_5 (x)</code>, thereby
+exposing the opportunity to eliminate the common argument to <code>L_5</code>.</p>
+</div>
+<div class="paragraph">
+<p>The interdependency the arguments to <code>L_3</code> and <code>L_5</code> suggest
+performing some sort of fixed-point analysis.  This analysis is
+relatively simple; maintain</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>varInfo: Var.t -&gt; VarLattice.t</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>VarLattice.t ~=~ Bot | Point of Var.t | Top</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>(but is implemented by the <a href="FlatLattice">FlatLattice</a> functor with a <code>lessThan</code>
+list and <code>value ref</code> under the hood), initialized to <code>Bot</code>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>For each variable <code>v</code> bound in a <code>Statement.t</code> or in the
+<code>Function.t</code> args, then <code>VarLattice.&#8656; (Point v, varInfo v)</code></p>
+</li>
+<li>
+<p>For each <code>L (x1, &#8230;&#8203;, xn)</code> transfer where <code>(a1, &#8230;&#8203;, an)</code> are the
+formals of <code>L</code>}, then <code>VarLattice.&#8656; (varInfo xi, varInfo ai)</code>.</p>
+</li>
+<li>
+<p>For each block argument a used in an unknown context, then
+<code>VarLattice.&#8656; (Point a, varInfo a)</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Now, any block argument a such that <code>varInfo a = Point x</code> can be
+optimized by setting <code>a = x</code> at the beginning of the block and
+dropping the argument from <code>Goto</code> transfers.</p>
+</div>
+<div class="paragraph">
+<p>Now, with the last example, we introduce the ordering constraints:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>varInfo x &lt;= varInfo a
+varInfo a &lt;= varInfo b
+varInfo x &lt;= varInfo b</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Assuming that <code>varInfo x = Point x</code>, then we get <code>varInfo a = Point x</code>
+and <code>varInfo b = Point x</code>, and we optimize the example as desired.</p>
+</div>
+<div class="paragraph">
+<p>But, that is a rather weak assumption.  It&#8217;s quite possible for
+<code>varInfo x = Top</code>.  For example, consider:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>G_1 ()
+  ... n = 1 ...
+  L_0 (n)
+G_2 ()
+  ... m = 2 ...
+  L_0 (m)
+L_0 (x)
+  ...
+L_1 ()
+  ...
+  L_3 (x)
+L_2 ()
+  ...
+  L_3 (x)
+L_3 (a)
+  ...
+  L_5(a)
+L_4 ()
+  ...
+  L_5(x)
+L_5 (b)
+   ...</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now <code>varInfo x = varInfo a = varInfo b = Top</code>.  What went wrong here?
+When <code>varInfo x</code> went to <code>Top</code>, it got propagated all the way through
+to <code>a</code> and <code>b</code>, and prevented the elimination of any common arguments.
+What we&#8217;d like to do instead is when <code>varInfo x</code> goes to <code>Top</code>,
+propagate on <code>Point x</code>&#8201;&#8212;&#8201;we have no hope of eliminating <code>x</code>, but if
+we hold <code>x</code> constant, then we have a chance of eliminating arguments
+for which <code>x</code> is passed as an actual.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dominator_analysis">Dominator Analysis</h3>
+<div class="paragraph">
+<p>Does anyone see where this is going yet?  Pausing for a little
+thought, <a href="MatthewFluet">MatthewFluet</a> realized that he had once before tried
+proposing this kind of "fix" to a fixed-point analysis&#8201;&#8212;&#8201;when we were
+first investigating the <a href="Contify">Contify</a> optimization in light of John
+Reppy&#8217;s CWS paper.  Of course, that "fix" failed because it defined a
+non-monotonic function and one couldn&#8217;t take the fixed point.  But,
+<a href="StephenWeeks">StephenWeeks</a> suggested a dominator based approach, and we were
+able to show that, indeed, the dominator analysis subsumed both the
+previous call based analysis and the cont based analysis.  And, a
+moment&#8217;s reflection reveals further parallels: when
+<code>varInfo: Var.t -&gt; Var.t option list ref</code>, we have something analogous
+to the call analysis, and when <code>varInfo: Var.t -&gt; VarLattice.t</code>, we
+have something analogous to the cont analysis.  Maybe there is
+something analogous to the dominator approach (and therefore superior
+to the previous analyses).</p>
+</div>
+<div class="paragraph">
+<p>And this turns out to be the case.  Construct the graph <code>G</code> as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>nodes(G) = {Root} U Var.t
+edges(G) = {Root -&gt; v | v bound in a Statement.t or
+                                in the Function.t args} U
+           {xi -&gt; ai | L(x1, ..., xn) transfer where (a1, ..., an)
+                                      are the formals of L} U
+           {Root -&gt; a | a is a block argument used in an unknown context}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let <code>idom(x)</code> be the immediate dominator of <code>x</code> in <code>G</code> with root
+<code>Root</code>.  Now, any block argument a such that <code>idom(a) = x &lt;&gt; Root</code> can
+be optimized by setting <code>a = x</code> at the beginning of the block and
+dropping the argument from <code>Goto</code> transfers.</p>
+</div>
+<div class="paragraph">
+<p>Furthermore, experimental evidence suggests (and we are confident that
+a formal presentation could prove) that the dominator analysis
+subsumes the "syntactic" and "fixpoint" based analyses in this context
+as well and that the dominator analysis gets "everything" in one go.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_final_thoughts">Final Thoughts</h3>
+<div class="paragraph">
+<p>I must admit, I was rather surprised at this progression and final
+result.  At the outset, I never would have thought of a connection
+between <a href="Contify">Contify</a> and <a href="#">CommonArg</a> optimizations.  They would seem
+to be two completely different optimizations.  Although, this may not
+really be the case.  As one of the reviewers of the ICFP paper said:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>I understand that such a form of CPS might be convenient in some
+cases, but when we&#8217;re talking about analyzing code to detect that some
+continuation is constant, I think it makes a lot more sense to make
+all the continuation arguments completely explicit.</p>
+</div>
+<div class="paragraph">
+<p>I believe that making all the continuation arguments explicit will
+show that the optimization can be generalized to eliminating constant
+arguments, whether continuations or not.</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>What I think the common argument optimization shows is that the
+dominator analysis does slightly better than the reviewer puts it: we
+find more than just constant continuations, we find common
+continuations.  And I think this is further justified by the fact that
+I have observed common argument eliminate some <code>env_X</code> arguments which
+would appear to correspond to determining that while the closure being
+executed isn&#8217;t constant it is at least the same as the closure being
+passed elsewhere.</p>
+</div>
+<div class="paragraph">
+<p>At first, I was curious whether or not we had missed a bigger picture
+with the dominator analysis.  When we wrote the contification paper, I
+assumed that the dominator analysis was a specialized solution to a
+specialized problem; we never suggested that it was a technique suited
+to a larger class of analyses.  After initially finding a connection
+between <a href="Contify">Contify</a> and <a href="#">CommonArg</a> (and thinking that the only
+connection was the technique), I wondered if the dominator technique
+really was applicable to a larger class of analyses.  That is still a
+question, but after writing up the above, I&#8217;m suspecting that the
+"real story" is that the dominator analysis is a solution to the
+common argument optimization, and that the <a href="Contify">Contify</a> optimization is
+specializing <a href="#">CommonArg</a> to the case of continuation arguments (with
+a different transformation at the end).  (Note, a whole-program,
+inter-procedural common argument analysis doesn&#8217;t really make sense
+(in our <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>), because the only way of
+passing values between functions is as arguments.  (Unless of course
+in the case that the common argument is also a constant argument, in
+which case <a href="ConstantPropagation">ConstantPropagation</a> could lift it to a global.)  The
+inter-procedural <a href="Contify">Contify</a> optimization works out because there we
+move the function to the argument.)</p>
+</div>
+<div class="paragraph">
+<p>Anyways, it&#8217;s still unclear to me whether or not the dominator based
+approach solves other kinds of problems.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_phase_ordering">Phase Ordering</h3>
+<div class="paragraph">
+<p>On the downside, the optimization doesn&#8217;t have a huge impact on
+runtime, although it does predictably saved some code size.  I stuck
+it in the optimization sequence after <a href="Flatten">Flatten</a> and (the third round
+of) <a href="LocalFlatten">LocalFlatten</a>, since it seems to me that we could have cases
+where some components of a tuple used as an argument are common, but
+the whole tuple isn&#8217;t.  I think it makes sense to add it after
+<a href="IntroduceLoops">IntroduceLoops</a> and <a href="LoopInvariant">LoopInvariant</a> (even though <a href="#">CommonArg</a>
+get some things that <a href="LoopInvariant">LoopInvariant</a> gets, it doesn&#8217;t get all of
+them).  I also think that it makes sense to add it before
+<a href="CommonSubexp">CommonSubexp</a>, since identifying variables could expose more common
+subexpressions.  I would think a similar thought applies to
+<a href="RedundantTests">RedundantTests</a>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CommonArg.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CommonArg.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

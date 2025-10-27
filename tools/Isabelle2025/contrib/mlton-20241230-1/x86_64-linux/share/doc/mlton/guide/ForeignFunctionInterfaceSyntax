@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ForeignFunctionInterfaceSyntax</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ForeignFunctionInterfaceSyntax</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton extends the syntax of SML with expressions that enable a
+<a href="ForeignFunctionInterface">ForeignFunctionInterface</a> to C.  The following description of the
+syntax uses some abbreviations.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">C base type</th>
+<th class="tableblock halign-left valign-top"><em>cBaseTy</em></th>
+<th class="tableblock halign-left valign-top"><a href="ForeignFunctionInterfaceTypes">Foreign Function Interface types</a></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C argument type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>cArgTy</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code><em>cBaseTy</em><sub>1</sub> * &#8230;&#8203; * <em>cBaseTy</em><sub>n</sub></code> or <code>unit</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C return type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>cRetTy</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code><em>cBaseTy</em></code> or <code>unit</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C function type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>cFuncTy</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code><em>cArgTy</em> -&gt; <em>cRetTy</em></code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C pointer type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>cPtrTy</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MLton.Pointer.t</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The type annotation and the semicolon are not optional in the syntax
+of <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> expressions.  However, the type is
+lexed, parsed, and elaborated as an SML type, so any type (including
+type abbreviations) may be used, so long as it elaborates to a type of
+the correct form.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_address">Address</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre>_address "CFunctionOrVariableName" attr... : cPtrTy;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Denotes the address of the C function or variable.</p>
+</div>
+<div class="paragraph">
+<p><code>attr&#8230;&#8203;</code> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>external</code> : import with external symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default).</p>
+</li>
+<li>
+<p><code>private</code> : import with private symbol scope (see <a href="LibrarySupport">LibrarySupport</a>).</p>
+</li>
+<li>
+<p><code>public</code> : import with public symbol scope (see <a href="LibrarySupport">LibrarySupport</a>).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>See <a href="MLtonPointer">MLtonPointer</a> for functions that manipulate C pointers.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_symbol">Symbol</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre>_symbol "CVariableName" attr... : (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Denotes the <em>getter</em> and <em>setter</em> for a C variable.  The <em>cBaseTy</em>s
+must be identical.</p>
+</div>
+<div class="paragraph">
+<p><code>attr&#8230;&#8203;</code> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>alloc</code> : allocate storage (and export a symbol) for the C variable.</p>
+</li>
+<li>
+<p><code>external</code> : import or export with external symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default if not <code>alloc</code>).</p>
+</li>
+<li>
+<p><code>private</code> : import or export with private symbol scope (see <a href="LibrarySupport">LibrarySupport</a>).</p>
+</li>
+<li>
+<p><code>public</code> : import or export with public symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default if <code>alloc</code>).</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>_symbol * : cPtrTy -&gt; (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Denotes the <em>getter</em> and <em>setter</em> for a C pointer to a variable.
+The <em>cBaseTy</em>s must be identical.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_import">Import</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre>_import "CFunctionName" attr... : cFuncTy;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Denotes an SML function whose behavior is implemented by calling the C
+function.  See <a href="CallingFromSMLToC">Calling from SML to C</a> for more
+details.</p>
+</div>
+<div class="paragraph">
+<p><code>attr&#8230;&#8203;</code> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>cdecl</code> : call with the <code>cdecl</code> calling convention (default).</p>
+</li>
+<li>
+<p><code>external</code> : import with external symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default).</p>
+</li>
+<li>
+<p><code>impure</code>: assert that the function depends upon state and/or performs side effects (default).</p>
+</li>
+<li>
+<p><code>private</code> : import with private symbol scope (see <a href="LibrarySupport">LibrarySupport</a>).</p>
+</li>
+<li>
+<p><code>public</code> : import with public symbol scope (see <a href="LibrarySupport">LibrarySupport</a>).</p>
+</li>
+<li>
+<p><code>pure</code>: assert that the function does not depend upon state or perform any side effects; such functions are subject to various optimizations (e.g., <a href="CommonSubexp">CommonSubexp</a>, <a href="RemoveUnused">RemoveUnused</a>)</p>
+</li>
+<li>
+<p><code>reentrant</code>: assert that the function (directly or indirectly) calls an <code>_export</code>-ed SML function.</p>
+</li>
+<li>
+<p><code>stdcall</code> : call with the <code>stdcall</code> calling convention (ignored except on Cygwin and MinGW).</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>_import * attr... : cPtrTy -&gt; cFuncTy;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Denotes an SML function whose behavior is implemented by calling a C
+function through a C function pointer.</p>
+</div>
+<div class="paragraph">
+<p><code>attr&#8230;&#8203;</code> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>cdecl</code> : call with the <code>cdecl</code> calling convention (default).</p>
+</li>
+<li>
+<p><code>impure</code>: assert that the function depends upon state and/or performs side effects (default).</p>
+</li>
+<li>
+<p><code>pure</code>: assert that the function does not depend upon state or perform any side effects; such functions are subject to various optimizations (e.g., <a href="CommonSubexp">CommonSubexp</a>, <a href="RemoveUnused">RemoveUnused</a>)</p>
+</li>
+<li>
+<p><code>reentrant</code>: assert that the function (directly or indirectly) calls an <code>_export</code>-ed SML function.</p>
+</li>
+<li>
+<p><code>stdcall</code> : call with the <code>stdcall</code> calling convention (ignored except on Cygwin and MinGW).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>See
+<a href="CallingFromSMLToCFunctionPointer">Calling from SML to C function pointer</a>
+for more details.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_export">Export</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre>_export "CFunctionName" attr... : cFuncTy -&gt; unit;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Exports a C function with the name <code>CFunctionName</code> that can be used to
+call an SML function of the type <em>cFuncTy</em>. When the function denoted
+by the export expression is applied to an SML function <code>f</code>, subsequent
+C calls to <code>CFunctionName</code> will call <code>f</code>.  It is an error to call
+<code>CFunctionName</code> before the export has been applied.  The export may be
+applied more than once, with each application replacing any previous
+definition of <code>CFunctionName</code>.</p>
+</div>
+<div class="paragraph">
+<p><code>attr&#8230;&#8203;</code> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>cdecl</code> : call with the <code>cdecl</code> calling convention (default).</p>
+</li>
+<li>
+<p><code>private</code> : export with private symbol scope (see <a href="LibrarySupport">LibrarySupport</a>).</p>
+</li>
+<li>
+<p><code>public</code> : export with public symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default).</p>
+</li>
+<li>
+<p><code>stdcall</code> : call with the <code>stdcall</code> calling convention (ignored except on Cygwin and MinGW).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>See <a href="CallingFromCToSML">Calling from C to SML</a> for more details.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ForeignFunctionInterfaceSyntax.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ForeignFunctionInterfaceSyntax.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RefFlatten</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RefFlatten</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">RefFlatten</a> is an optimization pass for the <a href="SSA2">SSA2</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSA2Simplify">SSA2Simplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass flattens a <code>ref</code> cell into its containing object.
+The idea is to replace, where possible, a type like</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>(int ref * real)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>with a type like</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>(int[m] * real)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where the <code>[m]</code> indicates a mutable field of a tuple.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/ref-flatten.fun"><code>ref-flatten.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The savings is obvious, I hope.  We avoid an extra heap-allocated
+object for the <code>ref</code>, which in the above case saves two words.  We
+also save the time and code for the extra indirection at each get and
+set.  There are lots of useful data structures (singly-linked and
+doubly-linked lists, union-find, Fibonacci heaps, &#8230;&#8203;) that I believe
+we are paying through the nose right now because of the absence of ref
+flattening.</p>
+</div>
+<div class="paragraph">
+<p>The idea is to compute for each occurrence of a <code>ref</code> type in the
+program whether or not that <code>ref</code> can be represented as an offset of
+some object (constructor or tuple).  As before, a unification-based
+whole-program with deep abstract values makes sure the analysis is
+consistent.</p>
+</div>
+<div class="paragraph">
+<p>The only syntactic part of the analysis that remains is the part that
+checks that for a variable bound to a value constructed by <code>Ref_ref</code>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the object allocation is in the same block.  This is pretty
+draconian, and it would be nice to generalize it some day to allow
+flattening as long as the <code>ref</code> allocation and object allocation "line
+up one-to-one" in the same loop-free chunk of code.</p>
+</li>
+<li>
+<p>updates occur in the same block (and hence it is safe-for-space
+because the containing object is still alive).  It would be nice to
+relax this to allow updates as long as it can be provedthat the
+container is live.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Prevent flattening of <code>unit ref</code>-s.</p>
+</div>
+<div class="paragraph">
+<p><a href="#">RefFlatten</a> is safe for space.  The idea is to prevent a <code>ref</code>
+being flattened into an object that has a component of unbounded size
+(other than possibly the <code>ref</code> itself) unless we can prove that at
+each point the <code>ref</code> is live, then the containing object is live too.
+I used a pretty simple approximation to liveness.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RefFlatten.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RefFlatten.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

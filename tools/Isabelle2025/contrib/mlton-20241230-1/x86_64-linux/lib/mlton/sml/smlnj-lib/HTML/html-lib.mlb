@@ -1,0 +1,476 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+  "allowOrPats true" "allowVectorExpsAndPats true"
+in
+
+local
+  basis l41 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb
+    end
+  basis l8 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+  basis l69 =
+    bas
+      (* $/ml-yacc-lib.cm ====> *) $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      html-error-sig.sml
+   in
+      signature gs_0 = HTML_ERROR
+   end
+   local
+      open l8
+   in
+      structure gs_1 = Format
+   end
+   local
+      open l41
+   in
+      structure gs_2 = Char
+      structure gs_3 = CharArray
+      structure gs_4 = CharVector
+      structure gs_5 = FixedInt
+      structure gs_6 = General
+      structure gs_7 = Int
+      structure gs_8 = Int32
+      structure gs_9 = Int64
+      structure gs_10 = IntInf
+      structure gs_11 = LargeInt
+      structure gs_12 = LargeReal
+      structure gs_13 = LargeWord
+      structure gs_14 = OS
+      structure gs_15 = Position
+      structure gs_16 = Real
+      structure gs_17 = Real64
+      structure gs_18 = RealArray
+      structure gs_19 = RealArraySlice
+      structure gs_20 = RealVector
+      structure gs_21 = RealVectorSlice
+      structure gs_22 = SMLofNJ
+      structure gs_23 = Socket
+      structure gs_24 = String
+      structure gs_25 = Substring
+      structure gs_26 = SysWord
+      structure gs_27 = Time
+      structure gs_28 = Word
+      structure gs_29 = Word32
+      structure gs_30 = Word64
+      structure gs_31 = Word8
+   end
+   local
+      open l41
+   in
+      structure gs_32 = List
+   end
+   local
+      open l8
+   in
+      structure gs_33 = ListFormat
+   end
+   local
+      html-sig.sml
+   in
+      signature gs_34 = HTML
+   end
+   local
+      structure Char = gs_2
+      structure CharArray = gs_3
+      structure CharVector = gs_4
+      structure FixedInt = gs_5
+      structure General = gs_6
+      signature HTML = gs_34
+      structure Int = gs_7
+      structure Int32 = gs_8
+      structure Int64 = gs_9
+      structure IntInf = gs_10
+      structure LargeInt = gs_11
+      structure LargeReal = gs_12
+      structure LargeWord = gs_13
+      structure List = gs_32
+      structure OS = gs_14
+      structure Position = gs_15
+      structure Real = gs_16
+      structure Real64 = gs_17
+      structure RealArray = gs_18
+      structure RealArraySlice = gs_19
+      structure RealVector = gs_20
+      structure RealVectorSlice = gs_21
+      structure SMLofNJ = gs_22
+      structure Socket = gs_23
+      structure String = gs_24
+      structure Substring = gs_25
+      structure SysWord = gs_26
+      structure Time = gs_27
+      structure Word = gs_28
+      structure Word32 = gs_29
+      structure Word64 = gs_30
+      structure Word8 = gs_31
+      html.sml
+   in
+      structure gs_35 = HTML
+   end
+   local
+      structure Char = gs_2
+      structure CharArray = gs_3
+      structure CharVector = gs_4
+      structure FixedInt = gs_5
+      structure Format = gs_1
+      structure General = gs_6
+      structure HTML = gs_35
+      structure Int = gs_7
+      structure Int32 = gs_8
+      structure Int64 = gs_9
+      structure IntInf = gs_10
+      structure LargeInt = gs_11
+      structure LargeReal = gs_12
+      structure LargeWord = gs_13
+      structure List = gs_32
+      structure ListFormat = gs_33
+      structure OS = gs_14
+      structure Position = gs_15
+      structure Real = gs_16
+      structure Real64 = gs_17
+      structure RealArray = gs_18
+      structure RealArraySlice = gs_19
+      structure RealVector = gs_20
+      structure RealVectorSlice = gs_21
+      structure SMLofNJ = gs_22
+      structure Socket = gs_23
+      structure String = gs_24
+      structure Substring = gs_25
+      structure SysWord = gs_26
+      structure Time = gs_27
+      structure Word = gs_28
+      structure Word32 = gs_29
+      structure Word64 = gs_30
+      structure Word8 = gs_31
+      pr-html.sml
+   in
+      structure gs_36 = PrHTML
+   end
+   local
+      structure HTML = gs_35
+      make-html.sml
+   in
+      structure gs_37 = MakeHTML
+   end
+   local
+      structure HTML = gs_35
+      html-defaults.sml
+   in
+      structure gs_38 = HTMLDefaults
+   end
+   local
+      open l69
+   in
+      functor gs_39 = Join
+      functor gs_40 = JoinWithArg
+   end
+   local
+      open l69
+   in
+      structure gs_41 = LrParser
+   end
+   local
+      open l41
+   in
+      structure gs_42 = TextIO
+   end
+   local
+      structure Format = gs_1
+      structure HTML = gs_35
+      signature HTML_ERROR = gs_0
+      structure List = gs_32
+      check-html-fn.sml
+   in
+      functor gs_43 = CheckHTMLFn
+   end
+   local
+      open l41
+   in
+      structure gs_44 = IO
+   end
+   local
+      open l41
+   in
+      structure gs_45 = TextPrimIO
+   end
+   local
+      open l41
+   in
+      structure gs_46 = Vector
+   end
+   local
+      open l8
+   in
+      functor gs_47 = HashTableFn
+   end
+   local
+      open l8
+   in
+      structure gs_48 = HashString
+   end
+   local
+      html-attr-vals.sml
+   in
+      structure gs_49 = HTMLAttrVals
+   end
+   local
+      structure HTML = gs_35
+      structure HTMLAttrVals = gs_49
+      html-attrs-sig.sml
+   in
+      signature gs_50 = HTML_ATTRS
+   end
+   local
+      open l69
+   in
+      signature gs_51 = ARG_LEXER
+      signature gs_52 = ARG_PARSER
+      signature gs_53 = LEXER
+      signature gs_54 = LR_PARSER
+      signature gs_55 = LR_TABLE
+      signature gs_56 = PARSER
+      signature gs_57 = PARSER_DATA
+      signature gs_58 = STREAM
+      signature gs_59 = TOKEN
+   end
+   local
+      signature ARG_LEXER = gs_51
+      signature ARG_PARSER = gs_52
+      structure HTMLAttrVals = gs_49
+      signature LEXER = gs_53
+      signature LR_PARSER = gs_54
+      signature LR_TABLE = gs_55
+      signature PARSER = gs_56
+      signature PARSER_DATA = gs_57
+      signature STREAM = gs_58
+      signature TOKEN = gs_59
+      html-gram.sig
+   in
+      signature gs_60 = HTML_LRVALS
+      signature gs_61 = HTML_TOKENS
+   end
+   local
+      structure Char = gs_2
+      structure CharArray = gs_3
+      structure CharVector = gs_4
+      structure FixedInt = gs_5
+      structure General = gs_6
+      signature HTML_ATTRS = gs_50
+      signature HTML_ERROR = gs_0
+      signature HTML_LRVALS = gs_60
+      signature HTML_TOKENS = gs_61
+      structure HashString = gs_48
+      functor HashTableFn = gs_47
+      structure Int = gs_7
+      structure Int32 = gs_8
+      structure Int64 = gs_9
+      structure IntInf = gs_10
+      structure LargeInt = gs_11
+      structure LargeReal = gs_12
+      structure LargeWord = gs_13
+      structure List = gs_32
+      structure OS = gs_14
+      structure Position = gs_15
+      structure Real = gs_16
+      structure Real64 = gs_17
+      structure RealArray = gs_18
+      structure RealArraySlice = gs_19
+      structure RealVector = gs_20
+      structure RealVectorSlice = gs_21
+      structure SMLofNJ = gs_22
+      structure Socket = gs_23
+      structure String = gs_24
+      structure Substring = gs_25
+      structure SysWord = gs_26
+      structure Time = gs_27
+      structure Word = gs_28
+      structure Word32 = gs_29
+      structure Word64 = gs_30
+      structure Word8 = gs_31
+      html-elements-fn.sml
+   in
+      functor gs_62 = HTMLElementsFn
+   end
+   local
+      structure Char = gs_2
+      structure CharArray = gs_3
+      structure CharVector = gs_4
+      structure FixedInt = gs_5
+      structure General = gs_6
+      functor HTMLElementsFn = gs_62
+      signature HTML_ATTRS = gs_50
+      signature HTML_ERROR = gs_0
+      signature HTML_LRVALS = gs_60
+      signature HTML_TOKENS = gs_61
+      structure IO = gs_44
+      structure Int = gs_7
+      structure Int32 = gs_8
+      structure Int64 = gs_9
+      structure IntInf = gs_10
+      structure LargeInt = gs_11
+      structure LargeReal = gs_12
+      structure LargeWord = gs_13
+      structure List = gs_32
+      structure OS = gs_14
+      structure Position = gs_15
+      structure Real = gs_16
+      structure Real64 = gs_17
+      structure RealArray = gs_18
+      structure RealArraySlice = gs_19
+      structure RealVector = gs_20
+      structure RealVectorSlice = gs_21
+      structure SMLofNJ = gs_22
+      structure Socket = gs_23
+      structure String = gs_24
+      structure Substring = gs_25
+      structure SysWord = gs_26
+      structure TextIO = gs_42
+      structure TextPrimIO = gs_45
+      structure Time = gs_27
+      structure Vector = gs_46
+      structure Word = gs_28
+      structure Word32 = gs_29
+      structure Word64 = gs_30
+      structure Word8 = gs_31
+      html-lex.sml
+   in
+      functor gs_63 = HTMLLexFn
+   end
+   local
+      open l41
+   in
+      structure gs_64 = Array
+   end
+   local
+      signature ARG_LEXER = gs_51
+      signature ARG_PARSER = gs_52
+      structure Array = gs_64
+      structure Char = gs_2
+      structure CharArray = gs_3
+      structure CharVector = gs_4
+      structure FixedInt = gs_5
+      structure General = gs_6
+      structure HTML = gs_35
+      structure HTMLAttrVals = gs_49
+      signature HTML_ATTRS = gs_50
+      signature HTML_LRVALS = gs_60
+      signature HTML_TOKENS = gs_61
+      structure Int = gs_7
+      structure Int32 = gs_8
+      structure Int64 = gs_9
+      structure IntInf = gs_10
+      signature LEXER = gs_53
+      signature LR_PARSER = gs_54
+      signature LR_TABLE = gs_55
+      structure LargeInt = gs_11
+      structure LargeReal = gs_12
+      structure LargeWord = gs_13
+      structure List = gs_32
+      structure OS = gs_14
+      signature PARSER = gs_56
+      signature PARSER_DATA = gs_57
+      structure Position = gs_15
+      structure Real = gs_16
+      structure Real64 = gs_17
+      structure RealArray = gs_18
+      structure RealArraySlice = gs_19
+      structure RealVector = gs_20
+      structure RealVectorSlice = gs_21
+      structure SMLofNJ = gs_22
+      signature STREAM = gs_58
+      structure Socket = gs_23
+      structure String = gs_24
+      structure Substring = gs_25
+      structure SysWord = gs_26
+      signature TOKEN = gs_59
+      structure Time = gs_27
+      structure Word = gs_28
+      structure Word32 = gs_29
+      structure Word64 = gs_30
+      structure Word8 = gs_31
+      html-gram.sml
+   in
+      functor gs_65 = HTMLLrValsFn
+   end
+   local
+      structure Array = gs_64
+      structure Char = gs_2
+      structure CharArray = gs_3
+      structure CharVector = gs_4
+      structure FixedInt = gs_5
+      structure General = gs_6
+      structure HTML = gs_35
+      structure HTMLAttrVals = gs_49
+      signature HTML_ATTRS = gs_50
+      signature HTML_ERROR = gs_0
+      structure HashString = gs_48
+      functor HashTableFn = gs_47
+      structure Int = gs_7
+      structure Int32 = gs_8
+      structure Int64 = gs_9
+      structure IntInf = gs_10
+      structure LargeInt = gs_11
+      structure LargeReal = gs_12
+      structure LargeWord = gs_13
+      structure List = gs_32
+      structure OS = gs_14
+      structure Position = gs_15
+      structure Real = gs_16
+      structure Real64 = gs_17
+      structure RealArray = gs_18
+      structure RealArraySlice = gs_19
+      structure RealVector = gs_20
+      structure RealVectorSlice = gs_21
+      structure SMLofNJ = gs_22
+      structure Socket = gs_23
+      structure String = gs_24
+      structure Substring = gs_25
+      structure SysWord = gs_26
+      structure Time = gs_27
+      structure Word = gs_28
+      structure Word32 = gs_29
+      structure Word64 = gs_30
+      structure Word8 = gs_31
+      html-attrs-fn.sml
+   in
+      functor gs_66 = HTMLAttrsFn
+   end
+   local
+      functor CheckHTMLFn = gs_43
+      structure HTML = gs_35
+      functor HTMLAttrsFn = gs_66
+      functor HTMLLexFn = gs_63
+      functor HTMLLrValsFn = gs_65
+      signature HTML_ERROR = gs_0
+      functor Join = gs_39
+      functor JoinWithArg = gs_40
+      structure LrParser = gs_41
+      structure TextIO = gs_42
+      html-parser-fn.sml
+   in
+      functor gs_67 = HTMLParserFn
+   end
+in
+   signature HTML = gs_34
+   structure HTML = gs_35
+   structure HTMLDefaults = gs_38
+   functor HTMLParserFn = gs_67
+   signature HTML_ERROR = gs_0
+   structure MakeHTML = gs_37
+   structure PrHTML = gs_36
+end
+end
+
+end

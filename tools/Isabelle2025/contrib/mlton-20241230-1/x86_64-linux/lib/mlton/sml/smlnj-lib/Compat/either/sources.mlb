@@ -1,0 +1,8 @@
+local
+  $(SML_LIB)/basis/basis.mlb
+  either.sig
+  either.sml
+in
+  signature EITHER
+  structure Either
+end

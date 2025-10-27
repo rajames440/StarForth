@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Bugs20051202</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Bugs20051202</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Here are the known bugs in <a href="Release20051202">MLton 20051202</a>, listed
+in reverse chronological order of date reported.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a id="bug16"></a>
+Bug in the <a href="https://smlfamily.github.io/Basis/real.html#SIG:REAL.fmt:VAL"><code>Real<em>&lt;N&gt;</em>.fmt</code></a>, <a href="https://smlfamily.github.io/Basis/real.html#SIG:REAL.fromString:VAL"><code>Real<em>&lt;N&gt;</em>.fromString</code></a>, <a href="https://smlfamily.github.io/Basis/real.html#SIG:REAL.scan:VAL"><code>Real<em>&lt;N&gt;</em>.scan</code></a>, and <a href="https://smlfamily.github.io/Basis/real.html#SIG:REAL.toString:VAL"><code>Real<em>&lt;N&gt;</em>.toString</code></a> functions of the <a href="BasisLibrary">Basis Library</a> implementation.  These functions were using <code>TO_NEAREST</code> semantics, but should obey the current rounding mode.  (Only <code>Real<em>&lt;N&gt;</em>.fmt StringCvt.EXACT</code>, <code>Real<em>&lt;N&gt;</em>.fromDecimal</code>, and <code>Real<em>&lt;N&gt;</em>.toDecimal</code> are specified to override the current rounding mode with <code>TO_NEAREST</code> semantics.)</p>
+<div class="paragraph">
+<p>Thanks to Sean McLaughlin for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r5827&amp;type=commits"><code>r5827</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug15"></a>
+Bug in the treatment of floating-point operations.  Floating-point operations depend on the current rounding mode, but were being treated as pure.</p>
+<div class="paragraph">
+<p>Thanks to Sean McLaughlin for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r5794&amp;type=commits"><code>r5794</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug14"></a>
+Bug in the <a href="https://smlfamily.github.io/Basis/real.html#SIG:REAL.toInt:VAL"><code>Real32.toInt</code></a> function of the <a href="BasisLibrary">Basis Library</a> implementation could lead incorrect results when applied to a <code>Real32.real</code> value numerically close to <code>valOf(Int.maxInt)</code>.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r5764&amp;type=commits"><code>r5764</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug13"></a>
+The <a href="https://smlfamily.github.io/Basis/socket.html"><code>Socket</code></a> structure of the <a href="BasisLibrary">Basis Library</a> implementation used <code>andb</code> rather than <code>orb</code> to unmarshal socket options (for <code>Socket.Ctl.get<em>&lt;OPT&gt;</em></code> functions).</p>
+<div class="paragraph">
+<p>Thanks to Anders Petersson for the bug report and patch.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r5735&amp;type=commits"><code>r5735</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug12"></a>
+Bug in the <a href="https://smlfamily.github.io/Basis/date.html"><code>Date</code></a> structure of the <a href="BasisLibrary">Basis Library</a> implementation yielded some functions that would erroneously raise <code>Date</code> when applied to a year before 1900.</p>
+<div class="paragraph">
+<p>Thanks to Joe Hurd for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r5732&amp;type=commits"><code>r5732</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug11"></a>
+Bug in monomorphisation pass could exhibit the error <code>Type error: type mismatch</code>.</p>
+<div class="paragraph">
+<p>Thanks to Vesa Karvonen for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r5731&amp;type=commits"><code>r5731</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug10"></a>
+The <a href="https://smlfamily.github.io/Basis/pack-float.html#SIG:PACK_REAL.toBytes:VAL"><code>PackReal<em>&lt;N&gt;</em>.toBytes</code></a> function in the <a href="BasisLibrary">Basis Library</a> implementation incorrectly shared (and mutated) the result vector.</p>
+<div class="paragraph">
+<p>Thanks to Eric McCorkle for the bug report and patch.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r5281&amp;type=commits"><code>r5281</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug09"></a>
+Bug in elaboration of FFI forms.  Using a unary FFI types (e.g., <code>array</code>, <code>ref</code>, <code>vector</code>) in places where <code>MLton.Pointer.t</code> was required would lead to an internal error <code>TypeError</code>.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r4890&amp;type=commits"><code>r4890</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug08"></a>
+The <a href="https://smlfamily.github.io/Basis/mono-vector.html"><code>MONO_VECTOR</code></a> signature of the <a href="BasisLibrary">Basis Library</a> implementation incorrectly omits the specification of <code>find</code>.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r4707&amp;type=commits"><code>r4707</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug07"></a>
+The optimizer reports an internal error (<code>TypeError</code>) when an imported C function is called but not used.</p>
+<div class="paragraph">
+<p>Thanks to "jq" for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r4690&amp;type=commits"><code>r4690</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug06"></a>
+Bug in pass to flatten data structures.</p>
+<div class="paragraph">
+<p>Thanks to Joe Hurd for the bug report.</p>
+</div>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r4662&amp;type=commits"><code>r4662</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug05"></a>
+The native codegen&#8217;s implementation of the C-calling convention failed to widen 16-bit arguments to 32-bits.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r4631&amp;type=commits"><code>r4631</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug04"></a>
+The <a href="https://smlfamily.github.io/Basis/pack-float.html"><code>PACK_REAL</code></a> structures of the <a href="BasisLibrary">Basis Library</a> implementation used byte, rather than element, indexing.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r4411&amp;type=commits"><code>r4411</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug03"></a>
+<code>MLton.share</code> could cause a segmentation fault.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r4400&amp;type=commits"><code>r4400</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug02"></a>
+The SSA simplifier could eliminate an irredundant test.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r4370&amp;type=commits"><code>r4370</code></a>.</p>
+</div>
+</li>
+<li>
+<p><a id="bug01"></a>
+A program with a very large number of functors could exhibit the error <code>ElaborateEnv.functorClosure: firstTycons</code>.</p>
+<div class="paragraph">
+<p>Fixed by revision <a href="https://github.com/MLton/mlton/search?q=SVN+r4344&amp;type=commits"><code>r4344</code></a>.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Bugs20051202.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Bugs20051202.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

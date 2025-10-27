@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>StephenWeeks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>StephenWeeks</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>I live in the New York City area and work at <a href="http://janestcapital.com">Jane Street Capital</a>.</p>
+</div>
+<div class="paragraph">
+<p>My <a href="http://sweeks.com/">home page</a>.</p>
+</div>
+<div class="paragraph">
+<p>You can email me at <a href="mailto:sweeks@sweeks.com">sweeks@sweeks.com</a>.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/StephenWeeks.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/StephenWeeks.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

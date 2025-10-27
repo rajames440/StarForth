@@ -1,0 +1,243 @@
+
+ann
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
+  "sequenceNonUnit ignore"
+  "warnUnused false" "forceUsed"
+in
+
+local
+  basis l33 =
+    bas
+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb
+    end
+  basis l60 =
+    bas
+      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+    end
+in
+local
+   $(SML_LIB)/basis/pervasive.mlb
+   local
+      open l33
+   in
+      structure gs_0 = Char
+      structure gs_1 = CharArray
+      structure gs_2 = CharVector
+      structure gs_3 = FixedInt
+      structure gs_4 = General
+      structure gs_5 = Int
+      structure gs_6 = Int32
+      structure gs_7 = Int64
+      structure gs_8 = IntInf
+      structure gs_9 = LargeInt
+      structure gs_10 = LargeReal
+      structure gs_11 = LargeWord
+      structure gs_12 = OS
+      structure gs_13 = Position
+      structure gs_14 = Real
+      structure gs_15 = Real64
+      structure gs_16 = RealArray
+      structure gs_17 = RealArraySlice
+      structure gs_18 = RealVector
+      structure gs_19 = RealVectorSlice
+      structure gs_20 = SMLofNJ
+      structure gs_21 = Socket
+      structure gs_22 = String
+      structure gs_23 = Substring
+      structure gs_24 = SysWord
+      structure gs_25 = Time
+      structure gs_26 = Word
+      structure gs_27 = Word32
+      structure gs_28 = Word64
+      structure gs_29 = Word8
+   end
+   local
+      open l33
+   in
+      structure gs_30 = Word8Array
+   end
+   local
+      open l33
+   in
+      structure gs_31 = Word8Vector
+   end
+   local
+      open l33
+   in
+      structure gs_32 = INetSock
+   end
+   local
+      open l33
+   in
+      structure gs_33 = NetHostDB
+   end
+   local
+      open l33
+   in
+      structure gs_34 = StringCvt
+   end
+   local
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure INetSock = gs_32
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure NetHostDB = gs_33
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      structure Socket = gs_21
+      structure String = gs_22
+      structure StringCvt = gs_34
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      structure Word8Array = gs_30
+      structure Word8Vector = gs_31
+      sock-util-sig.sml
+   in
+      signature gs_35 = SOCK_UTIL
+   end
+   local
+      open l33
+   in
+      structure gs_36 = UnixSock
+   end
+   local
+      open l60
+   in
+      structure gs_37 = ParserComb
+   end
+   local
+      open l33
+   in
+      structure gs_38 = NetServDB
+   end
+   local
+      open l33
+   in
+      structure gs_39 = Word8ArraySlice
+   end
+   local
+      open l33
+   in
+      structure gs_40 = Word8VectorSlice
+   end
+   local
+      open l33
+   in
+      structure gs_41 = Byte
+   end
+   local
+      structure Byte = gs_41
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure INetSock = gs_32
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure NetHostDB = gs_33
+      structure NetServDB = gs_38
+      structure OS = gs_12
+      structure ParserComb = gs_37
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      signature SOCK_UTIL = gs_35
+      structure Socket = gs_21
+      structure String = gs_22
+      structure StringCvt = gs_34
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      structure Word8Array = gs_30
+      structure Word8ArraySlice = gs_39
+      structure Word8Vector = gs_31
+      structure Word8VectorSlice = gs_40
+      sock-util.sml
+   in
+      structure gs_42 = SockUtil
+   end
+   local
+      structure Char = gs_0
+      structure CharArray = gs_1
+      structure CharVector = gs_2
+      structure FixedInt = gs_3
+      structure General = gs_4
+      structure Int = gs_5
+      structure Int32 = gs_6
+      structure Int64 = gs_7
+      structure IntInf = gs_8
+      structure LargeInt = gs_9
+      structure LargeReal = gs_10
+      structure LargeWord = gs_11
+      structure OS = gs_12
+      structure Position = gs_13
+      structure Real = gs_14
+      structure Real64 = gs_15
+      structure RealArray = gs_16
+      structure RealArraySlice = gs_17
+      structure RealVector = gs_18
+      structure RealVectorSlice = gs_19
+      structure SMLofNJ = gs_20
+      signature SOCK_UTIL = gs_35
+      structure SockUtil = gs_42
+      structure Socket = gs_21
+      structure String = gs_22
+      structure Substring = gs_23
+      structure SysWord = gs_24
+      structure Time = gs_25
+      structure UnixSock = gs_36
+      structure Word = gs_26
+      structure Word32 = gs_27
+      structure Word64 = gs_28
+      structure Word8 = gs_29
+      unix-sock-util.sml
+   in
+      signature gs_43 = UNIX_SOCK_UTIL
+      structure gs_44 = UnixSockUtil
+   end
+in
+   signature SOCK_UTIL = gs_35
+   structure SockUtil = gs_42
+   signature UNIX_SOCK_UTIL = gs_43
+   structure UnixSockUtil = gs_44
+end
+end
+
+end

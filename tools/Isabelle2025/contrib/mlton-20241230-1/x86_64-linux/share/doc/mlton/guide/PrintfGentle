@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>PrintfGentle</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>PrintfGentle</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_introduction">Introduction</a></li>
+<li><a href="#_from_tupling_to_currying">From tupling to currying</a></li>
+<li><a href="#_overloading_and_dependent_types">Overloading and dependent types</a></li>
+<li><a href="#_idea_express_type_information_in_the_format_string">Idea: express type information in the format string</a></li>
+<li><a href="#_the_types_of_format_characters">The types of format characters</a></li>
+<li><a href="#_understanding_guess_and_verify">Understanding guess and verify</a></li>
+<li><a href="#_type_checking_this_using_a_functor">Type checking this using a functor</a></li>
+<li><a href="#_implementing_printf">Implementing <code>Printf</code></a></li>
+<li><a href="#_testing_printf">Testing printf</a></li>
+<li><a href="#_user_definable_formats">User-definable formats</a></li>
+<li><a href="#_a_core_printf">A core <code>Printf</code></a></li>
+<li><a href="#_extending_to_fprintf">Extending to fprintf</a></li>
+<li><a href="#_notes">Notes</a></li>
+<li><a href="#_also_see">Also see</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page provides a gentle introduction and derivation of <a href="Printf">Printf</a>,
+with sections and arrangement more suitable to a talk.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction">Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>SML does not have <code>printf</code>.  Could we define it ourselves?</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="p">(</span><span class="s2">"here's an int %d and a real %f.</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mf">17.0</span><span class="p">)</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="p">(</span><span class="s2">"here's three values (%d, %f, %f).</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mf">17.0</span><span class="p">,</span> <span class="mf">19.0</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>What could the type of <code>printf</code> be?</p>
+</div>
+<div class="paragraph">
+<p>This obviously can&#8217;t work, because SML functions take a fixed number
+of arguments.  Actually they take one argument, but if that&#8217;s a tuple,
+it can only have a fixed number of components.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_from_tupling_to_currying">From tupling to currying</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>What about currying to get around the typing problem?</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="s2">"here's an int %d and a real %f.</span><span class="se">\n</span><span class="s2">"</span> <span class="mi">13</span> <span class="mf">17.0</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="s2">"here's three values (%d, %f, %f).</span><span class="se">\n</span><span class="s2">"</span> <span class="mi">13</span> <span class="mf">17.0</span> <span class="mf">19.0</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That fails for a similar reason.  We need two types for <code>printf</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>val printf: string -&gt; int -&gt; real -&gt; unit
+val printf: string -&gt; int -&gt; real -&gt; real -&gt; unit</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This can&#8217;t work, because <code>printf</code> can only have one type.  SML doesn&#8217;t
+support programmer-defined overloading.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_overloading_and_dependent_types">Overloading and dependent types</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Even without worrying about number of arguments, there is another
+problem.  The type of <code>printf</code> depends on the format string.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="s2">"here's an int %d and a real %f.</span><span class="se">\n</span><span class="s2">"</span> <span class="mi">13</span> <span class="mf">17.0</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="s2">"here's a real %f and an int %d.</span><span class="se">\n</span><span class="s2">"</span> <span class="mf">17.0</span> <span class="mi">13</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now we need</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>val printf: string -&gt; int -&gt; real -&gt; unit
+val printf: string -&gt; real -&gt; int -&gt; unit</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Again, this can&#8217;t possibly working because SML doesn&#8217;t have
+overloading, and types can&#8217;t depend on values.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_idea_express_type_information_in_the_format_string">Idea: express type information in the format string</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If we express type information in the format string, then different
+uses of <code>printf</code> can have different types.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>  <span class="c">(*</span><span class="cm"> the type of format strings *)</span>
+<span class="kr">val</span> <span class="nv">printf</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+<span class="kr">infix</span> <span class="n">D</span> <span class="n">F</span>
+<span class="kr">val</span> <span class="nv">fs1</span><span class="p">:</span> <span class="p">(</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span> <span class="s2">"here's an int "</span><span class="n">D</span><span class="s2">" and a real "</span><span class="n">F</span><span class="s2">".</span><span class="se">\n</span><span class="s2">"</span>
+<span class="kr">val</span> <span class="nv">fs2</span><span class="p">:</span> <span class="p">(</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+   <span class="s2">"here's three values ("</span><span class="n">D</span><span class="s2">", "</span><span class="n">F</span><span class="s2">", "</span><span class="n">F</span><span class="s2">").</span><span class="se">\n</span><span class="s2">"</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="n">fs1</span> <span class="mi">13</span> <span class="mf">17.0</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="n">fs2</span> <span class="mi">13</span> <span class="mf">17.0</span> <span class="mf">19.0</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now, our two calls to <code>printf</code> type check, because the format
+string specializes <code>printf</code> to the appropriate type.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_types_of_format_characters">The types of format characters</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>What should the type of format characters <code>D</code> and <code>F</code> be?  Each format
+character requires an additional argument of the appropriate type to
+be supplied to <code>printf</code>.</p>
+</div>
+<div class="paragraph">
+<p>Idea: guess the final type that will be needed for <code>printf</code> the format
+string and verify it with each format character.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span>   <span class="c">(*</span><span class="cm"> 'a = rest of type to verify, 'b = final type *)</span>
+<span class="kr">val</span> <span class="nv">`</span> <span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span>  <span class="c">(*</span><span class="cm"> guess the type, which must be verified *)</span>
+<span class="kr">val</span> <span class="nv">D</span><span class="p">:</span> <span class="p">(</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span>  <span class="c">(*</span><span class="cm"> consume an int *)</span>
+<span class="kr">val</span> <span class="nv">F</span><span class="p">:</span> <span class="p">(</span><span class="n">real</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span>  <span class="c">(*</span><span class="cm"> consume a real *)</span>
+<span class="kr">val</span> <span class="nv">printf</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Don&#8217;t worry.  In the end, type inference will guess and verify for us.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_understanding_guess_and_verify">Understanding guess and verify</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Now, let&#8217;s build up a format string and a specialized <code>printf</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">infix</span> <span class="n">D</span> <span class="n">F</span>
+<span class="kr">val</span> <span class="nv">f0</span> <span class="p">=</span> <span class="n">`</span><span class="s2">"here's an int "</span>
+<span class="kr">val</span> <span class="nv">f1</span> <span class="p">=</span> <span class="n">f0</span> <span class="n">D</span> <span class="s2">" and a real "</span>
+<span class="kr">val</span> <span class="nv">f2</span> <span class="p">=</span> <span class="n">f1</span> <span class="n">F</span> <span class="s2">".</span><span class="se">\n</span><span class="s2">"</span>
+<span class="kr">val</span> <span class="nv">p</span> <span class="p">=</span> <span class="n">printf</span> <span class="n">f2</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These definitions yield the following types.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f0</span><span class="p">:</span> <span class="p">(</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">,</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">t</span>
+<span class="kr">val</span> <span class="nv">f1</span><span class="p">:</span> <span class="p">(</span><span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">,</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">t</span>
+<span class="kr">val</span> <span class="nv">f2</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="n">t</span>
+<span class="kr">val</span> <span class="nv">p</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">real</span> <span class="p">-&gt;</span> <span class="n">unit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So, <code>p</code> is a specialized <code>printf</code> function.  We could use it as
+follows</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">p</span> <span class="mi">13</span> <span class="mf">17.0</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">p</span> <span class="mi">14</span> <span class="mf">19.0</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_checking_this_using_a_functor">Type checking this using a functor</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">PRINTF</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span>
+      <span class="kr">val</span> <span class="nv">`</span> <span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">D</span><span class="p">:</span> <span class="p">(</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">F</span><span class="p">:</span> <span class="p">(</span><span class="n">real</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">printf</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+   <span class="kr">end</span>
+
+<span class="kr">functor</span> <span class="nn">Test</span> <span class="p">(</span><span class="n">P</span><span class="p">:</span> <span class="n">PRINTF</span><span class="p">)</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">open</span> <span class="nn">P</span>
+      <span class="kr">infix</span> <span class="n">D</span> <span class="n">F</span>
+
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="p">(</span><span class="n">`</span><span class="s2">"here's an int "</span><span class="n">D</span><span class="s2">" and a real "</span><span class="n">F</span><span class="s2">".</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span> <span class="mi">13</span> <span class="mf">17.0</span>
+      <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">printf</span> <span class="p">(</span><span class="n">`</span><span class="s2">"here's three values ("</span><span class="n">D</span><span class="s2">", "</span><span class="n">F</span> <span class="s2">", "</span><span class="n">F</span><span class="s2">").</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span> <span class="mi">13</span> <span class="mf">17.0</span> <span class="mf">19.0</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementing_printf">Implementing <code>Printf</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Think of a format character as a formatter transformer.  It takes the
+formatter for the part of the format string before it and transforms
+it into a new formatter that first does the left hand bit, then does
+its bit, then continues on with the rest of the format string.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Printf</span><span class="p">:</span> <span class="n">PRINTF</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'b</span>
+
+      <span class="kr">fun</span> <span class="nf">printf</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">)</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">())</span>
+
+      <span class="kr">fun</span> <span class="nf">`</span> <span class="n">s</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">print</span> <span class="n">s</span><span class="p">;</span> <span class="n">a</span> <span class="p">()))</span>
+
+      <span class="kr">fun</span> <span class="nf">D</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=</span>
+         <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span>
+                       <span class="p">(</span><span class="n">print</span> <span class="p">(</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span><span class="p">);</span> <span class="n">print</span> <span class="n">s</span><span class="p">;</span> <span class="n">g</span> <span class="p">())))</span>
+
+      <span class="kr">fun</span> <span class="nf">F</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=</span>
+         <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span>
+                       <span class="p">(</span><span class="n">print</span> <span class="p">(</span><span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">i</span><span class="p">);</span> <span class="n">print</span> <span class="n">s</span><span class="p">;</span> <span class="n">g</span> <span class="p">())))</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_testing_printf">Testing printf</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Z</span> <span class="p">=</span> <span class="n">Test</span> <span class="p">(</span><span class="n">Printf</span><span class="p">)</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_user_definable_formats">User-definable formats</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The definition of the format characters is pretty much the same.
+Within the <code>Printf</code> structure we can define a format character
+generator.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">newFormat</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">string</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+   <span class="kr">fn</span> <span class="n">toString</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=&gt;</span>
+   <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">th</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">print</span> <span class="p">(</span><span class="n">toString</span> <span class="n">a</span><span class="p">);</span> <span class="n">print</span> <span class="n">s</span> <span class="p">;</span> <span class="n">th</span> <span class="p">())))</span>
+<span class="kr">val</span> <span class="nv">D</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">newFormat</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">F</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">newFormat</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_a_core_printf">A core <code>Printf</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We can now have a very small <code>PRINTF</code> signature, and define all
+the format strings externally to the core module.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">PRINTF</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span>
+      <span class="kr">val</span> <span class="nv">`</span> <span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">newFormat</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">string</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">printf</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+   <span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">Printf</span><span class="p">:</span> <span class="n">PRINTF</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'b</span>
+
+      <span class="kr">fun</span> <span class="nf">printf</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">)</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">())</span>
+
+      <span class="kr">fun</span> <span class="nf">`</span> <span class="n">s</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">print</span> <span class="n">s</span><span class="p">;</span> <span class="n">a</span> <span class="p">()))</span>
+
+      <span class="kr">fun</span> <span class="nf">newFormat</span> <span class="n">toString</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=</span>
+         <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">th</span> <span class="p">=&gt;</span>
+            <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span>
+               <span class="p">(</span><span class="n">print</span> <span class="p">(</span><span class="n">toString</span> <span class="n">a</span><span class="p">)</span>
+                <span class="p">;</span> <span class="n">print</span> <span class="n">s</span>
+                <span class="p">;</span> <span class="n">th</span> <span class="p">())))</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_extending_to_fprintf">Extending to fprintf</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One can implement fprintf by threading the outstream through all the
+transformers.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">PRINTF</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span>
+      <span class="kr">val</span> <span class="nv">`</span> <span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">fprintf</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">outstream</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+      <span class="kr">val</span> <span class="nv">newFormat</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">string</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">printf</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+   <span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">Printf</span><span class="p">:</span> <span class="n">PRINTF</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="kt">out</span> <span class="p">=</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">outstream</span>
+      <span class="kr">val</span> <span class="nv">output</span> <span class="p">=</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">output</span>
+
+      <span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="p">(</span><span class="n">out</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">out</span> <span class="p">-&gt;</span> <span class="nd">'b</span>
+
+      <span class="kr">fun</span> <span class="nf">fprintf</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="p">())</span> <span class="n">out</span>
+
+      <span class="kr">fun</span> <span class="nf">printf</span> <span class="n">t</span> <span class="p">=</span> <span class="n">fprintf</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nn">TextIO</span><span class="p">.</span><span class="n">stdOut</span><span class="p">)</span>
+
+      <span class="kr">fun</span> <span class="nf">`</span> <span class="n">s</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">out</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">output</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">s</span><span class="p">);</span> <span class="n">a</span> <span class="n">out</span><span class="p">))</span>
+
+      <span class="kr">fun</span> <span class="nf">newFormat</span> <span class="n">toString</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=</span>
+         <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span>
+            <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">out</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span>
+               <span class="p">(</span><span class="n">output</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">toString</span> <span class="n">a</span><span class="p">)</span>
+                <span class="p">;</span> <span class="n">output</span> <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+                <span class="p">;</span> <span class="n">g</span> <span class="n">out</span><span class="p">)))</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">Notes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Lesson: instead of using dependent types for a function, express the
+the dependency in the type of the argument.</p>
+</li>
+<li>
+<p>If <code>printf</code> is partially applied, it will do the printing then and
+there.  Perhaps this could be fixed with some kind of terminator.</p>
+<div class="paragraph">
+<p>A syntactic or argument terminator is not necessary.  A formatter can
+either be eager (as above) or lazy (as below).  A lazy formatter
+accumulates enough state to print the entire string.  The simplest
+lazy formatter concatenates the strings as they become available:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">PrintfLazyConcat</span><span class="p">:</span> <span class="n">PRINTF</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="p">(</span><span class="n">string</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="nd">'b</span>
+
+      <span class="kr">fun</span> <span class="nf">printf</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">)</span> <span class="p">=</span> <span class="n">f</span> <span class="n">print</span> <span class="s2">""</span>
+
+      <span class="kr">fun</span> <span class="nf">`</span> <span class="n">s</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">th</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">s'</span> <span class="p">=&gt;</span> <span class="n">th</span> <span class="p">(</span><span class="n">s'</span> <span class="n">^</span> <span class="n">s</span><span class="p">))</span>
+
+      <span class="kr">fun</span> <span class="nf">newFormat</span> <span class="n">toString</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=</span>
+         <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">th</span> <span class="p">=&gt;</span>
+            <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">s'</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span>
+               <span class="n">th</span> <span class="p">(</span><span class="n">s'</span> <span class="n">^</span> <span class="n">toString</span> <span class="n">a</span> <span class="n">^</span> <span class="n">s</span><span class="p">)))</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is somewhat more efficient to accumulate the strings as a list:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">PrintfLazyList</span><span class="p">:</span> <span class="n">PRINTF</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">T</span> <span class="kr">of</span> <span class="p">(</span><span class="n">string</span> <span class="n">list</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">string</span> <span class="n">list</span> <span class="p">-&gt;</span> <span class="nd">'b</span>
+
+      <span class="kr">fun</span> <span class="nf">printf</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">)</span> <span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="nn">List</span><span class="p">.</span><span class="n">app</span> <span class="n">print</span> <span class="n">o</span> <span class="nn">List</span><span class="p">.</span><span class="n">rev</span><span class="p">)</span> <span class="p">[]</span>
+
+      <span class="kr">fun</span> <span class="nf">`</span> <span class="n">s</span> <span class="p">=</span> <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">th</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">ss</span> <span class="p">=&gt;</span> <span class="n">th</span> <span class="p">(</span><span class="n">s::ss</span><span class="p">))</span>
+
+      <span class="kr">fun</span> <span class="nf">newFormat</span> <span class="n">toString</span> <span class="p">(</span><span class="n">T</span> <span class="n">f</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=</span>
+         <span class="n">T</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">th</span> <span class="p">=&gt;</span>
+            <span class="n">f</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">ss</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span>
+               <span class="n">th</span> <span class="p">(</span><span class="n">s::toString</span> <span class="n">a::ss</span><span class="p">)))</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Printf">Printf</a></p>
+</li>
+<li>
+<p><a href="References#Danvy98">Functional Unparsing</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/PrintfGentle.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/PrintfGentle.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

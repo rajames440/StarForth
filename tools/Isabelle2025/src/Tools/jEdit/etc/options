@@ -1,0 +1,169 @@
+(* :mode=isabelle-options: *)
+
+public option jedit_logic : string = ""
+  -- "logic session name (change requires restart)"
+
+public option jedit_print_mode : string = ""
+  -- "default print modes for output, separated by commas (change requires restart)"
+
+public option jedit_auto_resolve : bool = false
+  -- "automatically resolve auxiliary files within the document model"
+
+public option jedit_reset_font_size : int = 24
+  -- "reset main text font size"
+
+public option jedit_font_scale : real = 1.0
+  -- "scale factor of add-on panels wrt. main text font"
+
+public option jedit_popup_font_scale : real = 0.85
+  -- "scale factor of popups wrt. main text font"
+
+public option jedit_popup_bounds : real = 0.5
+  -- "relative bounds of popup window wrt. logical screen size"
+
+public option jedit_tooltip_delay : real = 0.75
+  -- "open/close delay for document tooltips (seconds)"
+
+public option jedit_tooltip_margin : int = 60
+  -- "margin for tooltip pretty-printing"
+
+public option jedit_structure_limit : int = 1000
+  -- "maximum number of lines to scan for language structure"
+
+public option jedit_symbols_search_limit : int = 50
+  -- "maximum number of symbols in search result"
+
+public option jedit_timing_threshold : real = 0.1
+  -- "default threshold for timing display (seconds)"
+
+public option jedit_text_overview : bool = true
+  -- "paint text overview column"
+
+public option jedit_focus_modifier : string = "CS"
+  -- "keyboard modifier to enable entity focus regardless of def visibility"
+
+public option jedit_toggle_full_screen : bool = false
+  -- "use original jEdit action toggle-full-screen instead of Isabelle/jEdit variant"
+
+public option isabelle_fonts_hinted : bool = true
+  -- "use hinted Isabelle DejaVu fonts (change requires restart)"
+
+
+section "Indentation"
+
+public option jedit_indent_input : bool = true
+  -- "indentation of Isabelle keywords after input (typed character or completion)"
+
+public option jedit_indent_newline : bool = true
+  -- "indentation of Isabelle keywords on ENTER (action isabelle.newline)"
+
+public option jedit_indent_script : bool = true
+  -- "indent unstructured proof script ('apply' etc.) via number of subgoals"
+
+public option jedit_indent_script_limit : int = 20
+  -- "maximum indentation of unstructured proof script ('apply' etc.)"
+
+
+section "Completion"
+
+public option jedit_completion : bool = true
+  -- "enable completion popup"
+
+public option jedit_completion_select_enter : bool = false
+  -- "select completion item via ENTER"
+
+public option jedit_completion_select_tab : bool = true
+  -- "select completion item via TAB"
+
+public option jedit_completion_context : bool = true
+  -- "use semantic language context for completion"
+
+public option jedit_completion_delay : real = 0.5
+  -- "delay for completion popup (seconds)"
+
+public option jedit_completion_immediate : bool = true
+  -- "insert uniquely completed abbreviation immediately into buffer"
+
+
+section "Rendering of Document Content"
+
+option outdated_color : string = "EEE3E3FF" for color_dialog
+option unprocessed_color : string = "FFA0A0FF" for color_dialog
+option unprocessed1_color : string = "FFA0A032" for color_dialog
+option running_color : string = "610061FF" for color_dialog
+option running1_color : string = "61006164" for color_dialog
+option bullet_color : string = "000000FF" for color_dialog
+option tooltip_color : string = "FFFFE9FF" for color_dialog
+option writeln_color : string = "C0C0C0FF" for color_dialog
+option information_color : string = "C1DFEEFF" for color_dialog
+option warning_color : string = "FF8C00FF" for color_dialog
+option legacy_color : string = "FF8C00FF" for color_dialog
+option error_color : string = "B22222FF" for color_dialog
+option ok_color : string = "000000FF" for color_dialog
+option failed_color : string = "B22222FF" for color_dialog
+option writeln_message_color : string = "F0F0F0FF" for color_dialog
+option information_message_color : string = "DCEAF3FF" for color_dialog
+option tracing_message_color : string = "F0F8FFFF" for color_dialog
+option warning_message_color : string = "EEE8AAFF" for color_dialog
+option legacy_message_color : string = "EEE8AAFF" for color_dialog
+option error_message_color : string = "FFC1C1FF" for color_dialog
+option spell_checker_color : string = "0000FFFF" for color_dialog
+option bad_color : string = "FF6A6A64" for color_dialog
+option canceled_color : string = "FF6A6A64" for color_dialog
+option intensify_color : string = "FFCC6664" for color_dialog
+option entity_color : string = "CCD9FF80" for color_dialog
+option entity_ref_color : string = "800080FF" for color_dialog
+option breakpoint_disabled_color : string = "CCCC0080" for color_dialog
+option breakpoint_enabled_color : string = "FF9966FF" for color_dialog
+option quoted_color : string = "8B8B8B19" for color_dialog
+option antiquoted_color : string = "FFC83219" for color_dialog
+option antiquote_color : string = "6600CCFF" for color_dialog
+option raw_text_color : string = "6600CCFF" for color_dialog
+option plain_text_color : string = "CC6600FF" for color_dialog
+option highlight_color : string = "50505032" for color_dialog
+option hyperlink_color : string = "000000FF" for color_dialog
+option active_color : string = "DCDCDCFF" for color_dialog
+option active_hover_color : string = "9DC75DFF" for color_dialog
+option active_result_color : string = "999966FF" for color_dialog
+option keyword1_color : string = "006699FF" for color_dialog
+option keyword2_color : string = "009966FF" for color_dialog
+option keyword3_color : string = "0099FFFF" for color_dialog
+option quasi_keyword_color : string = "9966FFFF" for color_dialog
+option improper_color : string = "FF5050FF" for color_dialog
+option operator_color : string = "323232FF" for color_dialog
+option comment1_color : string = "CC0000FF" for color_dialog
+option comment2_color : string = "FF8400FF" for color_dialog
+option comment3_color : string = "6600CCFF" for color_dialog
+option caret_debugger_color : string = "FF9966FF" for color_dialog
+option caret_invisible_color : string = "50000080" for color_dialog
+option completion_color : string = "0000FFFF" for color_dialog
+option search_color : string = "66FFFF64" for color_dialog
+
+option tfree_color : string = "A020F0FF" for color_dialog
+option tvar_color : string = "A020F0FF" for color_dialog
+option free_color : string = "0000FFFF" for color_dialog
+option skolem_color : string = "D2691EFF" for color_dialog
+option bound_color : string = "008000FF" for color_dialog
+option var_color : string = "00009BFF" for color_dialog
+option inner_numeral_color : string = "FF0000FF" for color_dialog
+option inner_quoted_color : string = "FF00CCFF" for color_dialog
+option inner_cartouche_color : string = "CC6600FF" for color_dialog
+option dynamic_color : string = "7BA428FF" for color_dialog
+option class_parameter_color : string = "D2691EFF" for color_dialog
+
+option markdown_bullet1_color : string = "DAFEDAFF" for color_dialog
+option markdown_bullet2_color : string = "FFF0CCFF" for color_dialog
+option markdown_bullet3_color : string = "E7E7FFFF" for color_dialog
+option markdown_bullet4_color : string = "FFE0F0FF" for color_dialog
+
+
+section "Icons"
+
+option tooltip_close_icon : string = "idea-icons/actions/closeHovered.png"
+option tooltip_detach_icon : string = "idea-icons/actions/nextfile.png"
+option gutter_information_icon : string = "idea-icons/general/balloonInformation.png"
+option gutter_warning_icon : string = "idea-icons/runConfigurations/testFailed.png"
+option gutter_legacy_icon : string = "idea-icons/general/balloonWarning.png"
+option gutter_error_icon : string = "idea-icons/runConfigurations/testError.png"
+option process_passive_icon : string = "idea-icons/process/step_passive.png"
+option process_active_icons : string = "idea-icons/process/step_1.png:idea-icons/process/step_2.png:idea-icons/process/step_3.png:idea-icons/process/step_4.png:idea-icons/process/step_5.png:idea-icons/process/step_6.png:idea-icons/process/step_7.png:idea-icons/process/step_8.png:idea-icons/process/step_9.png:idea-icons/process/step_10.png:idea-icons/process/step_11.png:idea-icons/process/step_12.png"

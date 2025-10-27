@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RunningOnWASI</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RunningOnWASI</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://wasi.dev">WASI</a> is a somewhat POSIX-compatible system interface
+for writing <a href="https://webassembly.org">WebAssembly</a> (Wasm) programs.</p>
+</div>
+<div class="paragraph">
+<p>MLton does not run on WASI directly (since it requires unimplemented
+functionality), but it can cross-compile to this target, resuling in
+binaries that can run in the browser (using a shim) and from the
+command line (using something like <a href="https://wasmtime.dev">Wasmtime</a>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">Notes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>To compile MLton for WASI:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>You will need a WASI compiler and sysroot. These are both included
+in <a href="https://github.com/WebAssembly/wasi-sdk">wasi-sdk</a>. Follow the
+directions to download and unpack a copy.</p>
+</li>
+<li>
+<p>The <a href="GMP">GMP</a> library is required. It must be compiled for
+WASI. Download it from <a href="https://gmplib.org" class="bare">https://gmplib.org</a>, build it and install it
+to a local prefix. An example configuration command is below
+(substitute your own wasi-sdk paths):</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">./configure <span class="nt">--host</span><span class="o">=</span>wasm32-wasi <span class="se">\</span>
+            <span class="nt">--prefix</span><span class="o">=</span><span class="nv">$HOME</span>/gmp-wasi-INSTALL <span class="se">\</span>
+            <span class="nv">CC</span><span class="o">=</span><span class="nv">$HOME</span>/wasi-sdk-22.0/bin/clang <span class="se">\</span>
+            <span class="nv">RANLIB</span><span class="o">=</span><span class="nv">$HOME</span>/wasi-sdk-22.0/bin/ranlib <span class="se">\</span>
+            <span class="nv">CFLAGS</span><span class="o">=</span><span class="nt">-D_WASI_EMULATED_SIGNAL</span> <span class="nv">LDFLAGS</span><span class="o">=</span><span class="nt">-lwasi-emulated-signal</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>During compilation of MLton, some files are generated, compiled, and
+ran. When compiling the MLton runtime for WASI, you will need a way
+of executing these binaries. Install <a href="https://wasmtime.dev">Wasmtime</a>
+to do this.</p>
+</li>
+<li>
+<p>MLton must be compiled and installed, then the MLton WASI runtime
+target must be compiled and installed. Build and install MLton normally,
+then clean the source directory and build the WASI runtime. An example
+to build and install the WASI runtime is:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">gmake <span class="nv">CC</span><span class="o">=</span><span class="nv">$HOME</span>/wasi-sdk-22.0/bin/clang <span class="se">\</span>
+      <span class="nv">AR</span><span class="o">=</span><span class="nv">$HOME</span>/wasi-sdk-22.0/bin/ar <span class="se">\</span>
+      <span class="nv">RANLIB</span><span class="o">=</span><span class="nv">$HOME</span>/wasi-sdk-22.0/bin/ranlib <span class="se">\</span>
+      <span class="nv">TARGET_OS</span><span class="o">=</span>wasi <span class="se">\</span>
+      <span class="nv">TARGET_ARCH</span><span class="o">=</span>wasm32 <span class="se">\</span>
+      <span class="nv">TARGET</span><span class="o">=</span>wasm32-wasi <span class="se">\</span>
+      <span class="nv">WITH_GMP_DIR</span><span class="o">=</span><span class="nv">$HOME</span>/gmp-wasi-INSTALL <span class="se">\</span>
+      <span class="nv">PREFIX</span><span class="o">=</span><span class="nv">$HOME</span>/mlton-INSTALL <span class="se">\</span>
+      <span class="nb">dirs </span>runtime install-runtime</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once this is complete, you should have a functional MLton that can
+cross-compile to WASI.</p>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Compiling WASI binaries with MLton:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Once installed, you can run MLton with the
+<code>-target wasm32-wasi</code> flag, to build WASI binaries:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">mlton <span class="nt">-target</span> wasm32-wasi hello-world.sml</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Using Wasmtime, you can run your WASI binaries locally:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="shell">wasmtime hello-world</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Hello, World!</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_known_issues">Known issues</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Many functions are unimplemented and will cause link errors during
+compilation, allowing for early detection of incompatibilities. See
+<a href="https://github.com/WebAssembly/wasi-libc">wasi-libc</a> for what is
+available. In general, anything listed in <code>platform/wasi.h</code> is
+unavailable for use.</p>
+</li>
+<li>
+<p>Disk-backed heap is not supported. Do not set <code>may-page-heap</code> to
+<code>true</code>.</p>
+</li>
+<li>
+<p>The maximum amount of available memory is fixed. See
+<code>platform/wasi.c</code> for the current value.</p>
+</li>
+<li>
+<p>The WASI runtime is restrictive regarding file IO and other
+operations. You will need to map directories for use by compiled
+binaries. See the Wasmtime help for details on how to do this.</p>
+</li>
+<li>
+<p>MLton currently only supports WASI, which requires a shim to run in
+browsers. A few options are available:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/bjorn3/browser_wasi_shim" class="bare">https://github.com/bjorn3/browser_wasi_shim</a></p>
+</li>
+<li>
+<p><a href="https://runno.dev/wasi" class="bare">https://runno.dev/wasi</a></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Mon Feb 12 11:23:47 2024 -0500 by Adam Goode.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RunningOnWASI.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RunningOnWASI.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

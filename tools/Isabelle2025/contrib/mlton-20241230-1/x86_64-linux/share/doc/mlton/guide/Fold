@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Fold</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Fold</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page describes a technique that enables convenient syntax for a
+number of language features that are not explicitly supported by
+<a href="StandardML">Standard ML</a>, including: variable number of arguments,
+<a href="OptionalArguments">optional arguments and labeled arguments</a>,
+<a href="ArrayLiteral">array and vector literals</a>,
+<a href="FunctionalRecordUpdate">functional record update</a>,
+and (seemingly) dependently typed functions like <a href="Printf">printf</a> and scanf.</p>
+</div>
+<div class="paragraph">
+<p>The key idea to <em>fold</em> is to define functions <code>fold</code>, <code>step0</code>,
+and <code>$</code> such that the following equation holds.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h1</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h2</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">step0</span> <span class="n">hn</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">hn</span> <span class="p">(...</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(</span><span class="n">h1</span> <span class="n">a</span><span class="p">))))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The name <code>fold</code> comes because this is like a traditional list fold,
+where <code>a</code> is the <em>base element</em>, and each <em>step function</em>,
+<code>step0 hi</code>, corresponds to one element of the list and does one
+step of the fold.  The name <code>$</code> is chosen to mean "end of
+arguments" from its common use in regular-expression syntax.</p>
+</div>
+<div class="paragraph">
+<p>Unlike the usual list fold in which the same function is used to step
+over each element in the list, this fold allows the step functions to
+be different from each other, and even to be of different types.  Also
+unlike the usual list fold, this fold includes a "finishing
+function", <code>f</code>, that is applied to the result of the fold.  The
+presence of the finishing function may seem odd because there is no
+analogy in list fold.  However, the finishing function is essential;
+without it, there would be no way for the folder to perform an
+arbitrary computation after processing all the arguments.  The
+examples below will make this clear.</p>
+</div>
+<div class="paragraph">
+<p>The functions <code>fold</code>, <code>step0</code>, and <code>$</code> are easy to
+define.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">$</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">=</span> <span class="n">f</span> <span class="n">a</span>
+<span class="kr">fun</span> <span class="nf">id</span> <span class="n">x</span> <span class="p">=</span> <span class="n">x</span>
+<span class="kr">structure</span> <span class="nn">Fold</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="n">g</span> <span class="p">=</span> <span class="n">g</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+      <span class="kr">fun</span> <span class="nf">step0</span> <span class="n">h</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">h</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We&#8217;ve placed <code>fold</code> and <code>step0</code> in the <code>Fold</code> structure
+but left <code>$</code> at the toplevel because it is convenient in code to
+always have <code>$</code> in scope.  We&#8217;ve also defined the identity
+function, <code>id</code>, at the toplevel since we use it so frequently.</p>
+</div>
+<div class="paragraph">
+<p>Plugging in the definitions, it is easy to verify the equation from
+above.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h1</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h2</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">step0</span> <span class="n">hn</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">step0</span> <span class="n">h1</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h2</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">step0</span> <span class="n">hn</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">h1</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h2</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">step0</span> <span class="n">hn</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">step0</span> <span class="n">h2</span> <span class="p">(</span><span class="n">h1</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">step0</span> <span class="n">hn</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(</span><span class="n">h1</span> <span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">step0</span> <span class="n">hn</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">...</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">hn</span> <span class="p">(...</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(</span><span class="n">h1</span> <span class="n">a</span><span class="p">))),</span> <span class="n">f</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">$</span> <span class="p">(</span><span class="n">hn</span> <span class="p">(...</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(</span><span class="n">h1</span> <span class="n">a</span><span class="p">))),</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">hn</span> <span class="p">(...</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(</span><span class="n">h1</span> <span class="n">a</span><span class="p">))))</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_variable_number_of_arguments">Example: variable number of arguments</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The simplest example of fold is accepting a variable number of
+(curried) arguments.  We&#8217;ll define a function <code>f</code> and argument
+<code>a</code> such that all of the following expressions are valid.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span> <span class="n">$</span>
+<span class="n">f</span> <span class="n">a</span> <span class="n">$</span>
+<span class="n">f</span> <span class="n">a</span> <span class="n">a</span> <span class="n">$</span>
+<span class="n">f</span> <span class="n">a</span> <span class="n">a</span> <span class="n">a</span> <span class="n">$</span>
+<span class="n">f</span> <span class="n">a</span> <span class="n">a</span> <span class="n">a</span> <span class="p">...</span> <span class="n">a</span> <span class="n">a</span> <span class="n">a</span> <span class="n">$</span> <span class="c">(*</span><span class="cm"> as many a's as we want *)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Off-hand it may appear impossible that all of the above expressions
+are type correct SML&#8201;&#8212;&#8201;how can a function <code>f</code> accept a variable
+number of curried arguments?  What could the type of <code>f</code> be?
+We&#8217;ll have more to say later on how type checking works.  For now,
+once we have supplied the definitions below, you can check that the
+expressions are type correct by feeding them to your favorite SML
+implementation.</p>
+</div>
+<div class="paragraph">
+<p>It is simple to define <code>f</code> and <code>a</code>.  We define <code>f</code> as a
+folder whose base element is <code>()</code> and whose finish function does
+nothing.  We define <code>a</code> as the step function that does nothing.
+The only trickiness is that we must <a href="EtaExpansion">eta expand</a> the
+definition of <code>f</code> and <code>a</code> to work around the <a href="ValueRestriction">ValueRestriction</a>;
+we frequently use eta expansion for this purpose without mention.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">base</span> <span class="p">=</span> <span class="p">()</span>
+<span class="kr">fun</span> <span class="nf">finish</span> <span class="p">()</span> <span class="p">=</span> <span class="p">()</span>
+<span class="kr">fun</span> <span class="nf">step</span> <span class="p">()</span> <span class="p">=</span> <span class="p">()</span>
+<span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">finish</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="n">step</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One can easily apply the fold equation to verify by hand that <code>f</code>
+applied to any number of <code>a</code>&rsquo;s evaluates to <code>()</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span> <span class="n">a</span> <span class="p">...</span> <span class="n">a</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">finish</span> <span class="p">(</span><span class="n">step</span> <span class="p">(...</span> <span class="p">(</span><span class="n">step</span> <span class="n">base</span><span class="p">)))</span>
+<span class="p">=</span> <span class="n">finish</span> <span class="p">(</span><span class="n">step</span> <span class="p">(...</span> <span class="p">()))</span>
+<span class="p">...</span>
+<span class="p">=</span> <span class="n">finish</span> <span class="p">()</span>
+<span class="p">=</span> <span class="p">()</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_variable_argument_sum">Example: variable-argument sum</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Let&#8217;s look at an example that computes something: a variable-argument
+function <code>sum</code> and a stepper <code>a</code> such that</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">sum</span> <span class="p">(</span><span class="n">a</span> <span class="n">i1</span><span class="p">)</span> <span class="p">(</span><span class="n">a</span> <span class="n">i2</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">a</span> <span class="n">im</span><span class="p">)</span> <span class="n">$</span> <span class="p">=</span> <span class="n">i1</span> <span class="n">+</span> <span class="n">i2</span> <span class="n">+</span> <span class="p">...</span> <span class="n">+</span> <span class="n">im</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The idea is simple&#8201;&#8212;&#8201;the folder starts with a base accumulator of
+<code>0</code> and the stepper adds each element to the accumulator, <code>s</code>,
+which the folder simply returns at the end.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">sum</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="n">s</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">fun</span> <span class="nf">a</span> <span class="n">i</span> <span class="p">=</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="n">i</span> <span class="n">+</span> <span class="n">s</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the fold equation, one can verify the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">sum</span> <span class="p">(</span><span class="n">a</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">a</span> <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">a</span> <span class="mi">3</span><span class="p">)</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">6</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step1">Step1</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is sometimes syntactically convenient to omit the parentheses
+around the steps in a fold.  This is easily done by defining a new
+function, <code>step1</code>, as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Fold</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">open</span> <span class="nn">Fold</span>
+      <span class="kr">fun</span> <span class="nf">step1</span> <span class="n">h</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="n">b</span> <span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">h</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>From the definition of <code>step1</code>, we have the following
+equivalence.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step1</span> <span class="n">h</span><span class="p">)</span> <span class="n">b</span>
+<span class="p">=</span> <span class="n">step1</span> <span class="n">h</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="n">b</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">h</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the above equivalence, we can compute the following equation for
+<code>step1</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step1</span> <span class="n">h1</span><span class="p">)</span> <span class="n">b1</span> <span class="p">(</span><span class="n">step1</span> <span class="n">h2</span><span class="p">)</span> <span class="n">b2</span> <span class="p">...</span> <span class="p">(</span><span class="n">step1</span> <span class="n">hn</span><span class="p">)</span> <span class="n">bn</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">h1</span> <span class="p">(</span><span class="n">b1</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step1</span> <span class="n">h2</span><span class="p">)</span> <span class="n">b2</span> <span class="p">...</span> <span class="p">(</span><span class="n">step1</span> <span class="n">hn</span><span class="p">)</span> <span class="n">bn</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(</span><span class="n">b2</span><span class="p">,</span> <span class="n">h1</span> <span class="p">(</span><span class="n">b1</span><span class="p">,</span> <span class="n">a</span><span class="p">)),</span> <span class="n">f</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">step1</span> <span class="n">hn</span><span class="p">)</span> <span class="n">bn</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">hn</span> <span class="p">(</span><span class="n">bn</span><span class="p">,</span> <span class="p">...</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(</span><span class="n">b2</span><span class="p">,</span> <span class="n">h1</span> <span class="p">(</span><span class="n">b1</span><span class="p">,</span> <span class="n">a</span><span class="p">)))),</span> <span class="n">f</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">hn</span> <span class="p">(</span><span class="n">bn</span><span class="p">,</span> <span class="p">...</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(</span><span class="n">b2</span><span class="p">,</span> <span class="n">h1</span> <span class="p">(</span><span class="n">b1</span><span class="p">,</span> <span class="n">a</span><span class="p">)))))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here is an example using <code>step1</code> to define a variable-argument
+product function, <code>prod</code>, with a convenient syntax.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">prod</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">p</span> <span class="p">=&gt;</span> <span class="n">p</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">`</span> <span class="p">=</span> <span class="nv">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">i</span> <span class="n">*</span> <span class="n">p</span><span class="p">)</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The functions <code>prod</code> and <code>`</code> satisfy the following equation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">prod</span> <span class="n">`i1</span> <span class="n">`i2</span> <span class="p">...</span> <span class="n">`im</span> <span class="n">$</span> <span class="p">=</span> <span class="n">i1</span> <span class="n">*</span> <span class="n">i2</span> <span class="n">*</span> <span class="p">...</span> <span class="n">*</span> <span class="n">im</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that in SML, <code>`i1</code> is two different tokens, <code>`</code> and
+<code>i1</code>.  We often use <code>`</code> for an instance of a <code>step1</code> function
+because of its syntactic unobtrusiveness and because no space is
+required to separate it from an alphanumeric token.</p>
+</div>
+<div class="paragraph">
+<p>Also note that there are no parenthesis around the steps.  That is,
+the following expression is not the same as the above one (in fact, it
+is not type correct).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">prod</span> <span class="p">(</span><span class="n">`i1</span><span class="p">)</span> <span class="p">(</span><span class="n">`i2</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">`im</span><span class="p">)</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_list_literals">Example: list literals</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>SML already has a syntax for list literals, e.g. <code>[w, x, y, z]</code>.
+However, using fold, we can define our own syntax.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">list</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">([],</span> <span class="n">rev</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">`</span> <span class="p">=</span> <span class="nv">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span> <span class="p">(</span><span class="kr">op</span> <span class="n">::</span><span class="p">)</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The idea is that the folder starts out with the empty list, the steps
+accumulate the elements into a list, and then the finishing function
+reverses the list at the end.</p>
+</div>
+<div class="paragraph">
+<p>With these definitions one can write a list like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">list</span> <span class="n">`w</span> <span class="n">`x</span> <span class="n">`y</span> <span class="n">`z</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>While the example is not practically useful, it does demonstrate the
+need for the finishing function to be incorporated in <code>fold</code>.
+Without a finishing function, every use of <code>list</code> would need to be
+wrapped in <code>rev</code>, as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">rev</span> <span class="p">(</span><span class="n">list</span> <span class="n">`w</span> <span class="n">`x</span> <span class="n">`y</span> <span class="n">`z</span> <span class="n">$</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The finishing function allows us to incorporate the reversal into the
+definition of <code>list</code>, and to treat <code>list</code> as a truly variable
+argument function, performing an arbitrary computation after receiving
+all of its arguments.</p>
+</div>
+<div class="paragraph">
+<p>See <a href="ArrayLiteral">ArrayLiteral</a> for a similar use of <code>fold</code> that provides a
+syntax for array and vector literals, which are not built in to SML.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_fold_right">Fold right</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Just as <code>fold</code> is analogous to a fold left, in which the functions
+are applied to the accumulator left-to-right, we can define a variant
+of <code>fold</code> that is analogous to a fold right, in which the
+functions are applied to the accumulator right-to-left.  That is, we
+can define functions <code>foldr</code> and <code>step0</code> such that the
+following equation holds.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">foldr</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h1</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h2</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="n">step0</span> <span class="n">hn</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">h1</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(...</span> <span class="p">(</span><span class="n">hn</span> <span class="n">a</span><span class="p">))))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The implementation of fold right is easy, using fold.  The idea is for
+the fold to start with <code>f</code> and for each step to precompose the
+next <code>hi</code>.  Then, the finisher applies the composed function to
+the base value, <code>a</code>.  Here is the code.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Foldr</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">foldr</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">=</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">a</span><span class="p">)</span>
+      <span class="kr">fun</span> <span class="nf">step0</span> <span class="n">h</span> <span class="p">=</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h</span><span class="p">)</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Verifying the fold-right equation is straightforward, using the
+fold-left equation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">foldr</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="nn">Foldr</span><span class="p">.</span><span class="n">step0</span> <span class="n">h1</span><span class="p">)</span> <span class="p">(</span><span class="nn">Foldr</span><span class="p">.</span><span class="n">step0</span> <span class="n">h2</span><span class="p">)</span> <span class="p">...</span> <span class="p">(</span><span class="nn">Foldr</span><span class="p">.</span><span class="n">step0</span> <span class="n">hn</span><span class="p">)</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">a</span><span class="p">)</span>
+    <span class="p">(</span><span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h1</span><span class="p">))</span>
+    <span class="p">(</span><span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h2</span><span class="p">))</span>
+    <span class="p">...</span>
+    <span class="p">(</span><span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">hn</span><span class="p">))</span> <span class="n">$</span>
+<span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">a</span><span class="p">)</span>
+  <span class="p">((</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">hn</span><span class="p">)</span> <span class="p">(...</span> <span class="p">((</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h2</span><span class="p">)</span> <span class="p">((</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h1</span><span class="p">)</span> <span class="n">f</span><span class="p">))))</span>
+<span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">a</span><span class="p">)</span>
+  <span class="p">((</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">hn</span><span class="p">)</span> <span class="p">(...</span> <span class="p">((</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h2</span><span class="p">)</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">h1</span><span class="p">))))</span>
+<span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">a</span><span class="p">)</span> <span class="p">((</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="n">hn</span><span class="p">)</span> <span class="p">(...</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">h1</span> <span class="n">o</span> <span class="n">h2</span><span class="p">)))</span>
+<span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">a</span><span class="p">)</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">h1</span> <span class="n">o</span> <span class="n">h2</span> <span class="n">o</span> <span class="p">...</span> <span class="n">o</span> <span class="n">hn</span><span class="p">)</span>
+<span class="p">=</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">h1</span> <span class="n">o</span> <span class="n">h2</span> <span class="n">o</span> <span class="p">...</span> <span class="n">o</span> <span class="n">hn</span><span class="p">)</span> <span class="n">a</span>
+<span class="p">=</span> <span class="n">f</span> <span class="p">(</span><span class="n">h1</span> <span class="p">(</span><span class="n">h2</span> <span class="p">(...</span> <span class="p">(</span><span class="n">hn</span> <span class="n">a</span><span class="p">))))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One can also define the fold-right analogue of <code>step1</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Foldr</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">open</span> <span class="nn">Foldr</span>
+      <span class="kr">fun</span> <span class="nf">step1</span> <span class="n">h</span> <span class="p">=</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="n">o</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">h</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">)))</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_list_literals_via_fold_right">Example: list literals via fold right</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Revisiting the list literal example from earlier, we can use fold
+right to define a syntax for list literals that doesn&#8217;t do a reversal.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">list</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Foldr</span><span class="p">.</span><span class="n">foldr</span> <span class="p">([],</span> <span class="kr">fn</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="n">l</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">`</span> <span class="p">=</span> <span class="nv">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Foldr</span><span class="p">.</span><span class="n">step1</span> <span class="p">(</span><span class="kr">op</span> <span class="n">::</span><span class="p">)</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As before, with these definitions, one can write a list like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">list</span> <span class="n">`w</span> <span class="n">`x</span> <span class="n">`y</span> <span class="n">`z</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The difference between the fold-left and fold-right approaches is that
+the fold-right approach does not have to reverse the list at the end,
+since it accumulates the elements in the correct order.  In practice,
+MLton will simplify away all of the intermediate function composition,
+so the the fold-right approach will be more efficient.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mixing_steppers">Mixing steppers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All of the examples so far have used the same step function throughout
+a fold.  This need not be the case.  For example, consider the
+following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">n</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">O</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span> <span class="n">*</span> <span class="mi">2</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">I</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span> <span class="n">*</span> <span class="mi">2</span> <span class="n">+</span> <span class="mi">1</span><span class="p">)</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we have one folder, <code>n</code>, that can be used with two different
+steppers, <code>O</code> and <code>I</code>.  By using the fold equation, one can
+verify the following equations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">n</span> <span class="n">O</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">0</span>
+<span class="n">n</span> <span class="n">I</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">1</span>
+<span class="n">n</span> <span class="n">I</span> <span class="n">O</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">2</span>
+<span class="n">n</span> <span class="n">I</span> <span class="n">O</span> <span class="n">I</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">5</span>
+<span class="n">n</span> <span class="n">I</span> <span class="n">I</span> <span class="n">I</span> <span class="n">O</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">14</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That is, we&#8217;ve defined a syntax for writing binary integer constants.</p>
+</div>
+<div class="paragraph">
+<p>Not only can one use different instances of <code>step0</code> in the same
+fold, one can also intermix uses of <code>step0</code> and <code>step1</code>.  For
+example, consider the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">n</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">O</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">n</span> <span class="n">*</span> <span class="mi">8</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">`</span> <span class="p">=</span> <span class="nv">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step1</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">n</span> <span class="n">*</span> <span class="mi">8</span> <span class="n">+</span> <span class="n">i</span><span class="p">)</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the straightforward generalization of the fold equation to mixed
+steppers, one can verify the following equations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">n</span> <span class="mi">0</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">0</span>
+<span class="n">n</span> <span class="n">`</span><span class="mi">3</span> <span class="n">O</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">24</span>
+<span class="n">n</span> <span class="n">`</span><span class="mi">1</span> <span class="n">O</span> <span class="n">`</span><span class="mi">7</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">71</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That is, we&#8217;ve defined a syntax for writing octal integer constants,
+with a special syntax, <code>O</code>, for the zero digit (admittedly
+contrived, since one could just write <code>`0</code> instead of <code>O</code>).</p>
+</div>
+<div class="paragraph">
+<p>See <a href="NumericLiteral">NumericLiteral</a> for a practical extension of this approach that
+supports numeric constants in any base and of any type.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_seemingly_dependent_types">(Seemingly) dependent types</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A normal list fold always returns the same type no matter what
+elements are in the list or how long the list is.  Variable-argument
+fold is more powerful, because the result type can vary based both on
+the arguments that are passed and on their number.  This can provide
+the illusion of dependent types.</p>
+</div>
+<div class="paragraph">
+<p>For example, consider the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">((),</span> <span class="n">id</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="s2">"hello"</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">b</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="mi">13</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the fold equation, one can verify the following equations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span> <span class="n">a</span> <span class="n">$</span> <span class="p">=</span> <span class="s2">"hello"</span><span class="p">:</span> <span class="n">string</span>
+<span class="n">f</span> <span class="n">b</span> <span class="n">$</span> <span class="p">=</span> <span class="mi">13</span><span class="p">:</span> <span class="n">int</span>
+<span class="n">f</span> <span class="n">c</span> <span class="n">$</span> <span class="p">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That is, <code>f</code> returns a value of a different type depending on
+whether it is applied to argument <code>a</code>, argument <code>b</code>, or
+argument <code>c</code>.</p>
+</div>
+<div class="paragraph">
+<p>The following example shows how the type of a fold can depend on the
+number of arguments.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">grow</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">([],</span> <span class="kr">fn</span> <span class="n">l</span> <span class="p">=&gt;</span> <span class="n">l</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="p">[</span><span class="n">x</span><span class="p">])</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the fold equation, one can verify the following equations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">grow</span> <span class="n">$</span> <span class="p">=</span> <span class="p">[]:</span> <span class="nd">'a</span> <span class="n">list</span>
+<span class="n">grow</span> <span class="n">a</span> <span class="n">$</span> <span class="p">=</span> <span class="p">[[]]:</span> <span class="nd">'a</span> <span class="n">list</span> <span class="n">list</span>
+<span class="n">grow</span> <span class="n">a</span> <span class="n">a</span> <span class="n">$</span> <span class="p">=</span> <span class="p">[[[]]]:</span> <span class="nd">'a</span> <span class="n">list</span> <span class="n">list</span> <span class="n">list</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Clearly, the result type of a call to the variable argument <code>grow</code>
+function depends on the number of arguments that are passed.</p>
+</div>
+<div class="paragraph">
+<p>As a reminder, this is well-typed SML.  You can check it out in any
+implementation.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_seemingly_dependently_typed_functional_results">(Seemingly) dependently-typed functional results</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Fold is especially useful when it returns a curried function whose
+arity depends on the number of arguments.  For example, consider the
+following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">makeSum</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="mi">0</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">I</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">x</span> <span class="n">+</span> <span class="n">i</span><span class="p">))</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>makeSum</code> folder constructs a function whose arity depends on
+the number of <code>I</code> arguments and that adds together all of its
+arguments.  For example,
+<code>makeSum I $</code> is of type <code>int -&gt; int</code> and
+<code>makeSum I I $</code> is of type <code>int -&gt; int -&gt; int</code>.</p>
+</div>
+<div class="paragraph">
+<p>One can use the fold equation to verify that the <code>makeSum</code> works
+correctly.  For example, one can easily check by hand the following
+equations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">makeSum</span> <span class="n">I</span> <span class="n">$</span> <span class="mi">1</span> <span class="p">=</span> <span class="mi">1</span>
+<span class="n">makeSum</span> <span class="n">I</span> <span class="n">I</span> <span class="n">$</span> <span class="mi">1</span> <span class="mi">2</span> <span class="p">=</span> <span class="mi">3</span>
+<span class="n">makeSum</span> <span class="n">I</span> <span class="n">I</span> <span class="n">I</span> <span class="n">$</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="p">=</span> <span class="mi">6</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Returning a function becomes especially interesting when there are
+steppers of different types.  For example, the following <code>makeSum</code>
+folder constructs functions that sum integers and reals.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">makeSum</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Foldr</span><span class="p">.</span><span class="n">foldr</span> <span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="mf">0.0</span><span class="p">)</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">I</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Foldr</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">x</span> <span class="n">+</span> <span class="n">real</span> <span class="n">i</span><span class="p">))</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">R</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Foldr</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">f</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">x</span><span class="p">:</span> <span class="n">real</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="n">r</span> <span class="p">=&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">x</span> <span class="n">+</span> <span class="n">r</span><span class="p">))</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With these definitions, <code>makeSum I R $</code> is of type
+<code>int -&gt; real -&gt; real</code> and <code>makeSum R I I $</code> is of type
+<code>real -&gt; int -&gt; int -&gt; real</code>.  One can use the foldr equation to
+check the following equations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">makeSum</span> <span class="n">I</span> <span class="n">$</span> <span class="mi">1</span> <span class="p">=</span> <span class="mf">1.0</span>
+<span class="n">makeSum</span> <span class="n">I</span> <span class="n">R</span> <span class="n">$</span> <span class="mi">1</span> <span class="mf">2.5</span> <span class="p">=</span> <span class="mf">3.5</span>
+<span class="n">makeSum</span> <span class="n">R</span> <span class="n">I</span> <span class="n">I</span> <span class="n">$</span> <span class="mf">1.5</span> <span class="mi">2</span> <span class="mi">3</span> <span class="p">=</span> <span class="mf">6.5</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We used <code>foldr</code> instead of <code>fold</code> for this so that the order
+in which the specifiers <code>I</code> and <code>R</code> appear is the same as the
+order in which the arguments appear.  Had we used <code>fold</code>, things
+would have been reversed.</p>
+</div>
+<div class="paragraph">
+<p>An extension of this idea is sufficient to define <a href="Printf">Printf</a>-like
+functions in SML.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_an_idiom_for_combining_steps">An idiom for combining steps</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is sometimes useful to combine a number of steps together and name
+them as a single step.  As a simple example, suppose that one often
+sees an integer follower by a real in the <code>makeSum</code> example above.
+One can define a new <em>compound step</em> <code>IR</code> as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">IR</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">u</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="n">u</span> <span class="n">I</span> <span class="n">R</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With this definition in place, one can verify the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">makeSum</span> <span class="n">IR</span> <span class="n">IR</span> <span class="n">$</span> <span class="mi">1</span> <span class="mf">2.2</span> <span class="mi">3</span> <span class="mf">4.4</span> <span class="p">=</span> <span class="mf">10.6</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In general, one can combine steps <code>s1</code>, <code>s2</code>, &#8230;&#8203; <code>sn</code> as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fn</span> <span class="n">u</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="n">u</span> <span class="n">s1</span> <span class="n">s2</span> <span class="p">...</span> <span class="n">sn</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The following calculation shows why a compound step behaves as the
+composition of its constituent steps.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">fold</span> <span class="n">u</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">u</span> <span class="p">=&gt;</span> <span class="n">fold</span> <span class="n">u</span> <span class="n">s1</span> <span class="n">s2</span> <span class="p">...</span> <span class="n">sn</span><span class="p">)</span>
+<span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">u</span> <span class="p">=&gt;</span> <span class="n">fold</span> <span class="n">u</span> <span class="n">s1</span> <span class="n">s2</span> <span class="p">...</span> <span class="n">sn</span><span class="p">)</span> <span class="n">u</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="n">u</span> <span class="n">s1</span> <span class="n">s2</span> <span class="p">...</span> <span class="n">sn</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_post_composition">Post composition</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Suppose we already have a function defined via fold,
+<code>w = fold (a, f)</code>, and we would like to construct a new fold
+function that is like <code>w</code>, but applies <code>g</code> to the result
+produced by <code>w</code>.  This is similar to function composition, but we
+can&#8217;t just do <code>g o w</code>, because we don&#8217;t want to use <code>g</code> until
+<code>w</code> has been applied to all of its arguments and received the
+end-of-arguments terminator <code>$</code>.</p>
+</div>
+<div class="paragraph">
+<p>More precisely, we want to define a post-composition function
+<code>post</code> that satisfies the following equation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">post</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span> <span class="n">s1</span> <span class="p">...</span> <span class="n">sn</span> <span class="n">$</span> <span class="p">=</span> <span class="n">g</span> <span class="p">(</span><span class="n">w</span> <span class="n">s1</span> <span class="p">...</span> <span class="n">sn</span> <span class="n">$</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here is the definition of <code>post</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Fold</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">open</span> <span class="nn">Fold</span>
+      <span class="kr">fun</span> <span class="nf">post</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span> <span class="n">s</span> <span class="p">=</span> <span class="n">w</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">s</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h</span><span class="p">))</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The following calculations show that <code>post</code> satisfies the desired
+equation, where <code>w = fold (a, f)</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">post</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span> <span class="n">s</span>
+<span class="p">=</span> <span class="n">w</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">s</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h</span><span class="p">))</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">s</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h</span><span class="p">))</span>
+<span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">s</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h</span><span class="p">))</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">s</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="n">o</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="n">o</span> <span class="n">f</span><span class="p">)</span> <span class="n">s</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now, suppose <code>si = step0 hi</code> for <code>i</code> from <code>1</code> to <code>n</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">post</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span> <span class="n">s1</span> <span class="n">s2</span> <span class="p">...</span> <span class="n">sn</span> <span class="n">$</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="n">o</span> <span class="n">f</span><span class="p">)</span> <span class="n">s1</span> <span class="n">s2</span> <span class="p">...</span> <span class="n">sn</span> <span class="n">$</span>
+<span class="p">=</span> <span class="p">(</span><span class="n">g</span> <span class="n">o</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">hn</span> <span class="p">(...</span> <span class="p">(</span><span class="n">h1</span> <span class="n">a</span><span class="p">)))</span>
+<span class="p">=</span> <span class="n">g</span> <span class="p">(</span><span class="n">f</span> <span class="p">(</span><span class="n">hn</span> <span class="p">(...</span> <span class="p">(</span><span class="n">h1</span> <span class="n">a</span><span class="p">))))</span>
+<span class="p">=</span> <span class="n">g</span> <span class="p">(</span><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="n">s1</span> <span class="p">...</span> <span class="n">sn</span> <span class="n">$</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">g</span> <span class="p">(</span><span class="n">w</span> <span class="n">s1</span> <span class="p">...</span> <span class="n">sn</span> <span class="n">$</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For a practical example of post composition, see <a href="ArrayLiteral">ArrayLiteral</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_lift">Lift</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We now define a peculiar-looking function, <code>lift0</code>, that is,
+equationally speaking, equivalent to the identity function on a step
+function.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">lift0</span> <span class="n">s</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">id</span><span class="p">)</span> <span class="n">s</span> <span class="n">$</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the definitions, we can prove the following equation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">lift0</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h</span><span class="p">))</span> <span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here is the proof.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">lift0</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h</span><span class="p">))</span>
+<span class="p">=</span> <span class="n">lift0</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h</span><span class="p">)</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">id</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h</span><span class="p">)</span> <span class="n">$</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">id</span><span class="p">)</span> <span class="n">$</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">fold</span> <span class="p">(</span><span class="n">h</span> <span class="n">a</span><span class="p">,</span> <span class="n">id</span><span class="p">)</span> <span class="n">$</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">$</span> <span class="p">(</span><span class="n">h</span> <span class="n">a</span><span class="p">,</span> <span class="n">id</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">id</span> <span class="p">(</span><span class="n">h</span> <span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">h</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">step0</span> <span class="n">h</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="p">=</span> <span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="n">step0</span> <span class="n">h</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If <code>lift0</code> is the identity, then why even define it?  The answer
+lies in the typing of fold expressions, which we have, until now, left
+unexplained.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_typing">Typing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Perhaps the most surprising aspect of fold is that it can be checked
+by the SML type system.  The types involved in fold expressions are
+complex; fortunately type inference is able to deduce them.
+Nevertheless, it is instructive to study the types of fold functions
+and steppers.  More importantly, it is essential to understand the
+typing aspects of fold in order to write down signatures of functions
+defined using fold and step.</p>
+</div>
+<div class="paragraph">
+<p>Here is the <code>FOLD</code> signature, and a recapitulation of the entire
+<code>Fold</code> structure, with additional type annotations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">FOLD</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'d</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step</span> <span class="p">-&gt;</span> <span class="nd">'d</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step0</span> <span class="p">=</span>
+         <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span><span class="p">)</span> <span class="n">step</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a11</span><span class="p">,</span> <span class="nd">'a12</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step1</span> <span class="p">=</span>
+         <span class="p">(</span><span class="nd">'a12</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'a11</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span><span class="p">)</span> <span class="n">step</span>
+
+      <span class="kr">val</span> <span class="nv">fold</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">lift0</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">)</span> <span class="n">step0</span>
+                 <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step0</span>
+      <span class="kr">val</span> <span class="nv">post</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c1</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'c1</span> <span class="p">-&gt;</span> <span class="nd">'c2</span><span class="p">)</span>
+                <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c2</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">step0</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a1</span> <span class="p">-&gt;</span> <span class="nd">'a2</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step0</span>
+      <span class="kr">val</span> <span class="nv">step1</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a11</span> <span class="n">*</span> <span class="nd">'a12</span> <span class="p">-&gt;</span> <span class="nd">'a2</span><span class="p">)</span>
+                 <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a11</span><span class="p">,</span> <span class="nd">'a12</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step1</span>
+   <span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">Fold</span><span class="p">:&gt;</span> <span class="n">FOLD</span> <span class="p">=</span>
+   <span class="kr">struct</span>
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'d</span>
+
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step</span> <span class="p">-&gt;</span> <span class="nd">'d</span>
+
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step0</span> <span class="p">=</span>
+         <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span><span class="p">)</span> <span class="n">step</span>
+
+      <span class="kr">type</span> <span class="p">(</span><span class="nd">'a11</span><span class="p">,</span> <span class="nd">'a12</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step1</span> <span class="p">=</span>
+         <span class="p">(</span><span class="nd">'a12</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'a11</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span><span class="p">)</span> <span class="n">step</span>
+
+      <span class="kr">fun</span> <span class="nf">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nd">'a</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span>
+               <span class="p">(</span><span class="n">g</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step</span><span class="p">):</span> <span class="nd">'d</span> <span class="p">=</span>
+         <span class="n">g</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+      <span class="kr">fun</span> <span class="nf">step0</span> <span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="nd">'a1</span> <span class="p">-&gt;</span> <span class="nd">'a2</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">a1</span><span class="p">:</span> <span class="nd">'a1</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">):</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+         <span class="n">fold</span> <span class="p">(</span><span class="n">h</span> <span class="n">a1</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+      <span class="kr">fun</span> <span class="nf">step1</span> <span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="nd">'a11</span> <span class="n">*</span> <span class="nd">'a12</span> <span class="p">-&gt;</span> <span class="nd">'a2</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">a12</span><span class="p">:</span> <span class="nd">'a12</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">a11</span><span class="p">:</span> <span class="nd">'a11</span><span class="p">):</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+         <span class="n">fold</span> <span class="p">(</span><span class="n">h</span> <span class="p">(</span><span class="n">a11</span><span class="p">,</span> <span class="n">a12</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+
+      <span class="kr">fun</span> <span class="nf">lift0</span> <span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">)</span> <span class="n">step0</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nd">'a1</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">):</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+         <span class="n">fold</span> <span class="p">(</span><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">id</span><span class="p">)</span> <span class="n">s</span> <span class="n">$</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+      <span class="kr">fun</span> <span class="nf">post</span> <span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c1</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span><span class="p">,</span>
+                <span class="n">g</span><span class="p">:</span> <span class="nd">'c1</span> <span class="p">-&gt;</span> <span class="nd">'c2</span><span class="p">)</span>
+               <span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c2</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step</span><span class="p">):</span> <span class="nd">'d</span> <span class="p">=</span>
+         <span class="n">w</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">s</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h</span><span class="p">))</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That&#8217;s a lot to swallow, so let&#8217;s walk through it one step at a time.
+First, we have the definition of type <code>Fold.step</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'d</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As a fold proceeds over its arguments, it maintains two things: the
+accumulator, of type <code>'a</code>, and the finishing function, of type
+<code>'b -&gt; 'c</code>.  Each step in the fold is a function that takes those
+two pieces (i.e. <code>'a * ('b -&gt; 'c)</code> and does something to them
+(i.e. produces <code>'d</code>).  The result type of the step is completely
+left open to be filled in by type inference, as it is an arrow type
+that is capable of consuming the rest of the arguments to the fold.</p>
+</div>
+<div class="paragraph">
+<p>A folder, of type <code>Fold.t</code>, is a function that consumes a single
+step.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step</span> <span class="p">-&gt;</span> <span class="nd">'d</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Expanding out the type, we have:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'d</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'d</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This shows that the only thing a folder does is to hand its
+accumulator (<code>'a</code>) and finisher (<code>'b -&gt; 'c</code>) to the next step
+(<code>'a * ('b -&gt; 'c) -&gt; 'd</code>).  If SML had <a href="FirstClassPolymorphism">first-class polymorphism</a>,
+we would write the fold type as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="n">Forall</span> <span class="nd">'d</span> <span class="err">.</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step</span> <span class="p">-&gt;</span> <span class="nd">'d</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This type definition shows that a folder had nothing to do with
+the rest of the fold, it only deals with the next step.</p>
+</div>
+<div class="paragraph">
+<p>We now can understand the type of <code>fold</code>, which takes the initial
+value of the accumulator and the finishing function, and constructs a
+folder, i.e. a function awaiting the next step.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">fold</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span>
+<span class="kr">fun</span> <span class="nf">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nd">'a</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span>
+         <span class="p">(</span><span class="n">g</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step</span><span class="p">):</span> <span class="nd">'d</span> <span class="p">=</span>
+   <span class="n">g</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Continuing on, we have the type of step functions.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step0</span> <span class="p">=</span>
+   <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span><span class="p">)</span> <span class="n">step</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Expanding out the type a bit gives:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step0</span> <span class="p">=</span>
+   <span class="nd">'a1</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So, a step function takes the accumulator (<code>'a1</code>) and finishing
+function (<code>'b -&gt; 'c</code>), which will be passed to it by the previous
+folder, and transforms them to a new folder.  This new folder has a
+new accumulator (<code>'a2</code>) and the same finishing function.</p>
+</div>
+<div class="paragraph">
+<p>Again, imagining that SML had <a href="FirstClassPolymorphism">first-class polymorphism</a> makes the type
+clearer.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">)</span> <span class="kt">step0</span> <span class="p">=</span>
+   <span class="n">Forall</span> <span class="p">(</span><span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="err">.</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span><span class="p">)</span> <span class="n">step</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Thus, in essence, a <code>step0</code> function is a wrapper around a
+function of type <code>'a1 -&gt; 'a2</code>, which is exactly what the
+definition of <code>step0</code> does.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">step0</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a1</span> <span class="p">-&gt;</span> <span class="nd">'a2</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step0</span>
+<span class="kr">fun</span> <span class="nf">step0</span> <span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="nd">'a1</span> <span class="p">-&gt;</span> <span class="nd">'a2</span><span class="p">)</span>
+          <span class="p">(</span><span class="n">a1</span><span class="p">:</span> <span class="nd">'a1</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">):</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+   <span class="n">fold</span> <span class="p">(</span><span class="n">h</span> <span class="n">a1</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is not much beyond <code>step0</code> to understand <code>step1</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a11</span><span class="p">,</span> <span class="nd">'a12</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="kt">step1</span> <span class="p">=</span>
+   <span class="p">(</span><span class="nd">'a12</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'a11</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span><span class="p">)</span> <span class="n">step</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A <code>step1</code> function takes the accumulator (<code>'a12</code>) and finisher
+(<code>'b -&gt; 'c</code>) passed to it by the previous folder and transforms
+them into a function that consumes the next argument (<code>'a11</code>) and
+produces a folder that will continue the fold with a new accumulator
+(<code>'a2</code>) and the same finisher.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">step1</span> <span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="nd">'a11</span> <span class="n">*</span> <span class="nd">'a12</span> <span class="p">-&gt;</span> <span class="nd">'a2</span><span class="p">)</span>
+          <span class="p">(</span><span class="n">a12</span><span class="p">:</span> <span class="nd">'a12</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">)</span>
+          <span class="p">(</span><span class="n">a11</span><span class="p">:</span> <span class="nd">'a11</span><span class="p">):</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+   <span class="n">fold</span> <span class="p">(</span><span class="n">h</span> <span class="p">(</span><span class="n">a11</span><span class="p">,</span> <span class="n">a12</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With <a href="FirstClassPolymorphism">first-class polymorphism</a>, a <code>step1</code> function is more clearly
+seen as a wrapper around a binary function of type
+<code>'a11 * 'a12 -&gt; 'a2</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="p">(</span><span class="nd">'a11</span><span class="p">,</span> <span class="nd">'a12</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">)</span> <span class="kt">step1</span> <span class="p">=</span>
+   <span class="n">Forall</span> <span class="p">(</span><span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="err">.</span> <span class="p">(</span><span class="nd">'a12</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'a11</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span><span class="p">)</span> <span class="n">step</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The type of <code>post</code> is clear: it takes a folder with a finishing
+function that produces type <code>'c1</code>, and a function of type
+<code>'c1 -&gt; 'c2</code> to postcompose onto the folder.  It returns a new
+folder with a finishing function that produces type <code>'c2</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">post</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c1</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'c1</span> <span class="p">-&gt;</span> <span class="nd">'c2</span><span class="p">)</span>
+          <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c2</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span>
+<span class="kr">fun</span> <span class="nf">post</span> <span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c1</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span><span class="p">,</span>
+          <span class="n">g</span><span class="p">:</span> <span class="nd">'c1</span> <span class="p">-&gt;</span> <span class="nd">'c2</span><span class="p">)</span>
+         <span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c2</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step</span><span class="p">):</span> <span class="nd">'d</span> <span class="p">=</span>
+   <span class="n">w</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">s</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="n">o</span> <span class="n">h</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We will return to <code>lift0</code> after an example.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_an_example_typing">An example typing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Let&#8217;s type check our simplest example, a variable-argument fold.
+Recall that we have a folder <code>f</code> and a stepper <code>a</code> defined as
+follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">((),</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">())</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">())</span> <span class="n">z</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Since the accumulator and finisher are uninteresting, we&#8217;ll use some
+abbreviations to simplify things.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="nd">'d</span> <span class="kt">step</span> <span class="p">=</span> <span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step</span>
+<span class="kr">type</span> <span class="nd">'d</span> <span class="kt">fold</span> <span class="p">=</span> <span class="nd">'d</span> <span class="n">step</span> <span class="p">-&gt;</span> <span class="nd">'d</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With these abbreviations, <code>f</code> and <code>a</code> have the following polymorphic
+types.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span><span class="p">:</span> <span class="nd">'d</span> <span class="n">fold</span>
+<span class="n">a</span><span class="p">:</span> <span class="nd">'d</span> <span class="n">step</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Suppose we want to type check</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span> <span class="n">a</span> <span class="n">a</span> <span class="n">a</span> <span class="n">$:</span> <span class="n">unit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As a reminder, the fully parenthesized expression is</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">((((</span><span class="n">f</span> <span class="n">a</span><span class="p">)</span> <span class="n">a</span><span class="p">)</span> <span class="n">a</span><span class="p">)</span> <span class="n">a</span><span class="p">)</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The observation that we will use repeatedly is that for any type
+<code>z</code>, if <code>f: z fold</code> and <code>s: z step</code>, then <code>f s: z</code>.
+So, if we want</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">f</span> <span class="n">a</span> <span class="n">a</span> <span class="n">a</span><span class="p">)</span> <span class="n">$:</span> <span class="n">unit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>then we must have</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span> <span class="n">a</span> <span class="n">a</span> <span class="n">a</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span>
+<span class="n">$:</span> <span class="n">unit</span> <span class="n">step</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Applying the observation again, we must have</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span> <span class="n">a</span> <span class="n">a</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">fold</span>
+<span class="n">a</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">step</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Applying the observation two more times leads to the following type
+derivation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">fold</span> <span class="n">fold</span> <span class="n">fold</span>  <span class="n">a</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">fold</span> <span class="n">fold</span> <span class="n">step</span>
+<span class="n">f</span> <span class="n">a</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">fold</span> <span class="n">fold</span>     <span class="n">a</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">fold</span> <span class="n">step</span>
+<span class="n">f</span> <span class="n">a</span> <span class="n">a</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">fold</span>        <span class="n">a</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">step</span>
+<span class="n">f</span> <span class="n">a</span> <span class="n">a</span> <span class="n">a</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span>           <span class="n">$:</span> <span class="n">unit</span> <span class="n">step</span>
+<span class="n">f</span> <span class="n">a</span> <span class="n">a</span> <span class="n">a</span> <span class="n">$:</span> <span class="n">unit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So, each application is a fold that consumes the next step, producing
+a fold of one smaller type.</p>
+</div>
+<div class="paragraph">
+<p>One can expand some of the type definitions in <code>f</code> to see that it is
+indeed a function that takes four curried arguments, each one a step
+function.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">f</span><span class="p">:</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">fold</span> <span class="n">fold</span> <span class="n">step</span>
+   <span class="p">-&gt;</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">fold</span> <span class="n">step</span>
+   <span class="p">-&gt;</span> <span class="n">unit</span> <span class="n">fold</span> <span class="n">step</span>
+   <span class="p">-&gt;</span> <span class="n">unit</span> <span class="n">step</span>
+   <span class="p">-&gt;</span> <span class="n">unit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This example shows why we must eta expand uses of <code>fold</code> and <code>step0</code>
+to work around the value restriction and make folders and steppers
+polymorphic.  The type of a fold function like <code>f</code> depends on the
+number of arguments, and so will vary from use to use.  Similarly,
+each occurrence of an argument like <code>a</code> has a different type,
+depending on the number of remaining arguments.</p>
+</div>
+<div class="paragraph">
+<p>This example also shows that the type of a folder, when fully
+expanded, is exponential in the number of arguments: there are as many
+nested occurrences of the <code>fold</code> type constructor as there are
+arguments, and each occurrence duplicates its type argument.  One can
+observe this exponential behavior in a type checker that doesn&#8217;t share
+enough of the representation of types (e.g. one that represents types
+as trees rather than directed acyclic graphs).</p>
+</div>
+<div class="paragraph">
+<p>Generalizing this type derivation to uses of fold where the
+accumulator and finisher are more interesting is straightforward.  One
+simply includes the type of the accumulator, which may change, for
+each step, and the type of the finisher, which doesn&#8217;t change from
+step to step.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_typing_lift">Typing lift</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The lack of <a href="FirstClassPolymorphism">first-class polymorphism</a> in SML
+causes problems if one wants to use a step in a first-class way.
+Consider the following <code>double</code> function, which takes a step, <code>s</code>, and
+produces a composite step that does <code>s</code> twice.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">double</span> <span class="n">s</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">u</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="n">u</span> <span class="n">s</span> <span class="n">s</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The definition of <code>double</code> is not type correct.  The problem is that
+the type of a step depends on the number of remaining arguments but
+that the parameter <code>s</code> is not polymorphic, and so can not be used in
+two different positions.</p>
+</div>
+<div class="paragraph">
+<p>Fortunately, we can define a function, <code>lift0</code>, that takes a monotyped
+step function and <em>lifts</em> it into a polymorphic step function.  This
+is apparent in the type of <code>lift0</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">lift0</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">)</span> <span class="n">step0</span>
+           <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">step0</span>
+<span class="kr">fun</span> <span class="nf">lift0</span> <span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a1</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">,</span> <span class="nd">'a2</span><span class="p">)</span> <span class="n">step0</span><span class="p">)</span>
+          <span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nd">'a1</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'c</span><span class="p">):</span> <span class="p">(</span><span class="nd">'a2</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="n">t</span> <span class="p">=</span>
+   <span class="n">fold</span> <span class="p">(</span><span class="n">fold</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">id</span><span class="p">)</span> <span class="n">s</span> <span class="n">$</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The following definition of <code>double</code> uses <code>lift0</code>, appropriately eta
+wrapped, to fix the problem.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">double</span> <span class="n">s</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">s</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">lift0</span> <span class="n">s</span> <span class="n">z</span>
+   <span class="kr">in</span>
+      <span class="kr">fn</span> <span class="n">u</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="n">u</span> <span class="n">s</span> <span class="n">s</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With that definition of <code>double</code> in place, we can use it as in the
+following example.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">((),</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">())</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">())</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="nv">a2</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="n">double</span> <span class="n">a</span> <span class="n">z</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">f</span> <span class="n">a</span> <span class="n">a2</span> <span class="n">a</span> <span class="n">a2</span> <span class="n">$</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Of course, we must eta wrap the call <code>double</code> in order to use its
+result, which is a step function, polymorphically.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hiding_the_type_of_the_accumulator">Hiding the type of the accumulator</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For clarity and to avoid mistakes, it can be useful to hide the type
+of the accumulator in a fold.  Reworking the simple variable-argument
+example to do this leads to the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">S</span><span class="p">:&gt;</span>
+  <span class="kr">sig</span>
+     <span class="kr">type</span> <span class="kt">ac</span>
+     <span class="kr">val</span> <span class="nv">f</span><span class="p">:</span> <span class="p">(</span><span class="n">ac</span><span class="p">,</span> <span class="n">ac</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">t</span>
+     <span class="kr">val</span> <span class="nv">s</span><span class="p">:</span> <span class="p">(</span><span class="n">ac</span><span class="p">,</span> <span class="n">ac</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">,</span> <span class="nd">'d</span><span class="p">)</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span>
+  <span class="kr">end</span> <span class="p">=</span>
+  <span class="kr">struct</span>
+     <span class="kr">type</span> <span class="kt">ac</span> <span class="p">=</span> <span class="n">unit</span>
+     <span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">fold</span> <span class="p">((),</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">())</span> <span class="n">z</span>
+     <span class="kr">val</span> <span class="nv">s</span> <span class="p">=</span> <span class="kr">fn</span> <span class="n">z</span> <span class="p">=&gt;</span> <span class="nn">Fold</span><span class="p">.</span><span class="n">step0</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">())</span> <span class="n">z</span>
+  <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The idea is to name the accumulator type and use opaque signature
+matching to make it abstract.  This can prevent improper manipulation
+of the accumulator by client code and ensure invariants that the
+folder and stepper would like to maintain.</p>
+</div>
+<div class="paragraph">
+<p>For a practical example of this technique, see <a href="ArrayLiteral">ArrayLiteral</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Fold has a number of practical applications.  Here are some of them.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="ArrayLiteral">ArrayLiteral</a></p>
+</li>
+<li>
+<p><a href="Fold01N">Fold01N</a></p>
+</li>
+<li>
+<p><a href="FunctionalRecordUpdate">FunctionalRecordUpdate</a></p>
+</li>
+<li>
+<p><a href="NumericLiteral">NumericLiteral</a></p>
+</li>
+<li>
+<p><a href="OptionalArguments">OptionalArguments</a></p>
+</li>
+<li>
+<p><a href="Printf">Printf</a></p>
+</li>
+<li>
+<p><a href="VariableArityPolymorphism">VariableArityPolymorphism</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>There are a number of related techniques.  Here are some of them.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="StaticSum">StaticSum</a></p>
+</li>
+<li>
+<p><a href="TypeIndexedValues">TypeIndexedValues</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Sun Jun 5 21:21:02 2022 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Fold.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Fold.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

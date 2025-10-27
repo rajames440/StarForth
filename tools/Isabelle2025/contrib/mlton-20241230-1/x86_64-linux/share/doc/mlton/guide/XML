@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>XML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>XML</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">XML</a> is an <a href="IntermediateLanguage">IntermediateLanguage</a>, translated from <a href="CoreML">CoreML</a> by
+<a href="Defunctorize">Defunctorize</a>, optimized by <a href="XMLSimplify">XMLSimplify</a>, and translated by
+<a href="Monomorphise">Monomorphise</a> to <a href="SXML">SXML</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">XML</a> is polymorphic, higher-order, with flat patterns.  Every
+<a href="#">XML</a> expression is annotated with its type.  Polymorphic
+generalization is made explicit through type variables annotating
+<code>val</code> and <code>fun</code> declarations.  Polymorphic instantiation is made
+explicit by specifying type arguments at variable references.  <a href="#">XML</a>
+patterns can not be nested and can not contain wildcards, constraints,
+flexible records, or layering.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/xml.sig"><code>xml.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/xml.fun"><code>xml.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/xml-tree.sig"><code>xml-tree.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/xml/xml-tree.fun"><code>xml-tree.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_checking">Type Checking</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">XML</a> also has a type checker, used for debugging.  At present, the
+type checker is also the best specification of the type system of
+<a href="#">XML</a>.  If you need more details, the type checker
+(<a href="https://github.com/MLton/mlton/blob/master/mlton/xml/type-check.sig"><code>type-check.sig</code></a>,
+<a href="https://github.com/MLton/mlton/blob/master/mlton/xml/type-check.fun"><code>type-check.fun</code></a>), is pretty short.</p>
+</div>
+<div class="paragraph">
+<p>Since the type checker does not affect the output of the compiler
+(unless it reports an error), it can be turned off.  The type checker
+recursively descends the program, checking that the type annotating
+each node is the same as the type synthesized from the types of the
+expressions subnodes.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">XML</a> uses the same atoms as <a href="CoreML">CoreML</a>, hence all identifiers
+(constructors, variables, etc.) are unique and can have properties
+attached to them.  Finally, <a href="#">XML</a> has a simplifier (<a href="XMLShrink">XMLShrink</a>),
+which implements a reduction system.</p>
+</div>
+<div class="sect2">
+<h3 id="_types">Types</h3>
+<div class="paragraph">
+<p><a href="#">XML</a> types are either type variables or applications of n-ary type
+constructors.  There are many utility functions for constructing and
+destructing types involving built-in type constructors.</p>
+</div>
+<div class="paragraph">
+<p>A type scheme binds list of type variables in a type.  The only
+interesting operation on type schemes is the application of a type
+scheme to a list of types, which performs a simultaneous substitution
+of the type arguments for the bound type variables of the scheme.  For
+the purposes of type checking, it is necessary to know the type scheme
+of variables, constructors, and primitives.  This is done by
+associating the scheme with the identifier using its property list.
+This approach is used instead of the more traditional environment
+approach for reasons of speed.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_xmltree">XmlTree</h3>
+<div class="paragraph">
+<p>Before defining <code>XML</code>, the signature for language <a href="#">XML</a>, we need to
+define an auxiliary signature <code>XML_TREE</code>, that contains the datatype
+declarations for the expression trees of <a href="#">XML</a>.  This is done solely
+for the purpose of modularity&#8201;&#8212;&#8201;it allows the simplifier and type
+checker to be defined by separate functors (which take a structure
+matching <code>XML_TREE</code>).  Then, <code>Xml</code> is defined as the signature for a
+module containing the expression trees, the simplifier, and the type
+checker.</p>
+</div>
+<div class="paragraph">
+<p>Both constructors and variables can have type schemes, hence both
+constructor and variable references specify the instance of the scheme
+at the point of references.  An instance is specified with a vector of
+types, which corresponds to the type variables in the scheme.</p>
+</div>
+<div class="paragraph">
+<p><a href="#">XML</a> patterns are flat (i.e. not nested).  A pattern is a
+constructor with an optional argument variable.  Patterns only occur
+in <code>case</code> expressions.  To evaluate a case expression, compare the
+test value sequentially against each pattern.  For the first pattern
+that matches, destruct the value if necessary to bind the pattern
+variables and evaluate the corresponding expression.  If no pattern
+matches, evaluate the default.  All patterns of a case statement are
+of the same variant of <code>Pat.t</code>, although this is not enforced by ML&#8217;s
+type system.  The type checker, however, does enforce this.  Because
+tuple patterns are irrefutable, there will only ever be one tuple
+pattern in a case expression and there will be no default.</p>
+</div>
+<div class="paragraph">
+<p><a href="#">XML</a> contains value, exception, and mutually recursive function
+declarations.  There are no free type variables in <a href="#">XML</a>.  All type
+variables are explicitly bound at either a value or function
+declaration.  At some point in the future, exception declarations may
+go away, and exceptions may be represented with a single datatype
+containing a <code>unit ref</code> component to implement genericity.</p>
+</div>
+<div class="paragraph">
+<p><a href="#">XML</a> expressions are like those of <a href="CoreML">CoreML</a>, with the following
+exceptions.  There are no records expressions.  After type inference,
+all records (some of which may have originally been tuples in the
+source) are converted to tuples, because once flexible record patterns
+have been resolved, tuple labels are superfluous.  Tuple components
+are ordered based on the field ordering relation.  <a href="#">XML</a> eta expands
+primitives and constructors so that there are always fully applied.
+Hence, the only kind of value of arrow type is a lambda.  This
+property is useful for flow analysis and later in code generation.</p>
+</div>
+<div class="paragraph">
+<p>An <a href="#">XML</a> program is a list of toplevel datatype declarations and a
+body expression.  Because datatype declarations are not generative,
+the defunctorizer can safely move them to toplevel.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/XML.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/XML.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

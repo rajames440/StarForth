@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ProductType</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ProductType</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="StandardML">Standard ML</a> has special syntax for products (tuples). A
+product type is written as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">t1</span> <span class="n">*</span> <span class="n">t2</span> <span class="n">*</span> <span class="p">...</span> <span class="n">*</span> <span class="n">tN</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and a product pattern is written as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="p">...,</span> <span class="n">pN</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In most situations the syntax is quite convenient.  However, there are
+situations where the syntax is cumbersome.  There are also situations
+in which it is useful to construct and destruct n-ary products
+inductively, especially when using <a href="Fold">Fold</a>.</p>
+</div>
+<div class="paragraph">
+<p>In such situations, it is useful to have a binary product datatype
+with an infix constructor defined as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">product</span> <span class="p">=</span> <span class="nc">&amp;</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span>
+<span class="kr">infix</span> <span class="n">&amp;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With these definitions, one can write an n-ary product as a nested
+binary product quite conveniently.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">x1</span> <span class="n">&amp;</span> <span class="n">x2</span> <span class="n">&amp;</span> <span class="p">...</span> <span class="n">&amp;</span> <span class="n">xn</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Because of left associativity, this is the same as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(((</span><span class="n">x1</span> <span class="n">&amp;</span> <span class="n">x2</span><span class="p">)</span> <span class="n">&amp;</span> <span class="p">...)</span> <span class="n">&amp;</span> <span class="n">xn</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Because <code>&amp;</code> is a constructor, the syntax can also be used for
+patterns.</p>
+</div>
+<div class="paragraph">
+<p>The symbol <code>&amp;</code> is inspired by the Curry-Howard isomorphism: the proof
+of a conjunction <code>(A &amp; B)</code> is a pair of proofs <code>(a, b)</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_parser_combinators">Example: parser combinators</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A typical parser combinator library provides a combinator that has a
+type of the form.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nd">'a</span> <span class="n">parser</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">parser</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">parser</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and produces a parser for the concatenation of two parsers. When more
+than two parsers are concatenated, the result of the resulting parser
+is a nested structure of pairs</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(...((</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">),</span> <span class="n">p3</span><span class="p">)...,</span> <span class="n">pN</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>which is somewhat cumbersome.</p>
+</div>
+<div class="paragraph">
+<p>By using a product type, the type of the concatenation combinator then
+becomes</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="nd">'a</span> <span class="n">parser</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">parser</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">product</span> <span class="n">parser</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>While this doesn&#8217;t stop the nesting, it makes the pattern significantly
+easier to write. Instead of</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="p">(...((</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">),</span> <span class="n">p3</span><span class="p">)...,</span> <span class="n">pN</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>the pattern is written as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">p1</span> <span class="n">&amp;</span> <span class="n">p2</span> <span class="n">&amp;</span> <span class="n">p3</span> <span class="n">&amp;</span> <span class="p">...</span> <span class="n">&amp;</span> <span class="n">pN</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>which is considerably more concise.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="VariableArityPolymorphism">VariableArityPolymorphism</a></p>
+</li>
+<li>
+<p><a href="Utilities">Utilities</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ProductType.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ProductType.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

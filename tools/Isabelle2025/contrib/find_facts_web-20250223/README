@@ -1,0 +1,8 @@
+This component contains web assets (downloaded from recommended CDNs) for the Find_Facts
+web application, and its compiled index.html.
+
+Sources can be found in $FIND_FACTS_HOME/web.
+
+
+        Fabian Huch
+        23-Feb-2025

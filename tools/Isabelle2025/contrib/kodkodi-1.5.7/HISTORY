@@ -1,0 +1,165 @@
+Version 1.5.7 (08 Oct 2021)
+
+  * Java package name is now "isabelle.kodkodi".
+  * More robust file and process management in class ExternalV2.
+
+Version 1.5.6 (25 Aug 2020)
+
+  * More robust treatment of interrupt.
+
+Version 1.5.5 (24 Aug 2020)
+
+  * More explicit treatment of interrupt.
+
+Version 1.5.4 (19 Aug 2020)
+
+  * More flexible system context and executor.
+
+Version 1.5.3 (18 Aug 2020)
+
+  * Clarified build process.
+
+Version 1.5.2 (23 Jan 2012)
+
+  * Added "-prove" option (contributed by Ragnhild Van Der Straeten)
+
+Version 1.5.1 (27 Sept 2011)
+
+  * Updated the ".jar" and JNI files with a silently update of Kodkod 1.5
+  * Reintroduced PowerPC version of MiniSat
+
+Version 1.5.0 (26 Sept 2011)
+
+  * Ported to Kodkod 1.5
+  * Updated the ".jar" and JNI files for the latest Kodkod
+
+Version 1.2.16 (7 Nov 2010)
+
+  * Added "export" keyword to "bin/kodkodi" script (it appears to be needed
+    on some platforms)
+
+Version 1.2.15 (18 Aug 2010)
+
+  * Rebuilt ".jar" files with Java 1.5 instead of 1.6
+  * Added timestamps in output
+
+Version 1.2.14 (1 Aug 2010)
+
+  * Added support for primed relations
+
+Version 1.2.13 (28 May 2010)
+
+  * Removed spurious "UNSATISFIABLE" results when the "-solve-all" option is
+    specified
+  * Replaced "ML_PLATFORM" with "ISABELLE_PLATFORM" in "etc/settings"
+  * Labeled Kodkod solve errors more clearly
+  * Improved support for 64-bit Linux
+
+Version 1.2.12 (24 Mar 2010)
+
+  * Improved support for 64-bit Mac
+
+Version 1.2.11 (10 Mar 2010)
+
+  * Added proper support for 64-bit Mac
+
+Version 1.2.10 (10 Mar 2010)
+
+  * Fixed execution of "ExternalV2" solvers that write to standard output
+
+Version 1.2.9 (23 Feb 2010)
+
+  * Made more resilient in the face of SAT solver errors
+
+Version 1.2.8 (17 Feb 2010)
+
+  * Fixed "etc/settings" script for 64-bit Darwin ML platform
+  * Improved "bin/kodkodi" script for Linux
+
+Version 1.2.7 (30 Nov 2009)
+
+  * Fixed "bin/kodkodi" script for Cygwin
+  * Added license files for all third-party tools in "LICENSES"
+
+Version 1.2.6 (18 Nov 2009)
+
+  * Fixed "bin/kodkodi" script on non-Mac platforms
+
+Version 1.2.5 (17 Nov 2009)
+
+  * Added "x1" SAT solvers for Linux and patched Kodkod accordingly
+
+Version 1.2.4 (17 Nov 2009)
+
+  * Added "bin/kodkodi" script
+  * Added (unfinished) "timeout" option
+
+Version 1.2.3 (26 Oct 2009)
+
+  * Added native SAT solvers
+  * Added "etc/settings" file for Isabelle
+
+Version 1.2.2 (16 Oct 2009)
+
+  * Added "-solve-all" command-line option
+  * Replaced "-exit-on-success" command-line option with "-max-solutions"
+
+Version 1.2.1 (25 Sep 2009)
+
+  * Added PicoSAT solver
+  * Added proper handling for "StackOverflowError" and other errors
+  * Made sure Kodkodi keeps running after an error while processing one problem
+
+Version 1.2.0 (16 Jun 2009)
+
+  * Added server functionality (contributed by Hesam Samimi)
+  * Added "delay" option
+  * Ported to 17 Mar 2009 version of Kodkod
+
+Version 1.1.4 (17 Mar 2009)
+
+  * Fixed exception handling w.r.t. threads
+
+Version 1.1.3 (12 Mar 2009)
+
+  * Added "-max-threads" command-line option
+  * Removed temporary "ExternalV2" files after use
+
+Version 1.1.2 (27 Feb 2009)
+
+  * Added "ExternalV2" syntax to support non-standard output formats
+
+Version 1.1.1 (18 Feb 2009)
+
+  * Used Kodkod's n-ary operator mechanism for "||", "&&", and "[]" (projection)
+  * Changed syntax for exact bounds to make them stand out more
+  * Added "-version" command-line option
+  * Bundled Kodkod and SAT4J
+
+Version 1.1.0 (7 Jan 2009)
+
+  * Ported to 25 Nov 2008 version of Kodkod
+  * Added support for command-line options
+  * Added support for multiple problems in one run
+  * Removed "prealloc" declaration
+  * Added arity mismatch exception handling
+  * Added atom and universe syntax in formulas
+  * Added primed variables
+  * Added "\" operator
+  * Added support for empty declaration lists for logical quantifiers
+  * Renamed "bitwidth" option "bit_width"
+  * Added "+", "-", "&", and "()" operators to the tuple set syntax
+
+Version 1.0.2 (30 Oct 2008)
+
+  * Added "let" construct
+  * Fixed bailing-out mechanism to always bail out in case of error
+  * Trimmed output to exclude relations and integers with exact bounds
+
+Version 1.0.1 (17 Oct 2008)
+
+  * Fixed several bugs
+
+Version 1.0.0 (15 Oct 2008)
+
+  * First release

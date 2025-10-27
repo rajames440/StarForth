@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Release20241230</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Release20241230</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here you can download the latest public release of MLton, version 20241230.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_mlton_20210117">Changes since <a href="Release20210117">MLton 20210117</a></h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Compiler.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Enhance and fix bugs in <code>Useless</code> and <code>ConstantPropagation</code> SSA
+optimization passes.</p>
+</li>
+<li>
+<p>Update LLVM codegen; using the LLVM codegen requires LLVM 15 (or
+higher).</p>
+</li>
+<li>
+<p>Update elaboration error messages involving constants and infix
+patterns and expressions.</p>
+</li>
+<li>
+<p>Accept a non-semicolon terminated final expression in the syntax
+of programs.</p>
+</li>
+<li>
+<p>Eliminate (expert) <code>-profile time-label</code> compile-time option.</p>
+</li>
+<li>
+<p>Fix <code>-pi-style pie</code> compile-time option.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Runtime.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Fix bug in heap resizing that could lead to a segmentation fault.</p>
+</li>
+<li>
+<p>Fix bug with <code>-align 4</code> and mark-compact GC.</p>
+</li>
+<li>
+<p>Fix bug in <code>GC_sequenceCopy</code> failing to update card map when
+copying object pointers.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Basis Library.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Fix bug in <code>ImperativeIO.getInstream</code>.</p>
+</li>
+<li>
+<p>Fix bug in <code>Date.localOffset</code> for time zones east of prime
+meridian.</p>
+</li>
+<li>
+<p>Fix bugs in <code>WORD.scan</code> when <code>0</code> is followed by <code>w</code> or <code>x</code> or
+<code>wx</code> but not by more digits.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Add preliminary support for <code>wasm32-wasi</code>.</p>
+</li>
+<li>
+<p>Add support for <code>loongarch64</code> architecture.</p>
+</li>
+<li>
+<p>Update <code>Makefile</code>s to simplify bootstrapping.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20241230_binary_packages">20241230 binary packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>See <a href="https://github.com/MLton/mlton/releases/tag/on-20241230-release">MLton 20241230</a> assets on <a href="https://github.com">GitHub</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20241230_source_packages">20241230 source packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230.src.tgz">mlton-20241230.src.tgz</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/guide/20241230/">MLton Guide (20241230)</a>.</p>
+<div class="paragraph">
+<p>A snapshot of the MLton website at the time of release.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Mon Dec 30 07:22:35 2024 -0500 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Release20241230.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Release20241230.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

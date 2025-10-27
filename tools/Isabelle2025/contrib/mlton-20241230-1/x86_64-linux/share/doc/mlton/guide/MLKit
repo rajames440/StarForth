@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLKit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLKit</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>The <a href="http://sourceforge.net/apps/mediawiki/mlkit">ML Kit</a> is a
+<a href="StandardMLImplementations">Standard ML implementation</a>.</p>
+</div>
+<div class="paragraph">
+<p>MLKit supports:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="DefinitionOfStandardML">SML'97</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p>including most of the latest <a href="BasisLibrary">Basis Library</a>
+<a href="https://smlfamily.github.io/Basis">specification</a>,</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="MLBasis">ML Basis</a> files</p>
+<div class="ulist">
+<ul>
+<li>
+<p>and separate compilation,</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="Regions">Region-Based Memory Management</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p>and <a href="GarbageCollection">garbage collection</a>,</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Multiple backends, including</p>
+<div class="ulist">
+<ul>
+<li>
+<p>native x86,</p>
+</li>
+<li>
+<p>bytecode, and</p>
+</li>
+<li>
+<p>JavaScript (see <a href="http://www.itu.dk/people/mael/smltojs/">SMLtoJs</a>).</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>At the time of writing, MLKit does not support:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>concurrent programming / threads,</p>
+</li>
+<li>
+<p>calling from C to SML.</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLKit.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLKit.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

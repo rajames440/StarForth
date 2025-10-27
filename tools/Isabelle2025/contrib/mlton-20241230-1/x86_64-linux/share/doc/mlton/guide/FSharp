@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>FSharp</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>FSharp</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p><a href="http://research.microsoft.com/en-us/um/cambridge/projects/fsharp/">F#</a>
+is a functional programming language developed at Microsoft Research.
+F# was partly inspired by the <a href="OCaml">OCaml</a> language and shares some
+common core constructs with it.  F# is integrated with Visual Studio
+2010 as a first-class language.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/FSharp.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/FSharp.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

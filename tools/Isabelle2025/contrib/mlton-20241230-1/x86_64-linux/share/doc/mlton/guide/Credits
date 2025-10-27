@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Credits</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Credits</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>MLton was designed and implemented by HenryCejtin,
+MatthewFluet, SureshJagannathan, and <a href="StephenWeeks">StephenWeeks</a>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="HenryCejtin">HenryCejtin</a> wrote the <code>IntInf</code> implementation, the original
+profiler, the original man pages, the <code>.spec</code> files for the RPMs,
+and lots of little hacks to speed stuff up.</p>
+</li>
+<li>
+<p><a href="MatthewFluet">MatthewFluet</a> implemented the X86 and AMD64 native code generators,
+ported <code>mlprof</code> to work with the native code generator, did a lot
+of work on the SSA optimizer, both adding new optimizations and
+improving or porting existing optimizations, updated the
+<a href="BasisLibrary">Basis Library</a> implementation, ported
+<a href="ConcurrentML">ConcurrentML</a> and <a href="MLNLFFI">ML-NLFFI</a> to MLton, implemented the
+<a href="MLBasis">ML Basis system</a>, ported MLton to 64-bit platforms,
+and currently leads the project.</p>
+</li>
+<li>
+<p><a href="SureshJagannathan">SureshJagannathan</a> implemented some early inlining and uncurrying
+optimizations.</p>
+</li>
+<li>
+<p><a href="StephenWeeks">StephenWeeks</a> implemented most of the original version of MLton, and
+continues to keep his fingers in most every part.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Many people have helped us over the years.  Here is an alphabetical
+list.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="JesperLouisAndersen">JesperLouisAndersen</a> sent several patches to improve the runtime on
+FreeBSD and ported MLton to run on NetBSD and OpenBSD.</p>
+</li>
+<li>
+<p><a href="JohnnyAndersen">JohnnyAndersen</a> implemented <code>BinIO</code>, modified MLton so it could
+cross compile to MinGW, and provided useful discussion about
+cross-compilation.</p>
+</li>
+<li>
+<p>Alexander Abushkevich extended support for OpenBSD.</p>
+</li>
+<li>
+<p>Ross Bayer added the <code>-keep ast</code> compile-time option and experimented with
+porting the build system to CMake.</p>
+</li>
+<li>
+<p>Kevin Bradley added initial support for <a href="SuccessorML">SuccessorML</a> features.</p>
+</li>
+<li>
+<p>Bryan Camp added <code>-disable-pass <em>regex</em></code> and <code>enable-pass <em>regex</em></code> compile
+options to generalize <code>-drop-pass <em>regex</em></code> and added <code>Array_copyArray</code> and
+<code>Array_copyVector</code> primitives.</p>
+</li>
+<li>
+<p>Jason Carr added a parser combinator library and a parser for the <a href="SXML">SXML</a>
+IR, extended compilation to start with a <code>.sxml</code> file, experimented with
+alternate control-flow analyses for <a href="ClosureConvert">closure conversion</a>,
+added new <a href="DuplicateGlobals">DuplicateGlobals</a> and <a href="SplitTypes">SplitTypes</a> <a href="SSA">SSA</a> optimization passes,
+improved <a href="RSSAShrink">RSSAShrink</a>, added a new <a href="BounceVars">BounceVars</a> <a href="RSSA">RSSA</a> optimization pass,
+added <code>-llvm-aamd {none|tbaa}</code> to control including alias-analysis metadata
+when compiling with LLVM, implemented static allocation and initialization of
+global objects.</p>
+</li>
+<li>
+<p>Christopher Cramer contributed support for additional
+<code>Posix.ProcEnv.sysconf</code> variables, performance improvements for
+<code>String.concatWith</code>, and Debian packaging.</p>
+</li>
+<li>
+<p>Alain Deutsch and
+<a href="http://www.polyspace.com/">PolySpace Technologies</a> provided many bug
+fixes and runtime system improvements, code to help the Sparc/Solaris
+port, and funded a number of improvements to MLton.</p>
+</li>
+<li>
+<p>Armando Doval updated <code>mlnlffigen</code> to warn and skip functions with
+<code>struct</code>/<code>union</code> arguments.</p>
+</li>
+<li>
+<p>Martin Elsman provided helpful discussions in the development of
+the <a href="MLBasis">ML Basis system</a>.</p>
+</li>
+<li>
+<p>Brent Fulgham ported MLton most of the way to MinGW.</p>
+</li>
+<li>
+<p><a href="AdamGoode">AdamGoode</a> provided a script to build the PDF MLton Guide and
+maintains the
+<a href="https://admin.fedoraproject.org/pkgdb/acls/name/mlton">Fedora</a>
+packages.</p>
+</li>
+<li>
+<p>Simon Helsen provided bug reports, suggestions, and helpful
+discussions.</p>
+</li>
+<li>
+<p>Joe Hurd provided useful discussion and feedback on source-level
+profiling.</p>
+</li>
+<li>
+<p>Manan Joshi added a parser for the <a href="SSA2">SSA2</a> IR.</p>
+</li>
+<li>
+<p><a href="VesaKarvonen">VesaKarvonen</a> contributed <code>esml-mode.el</code> and <code>esml-mlb-mode.el</code> (see <a href="Emacs">Emacs</a>),
+contributed patches for improving match warnings,
+contributed <code>esml-du-mlton.el</code> and extended def-use output to include types of variable definitions (see <a href="EmacsDefUseMode">EmacsDefUseMode</a>), and
+improved constant folding of floating-point operations.</p>
+</li>
+<li>
+<p>Richard Kelsey provided helpful discussions.</p>
+</li>
+<li>
+<p>Ville Laurikari ported MLton to IA64/HPUX, HPPA/HPUX, PowerPC/AIX, PowerPC64/AIX.</p>
+</li>
+<li>
+<p>Brian Leibig implemented the <a href="LLVMCodegen">LLVMCodegen</a>.</p>
+</li>
+<li>
+<p>Geoffrey Mainland helped with FreeBSD packaging.</p>
+</li>
+<li>
+<p>Eric McCorkle ported MLton to Intel Mac.</p>
+</li>
+<li>
+<p>Daman Morris introduced new <code>Overflow</code>-checking primitives and removed old
+<code>Overflow</code>-checking primitives and special-case code required (e.g., <code>Arith</code>
+transfers in IRs) to support them.</p>
+</li>
+<li>
+<p><a href="TomMurphy">TomMurphy</a> wrote the original version of <code>MLton.Syslog</code> as part
+of his <code>mlftpd</code> project, and has sent many useful bug reports and
+suggestions.</p>
+</li>
+<li>
+<p>Michael Neumann helped to patch the runtime to compile under
+FreeBSD.</p>
+</li>
+<li>
+<p>Barak Pearlmutter built the original
+<a href="http://packages.debian.org/mlton">Debian package</a> for MLton, and
+helped us to take over the process.</p>
+</li>
+<li>
+<p>Filip Pizlo ported MLton to (PowerPC) Darwin.</p>
+</li>
+<li>
+<p>Vedant Raiththa extended the <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> with support for
+<code>pure</code> and <code>impure</code> attributes to <code>_import</code>.</p>
+</li>
+<li>
+<p>Krishna Ravikumar added initial support for vector expressions and the
+<code>Vector_vector</code> primitive.</p>
+</li>
+<li>
+<p>James Reilly added a parser for the <a href="SSA">SSA</a> IR.</p>
+</li>
+<li>
+<p>John Reppy assisted in porting MLton to Intel Mac.</p>
+</li>
+<li>
+<p>Sam Rushing ported MLton to FreeBSD.</p>
+</li>
+<li>
+<p>Rob Simmons refactored the array and vector implementation in the
+<a href="BasisLibrary">Basis Library:</a> into a primitive implementation (using
+<code>SeqInt.int</code> for indexing) and a wrapper implementation (using the default
+<code>Int.int</code> for indexing).</p>
+</li>
+<li>
+<p>Jeffrey Mark Siskind provided helpful discussions and inspiration
+with his Stalin Scheme compiler.</p>
+</li>
+<li>
+<p>Matthew Surawski added <a href="LoopUnroll">LoopUnroll</a> and <a href="LoopUnswitch">LoopUnswitch</a> SSA optimizations.</p>
+</li>
+<li>
+<p><a href="WesleyTerpstra">WesleyTerpstra</a> added support for <code>MLton.Process.create</code>, made
+a number of contributions to the <a href="ForeignFunctionInterface">ForeignFunctionInterface</a>,
+contributed a number of runtime system patches,
+added support for compiling to a <a href="LibrarySupport">C library</a>,
+ported MLton to <a href="http://mingw.org">MinGW</a> and all <a href="http://packages.debian.org/search?keywords=mlton&amp;searchon=names&amp;suite=all&amp;section=all">Debian</a> supported architectures with <a href="CrossCompiling">cross-compiling</a> support,
+and maintains the <a href="http://packages.debian.org/search?keywords=mlton&amp;searchon=names&amp;suite=all&amp;section=all">Debian</a> and <a href="http://mingw.org">MinGW</a> packages.</p>
+</li>
+<li>
+<p>Maksim Yegorov added rudimentary support for <code>./configure</code> and other
+improvements to the build system and implemented the <a href="ShareZeroVec">ShareZeroVec</a> SSA
+optimization.</p>
+</li>
+<li>
+<p>Luke Ziarek assisted in porting MLton to (PowerPC) Darwin.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>We have also benefited from other software development tools and
+used code from other sources.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>MLton was developed using
+<a href="SMLNJ">Standard ML of New Jersey</a> and the
+<a href="CompilationManager">Compilation Manager (CM)</a></p>
+</li>
+<li>
+<p>MLton&#8217;s lexer (<code>mlton/frontend/ml.lex</code>), parser
+(<code>mlton/frontend/ml.grm</code>), and precedence-parser
+(<code>mlton/elaborate/precedence-parse.fun</code>) are modified versions of
+code from SML/NJ.</p>
+</li>
+<li>
+<p>The MLton <a href="BasisLibrary">Basis Library</a> implementation of
+conversions between binary and decimal representations of reals uses
+David Gay&#8217;s <a href="http://www.netlib.org/fp/">gdtoa</a> library.</p>
+</li>
+<li>
+<p>The MLton <a href="BasisLibrary">Basis Library</a> implementation uses
+modified versions of  portions of the the SML/NJ Basis Library
+implementation modules <code>OS.IO</code>, <code>Posix.IO</code>, <code>Process</code>,
+and <code>Unix</code>.</p>
+</li>
+<li>
+<p>The MLton <a href="BasisLibrary">Basis Library</a> implementation uses
+modified versions of portions of the <a href="MLKit">ML Kit</a> Version 4.1.4
+Basis Library implementation modules <code>Path</code>, <code>Time</code>, and
+<code>Date</code>.</p>
+</li>
+<li>
+<p>Many of the benchmarks come from the SML/NJ benchmark suite.</p>
+</li>
+<li>
+<p>Many of the regression tests come from the ML Kit Version 4.1.4
+distribution, which borrowed them from the
+<a href="http://www.dina.kvl.dk/%7Esestoft/mosml.html">Moscow ML</a> distribution.</p>
+</li>
+<li>
+<p>MLton uses the <a href="http://www.gnu.org/software/gmp/gmp.html">GNU multiprecision library</a> for its implementation of <code>IntInf</code>.</p>
+</li>
+<li>
+<p>MLton&#8217;s implementation of <a href="MLLex">mllex</a>, <a href="MLYacc">mlyacc</a>,
+the <a href="CKitLibrary">ckit Library</a>,
+the <a href="MLLPTLibrary">ML-LPT Library</a>,
+the <a href="MLRISCLibrary">MLRISC Library</a>,
+the <a href="SMLNJLibrary">SML/NJ Library</a>,
+<a href="ConcurrentML">Concurrent ML</a>,
+mlnlffigen and <a href="MLNLFFI">ML-NLFFI</a>
+are modified versions of code from SML/NJ.</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Credits.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Credits.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

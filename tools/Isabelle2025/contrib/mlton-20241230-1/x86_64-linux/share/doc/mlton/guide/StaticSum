@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>StaticSum</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>StaticSum</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>While SML makes it impossible to write functions whose types would
+depend on the values of their arguments, or so called dependently
+typed functions, it is possible, and arguably commonplace, to write
+functions whose types depend on the types of their arguments.  Indeed,
+the types of parametrically polymorphic functions like <code>map</code> and
+<code>foldl</code> can be said to depend on the types of their arguments.  What
+is less commonplace, however, is to write functions whose behavior
+would depend on the types of their arguments.  Nevertheless, there are
+several techniques for writing such functions.
+<a href="TypeIndexedValues">Type-indexed values</a> and <a href="Fold">fold</a> are two such
+techniques.  This page presents another such technique dubbed static
+sums.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ordinary_sums">Ordinary Sums</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Consider the sum type as defined below:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">Sum</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">datatype</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">INL</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="p">|</span> <span class="nc">INR</span> <span class="kr">of</span> <span class="nd">'b</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>While a generic sum type such as defined above is very useful, it has
+a number of limitations.  As an example, we could write the function
+<code>out</code> to extract the value from a sum as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">out</span> <span class="p">(</span><span class="n">s</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="nn">Sum</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">:</span> <span class="nd">'a</span> <span class="p">=</span>
+    <span class="kr">case</span> <span class="n">s</span>
+     <span class="kr">of</span> <span class="nn">Sum</span><span class="p">.</span><span class="n">INL</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span>
+      <span class="p">|</span> <span class="nn">Sum</span><span class="p">.</span><span class="n">INR</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As can be seen from the type of <code>out</code>, it is limited in the sense that
+it requires both variants of the sum to have the same type.  So, <code>out</code>
+cannot be used to extract the value of a sum of two different types,
+such as the type <code>(int, real) Sum.t</code>.  As another example of a
+limitation, consider the following attempt at a <code>succ</code> function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">succ</span> <span class="p">(</span><span class="n">s</span> <span class="p">:</span> <span class="p">(</span><span class="n">int</span><span class="p">,</span> <span class="n">real</span><span class="p">)</span> <span class="nn">Sum</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">:</span> <span class="n">???</span> <span class="p">=</span>
+    <span class="kr">case</span> <span class="n">s</span>
+     <span class="kr">of</span> <span class="nn">Sum</span><span class="p">.</span><span class="n">INL</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span> <span class="n">+</span> <span class="mi">1</span>
+      <span class="p">|</span> <span class="nn">Sum</span><span class="p">.</span><span class="n">INR</span> <span class="n">r</span> <span class="p">=&gt;</span> <span class="nn">Real</span><span class="p">.</span><span class="n">nextAfter</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nn">Real</span><span class="p">.</span><span class="n">posInf</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above definition of <code>succ</code> cannot be typed, because there is no
+type for the codomain within SML.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_static_sums">Static Sums</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Interestingly, it is possible to define values <code>inL</code>, <code>inR</code>, and
+<code>match</code> that satisfy the laws</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>match (inL x) (f, g) = f x
+match (inR x) (f, g) = g x</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and do not suffer from the same limitions.  The definitions are
+actually quite trivial:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">StaticSum</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">fun</span> <span class="nf">inL</span> <span class="n">x</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">_)</span> <span class="p">=</span> <span class="n">f</span> <span class="n">x</span>
+   <span class="kr">fun</span> <span class="nf">inR</span> <span class="n">x</span> <span class="p">(_,</span> <span class="n">g</span><span class="p">)</span> <span class="p">=</span> <span class="n">g</span> <span class="n">x</span>
+   <span class="kr">fun</span> <span class="nf">match</span> <span class="n">x</span> <span class="p">=</span> <span class="n">x</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now, given the <code>succ</code> function defined as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">succ</span> <span class="n">s</span> <span class="p">=</span>
+    <span class="nn">StaticSum</span><span class="p">.</span><span class="n">match</span> <span class="n">s</span>
+       <span class="p">(</span><span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span> <span class="n">+</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="kr">fn</span> <span class="n">r</span> <span class="p">=&gt;</span> <span class="nn">Real</span><span class="p">.</span><span class="n">nextAfter</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nn">Real</span><span class="p">.</span><span class="n">posInf</span><span class="p">))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>we get</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="n">succ</span> <span class="p">(</span><span class="nn">StaticSum</span><span class="p">.</span><span class="n">inL</span> <span class="mi">1</span><span class="p">)</span> <span class="p">=</span> <span class="mi">2</span>
+<span class="n">succ</span> <span class="p">(</span><span class="nn">StaticSum</span><span class="p">.</span><span class="n">inR</span> <span class="nn">Real</span><span class="p">.</span><span class="n">maxFinite</span><span class="p">)</span> <span class="p">=</span> <span class="nn">Real</span><span class="p">.</span><span class="n">posInf</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To better understand how this works, consider the following signature
+for static sums:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">StaticSum</span> <span class="p">:&gt;</span> <span class="kr">sig</span>
+   <span class="kr">type</span> <span class="p">(</span><span class="nd">'dL</span><span class="p">,</span> <span class="nd">'cL</span><span class="p">,</span> <span class="nd">'dR</span><span class="p">,</span> <span class="nd">'cR</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="kt">t</span>
+   <span class="kr">val</span> <span class="nv">inL</span> <span class="p">:</span> <span class="nd">'dL</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'dL</span><span class="p">,</span> <span class="nd">'cL</span><span class="p">,</span> <span class="nd">'dR</span><span class="p">,</span> <span class="nd">'cR</span><span class="p">,</span> <span class="nd">'cL</span><span class="p">)</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">inR</span> <span class="p">:</span> <span class="nd">'dR</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'dL</span><span class="p">,</span> <span class="nd">'cL</span><span class="p">,</span> <span class="nd">'dR</span><span class="p">,</span> <span class="nd">'cR</span><span class="p">,</span> <span class="nd">'cR</span><span class="p">)</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">match</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'dL</span><span class="p">,</span> <span class="nd">'cL</span><span class="p">,</span> <span class="nd">'dR</span><span class="p">,</span> <span class="nd">'cR</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'dL</span> <span class="p">-&gt;</span> <span class="nd">'cL</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'dR</span> <span class="p">-&gt;</span> <span class="nd">'cR</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'c</span>
+<span class="kr">end</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">type</span> <span class="p">(</span><span class="nd">'dL</span><span class="p">,</span> <span class="nd">'cL</span><span class="p">,</span> <span class="nd">'dR</span><span class="p">,</span> <span class="nd">'cR</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="kt">t</span> <span class="p">=</span> <span class="p">(</span><span class="nd">'dL</span> <span class="p">-&gt;</span> <span class="nd">'cL</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'dR</span> <span class="p">-&gt;</span> <span class="nd">'cR</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'c</span>
+   <span class="kr">open</span> <span class="nn">StaticSum</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Above, <code>'d</code> stands for domain and <code>'c</code> for codomain.  The key
+difference between an ordinary sum type, like <code>(int, real) Sum.t</code>, and
+a static sum type, like <code>(int, real, real, int, real) StaticSum.t</code>, is
+that the ordinary sum type says nothing about the type of the result
+of deconstructing a sum while the static sum type specifies the type.</p>
+</div>
+<div class="paragraph">
+<p>With the sealed static sum module, we get the type</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">succ</span> <span class="p">:</span> <span class="p">(</span><span class="n">int</span><span class="p">,</span> <span class="n">int</span><span class="p">,</span> <span class="n">real</span><span class="p">,</span> <span class="n">real</span><span class="p">,</span> <span class="nd">'a</span><span class="p">)</span> <span class="nn">StaticSum</span><span class="p">.</span><span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>for the previously defined <code>succ</code> function.  The type specifies that
+<code>succ</code> maps a left <code>int</code> to an <code>int</code> and a right <code>real</code> to a <code>real</code>.
+For example, the type of <code>StaticSum.inL 1</code> is
+<code>(int, 'cL, 'dR, 'cR, 'cL) StaticSum.t</code>.  Unifying this with the
+argument type of <code>succ</code> gives the type <code>(int, int, real, real, int)
+StaticSum.t &#8594; int</code>.</p>
+</div>
+<div class="paragraph">
+<p>The <code>out</code> function is quite useful on its own.  Here is how it can be
+defined:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">StaticSum</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">open</span> <span class="nn">StaticSum</span>
+   <span class="kr">val</span> <span class="nv">out</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'b</span><span class="p">,</span> <span class="nd">'c</span><span class="p">)</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'c</span> <span class="p">=</span>
+    <span class="kr">fn</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="n">match</span> <span class="n">s</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">)</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Due to the value restriction, lack of first class polymorphism and
+polymorphic recursion, the usefulness and convenience of static sums
+is somewhat limited in SML.  So, don&#8217;t throw away the ordinary sum
+type just yet.  Static sums can nevertheless be quite useful.</p>
+</div>
+<div class="sect2">
+<h3 id="_example_send_and_receive_with_argument_type_dependent_result_types">Example: Send and Receive with Argument Type Dependent Result Types</h3>
+<div class="paragraph">
+<p>In some situations it would seem useful to define functions whose
+result type would depend on some of the arguments.  Traditionally such
+functions have been thought to be impossible in SML and the solution
+has been to define multiple functions.  For example, the
+<a href="https://smlfamily.github.io/Basis/socket.html"><code>Socket</code> structure</a> of the
+Basis library defines 16 <code>send</code> and 16 <code>recv</code> functions.  In contrast,
+the Net structure
+(<a href="https://github.com/MLton/mltonlib/blob/master/com/sweeks/basic/unstable/net.sig"><code>net.sig</code></a>) of the
+Basic library designed by Stephen Weeks defines only a single <code>send</code>
+and a single <code>receive</code> and the result types of the functions depend on
+their arguments.  The implementation
+(<a href="https://github.com/MLton/mltonlib/blob/master/com/sweeks/basic/unstable/net.sml"><code>net.sml</code></a>) uses
+static sums (with a slighly different signature:
+<a href="https://github.com/MLton/mltonlib/blob/master/com/sweeks/basic/unstable/static-sum.sig"><code>static-sum.sig</code></a>).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example_picking_monad_results">Example: Picking Monad Results</h3>
+<div class="paragraph">
+<p>Suppose that we need to write a parser that accepts a pair of integers
+and returns their sum given a monadic parsing combinator library.  A
+part of the signature of such library could look like this</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">PARSING</span> <span class="p">=</span> <span class="kr">sig</span>
+   <span class="kr">include</span> <span class="nn">MONAD</span>
+   <span class="kr">val</span> <span class="nv">int</span> <span class="p">:</span> <span class="n">int</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">lparen</span> <span class="p">:</span> <span class="n">unit</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">rparen</span> <span class="p">:</span> <span class="n">unit</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">comma</span> <span class="p">:</span> <span class="n">unit</span> <span class="n">t</span>
+   <span class="c">(*</span><span class="cm"> ... *)</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where the <code>MONAD</code> signature could be defined as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MONAD</span> <span class="p">=</span> <span class="kr">sig</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+   <span class="kr">val</span> <span class="nv">return</span> <span class="p">:</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">&gt;&gt;</span><span class="p">=</span> <span class="nv">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="n">t</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="n">t</span>
+<span class="kr">end</span>
+<span class="kr">infix</span> <span class="n">&gt;&gt;=</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The straightforward, but tedious, way to write the desired parser is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">p</span> <span class="p">=</span> <span class="n">lparen</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span>
+        <span class="n">int</span>    <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span>
+        <span class="n">comma</span>  <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span>
+        <span class="n">int</span>    <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">y</span> <span class="p">=&gt;</span>
+        <span class="n">rparen</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span>
+        <span class="n">return</span> <span class="p">(</span><span class="n">x</span> <span class="n">+</span> <span class="n">y</span><span class="p">))))))</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In Haskell, the parser could be written using the <code>do</code> notation
+considerably less verbosely as:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="haskell"><span class="n">p</span> <span class="o">=</span> <span class="kr">do</span> <span class="p">{</span> <span class="n">lparen</span> <span class="p">;</span> <span class="n">x</span> <span class="o">&lt;-</span> <span class="n">int</span> <span class="p">;</span> <span class="n">comma</span> <span class="p">;</span> <span class="n">y</span> <span class="o">&lt;-</span> <span class="n">int</span> <span class="p">;</span> <span class="n">rparen</span> <span class="p">;</span> <span class="n">return</span> <span class="o">$</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>SML doesn&#8217;t provide a <code>do</code> notation, so we need another solution.</p>
+</div>
+<div class="paragraph">
+<p>Suppose we would have a "pick" notation for monads that would allows
+us to write the parser as</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">p</span> <span class="p">=</span> <span class="n">`lparen</span> <span class="n">^</span> <span class="n">\int</span> <span class="n">^</span> <span class="n">`comma</span> <span class="n">^</span> <span class="n">\int</span> <span class="n">^</span> <span class="n">`rparen</span> <span class="n">@</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="n">&amp;</span> <span class="n">y</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="n">+</span> <span class="n">y</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>using four auxiliary combinators: <code>`</code>, <code>\</code>, <code>^</code>, and <code>@</code>.</p>
+</div>
+<div class="paragraph">
+<p>Roughly speaking</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>`p</code> means that the result of <code>p</code> is dropped,</p>
+</li>
+<li>
+<p><code>\p</code> means that the result of <code>p</code> is taken,</p>
+</li>
+<li>
+<p><code>p ^ q</code> means that results of <code>p</code> and <code>q</code> are taken as a product, and</p>
+</li>
+<li>
+<p><code>p @ a</code> means that the results of <code>p</code> are passed to the function <code>a</code> and that result is returned.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The difficulty is in implementing the concatenation combinator <code>^</code>.
+The type of the result of the concatenation depends on the types of
+the arguments.</p>
+</div>
+<div class="paragraph">
+<p>Using static sums and the <a href="ProductType">product type</a>, the pick
+notation for monads can be implemented as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">MkMonadPick</span> <span class="p">(</span><span class="kr">include</span> <span class="nn">MONAD</span><span class="p">)</span> <span class="p">=</span> <span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">StaticSum</span>
+<span class="kr">in</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">`</span><span class="n">a</span> <span class="p">=</span> <span class="n">inL</span> <span class="p">(</span><span class="n">a</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">return</span> <span class="p">()))</span>
+      <span class="kr">val</span> <span class="nv">\</span> <span class="p">=</span> <span class="nv">inR</span>
+      <span class="kr">fun</span> <span class="nf">a</span> <span class="n">@</span> <span class="n">f</span> <span class="p">=</span> <span class="n">out</span> <span class="n">a</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="n">return</span> <span class="n">o</span> <span class="n">f</span><span class="p">)</span>
+      <span class="kr">fun</span> <span class="nf">a</span> <span class="n">^</span> <span class="n">b</span> <span class="p">=</span>
+          <span class="p">(</span><span class="n">match</span> <span class="n">b</span> <span class="n">o</span> <span class="n">match</span> <span class="n">a</span><span class="p">)</span>
+             <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span>
+                 <span class="p">(</span><span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">inL</span> <span class="p">(</span><span class="n">a</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">b</span><span class="p">)),</span>
+                  <span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">inR</span> <span class="p">(</span><span class="n">a</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">b</span><span class="p">))),</span>
+              <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span>
+                 <span class="p">(</span><span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">inR</span> <span class="p">(</span><span class="n">a</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">b</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">return</span> <span class="n">a</span><span class="p">))),</span>
+                  <span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">inR</span> <span class="p">(</span><span class="n">a</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">b</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">return</span> <span class="p">(</span><span class="n">a</span> <span class="n">&amp;</span> <span class="n">b</span><span class="p">))))))</span>
+   <span class="kr">end</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above implementation is inefficient, however.  It uses many more
+bind operations, <code>&gt;&gt;=</code>, than necessary.  That can be solved with an
+additional level of abstraction:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">MkMonadPick</span> <span class="p">(</span><span class="kr">include</span> <span class="nn">MONAD</span><span class="p">)</span> <span class="p">=</span> <span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">StaticSum</span>
+<span class="kr">in</span>
+   <span class="kr">struct</span>
+      <span class="kr">fun</span> <span class="nf">`</span><span class="n">a</span> <span class="p">=</span> <span class="n">inL</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">a</span> <span class="n">&gt;&gt;=</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">b</span> <span class="p">()))</span>
+      <span class="kr">fun</span> <span class="nf">\</span><span class="n">a</span> <span class="p">=</span> <span class="n">inR</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">a</span> <span class="n">&gt;&gt;=</span> <span class="n">b</span><span class="p">)</span>
+      <span class="kr">fun</span> <span class="nf">a</span> <span class="n">@</span> <span class="n">f</span> <span class="p">=</span> <span class="n">out</span> <span class="n">a</span> <span class="p">(</span><span class="n">return</span> <span class="n">o</span> <span class="n">f</span><span class="p">)</span>
+      <span class="kr">fun</span> <span class="nf">a</span> <span class="n">^</span> <span class="n">b</span> <span class="p">=</span>
+          <span class="p">(</span><span class="n">match</span> <span class="n">b</span> <span class="n">o</span> <span class="n">match</span> <span class="n">a</span><span class="p">)</span>
+             <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">inL</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">c</span> <span class="p">=&gt;</span> <span class="n">a</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">b</span> <span class="n">c</span><span class="p">)),</span>
+                       <span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">inR</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">c</span> <span class="p">=&gt;</span> <span class="n">a</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">b</span> <span class="n">c</span><span class="p">))),</span>
+              <span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">inR</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">c</span> <span class="p">=&gt;</span> <span class="n">a</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">b</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">c</span> <span class="n">a</span><span class="p">))),</span>
+                       <span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">inR</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">c</span> <span class="p">=&gt;</span> <span class="n">a</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">a</span> <span class="p">=&gt;</span> <span class="n">b</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">b</span> <span class="p">=&gt;</span> <span class="n">c</span> <span class="p">(</span><span class="n">a</span> <span class="n">&amp;</span> <span class="n">b</span><span class="p">))))))</span>
+   <span class="kr">end</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After instantiating and opening either of the above monad pick
+implementations, the previously given definition of <code>p</code> can be
+compiled and results in a parser whose result is of type <code>int</code>.  Here
+is a functor to test the theory:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">functor</span> <span class="nn">Test</span> <span class="p">(</span><span class="n">Arg</span> <span class="p">:</span> <span class="n">PARSING</span><span class="p">)</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">local</span>
+      <span class="kr">structure</span> <span class="nn">Pick</span> <span class="p">=</span> <span class="n">MkMonadPick</span> <span class="p">(</span><span class="n">Arg</span><span class="p">)</span>
+      <span class="kr">open</span> <span class="nn">Pick</span> <span class="nn">Arg</span>
+   <span class="kr">in</span>
+      <span class="kr">val</span> <span class="nv">p</span> <span class="p">:</span> <span class="n">int</span> <span class="n">t</span> <span class="p">=</span>
+          <span class="n">`lparen</span> <span class="n">^</span> <span class="n">\int</span> <span class="n">^</span> <span class="n">`comma</span> <span class="n">^</span> <span class="n">\int</span> <span class="n">^</span> <span class="n">`rparen</span> <span class="n">@</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="n">&amp;</span> <span class="n">y</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="n">+</span> <span class="n">y</span><span class="p">)</span>
+   <span class="kr">end</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are a number of related techniques.  Here are some of them.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Fold">Fold</a></p>
+</li>
+<li>
+<p><a href="TypeIndexedValues">TypeIndexedValues</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/StaticSum.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/StaticSum.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

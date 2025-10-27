@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Features</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Features</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton has the following features.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_robustness">Robustness</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Supports the full SML&#160;97 language as given in <a href="DefinitionOfStandardML">The Definition of Standard&#160;ML (Revised)</a>.</p>
+<div class="paragraph">
+<p>If there is a program that is valid according to the
+<a href="DefinitionOfStandardML">Definition</a> that is rejected by MLton, or a
+program that is invalid according to the
+<a href="DefinitionOfStandardML">Definition</a> that is accepted by MLton, it is
+a bug.  For a list of known bugs, see <a href="UnresolvedBugs">UnresolvedBugs</a>.</p>
+</div>
+</li>
+<li>
+<p>A complete implementation of the <a href="BasisLibrary">Basis Library</a>.</p>
+<div class="paragraph">
+<p>MLton&#8217;s implementation matches latest <a href="BasisLibrary">Basis Library</a>
+<a href="https://smlfamily.github.io/Basis">specification</a>, and includes a
+complete implementation of all the required modules, as well as many
+of the optional modules.</p>
+</div>
+</li>
+<li>
+<p>Generates standalone executables.</p>
+<div class="paragraph">
+<p>No additional code or libraries are necessary in order to run an
+executable, except for the standard shared libraries.  MLton can also
+generate statically linked executables.</p>
+</div>
+</li>
+<li>
+<p>Compiles large programs.</p>
+<div class="paragraph">
+<p>MLton is sufficiently efficient and robust that it can compile large
+programs, including itself (over 190K lines).  The distributed version
+of MLton was compiled by MLton.</p>
+</div>
+</li>
+<li>
+<p>Support for large amounts of memory (up to 4G on 32-bit systems; more on 64-bit systems).</p>
+</li>
+<li>
+<p>Support for large array lengths (up to 2<sup>31</sup>-1 on 32-bit systems; up to 2<sup>63</sup>-1 on 64-bit systems).</p>
+</li>
+<li>
+<p>Support for large files, using 64-bit file positions.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_performance">Performance</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Executables have <a href="Performance">excellent runtime performance</a>.</p>
+</li>
+<li>
+<p>Generates small executables.</p>
+<div class="paragraph">
+<p>MLton takes advantage of whole-program compilation to perform very
+aggressive dead-code elimination, which often leads to smaller
+executables than with other SML compilers.</p>
+</div>
+</li>
+<li>
+<p>Untagged and unboxed native integers, reals, and words.</p>
+<div class="paragraph">
+<p>In MLton, integers and words are 8 bits, 16 bits, 32 bits, and 64 bits
+and arithmetic does not have any overhead due to tagging or boxing.
+Also, reals (32-bit and 64-bit) are stored unboxed, avoiding any
+overhead due to boxing.</p>
+</div>
+</li>
+<li>
+<p>Unboxed native arrays.</p>
+<div class="paragraph">
+<p>In MLton, an array (or vector) of integers, reals, or words uses the
+natural C-like representation.  This is fast and supports easy
+exchange of data with C.  Monomorphic arrays (and vectors) use the
+same C-like representations as their polymorphic counterparts.</p>
+</div>
+</li>
+<li>
+<p>Multiple <a href="GarbageCollection">garbage collection</a> strategies.</p>
+</li>
+<li>
+<p>Fast arbitrary precision arithmetic (<code>IntInf</code>) based on <a href="GMP">GMP</a>.</p>
+<div class="paragraph">
+<p>For <code>IntInf</code> intensive programs, MLton can be an order of magnitude or
+more faster than Poly/ML or SML/NJ.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tools">Tools</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Source-level <a href="Profiling">Profiling</a> of both time and allocation.</p>
+</li>
+<li>
+<p><a href="MLLex">MLLex</a> lexer generator</p>
+</li>
+<li>
+<p><a href="MLYacc">MLYacc</a> parser generator</p>
+</li>
+<li>
+<p><a href="MLNLFFIGen">MLNLFFIGen</a> foreign-function-interface generator</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_extensions">Extensions</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>The <a href="MLBasis">ML Basis system</a> for programming in the very large, separate delivery of library sources, and more.</p>
+</li>
+<li>
+<p>A number of useful <a href="SuccessorML">language extensions</a>.</p>
+</li>
+<li>
+<p>A simple and fast C <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> that supports calling from SML to C and from C to SML.</p>
+</li>
+<li>
+<p>A number of extension libraries that provide useful functionality
+that cannot be implemented with the <a href="BasisLibrary">Basis Library</a>.
+See below for an overview and <a href="MLtonStructure">MLtonStructure</a> for details.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="MLtonCont">continuations</a></p>
+<div class="paragraph">
+<p>MLton supports continuations via <code>callcc</code> and <code>throw</code>.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonFinalizable">finalization</a></p>
+<div class="paragraph">
+<p>MLton supports finalizable values of arbitrary type.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonItimer">interval timers</a></p>
+<div class="paragraph">
+<p>MLton supports the functionality of the C <code>setitimer</code> function.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonRandom">random numbers</a></p>
+<div class="paragraph">
+<p>MLton has functions similar to the C <code>rand</code> and <code>srand</code> functions, as well as support for access to <code>/dev/random</code> and <code>/dev/urandom</code>.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonRlimit">resource limits</a></p>
+<div class="paragraph">
+<p>MLton has functions similar to the C <code>getrlimit</code> and <code>setrlimit</code> functions.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonRusage">resource usage</a></p>
+<div class="paragraph">
+<p>MLton supports a subset of the functionality of the C <code>getrusage</code> function.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonSignal">signal handlers</a></p>
+<div class="paragraph">
+<p>MLton supports signal handlers written in SML.  Signal handlers run in
+a separate MLton thread, and have access to the thread that was
+interrupted by the signal.  Signal handlers can be used in conjunction
+with threads to implement preemptive multitasking.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonStructure">size primitive</a></p>
+<div class="paragraph">
+<p>MLton includes a primitive that returns the size (in bytes) of any
+object.  This can be useful in understanding the space behavior of a
+program.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonSyslog">system logging</a></p>
+<div class="paragraph">
+<p>MLton has a complete interface to the C <code>syslog</code> function.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonThread">threads</a></p>
+<div class="paragraph">
+<p>MLton has support for its own threads, upon which either preemptive or
+non-preemptive multitasking can be implemented.  MLton also has
+support for <a href="ConcurrentML">Concurrent ML</a> (CML).</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonWeak">weak pointers</a></p>
+<div class="paragraph">
+<p>MLton supports weak pointers, which allow the garbage collector to
+reclaim objects that it would otherwise be forced to keep.  Weak
+pointers are also used to provide finalization.</p>
+</div>
+</li>
+<li>
+<p><a href="MLtonWorld">world save and restore</a></p>
+<div class="paragraph">
+<p>MLton has a facility for saving the entire state of a computation to a
+file and restarting it later.  This facility can be used for staging
+and for checkpointing computations.  It can even be used from within
+signal handlers, allowing interrupt driven checkpointing.</p>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_portability">Portability</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Runs on a wide variety of platforms.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnARM">ARM</a>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnLinux">Linux</a> (Debian)</p>
+</li>
+<li>
+<p><a href="RunningOnFreeBSD">FreeBSD</a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="RunningOnAlpha">Alpha</a>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnLinux">Linux</a> (Debian)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="RunningOnAMD64">AMD64</a>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnDarwin">Darwin</a> (Mac OS X)</p>
+</li>
+<li>
+<p><a href="RunningOnFreeBSD">FreeBSD</a></p>
+</li>
+<li>
+<p><a href="RunningOnLinux">Linux</a> (Debian, Fedora, Ubuntu, &#8230;&#8203;)</p>
+</li>
+<li>
+<p><a href="RunningOnOpenBSD">OpenBSD</a></p>
+</li>
+<li>
+<p><a href="RunningOnSolaris">Solaris</a> (10 and above)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="RunningOnHPPA">HPPA</a>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnHPUX">HPUX</a> (11.11 and above)</p>
+</li>
+<li>
+<p><a href="RunningOnLinux">Linux</a> (Debian)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="RunningOnIA64">IA64</a>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnHPUX">HPUX</a> (11.11 and above)</p>
+</li>
+<li>
+<p><a href="RunningOnLinux">Linux</a> (Debian)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="RunningOnPowerPC">PowerPC</a>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnAIX">AIX</a> (5.2 and above)</p>
+</li>
+<li>
+<p><a href="RunningOnDarwin">Darwin</a> (Mac OS X)</p>
+</li>
+<li>
+<p><a href="RunningOnLinux">Linux</a> (Debian, Fedora, &#8230;&#8203;)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="RunningOnPowerPC64">PowerPC64</a>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnAIX">AIX</a> (5.2 and above)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="RunningOnS390">S390</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnLinux">Linux</a> (Debian)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="RunningOnSparc">Sparc</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnLinux">Linux</a> (Debian)</p>
+</li>
+<li>
+<p><a href="RunningOnSolaris">Solaris</a> (8 and above)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><a href="RunningOnX86">X86</a>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="RunningOnCygwin">Cygwin</a>/Windows</p>
+</li>
+<li>
+<p><a href="RunningOnDarwin">Darwin</a> (Mac OS X)</p>
+</li>
+<li>
+<p><a href="RunningOnFreeBSD">FreeBSD</a></p>
+</li>
+<li>
+<p><a href="RunningOnLinux">Linux</a> (Debian, Fedora, Ubuntu, &#8230;&#8203;)</p>
+</li>
+<li>
+<p><a href="RunningOnMinGW">MinGW</a>/Windows</p>
+</li>
+<li>
+<p><a href="RunningOnNetBSD">NetBSD</a></p>
+</li>
+<li>
+<p><a href="RunningOnOpenBSD">OpenBSD</a></p>
+</li>
+<li>
+<p><a href="RunningOnSolaris">Solaris</a> (10 and above)</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Features.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Features.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

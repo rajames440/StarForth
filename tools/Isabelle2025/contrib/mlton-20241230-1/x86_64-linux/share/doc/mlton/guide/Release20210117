@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Release20210117</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Release20210117</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an archived public release of MLton, version 20210117.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changes_since_mlton_20201002">Changes since <a href="Release20201002">MLton 20201002</a></h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Compiler.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Fix bug in <code>SimplifyTypes</code> SSA optimization pass.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Other libraries.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Other.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Preliminary support for <code>arm64-darwin</code>.</p>
+</li>
+<li>
+<p>Fix bug in <code>Makefile.binary</code> detecting default position-independent style.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For a complete list of changes and bug fixes since
+<a href="Release20201002">Release20201002</a>, see the
+<a href="https://github.com/MLton/mlton/blob/on-20210117-release/CHANGELOG.adoc"><code>CHANGELOG.adoc</code></a> and
+<a href="Bugs20201002">Bugs20201002</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20210117_binary_packages">20210117 binary packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>AMD64 (aka "x86-64" or "x64")</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew.tgz">Darwin (.tgz)</a> 19.6 (Mac OS X Catalina), dynamically linked against <a href="GMP">GMP</a> in <code>/usr/local/lib</code> (suitable for <a href="https://brew.sh/">Homebrew</a> install of <a href="GMP">GMP</a>)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-1.amd64-darwin-19.6.gmp-static.tgz">Darwin (.tgz)</a> 19.6 (Mac OS X Catalina), statically linked against <a href="GMP">GMP</a> (but requires <a href="GMP">GMP</a> for generated executables)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-1.amd64-linux-glibc2.23.tgz">Linux (.tgz)</a>, glibc 2.23 (Ubuntu 16.04)</p>
+</li>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-1.amd64-linux-glibc2.31.tgz">Linux (.tgz)</a>, glibc 2.31 (Ubuntu 20.04)</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_binary_packages_available_at_other_sites">Binary packages available at other sites</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://projects.laas.fr/tina/software.php">TINA toolbox</a>: Includes binary
+releases for: amd64-darwin macOS Sierra 10.12 (both statically and dynamically
+linked against <a href="GMP">GMP</a>), amd64-linux Ubuntu 14 (both statically and
+dynamically linked against <a href="GMP">GMP</a>), amd64-mingw MSys2 (both statically and
+dynamically linked against <a href="GMP">GMP</a>), amd64-solaris Solaris 11.4 (both
+statically and dynamically linked against <a href="GMP">GMP</a>), and arm64-darwin macOS
+Monterey 12.4 (Apple Silicon) (both statically and dynamically linked against
+<a href="GMP">GMP</a>).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_20210117_source_packages">20210117 source packages</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117.src.tgz">mlton-20210117.src.tgz</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Bugs20210117">Bugs20210117</a></p>
+</li>
+<li>
+<p><a href="http://www.mlton.org/guide/20210117/">MLton Guide (20210117)</a>.</p>
+<div class="paragraph">
+<p>A snapshot of the MLton website at the time of release.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Mon Dec 30 07:22:35 2024 -0500 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Release20210117.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Release20210117.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

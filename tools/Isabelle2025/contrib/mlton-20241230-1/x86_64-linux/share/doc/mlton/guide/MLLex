@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLLex</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLLex</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">MLLex</a> is a lexical analyzer generator for <a href="StandardML">Standard ML</a>
+modeled after the Lex lexical analyzer generator.</p>
+</div>
+<div class="paragraph">
+<p>A version of MLLex, ported from the <a href="SMLNJ">SML/NJ</a> sources, is
+distributed with MLton.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLLex takes as input the lex language as defined in the ML-Lex manual,
+and outputs a lexical analyzer in SML.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mllex/lexgen.sml"><code>lexgen.sml</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mllex/main.sml"><code>main.sml</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mllex/call-main.sml"><code>call-main.sml</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are 3 main passes in the MLLex tool:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Source parsing. In this pass, lex source program are parsed into internal representations. The core part of this pass is a hand-written lexer and an LL(1) parser. The output of this pass is a record of user code, rules (along with start states) and actions. (MLLex definitions are wiped off.)</p>
+</li>
+<li>
+<p>DFA construction. In this pass, a DFA is constructed by the algorithm of H. Yamada et. al.</p>
+</li>
+<li>
+<p>Output. In this pass, the generated DFA is written out as a transition table, along with a table-driven algorithm, to an SML file.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Documentation.attachments/mllex.pdf"><code>mllex.pdf</code></a></p>
+</li>
+<li>
+<p><a href="MLYacc">MLYacc</a></p>
+</li>
+<li>
+<p><a href="References#AppelEtAl94">AppelEtAl94</a></p>
+</li>
+<li>
+<p><a href="References#Price09">Price09</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLLex.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLLex.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>UnsafeStructure</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>UnsafeStructure</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>This module is a subset of the <code>Unsafe</code> module provided by SML/NJ,
+with a few extract operations for <code>PackWord</code> and <code>PackReal</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">UNSAFE_MONO_ARRAY</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">array</span>
+      <span class="kr">type</span> <span class="kt">elem</span>
+
+      <span class="kr">val</span> <span class="nv">create</span><span class="p">:</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">array</span>
+      <span class="kr">val</span> <span class="nv">sub</span><span class="p">:</span> <span class="n">array</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">elem</span>
+      <span class="kr">val</span> <span class="nv">update</span><span class="p">:</span> <span class="n">array</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="n">elem</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+   <span class="kr">end</span>
+
+<span class="kr">signature</span> <span class="nn">UNSAFE_MONO_VECTOR</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">elem</span>
+      <span class="kr">type</span> <span class="kt">vector</span>
+
+      <span class="kr">val</span> <span class="nv">sub</span><span class="p">:</span> <span class="n">vector</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">elem</span>
+   <span class="kr">end</span>
+
+<span class="kr">signature</span> <span class="nn">UNSAFE</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">structure</span> <span class="nn">Array</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">val</span> <span class="nv">create</span><span class="p">:</span> <span class="n">int</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">array</span>
+            <span class="kr">val</span> <span class="nv">sub</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">array</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+            <span class="kr">val</span> <span class="nv">update</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">array</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+         <span class="kr">end</span>
+      <span class="kr">structure</span> <span class="nn">CharArray</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">CharVector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">IntArray</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">IntVector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Int8Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Int8Vector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Int16Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Int16Vector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Int32Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Int32Vector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Int64Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Int64Vector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">IntInfArray</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">IntInfVector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">LargeIntArray</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">LargeIntVector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">LargeRealArray</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">LargeRealVector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">LargeWordArray</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">LargeWordVector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">RealArray</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">RealVector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Real32Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Real32Vector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Real64Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Vector</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">val</span> <span class="nv">sub</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">vector</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+         <span class="kr">end</span>
+      <span class="kr">structure</span> <span class="nn">Word8Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Word8Vector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Word16Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Word16Vector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Word32Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Word32Vector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+      <span class="kr">structure</span> <span class="nn">Word64Array</span><span class="p">:</span> <span class="n">UNSAFE_MONO_ARRAY</span>
+      <span class="kr">structure</span> <span class="nn">Word64Vector</span><span class="p">:</span> <span class="n">UNSAFE_MONO_VECTOR</span>
+
+      <span class="kr">structure</span> <span class="nn">PackReal32Big</span> <span class="p">:</span> <span class="n">PACK_REAL</span>
+      <span class="kr">structure</span> <span class="nn">PackReal32Little</span> <span class="p">:</span> <span class="n">PACK_REAL</span>
+      <span class="kr">structure</span> <span class="nn">PackReal64Big</span> <span class="p">:</span> <span class="n">PACK_REAL</span>
+      <span class="kr">structure</span> <span class="nn">PackReal64Little</span> <span class="p">:</span> <span class="n">PACK_REAL</span>
+      <span class="kr">structure</span> <span class="nn">PackRealBig</span> <span class="p">:</span> <span class="n">PACK_REAL</span>
+      <span class="kr">structure</span> <span class="nn">PackRealLittle</span> <span class="p">:</span> <span class="n">PACK_REAL</span>
+      <span class="kr">structure</span> <span class="nn">PackWord16Big</span> <span class="p">:</span> <span class="n">PACK_WORD</span>
+      <span class="kr">structure</span> <span class="nn">PackWord16Little</span> <span class="p">:</span> <span class="n">PACK_WORD</span>
+      <span class="kr">structure</span> <span class="nn">PackWord32Big</span> <span class="p">:</span> <span class="n">PACK_WORD</span>
+      <span class="kr">structure</span> <span class="nn">PackWord32Little</span> <span class="p">:</span> <span class="n">PACK_WORD</span>
+      <span class="kr">structure</span> <span class="nn">PackWord64Big</span> <span class="p">:</span> <span class="n">PACK_WORD</span>
+      <span class="kr">structure</span> <span class="nn">PackWord64Little</span> <span class="p">:</span> <span class="n">PACK_WORD</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/UnsafeStructure.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/UnsafeStructure.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

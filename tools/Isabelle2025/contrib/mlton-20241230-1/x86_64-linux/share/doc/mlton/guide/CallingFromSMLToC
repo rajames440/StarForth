@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>CallingFromSMLToC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>CallingFromSMLToC</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton&#8217;s <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> allows an SML program to <em>import</em>
+C functions.  Suppose you would like to import from C a function with
+the following prototype:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="kt">int</span> <span class="nf">foo</span> <span class="p">(</span><span class="kt">double</span> <span class="n">d</span><span class="p">,</span> <span class="kt">char</span> <span class="n">c</span><span class="p">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>MLton extends the syntax of SML to allow expressions like the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>_import "foo": real * char -&gt; int;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This expression denotes a function of type <code>real * char -&gt; int</code> whose
+behavior is implemented by calling the C function whose name is <code>foo</code>.
+Thinking in terms of C, imagine that there are C variables <code>d</code> of type
+<code>double</code>, <code>c</code> of type <code>unsigned char</code>, and <code>i</code> of type <code>int</code>.  Then,
+the C statement <code>i = foo (d, c)</code> is executed and <code>i</code> is returned.</p>
+</div>
+<div class="paragraph">
+<p>The general form of an <code>_import</code> expression is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>_import "C function name" attr... : cFuncTy;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The type and the semicolon are not optional.</p>
+</div>
+<div class="paragraph">
+<p>The function name is followed by a (possibly empty) sequence of
+attributes, analogous to C <code><em>attribute</em></code> specifiers.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example">Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>import.sml</code> imports the C function <code>ffi</code> and the C variable <code>FFI_INT</code>
+as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="c">(*</span><span class="cm"> main.sml *)</span>
+
+<span class="c">(*</span><span class="cm"> Declare ffi to be implemented by calling the C function ffi. *)</span>
+<span class="kr">val</span> <span class="nv">ffi</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"ffi"</span> <span class="n">public</span><span class="p">:</span> <span class="n">real</span> <span class="n">array</span> <span class="n">*</span> <span class="n">int</span> <span class="n">*</span> <span class="n">int</span> <span class="n">ref</span> <span class="n">*</span> <span class="n">char</span> <span class="n">ref</span> <span class="n">*</span> <span class="n">int</span> <span class="p">-&gt;</span> <span class="n">char</span><span class="p">;</span>
+<span class="kr">open</span> <span class="nn">Array</span>
+
+<span class="kr">val</span> <span class="nv">size</span> <span class="p">=</span> <span class="mi">10</span>
+<span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="n">tabulate</span> <span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span> <span class="n">real</span> <span class="n">i</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">ri</span> <span class="p">=</span> <span class="n">ref</span> <span class="mi">0</span>
+<span class="kr">val</span> <span class="nv">rc</span> <span class="p">=</span> <span class="n">ref</span> <span class="sc">#"0"</span>
+<span class="kr">val</span> <span class="nv">n</span> <span class="p">=</span> <span class="mi">17</span>
+
+<span class="c">(*</span><span class="cm"> Call the C function *)</span>
+<span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="n">ffi</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nn">Array</span><span class="p">.</span><span class="n">length</span> <span class="n">a</span><span class="p">,</span> <span class="n">ri</span><span class="p">,</span> <span class="n">rc</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+<span class="c">(*</span><span class="cm"> FFI_INT is declared as public in ffi-import.c *)</span>
+<span class="kr">val</span> <span class="p">(</span><span class="n">nGet</span><span class="p">,</span> <span class="n">nSet</span><span class="p">)</span> <span class="nv">=</span> <span class="p">_</span><span class="n">symbol</span> <span class="s2">"FFI_INT"</span> <span class="n">public</span><span class="p">:</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="n">int</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">);</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="p">(</span><span class="n">nGet</span> <span class="p">()),</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span>
+
+<span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span>
+   <span class="n">print</span> <span class="p">(</span><span class="kr">if</span> <span class="n">c</span> <span class="p">=</span> <span class="sc">#"c"</span> <span class="kr">andalso</span> <span class="n">!ri</span> <span class="p">=</span> <span class="mi">45</span> <span class="kr">andalso</span> <span class="n">!rc</span> <span class="p">=</span> <span class="n">c</span>
+             <span class="kr">then</span> <span class="s2">"success</span><span class="se">\n</span><span class="s2">"</span>
+          <span class="kr">else</span> <span class="s2">"fail</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>ffi-import.c</code> is</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="cp">#include</span> <span class="cpf">"export.h"</span><span class="cp">
+</span>
+<span class="n">Int32</span> <span class="n">FFI_INT</span> <span class="o">=</span> <span class="mi">13</span><span class="p">;</span>
+<span class="n">Word32</span> <span class="n">FFI_WORD</span> <span class="o">=</span> <span class="mh">0xFF</span><span class="p">;</span>
+<span class="n">Bool</span> <span class="n">FFI_BOOL</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">Real64</span> <span class="n">FFI_REAL</span> <span class="o">=</span> <span class="mi">3</span><span class="p">.</span><span class="mi">14159</span><span class="p">;</span>
+
+<span class="n">Char8</span> <span class="nf">ffi</span> <span class="p">(</span><span class="n">Pointer</span> <span class="n">a1</span><span class="p">,</span> <span class="n">Int32</span> <span class="n">a1len</span><span class="p">,</span> <span class="n">Pointer</span> <span class="n">a2</span><span class="p">,</span> <span class="n">Pointer</span> <span class="n">a3</span><span class="p">,</span> <span class="n">Int32</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kt">double</span> <span class="o">*</span><span class="n">ds</span> <span class="o">=</span> <span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">)</span><span class="n">a1</span><span class="p">;</span>
+        <span class="kt">int</span> <span class="o">*</span><span class="n">pi</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="o">*</span><span class="p">)</span><span class="n">a2</span><span class="p">;</span>
+        <span class="kt">char</span> <span class="o">*</span><span class="n">pc</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">a3</span><span class="p">;</span>
+        <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+        <span class="kt">double</span> <span class="n">sum</span><span class="p">;</span>
+
+        <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">a1len</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">sum</span> <span class="o">+=</span> <span class="n">ds</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+                <span class="n">ds</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="o">*</span><span class="n">pi</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">sum</span><span class="p">;</span>
+        <span class="o">*</span><span class="n">pc</span> <span class="o">=</span> <span class="sc">'c'</span><span class="p">;</span>
+        <span class="k">return</span> <span class="sc">'c'</span><span class="p">;</span>
+<span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Compile and run the program.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>% mlton -default-ann 'allowFFI true' -export-header export.h  import.sml ffi-import.c
+% ./import
+13
+success</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_download">Download</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://raw.github.com/MLton/mlton/master/doc/examples/ffi/import.sml"><code>import.sml</code></a></p>
+</li>
+<li>
+<p><a href="https://raw.github.com/MLton/mlton/master/doc/examples/ffi/ffi-import.c"><code>ffi-import.c</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps">Next Steps</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="CallingFromSMLToCFunctionPointer">CallingFromSMLToCFunctionPointer</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/CallingFromSMLToC.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/CallingFromSMLToC.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>SMLofNJStructure</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>SMLofNJStructure</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">SML_OF_NJ</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">structure</span> <span class="nn">Cont</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">cont</span>
+            <span class="kr">val</span> <span class="nv">callcc</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">cont</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+            <span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">cont</span>
+            <span class="kr">val</span> <span class="nv">throw</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">cont</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span>
+         <span class="kr">end</span>
+      <span class="kr">structure</span> <span class="nn">SysInfo</span><span class="p">:</span>
+         <span class="kr">sig</span>
+            <span class="kr">exception</span> <span class="nc">UNKNOWN</span>
+            <span class="kr">datatype</span> <span class="kt">os_kind</span> <span class="p">=</span> <span class="nc">BEOS</span> <span class="p">|</span> <span class="nc">MACOS</span> <span class="p">|</span> <span class="nc">OS2</span> <span class="p">|</span> <span class="nc">UNIX</span> <span class="p">|</span> <span class="nc">WIN32</span>
+
+            <span class="kr">val</span> <span class="nv">getHostArch</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">string</span>
+            <span class="kr">val</span> <span class="nv">getOSKind</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">os_kind</span>
+            <span class="kr">val</span> <span class="nv">getOSName</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">string</span>
+         <span class="kr">end</span>
+
+      <span class="kr">val</span> <span class="nv">exnHistory</span><span class="p">:</span> <span class="n">exn</span> <span class="p">-&gt;</span> <span class="n">string</span> <span class="n">list</span>
+      <span class="kr">val</span> <span class="nv">exportFn</span><span class="p">:</span> <span class="n">string</span> <span class="n">*</span> <span class="p">(</span><span class="n">string</span> <span class="n">*</span> <span class="n">string</span> <span class="n">list</span> <span class="p">-&gt;</span> <span class="nn">OS</span><span class="p">.</span><span class="nn">Process</span><span class="p">.</span><span class="n">status</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="kr">val</span> <span class="nv">exportML</span><span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="n">bool</span>
+      <span class="kr">val</span> <span class="nv">getAllArgs</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">string</span> <span class="n">list</span>
+      <span class="kr">val</span> <span class="nv">getArgs</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">string</span> <span class="n">list</span>
+      <span class="kr">val</span> <span class="nv">getCmdName</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">string</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>SMLofNJ</code> implements a subset of the structure of the same name
+provided in <a href="SMLNJ">Standard ML of New Jersey</a>.  It is included to
+make it easier to port programs between the two systems.  The
+semantics of these functions may be different than in SML/NJ.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>structure Cont</code></p>
+<div class="paragraph">
+<p>implements continuations.</p>
+</div>
+</li>
+<li>
+<p><code>SysInfo.getHostArch ()</code></p>
+<div class="paragraph">
+<p>returns the string for the architecture.</p>
+</div>
+</li>
+<li>
+<p><code>SysInfo.getOSKind</code></p>
+<div class="paragraph">
+<p>returns the OS kind.</p>
+</div>
+</li>
+<li>
+<p><code>SysInfo.getOSName ()</code></p>
+<div class="paragraph">
+<p>returns the string for the host.</p>
+</div>
+</li>
+<li>
+<p><code>exnHistory</code></p>
+<div class="paragraph">
+<p>the same as <code>MLton.Exn.history</code>.</p>
+</div>
+</li>
+<li>
+<p><code>getCmdName ()</code></p>
+<div class="paragraph">
+<p>the same as <code>CommandLine.name ()</code>.</p>
+</div>
+</li>
+<li>
+<p><code>getArgs ()</code></p>
+<div class="paragraph">
+<p>the same as <code>CommandLine.arguments ()</code>.</p>
+</div>
+</li>
+<li>
+<p><code>getAllArgs ()</code></p>
+<div class="paragraph">
+<p>the same as <code>getCmdName()::getArgs()</code>.</p>
+</div>
+</li>
+<li>
+<p><code>exportFn f</code></p>
+<div class="paragraph">
+<p>saves the state of the computation to a file that will apply <code>f</code> to
+the command-line arguments upon restart.</p>
+</div>
+</li>
+<li>
+<p><code>exportML f</code></p>
+<div class="paragraph">
+<p>saves the state of the computation to file <code>f</code> and continue.  Returns
+<code>true</code> in the restarted computation and <code>false</code> in the continuing
+computation.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/SMLofNJStructure.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/SMLofNJStructure.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

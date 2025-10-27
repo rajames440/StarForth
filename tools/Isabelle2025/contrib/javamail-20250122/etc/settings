@@ -1,0 +1,6 @@
+# -*- shell-script -*- :mode=shellscript:
+
+classpath "$COMPONENT/lib/jakarta.mail-api-2.1.3.jar"
+classpath "$COMPONENT/lib/jakarta.activation-api-2.1.3.jar"
+classpath "$COMPONENT/lib/angus-mail-2.0.3.jar"
+classpath "$COMPONENT/lib/angus-activation-2.0.2.jar"

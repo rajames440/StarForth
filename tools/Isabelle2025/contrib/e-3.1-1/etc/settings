@@ -1,0 +1,4 @@
+# -*- shell-script -*- :mode=shellscript:
+
+E_HOME="$COMPONENT/${ISABELLE_APPLE_PLATFORM64:-$ISABELLE_PLATFORM64}"
+E_VERSION="3.1"

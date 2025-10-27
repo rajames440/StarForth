@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>TypeIndexedValues</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>TypeIndexedValues</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="StandardML">Standard ML</a> does not support ad hoc polymorphism.  This
+presents a challenge to programmers.  The problem is that at first
+glance there seems to be no practical way to implement something like
+a function for converting a value of any type to a string or a
+function for computing a hash value for a value of any type.
+Fortunately there are ways to implement type-indexed values in SML as
+discussed in <a href="References#Yang98">Yang98</a>.  Various articles such as
+<a href="References#Danvy98">Danvy98</a>, <a href="References#Ramsey11">Ramsey11</a>, <a href="References#Elsman04">Elsman04</a>,
+<a href="References#Kennedy04">Kennedy04</a>, and <a href="References#Benton05">Benton05</a> also contain examples of
+type-indexed values.</p>
+</div>
+<div class="paragraph">
+<p><strong>NOTE:</strong> The technique used in the following example uses an early (and
+somewhat broken) variation of the basic technique used in an
+experimental generic programming library (see
+<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/generic/unstable/README"><code>README</code></a>) that can
+be found from the MLton repository.  The generic programming library
+also includes a more advanced generic pretty printing function (see
+<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/generic/unstable/public/value/pretty.sig"><code>pretty.sig</code></a>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_converting_any_sml_value_to_roughly_sml_syntax">Example: Converting any SML value to (roughly) SML syntax</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Consider the problem of converting any SML value to a textual
+presentation that matches the syntax of SML as closely as possible.
+One solution is a type-indexed function that maps a given type to a
+function that maps any value (of the type) to its textual
+presentation.  A type-indexed function like this can be useful for a
+variety of purposes.  For example, one could use it to show debugging
+information.  We&#8217;ll call this function <code>show</code>.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll do a fairly complete implementation of <code>show</code>.  We do not
+distinguish infix and nonfix constructors, but that is not an
+intrinsic property of SML datatypes.  We also don&#8217;t reconstruct a type
+name for the value, although it would be particularly useful for
+functional values.  To reconstruct type names, some changes would be
+needed and the reader is encouraged to consider how to do that.  A
+more realistic implementation would use some pretty printing
+combinators to compute a layout for the result.  This should be a
+relatively easy change (given a suitable pretty printing library).
+Cyclic values (through references and arrays) do not have a standard
+textual presentation and it is impossible to convert arbitrary
+functional values (within SML) to a meaningful textual presentation.
+Finally, it would also make sense to show sharing of references and
+arrays.  We&#8217;ll leave these improvements to an actual library
+implementation.</p>
+</div>
+<div class="paragraph">
+<p>The following code uses the <a href="Fixpoints">fixpoint framework</a> and other
+utilities from an Extended Basis library (see
+<a href="https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/README"><code>README</code></a>).</p>
+</div>
+<div class="sect2">
+<h3 id="_signature">Signature</h3>
+<div class="paragraph">
+<p>Let&#8217;s consider the design of the <code>SHOW</code> signature:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">infixr</span> <span class="n">--&gt;</span>
+
+<span class="kr">signature</span> <span class="nn">SHOW</span> <span class="p">=</span> <span class="kr">sig</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>       <span class="c">(*</span><span class="cm"> complete type-index *)</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">s</span>       <span class="c">(*</span><span class="cm"> incomplete sum *)</span>
+   <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'k</span><span class="p">)</span> <span class="kt">p</span> <span class="c">(*</span><span class="cm"> incomplete product *)</span>
+   <span class="kr">type</span> <span class="kt">u</span>          <span class="c">(*</span><span class="cm"> tuple or unlabelled product *)</span>
+   <span class="kr">type</span> <span class="kt">l</span>          <span class="c">(*</span><span class="cm"> record or labelled product *)</span>
+
+   <span class="kr">val</span> <span class="nv">show</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">string</span>
+
+   <span class="c">(*</span><span class="cm"> user-defined types *)</span>
+   <span class="kr">val</span> <span class="nv">inj</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+
+   <span class="c">(*</span><span class="cm"> tuples and records *)</span>
+   <span class="kr">val</span> <span class="nv">*</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'k</span><span class="p">)</span> <span class="n">p</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span><span class="p">,</span> <span class="nd">'k</span><span class="p">)</span> <span class="n">p</span> <span class="p">-&gt;</span> <span class="p">((</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">product</span><span class="p">,</span> <span class="nd">'k</span><span class="p">)</span> <span class="n">p</span>
+
+   <span class="kr">val</span> <span class="nv">U</span> <span class="p">:</span>           <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="n">p</span>
+   <span class="kr">val</span> <span class="nv">L</span> <span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="n">p</span>
+
+   <span class="kr">val</span> <span class="nv">tuple</span>  <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="n">p</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">record</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="n">p</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+
+   <span class="c">(*</span><span class="cm"> datatypes *)</span>
+   <span class="kr">val</span> <span class="nv">+</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">s</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">s</span> <span class="p">-&gt;</span> <span class="p">((</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">sum</span><span class="p">)</span> <span class="n">s</span>
+
+   <span class="kr">val</span> <span class="nv">C0</span> <span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="n">unit</span> <span class="n">s</span>
+   <span class="kr">val</span> <span class="nv">C1</span> <span class="p">:</span> <span class="n">string</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">s</span>
+
+   <span class="kr">val</span> <span class="nv">data</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">s</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+
+   <span class="kr">val</span> <span class="nv">Y</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="nn">Tie</span><span class="p">.</span><span class="n">t</span>
+
+   <span class="c">(*</span><span class="cm"> exceptions *)</span>
+   <span class="kr">val</span> <span class="nv">exn</span> <span class="p">:</span> <span class="n">exn</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">regExn</span> <span class="p">:</span> <span class="p">(</span><span class="n">exn</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">s</span><span class="p">)</span> <span class="n">option</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+
+   <span class="c">(*</span><span class="cm"> some built-in type constructors *)</span>
+   <span class="kr">val</span> <span class="nv">refc</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">ref</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">array</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">array</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">list</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">list</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">vector</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">vector</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">--&gt;</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">t</span>
+
+   <span class="c">(*</span><span class="cm"> some built-in base types *)</span>
+   <span class="kr">val</span> <span class="nv">string</span> <span class="p">:</span> <span class="n">string</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">unit</span> <span class="p">:</span> <span class="n">unit</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">bool</span> <span class="p">:</span> <span class="n">bool</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">char</span> <span class="p">:</span> <span class="n">char</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">int</span> <span class="p">:</span> <span class="n">int</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">word</span> <span class="p">:</span> <span class="n">word</span> <span class="n">t</span>
+   <span class="kr">val</span> <span class="nv">real</span> <span class="p">:</span> <span class="n">real</span> <span class="n">t</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>While some details are shaped by the specific requirements of <code>show</code>,
+there are a number of (design) patterns that translate to other
+type-indexed values.  The former kind of details are mostly shaped by
+the syntax of SML values that <code>show</code> is designed to produce.  To this
+end, abstract types and phantom types are used to distinguish
+incomplete record, tuple, and datatype type-indices from each other
+and from complete type-indices.  Also, names of record labels and
+datatype constructors need to be provided by the user.</p>
+</div>
+<div class="sect3">
+<h4 id="_arbitrary_user_defined_datatypes">Arbitrary user-defined datatypes</h4>
+<div class="paragraph">
+<p>Perhaps the most important pattern is how the design supports
+arbitrary user-defined datatypes.  A number of combinators together
+conspire to provide the functionality.  First of all, to support new
+user-defined types, a combinator taking a conversion function to a
+previously supported type is provided:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">inj</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'b</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An injection function is sufficient in this case, but in the general
+case, an embedding with injection and projection functions may be
+needed.</p>
+</div>
+<div class="paragraph">
+<p>To support products (tuples and records) a product combinator is
+provided:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">*</span> <span class="p">:</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'k</span><span class="p">)</span> <span class="n">p</span> <span class="n">*</span> <span class="p">(</span><span class="nd">'b</span><span class="p">,</span> <span class="nd">'k</span><span class="p">)</span> <span class="n">p</span> <span class="p">-&gt;</span> <span class="p">((</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">product</span><span class="p">,</span> <span class="nd">'k</span><span class="p">)</span> <span class="n">p</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The second (phantom) type variable <code>'k</code> is there to distinguish
+between labelled and unlabelled products and the type <code>p</code>
+distinguishes incomplete products from complete type-indices of type
+<code>t</code>.  Most type-indexed values do not need to make such distinctions.</p>
+</div>
+<div class="paragraph">
+<p>To support sums (datatypes) a sum combinator is provided:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">+</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">s</span> <span class="n">*</span> <span class="nd">'b</span> <span class="n">s</span> <span class="p">-&gt;</span> <span class="p">((</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">sum</span><span class="p">)</span> <span class="n">s</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Again, the purpose of the type <code>s</code> is to distinguish incomplete sums
+from complete type-indices of type <code>t</code>, which usually isn&#8217;t necessary.</p>
+</div>
+<div class="paragraph">
+<p>Finally, to support recursive datatypes, including sets of mutually
+recursive datatypes, a <a href="Fixpoints">fixpoint tier</a> is provided:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">Y</span> <span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="nn">Tie</span><span class="p">.</span><span class="n">t</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Together these combinators (with the more domain specific combinators
+<code>U</code>, <code>L</code>, <code>tuple</code>, <code>record</code>, <code>C0</code>, <code>C1</code>, and <code>data</code>) enable one to
+encode a type-index for any user-defined datatype.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_exceptions">Exceptions</h4>
+<div class="paragraph">
+<p>The <code>exn</code> type in SML is a <a href="UniversalType">universal type</a> into which
+all types can be embedded.  SML also allows a program to generate new
+exception variants at run-time.  Thus a mechanism is required to register
+handlers for particular variants:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">exn</span> <span class="p">:</span> <span class="n">exn</span> <span class="n">t</span>
+<span class="kr">val</span> <span class="nv">regExn</span> <span class="p">:</span> <span class="p">(</span><span class="n">exn</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">s</span><span class="p">)</span> <span class="n">option</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The universal <code>exn</code> type-index then makes use of the registered
+handlers.  The above particular form of handler, which converts an
+exception value to a value of some type and a type-index for that type
+(essentially an existential type) is designed to make it convenient to
+write handlers.  To write a handler, one can conveniently reuse
+existing type-indices:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">exception</span> <span class="nc">Int</span> <span class="kr">of</span> <span class="n">int</span>
+
+<span class="kr">local</span>
+   <span class="kr">open</span> <span class="nn">Show</span>
+<span class="kr">in</span>
+   <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="n">regExn</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">Int</span> <span class="n">v</span> <span class="p">=&gt;</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">C1</span><span class="s2">"Int"</span> <span class="n">int</span><span class="p">)</span>
+                     <span class="p">|</span> <span class="p">_</span>     <span class="p">=&gt;</span> <span class="n">NONE</span><span class="p">)</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that a single handler may actually handle an arbitrary number of
+different exceptions.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_other_types">Other types</h4>
+<div class="paragraph">
+<p>Some built-in and standard types typically require special treatment
+due to their special nature.  The most important of these are arrays
+and references, because cyclic data (ignoring closures) and observable
+sharing can only be constructed through them.</p>
+</div>
+<div class="paragraph">
+<p>When arrow types are really supported, unlike in this case, they
+usually need special treatment due to the contravariance of arguments.</p>
+</div>
+<div class="paragraph">
+<p>Lists and vectors require special treatment in the case of <code>show</code>,
+because of their special syntax.  This isn&#8217;t usually the case.</p>
+</div>
+<div class="paragraph">
+<p>The set of base types to support also needs to be considered unless
+one exports an interface for constructing type-indices for entirely
+new base types.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before going to the implementation, let&#8217;s look at some examples.  For
+the following examples, we&#8217;ll assume a structure binding
+<code>Show :&gt; SHOW</code>.  If you want to try the examples immediately, just
+skip forward to the implementation.</p>
+</div>
+<div class="paragraph">
+<p>To use <code>show</code>, one first needs a type-index, which is then given to
+<code>show</code>.  To show a list of integers, one would use the type-index
+<code>list int</code>, which has the type <code>int list Show.t</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="s2">"[3, 1, 4]"</span> <span class="p">=</span>
+    <span class="kr">let</span> <span class="kr">open</span> <span class="nn">Show</span> <span class="kr">in</span> <span class="n">show</span> <span class="p">(</span><span class="n">list</span> <span class="n">int</span><span class="p">)</span> <span class="kr">end</span>
+       <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Likewise, to show a list of lists of characters, one would use the
+type-index <code>list (list char)</code>, which has the type <code>char list list
+Show.t</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="s2">"[[#</span><span class="se">\"</span><span class="s2">a</span><span class="se">\"</span><span class="s2">, #</span><span class="se">\"</span><span class="s2">b</span><span class="se">\"</span><span class="s2">, #</span><span class="se">\"</span><span class="s2">c</span><span class="se">\"</span><span class="s2">], []]"</span> <span class="p">=</span>
+    <span class="kr">let</span> <span class="kr">open</span> <span class="nn">Show</span> <span class="kr">in</span> <span class="n">show</span> <span class="p">(</span><span class="n">list</span> <span class="p">(</span><span class="n">list</span> <span class="n">char</span><span class="p">))</span> <span class="kr">end</span>
+       <span class="p">[[</span><span class="sc">#"a"</span><span class="p">,</span> <span class="sc">#"b"</span><span class="p">,</span> <span class="sc">#"c"</span><span class="p">],</span> <span class="p">[]]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Handling standard types is not particularly interesting.  It is more
+interesting to see how user-defined types can be handled.  Although
+the <code>option</code> datatype is a standard type, it requires no special
+support, so we can treat it as a user-defined type.  Options can be
+encoded easily using a sum:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">option</span> <span class="n">t</span> <span class="p">=</span> <span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">Show</span>
+<span class="kr">in</span>
+   <span class="n">inj</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">INL</span> <span class="p">()</span>
+         <span class="p">|</span> <span class="n">SOME</span> <span class="n">v</span> <span class="p">=&gt;</span> <span class="n">INR</span> <span class="n">v</span><span class="p">)</span>
+       <span class="p">(</span><span class="n">data</span> <span class="p">(</span><span class="n">C0</span><span class="s2">"NONE"</span> <span class="n">+</span> <span class="n">C1</span><span class="s2">"SOME"</span> <span class="n">t</span><span class="p">))</span>
+<span class="kr">end</span>
+
+<span class="kr">val</span> <span class="s2">"SOME 5"</span> <span class="p">=</span>
+    <span class="kr">let</span> <span class="kr">open</span> <span class="nn">Show</span> <span class="kr">in</span> <span class="n">show</span> <span class="p">(</span><span class="n">option</span> <span class="n">int</span><span class="p">)</span> <span class="kr">end</span>
+       <span class="p">(</span><span class="n">SOME</span> <span class="mi">5</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Readers new to type-indexed values might want to type annotate each
+subexpression of the above example as an exercise.  (Use a compiler to
+check your annotations.)</p>
+</div>
+<div class="paragraph">
+<p>Using a product, user specified records can be also be encoded easily:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">abc</span> <span class="p">=</span> <span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">Show</span>
+<span class="kr">in</span>
+   <span class="n">inj</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">{</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">}</span> <span class="p">=&gt;</span> <span class="n">a</span> <span class="n">&amp;</span> <span class="n">b</span> <span class="n">&amp;</span> <span class="n">c</span><span class="p">)</span>
+       <span class="p">(</span><span class="n">record</span> <span class="p">(</span><span class="n">L</span><span class="s2">"a"</span> <span class="p">(</span><span class="n">option</span> <span class="n">int</span><span class="p">)</span> <span class="n">*</span>
+                <span class="n">L</span><span class="s2">"b"</span> <span class="n">real</span> <span class="n">*</span>
+                <span class="n">L</span><span class="s2">"c"</span> <span class="n">bool</span><span class="p">))</span>
+<span class="kr">end</span>
+
+<span class="kr">val</span> <span class="s2">"{a = SOME 1, b = 3.0, c = false}"</span>
+    <span class="kr">let</span> <span class="kr">open</span> <span class="nn">Show</span> <span class="kr">in</span> <span class="n">show</span> <span class="n">abc</span> <span class="kr">end</span>
+       <span class="p">{</span><span class="n">a</span> <span class="p">=</span> <span class="n">SOME</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span> <span class="p">=</span> <span class="mf">3.0</span><span class="p">,</span> <span class="n">c</span> <span class="p">=</span> <span class="n">false</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you can see, both of the above use <code>inj</code> to inject user-defined
+types to the general purpose sum and product types.</p>
+</div>
+<div class="paragraph">
+<p>Of particular interest is whether recursive datatypes and cyclic data
+can be handled.  For example, how does one write a type-index for a
+recursive datatype such as a cyclic graph?</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">graph</span> <span class="p">=</span> <span class="nc">VTX</span> <span class="kr">of</span> <span class="nd">'a</span> <span class="n">*</span> <span class="nd">'a</span> <span class="n">graph</span> <span class="n">list</span> <span class="n">ref</span>
+<span class="kr">fun</span> <span class="nf">arcs</span> <span class="p">(</span><span class="n">VTX</span> <span class="p">(_,</span> <span class="n">r</span><span class="p">))</span> <span class="p">=</span> <span class="n">r</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the <code>Show</code> combinators, we could first write a new type-index
+combinator for <code>graph</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">graph</span> <span class="n">a</span> <span class="p">=</span> <span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">Tie</span> <span class="nn">Show</span>
+<span class="kr">in</span>
+   <span class="n">fix</span> <span class="n">Y</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">graph_a</span> <span class="p">=&gt;</span>
+             <span class="n">inj</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">VTX</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="n">&amp;</span> <span class="n">y</span><span class="p">)</span>
+                 <span class="p">(</span><span class="n">data</span> <span class="p">(</span><span class="n">C1</span><span class="s2">"VTX"</span>
+                          <span class="p">(</span><span class="n">tuple</span> <span class="p">(</span><span class="n">U</span> <span class="n">a</span> <span class="n">*</span>
+                                  <span class="n">U</span> <span class="p">(</span><span class="n">refc</span> <span class="p">(</span><span class="n">list</span> <span class="n">graph_a</span><span class="p">)))))))</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To show a graph with integer labels</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">a_graph</span> <span class="p">=</span> <span class="kr">let</span>
+   <span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="n">VTX</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ref</span> <span class="p">[])</span>
+   <span class="kr">val</span> <span class="nv">b</span> <span class="p">=</span> <span class="n">VTX</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">ref</span> <span class="p">[])</span>
+   <span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="n">VTX</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">ref</span> <span class="p">[])</span>
+   <span class="kr">val</span> <span class="nv">d</span> <span class="p">=</span> <span class="n">VTX</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">ref</span> <span class="p">[])</span>
+   <span class="kr">val</span> <span class="nv">e</span> <span class="p">=</span> <span class="n">VTX</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">ref</span> <span class="p">[])</span>
+   <span class="kr">val</span> <span class="nv">f</span> <span class="p">=</span> <span class="n">VTX</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">ref</span> <span class="p">[])</span>
+<span class="kr">in</span>
+   <span class="n">arcs</span> <span class="n">a</span> <span class="n">:=</span> <span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span>
+ <span class="p">;</span> <span class="n">arcs</span> <span class="n">b</span> <span class="n">:=</span> <span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">e</span><span class="p">]</span>
+ <span class="p">;</span> <span class="n">arcs</span> <span class="n">c</span> <span class="n">:=</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">]</span>
+ <span class="p">;</span> <span class="n">arcs</span> <span class="n">d</span> <span class="n">:=</span> <span class="p">[</span><span class="n">f</span><span class="p">]</span>
+ <span class="p">;</span> <span class="n">arcs</span> <span class="n">e</span> <span class="n">:=</span> <span class="p">[</span><span class="n">d</span><span class="p">]</span>
+ <span class="p">;</span> <span class="n">arcs</span> <span class="n">f</span> <span class="n">:=</span> <span class="p">[</span><span class="n">e</span><span class="p">]</span>
+ <span class="p">;</span> <span class="n">a</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>we could then simply write</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="s2">"VTX (1, ref [VTX (2, ref [VTX (3, ref [VTX (1, %0), </span><span class="si">\
+    \</span><span class="s2">VTX (6, ref [VTX (5, ref [VTX (4, ref [VTX (6, %3)])])] as %3)]), </span><span class="si">\
+    \</span><span class="s2">VTX (5, ref [VTX (4, ref [VTX (6, ref [VTX (5, %2)])])] as %2)]), </span><span class="si">\
+    \</span><span class="s2">VTX (4, ref [VTX (6, ref [VTX (5, ref [VTX (4, %1)])])] as %1)] as %0)"</span> <span class="p">=</span>
+    <span class="kr">let</span> <span class="kr">open</span> <span class="nn">Show</span> <span class="kr">in</span> <span class="n">show</span> <span class="p">(</span><span class="n">graph</span> <span class="n">int</span><span class="p">)</span> <span class="kr">end</span>
+       <span class="n">a_graph</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There is a subtle gotcha with cyclic data.  Consider the following code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">exception</span> <span class="nc">ExnArray</span> <span class="kr">of</span> <span class="n">exn</span> <span class="n">array</span>
+
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">Show</span>
+<span class="kr">in</span>
+   <span class="n">regExn</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">ExnArray</span> <span class="n">a</span> <span class="p">=&gt;</span>
+              <span class="n">SOME</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">C1</span><span class="s2">"ExnArray"</span> <span class="p">(</span><span class="n">array</span> <span class="n">exn</span><span class="p">))</span>
+            <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">NONE</span><span class="p">)</span>
+<span class="kr">end</span>
+
+<span class="kr">val</span> <span class="nv">a_cycle</span> <span class="p">=</span> <span class="kr">let</span>
+   <span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="nn">Array</span><span class="p">.</span><span class="n">fromList</span> <span class="p">[</span><span class="n">Empty</span><span class="p">]</span>
+<span class="kr">in</span>
+   <span class="nn">Array</span><span class="p">.</span><span class="n">update</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ExnArray</span> <span class="n">a</span><span class="p">)</span> <span class="p">;</span> <span class="n">a</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Although the above looks innocent enough, the evaluation  of</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="s2">"[|ExnArray %0|] as %0"</span> <span class="p">=</span>
+    <span class="kr">let</span> <span class="kr">open</span> <span class="nn">Show</span> <span class="kr">in</span> <span class="n">show</span> <span class="p">(</span><span class="n">array</span> <span class="n">exn</span><span class="p">)</span> <span class="kr">end</span>
+       <span class="n">a_cycle</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>goes into an infinite loop.  To avoid this problem, the type-index
+<code>array exn</code> must be evaluated only once, as in the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="nv">array_exn</span> <span class="p">=</span> <span class="kr">let</span> <span class="kr">open</span> <span class="nn">Show</span> <span class="kr">in</span> <span class="n">array</span> <span class="n">exn</span> <span class="kr">end</span>
+
+<span class="kr">exception</span> <span class="nc">ExnArray</span> <span class="kr">of</span> <span class="n">exn</span> <span class="n">array</span>
+
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">Show</span>
+<span class="kr">in</span>
+   <span class="n">regExn</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">ExnArray</span> <span class="n">a</span> <span class="p">=&gt;</span>
+              <span class="n">SOME</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">C1</span><span class="s2">"ExnArray"</span> <span class="n">array_exn</span><span class="p">)</span>
+            <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">NONE</span><span class="p">)</span>
+<span class="kr">end</span>
+
+<span class="kr">val</span> <span class="nv">a_cycle</span> <span class="p">=</span> <span class="kr">let</span>
+   <span class="kr">val</span> <span class="nv">a</span> <span class="p">=</span> <span class="nn">Array</span><span class="p">.</span><span class="n">fromList</span> <span class="p">[</span><span class="n">Empty</span><span class="p">]</span>
+<span class="kr">in</span>
+   <span class="nn">Array</span><span class="p">.</span><span class="n">update</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ExnArray</span> <span class="n">a</span><span class="p">)</span> <span class="p">;</span> <span class="n">a</span>
+<span class="kr">end</span>
+
+<span class="kr">val</span> <span class="s2">"[|ExnArray %0|] as %0"</span> <span class="p">=</span>
+    <span class="kr">let</span> <span class="kr">open</span> <span class="nn">Show</span> <span class="kr">in</span> <span class="n">show</span> <span class="n">array_exn</span> <span class="kr">end</span>
+       <span class="n">a_cycle</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Cyclic data (excluding closures) in Standard ML can only be
+constructed imperatively through arrays and references (combined with
+exceptions or recursive datatypes).  Before recursing to a reference
+or an array, one needs to check whether that reference or array has
+already been seen before.  When <code>ref</code> or <code>array</code> is called with a
+type-index, a new cyclicity checker is instantiated.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">structure</span> <span class="nn">SmlSyntax</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">local</span>
+      <span class="kr">structure</span> <span class="nn">CV</span> <span class="p">=</span> <span class="n">CharVector</span> <span class="kr">and</span> <span class="nv">C</span> <span class="p">=</span> <span class="n">Char</span>
+   <span class="kr">in</span>
+      <span class="kr">val</span> <span class="nv">isSym</span> <span class="p">=</span> <span class="nn">Char</span><span class="p">.</span><span class="n">contains</span> <span class="s2">"!%&amp;$#+-/:&lt;=&gt;?@</span><span class="se">\\</span><span class="s2">~`^|*"</span>
+
+      <span class="kr">fun</span> <span class="nf">isSymId</span> <span class="n">s</span> <span class="p">=</span> <span class="mi">0</span> <span class="n">&lt;</span> <span class="n">size</span> <span class="n">s</span> <span class="kr">andalso</span> <span class="nn">CV</span><span class="p">.</span><span class="n">all</span> <span class="n">isSym</span> <span class="n">s</span>
+
+      <span class="kr">fun</span> <span class="nf">isAlphaNumId</span> <span class="n">s</span> <span class="p">=</span>
+          <span class="mi">0</span> <span class="n">&lt;</span> <span class="n">size</span> <span class="n">s</span>
+          <span class="kr">andalso</span> <span class="nn">C</span><span class="p">.</span><span class="n">isAlpha</span> <span class="p">(</span><span class="nn">CV</span><span class="p">.</span><span class="n">sub</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+          <span class="kr">andalso</span> <span class="nn">CV</span><span class="p">.</span><span class="n">all</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">c</span> <span class="p">=&gt;</span> <span class="nn">C</span><span class="p">.</span><span class="n">isAlphaNum</span> <span class="n">c</span>
+                                  <span class="kr">orelse</span> <span class="sc">#"'"</span> <span class="p">=</span> <span class="n">c</span>
+                                  <span class="kr">orelse</span> <span class="sc">#"_"</span> <span class="p">=</span> <span class="n">c</span><span class="p">)</span> <span class="n">s</span>
+
+      <span class="kr">fun</span> <span class="nf">isNumLabel</span> <span class="n">s</span> <span class="p">=</span>
+          <span class="mi">0</span> <span class="n">&lt;</span> <span class="n">size</span> <span class="n">s</span>
+          <span class="kr">andalso</span> <span class="sc">#"0"</span> <span class="n">&lt;&gt;</span> <span class="nn">CV</span><span class="p">.</span><span class="n">sub</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+          <span class="kr">andalso</span> <span class="nn">CV</span><span class="p">.</span><span class="n">all</span> <span class="nn">C</span><span class="p">.</span><span class="n">isDigit</span> <span class="n">s</span>
+
+      <span class="kr">fun</span> <span class="nf">isId</span> <span class="n">s</span> <span class="p">=</span> <span class="n">isAlphaNumId</span> <span class="n">s</span> <span class="kr">orelse</span> <span class="n">isSymId</span> <span class="n">s</span>
+
+      <span class="kr">fun</span> <span class="nf">isLongId</span> <span class="n">s</span> <span class="p">=</span> <span class="nn">List</span><span class="p">.</span><span class="n">all</span> <span class="n">isId</span> <span class="p">(</span><span class="nn">String</span><span class="p">.</span><span class="n">fields</span> <span class="p">(</span><span class="sc">#"."</span> <span class="n">&lt;\</span> <span class="kr">op</span> <span class="p">=)</span> <span class="n">s</span><span class="p">)</span>
+
+      <span class="kr">fun</span> <span class="nf">isLabel</span> <span class="n">s</span> <span class="p">=</span> <span class="n">isId</span> <span class="n">s</span> <span class="kr">orelse</span> <span class="n">isNumLabel</span> <span class="n">s</span>
+   <span class="kr">end</span>
+<span class="kr">end</span>
+
+<span class="kr">structure</span> <span class="nn">Show</span> <span class="p">:&gt;</span> <span class="n">SHOW</span> <span class="p">=</span> <span class="kr">struct</span>
+   <span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">t</span> <span class="p">=</span> <span class="nc">IN</span> <span class="kr">of</span> <span class="n">exn</span> <span class="n">list</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">bool</span> <span class="n">*</span> <span class="n">string</span>
+   <span class="kr">type</span> <span class="nd">'a</span> <span class="kt">s</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="kr">type</span> <span class="p">(</span><span class="nd">'a</span><span class="p">,</span> <span class="nd">'k</span><span class="p">)</span> <span class="kt">p</span> <span class="p">=</span> <span class="nd">'a</span> <span class="n">t</span>
+   <span class="kr">type</span> <span class="kt">u</span> <span class="p">=</span> <span class="n">unit</span>
+   <span class="kr">type</span> <span class="kt">l</span> <span class="p">=</span> <span class="n">unit</span>
+
+   <span class="kr">fun</span> <span class="nf">show</span> <span class="p">(</span><span class="n">IN</span> <span class="n">t</span><span class="p">)</span> <span class="n">x</span> <span class="p">=</span> <span class="nl">#2</span> <span class="p">(</span><span class="n">t</span> <span class="p">([],</span> <span class="n">x</span><span class="p">))</span>
+
+   <span class="c">(*</span><span class="cm"> user-defined types *)</span>
+   <span class="kr">fun</span> <span class="nf">inj</span> <span class="n">inj</span> <span class="p">(</span><span class="n">IN</span> <span class="n">b</span><span class="p">)</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">b</span> <span class="n">o</span> <span class="nn">Pair</span><span class="p">.</span><span class="n">map</span> <span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">inj</span><span class="p">))</span>
+
+   <span class="kr">local</span>
+      <span class="kr">fun</span> <span class="nf">surround</span> <span class="n">pre</span> <span class="n">suf</span> <span class="p">(_,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=</span> <span class="p">(</span><span class="n">false</span><span class="p">,</span> <span class="n">concat</span> <span class="p">[</span><span class="n">pre</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">suf</span><span class="p">])</span>
+      <span class="kr">fun</span> <span class="nf">parenthesize</span> <span class="n">x</span> <span class="p">=</span> <span class="kr">if</span> <span class="nl">#1</span> <span class="n">x</span> <span class="kr">then</span> <span class="n">surround</span> <span class="s2">"("</span> <span class="s2">")"</span> <span class="n">x</span> <span class="kr">else</span> <span class="n">x</span>
+      <span class="kr">fun</span> <span class="nf">construct</span> <span class="n">tag</span> <span class="p">=</span>
+          <span class="p">(</span><span class="kr">fn</span> <span class="p">(_,</span> <span class="n">s</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">concat</span> <span class="p">[</span><span class="n">tag</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="n">s</span><span class="p">]))</span> <span class="n">o</span> <span class="n">parenthesize</span>
+      <span class="kr">fun</span> <span class="nf">check</span> <span class="n">p</span> <span class="n">m</span> <span class="n">s</span> <span class="p">=</span> <span class="kr">if</span> <span class="n">p</span> <span class="n">s</span> <span class="kr">then</span> <span class="p">()</span> <span class="kr">else</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="p">(</span><span class="n">m^s</span><span class="p">)</span>
+   <span class="kr">in</span>
+      <span class="c">(*</span><span class="cm"> tuples and records *)</span>
+      <span class="kr">fun</span> <span class="p">(</span><span class="n">IN</span> <span class="n">l</span><span class="p">)</span> <span class="nf">*</span> <span class="p">(</span><span class="n">IN</span> <span class="n">r</span><span class="p">)</span> <span class="p">=</span>
+          <span class="n">IN</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">a</span> <span class="n">&amp;</span> <span class="n">b</span><span class="p">)</span> <span class="p">=&gt;</span>
+                 <span class="p">(</span><span class="n">false</span><span class="p">,</span> <span class="n">concat</span> <span class="p">[</span><span class="nl">#2</span> <span class="p">(</span><span class="n">l</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">a</span><span class="p">)),</span>
+                                 <span class="s2">", "</span><span class="p">,</span>
+                                 <span class="nl">#2</span> <span class="p">(</span><span class="n">r</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">b</span><span class="p">))]))</span>
+
+      <span class="kr">val</span> <span class="nv">U</span> <span class="p">=</span> <span class="n">id</span>
+      <span class="kr">fun</span> <span class="nf">L</span> <span class="n">l</span> <span class="p">=</span> <span class="p">(</span><span class="n">check</span> <span class="nn">SmlSyntax</span><span class="p">.</span><span class="n">isLabel</span> <span class="s2">"Invalid label: "</span> <span class="n">l</span>
+               <span class="p">;</span> <span class="kr">fn</span> <span class="n">IN</span> <span class="n">t</span> <span class="p">=&gt;</span> <span class="n">IN</span> <span class="p">(</span><span class="n">surround</span> <span class="p">(</span><span class="n">l^</span><span class="s2">" = "</span><span class="p">)</span> <span class="s2">""</span> <span class="n">o</span> <span class="n">t</span><span class="p">))</span>
+
+      <span class="kr">fun</span> <span class="nf">tuple</span> <span class="p">(</span><span class="n">IN</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">surround</span> <span class="s2">"("</span> <span class="s2">")"</span> <span class="n">o</span> <span class="n">t</span><span class="p">)</span>
+      <span class="kr">fun</span> <span class="nf">record</span> <span class="p">(</span><span class="n">IN</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">surround</span> <span class="s2">"{"</span> <span class="s2">"}"</span> <span class="n">o</span> <span class="n">t</span><span class="p">)</span>
+
+      <span class="c">(*</span><span class="cm"> datatypes *)</span>
+      <span class="kr">fun</span> <span class="p">(</span><span class="n">IN</span> <span class="n">l</span><span class="p">)</span> <span class="nf">+</span> <span class="p">(</span><span class="n">IN</span> <span class="n">r</span><span class="p">)</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">INL</span> <span class="n">a</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">l</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+                                 <span class="p">|</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">INR</span> <span class="n">b</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">r</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+
+      <span class="kr">fun</span> <span class="nf">C0</span> <span class="n">c</span> <span class="p">=</span> <span class="p">(</span><span class="n">check</span> <span class="nn">SmlSyntax</span><span class="p">.</span><span class="n">isId</span> <span class="s2">"Invalid constructor: "</span> <span class="n">c</span>
+                <span class="p">;</span> <span class="n">IN</span> <span class="p">(</span><span class="n">const</span> <span class="p">(</span><span class="n">false</span><span class="p">,</span> <span class="n">c</span><span class="p">)))</span>
+      <span class="kr">fun</span> <span class="nf">C1</span> <span class="n">c</span> <span class="p">(</span><span class="n">IN</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="p">(</span><span class="n">check</span> <span class="nn">SmlSyntax</span><span class="p">.</span><span class="n">isId</span> <span class="s2">"Invalid constructor: "</span> <span class="n">c</span>
+                       <span class="p">;</span> <span class="n">IN</span> <span class="p">(</span><span class="n">construct</span> <span class="n">c</span> <span class="n">o</span> <span class="n">t</span><span class="p">))</span>
+
+      <span class="kr">val</span> <span class="nv">data</span> <span class="p">=</span> <span class="n">id</span>
+
+      <span class="kr">fun</span> <span class="nf">Y</span> <span class="n">?</span> <span class="p">=</span> <span class="nn">Tie</span><span class="p">.</span><span class="n">iso</span> <span class="nn">Tie</span><span class="p">.</span><span class="n">function</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">IN</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">,</span> <span class="n">IN</span><span class="p">)</span> <span class="n">?</span>
+
+      <span class="c">(*</span><span class="cm"> exceptions *)</span>
+      <span class="kr">local</span>
+         <span class="kr">val</span> <span class="nv">handlers</span> <span class="p">=</span> <span class="n">ref</span> <span class="p">([]</span> <span class="p">:</span> <span class="p">(</span><span class="n">exn</span> <span class="p">-&gt;</span> <span class="n">unit</span> <span class="n">t</span> <span class="n">option</span><span class="p">)</span> <span class="n">list</span><span class="p">)</span>
+      <span class="kr">in</span>
+         <span class="kr">val</span> <span class="nv">exn</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="kr">let</span>
+                             <span class="kr">fun</span> <span class="nf">lp</span> <span class="p">[]</span> <span class="p">=</span>
+                                 <span class="n">C0</span><span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="s2">"&lt;exn:"</span><span class="p">,</span>
+                                            <span class="nn">General</span><span class="p">.</span><span class="n">exnName</span> <span class="n">e</span><span class="p">,</span>
+                                            <span class="s2">"&gt;"</span><span class="p">])</span>
+                               <span class="p">|</span> <span class="nf">lp</span> <span class="p">(</span><span class="n">f::fs</span><span class="p">)</span> <span class="p">=</span>
+                                 <span class="kr">case</span> <span class="n">f</span> <span class="n">e</span>
+                                  <span class="kr">of</span> <span class="n">NONE</span> <span class="p">=&gt;</span> <span class="n">lp</span> <span class="n">fs</span>
+                                   <span class="p">|</span> <span class="n">SOME</span> <span class="n">t</span> <span class="p">=&gt;</span> <span class="n">t</span>
+                             <span class="kr">val</span> <span class="nv">IN</span> <span class="n">f</span> <span class="p">=</span> <span class="n">lp</span> <span class="p">(</span><span class="n">!handlers</span><span class="p">)</span>
+                          <span class="kr">in</span>
+                             <span class="n">f</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="p">())</span>
+                          <span class="kr">end</span><span class="p">)</span>
+         <span class="kr">fun</span> <span class="nf">regExn</span> <span class="n">f</span> <span class="p">=</span>
+             <span class="n">handlers</span> <span class="n">:=</span> <span class="p">(</span><span class="nn">Option</span><span class="p">.</span><span class="n">map</span>
+                             <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">IN</span> <span class="n">f</span><span class="p">)</span> <span class="p">=&gt;</span>
+                                 <span class="n">IN</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="p">())</span> <span class="p">=&gt;</span>
+                                        <span class="n">f</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">x</span><span class="p">)))</span> <span class="n">o</span> <span class="n">f</span><span class="p">)</span>
+                         <span class="n">::</span> <span class="n">!handlers</span>
+      <span class="kr">end</span>
+
+      <span class="c">(*</span><span class="cm"> some built-in type constructors *)</span>
+      <span class="kr">local</span>
+         <span class="kr">fun</span> <span class="nf">cyclic</span> <span class="p">(</span><span class="n">IN</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span> <span class="kr">let</span>
+            <span class="kr">exception</span> <span class="nc">E</span> <span class="kr">of</span> <span class="nd">''a</span> <span class="n">*</span> <span class="n">bool</span> <span class="n">ref</span>
+         <span class="kr">in</span>
+            <span class="n">IN</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">v</span> <span class="p">:</span> <span class="nd">''a</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="kr">let</span>
+                      <span class="kr">val</span> <span class="nv">idx</span> <span class="p">=</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span> <span class="n">o</span> <span class="n">length</span>
+                      <span class="kr">fun</span> <span class="nf">lp</span> <span class="p">(</span><span class="n">E</span> <span class="p">(</span><span class="n">v'</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span><span class="n">::rs</span><span class="p">)</span> <span class="p">=</span>
+                          <span class="kr">if</span> <span class="n">v'</span> <span class="n">&lt;&gt;</span> <span class="n">v</span> <span class="kr">then</span> <span class="n">lp</span> <span class="n">rs</span>
+                          <span class="kr">else</span> <span class="p">(</span><span class="n">c</span> <span class="n">:=</span> <span class="n">false</span> <span class="p">;</span> <span class="p">(</span><span class="n">false</span><span class="p">,</span> <span class="s2">"%"</span><span class="n">^idx</span> <span class="n">rs</span><span class="p">))</span>
+                        <span class="p">|</span> <span class="nf">lp</span> <span class="p">(_</span><span class="n">::rs</span><span class="p">)</span> <span class="p">=</span> <span class="n">lp</span> <span class="n">rs</span>
+                        <span class="p">|</span> <span class="nf">lp</span> <span class="p">[]</span> <span class="p">=</span> <span class="kr">let</span>
+                             <span class="kr">val</span> <span class="nv">c</span> <span class="p">=</span> <span class="n">ref</span> <span class="n">true</span>
+                             <span class="kr">val</span> <span class="nv">r</span> <span class="p">=</span> <span class="n">t</span> <span class="p">(</span><span class="n">E</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span><span class="n">::rs</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                          <span class="kr">in</span>
+                             <span class="kr">if</span> <span class="n">!c</span> <span class="kr">then</span> <span class="n">r</span>
+                             <span class="kr">else</span> <span class="n">surround</span> <span class="s2">""</span> <span class="p">(</span><span class="s2">" as %"</span><span class="n">^idx</span> <span class="n">rs</span><span class="p">)</span> <span class="n">r</span>
+                          <span class="kr">end</span>
+                   <span class="kr">in</span>
+                      <span class="n">lp</span> <span class="n">rs</span>
+                   <span class="kr">end</span><span class="p">)</span>
+         <span class="kr">end</span>
+
+         <span class="kr">fun</span> <span class="nf">aggregate</span> <span class="n">pre</span> <span class="n">suf</span> <span class="n">toList</span> <span class="p">(</span><span class="n">IN</span> <span class="n">t</span><span class="p">)</span> <span class="p">=</span>
+             <span class="n">IN</span> <span class="p">(</span><span class="n">surround</span> <span class="n">pre</span> <span class="n">suf</span> <span class="n">o</span>
+                 <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">rs</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="p">=&gt;</span>
+                     <span class="p">(</span><span class="n">false</span><span class="p">,</span>
+                      <span class="nn">String</span><span class="p">.</span><span class="n">concatWith</span>
+                         <span class="s2">", "</span>
+                         <span class="p">(</span><span class="n">map</span> <span class="p">(</span><span class="nl">#2</span> <span class="n">o</span> <span class="n">curry</span> <span class="n">t</span> <span class="n">rs</span><span class="p">)</span>
+                              <span class="p">(</span><span class="n">toList</span> <span class="n">a</span><span class="p">)))))</span>
+      <span class="kr">in</span>
+         <span class="kr">fun</span> <span class="nf">refc</span> <span class="n">?</span> <span class="p">=</span> <span class="p">(</span><span class="n">cyclic</span> <span class="n">o</span> <span class="n">inj</span> <span class="n">!</span> <span class="n">o</span> <span class="n">C1</span><span class="s2">"ref"</span><span class="p">)</span> <span class="n">?</span>
+         <span class="kr">fun</span> <span class="nf">array</span> <span class="n">?</span> <span class="p">=</span> <span class="p">(</span><span class="n">cyclic</span> <span class="n">o</span> <span class="n">aggregate</span> <span class="s2">"[|"</span> <span class="s2">"|]"</span> <span class="p">(</span><span class="nn">Array</span><span class="p">.</span><span class="n">foldr</span> <span class="kr">op</span><span class="n">::</span> <span class="p">[]))</span> <span class="n">?</span>
+         <span class="kr">fun</span> <span class="nf">list</span> <span class="n">?</span> <span class="p">=</span> <span class="n">aggregate</span> <span class="s2">"["</span> <span class="s2">"]"</span> <span class="n">id</span> <span class="n">?</span>
+         <span class="kr">fun</span> <span class="nf">vector</span> <span class="n">?</span> <span class="p">=</span> <span class="n">aggregate</span> <span class="s2">"#["</span> <span class="s2">"]"</span> <span class="p">(</span><span class="nn">Vector</span><span class="p">.</span><span class="n">foldr</span> <span class="kr">op</span><span class="n">::</span> <span class="p">[])</span> <span class="n">?</span>
+      <span class="kr">end</span>
+
+      <span class="kr">fun</span> <span class="p">(</span><span class="n">IN</span> <span class="n">_</span><span class="p">)</span> <span class="nf">--&gt;</span> <span class="p">(</span><span class="n">IN</span> <span class="p">_)</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">const</span> <span class="p">(</span><span class="n">false</span><span class="p">,</span> <span class="s2">"&lt;fn&gt;"</span><span class="p">))</span>
+
+      <span class="c">(*</span><span class="cm"> some built-in base types *)</span>
+      <span class="kr">local</span>
+         <span class="kr">fun</span> <span class="nf">mk</span> <span class="n">toS</span> <span class="p">=</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">false</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span> <span class="n">o</span> <span class="n">toS</span> <span class="n">o</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(_,</span> <span class="n">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">)</span>
+      <span class="kr">in</span>
+         <span class="kr">val</span> <span class="nv">string</span> <span class="p">=</span>
+             <span class="n">IN</span> <span class="p">(</span><span class="n">surround</span> <span class="s2">"</span><span class="se">\"</span><span class="s2">"</span> <span class="s2">"</span><span class="se">\"</span><span class="s2">"</span> <span class="n">o</span> <span class="n">mk</span> <span class="p">(</span><span class="nn">String</span><span class="p">.</span><span class="n">translate</span> <span class="nn">Char</span><span class="p">.</span><span class="n">toString</span><span class="p">))</span>
+         <span class="kr">val</span> <span class="nv">unit</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">mk</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="s2">"()"</span><span class="p">))</span>
+         <span class="kr">val</span> <span class="nv">bool</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">mk</span> <span class="nn">Bool</span><span class="p">.</span><span class="n">toString</span><span class="p">)</span>
+         <span class="kr">val</span> <span class="nv">char</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">surround</span> <span class="s2">"#</span><span class="se">\"</span><span class="s2">"</span> <span class="s2">"</span><span class="se">\"</span><span class="s2">"</span> <span class="n">o</span> <span class="n">mk</span> <span class="nn">Char</span><span class="p">.</span><span class="n">toString</span><span class="p">)</span>
+         <span class="kr">val</span> <span class="nv">int</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">mk</span> <span class="nn">Int</span><span class="p">.</span><span class="n">toString</span><span class="p">)</span>
+         <span class="kr">val</span> <span class="nv">word</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">surround</span> <span class="s2">"0wx"</span> <span class="s2">""</span> <span class="n">o</span> <span class="n">mk</span> <span class="nn">Word</span><span class="p">.</span><span class="n">toString</span><span class="p">)</span>
+         <span class="kr">val</span> <span class="nv">real</span> <span class="p">=</span> <span class="n">IN</span> <span class="p">(</span><span class="n">mk</span> <span class="nn">Real</span><span class="p">.</span><span class="n">toString</span><span class="p">)</span>
+      <span class="kr">end</span>
+   <span class="kr">end</span>
+<span class="kr">end</span>
+
+<span class="c">(*</span><span class="cm"> Handlers for standard top-level exceptions *)</span>
+<span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="kr">let</span>
+   <span class="kr">open</span> <span class="nn">Show</span>
+   <span class="kr">fun</span> <span class="nf">E0</span> <span class="n">name</span> <span class="p">=</span> <span class="n">SOME</span> <span class="p">((),</span> <span class="n">C0</span> <span class="n">name</span><span class="p">)</span>
+<span class="kr">in</span>
+   <span class="n">regExn</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">Bind</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Bind"</span>
+            <span class="p">|</span> <span class="n">Chr</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Chr"</span>
+            <span class="p">|</span> <span class="n">Div</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Div"</span>
+            <span class="p">|</span> <span class="n">Domain</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Domain"</span>
+            <span class="p">|</span> <span class="n">Empty</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Empty"</span>
+            <span class="p">|</span> <span class="n">Match</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Match"</span>
+            <span class="p">|</span> <span class="n">Option</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Option"</span>
+            <span class="p">|</span> <span class="n">Overflow</span>  <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Overflow"</span>
+            <span class="p">|</span> <span class="n">Size</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Size"</span>
+            <span class="p">|</span> <span class="n">Span</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Span"</span>
+            <span class="p">|</span> <span class="n">Subscript</span> <span class="p">=&gt;</span> <span class="n">E0</span><span class="s2">"Subscript"</span>
+            <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">NONE</span><span class="p">)</span>
+ <span class="p">;</span> <span class="n">regExn</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">Fail</span> <span class="n">s</span> <span class="p">=&gt;</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">C1</span><span class="s2">"Fail"</span> <span class="n">string</span><span class="p">)</span>
+            <span class="p">|</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="n">NONE</span><span class="p">)</span>
+<span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are a number of related techniques.  Here are some of them.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Fold">Fold</a></p>
+</li>
+<li>
+<p><a href="StaticSum">StaticSum</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/TypeIndexedValues.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/TypeIndexedValues.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

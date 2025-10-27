@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>RunningOnFreeBSD</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>RunningOnFreeBSD</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton runs fine on <a href="http://www.freebsd.org/">FreeBSD</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes">Notes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>MLton is available as a <a href="http://www.freebsd.org/">FreeBSD</a>
+<a href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all">port</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_known_issues">Known issues</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Executables often run more slowly than on a comparable Linux
+machine.  We conjecture that part of this is due to costs due to heap
+resizing and kernel zeroing of pages.  Any help in solving the problem
+would be appreciated.</p>
+</li>
+<li>
+<p>FreeBSD defaults to a datasize limit of 512M, even if you have more
+than that amount of memory in the computer. Hence, your MLton process
+will be limited in the amount of memory it has. To fix this problem,
+turn up the datasize and the default datasize available to a process:
+Edit <code>/boot/loader.conf</code> to set the limits. For example, the setting</p>
+<div class="listingblock">
+<div class="content">
+<pre>   kern.maxdsiz="671088640"
+   kern.dfldsiz="671088640"
+   kern.maxssiz="134217728"</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will give a process 640M of datasize memory, default to 640M available
+and set 128M of stack size memory.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/RunningOnFreeBSD.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/RunningOnFreeBSD.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Restore</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Restore</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">Restore</a> is a rewrite pass for the <a href="SSA">SSA</a> and <a href="SSA2">SSA2</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>s, invoked from <a href="KnownCase">KnownCase</a> and
+<a href="LocalRef">LocalRef</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This pass restores the SSA condition for a violating <a href="SSA">SSA</a> or
+<a href="SSA2">SSA2</a> program; the program must satisfy:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>Every path from the root to a use of a variable (excluding globals)
+passes through a def of that variable.</p>
+</div>
+</blockquote>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/restore.sig"><code>restore.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/restore.fun"><code>restore.fun</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/restore2.sig"><code>restore2.sig</code></a></p>
+</li>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/restore2.fun"><code>restore2.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Based primarily on Section 19.1 of <a href="References#Appel98">Modern Compiler
+Implementation in ML</a>.</p>
+</div>
+<div class="paragraph">
+<p>The main deviation is the calculation of liveness of the violating
+variables, which is used to predicate the insertion of phi arguments.
+This is due to the algorithm&#8217;s bias towards imperative languages, for
+which it makes the assumption that all variables are defined in the
+start block and all variables are "used" at exit.</p>
+</div>
+<div class="paragraph">
+<p>This is "optimized" for restoration of functions with small numbers of
+violating variables&#8201;&#8212;&#8201;use bool vectors to represent sets of violating
+variables.</p>
+</div>
+<div class="paragraph">
+<p>Also, we use a <code>Promise.t</code> to suspend part of the dominance frontier
+computation.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Restore.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Restore.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

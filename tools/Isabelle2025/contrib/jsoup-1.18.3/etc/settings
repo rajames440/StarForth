@@ -1,0 +1,5 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ISABELLE_JSOUP_HOME="$COMPONENT"
+
+classpath "$ISABELLE_JSOUP_HOME/lib/jsoup-1.18.3.jar"

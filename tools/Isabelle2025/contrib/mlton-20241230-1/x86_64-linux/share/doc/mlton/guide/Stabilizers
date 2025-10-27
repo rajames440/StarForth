@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Stabilizers</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Stabilizers</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_installation">Installation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Stabilizers currently require the MLton sources, this should be fixed by the next release</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license">License</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Stabilizers are released under the MLton License</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_instructions">Instructions</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Download and build a source copy of MLton</p>
+</li>
+<li>
+<p>Extract the tar.gz file attached to this page</p>
+</li>
+<li>
+<p>Some examples are provided in the "examples/" sub directory, more examples will be added to this page in the following week</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bug_reports_suggestions">Bug reports / Suggestions</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Please send any errors you encounter to schatzp and lziarek at cs.purdue.edu</p>
+</li>
+<li>
+<p>We are looking to expand the usability of stabilizers</p>
+</li>
+<li>
+<p>Please send any suggestions and desired functionality to the above email addresses</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_note">Note</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>This is an alpha release. We expect to have another release shortly with added functionality soon</p>
+</li>
+<li>
+<p>More documentation, such as signatures and descriptions of functionality, will be forthcoming</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_documentation">Documentation</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">STABLE</span> <span class="p">=</span>
+  <span class="kr">sig</span>
+     <span class="kr">type</span> <span class="kt">checkpoint</span>
+
+     <span class="kr">val</span> <span class="nv">stable</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span>
+     <span class="kr">val</span> <span class="nv">stabilize</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+
+     <span class="kr">val</span> <span class="nv">stableCP</span><span class="p">:</span> <span class="p">((</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">*</span> <span class="p">(</span><span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">))</span> <span class="p">-&gt;</span>
+                    <span class="p">((</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span><span class="p">)</span> <span class="n">*</span>  <span class="n">checkpoint</span><span class="p">)</span>
+     <span class="kr">val</span> <span class="nv">stabilizeCP</span><span class="p">:</span> <span class="n">checkpoint</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+
+     <span class="kr">val</span> <span class="nv">unmonitoredAssign</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">ref</span> <span class="n">*</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+     <span class="kr">val</span> <span class="nv">monitoredAssign</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">ref</span> <span class="n">*</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+  <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>Stable</code> provides functions to manage stable sections.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>type checkpoint</code></p>
+<div class="paragraph">
+<p>handle used to stabilize contexts other than the current one.</p>
+</div>
+</li>
+<li>
+<p><code>stable f</code></p>
+<div class="paragraph">
+<p>returns a function identical to <code>f</code> that will execute within a stable section.</p>
+</div>
+</li>
+<li>
+<p><code>stabilize ()</code></p>
+<div class="paragraph">
+<p>unrolls the effects made up to the current context to at least the
+nearest enclosing <em>stable</em> section.  These effects may have propagated
+to other threads, so all affected threads are returned to a globally
+consistent previous state.  The return is undefined because control
+cannot resume after stabilize is called.</p>
+</div>
+</li>
+<li>
+<p><code>stableCP (f, comp)</code></p>
+<div class="paragraph">
+<p>returns a function <code>f'</code> and checkpoint tag <code>cp</code>.  Function <code>f'</code> is
+identical to <code>f</code> but when applied will execute within a stable
+section.  <code>comp</code> will be executed if <code>f'</code> is later stabilized.  <code>cp</code>
+is used by <code>stabilizeCP</code> to stabilize a given checkpoint.</p>
+</div>
+</li>
+<li>
+<p><code>stabilizeCP cp</code></p>
+<div class="paragraph">
+<p>same as stabilize except that the (possibly current) checkpoint to
+stabilize is provided.</p>
+</div>
+</li>
+<li>
+<p><code>unmonitoredAssign (r, v)</code></p>
+<div class="paragraph">
+<p>standard assignment (<code>:=</code>).  The version of CML distributed rebinds
+<code>:=</code> to a monitored version so interesting effects can be recorded.</p>
+</div>
+</li>
+<li>
+<p><code>monitoredAssign (r, v)</code></p>
+<div class="paragraph">
+<p>the assignment operator that should be used in programs that use
+stabilizers. <code>:=</code> is rebound to this by including CML.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_download">Download</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Stabilizers.attachments/stabilizers_alpha_2006-10-09.tar.gz"><code>stabilizers_alpha_2006-10-09.tar.gz</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_also_see">Also see</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="References#ZiarekEtAl06">ZiarekEtAl06</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Stabilizers.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Stabilizers.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

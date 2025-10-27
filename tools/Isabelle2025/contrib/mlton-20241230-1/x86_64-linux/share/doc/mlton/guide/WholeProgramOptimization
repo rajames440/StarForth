@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>WholeProgramOptimization</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>WholeProgramOptimization</h1>
+</div>
+<div id="content">
+<div class="paragraph">
+<p>Whole-program optimization is a compilation technique in which
+optimizations operate over the entire program.  This allows the
+compiler many optimization opportunities that are not available when
+analyzing modules separately (as with separate compilation).</p>
+</div>
+<div class="paragraph">
+<p>Most of MLton&#8217;s optimizations are whole-program optimizations.
+Because MLton compiles the whole program at once, it can perform
+optimization across module boundaries.  As a consequence, MLton often
+reduces or eliminates the run-time penalty that arises with separate
+compilation of SML features such as functors, modules, polymorphism,
+and higher-order functions.  MLton takes advantage of having the
+entire program to perform transformations such as: defunctorization,
+monomorphisation, higher-order control-flow analysis, inlining,
+unboxing, argument flattening, redundant-argument removal, constant
+folding, and representation selection.  Whole-program compilation is
+an integral part of the design of MLton and is not likely to change.</p>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/WholeProgramOptimization.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/WholeProgramOptimization.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

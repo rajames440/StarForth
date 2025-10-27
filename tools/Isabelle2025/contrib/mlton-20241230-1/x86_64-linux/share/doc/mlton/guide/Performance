@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>Performance</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>Performance</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page compares the performance of a number of SML compilers on a
+range of benchmarks.</p>
+</div>
+<div class="paragraph">
+<p>This page compares the following SML compiler versions.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="Home">MLton</a> 20171211 (git 79d4a623c)</p>
+</li>
+<li>
+<p><a href="MLKit">ML Kit</a> 4.3.12 (20171210)</p>
+</li>
+<li>
+<p><a href="MoscowML">Moscow ML</a> 2.10.1 `` (git f529b33bb, 20170711)</p>
+</li>
+<li>
+<p><a href="PolyML">Poly/ML</a> 5.7.2 Testing (git 5.7.1-35-gcb73407a)</p>
+</li>
+<li>
+<p><a href="SMLNJ">SML/NJ</a> 110.81 (20170501)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>There are tables for <a href="#RunTime">run time</a>, <a href="#CodeSize">code size</a>, and
+<a href="#CompileTime">compile time</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_setup">Setup</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All benchmarks were compiled and run on a 2.6 GHz Core i7-5600U with 16G of
+RAM.  The benchmarks were compiled with the default settings for all
+the compilers, except for Moscow ML, which was passed the
+<code>-orthodox -standalone -toplevel</code> switches.  The Poly/ML executables
+were produced using <code>polyc</code>.
+The SML/NJ executables were produced by wrapping the entire program in
+a <code>local</code> declaration whose body performs an <code>SMLofNJ.exportFn</code>.</p>
+</div>
+<div class="paragraph">
+<p>For more details, or if you want to run the benchmarks yourself,
+please see the <a href="https://github.com/MLton/mlton/tree/master/benchmark"><code>benchmark</code></a> directory of our
+<a href="Sources">Sources</a>.</p>
+</div>
+<div class="paragraph">
+<p>All of the benchmarks are available for download from this page.  Some
+of the benchmarks were obtained from the SML/NJ benchmark suite.  Some
+of the benchmarks expect certain input files to exist in the
+<a href="https://github.com/MLton/mlton/tree/master/benchmark/tests/DATA"><code>DATA</code></a> subdirectory.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/hamlet.sml"><code>hamlet.sml</code></a> <a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/DATA/hamlet-input.sml"><code>hamlet-input.sml</code></a></p>
+</li>
+<li>
+<p><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/ray.sml"><code>ray.sml</code></a> <a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/DATA/ray"><code>ray</code></a></p>
+</li>
+<li>
+<p><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/raytrace.sml"><code>raytrace.sml</code></a> <a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/DATA/chess.gml"><code>chess.gml</code></a></p>
+</li>
+<li>
+<p><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vliw.sml"><code>vliw.sml</code></a> <a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/DATA/ndotprod.s"><code>ndotprod.s</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="RunTime">Run-time ratio</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following table gives the ratio of the run time of each benchmark
+when compiled by another compiler to the run time when compiled by
+MLton.  That is, the larger the number, the slower the generated code
+runs.  A number larger than one indicates that the corresponding
+compiler produces code that runs more slowly than MLton.  A * in an
+entry means the compiler failed to compile the benchmark or that the
+benchmark failed to run.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 28.5714%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2858%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">benchmark</th>
+<th class="tableblock halign-left valign-top">MLton</th>
+<th class="tableblock halign-left valign-top">ML-Kit</th>
+<th class="tableblock halign-left valign-top">MosML</th>
+<th class="tableblock halign-left valign-top">Poly/ML</th>
+<th class="tableblock halign-left valign-top">SML/NJ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/barnes-hut.sml"><code>barnes-hut.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">19.36</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.98</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.24</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/boyer.sml"><code>boyer.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.87</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.22</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.75</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/checksum.sml"><code>checksum.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">30.79</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10.94</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9.08</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/count-graphs.sml"><code>count-graphs.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.51</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">40.42</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.32</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/DLXSimulator.sml"><code>DLXSimulator.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.97</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/even-odd.sml"><code>even-odd.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.50</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">11.50</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.42</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.42</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/fft.sml"><code>fft.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.35</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">81.51</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.19</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/fib.sml"><code>fib.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.41</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10.94</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.25</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.17</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/flat-array.sml"><code>flat-array.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.19</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">68.33</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.28</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13.16</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/hamlet.sml"><code>hamlet.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.97</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">22.85</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.58</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/imp-for.sml"><code>imp-for.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.99</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">57.84</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.67</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/knuth-bendix.sml"><code>knuth-bendix.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">18.43</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.18</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.06</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/lexgen.sml"><code>lexgen.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.76</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.94</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.19</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/life.sml"><code>life.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.80</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">20.19</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.89</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.50</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/logic.sml"><code>logic.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">11.06</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.27</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/mandelbrot.sml"><code>mandelbrot.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.50</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">25.52</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.33</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.28</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/matrix-multiply.sml"><code>matrix-multiply.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">29.40</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">183.02</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.41</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">15.19</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/md5.sml"><code>md5.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">95.18</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">32.61</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">47.47</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/merge.sml"><code>merge.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.42</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.74</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.24</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/mlyacc.sml"><code>mlyacc.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.83</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8.45</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.84</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/model-elimination.sml"><code>model-elimination.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12.42</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.25</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/mpuz.sml"><code>mpuz.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.73</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">57.44</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.05</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.22</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/nucleic.sml"><code>nucleic.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.96</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.73</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.20</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/output1.sml"><code>output1.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.26</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">30.85</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.82</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.99</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/peek.sml"><code>peek.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9.37</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">44.78</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.18</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.15</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/psdes-random.sml"><code>psdes-random.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.79</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.59</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/ratio-regions.sml"><code>ratio-regions.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.68</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">165.56</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.92</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">37.52</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/ray.sml"><code>ray.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12.05</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">25.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8.73</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.75</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/raytrace.sml"><code>raytrace.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.33</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/simple.sml"><code>simple.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.95</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24.03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.67</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.93</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/smith-normal-form.sml"><code>smith-normal-form.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.04</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/string-concat.sml"><code>string-concat.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.88</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">28.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.67</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tailfib.sml"><code>tailfib.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.58</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">23.57</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tak.sml"><code>tak.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.69</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">15.90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.57</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.01</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tensor.sml"><code>tensor.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.07</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tsp.sml"><code>tsp.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.19</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">66.76</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.27</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.48</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tyan.sml"><code>tyan.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">19.43</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.03</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vector32-concat.sml"><code>vector32-concat.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13.85</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.80</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12.48</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vector64-concat.sml"><code>vector64-concat.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13.92</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vector-rev.sml"><code>vector-rev.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.88</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">68.85</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9.39</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">68.80</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vliw.sml"><code>vliw.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.46</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">15.39</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.43</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.55</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-input1.sml"><code>wc-input1.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">29.25</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9.54</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-scanStream.sml"><code>wc-scanStream.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">80.43</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">19.45</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8.71</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/zebra.sml"><code>zebra.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.62</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">35.56</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.68</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9.97</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/zern.sml"><code>zern.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.00</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.60</p></td>
+</tr>
+</tbody>
+</table>
+<div id="SNFNote" class="paragraph">
+<p>Note: for SML/NJ, the
+<a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/smith-normal-form.sml"><code>smith-normal-form.sml</code></a>
+benchmark was killed after running for over 51,000 seconds.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="CodeSize">Code size</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following table gives the code size of each benchmark in bytes.
+The size for MLton and the ML Kit is the sum of text and data for the
+standalone executable as reported by <code>size</code>.  The size for Moscow
+ML is the size in bytes of the executable <code>a.out</code>.  The size for
+Poly/ML is the difference in size of the database before the session
+start and after the commit.  The size for SML/NJ is the size of the
+heap file created by <code>exportFn</code> and does not include the size of
+the SML/NJ runtime system (approximately 100K).  A * in an entry means
+that the compiler failed to compile the benchmark.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 28.5714%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2858%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">benchmark</th>
+<th class="tableblock halign-left valign-top">MLton</th>
+<th class="tableblock halign-left valign-top">ML-Kit</th>
+<th class="tableblock halign-left valign-top">MosML</th>
+<th class="tableblock halign-left valign-top">Poly/ML</th>
+<th class="tableblock halign-left valign-top">SML/NJ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/barnes-hut.sml"><code>barnes-hut.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">180,788</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">810,267</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">199,503</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">148,120</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">402,480</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/boyer.sml"><code>boyer.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">250,246</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">248,018</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">196,984</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">496,664</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/checksum.sml"><code>checksum.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">122,422</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">225,274</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,088</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">406,560</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/count-graphs.sml"><code>count-graphs.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">151,878</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">250,126</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">187,048</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">144,032</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">428,136</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/DLXSimulator.sml"><code>DLXSimulator.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">223,073</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">827,483</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">272,664</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/even-odd.sml"><code>even-odd.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">122,350</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">87,586</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">181,415</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,072</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">380,928</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/fft.sml"><code>fft.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">145,008</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">237,230</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">186,228</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">131,400</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">418,896</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/fib.sml"><code>fib.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">122,310</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">87,402</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">181,312</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,088</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">380,928</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/flat-array.sml"><code>flat-array.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">121,958</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">104,102</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">181,464</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,072</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">394,256</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/hamlet.sml"><code>hamlet.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1,503,849</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2,280,691</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">407,219</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2,249,504</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/imp-for.sml"><code>imp-for.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">122,078</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">89,346</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">181,470</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,088</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">381,952</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/knuth-bendix.sml"><code>knuth-bendix.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">193,145</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">192,659</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">161,080</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">400,408</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/lexgen.sml"><code>lexgen.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">308,296</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">826,819</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">213,128</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">268,272</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/life.sml"><code>life.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">141,862</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">721,419</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">186,463</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">118,552</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">384,024</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/logic.sml"><code>logic.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">211,086</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">782,667</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">188,908</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">198,408</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">409,624</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/mandelbrot.sml"><code>mandelbrot.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">122,086</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">700,075</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">183,037</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,104</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">386,048</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/matrix-multiply.sml"><code>matrix-multiply.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">124,398</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">280,006</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">184,328</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">110,232</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">416,784</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/md5.sml"><code>md5.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">150,497</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">271,794</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">122,624</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">399,416</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/merge.sml"><code>merge.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">123,846</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">100,858</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">181,542</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,136</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">381,960</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/mlyacc.sml"><code>mlyacc.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">678,920</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1,233,587</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">263,721</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">576,728</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/model-elimination.sml"><code>model-elimination.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">846,779</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1,432,283</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">297,108</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">777,664</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">985,304</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/mpuz.sml"><code>mpuz.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">124,126</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">229,078</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">184,440</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">114,584</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">392,232</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/nucleic.sml"><code>nucleic.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">298,038</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">507,186</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">475,808</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">456,744</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/output1.sml"><code>output1.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">157,973</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">699,003</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">181,680</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">118,800</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">380,928</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/peek.sml"><code>peek.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">156,401</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">201,138</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">183,438</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">110,456</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">385,072</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/psdes-random.sml"><code>psdes-random.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">126,486</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,166</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,088</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">393,256</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/ratio-regions.sml"><code>ratio-regions.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">150,174</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">265,694</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">190,088</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">184,536</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">414,760</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/ray.sml"><code>ray.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">260,863</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">736,795</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">195,064</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">198,976</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">512,160</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/raytrace.sml"><code>raytrace.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">384,905</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">446,424</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">623,824</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/simple.sml"><code>simple.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">365,578</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">895,139</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">197,765</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1,051,952</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">708,696</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/smith-normal-form.sml"><code>smith-normal-form.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">286,474</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">262,616</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">547,984</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/string-concat.sml"><code>string-concat.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">119,102</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">140,626</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">183,249</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,088</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">390,160</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tailfib.sml"><code>tailfib.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">122,110</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">87,890</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">181,369</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,072</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">381,952</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tak.sml"><code>tak.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">122,246</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">87,402</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">181,349</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,088</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">376,832</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tensor.sml"><code>tensor.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">186,545</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">421,984</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tsp.sml"><code>tsp.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">163,033</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">722,571</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">188,634</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">126,984</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">393,264</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tyan.sml"><code>tyan.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">235,449</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">195,401</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">184,816</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">478,296</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vector32-concat.sml"><code>vector32-concat.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">123,790</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">104,398</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,200</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">394,256</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vector64-concat.sml"><code>vector64-concat.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">123,846</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">405,552</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vector-rev.sml"><code>vector-rev.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">122,982</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">104,614</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">181,534</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">106,072</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">394,256</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vliw.sml"><code>vliw.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">538,074</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1,182,851</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">249,884</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">580,792</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">749,752</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-input1.sml"><code>wc-input1.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">186,152</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">699,459</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">191,347</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">127,200</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">386,048</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-scanStream.sml"><code>wc-scanStream.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">196,232</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">700,131</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">191,539</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">127,232</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">387,072</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/zebra.sml"><code>zebra.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">230,433</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">128,354</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">186,322</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">127,048</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">390,184</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/zern.sml"><code>zern.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">156,902</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">453,768</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="CompileTime">Compile time</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following table gives the compile time of each benchmark in
+seconds.  A * in an entry means that the compiler failed to compile
+the benchmark.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 28.5714%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2858%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">benchmark</th>
+<th class="tableblock halign-left valign-top">MLton</th>
+<th class="tableblock halign-left valign-top">ML-Kit</th>
+<th class="tableblock halign-left valign-top">MosML</th>
+<th class="tableblock halign-left valign-top">Poly/ML</th>
+<th class="tableblock halign-left valign-top">SML/NJ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/barnes-hut.sml"><code>barnes-hut.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.89</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.29</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.20</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/boyer.sml"><code>boyer.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.87</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.41</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/checksum.sml"><code>checksum.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.21</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/count-graphs.sml"><code>count-graphs.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.28</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.21</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/DLXSimulator.sml"><code>DLXSimulator.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.93</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.27</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/even-odd.sml"><code>even-odd.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/fft.sml"><code>fft.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.35</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.28</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.09</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.10</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/fib.sml"><code>fib.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.19</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/flat-array.sml"><code>flat-array.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/hamlet.sml"><code>hamlet.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12.28</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">19.25</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">23.75</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.44</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/imp-for.sml"><code>imp-for.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/knuth-bendix.sml"><code>knuth-bendix.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.48</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.23</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/lexgen.sml"><code>lexgen.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.31</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.75</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.22</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/life.sml"><code>life.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.25</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.32</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.09</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.10</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/logic.sml"><code>logic.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.72</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.57</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.17</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.21</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/mandelbrot.sml"><code>mandelbrot.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/matrix-multiply.sml"><code>matrix-multiply.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/md5.sml"><code>md5.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.31</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.39</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.27</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/merge.sml"><code>merge.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.21</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/mlyacc.sml"><code>mlyacc.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.53</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.05</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.80</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/model-elimination.sml"><code>model-elimination.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.78</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.76</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.65</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.78</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/mpuz.sml"><code>mpuz.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.28</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.02</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/nucleic.sml"><code>nucleic.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.96</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.37</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.49</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/output1.sml"><code>output1.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.30</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.22</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/peek.sml"><code>peek.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.26</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/psdes-random.sml"><code>psdes-random.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.22</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9.83</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12.55</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/ratio-regions.sml"><code>ratio-regions.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.59</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.47</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.24</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/ray.sml"><code>ray.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.95</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.46</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.17</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.14</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/raytrace.sml"><code>raytrace.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.93</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.45</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.74</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/simple.sml"><code>simple.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.42</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.30</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.32</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.53</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/smith-normal-form.sml"><code>smith-normal-form.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.32</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/string-concat.sml"><code>string-concat.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.25</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.28</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tailfib.sml"><code>tailfib.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.21</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tak.sml"><code>tak.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tensor.sml"><code>tensor.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.73</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.44</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tsp.sml"><code>tsp.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.42</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.38</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.11</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/tyan.sml"><code>tyan.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.93</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.27</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.31</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vector32-concat.sml"><code>vector32-concat.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.22</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vector64-concat.sml"><code>vector64-concat.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.18</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vector-rev.sml"><code>vector-rev.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.22</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/vliw.sml"><code>vliw.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.25</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.93</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.63</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.94</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.85</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-input1.sml"><code>wc-input1.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.46</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-scanStream.sml"><code>wc-scanStream.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.61</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.25</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.05</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/zebra.sml"><code>zebra.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.99</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.35</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.09</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.11</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://raw.github.com/MLton/mlton/master/benchmark/tests/zern.sml"><code>zern.sml</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.31</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.11</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/Performance.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/Performance.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

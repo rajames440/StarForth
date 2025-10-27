@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>MLtonReal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>MLtonReal</h1>
+</div>
+<div id="content">
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">signature</span> <span class="nn">MLTON_REAL</span> <span class="p">=</span>
+   <span class="kr">sig</span>
+      <span class="kr">type</span> <span class="kt">t</span>
+
+      <span class="kr">val</span> <span class="nv">fromWord</span><span class="p">:</span> <span class="n">word</span> <span class="p">-&gt;</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">fromLargeWord</span><span class="p">:</span> <span class="nn">LargeWord</span><span class="p">.</span><span class="n">word</span> <span class="p">-&gt;</span> <span class="n">t</span>
+      <span class="kr">val</span> <span class="nv">toWord</span><span class="p">:</span> <span class="nn">IEEEReal</span><span class="p">.</span><span class="n">rounding_mode</span> <span class="p">-&gt;</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="n">word</span>
+      <span class="kr">val</span> <span class="nv">toLargeWord</span><span class="p">:</span> <span class="nn">IEEEReal</span><span class="p">.</span><span class="n">rounding_mode</span> <span class="p">-&gt;</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">LargeWord</span><span class="p">.</span><span class="n">word</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>type t</code></p>
+<div class="paragraph">
+<p>the type of reals.  For <code>MLton.LargeReal</code> this is <code>LargeReal.real</code>,
+for <code>MLton.Real</code> this is <code>Real.real</code>, for <code>MLton.Real32</code> this is
+<code>Real32.real</code>, for <code>MLton.Real64</code> this is <code>Real64.real</code>.</p>
+</div>
+</li>
+<li>
+<p><code>fromWord w</code></p>
+</li>
+<li>
+<p><code>fromLargeWord w</code></p>
+<div class="paragraph">
+<p>convert the word <code>w</code> to a real value.  If the value of <code>w</code> is larger
+than (the appropriate) <code>REAL.maxFinite</code>, then infinity is returned.
+If <code>w</code> cannot be exactly represented as a real value, then the current
+rounding mode is used to determine the resulting value.</p>
+</div>
+</li>
+<li>
+<p><code>toWord mode r</code></p>
+</li>
+<li>
+<p><code>toLargeWord mode r</code></p>
+<div class="paragraph">
+<p>convert the argument <code>r</code> to a word type using the specified rounding
+mode. They raise <code>Overflow</code> if the result is not representable, in
+particular, if <code>r</code> is an infinity. They raise <code>Domain</code> if <code>r</code> is NaN.</p>
+</div>
+</li>
+<li>
+<p><code>MLton.Real32.castFromWord w</code></p>
+</li>
+<li>
+<p><code>MLton.Real64.castFromWord w</code></p>
+<div class="paragraph">
+<p>convert the argument <code>w</code> to a real type as a bit-wise cast.</p>
+</div>
+</li>
+<li>
+<p><code>MLton.Real32.castToWord r</code></p>
+</li>
+<li>
+<p><code>MLton.Real64.castToWord r</code></p>
+<div class="paragraph">
+<p>convert the argument <code>r</code> to a word type as a bit-wise cast.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/MLtonReal.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/MLtonReal.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

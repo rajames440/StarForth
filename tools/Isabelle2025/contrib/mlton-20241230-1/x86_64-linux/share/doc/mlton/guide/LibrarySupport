@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>LibrarySupport</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>LibrarySupport</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton supports both linking to and creating system-level libraries.
+While Standard ML libraries should be designed with the <a href="MLBasis">MLBasis</a> system to work with other Standard ML programs,
+system-level library support allows MLton to create libraries for use by other programming languages.
+Even more importantly, system-level library support allows MLton to access libraries from other languages.
+This article will explain how to use libraries portably with MLton.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_basics">The Basics</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A Dynamic Shared Object (DSO) is a piece of executable code written in a format understood by the operating system.
+Executable programs and dynamic libraries are the two most common examples of a DSO.
+They are called shared because if they are used more than once, they are only loaded once into main memory.
+For example, if you start two instances of your web browser (an executable), there may be two processes running, but the program code of the executable is only loaded once.
+A dynamic library, for example a graphical toolkit, might be used by several different executable programs, each possibly running multiple times.
+Nevertheless, the dynamic library is only loaded once and it&#8217;s program code is shared between all of the processes.</p>
+</div>
+<div class="paragraph">
+<p>In addition to program code, DSOs contain a table of textual strings called symbols.
+These are used in order to make the DSO do something useful, like execute.
+For example, on linux the symbol <code>_start</code> refers to the point in the program code where the operating system should start executing the program.
+Dynamic libraries generally provide many symbols, corresponding to functions which can be called and variables which can be read or written.
+Symbols can be used by the DSO itself, or by other DSOs which require services.</p>
+</div>
+<div class="paragraph">
+<p>When a DSO creates a symbol, this is called 'exporting'.
+If a DSO needs to use a symbol, this is called 'importing'.
+A DSO might need to use symbols defined within itself or perhaps from another DSO.
+In both cases, it is importing that symbol, but the scope of the import differs.
+Similarly, a DSO might export a symbol for use only within itself, or it might export a symbol for use by other DSOs.
+Some symbols are resolved at compile time by the linker (those used within the DSO) and some are resolved at runtime by the dynamic link loader (symbols accessed between DSOs).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_symbols_in_mlton">Symbols in MLton</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Symbols in MLton are both imported and exported via the <a href="ForeignFunctionInterface">ForeignFunctionInterface</a>.
+The notation <code>_import "symbolname"</code> imports functions, <code>_symbol "symbolname"</code> imports variables, and <code>_address "symbolname"</code> imports an address.
+To create and export a symbol, <code>_export "symbolname"</code> creates a function symbol and <code>_symbol "symbolname" 'alloc'</code> creates and exports a variable.
+For details of the syntax and restrictions on the supported FFI types, read the <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> page.
+In this discussion it only matters that every FFI use is either an import or an export.</p>
+</div>
+<div class="paragraph">
+<p>When exporting a symbol, MLton supports controlling the export scope.
+If the symbol should only be used within the same DSO, that symbol has &#8216;private&#8217; scope.
+Conversely, if the symbol should also be available to other DSOs the symbol has &#8216;public&#8217; scope.
+Generally, one should have as few public exports as possible.
+Since they are public, other DSOs will come to depend on them, limiting your ability to change them.
+You specify the export scope in MLton by putting <code>private</code> or <code>public</code> after the symbol&#8217;s name in an FFI directive.
+eg: <code>_export "foo" private: int-&gt;int;</code> or <code>_export "bar" public: int-&gt;int;</code> .</p>
+</div>
+<div class="paragraph">
+<p>For technical reasons, the linker and loader on various platforms need to know the scope of a symbol being imported.
+If the symbol is exported by the same DSO, use <code>public</code> or <code>private</code> as appropriate.
+If the symbol is exported by a different DSO, then the scope &#8216;external&#8217; should be used to import it.
+Within a DSO, all references to a symbol must use the same scope.
+MLton will check this at compile time, reporting: <code>symbol "foo" redeclared as public (previously external)</code>. This may cause linker errors.
+However, MLton can only check usage within Standard ML.
+All objects being linked into a resulting DSO must agree, and it is the programmer&#8217;s responsibility to ensure this.</p>
+</div>
+<div class="paragraph">
+<p>Summary of symbol scopes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>private</code>: used for symbols exported within a DSO only for use within that DSO</p>
+</li>
+<li>
+<p><code>public</code>: used for symbols exported within a DSO that may also be used outside that DSO</p>
+</li>
+<li>
+<p><code>external</code>: used for importing symbols from another DSO</p>
+</li>
+<li>
+<p>All uses of a symbol within a DSO (both imports and exports) must agree on the symbol scope</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_output_formats">Output Formats</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton can create executables (<code>-format executable</code>) and dynamic shared libraries (<code>-format library</code>).
+To link a shared library, use <code>-link-opt -l&lt;dso_name&gt;</code>.
+The default output format is executable.</p>
+</div>
+<div class="paragraph">
+<p>MLton can also create archives.
+An archive is not a DSO, but it does have a collection of symbols.
+When an archive is linked into a DSO, it is completely absorbed.
+Other objects being compiled into the DSO should refer to the public symbols in the archive as public, since they are still in the same DSO.
+However, in the interest of modular programming, private symbols in an archive cannot be used outside of that archive, even within the same DSO.</p>
+</div>
+<div class="paragraph">
+<p>Although both executables and libraries are DSOs, some implementation details differ on some platforms.
+For this reason, MLton can create two types or archives.
+A normal archive (<code>-format archive</code>) is appropriate for linking into an executable.
+Conversely, a libarchive (<code>-format libarchive</code>) should be used if it will be linked into a dynamic library.</p>
+</div>
+<div class="paragraph">
+<p>When MLton does not create an executable, it creates two special symbols.
+The symbol <code>libname_open</code> is a function which must be called before any other symbols are accessed.
+The <code>libname</code> is controlled by the <code>-libname</code> compile option and defaults to the name of the output, with any prefixing lib stripped (eg: <code>foo</code> &#8594; <code>foo</code>, <code>libfoo</code> &#8594; <code>foo</code>).
+The symbol <code>libname_close</code> is a function which should be called to clean up memory once done.</p>
+</div>
+<div class="paragraph">
+<p>Summary of <code>-format</code> options:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>executable</code>: create an executable (a DSO)</p>
+</li>
+<li>
+<p><code>library</code>: create a dynamic shared library (a DSO)</p>
+</li>
+<li>
+<p><code>archive</code>: create an archive of symbols (not a DSO) that can be linked into an executable</p>
+</li>
+<li>
+<p><code>libarchive</code>: create an archive of symbols (not a DSO) that can be linked into a library</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Related options:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>-libname x</code>: controls the name of the special <code>_open</code> and <code>_close</code> functions.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_interfacing_with_c">Interfacing with C</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>MLton can generate a C header file.
+When the output format is not an executable, it creates one by default named <code>libname.h</code>.
+This can be overridden with <code>-export-header foo.h</code>.
+This header file should be included by any C files using the exported Standard ML symbols.</p>
+</div>
+<div class="paragraph">
+<p>If C is being linked with Standard ML into the same output archive or DSO,
+then the C code should <code>#define PART_OF_LIBNAME</code> before it includes the header file.
+This ensures that the C code is using the symbols with correct scope.
+Any symbols exported from C should also be marked using the <code>PRIVATE</code>/<code>PUBLIC</code>/<code>EXTERNAL</code> macros defined in the Standard ML export header.
+The declared C scope on exported C symbols should match the import scope used in Standard ML.</p>
+</div>
+<div class="paragraph">
+<p>An example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="c"><span class="cp">#define PART_OF_FOO
+#include</span> <span class="cpf">"foo.h"</span><span class="cp">
+</span>
+<span class="n">PUBLIC</span> <span class="kt">int</span> <span class="nf">cFoo</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="n">smlFoo</span><span class="p">();</span>
+<span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="p">_</span><span class="n">export</span> <span class="s2">"smlFoo"</span> <span class="n">private</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">;</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="mi">5</span><span class="p">)</span>
+<span class="kr">val</span> <span class="nv">cFoo</span> <span class="p">=</span> <span class="p">_</span><span class="n">import</span> <span class="s2">"cFoo"</span> <span class="n">public</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">int</span><span class="p">;</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_operating_system_specific_details">Operating-system specific details</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>On Windows, <code>libarchive</code> and <code>archive</code> are the same.
+However, depending on this will lead to portability problems.
+Windows is also especially sensitive to mixups of &#8216;public&#8217; and &#8216;external&#8217;.
+If an archive is linked, make sure it&#8217;s symbols are imported as <code>public</code>.
+If a DLL is linked, make sure it&#8217;s symbols are imported as <code>external</code>.
+Using <code>external</code> instead of <code>public</code> will result in link errors that <code><em>imp</em>foo is undefined</code>.
+Using <code>public</code> instead of <code>external</code> will result in inconsistent function pointer addresses and failure to update the imported variables.</p>
+</div>
+<div class="paragraph">
+<p>On Linux, <code>libarchive</code> and <code>archive</code> are different.
+Libarchives are quite rare, but necessary if creating a library from an archive.
+It is common for a library to provide both an archive and a dynamic library on this platform.
+The linker will pick one or the other, usually preferring the dynamic library.
+While a quirk of the operating system allows external import to work for both archives and libraries,
+portable projects should not depend on this behaviour.
+On other systems it can matter how the library is linked (static or dynamic).</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/LibrarySupport.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/LibrarySupport.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

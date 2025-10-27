@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ConcurrentMLImplementation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ConcurrentMLImplementation</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here are some notes on MLton&#8217;s implementation of <a href="ConcurrentML">ConcurrentML</a>.</p>
+</div>
+<div class="paragraph">
+<p>Concurrent ML was originally implemented for SML/NJ.  It was ported to
+MLton in the summer of 2004.  The main difference between the
+implementations is that SML/NJ uses continuations to implement CML
+threads, while MLton uses its underlying <a href="MLtonThread">thread</a>
+package.  Presently, MLton&#8217;s threads are a little more heavyweight
+than SML/NJ&#8217;s continuations, but it&#8217;s pretty clear that there is some
+fat there that could be trimmed.</p>
+</div>
+<div class="paragraph">
+<p>The implementation of CML in SML/NJ is built upon the first-class
+continuations of the <code>SMLofNJ.Cont</code> module.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="nd">'a</span> <span class="kt">cont</span>
+<span class="kr">val</span> <span class="nv">callcc</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">cont</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+<span class="kr">val</span> <span class="nv">isolate</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">cont</span>
+<span class="kr">val</span> <span class="nv">throw</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">cont</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nd">'b</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The implementation of CML in MLton is built upon the first-class
+threads of the <a href="MLtonThread">MLtonThread</a> module.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">type</span> <span class="nd">'a</span> <span class="kt">t</span>
+<span class="kr">val</span> <span class="nv">new</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">t</span>
+<span class="kr">val</span> <span class="nv">prepare</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span> <span class="n">*</span> <span class="nd">'a</span> <span class="p">-&gt;</span> <span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span>
+<span class="kr">val</span> <span class="nv">switch</span><span class="p">:</span> <span class="p">(</span><span class="nd">'a</span> <span class="n">t</span> <span class="p">-&gt;</span> <span class="nn">Runnable</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="nd">'a</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The port is relatively straightforward, because CML always throws to a
+continuation at most once.  Hence, an "abstract" implementation of
+CML could be built upon first-class one-shot continuations, which map
+equally well to SML/NJ&#8217;s continuations and MLton&#8217;s threads.</p>
+</div>
+<div class="paragraph">
+<p>The "essence" of the port is to transform:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>callcc (fn k =&gt; ... throw k' v')</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>switch (fn t =&gt; ... prepare (t', v'))</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>which suffices for the vast majority of the CML implementation.</p>
+</div>
+<div class="paragraph">
+<p>There was only one complicated transformation: blocking multiple base
+events.  In SML/NJ CML, the representation of base events is given by:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">event_status</span>
+  <span class="p">=</span> <span class="nc">ENABLED</span> <span class="kr">of</span> <span class="p">{</span><span class="n">prio</span><span class="p">:</span> <span class="n">int</span><span class="p">,</span> <span class="n">doFn</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">}</span>
+  <span class="p">|</span> <span class="nc">BLOCKED</span> <span class="kr">of</span> <span class="p">{</span>
+        <span class="n">transId</span><span class="p">:</span> <span class="n">trans_id</span> <span class="n">ref</span><span class="p">,</span>
+        <span class="n">cleanUp</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">,</span>
+        <span class="n">next</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span>
+      <span class="p">}</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+<span class="kr">type</span> <span class="nd">'a</span> <span class="kt">base_evt</span> <span class="p">=</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">event_status</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When synchronizing on a set of base events, which are all blocked, we
+must invoke each <code>BLOCKED</code> function with the same <code>transId</code> and
+<code>cleanUp</code> (the <code>transId</code> is (checked and) set to <code>CANCEL</code> by the
+<code>cleanUp</code> function, which is invoked by the first enabled event; this
+"fizzles" every other event in the synchronization group that later
+becomes enabled).  However, each <code>BLOCKED</code> function is implemented by
+a callcc, so that when the event is enabled, it throws back to the
+point of synchronization.  Hence, the next function (which doesn&#8217;t
+return) is invoked by the <code>BLOCKED</code> function to escape the callcc and
+continue in the thread performing the synchronization.  In SML/NJ this
+is implemented as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">ext</span> <span class="p">([],</span> <span class="n">blockFns</span><span class="p">)</span> <span class="p">=</span> <span class="n">callcc</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">k</span> <span class="p">=&gt;</span> <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">throw</span> <span class="p">=</span> <span class="n">throw</span> <span class="n">k</span>
+      <span class="kr">val</span> <span class="p">(</span><span class="n">transId</span><span class="p">,</span> <span class="n">setFlg</span><span class="p">)</span> <span class="nv">=</span> <span class="n">mkFlg</span><span class="p">()</span>
+      <span class="kr">fun</span> <span class="nf">log</span> <span class="p">[]</span> <span class="p">=</span> <span class="nn">S</span><span class="p">.</span><span class="n">atomicDispatch</span> <span class="p">()</span>
+        <span class="p">|</span> <span class="nf">log</span> <span class="p">(</span><span class="n">blockFn::</span> <span class="n">r</span><span class="p">)</span> <span class="p">=</span>
+            <span class="n">throw</span> <span class="p">(</span><span class="n">blockFn</span> <span class="p">{</span>
+                <span class="n">transId</span> <span class="p">=</span> <span class="n">transId</span><span class="p">,</span>
+                <span class="n">cleanUp</span> <span class="p">=</span> <span class="n">setFlg</span><span class="p">,</span>
+                <span class="n">next</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">log</span> <span class="n">r</span>
+              <span class="p">})</span>
+      <span class="kr">in</span>
+        <span class="n">log</span> <span class="n">blockFns</span><span class="p">;</span> <span class="n">error</span> <span class="s2">"[log]"</span>
+      <span class="kr">end</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>(Note that <code>S.atomicDispatch</code> invokes the continuation of the next
+continuation on the ready queue.)  This doesn&#8217;t map well to the MLton
+thread model.  Although it follows the</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>callcc (fn k =&gt; ... throw k v)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>model, the fact that <code>blockFn</code> will also attempt to do</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>callcc (fn k' =&gt; ... next ())</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>means that the naive transformation will result in nested <code>switch</code>-es.</p>
+</div>
+<div class="paragraph">
+<p>We need to think a little more about what this code is trying to do.
+Essentially, each <code>blockFn</code> wants to capture this continuation, hold
+on to it until the event is enabled, and continue with next; when the
+event is enabled, before invoking the continuation and returning to
+the synchronization point, the <code>cleanUp</code> and other event specific
+operations are performed.</p>
+</div>
+<div class="paragraph">
+<p>To accomplish the same effect in the MLton thread implementation, we
+have the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">datatype</span> <span class="nd">'a</span> <span class="kt">status</span> <span class="p">=</span>
+   <span class="nc">ENABLED</span> <span class="kr">of</span> <span class="p">{</span><span class="n">prio</span><span class="p">:</span> <span class="n">int</span><span class="p">,</span> <span class="n">doitFn</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">}</span>
+ <span class="p">|</span> <span class="nc">BLOCKED</span> <span class="kr">of</span> <span class="p">{</span><span class="n">transId</span><span class="p">:</span> <span class="n">trans_id</span><span class="p">,</span>
+               <span class="n">cleanUp</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">unit</span><span class="p">,</span>
+               <span class="n">next</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="n">rdy_thread</span><span class="p">}</span> <span class="p">-&gt;</span> <span class="nd">'a</span>
+
+<span class="kr">type</span> <span class="nd">'a</span> <span class="kt">base</span> <span class="p">=</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span> <span class="n">status</span>
+
+<span class="kr">fun</span> <span class="nf">ext</span> <span class="p">([],</span> <span class="n">blockFns</span><span class="p">):</span> <span class="nd">'a</span> <span class="p">=</span>
+   <span class="nn">S</span><span class="p">.</span><span class="n">atomicSwitch</span>
+   <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="nd">'a</span> <span class="nn">S</span><span class="p">.</span><span class="n">thread</span><span class="p">)</span> <span class="p">=&gt;</span>
+    <span class="kr">let</span>
+       <span class="kr">val</span> <span class="p">(</span><span class="n">transId</span><span class="p">,</span> <span class="n">cleanUp</span><span class="p">)</span> <span class="nv">=</span> <span class="nn">TransID</span><span class="p">.</span><span class="n">mkFlg</span> <span class="p">()</span>
+       <span class="kr">fun</span> <span class="nf">log</span> <span class="n">blockFns</span><span class="p">:</span> <span class="nn">S</span><span class="p">.</span><span class="n">rdy_thread</span> <span class="p">=</span>
+          <span class="kr">case</span> <span class="n">blockFns</span> <span class="kr">of</span>
+             <span class="p">[]</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="nn">S</span><span class="p">.</span><span class="n">atomicEnd</span> <span class="p">();</span> <span class="nn">S</span><span class="p">.</span><span class="n">next</span> <span class="p">())</span>
+           <span class="p">|</span> <span class="n">blockFn::blockFns</span> <span class="p">=&gt;</span>
+                <span class="kr">let</span>
+                   <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="nn">S</span><span class="p">.</span><span class="n">atomicBegin</span> <span class="p">()</span>
+                <span class="kr">in</span>
+                   <span class="p">(</span><span class="nn">S</span><span class="p">.</span><span class="n">prep</span> <span class="n">o</span> <span class="nn">S</span><span class="p">.</span><span class="n">new</span><span class="p">)</span>
+                   <span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span>
+                    <span class="kr">let</span>
+                       <span class="kr">val</span> <span class="p">()</span> <span class="nv">=</span> <span class="nn">S</span><span class="p">.</span><span class="n">atomicBegin</span> <span class="p">()</span>
+                       <span class="kr">val</span> <span class="nv">x</span> <span class="p">=</span> <span class="n">blockFn</span> <span class="p">{</span><span class="n">transId</span> <span class="p">=</span> <span class="n">transId</span><span class="p">,</span>
+                                        <span class="n">cleanUp</span> <span class="p">=</span> <span class="n">cleanUp</span><span class="p">,</span>
+                                        <span class="n">next</span> <span class="p">=</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">log</span> <span class="n">blockFns</span><span class="p">}</span>
+                    <span class="kr">in</span> <span class="nn">S</span><span class="p">.</span><span class="n">switch</span><span class="p">(</span><span class="kr">fn</span> <span class="p">_</span> <span class="p">=&gt;</span> <span class="nn">S</span><span class="p">.</span><span class="n">prepVal</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+                    <span class="kr">end</span><span class="p">)</span>
+                <span class="kr">end</span>
+    <span class="kr">in</span>
+       <span class="n">log</span> <span class="n">blockFns</span>
+    <span class="kr">end</span><span class="p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To avoid the nested <code>switch</code>-es, I run the <code>blockFn</code> in it&#8217;s own
+thread, whose only purpose is to return to the synchronization point.
+This corresponds to the <code>throw (blockFn {&#8230;&#8203;})</code> in the SML/NJ
+implementation.  I&#8217;m worried that this implementation might be a
+little expensive, starting a new thread for each blocked event (when
+there are only multiple blocked events in a synchronization group).
+But, I don&#8217;t see another way of implementing this behavior in the
+MLton thread model.</p>
+</div>
+<div class="paragraph">
+<p>Note that another way of thinking about what is going on is to
+consider each <code>blockFn</code> as prepending a different set of actions to
+the thread <code>t</code>.  It might be possible to give a
+<code>MLton.Thread.unsafePrepend</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml"><span class="kr">fun</span> <span class="nf">unsafePrepend</span> <span class="p">(</span><span class="n">T</span> <span class="n">r</span><span class="p">:</span> <span class="nd">'a</span> <span class="n">t</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nd">'b</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">):</span> <span class="nd">'b</span> <span class="n">t</span> <span class="p">=</span>
+   <span class="kr">let</span>
+      <span class="kr">val</span> <span class="nv">t</span> <span class="p">=</span>
+         <span class="kr">case</span> <span class="n">!r</span> <span class="kr">of</span>
+            <span class="n">Dead</span> <span class="p">=&gt;</span> <span class="kr">raise</span> <span class="n">Fail</span> <span class="s2">"prepend to a Dead thread"</span>
+          <span class="p">|</span> <span class="n">New</span> <span class="n">g</span> <span class="p">=&gt;</span> <span class="n">New</span> <span class="p">(</span><span class="n">g</span> <span class="n">o</span> <span class="n">f</span><span class="p">)</span>
+          <span class="p">|</span> <span class="n">Paused</span> <span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">Paused</span> <span class="p">(</span><span class="kr">fn</span> <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">g</span> <span class="p">(</span><span class="n">f</span> <span class="n">o</span> <span class="n">h</span><span class="p">),</span> <span class="n">t</span><span class="p">)</span>
+   <span class="kr">in</span> <span class="c">(*</span><span class="cm"> r := Dead; *)</span>
+      <span class="n">T</span> <span class="p">(</span><span class="n">ref</span> <span class="n">t</span><span class="p">)</span>
+   <span class="kr">end</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I have commented out the <code>r := Dead</code>, which would allow multiple
+prepends to the same thread (i.e., not destroying the original thread
+in the process).  Of course, only one of the threads could be run: if
+the original thread were in the <code>Paused</code> state, then multiple threads
+would share the underlying runtime/primitive thread.  Now, this
+matches the "one-shot" nature of CML continuations/threads, but I&#8217;m
+not comfortable with extending <code>MLton.Thread</code> with such an unsafe
+operation.</p>
+</div>
+<div class="paragraph">
+<p>Other than this complication with blocking multiple base events, the
+port was quite routine.  (As a very pleasant surprise, the CML
+implementation in SML/NJ doesn&#8217;t use any SML/NJ-isms.)  There is a
+slight difference in the way in which critical sections are handled in
+SML/NJ and MLton; since <code>MLton.Thread.switch</code> <em>always</em> leaves a
+critical section, it is sometimes necessary to add additional
+<code>atomicBegin</code>-s/<code>atomicEnd</code>-s to ensure that we remain in a critical
+section after a thread switch.</p>
+</div>
+<div class="paragraph">
+<p>While looking at virtually every file in the core CML implementation,
+I took the liberty of simplifying things where it seemed possible; in
+terms of style, the implementation is about half-way between Reppy&#8217;s
+original and MLton&#8217;s.</p>
+</div>
+<div class="paragraph">
+<p>Some changes of note:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>util/</code> contains all pertinent data-structures: (functional and
+imperative) queues, (functional) priority queues.  Hence, it should be
+easier to switch in more efficient or real-time implementations.</p>
+</li>
+<li>
+<p><code>core-cml/scheduler.sml</code>: in both implementations, this is where
+most of the interesting action takes place.  I&#8217;ve made the connection
+between <code>MLton.Thread.t</code>-s and <code>ThreadId.thread_id</code>-s more abstract
+than it is in the SML/NJ implementation, and encapsulated all of the
+<code>MLton.Thread</code> operations in this module.</p>
+</li>
+<li>
+<p>eliminated all of the "by hand" inlining</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_future_extensions">Future Extensions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The CML documentation says the following:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="listingblock">
+<div class="content">
+<pre>CML.joinEvt: thread_id -&gt; unit event</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>joinEvt tid</code></p>
+<div class="paragraph">
+<p>creates an event value for synchronizing on the termination of the
+thread with the ID tid.  There are three ways that a thread may
+terminate: the function that was passed to spawn (or spawnc) may
+return; it may call the exit function, or it may have an uncaught
+exception.  Note that <code>joinEvt</code> does not distinguish between these
+cases; it also does not become enabled if the named thread deadlocks
+(even if it is garbage collected).</p>
+</div>
+</li>
+</ul>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>I believe that the <code>MLton.Finalizable</code> might be able to relax that
+last restriction.  Upon the creation of a <code>'a Scheduler.thread</code>, we
+could attach a finalizer to the underlying <code>'a MLton.Thread.t</code> that
+enables the <code>joinEvt</code> (in the associated <code>ThreadID.thread_id</code>) when
+the <code>'a MLton.Thread.t</code> becomes unreachable.</p>
+</div>
+<div class="paragraph">
+<p>I don&#8217;t know why CML doesn&#8217;t have</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>CML.kill: thread_id -&gt; unit</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>which has a fairly simple implementation&#8201;&#8212;&#8201;setting a kill flag in the
+<code>thread_id</code> and adjusting the scheduler to discard any killed threads
+that it takes off the ready queue.  The fairness of the scheduler
+ensures that a killed thread will eventually be discarded.  The
+semantics are little murky for blocked threads that are killed,
+though.  For example, consider a thread blocked on <code>SyncVar.mTake mv</code>
+and a thread blocked on <code>SyncVar.mGet mv</code>.  If the first thread is
+killed while blocked, and a third thread does <code>SyncVar.mPut (mv, x)</code>,
+then we might expect that we&#8217;ll enable the second thread, and never
+the first.  But, when only the ready queue is able to discard killed
+threads, then the <code>SyncVar.mPut</code> could enable the first thread
+(putting it on the ready queue, from which it will be discarded) and
+leave the second thread blocked.  We could solve this by adjusting the
+<code>TransID.trans_id types</code> and the "cleaner" functions to look for both
+canceled transactions and transactions on killed threads.</p>
+</div>
+<div class="paragraph">
+<p>John Reppy says that <a href="References#MarlowEtAl01">MarlowEtAl01</a> and <a href="References#FlattFindler04">FlattFindler04</a>
+explain why <code>CML.kill</code> would be a bad idea.</p>
+</div>
+<div class="paragraph">
+<p>Between <code>CML.timeOutEvt</code> and <code>CML.kill</code>, one could give an efficient
+solution to the recent <code>comp.lang.ml</code> post about terminating a
+function that doesn&#8217;t complete in a given time.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml">  <span class="kr">fun</span> <span class="nf">timeOut</span> <span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">unit</span> <span class="p">-&gt;</span> <span class="nd">'a</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nn">Time</span><span class="p">.</span><span class="n">time</span><span class="p">):</span> <span class="nd">'a</span> <span class="n">option</span> <span class="p">=</span>
+    <span class="kr">let</span>
+       <span class="kr">val</span> <span class="nv">iv</span> <span class="p">=</span> <span class="nn">SyncVar</span><span class="p">.</span><span class="n">iVar</span> <span class="p">()</span>
+       <span class="kr">val</span> <span class="nv">tid</span> <span class="p">=</span> <span class="nn">CML</span><span class="p">.</span><span class="n">spawn</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="nn">SyncVar</span><span class="p">.</span><span class="n">iPut</span> <span class="p">(</span><span class="n">iv</span><span class="p">,</span> <span class="n">f</span> <span class="p">()))</span>
+    <span class="kr">in</span>
+       <span class="nn">CML</span><span class="p">.</span><span class="n">select</span>
+       <span class="p">[</span><span class="nn">CML</span><span class="p">.</span><span class="n">wrap</span> <span class="p">(</span><span class="nn">CML</span><span class="p">.</span><span class="n">timeOutEvt</span> <span class="n">t</span><span class="p">,</span> <span class="kr">fn</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="nn">CML</span><span class="p">.</span><span class="n">kill</span> <span class="n">tid</span><span class="p">;</span> <span class="n">NONE</span><span class="p">)),</span>
+        <span class="nn">CML</span><span class="p">.</span><span class="n">wrap</span> <span class="p">(</span><span class="nn">SyncVar</span><span class="p">.</span><span class="n">iGetEvt</span> <span class="n">iv</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">SOME</span> <span class="n">x</span><span class="p">)]</span>
+    <span class="kr">end</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_space_safety">Space Safety</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are some CML related posts on the MLton mailing list:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mlton.org/pipermail/mlton/2004-May/" class="bare">http://www.mlton.org/pipermail/mlton/2004-May/</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>that discuss concerns that SML/NJ&#8217;s implementation is not space
+efficient, because multi-shot continuations can be held indefinitely
+on event queues.  MLton is better off because of the one-shot nature&#8201;&#8212;&#8201;when an event enables a thread, all other copies of the thread
+waiting in other event queues get turned into dead threads (of zero
+size).</p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ConcurrentMLImplementation.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ConcurrentMLImplementation.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

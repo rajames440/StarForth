@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.23">
+<title>ShareZeroVec</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="./rouge-github.css">
+<link rel="stylesheet" href="./mlton.css">
+
+</head>
+<body class="article">
+<div id="mlton-header">
+<div id="mlton-header-text">
+<h2>
+<a href="./Home">
+MLton
+20241230
+</a>
+</h2>
+</div>
+</div>
+<div id="header">
+<h1>ShareZeroVec</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="#">ShareZeroVec</a> is an optimization pass for the <a href="SSA">SSA</a>
+<a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_description">Description</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>An SSA optimization to share zero-length vectors.</p>
+</div>
+<div class="paragraph">
+<p>From <a href="https://github.com/MLton/mlton/commit/be8c5f576"><code>be8c5f576</code></a>, which replaced the use of the
+<code>Array_array0Const</code> primitive in the Basis Library implementation with a
+(nullary) <code>Vector_vector</code> primitive:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>The original motivation for the <code>Array_array0Const</code> primitive was to share the
+heap space required for zero-length vectors among all vectors (of a given type).
+It was claimed that this optimization is important, e.g., in a self-compile,
+where vectors are used for lots of syntax tree elements and many of those
+vectors are empty. See:
+<a href="http://www.mlton.org/pipermail/mlton-devel/2002-February/021523.html" class="bare">http://www.mlton.org/pipermail/mlton-devel/2002-February/021523.html</a></p>
+</div>
+<div class="paragraph">
+<p>Curiously, the full effect of this optimization has been missing for quite some
+time (perhaps since the port of <a href="ConstantPropagation">ConstantPropagation</a> to the SSA IL).  While
+<a href="ConstantPropagation">ConstantPropagation</a> has "globalized" the nullary application of the
+<code>Array_array0Const</code> primitive, it also simultaneously transformed it to an
+application of the <code>Array_uninit</code> (previously, the <code>Array_array</code>) primitive to
+the zero constant.  The hash-consing of globals, meant to create exactly one
+global for each distinct constant, treats <code>Array_uninit</code> primitives as unequal
+(appropriately, since <code>Array_uninit</code> allocates an array with identity (though
+the identity may be supressed by a subsequent <code>Array_toVector</code>)), hence each
+distinct <code>Array_array0Const</code> primitive in the program remained as distinct
+globals.  The limited amount of inlining prior to <a href="ConstantPropagation">ConstantPropagation</a> meant
+that there were typically fewer than a dozen "copies" of the same empty vector
+in a program for a given type.</p>
+</div>
+<div class="paragraph">
+<p>As a "functional" primitive, a nullary <code>Vector_vector</code> is globalized by
+ClosureConvert, but is further recognized by ConstantPropagation and hash-consed
+into a unique instance for each type.</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>However, a single, shared, global <code>Vector_vector ()</code> inhibits the
+coercion-based optimizations of <code>Useless</code>.  For example, consider the
+following program:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="sml">    <span class="kr">val</span> <span class="nv">n</span> <span class="p">=</span> <span class="n">valOf</span> <span class="p">(</span><span class="nn">Int</span><span class="p">.</span><span class="n">fromString</span> <span class="p">(</span><span class="n">hd</span> <span class="p">(</span><span class="nn">CommandLine</span><span class="p">.</span><span class="n">arguments</span> <span class="p">())))</span>
+
+    <span class="kr">val</span> <span class="nv">v1</span> <span class="p">=</span> <span class="nn">Vector</span><span class="p">.</span><span class="n">tabulate</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="kr">fn</span> <span class="n">i</span> <span class="p">=&gt;</span>
+                              <span class="kr">let</span> <span class="kr">val</span> <span class="nv">w</span> <span class="p">=</span> <span class="nn">Word16</span><span class="p">.</span><span class="n">fromInt</span> <span class="n">i</span>
+                              <span class="kr">in</span> <span class="p">(</span><span class="n">w</span> <span class="n">-</span> <span class="mh">0wx1</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">w</span> <span class="n">+</span> <span class="mh">0wx1</span> <span class="n">+</span> <span class="n">w</span><span class="p">)</span>
+                              <span class="kr">end</span><span class="p">)</span>
+    <span class="kr">val</span> <span class="nv">v2</span> <span class="p">=</span> <span class="nn">Vector</span><span class="p">.</span><span class="n">map</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">(</span><span class="n">w1</span><span class="p">,</span> <span class="n">w2</span><span class="p">,</span> <span class="n">w3</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">w1</span><span class="p">,</span> <span class="mh">0wx2</span> <span class="n">*</span> <span class="n">w2</span><span class="p">,</span> <span class="mh">0wx3</span> <span class="n">*</span> <span class="n">w3</span><span class="p">))</span> <span class="n">v1</span>
+    <span class="kr">val</span> <span class="nv">v3</span> <span class="p">=</span> <span class="nn">VectorSlice</span><span class="p">.</span><span class="n">vector</span> <span class="p">(</span><span class="nn">VectorSlice</span><span class="p">.</span><span class="n">slice</span> <span class="p">(</span><span class="n">v1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">SOME</span> <span class="p">(</span><span class="n">n</span> <span class="n">-</span> <span class="mi">2</span><span class="p">)))</span>
+    <span class="kr">val</span> <span class="nv">ans1</span> <span class="p">=</span> <span class="nn">Vector</span><span class="p">.</span><span class="n">foldl</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">((</span><span class="n">w1</span><span class="p">,</span><span class="n">w2</span><span class="p">,</span><span class="n">w3</span><span class="p">),</span><span class="n">w</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">w</span> <span class="n">+</span> <span class="n">w1</span> <span class="n">+</span> <span class="n">w2</span> <span class="n">+</span> <span class="n">w3</span><span class="p">)</span> <span class="mh">0wx0</span> <span class="n">v1</span>
+    <span class="kr">val</span> <span class="nv">ans2</span> <span class="p">=</span> <span class="nn">Vector</span><span class="p">.</span><span class="n">foldl</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">((_,</span><span class="n">w2</span><span class="p">,_),</span><span class="n">w</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">w</span> <span class="n">+</span> <span class="n">w2</span><span class="p">)</span> <span class="mh">0wx0</span> <span class="n">v2</span>
+    <span class="kr">val</span> <span class="nv">ans3</span> <span class="p">=</span> <span class="nn">Vector</span><span class="p">.</span><span class="n">foldl</span> <span class="p">(</span><span class="kr">fn</span> <span class="p">((_,</span><span class="n">w2</span><span class="p">,_),</span><span class="n">w</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">w</span> <span class="n">+</span> <span class="n">w2</span><span class="p">)</span> <span class="mh">0wx0</span> <span class="n">v3</span>
+
+    <span class="kr">val</span> <span class="nv">_</span> <span class="p">=</span> <span class="n">print</span> <span class="p">(</span><span class="n">concat</span> <span class="p">[</span><span class="s2">"ans1 = "</span><span class="p">,</span> <span class="nn">Word16</span><span class="p">.</span><span class="n">toString</span> <span class="n">ans1</span><span class="p">,</span> <span class="s2">"  "</span><span class="p">,</span>
+                           <span class="s2">"ans2 = "</span><span class="p">,</span> <span class="nn">Word16</span><span class="p">.</span><span class="n">toString</span> <span class="n">ans2</span><span class="p">,</span> <span class="s2">"  "</span><span class="p">,</span>
+                           <span class="s2">"ans3 = "</span><span class="p">,</span> <span class="nn">Word16</span><span class="p">.</span><span class="n">toString</span> <span class="n">ans3</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">])</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We would like <code>v2</code> and <code>v3</code> to be optimized from
+<code>(word16 * word16 * word16) vector</code> to <code>word16 vector</code> because only
+the 2nd component of the elements is needed to compute the answer.</p>
+</div>
+<div class="paragraph">
+<p>With <code>Array_array0Const</code>, each distinct occurrence of
+<code>Array_array0Constword16 * word16 * word16</code> arising from
+polyvariance and inlining remained a distinct
+<code>Array_uninitword16 * word16 * word16 (0x0)</code> global, which
+resulted in distinct occurrences for the
+<code>val v1 = Vector.tabulate &#8230;&#8203;</code> and for the
+<code>val v2 = Vector.map &#8230;&#8203;</code>. The latter could be optimized to
+<code>Array_uninit(word16) (0x0)</code> by <code>Useless</code>, because its result only
+flows to places requiring the 2nd component of the elements.</p>
+</div>
+<div class="paragraph">
+<p>With <code>Vector_vector ()</code>, the distinct occurrences of
+<code>Vector_vectorword16 * word16 * word16 ()</code> arising from
+polyvariance are globalized during <code>ClosureConvert</code>, those global
+references may be further duplicated by inlining, but the distinct
+occurrences of <code>Vector_vectorword16 * word16 * word16 ()</code> are
+merged to a single occurrence.  Because this result flows to places
+requiring all three components of the elements, it remains
+<code>Vector_vectorword16 * word16 * word16 ()</code> after
+<code>Useless</code>. Furthermore, because one cannot (in constant time) coerce a
+<code>(word16 * word16 * word16) vector</code> to a <code>word16 vector</code>, the <code>v2</code>
+value remains of type <code>(word16 * word16 * word16) vector</code>.</p>
+</div>
+<div class="paragraph">
+<p>One option would be to drop the 0-element vector "optimization"
+entirely.  This costs some space (no sharing of empty vectors) and
+some time (allocation and garbage collection of empty vectors).</p>
+</div>
+<div class="paragraph">
+<p>Another option would be to reinstate the <code>Array_array0Const</code> primitive
+and associated <code>ConstantPropagation</code> treatment.  But, the semantics
+and purpose of <code>Array_array0Const</code> was poorly understood, resulting in
+this break.</p>
+</div>
+<div class="paragraph">
+<p>The <a href="#">ShareZeroVec</a> pass pursues a different approach: perform the 0-element
+vector "optimization" as a separate optimization, after
+<code>ConstantPropagation</code> and <code>Useless</code>.  A trivial static analysis is
+used to match <code>val v: t vector = Array_toVector(t) (a)</code> with
+corresponding <code>val a: array = Array_uninit(t) (l)</code> and the later are
+expanded to
+<code>val a: t array = if 0 = l then zeroArr_[t] else Array_uninit(t) (l)</code>
+with a single global <code>val zeroArr_[t] = Array_uninit(t) (0)</code> created
+for each distinct type (after coercion-based optimizations).</p>
+</div>
+<div class="paragraph">
+<p>One disadvantage of this approach, compared to the <code>Vector_vector(t) ()</code>
+approach, is that <code>Array_toVector</code> is applied each time a vector
+is created, even if it is being applied to the <code>zeroArr_[t]</code>
+zero-length array.  (Although, this was the behavior of the
+<code>Array_array0Const</code> approach.)  This updates the object header each
+time, whereas the <code>Vector_vector(t) ()</code> approach would have updated
+the object header once, when the global was created, and the
+<code>zeroVec_[t]</code> global and the <code>Array_toVector</code> result would flow to the
+join point.</p>
+</div>
+<div class="paragraph">
+<p>It would be possible to properly share zero-length vectors, but doing
+so is a more sophisticated analysis and transformation, because there
+can be arbitrary code between the
+<code>val a: t array = Array_uninit(t) (l)</code> and the corresponding
+<code>val v: v vector = Array_toVector(t) (a)</code>, although, in practice,
+nothing happens when a zero-length vector is created.  It may be best
+to pursue a more general "array to vector" optimization that
+transforms creations of static-length vectors (e.g., all the
+<code>Vector.new&lt;N&gt;</code> functions) into <code>Vector_vector</code> primitives (some of
+which could be globalized).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation">Implementation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/MLton/mlton/blob/master/mlton/ssa/share-zero-vec.fun"><code>share-zero-vec.fun</code></a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details_and_notes">Details and Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+</div>
+<div id="mlton-footer">
+<div id="mlton-footer-text">
+<div>
+Last updated Thu Oct 21 15:53:06 2021 -0400 by Matthew Fluet.
+<a href="https://github.com/MLton/mlton/commits/master/doc/guide/src/ShareZeroVec.adoc">Log</a>
+<a href="https://github.com/MLton/mlton/edit/master/doc/guide/src/ShareZeroVec.adoc">Edit</a>
+</div>
+</div>
+</body>
+</html>

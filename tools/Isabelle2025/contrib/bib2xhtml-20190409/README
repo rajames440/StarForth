@@ -1,0 +1,11 @@
+bib2xhtml - Convert BibTeX Files into HTML
+==========================================
+
+- Directory main: snapshot of https://github.com/dspinellis/bib2xhtml version
+ab8c90bfd8c0 from 03-Mar-2019.
+
+- Directory bst: result of running ./gen-bst.pl in main.
+
+
+        Makarius
+        09-Apr-2019
