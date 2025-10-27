@@ -145,3 +145,4 @@ Isabelle will capture the formal state machine, invariants, and IPC handshake pr
 - Implement the host snapshot shim (POSIX + L4Re) and analytics heap scaffolding.
 - Draft initial Isabelle models for the physics state machine and observation window invariants.
 - Specify HOLA’s shared-memory schema and command protocol that matches the plan above.
+- Something else I can't recall.
