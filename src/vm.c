@@ -3,7 +3,7 @@
 
   vm.c- FORTH-79 Standard and ANSI C99 ONLY
   Modified by - rajames
-  Last modified - 2025-10-23T10:54:00.418-04
+  Last modified - 2025-10-27T08:13:23.674-04
 
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
@@ -22,6 +22,8 @@
 #include "../include/word_registry.h"
 #include "../include/vm_debug.h"
 #include "../include/profiler.h"
+#include "../include/platform_time.h"
+#include "../include/physics_metadata.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -358,6 +360,19 @@ void vm_exit_compile_mode(VM *vm) {
     vm_compile_word(vm, EXIT);
 
     vm->compiling_word->flags &= ~WORD_SMUDGED;
+    vm->compiling_word->flags |= WORD_COMPILED;
+
+    cell_t *df = vm_dictionary_get_data_field(vm->compiling_word);
+    if (df) {
+        uint64_t header_bytes = (uint64_t)(((uint8_t *) df + sizeof(cell_t)) - (uint8_t *) vm->compiling_word);
+        uint64_t body_start = (uint64_t)(vaddr_t)(uint64_t)(*df);
+        uint64_t here_bytes = (uint64_t) vm->here;
+        uint64_t body_bytes = (here_bytes >= body_start) ? (here_bytes - body_start) : 0;
+        uint64_t total = header_bytes + body_bytes;
+        uint32_t mass = (total > UINT32_MAX) ? UINT32_MAX : (uint32_t) total;
+        physics_metadata_set_mass(vm->compiling_word, mass);
+    }
+    physics_metadata_refresh_state(vm->compiling_word);
 
     vm->mode = MODE_INTERPRET;
     vm->state_var = 0;
@@ -420,6 +435,9 @@ void execute_colon_word(VM *vm) {
     for (;;) {
         /* Each code cell stores a DictEntry* (called word) */
         DictEntry *w = (DictEntry *) (uintptr_t)(*ip);
+        if (w) {
+            w->entropy++;
+        }
 
         /* Advance IP to next cell and save resume IP on return stack */
         ip = ip + 1;
@@ -433,7 +451,10 @@ void execute_colon_word(VM *vm) {
         profiler_word_count(w);
 
         if (w && w->func) {
+            profiler_word_enter(w);
             w->func(vm);
+            physics_metadata_touch(w, w->entropy, sf_monotonic_ns());
+            profiler_word_exit(w);
         } else {
             log_message(LOG_ERROR, "execute_colon_word: null word func");
             vm->error = 1;
@@ -482,8 +503,12 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
 
     if (entry) {
         /* Bump usage counters */
+        uint64_t lookup_ns = sf_monotonic_ns();
         entry->entropy++;
-        if (canon && canon != entry) canon->entropy++;
+        if (canon && canon != entry) {
+            canon->entropy++;
+            physics_metadata_touch(canon, canon->entropy, lookup_ns);
+        }
 
         /* Immediate if either entry or canonical is flagged immediate */
         int is_immediate =
@@ -503,7 +528,10 @@ void vm_interpret_word(VM *vm, const char *word_str, size_t len) {
         profiler_word_count(entry);
 
         if (entry->func) {
+            profiler_word_enter(entry);
             entry->func(vm);
+            physics_metadata_touch(entry, entry->entropy, sf_monotonic_ns());
+            profiler_word_exit(entry);
         } else {
             log_message(LOG_ERROR, "NULL func for '%.*s'", (int) len, word_str);
             vm->error = 1;
@@ -652,6 +680,7 @@ void vm_make_immediate(VM *vm) {
         return;
     }
     vm->latest->flags |= WORD_IMMEDIATE;
+    physics_metadata_refresh_state(vm->latest);
     log_message(LOG_DEBUG, "IMMEDIATE: '%.*s'",
                 (int) vm->latest->name_len, vm->latest->name);
 }

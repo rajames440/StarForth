@@ -109,6 +109,16 @@ HOLA owns the analyzer interface contract so every consumer speaks the same shar
 - **VM-level aggregation**: roll per-word fields into VM-level metrics (temperature, entropy flux, latency profile, mass, state flags).
 Use those to maintain operating bands (`COLD`, `WARM`, `HOT`, `CRITICAL`), trigger governance hooks, and request scheduler adjustments when available.
 
+=== Runtime Integration Notes (Phase 1)
+
+- `physics_runtime_init()` is invoked from `main.c` once logging is configured; failure to allocate the analytics heap emits a warning but does not abort the VM.
+- `physics_host_snapshot()` captures scheduler hints on both POSIX and L4Re builds and pushes deltas into HOLA channel `0x00000002` via `physics_analytics_publish_event()`.
+- `physics_runtime_shutdown()` runs during final teardown so analytics heaps are never left mapped across runs.
+- The shared-memory schema and command protocol are captured in <<docs/src/internal/HOLA_PROTOCOL.adoc,HOLA_PROTOCOL.adoc>> and must remain in sync with any governance-side consumers.
+- On Linux the shim now records PSI metrics, `/proc/stat` totals, and cgroup usage.
+Use the `PHYSICS_HOST_FLAG_*` bits to gate scheduler reactions when running on kernels that lack those files.
+- Primitive seeding: `physics_metadata_apply_seed()` preloads temperature/latency hints for high-impact words (`IF`, `LOOP`, `EMIT`, block words, etc.) so the inference loop starts from sensible priors.
+
 == Open Questions
 
 - Do we require persistent storage of physics metadata across restarts, or is it runtime-only?

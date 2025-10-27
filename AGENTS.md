@@ -2,41 +2,58 @@
 
 ## Project Structure & Module Organization
 
-StarForth keeps its ANSI C99 sources under `src/`, with the VM entry points in `src/main.c` and core execution in
-`src/vm.c`. Public headers live in `include/`, while Forth word implementations are grouped by module in
-`src/word_source/`. The purpose-built harness and module tests sit in `src/test_runner/` (add new suites under
-`src/test_runner/modules/`). Runtime defaults such as `init.4th` reside in `conf/`, assets and utilities in `scripts/`,
-and long-form documentation in `docs/src/`. Treat `StarForth-Governance/` as read-only; changes there must go through
-the governance repo.
+StarForth C99 sources live under `src/`; VM entry points begin in `src/main.c` and core execution continues in
+`src/vm.c`. Public headers reside in `include/`. Forth word definitions are grouped by module in `src/word_source/`.
+Test harness code sits in `src/test_runner/`, with module suites under `src/test_runner/modules/`. Runtime defaults such
+as `init.4th` sit in `conf/`, helper scripts in `scripts/`, and long-form docs in `docs/src/`; physics design notes live
+under `docs/src/internal/` (see `PHYSICS_SCHEDULING_PLAN.adoc` and `PHYSICS_SIGNAL_MAP.adoc`). Treat
+`StarForth-Governance/` as read-only and coordinate changes via the governance repo.
 
 ## Build, Test, and Development Commands
 
-Use `make all` for the standard optimized build (outputs `build/starforth`). `make test` runs the compiled binary in
-test mode (`./build/starforth -t`) and should be clean before every PR. Quick sanity checks rely on `make smoke`, while
-`make debug` produces a symbols-rich binary for step-through debugging. Performance work typically starts from
-`make fastest` (ASM + direct threading) or `make pgo` for profile-guided builds. Reset artifacts with `make clean`;
-combine with `STRICT_PTR=1` when chasing pointer discipline regressions.
+Run `make all` for the optimized binary at `build/starforth`. Use `make smoke` for quick validation, `make test` for the
+full test mode (`./build/starforth --run-tests`), and `make debug` when you need symbol-rich output. Performance work
+starts from `make fastest` or `make pgo`; both expect a clean tree. Reset artifacts with `make clean`, and combine with
+`STRICT_PTR=1` while chasing pointer-safety regressions. Enable the profiler (`PROFILE=1 make test`) when validating new
+physics signals.
 
 ## Coding Style & Naming Conventions
 
-Stick to strict ANSI C99, compiling with warnings-as-errors; verify with the default Makefile flags. Source files use
-four-space indentation, braces on the same line, and snake_case identifiers for functions and locals; macros remain
-SHOUT_CASE. Document public entry points with brief Doxygen comments and keep helper functions `static`. New words
-mirror existing naming (`forth_word_*`) and register through the word registry tables. Honour `STRICT_PTR` expectations
-and avoid introducing compiler-specific extensions.
+Code compiles as strict ANSI C99 with warnings treated as errors. Use four-space indentation, brace-on-same-line style,
+and snake_case for functions and locals; macros stay in SHOUT_CASE. Document public entry points with brief Doxygen
+comments, keep helpers `static`, and register new Forth words via the `forth_word_*` patterns and registry tables. Avoid
+compiler-specific extensions and honor `STRICT_PTR` invariants.
 
 ## Testing Guidelines
 
-Extend coverage by adding `_test.c` modules in `src/test_runner/modules/` and wiring them into the `test_modules` array
-in `src/test_runner/test_runner.c`. Keep assertions granular so the fail-fast harness can pinpoint regressions; prefer
-the helpers in `test_common.h`. Use `./build/starforth --run-tests` for full suites, `--fail-fast` during triage, and
-`--break-me` when validating broad integrations. Aim for near-total coverage of newly exposed APIs and explain any
-intentional gaps in your PR description.
+Add new `_test.c` files under `src/test_runner/modules/` and wire them into `test_modules` in
+`src/test_runner/test_runner.c`. Prefer the utilities in `test_common.h` for assertions. Run suites with
+`./build/starforth --run-tests`; append `--fail-fast` during triage and `--break-me` for broad coverage sweeps. Target
+high coverage for new APIs, and document intentional gaps in your PR. Exercise physics metadata paths with
+profiler-backed tests and verify telemetry snapshots remain deterministic.
+
+## Physics Metadata & Signals
+
+Phase 1 physics metadata extends `DictEntry.physics` with fields such as `temperature_q8`, `last_active_ns`,
+`mass_bytes`, and `avg_latency_ns`; map derivations back to the thermodynamic plan in
+`docs/src/internal/PHYSICS_SCHEDULING_PLAN.adoc`. Populate metrics from existing hooks: `DictEntry.entropy`, profiler
+counters (`include/profiler.h`), and monotonic clocks exposed by the L4Re KIP. When adding new telemetry sources,
+consult `docs/src/internal/PHYSICS_SIGNAL_MAP.adoc` to align with approved kernel capabilities (`l4_kip_clock_ns`,
+`l4_scheduler_info`, loader capabilities like `vbus_storage`). Keep additions cache-friendly (≤24 bytes per entry),
+prefer 64-bit fixed-point math, and reserve unused slots (`acl_hint`, `pubsub_mask`) for future governance directives.
+
+## Adaptive Optimization Pathways
+
+Prototype advanced pathways (e.g., JIT emitters, word inlining, timing/core balancing) behind feature flags and allow
+the physics inference engine to select strategies based on telemetry. Document each pathway under `docs/src/internal/`
+with activation knobs, fallback behaviour, and scheduler touchpoints. Keep runtime toggles centralized in the physics
+controller (e.g., `physics_mode`, `scheduler_policy`) and ensure every option degrades gracefully to the baseline
+interpreter. Profile new pathways with `PROFILE=1 make test` and capture before/after metrics so governance can approve
+promotion beyond experimental status.
 
 ## Commit & Pull Request Guidelines
 
-Create small, topic-focused commits with imperative subjects ("fix logging regression"), wrapping bodies at ~72
-characters. Ensure `make clean && make test` (optionally with `STRICT_PTR=1`) passes before you push. PRs should
-summarize intent, list test evidence, link related issues, and call out any docs touched. Never modify
-`StarForth-Governance/`; instead, open an issue in the governance repo and reference it. Provide screenshots or
-benchmark outputs when altering performance-critical paths or user-visible behaviour.
+Write topic-focused commits with imperative subjects (e.g., `fix logging regression`) and wrap descriptions near 72
+characters. Before pushing, ensure `make clean && make test` passes (optionally with `STRICT_PTR=1`). PRs should
+summarize intent, list test evidence, link any tracking issues, and include screenshots or benchmarks when altering
+user-visible or performance-critical paths.

@@ -3,7 +3,7 @@
 
   main.c- FORTH-79 Standard and ANSI C99 ONLY
   Modified by - rajames
-  Last modified - 2025-10-23T10:54:00.433-04
+  Last modified - 2025-10-27T08:13:23.638-04
 
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
@@ -31,6 +31,7 @@
 #include "vm_debug.h"
 #include "log.h"
 #include "profiler.h"
+#include "physics_runtime.h"
 #include "platform_time.h"
 #include "test_runner/include/test_runner.h"
 #include "test_runner/include/test_common.h"  /* brings in extern int fail_fast; */
@@ -107,6 +108,7 @@ static void cleanup_blkio(void) {
 void cleanup_and_exit(void) {
     /* close blkio & free RAM before VM */
     cleanup_blkio();
+    physics_runtime_shutdown();
 
     if (global_vm != NULL) {
         vm_cleanup(global_vm);
@@ -135,7 +137,6 @@ void print_usage(const char *program_name) {
     printf("Usage: %s [OPTIONS]\n", program_name);
     printf("StarForth - A lightweight Forth virtual machine\n\n");
     printf("Options:\n");
-    printf("  --run-tests       Run the comprehensive test suite before starting REPL\n");
     printf("  --stress-tests    Run stress tests (deep nesting, stack exhaustion, large definitions)\n");
     printf("  --integration     Run integration tests (complete Forth programs)\n");
     printf("  --break-me        🔥 ULTRA-COMPREHENSIVE diagnostic mode - tests EVERYTHING,\n");
@@ -156,12 +157,11 @@ void print_usage(const char *program_name) {
     printf("  --ram-disk=<MB>   RAM fallback size if no --disk-img (default: 1 MB)\n");
     printf("  --fbs=<bytes>     Forth block size (default: 1024)\n");
     printf("  --help, -h        Show this help message\n\n");
+    printf("Tests are executed automatically before the REPL starts.\n\n");
     printf("Examples:\n");
     printf("  %s                        # Start REPL with INFO logging\n", program_name);
-    printf("  %s --run-tests            # Run tests with TEST logging, then start REPL\n", program_name);
     printf("  %s --benchmark            # Run benchmarks with 1000 iterations\n", program_name);
     printf("  %s --benchmark 5000       # Run benchmarks with 5000 iterations\n", program_name);
-    printf("  %s --log-debug --run-tests  # Run tests with DEBUG logging\n", program_name);
     printf("  %s --disk-img=./disks/starship.img  # Use disk image\n", program_name);
     printf("  %s --ram-disk=64 --fbs=1024         # 64 MB RAM fallback\n", program_name);
 }
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
     VM vm = {0}; /* Zero-init */
     global_vm = &vm;
 
-    int run_tests = 0;
+    int run_tests_flag_observed = 0;
     int run_benchmark = 0;
     int do_stress_tests = 0;
     int do_integration_tests = 0;
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     /* Parse command line arguments */
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--run-tests") == 0) {
-            run_tests = 1;
+            run_tests_flag_observed = 1;
         } else if (strcmp(argv[i], "--stress-tests") == 0) {
             do_stress_tests = 1;
         } else if (strcmp(argv[i], "--integration") == 0) {
@@ -314,14 +314,24 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /* If running tests and no explicit log level was set, default to TEST */
-    if (run_tests && !log_level_explicitly_set && !run_benchmark) {
+    /* Honor legacy --run-tests behavior for log level selection */
+    if (run_tests_flag_observed && !log_level_explicitly_set && !run_benchmark) {
         log_level = LOG_TEST;
-        log_message(LOG_INFO, "Test mode enabled - using LOG_TEST level for diagnostics");
     }
 
     /* Set the logging level */
     log_set_level(log_level);
+
+    if (physics_runtime_init(0) != 0) {
+        log_message(LOG_WARN, "Physics runtime failed to allocate analytics heap; proceeding degraded");
+    }
+
+    if (run_tests_flag_observed) {
+        log_message(LOG_WARN, "--run-tests flag is obsolete; tests now run automatically.");
+        if (!log_level_explicitly_set && !run_benchmark) {
+            log_message(LOG_INFO, "Test mode enabled - using LOG_TEST level for diagnostics");
+        }
+    }
 
     /* ---------- Open block device BEFORE vm_init so the VM can discover it ---------- */
     {
@@ -485,12 +495,33 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    /* Run tests if requested */
-    if (run_tests) {
-        log_message(LOG_INFO, "Running comprehensive test suite...");
-        run_all_tests(&vm);
-        log_message(LOG_INFO, "Test run complete. Starting REPL...");
+    /* Always execute the full test suite before any optional modes */
+    log_message(LOG_INFO, "Running comprehensive test suite...");
+    run_all_tests(&vm);
+    log_message(LOG_INFO, "Test run complete.");
+
+    /* Ensure the interpreter is ready for INIT even if tests triggered error paths */
+    if (vm.error != 0) {
+        log_message(LOG_WARN, "Clearing residual VM error state (%d) before INIT", vm.error);
+        vm.error = 0;
     }
+    vm.abort_requested = 0;
+    vm.exit_colon = 0;
+    vm.mode = MODE_INTERPRET;
+
+    /* Run INIT immediately after the test suite */
+    log_message(LOG_INFO, "Running system initialization (INIT)...");
+    vm_interpret(&vm, "INIT");
+    if (vm.error) {
+        log_message(LOG_ERROR, "System initialization failed - cannot continue");
+        cleanup_and_exit();
+        return 1;
+    }
+
+    /* Set dictionary fence after INIT to protect foundational words from FORGET */
+    vm.dict_fence_latest = vm.latest;
+    vm.dict_fence_here = vm.here;
+    log_message(LOG_INFO, "Dictionary fence set - init words protected from FORGET");
 
     if (do_stress_tests) {
         run_stress_tests(&vm);
@@ -511,20 +542,6 @@ int main(int argc, char *argv[]) {
 
     /* Start the REPL if not running tests that exit */
     if (!do_stress_tests && !do_integration_tests) {
-        /* Run INIT to load system initialization from init.4th */
-        log_message(LOG_INFO, "Running system initialization (INIT)...");
-        vm_interpret(&vm, "INIT");
-        if (vm.error) {
-            log_message(LOG_ERROR, "System initialization failed - cannot start REPL");
-            cleanup_and_exit();
-            return 1;
-        }
-
-        /* Set dictionary fence after INIT to protect foundational words from FORGET */
-        vm.dict_fence_latest = vm.latest;
-        vm.dict_fence_here = vm.here;
-        log_message(LOG_INFO, "Dictionary fence set - init words protected from FORGET");
-
         vm_repl(&vm);
     }
 

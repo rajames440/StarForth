@@ -65,6 +65,18 @@ OBJ = $(patsubst src/%.c,build/%.o,$(SRC))
 ASM_FILES = $(patsubst src/%.c,build/%.s,$(SRC))
 TARGET = build/starforth
 
+# Optional profiler controls for test targets
+PROFILE_LEVEL := $(strip $(PROFILE))
+ifeq ($(PROFILE_LEVEL),)
+PROFILE_ARGS :=
+else
+PROFILE_ARGS := --profile $(PROFILE_LEVEL)
+PROFILE_REPORT ?= 1
+ifneq ($(strip $(PROFILE_REPORT)),0)
+PROFILE_ARGS += --profile-report
+endif
+endif
+
 # Default target
 all: banner $(TARGET)
 	@echo ""
@@ -350,7 +362,7 @@ smoke: $(TARGET)
 # Run tests
 test: $(TARGET)
 	@echo "🧪 Running test suite..."
-	./$(TARGET) -t
+	@printf 'BYE\n' | ./$(TARGET) --run-tests $(PROFILE_ARGS)
 
 # ==============================================================================
 # CLEANUP

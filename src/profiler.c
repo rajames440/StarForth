@@ -3,7 +3,7 @@
 
   profiler.c- FORTH-79 Standard and ANSI C99 ONLY
   Modified by - rajames
-  Last modified - 2025-10-23T10:54:00.470-04
+  Last modified - 2025-10-27T08:13:23.649-04
 
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
@@ -35,6 +35,7 @@
 #include "../include/profiler.h"
 #include "../include/platform_time.h"
 #include "../include/vm.h"
+#include "../include/physics_metadata.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -202,6 +203,8 @@ void profiler_word_exit(const DictEntry *entry) {
         if (elapsed > stats->max_time_ns) stats->max_time_ns = elapsed;
     }
 
+    physics_metadata_record_latency((DictEntry *) entry, elapsed);
+
     profiler_state.current_word = NULL;
 }
 
@@ -214,6 +217,7 @@ void profiler_word_exit(const DictEntry *entry) {
  */
 void profiler_word_count(const DictEntry *entry) {
     if (!profiler_state.enabled || !entry) return;
+    if (profiler_state.level >= PROFILE_DETAILED) return;
 
     WordStats *stats = get_word_stats(entry);
     if (stats) {

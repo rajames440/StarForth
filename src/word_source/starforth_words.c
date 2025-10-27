@@ -3,7 +3,7 @@
 
   starforth_words.c- FORTH-79 Standard and ANSI C99 ONLY
   Modified by - rajames
-  Last modified - 2025-10-23T10:54:00.878-04
+  Last modified - 2025-10-27T08:13:23.668-04
 
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
@@ -21,6 +21,9 @@
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include "../../include/vm.h"
+#include "../../include/physics_metadata.h"
+#include "../../include/platform_time.h"
+#include "../../include/profiler.h"
 #include "../../include/block_subsystem.h"
 #include <string.h>
 #include <stdio.h>
@@ -120,10 +123,12 @@ void starforth_word_reset_entropy(VM *vm) {
     for (DictEntry *entry = vm->latest; entry; entry = entry->link) {
         if (entry->entropy > 0) {
             entry->entropy = 0;
+            entry->physics.temperature_q8 = 0;
+            entry->physics.avg_latency_ns = 0;
+            entry->physics.last_active_ns = 0;
             reset_count++;
         }
     }
-
 }
 
 /**
@@ -461,7 +466,14 @@ void starforth_word_init(VM *vm) {
             return;
         }
 
+        vm->current_executing_entry = load_word;
+        load_word->entropy++;
+        profiler_word_count(load_word);
+        profiler_word_enter(load_word);
         load_word->func(vm);
+        physics_metadata_touch(load_word, load_word->entropy, sf_monotonic_ns());
+        profiler_word_exit(load_word);
+        vm->current_executing_entry = NULL;
 
         /* Check for errors after each block */
         if (vm->error) {

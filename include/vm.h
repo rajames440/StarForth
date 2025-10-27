@@ -3,7 +3,7 @@
 
   vm.h- FORTH-79 Standard and ANSI C99 ONLY
   Modified by - rajames
-  Last modified - 2025-10-26T09:28:04.038-04
+  Last modified - 2025-10-27T08:13:23.681-04
 
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
@@ -97,20 +97,21 @@ static inline cell_t CELL(vaddr_t a) { return (cell_t) (int64_t) a; }
 #define SPIN_IDLE        0      /* Particle spin state: idle */
 #define CHARGE_NEUTRAL   0      /* Particle charge state: neutral */
 
-/* Physics properties structure - stub implementation for elementary particle model */
+/* Physics state flags */
+#define PHYSICS_STATE_IMMEDIATE 0x01
+#define PHYSICS_STATE_PINNED    0x02
+#define PHYSICS_STATE_HIDDEN    0x04
+#define PHYSICS_STATE_COMPILED  0x08
+
+/* Phase 1 physics metadata */
 typedef struct {
-    uint32_t observations; /* Number of times word has been observed/executed */
-    uint32_t entropy_reciprocal; /* Reciprocal of entropy (higher = colder/less used) */
-    uint64_t last_observed_ns; /* Timestamp of last observation in nanoseconds */
-    uint32_t decay_rate; /* Rate at which word decays when unused */
-    uint32_t mass; /* Memory footprint of the word */
-    uint32_t momentum; /* Execution momentum */
-    uint8_t spin; /* Particle spin state */
-    uint8_t charge; /* Particle charge state */
-    uint8_t superposition; /* Superposition state */
-    uint8_t heat_index; /* Heat index (usage intensity) */
-    void *topics; /* Topic subscriptions (NULL for now) */
-    uint32_t topic_count; /* Number of topic subscriptions */
+    uint16_t temperature_q8; /* Entropy-backed hotness scaled to Q8 */
+    uint64_t last_active_ns; /* Monotonic timestamp of last execution */
+    uint32_t mass_bytes; /* Header + body footprint */
+    uint32_t avg_latency_ns; /* Rolling average latency (PROFILE_DETAILED+) */
+    uint8_t state_flags; /* Encoded execution traits (immediate, pinned, etc.) */
+    uint8_t acl_hint; /* Reserved for governance-driven ACLs */
+    uint16_t pubsub_mask; /* Reserved topic bitmap */
 } DictPhysics;
 
 /* Dictionary entry - enhanced for FORTH-79 compatibility */

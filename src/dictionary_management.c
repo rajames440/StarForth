@@ -3,7 +3,7 @@
 
   dictionary_management.c- FORTH-79 Standard and ANSI C99 ONLY
   Modified by - rajames
-  Last modified - 2025-10-23T10:54:00.986-04
+  Last modified - 2025-10-27T08:13:23.631-04
 
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
@@ -24,6 +24,7 @@
 #include "../include/vm.h"
 #include "../include/io.h"
 #include "../include/log.h"
+#include "../include/physics_metadata.h"
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -226,7 +227,11 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     entry->flags = 0;
     entry->name_len = (uint8_t) len;
     entry->entropy = 0; /* Initialize usage counter */
-    // entry->entropy = 0; /* Initialize usage counter */
+    entry->acl_default = ACL_USER_DEFAULT;
+
+    uint32_t header_bytes = (total > UINT32_MAX) ? UINT32_MAX : (uint32_t) total;
+    physics_metadata_init(entry, header_bytes);
+    physics_metadata_apply_seed(entry);
 
     memcpy(entry->name, name, len);
     entry->name[len] = '\0';
@@ -289,7 +294,10 @@ cell_t *vm_dictionary_get_data_field(DictEntry *entry) {
  * @param vm The virtual machine context
  */
 void vm_hide_word(VM *vm) {
-    if (vm && vm->latest) vm->latest->flags |= WORD_HIDDEN;
+    if (vm && vm->latest) {
+        vm->latest->flags |= WORD_HIDDEN;
+        physics_metadata_refresh_state(vm->latest);
+    }
 }
 
 void vm_smudge_word(VM *vm) {
@@ -301,6 +309,7 @@ void vm_smudge_word(VM *vm) {
         return;
     }
     vm->latest->flags ^= WORD_SMUDGED;
+    physics_metadata_refresh_state(vm->latest);
 }
 
 void vm_pin_entropy(VM *vm) {
@@ -312,6 +321,7 @@ void vm_pin_entropy(VM *vm) {
         return;
     }
     vm->latest->flags |= WORD_PINNED;
+    physics_metadata_refresh_state(vm->latest);
 }
 
 void vm_unpin_entropy(VM *vm) {
@@ -323,6 +333,7 @@ void vm_unpin_entropy(VM *vm) {
         return;
     }
     vm->latest->flags &= ~WORD_PINNED;
+    physics_metadata_refresh_state(vm->latest);
 }
 
 /* If you ever need to hard-reset (e.g., switching vocabularies wholesale) */

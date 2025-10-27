@@ -3,7 +3,7 @@
 
   defining_words.c- FORTH-79 Standard and ANSI C99 ONLY
   Modified by - rajames
-  Last modified - 2025-10-23T10:54:00.866-04
+  Last modified - 2025-10-27T08:13:23.623-04
 
   Copyright (c) 2025 (rajames) Robert A. James - StarshipOS Forth Project.
 
@@ -21,6 +21,9 @@
 #include "../../include/vm.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+#include "../../include/profiler.h"
+#include "../../include/physics_metadata.h"
+#include "../../include/platform_time.h"
 
 #include <string.h>
 #include <stdlib.h>   /* malloc/free */
@@ -246,7 +249,12 @@ static void defining_runtime_dodoes(VM *vm) {
             break;
         }
         vm->current_executing_entry = entry;
+        entry->entropy++;
+        profiler_word_count(entry);
+        profiler_word_enter(entry);
         entry->func(vm);
+        physics_metadata_touch(entry, entry->entropy, sf_monotonic_ns());
+        profiler_word_exit(entry);
     }
 
     /* Handle EXIT from the DOES> body */
@@ -665,7 +673,6 @@ static void defining_word_immediate(VM *vm) {
  * @param vm Pointer to the VM context
  */
 void register_defining_words(VM *vm) {
-
     /* Core colon pair — both IMMEDIATE */
     register_word(vm, ":", defining_word_colon);
     vm_make_immediate(vm);

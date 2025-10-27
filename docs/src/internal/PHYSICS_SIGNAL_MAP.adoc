@@ -118,6 +118,17 @@ Virtual IRQs (e.g., the scheduler hotplug IRQ) are another option for non-blocki
 All state remains resident in RAM inside a fixed-size analytics heap; no dynamic expansion is permitted.
 The analytics heap (default 10 MiB) is separate from the VM arena (`VM_MEMORY_SIZE` stays 5 MiB), so dictionary, stacks, and block subsystem budgets remain untouched.
 
+=== Host Snapshot Shim & Analytics Heap
+
+Phase 1 ships a concrete implementation of the items above:
+
+- `physics_runtime_init()` reserves a dedicated analytics heap (default 10 MiB) whose layout is documented in <<hola>>.
+- `physics_host_snapshot()` abstracts POSIX vs.
+L4Re scheduler probes and feeds ring-buffer events via `physics_analytics_publish_event()`.
+- The heap header, event records, and mailbox schema live in `include/physics_runtime.h`; the runtime implementation resides in `src/physics_runtime.c`.
+
+The shim exposes portable scheduler hints—monotonic clocks, logical CPU count, runnable thread estimates—and keeps the interface ABI-stable so governance tooling can evolve independently.
+
 == Immediate Research Tasks
 
 1. Prototype a thin KIP/scheduler shim that exposes the bullet-listed signals to userland C code (no filesystem).
@@ -139,6 +150,40 @@ Descriptor inheritance flows from module/vocabulary/VM defaults down to individu
 VM-level rollups mirror the per-word metrics and define operating bands (`COLD`, `WARM`, `HOT`, `CRITICAL`) that higher layers (governance, scheduler shim) can respond to.
 
 Isabelle will capture the formal state machine, invariants, and IPC handshake proofs, while HOLA defines the shared-memory layout and control protocol consumed by both the VM and external analyzers.
+
+=== Host Snapshot Shim & Analytics Heap (Implemented)
+
+- `physics_runtime_init()` provisions the analytics heap (default 10 MiB) and publishes the header/region descriptors consumed by HOLA.
+- `physics_host_snapshot()` abstracts POSIX vs.
+L4Re backends and feeds event channel `0x00000002` via `physics_analytics_publish_event()`.
+- Structures live in `include/physics_runtime.h`; implementation in `src/physics_runtime.c`.
+
+These hooks are intentionally ABI-stable so governance scripts can mirror them into the external repository without pulling in C sources.
+
+Phase 1 (POSIX path) captures additional host signals:
+
+- Linux PSI values (`/proc/pressure/*`) mapped into `psi_*_avg{10,60,300}_milli`.
+- `/proc/stat` totals for total/idle jiffies so analyzers can derive load without re-reading procfs.
+- cgroup v2 `cpu.stat` and `memory.current` usage figures (when available).
+- Flag bits (`PHYSICS_HOST_FLAG_*`) advertise which sources were populated.
+
+[[hola]]
+=== HOLA Shared-Memory Schema & Command Protocol
+
+See <<docs/src/internal/HOLA_PROTOCOL.adoc,HOLA_PROTOCOL.adoc>> for the Phase 1 contract (header layout, ring buffer semantics, command mailbox).
+Consumers **must** validate the magic/version triple before touching the heap.
+
+=== Formal Artefacts
+
+- Observation/state machine: `docs/src/internal/formal/Physics_StateMachine.thy`.
+- Observation invariants & host coupling: `docs/src/internal/formal/Physics_Observation.thy`.
+- Governance hand-off plan: summarised updates in <<docs/src/internal/PHYSICS_SCHEDULING_PLAN.adoc,PHYSICS_SCHEDULING_PLAN.adoc>> plus forthcoming governance repository notes.
+- Export checklist: `docs/src/internal/GOVERNANCE_EXPORT_NOTES.adoc` outlines what moves to the governance repository.
+
+=== Primitive Seed Table
+
+`physics_metadata_apply_seed()` introduces initial priors for a handful of high-impact primitives (control flow, I/O, block subsystem, save-system).
+Seeds live in `src/physics_metadata.c` and keep temperature/latency estimates from starting at absolute zero; governance tooling can extend or override the table once the Bayesian loop is in place.
 
 === Morning Pickup Notes
 
