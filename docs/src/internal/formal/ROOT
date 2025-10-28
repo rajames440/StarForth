@@ -1,9 +1,10 @@
-session StarForth_Specs = HOL +
+session Physics_Formal = HOL +
+  description "Physics metadata invariants for StarForth"
   options [document = false]
   theories
-    StarForth_Spec
-    Observation_Window
-    Ring_Buffer
-    Seeds
-    Snapshot
-    StarForth_Impl_Sketch
+    Physics_StateMachine
+    Physics_Observation
+    VM_Core
+    VM_Stacks
+    VM_Words
+    VM_Register
