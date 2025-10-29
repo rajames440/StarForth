@@ -14,7 +14,7 @@ nownow ![assetts/banner.png](banner.png)
 
 ### *Come see how I `stack up`* 🧱⚡
 
-> “Born in 1979. Rebuilt for 2025.
+> “Born in 199. Rebuilt for 2025.
 > The fastest rat rod in Ohio — and maybe your next favorite VM.”
 
 ---
