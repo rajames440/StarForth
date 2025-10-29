@@ -1,10 +1,18 @@
-session Physics_Formal = HOL +
+session VM_Formal = HOL +
+  description "Core StarForth VM semantics"
+  options [document = false]
+  theories
+    VM_Core
+    VM_Stacks
+    VM_StackRuntime
+    VM_Words
+    VM_DataStack_Words
+    VM_ReturnStack_Words
+    VM_Register
+
+session Physics_Formal = VM_Formal +
   description "Physics metadata invariants for StarForth"
   options [document = false]
   theories
     Physics_StateMachine
     Physics_Observation
-    VM_Core
-    VM_Stacks
-    VM_Words
-    VM_Register

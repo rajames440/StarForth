@@ -28,35 +28,39 @@ definition stack_pop :: "'a stack \<Rightarrow> ('a * 'a stack) option" where
 definition stack_trim :: "nat \<Rightarrow> 'a stack \<Rightarrow> 'a stack" where
   "stack_trim n s = take n s"
 
-definition push_data :: "'val \<Rightarrow> ('dict,'val stack,'io) vm_core_state \<Rightarrow> ('dict,'val stack,'io) vm_core_state" where
+definition push_data :: "'val \<Rightarrow> ('dict,'val stack,'io,'phys) vm_core_state \<Rightarrow> ('dict,'val stack,'io,'phys) vm_core_state" where
   "push_data x st = st\<lparr> data_stack := stack_push x (data_stack st) \<rparr>"
 
-definition pop_data :: "('dict,'val stack,'io) vm_core_state \<Rightarrow> (('val * ('dict,'val stack,'io) vm_core_state)) option" where
+definition pop_data :: "('dict,'val stack,'io,'phys) vm_core_state \<Rightarrow> (('val * ('dict,'val stack,'io,'phys) vm_core_state)) option" where
   "pop_data st = (case stack_pop (data_stack st) of None \<Rightarrow> None | Some (x, s) \<Rightarrow> Some (x, st\<lparr> data_stack := s \<rparr>))"
 
-definition push_return :: "'val \<Rightarrow> ('dict,'val stack,'io) vm_core_state \<Rightarrow> ('dict,'val stack,'io) vm_core_state" where
+definition push_return :: "'val \<Rightarrow> ('dict,'val stack,'io,'phys) vm_core_state \<Rightarrow> ('dict,'val stack,'io,'phys) vm_core_state" where
   "push_return x st = st\<lparr> return_stack := stack_push x (return_stack st) \<rparr>"
 
-definition pop_return :: "('dict,'val stack,'io) vm_core_state \<Rightarrow> (('val * ('dict,'val stack,'io) vm_core_state)) option" where
+definition pop_return :: "('dict,'val stack,'io,'phys) vm_core_state \<Rightarrow> (('val * ('dict,'val stack,'io,'phys) vm_core_state)) option" where
   "pop_return st = (case stack_pop (return_stack st) of None \<Rightarrow> None | Some (x, s) \<Rightarrow> Some (x, st\<lparr> return_stack := s \<rparr>))"
 
 
 locale vm_stack_model =
-  fixes state :: "('dict,'val stack,'io) vm_core_state"
+  fixes state :: "('dict,'val stack,'io,'phys) vm_core_state"
   fixes data_limit :: nat
   fixes return_limit :: nat
   fixes data_underflow_ok :: bool
   fixes return_underflow_ok :: bool
+  fixes cell_to_int :: "'val \<Rightarrow> int"
+  fixes int_to_cell :: "int \<Rightarrow> 'val"
   assumes data_stack_depth: "stack_depth (data_stack state) \<le> data_limit"
       and return_stack_depth: "stack_depth (return_stack state) \<le> return_limit"
       and data_underflow_guard: "data_underflow_ok \<longleftrightarrow> data_stack state = []"
       and return_underflow_guard: "return_underflow_ok \<longleftrightarrow> return_stack state = []"
+      and cell_roundtrip: "int_to_cell (cell_to_int v) = v"
+      and cell_encode_decode: "cell_to_int (int_to_cell i) = i"
 begin
 
 definition stack_ok_limit :: "'val stack \<Rightarrow> bool" where
   "stack_ok_limit s \<longleftrightarrow> stack_depth s \<le> data_limit"
 
-definition transfer_data_to_return :: "('dict,'val stack,'io) vm_core_state \<Rightarrow> ('dict,'val stack,'io) vm_core_state option" where
+definition transfer_data_to_return :: "('dict,'val stack,'io,'phys) vm_core_state \<Rightarrow> ('dict,'val stack,'io,'phys) vm_core_state option" where
   "transfer_data_to_return st =
      (case pop_data st of
         None \<Rightarrow> None
@@ -65,7 +69,7 @@ definition transfer_data_to_return :: "('dict,'val stack,'io) vm_core_state \<Ri
           then Some (push_return x st1)
           else None)"
 
-definition transfer_return_to_data :: "('dict,'val stack,'io) vm_core_state \<Rightarrow> ('dict,'val stack,'io) vm_core_state option" where
+definition transfer_return_to_data :: "('dict,'val stack,'io,'phys) vm_core_state \<Rightarrow> ('dict,'val stack,'io,'phys) vm_core_state option" where
   "transfer_return_to_data st =
      (case pop_return st of
         None \<Rightarrow> None
@@ -74,7 +78,7 @@ definition transfer_return_to_data :: "('dict,'val stack,'io) vm_core_state \<Ri
           then Some (push_data x st1)
           else None)"
 
-definition peek_return_to_data :: "('dict,'val stack,'io) vm_core_state \<Rightarrow> ('dict,'val stack,'io) vm_core_state option" where
+definition peek_return_to_data :: "('dict,'val stack,'io,'phys) vm_core_state \<Rightarrow> ('dict,'val stack,'io,'phys) vm_core_state option" where
   "peek_return_to_data st =
      (case stack_top (return_stack st) of
         None \<Rightarrow> None
