@@ -1,11 +1,26 @@
-# TEST ME I never make it to StarshipOS
+# ==============================================================================
+# StarForth Build System - The Fastest Forth in the West!
+# ==============================================================================
+#
+# Quick Start:
+#   make                  - Standard optimized build
+#   make fastest          - Maximum performance build
+#   make test             - Run test suite
+#   make help             - Show all available targets
+#
+# ==============================================================================
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+
+VERSION ?= 2.0.0
 STRICT_PTR ?= 1
 CC = gcc
 
 # Architecture detection
 ARCH := $(shell uname -m)
 
-# Detect if we're on x86_64 or ARM64
 ifeq ($(ARCH),x86_64)
     ARCH_NAME = x86_64
     ARCH_FLAGS = -march=native
@@ -34,10 +49,9 @@ else
     ASM_SYNTAX =
 endif
 
-# Base compiler flags
+# Compiler flags
 BASE_CFLAGS = -std=c99 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include -DSTRICT_PTR=$(STRICT_PTR)
 
-# Fast defaults; override CFLAGS on the command line if you need a debug build.
 CFLAGS ?= $(BASE_CFLAGS) -O2 -march=native -flto=auto -fuse-linker-plugin -DNDEBUG \
           -DUSE_ASM_OPT=1 \
           -ffunction-sections -fdata-sections -fomit-frame-pointer \
@@ -51,21 +65,19 @@ CFLAGS += -DSTARFORTH_MINIMAL=1 -nostdlib -ffreestanding
 LDFLAGS += -nostdlib
 PLATFORM_SRC = src/platform/starforth_minimal.c
 else ifdef L4RE
-# L4Re/StarshipOS build (sets __l4__ define)
 CFLAGS += -D__l4__=1
 PLATFORM_TIME_SRC = src/platform/l4re/time.c src/platform/platform_init.c
 else
-# Default: Linux/POSIX build
 PLATFORM_TIME_SRC = src/platform/linux/time.c src/platform/platform_init.c
 endif
 
-# Source files
+# Source and object files
 SRC = $(wildcard src/*.c src/word_source/*.c src/test_runner/*.c src/test_runner/modules/*.c) $(PLATFORM_SRC) $(PLATFORM_TIME_SRC)
 OBJ = $(patsubst src/%.c,build/%.o,$(SRC))
 ASM_FILES = $(patsubst src/%.c,build/%.s,$(SRC))
 TARGET = build/starforth
 
-# Optional profiler controls for test targets
+# Profiler support for test targets
 PROFILE_LEVEL := $(strip $(PROFILE))
 ifeq ($(PROFILE_LEVEL),)
 PROFILE_ARGS :=
@@ -77,7 +89,31 @@ PROFILE_ARGS += --profile-report
 endif
 endif
 
-# Default target
+# Installation directories
+PREFIX ?= .
+BINDIR = $(PREFIX)/bin
+MANDIR = $(PREFIX)/share/man/man1
+INFODIR = $(PREFIX)/share/info
+DOCDIR = $(PREFIX)/share/doc/starforth
+CONFDIR = $(PREFIX)/etc/starforth
+
+# ==============================================================================
+# PHONY TARGETS
+# ==============================================================================
+
+.PHONY: all banner help clean clean-obj clean-docs
+.PHONY: fastest fast turbo pgo pgo-perf pgo-valgrind bench-compare
+.PHONY: rpi4 rpi4-cross rpi4-fastest
+.PHONY: minimal fake-l4re debug profile performance
+.PHONY: test smoke bench benchmark
+.PHONY: asm sbom
+.PHONY: docs api-docs latex info
+.PHONY: install uninstall package deb rpm
+
+# ==============================================================================
+# MAIN TARGETS
+# ==============================================================================
+
 all: banner $(TARGET)
 	@echo ""
 	@echo "✓ Build complete: $(TARGET)"
@@ -93,10 +129,10 @@ banner:
 	@echo ""
 
 # ==============================================================================
-# 🤠 FASTEST IN THE WEST TARGETS
+# OPTIMIZATION BUILDS - The Fastest in the West
 # ==============================================================================
 
-# The quick-draw champion - maximum speed, no compromises
+# Maximum performance - no compromises
 fastest: banner
 	@echo "🏆 Building FASTEST configuration..."
 	@echo "   - Architecture: $(ARCH_NAME)"
@@ -111,7 +147,7 @@ fastest: banner
 	@echo "Quick-draw benchmark:"
 	@time -f "  ⏱️  Time: %E seconds" ./$(TARGET) -c ": BENCH 1000000 0 DO 1 2 + DROP LOOP ; BENCH BYE" 2>/dev/null || true
 
-# Optimized but without LTO (for readable assembly)
+# Fast without LTO (easier debugging)
 fast: banner
 	@echo "⚡ Building FAST configuration (no LTO for debugging)..."
 	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -DNDEBUG" LDFLAGS="-s" $(TARGET)
@@ -121,7 +157,7 @@ turbo: banner
 	@echo "🚀 Building TURBO configuration (ASM only)..."
 	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DNDEBUG -flto" LDFLAGS="-flto -s" $(TARGET)
 
-# Profile-guided optimization - comprehensive three-stage build
+# Profile-guided optimization - 6-stage build
 pgo: banner
 	@echo "📊 Building with Profile-Guided Optimization..."
 	@echo "   Stage 1: Clean build environment..."
@@ -146,7 +182,7 @@ pgo: banner
 	@echo ""
 	@echo "Compare performance with: make bench-compare"
 
-# Profile-guided optimization with perf analysis
+# PGO with perf analysis
 pgo-perf: banner
 	@echo "📊 Building with PGO + perf analysis..."
 	@if ! command -v perf &> /dev/null; then \
@@ -169,7 +205,7 @@ pgo-perf: banner
 	@echo "  View detailed report: sudo perf report -i pgo-perf.data"
 	@echo "  View flamegraph: sudo perf script -i pgo-perf.data | ./scripts/flamegraph.pl > pgo-flame.svg"
 
-# Profile with valgrind callgrind for detailed analysis
+# PGO with valgrind callgrind
 pgo-valgrind: banner
 	@echo "📊 Building with PGO + valgrind callgrind analysis..."
 	@if ! command -v valgrind &> /dev/null; then \
@@ -192,13 +228,13 @@ pgo-valgrind: banner
 	@echo "  View callgrind data: kcachegrind pgo-callgrind.out"
 	@echo "  Or text report: callgrind_annotate pgo-callgrind.out"
 
-# Benchmark comparison: regular vs PGO
+# Benchmark: regular vs PGO comparison
 bench-compare: banner
 	@echo "🏁 Benchmark Comparison: Regular vs PGO"
 	@echo ""
 	@echo "Building regular optimized binary..."
 	@$(MAKE) clean > /dev/null 2>&1
-	@$(MAKE) release > /dev/null 2>&1
+	@$(MAKE) fastest > /dev/null 2>&1
 	@echo "Running benchmark (10000 iterations)..."
 	@echo -n "  Regular build: "
 	@/usr/bin/time -f "%E elapsed, %U user" ./$(TARGET) --benchmark 10000 --log-none 2>&1 | tail -1
@@ -212,15 +248,15 @@ bench-compare: banner
 	@echo "✓ Comparison complete!"
 
 # ==============================================================================
-# RASPBERRY PI 4 TARGETS
+# PLATFORM-SPECIFIC BUILDS
 # ==============================================================================
 
-# Native build on Raspberry Pi 4
+# Raspberry Pi 4 - native build
 rpi4: banner
 	@echo "🥧 Building for Raspberry Pi 4 (native)..."
 	$(MAKE) CFLAGS="$(BASE_CFLAGS) -march=armv8-a+crc+simd -mtune=cortex-a72 -DARCH_ARM64=1 -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -DNDEBUG -flto" LDFLAGS="-flto -s" $(TARGET)
 
-# Cross-compile for Raspberry Pi 4 from x86_64
+# Raspberry Pi 4 - cross-compile from x86_64
 rpi4-cross: banner
 	@echo "🥧 Cross-compiling for Raspberry Pi 4..."
 	$(MAKE) CC=aarch64-linux-gnu-gcc \
@@ -230,7 +266,7 @@ rpi4-cross: banner
 	@echo "✓ Cross-compiled binary ready: $(TARGET)"
 	@echo "  Copy to RPi4: scp $(TARGET) pi@raspberrypi.local:~/"
 
-# Raspberry Pi 4 with maximum optimization
+# Raspberry Pi 4 - maximum optimization
 rpi4-fastest: banner
 	@echo "🥧⚡ Building FASTEST for Raspberry Pi 4..."
 	$(MAKE) CC=aarch64-linux-gnu-gcc \
@@ -238,27 +274,31 @@ rpi4-fastest: banner
 	        LDFLAGS="-flto -s -static" \
 	        $(TARGET)
 
-# ==============================================================================
-# EXISTING TARGETS (enhanced)
-# ==============================================================================
-
+# Minimal/embedded build
 minimal:
 	$(MAKE) MINIMAL=1
 
+# Fake L4Re build (for testing)
 fake-l4re:
 	$(MAKE) MINIMAL=1 CC=l4-gcc CFLAGS="$(BASE_CFLAGS) -DL4RE_TARGET=1"
 
-profile:
-	$(MAKE) CFLAGS="$(BASE_CFLAGS) -DPROFILE_ENABLED=1 -g -O1"
-
-performance:
-	@echo "Note: Use 'make fastest' for maximum performance"
-	$(MAKE) CFLAGS="$(BASE_CFLAGS) -O3 -DSTARFORTH_PERFORMANCE -DNDEBUG -march=native -flto -funroll-loops -finline-functions -fomit-frame-pointer" LDFLAGS="-flto -s"
+# ==============================================================================
+# DEBUG & DEVELOPMENT BUILDS
+# ==============================================================================
 
 # Debug build with symbols
 debug: banner
 	@echo "🐛 Building DEBUG configuration..."
 	$(MAKE) CFLAGS="$(BASE_CFLAGS) -O0 -g -DDEBUG" LDFLAGS="" $(TARGET)
+
+# Build with profiler support
+profile:
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) -DPROFILE_ENABLED=1 -g -O1"
+
+# Performance build (legacy - use 'fastest' instead)
+performance:
+	@echo "Note: Use 'make fastest' for maximum performance"
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) -O3 -DSTARFORTH_PERFORMANCE -DNDEBUG -march=native -flto -funroll-loops -finline-functions -fomit-frame-pointer" LDFLAGS="-flto -s"
 
 # ==============================================================================
 # BUILD RULES
@@ -269,40 +309,8 @@ $(TARGET): $(OBJ) | build
 	@echo "🔗 Linking $(TARGET)..."
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
-# Build rules
+# Pattern rule for all C files (consolidates 5 repetitive rules)
 build/%.o: src/%.c | build
-	@mkdir -p $(dir $@)
-	@echo "  CC  $<"
-	@$(CC) $(CFLAGS) -c $< -o $@
-ifdef ASM
-	@$(CC) $(CFLAGS) -S $(ASM_SYNTAX) $< -o $(patsubst %.o,%.s,$@)
-endif
-
-build/platform/%.o: src/platform/%.c | build
-	@mkdir -p $(dir $@)
-	@echo "  CC  $<"
-	@$(CC) $(CFLAGS) -c $< -o $@
-ifdef ASM
-	@$(CC) $(CFLAGS) -S $(ASM_SYNTAX) $< -o $(patsubst %.o,%.s,$@)
-endif
-
-build/word_source/%.o: src/word_source/%.c | build
-	@mkdir -p $(dir $@)
-	@echo "  CC  $<"
-	@$(CC) $(CFLAGS) -c $< -o $@
-ifdef ASM
-	@$(CC) $(CFLAGS) -S $(ASM_SYNTAX) $< -o $(patsubst %.o,%.s,$@)
-endif
-
-build/test_runner/%.o: src/test_runner/%.c | build
-	@mkdir -p $(dir $@)
-	@echo "  CC  $<"
-	@$(CC) $(CFLAGS) -c $< -o $@
-ifdef ASM
-	@$(CC) $(CFLAGS) -S $(ASM_SYNTAX) $< -o $(patsubst %.o,%.s,$@)
-endif
-
-build/test_runner/modules/%.o: src/test_runner/modules/%.c | build
 	@mkdir -p $(dir $@)
 	@echo "  CC  $<"
 	@$(CC) $(CFLAGS) -c $< -o $@
@@ -313,16 +321,28 @@ endif
 # Create build directories
 build:
 	@mkdir -p build
-	@mkdir -p build/platform
 	@mkdir -p build/platform/linux
 	@mkdir -p build/platform/l4re
 	@mkdir -p build/word_source
-	@mkdir -p build/test_runner
 	@mkdir -p build/test_runner/modules
 
 # ==============================================================================
-# BENCHMARKING AND TESTING
+# TESTING & BENCHMARKING
 # ==============================================================================
+
+# Run full test suite
+test: $(TARGET)
+	@echo "🧪 Running test suite..."
+	@printf 'BYE\n' | ./$(TARGET) --run-tests $(PROFILE_ARGS)
+
+# Quick smoke test
+smoke: $(TARGET)
+	@echo ""
+	@echo "🚦 Running smoke test (1 2 + .)"
+	@out=$$(printf '1 2 + . BYE\n' | ./$(TARGET) --log-none); \
+	printf '%s\n' "$$out"; \
+	echo "$$out" | grep -q '^ok> 3 Goodbye!' || (echo "Smoke test failed" >&2; exit 1)
+	@echo "✓ Smoke test passed"
 
 # Quick benchmark
 bench: $(TARGET)
@@ -350,35 +370,8 @@ benchmark: $(TARGET)
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════"
 
-# Quick smoke check
-smoke: $(TARGET)
-	@echo ""
-	@echo "🚦 Running smoke test (1 2 + .)"
-	@out=$$(printf '1 2 + . BYE\n' | ./$(TARGET) --log-none); \
-	printf '%s\n' "$$out"; \
-	echo "$$out" | grep -q '^ok> 3 Goodbye!' || (echo "Smoke test failed" >&2; exit 1)
-	@echo "✓ Smoke test passed"
-
-# Run tests
-test: $(TARGET)
-	@echo "🧪 Running test suite..."
-	@printf 'BYE\n' | ./$(TARGET) --run-tests $(PROFILE_ARGS)
-
 # ==============================================================================
-# CLEANUP
-# ==============================================================================
-
-clean:
-	@echo "🧹 Cleaning build artifacts..."
-	@rm -rfv build/*
-	@rm -f src/*.gcda src/word_source/*.gcda src/*.gcno src/word_source/*.gcno
-	@echo "✓ Clean complete"
-
-clean-obj:
-	@rm -rf build/*.o build/**/*.o
-
-# ==============================================================================
-# ASSEMBLY OUTPUT
+# ASSEMBLY OUTPUT & ANALYSIS
 # ==============================================================================
 
 # Generate assembly files for inspection
@@ -388,74 +381,82 @@ asm: banner
 	@echo "✓ Assembly files generated in build/"
 	@echo "  Example: less build/stack_management.s"
 
+# Generate Software Bill of Materials (SBOM) in SPDX format
+sbom:
+	@echo "📋 Generating SBOM (Software Bill of Materials)..."
+	@if ! which syft >/dev/null 2>&1; then \
+		echo "Error: syft not found. Install from https://github.com/anchore/syft"; \
+		exit 1; \
+	fi
+	@syft dir:. -o spdx-json=sbom.spdx.json -o spdx=sbom.spdx \
+		--source-name StarForth \
+		--source-version $(VERSION) \
+		--exclude './build/**' --exclude './tools/**' --exclude './.git/**'
+	@echo "✅ SBOM generated:"
+	@echo "   SPDX JSON: sbom.spdx.json"
+	@echo "   SPDX:      sbom.spdx"
+	@echo "   Version:   $(VERSION)"
 
 # ==============================================================================
-# HELP
+# DOCUMENTATION
 # ==============================================================================
 
-help:
-	@echo "════════════════════════════════════════════════════════════"
-	@echo "   ⚡ StarForth Build System - Fastest in the West! ⚡"
-	@echo "════════════════════════════════════════════════════════════"
-	@echo ""
-	@echo "🏆 FASTEST TARGETS:"
-	@echo "  fastest         - Maximum performance (ASM + direct threading + LTO)"
-	@echo "  fast            - Fast without LTO (easier debugging)"
-	@echo "  turbo           - Assembly optimizations only"
-	@echo "  pgo             - Profile-guided optimization (5-15% faster than fastest)"
-	@echo "  pgo-perf        - PGO + perf analysis (requires sudo, linux-tools)"
-	@echo "  pgo-valgrind    - PGO + callgrind profiling (requires valgrind)"
-	@echo "  bench-compare   - Compare regular vs PGO performance"
-	@echo ""
-	@echo "🥧 RASPBERRY PI 4:"
-	@echo "  rpi4            - Native build on Raspberry Pi 4"
-	@echo "  rpi4-cross      - Cross-compile from x86_64"
-	@echo "  rpi4-fastest    - Maximum optimization for RPi4"
-	@echo ""
-	@echo "🔧 STANDARD TARGETS:"
-	@echo "  all             - Standard build (default)"
-	@echo "  debug           - Debug build with symbols (-g -O0)"
-	@echo "  minimal         - Minimal/embedded build"
-	@echo "  l4re            - L4Re microkernel build"
-	@echo "  profile         - Profiling support"
-	@echo ""
-	@echo "🧪 TESTING & BENCHMARKING:"
-	@echo "  bench           - Quick benchmark"
-	@echo "  benchmark       - Full benchmark suite"
-	@echo "  test            - Run test suite"
-	@echo ""
-	@echo "📝 UTILITIES:"
-	@echo "  asm             - Generate assembly output"
-	@echo "  clean           - Remove build artifacts"
-	@echo "  help            - Show this help"
-	@echo ""
-	@echo "⚙️  CONFIGURATION:"
-	@echo "  CC              - Compiler (default: gcc)"
-	@echo "  CFLAGS          - Compiler flags"
-	@echo "  LDFLAGS         - Linker flags"
-	@echo "  MINIMAL=1       - Minimal build"
-	@echo "  ASM=1           - Generate assembly files"
-	@echo ""
-	@echo "📋 EXAMPLES:"
-	@echo "  make fastest                    # Fastest build for current platform"
-	@echo "  make rpi4-cross                 # Cross-compile for Raspberry Pi 4"
-	@echo "  make pgo                        # Profile-guided optimization"
-	@echo "  make benchmark                  # Run full benchmark suite"
-	@echo "  make asm                        # Generate assembly for inspection"
-	@echo "  make debug                      # Debug build"
-	@echo ""
-	@echo "🌟 CURRENT PLATFORM: $(ARCH_NAME)"
-	@echo "════════════════════════════════════════════════════════════"
+# Generate API documentation (Doxygen XML → AsciiDoc)
+api-docs:
+	@echo "📚 Generating API documentation from Doxygen..."
+	@if [ ! -f scripts/generate-doxygen-appendix.sh ]; then \
+		echo "Error: scripts/generate-doxygen-appendix.sh not found"; \
+		exit 1; \
+	fi
+	@./scripts/generate-doxygen-appendix.sh
+	@echo "✅ API documentation generated: docs/src/appendix/"
 
-# Installation directories (defaults to local ./bin unless PREFIX is set)
-PREFIX ?= .
-BINDIR = $(PREFIX)/bin
-MANDIR = $(PREFIX)/share/man/man1
-INFODIR = $(PREFIX)/share/info
-DOCDIR = $(PREFIX)/share/doc/starforth
-CONFDIR = $(PREFIX)/etc/starforth
+# Convert all AsciiDoc to LaTeX
+latex:
+	@echo "📄 Converting AsciiDoc to LaTeX..."
+	@if [ ! -f scripts/asciidoc-to-latex.sh ]; then \
+		echo "Error: scripts/asciidoc-to-latex.sh not found"; \
+		exit 1; \
+	fi
+	@./scripts/asciidoc-to-latex.sh
+	@echo "✅ LaTeX files generated: docs/latex/"
 
-# Installation targets
+# Generate GNU info documentation
+docs/starforth.info:
+	@if [ ! -f docs/starforth.texi ]; then \
+		echo "⚠️  Skipping info docs: docs/starforth.texi not present"; \
+		touch docs/starforth.info; \
+	else \
+		echo "📖 Building GNU info documentation..."; \
+		if ! command -v makeinfo >/dev/null 2>&1; then \
+			echo "Warning: makeinfo not found. Install with: sudo apt-get install texinfo"; \
+			touch docs/starforth.info; \
+		else \
+			makeinfo docs/starforth.texi -o docs/starforth.info && \
+			echo "✅ Info documentation: docs/starforth.info"; \
+		fi; \
+	fi
+
+info: docs/starforth.info
+
+# Generate all documentation
+docs: api-docs latex
+	@echo "✅ All documentation generated!"
+	@echo ""
+	@echo "📂 Documentation locations:"
+	@echo "  • API docs: docs/src/appendix/"
+	@echo "  • LaTeX:    docs/latex/"
+
+# Clean generated documentation
+clean-docs:
+	@echo "🗑️  Cleaning generated documentation..."
+	@rm -rf docs/src/appendix/ docs/latex/
+	@echo "✅ Documentation cleaned"
+
+# ==============================================================================
+# INSTALLATION
+# ==============================================================================
+
 install: build/starforth
 	@echo "📦 Installing StarForth to $(PREFIX)..."
 	@install -d $(BINDIR)
@@ -487,7 +488,11 @@ uninstall:
 	@rm -rf $(CONFDIR)
 	@echo "✅ Uninstall complete!"
 
-# Package building targets
+# ==============================================================================
+# PACKAGING
+# ==============================================================================
+
+# Build Debian package
 deb: build/starforth man/starforth.1
 	@echo "📦 Building Debian package..."
 	@if ! command -v dpkg-buildpackage >/dev/null 2>&1; then \
@@ -497,6 +502,7 @@ deb: build/starforth man/starforth.1
 	@dpkg-buildpackage -us -uc
 	@echo "✅ Debian package built: ../starforth_*.deb"
 
+# Build RPM package
 rpm: build/starforth man/starforth.1
 	@echo "📦 Building RPM package..."
 	@if ! command -v rpmbuild >/dev/null 2>&1; then \
@@ -512,64 +518,97 @@ rpm: build/starforth man/starforth.1
 	@rpmbuild -ba ~/rpmbuild/SPECS/starforth.spec
 	@echo "✅ RPM package built: ~/rpmbuild/RPMS/*/starforth-*.rpm"
 
-# Info documentation
-docs/starforth.info:
-	@if [ ! -f docs/starforth.texi ]; then \
-		echo "⚠️  Skipping info docs: docs/starforth.texi not present"; \
-		touch docs/starforth.info; \
-	else \
-		echo "📖 Building GNU info documentation..."; \
-		if ! command -v makeinfo >/dev/null 2>&1; then \
-			echo "Warning: makeinfo not found. Install with: sudo apt-get install texinfo"; \
-			touch docs/starforth.info; \
-		else \
-			makeinfo docs/starforth.texi -o docs/starforth.info && \
-			echo "✅ Info documentation: docs/starforth.info"; \
-		fi; \
-	fi
-
-info: docs/starforth.info
-
-# Combined package target
+# Build all packages
 package: deb rpm info
 	@echo "✅ All packages built successfully!"
 
 # ==============================================================================
-# 📚 DOCUMENTATION TARGETS
+# CLEANUP
 # ==============================================================================
 
-# Generate API documentation (Doxygen XML → AsciiDoc)
-api-docs:
-	@echo "📚 Generating API documentation from Doxygen..."
-	@if [ ! -f scripts/generate-doxygen-appendix.sh ]; then \
-		echo "Error: scripts/generate-doxygen-appendix.sh not found"; \
-		exit 1; \
-	fi
-	@./scripts/generate-doxygen-appendix.sh
-	@echo "✅ API documentation generated: docs/src/appendix/"
+clean:
+	@echo "🧹 Cleaning build artifacts..."
+	@rm -rfv build/*
+	@rm -f src/*.gcda src/word_source/*.gcda src/*.gcno src/word_source/*.gcno
+	@echo "✓ Clean complete"
 
-# Convert all AsciiDoc to LaTeX
-latex:
-	@echo "📄 Converting AsciiDoc to LaTeX..."
-	@if [ ! -f scripts/asciidoc-to-latex.sh ]; then \
-		echo "Error: scripts/asciidoc-to-latex.sh not found"; \
-		exit 1; \
-	fi
-	@./scripts/asciidoc-to-latex.sh
-	@echo "✅ LaTeX files generated: docs/latex/"
+clean-obj:
+	@rm -rf build/*.o build/**/*.o
 
-# Generate all documentation
-docs: api-docs latex
-	@echo "✅ All documentation generated!"
+# ==============================================================================
+# HELP
+# ==============================================================================
+
+help:
+	@echo "════════════════════════════════════════════════════════════"
+	@echo "   ⚡ StarForth Build System - Fastest in the West! ⚡"
+	@echo "════════════════════════════════════════════════════════════"
 	@echo ""
-	@echo "📂 Documentation locations:"
-	@echo "  • API docs: docs/src/appendix/"
-	@echo "  • LaTeX:    docs/latex/"
-
-# Clean documentation
-clean-docs:
-	@echo "🗑️  Cleaning generated documentation..."
-	@rm -rf docs/src/appendix/ docs/latex/
-	@echo "✅ Documentation cleaned"
-
-.PHONY: all banner fastest fast turbo pgo rpi4 rpi4-cross rpi4-fastest minimal l4re profile performance debug bench benchmark test asm clean clean-obj help install uninstall deb rpm info package api-docs latex docs clean-docs
+	@echo "🏆 OPTIMIZATION BUILDS:"
+	@echo "  fastest         - Maximum performance (ASM + direct threading + LTO)"
+	@echo "  fast            - Fast without LTO (easier debugging)"
+	@echo "  turbo           - Assembly optimizations only"
+	@echo "  pgo             - Profile-guided optimization (5-15% faster)"
+	@echo "  pgo-perf        - PGO + perf analysis (requires sudo)"
+	@echo "  pgo-valgrind    - PGO + callgrind profiling"
+	@echo "  bench-compare   - Compare regular vs PGO performance"
+	@echo ""
+	@echo "🥧 PLATFORM-SPECIFIC BUILDS:"
+	@echo "  rpi4            - Native build on Raspberry Pi 4"
+	@echo "  rpi4-cross      - Cross-compile from x86_64"
+	@echo "  rpi4-fastest    - Maximum optimization for RPi4"
+	@echo "  minimal         - Minimal/embedded build"
+	@echo "  fake-l4re       - L4Re test build"
+	@echo ""
+	@echo "🔧 DEBUG & DEVELOPMENT:"
+	@echo "  all             - Standard optimized build (default)"
+	@echo "  debug           - Debug build with symbols (-g -O0)"
+	@echo "  profile         - Build with profiling support"
+	@echo "  performance     - Legacy performance build (use 'fastest')"
+	@echo ""
+	@echo "🧪 TESTING & BENCHMARKING:"
+	@echo "  test            - Run full test suite"
+	@echo "  smoke           - Quick smoke test"
+	@echo "  bench           - Quick benchmark"
+	@echo "  benchmark       - Full benchmark suite"
+	@echo ""
+	@echo "📝 ANALYSIS & DOCUMENTATION:"
+	@echo "  asm             - Generate assembly output"
+	@echo "  sbom            - Generate SBOM (Software Bill of Materials, SPDX)"
+	@echo "  docs            - Generate all documentation"
+	@echo "  api-docs        - Generate API docs (Doxygen → AsciiDoc)"
+	@echo "  latex           - Convert AsciiDoc to LaTeX"
+	@echo "  info            - Build GNU info documentation"
+	@echo ""
+	@echo "📦 INSTALLATION & PACKAGING:"
+	@echo "  install         - Install to PREFIX (default: .)"
+	@echo "  uninstall       - Uninstall from PREFIX"
+	@echo "  deb             - Build Debian package"
+	@echo "  rpm             - Build RPM package"
+	@echo "  package         - Build all packages"
+	@echo ""
+	@echo "🧹 CLEANUP:"
+	@echo "  clean           - Remove all build artifacts"
+	@echo "  clean-obj       - Remove object files only"
+	@echo "  clean-docs      - Remove generated documentation"
+	@echo ""
+	@echo "⚙️  CONFIGURATION VARIABLES:"
+	@echo "  CC              - Compiler (default: gcc)"
+	@echo "  CFLAGS          - Compiler flags (override defaults)"
+	@echo "  LDFLAGS         - Linker flags (override defaults)"
+	@echo "  PREFIX          - Install prefix (default: .)"
+	@echo "  MINIMAL=1       - Enable minimal build mode"
+	@echo "  L4RE=1          - Enable L4Re build mode"
+	@echo "  ASM=1           - Generate assembly files during build"
+	@echo ""
+	@echo "📋 EXAMPLES:"
+	@echo "  make fastest                    # Fastest build for current platform"
+	@echo "  make rpi4-cross                 # Cross-compile for Raspberry Pi 4"
+	@echo "  make pgo                        # Profile-guided optimization"
+	@echo "  make test                       # Run test suite"
+	@echo "  make asm                        # Generate assembly for inspection"
+	@echo "  make debug                      # Debug build"
+	@echo "  make PREFIX=/usr/local install  # Install system-wide"
+	@echo ""
+	@echo "🌟 CURRENT PLATFORM: $(ARCH_NAME)"
+	@echo "════════════════════════════════════════════════════════════"
