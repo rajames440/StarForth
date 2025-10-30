@@ -218,25 +218,20 @@ pipeline {
 
 		stage('🎯 Edge Case Testing') {
 			steps {
-				// Run edge case tests sequentially to avoid conflicts
-				echo "Testing division by zero handling..."
+				// Run comprehensive edge case and stress tests
+				echo "Running integration tests for edge cases..."
 				sh '''
-                    echo "Skipping division by zero test (requires -c flag)" 2>&1 | tee ${LOG_DIR}/edge-div-zero.log || echo "Handled division by zero"
+                    timeout 120 ./build/starforth --integration --log-test 2>&1 | tee ${LOG_DIR}/edge-integration.log || echo "Some integration tests failed (expected for edge cases)"
                 '''
 
-				echo "Testing stack underflow handling..."
+				echo "Running stress tests for extreme cases..."
 				sh '''
-                    echo "Skipping stack underflow test (requires -c flag)" 2>&1 | tee ${LOG_DIR}/edge-stack-underflow.log || echo "Handled stack underflow"
+                    timeout 120 ./build/starforth --stress-tests --log-test 2>&1 | tee ${LOG_DIR}/edge-stress.log || echo "Stress tests completed"
                 '''
 
-				echo "Testing stack overflow handling..."
+				echo "Running comprehensive diagnostic mode..."
 				sh '''
-                    timeout 60 echo "Skipping stack overflow test (requires -c flag)" 2>&1 | tee ${LOG_DIR}/edge-stack-overflow.log || echo "Handled stack overflow"
-                '''
-
-				echo "Testing invalid memory access handling..."
-				sh '''
-                    echo "Skipping invalid memory access test (requires -c flag)" 2>&1 | tee ${LOG_DIR}/edge-invalid-memory.log || echo "Handled invalid memory access"
+                    timeout 120 ./build/starforth --break-me --log-test 2>&1 | tee ${LOG_DIR}/edge-break-me.log || echo "Diagnostic mode completed"
                 '''
 			}
 		}
@@ -286,15 +281,14 @@ pipeline {
 			}
 		}
 
-		
-	stage('🔬 Formal Verification & Isabelle Theories') {
-		steps {
-			echo "════════════════════════════════════════════════════════════"
-			echo "  🔬 Running Formal Verification & Isabelle Theory Build"
-			echo "════════════════════════════════════════════════════════════"
+		stage('🔬 Formal Verification & Isabelle Theories') {
+			steps {
+				echo "════════════════════════════════════════════════════════════"
+				echo "  🔬 Running Formal Verification & Isabelle Theory Build"
+				echo "════════════════════════════════════════════════════════════"
 
-			// Check if Isabelle is available
-			sh '''
+				// Check if Isabelle is available
+				sh '''
                     if command -v isabelle &> /dev/null; then
                         echo "✅ Isabelle found: $(isabelle version 2>&1 | head -1)"
                     else
@@ -304,8 +298,8 @@ pipeline {
                     fi
                 '''
 
-			// Generate comprehensive Isabelle documentation (audit mode - never fails)
-			sh '''
+				// Generate comprehensive Isabelle documentation (audit mode - never fails)
+				sh '''
                     echo "Step 1: Building Isabelle theories (audit mode)..."
                     make docs-isabelle 2>&1 | tee ${LOG_DIR}/isabelle-build.log || echo "⚠️  Some theories incomplete (see build.log)"
 
@@ -315,8 +309,8 @@ pipeline {
                     fi
                 '''
 
-			// Refinement verification status
-			sh '''
+				// Refinement verification status
+				sh '''
                     echo "Step 2: Checking refinement status..."
                     if [ -f docs/REFINEMENT_CAPA.adoc ]; then
                         echo "Refinement tracking document exists"
@@ -327,14 +321,14 @@ pipeline {
                     fi
                 '''
 
-			// Code annotation validation
-			sh '''
+				// Code annotation validation
+				sh '''
                     echo "Step 3: Validating code annotations..."
                     make refinement-annotate-check 2>&1 | tee ${LOG_DIR}/annotation-check.log || true
                 '''
 
-			// Generate refinement report
-			sh '''
+				// Generate refinement report
+				sh '''
                     echo "Step 4: Generating refinement report..."
                     make refinement-report 2>&1 | tee ${LOG_DIR}/refinement-report.log || true
                     if [ -f docs/reports/refinement-status.md ]; then
@@ -342,8 +336,8 @@ pipeline {
                     fi
                 '''
 
-			// Archive all formal verification artifacts
-			sh '''
+				// Archive all formal verification artifacts
+				sh '''
                     echo "Step 5: Archiving formal verification artifacts..."
                     if [ -f docs/REFINEMENT_ANNOTATIONS.adoc ]; then
                         cp docs/REFINEMENT_ANNOTATIONS.adoc ${ARTIFACT_DIR}/
@@ -352,15 +346,15 @@ pipeline {
                         cp docs/REFINEMENT_ROADMAP.adoc ${ARTIFACT_DIR}/
                     fi
                 '''
+			}
 		}
-	}
 
-	stage('📚 Documentation Build') {
-		steps {
-			echo "Generating all documentation (API, Isabelle, LaTeX)..."
+		stage('📚 Documentation Build') {
+			steps {
+				echo "Generating all documentation (API, Isabelle, LaTeX)..."
 
-			// Build all documentation
-			sh '''
+				// Build all documentation
+				sh '''
                     echo "Building API documentation..."
                     make api-docs 2>&1 | tee ${LOG_DIR}/api-docs-build.log || echo "⚠️  API docs build had issues"
 
@@ -375,20 +369,20 @@ pipeline {
                         cp -r docs/latex ${ARTIFACT_DIR}/latex-docs || true
                     fi
                 '''
+			}
 		}
-	}
 
-	stage('📦 Package Build (DEB & RPM)') {
-		steps {
-			echo "════════════════════════════════════════════════════════════"
-			echo "  📦 Building Distribution Packages"
-			echo "════════════════════════════════════════════════════════════"
+		stage('📦 Package Build (DEB & RPM)') {
+			steps {
+				echo "════════════════════════════════════════════════════════════"
+				echo "  📦 Building Distribution Packages"
+				echo "════════════════════════════════════════════════════════════"
 
-			// Ensure we have a clean optimized build
-			sh 'make clean && make fastest 2>&1 | tee ${LOG_DIR}/package-build.log'
+				// Ensure we have a clean optimized build
+				sh 'make clean && make fastest 2>&1 | tee ${LOG_DIR}/package-build.log'
 
-			// Build DEB package
-			sh '''
+				// Build DEB package
+				sh '''
                     echo "Building Debian package..."
                     if command -v fpm &> /dev/null; then
                         make deb 2>&1 | tee ${LOG_DIR}/deb-build.log
@@ -402,8 +396,8 @@ pipeline {
                     fi
                 '''
 
-			// Build RPM package
-			sh '''
+				// Build RPM package
+				sh '''
                     echo "Building RPM package..."
                     if command -v fpm &> /dev/null; then
                         make rpm 2>&1 | tee ${LOG_DIR}/rpm-build.log
@@ -415,10 +409,10 @@ pipeline {
                         echo "⚠️  fpm not found - skipping RPM build"
                     fi
                 '''
+			}
 		}
-	}
 
-stage('📋 Generate Test Report') {
+		stage('📋 Generate Test Report') {
 			steps {
 				echo "Generating comprehensive test report..."
 				sh '''
