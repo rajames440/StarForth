@@ -570,32 +570,22 @@ EOFMD
 
 	post {
 		always {
-			echo "Pipeline execution completed"
+			sh 'echo "Pipeline execution completed"'
 
 			// Archive artifacts
 			archiveArtifacts artifacts: 'artifacts/**, logs/**', allowEmptyArchive: true
-
-			// Publish test report
-			publishHTML([
-				allowMissing: true,
-				alwaysLinkToLastBuild: true,
-				keepAll: true,
-				reportDir: 'artifacts',
-				reportFiles: 'test-report.md',
-				reportName: 'StarForth Torture Test Report'
-			])
 		}
 
 		success {
-			echo "✅ All torture tests passed! StarForth is a beast!"
+			sh 'echo "✅ All torture tests passed! StarForth is a beast!"'
 		}
 
 		failure {
-			echo "❌ Some tests failed. Check logs for details."
+			sh 'echo "❌ Some tests failed. Check logs for details."'
 		}
 
 		unstable {
-			echo "⚠️  Build completed but with warnings or unstable tests"
+			sh 'echo "⚠️  Build completed but with warnings or unstable tests"'
 		}
 	}
 }
