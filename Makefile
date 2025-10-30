@@ -165,7 +165,7 @@ pgo: banner
 	@rm -f *.gcda */*.gcda */*/*.gcda src/*.gcda src/*/*.gcda build/*.gcda 2>/dev/null || true
 	@rm -f *.gcno */*.gcno */*/*.gcno src/*.gcno src/*/*.gcno build/*.gcno 2>/dev/null || true
 	@echo "   Stage 2: Instrumentation build..."
-	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O2 -DUSE_ASM_OPT=1 -fprofile-generate" LDFLAGS="-fprofile-generate -lgcov" $(TARGET)
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O2 -DUSE_ASM_OPT=1 --coverage" LDFLAGS="--coverage -lgcov" $(TARGET)
 	@echo "   Stage 3: Running comprehensive profiling workload..."
 	@echo "     (This exercises all code paths: tests, benchmarks, REPL, blocks, etc.)"
 	@./scripts/pgo-workload.sh $(TARGET)
@@ -174,7 +174,7 @@ pgo: banner
 	@echo "   Stage 5: Optimized build with profile data..."
 	$(MAKE) clean-obj
 	@rm -f *.gcno */*.gcno */*/*.gcno src/*.gcno src/*/*.gcno build/*.gcno 2>/dev/null || true
-	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -fprofile-use -fprofile-correction -Wno-error=coverage-mismatch" LDFLAGS="-fprofile-use" $(TARGET)
+	$(MAKE) CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -fprofile-use -fprofile-correction -Wno-error=coverage-mismatch" LDFLAGS="-fprofile-use -lgcov" $(TARGET)
 	@echo "   Stage 6: Cleaning up profile data..."
 	@rm -f *.gcda */*.gcda */*/*.gcda src/*.gcda src/*/*.gcda build/*.gcda 2>/dev/null || true
 	@rm -f *.gcno */*.gcno */*/*.gcno src/*.gcno src/*/*.gcno build/*.gcno 2>/dev/null || true
@@ -307,7 +307,7 @@ performance:
 # Main executable
 $(TARGET): $(OBJ) | build
 	@echo "🔗 Linking $(TARGET)..."
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Pattern rule for all C files (consolidates 5 repetitive rules)
 build/%.o: src/%.c | build
