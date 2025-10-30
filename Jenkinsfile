@@ -23,9 +23,9 @@ pipeline {
 	stages {
 		stage('🧹 Cleanup & Preparation') {
 			steps {
-				echo "════════════════════════════════════════════════════════════"
-				echo "   ⚡ StarForth Torture Test Pipeline - AMD64 & ARM (RPi4) ⚡"
-				echo "════════════════════════════════════════════════════════════"
+				sh 'echo "════════════════════════════════════════════════════════════"'
+				sh 'echo "   ⚡ StarForth Torture Test Pipeline - AMD64 & ARM (RPi4) ⚡"'
+				sh 'echo "════════════════════════════════════════════════════════════"'
 
 				// Clone/pull from GitHub remote
 				sh '''
@@ -56,40 +56,40 @@ pipeline {
 		stage('🔨 Build Gauntlet') {
 			steps {
 				// Build sequentially to avoid workspace conflicts
-				echo "Building all configurations (AMD64 + ARM)..."
+				sh 'echo "Building all configurations (AMD64 + ARM)..."'
 
 				// === AMD64 BUILDS ===
-				echo "════ AMD64 Builds ════"
+				sh 'echo "════ AMD64 Builds ════"'
 
-				echo "Building AMD64 DEBUG configuration..."
+				sh 'echo "Building AMD64 DEBUG configuration..."'
 				sh 'make clean'
 				sh 'make debug 2>&1 | tee ${LOG_DIR}/build-debug.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-debug'
 
-				echo "Building AMD64 STANDARD configuration..."
+				sh 'echo "Building AMD64 STANDARD configuration..."'
 				sh 'make clean'
 				sh 'make 2>&1 | tee ${LOG_DIR}/build-standard.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-standard'
 
-				echo "Building AMD64 FASTEST configuration..."
+				sh 'echo "Building AMD64 FASTEST configuration..."'
 				sh 'make clean'
 				sh 'make fastest 2>&1 | tee ${LOG_DIR}/build-fastest.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-fastest'
 
-				echo "Building AMD64 FAST configuration..."
+				sh 'echo "Building AMD64 FAST configuration..."'
 				sh 'make clean'
 				sh 'make fast 2>&1 | tee ${LOG_DIR}/build-fast.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-fast'
 
 				// === ARM (Raspberry Pi 4) BUILDS ===
-				echo "════ ARM (RPi4) Cross-Compilation Builds ════"
+				sh 'echo "════ ARM (RPi4) Cross-Compilation Builds ════"'
 
-				echo "Building RPi4 cross-compiled configuration..."
+				sh 'echo "Building RPi4 cross-compiled configuration..."'
 				sh 'make clean'
 				sh 'make rpi4-cross 2>&1 | tee ${LOG_DIR}/build-rpi4-cross.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-rpi4-cross || true'
 
-				echo "Building RPi4 FASTEST (optimized) configuration..."
+				sh 'echo "Building RPi4 FASTEST (optimized) configuration..."'
 				sh 'make clean'
 				sh 'make rpi4-fastest 2>&1 | tee ${LOG_DIR}/build-rpi4-fastest.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-rpi4-fastest || true'
@@ -98,7 +98,7 @@ pipeline {
 
 		stage('🧪 Smoke Test') {
 			steps {
-				echo "Running smoke test to verify basic functionality..."
+				sh 'echo "Running smoke test to verify basic functionality..."'
 				sh 'make clean && make fastest'
 				sh 'make smoke 2>&1 | tee ${LOG_DIR}/smoke-test.log'
 			}
@@ -106,7 +106,7 @@ pipeline {
 
 		stage('✅ Comprehensive Test Suite') {
 			steps {
-				echo "Running full test suite (936 tests)..."
+				sh 'echo "Running full test suite (936 tests)..."'
 				sh 'make clean && make fastest'
 				sh 'make test 2>&1 | tee ${LOG_DIR}/full-test-suite.log'
 
@@ -121,23 +121,23 @@ pipeline {
 		stage('🏇 Benchmark Gauntlet') {
 			steps {
 				// Run benchmarks sequentially since they all need the same binary
-				echo "Running quick benchmark (1M iterations)..."
+				sh 'echo "Running quick benchmark (1M iterations)..."'
 				sh 'make bench 2>&1 | tee ${LOG_DIR}/bench-quick.log'
 
-				echo "Running full benchmark suite..."
+				sh 'echo "Running full benchmark suite..."'
 				sh 'make benchmark 2>&1 | tee ${LOG_DIR}/bench-full.log'
 
-				echo "Stack operations stress test (10M iterations)..."
+				sh 'echo "Stack operations stress test (10M iterations)..."'
 				sh '''
                     /usr/bin/time -v ./build/starforth --benchmark 10000000 --log-none 2>&1 | tee ${LOG_DIR}/bench-stack-torture.log || true
                 '''
 
-				echo "Arithmetic operations stress test (10M iterations)..."
+				sh 'echo "Arithmetic operations stress test (10M iterations)..."'
 				sh '''
                     /usr/bin/time -v ./build/starforth --benchmark 10000000 --log-none 2>&1 | tee ${LOG_DIR}/bench-math-torture.log || true
                 '''
 
-				echo "Logic operations stress test (10M iterations)..."
+				sh 'echo "Logic operations stress test (10M iterations)..."'
 				sh '''
                     /usr/bin/time -v ./build/starforth --benchmark 10000000 --log-none 2>&1 | tee ${LOG_DIR}/bench-logic-torture.log || true
                 '''
@@ -147,27 +147,27 @@ pipeline {
 		stage('💀 Extreme Stress Tests') {
 			steps {
 				// Run stress tests sequentially to avoid interference
-				echo "Testing deep recursion limits..."
+				sh 'echo "Testing deep recursion limits..."'
 				sh '''
                     timeout 300 ./build/starforth --stress-tests --log-none 2>&1 | tee ${LOG_DIR}/stress-recursion.log || echo "Recursion limit reached (expected)"
                 '''
 
-				echo "Testing maximum stack depth..."
+				sh 'echo "Testing maximum stack depth..."'
 				sh '''
                     timeout 300 ./build/starforth --stress-tests --log-none 2>&1 | tee ${LOG_DIR}/stress-stack-depth.log || echo "Stack depth limit reached (expected)"
                 '''
 
-				echo "Testing memory allocation patterns..."
+				sh 'echo "Testing memory allocation patterns..."'
 				sh '''
                     timeout 300 ./build/starforth --stress-tests --log-none 2>&1 | tee ${LOG_DIR}/stress-memory.log || echo "Memory stress completed/failed"
                 '''
 
-				echo "Testing long-running computation stability..."
+				sh 'echo "Testing long-running computation stability..."'
 				sh '''
                     timeout 600 ./build/starforth --benchmark 50000000 --log-none 2>&1 | tee ${LOG_DIR}/stress-long-run.log
                 '''
 
-				echo "Testing deeply nested loops..."
+				sh 'echo "Testing deeply nested loops..."'
 				sh '''
                     timeout 300 ./build/starforth --stress-tests --log-none 2>&1 | tee ${LOG_DIR}/stress-nested-loops.log
                 '''
@@ -176,7 +176,7 @@ pipeline {
 
 		stage('🔥 Thermal & Performance Monitoring') {
 			steps {
-				echo "Running sustained load test with performance monitoring..."
+				sh 'echo "Running sustained load test with performance monitoring..."'
 				sh 'make clean && make fastest'
 
 				script {
@@ -206,7 +206,7 @@ pipeline {
 				}
 			}
 			steps {
-				echo "Running valgrind memory leak detection..."
+				sh 'echo "Running valgrind memory leak detection..."'
 				sh 'make clean && make debug'
 				sh '''
                     timeout 600 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=${LOG_DIR}/valgrind-leak-check.log \
@@ -217,7 +217,7 @@ pipeline {
 
 		stage('⚡ Profile-Guided Optimization Build') {
 			steps {
-				echo "Building with PGO for maximum performance..."
+				sh 'echo "Building with PGO for maximum performance..."'
 				sh '''
                     make pgo 2>&1 | tee ${LOG_DIR}/build-pgo.log
                     cp build/starforth ${ARTIFACT_DIR}/starforth-pgo
@@ -227,7 +227,7 @@ pipeline {
 
 		stage('📊 PGO Performance Comparison') {
 			steps {
-				echo "Comparing PGO vs Regular build performance..."
+				sh 'echo "Comparing PGO vs Regular build performance..."'
 				sh 'make bench-compare 2>&1 | tee ${LOG_DIR}/pgo-comparison.log'
 			}
 		}
@@ -235,12 +235,12 @@ pipeline {
 		stage('🎯 Edge Case Testing') {
 			steps {
 				// Run comprehensive edge case and stress tests
-				echo "Running integration tests for edge cases..."
+				sh 'echo "Running integration tests for edge cases..."'
 				sh '''
                     timeout 120 ./build/starforth --integration --log-test 2>&1 | tee ${LOG_DIR}/edge-integration.log || echo "Some integration tests failed (expected for edge cases)"
                 '''
 
-				echo "Running stress tests for extreme cases..."
+				sh 'echo "Running stress tests for extreme cases..."'
 				sh '''
                     timeout 120 ./build/starforth --stress-tests --log-test 2>&1 | tee ${LOG_DIR}/edge-stress.log || echo "Stress tests completed"
                 '''
@@ -249,7 +249,7 @@ pipeline {
 
 		stage('📈 Performance Regression Check') {
 			steps {
-				echo "Running performance regression baseline..."
+				sh 'echo "Running performance regression baseline..."'
 				sh 'make clean && make fastest'
 				sh '''
                     echo "timestamp,operation,iterations,duration_seconds" > ${LOG_DIR}/performance-baseline.csv
@@ -275,7 +275,7 @@ pipeline {
 
 		stage('🔍 Code Quality Checks') {
 			steps {
-				echo "Running static analysis and code quality checks..."
+				sh 'echo "Running static analysis and code quality checks..."'
 
 				// Check for compiler warnings
 				sh '''
@@ -294,9 +294,9 @@ pipeline {
 
 		stage('🔬 Formal Verification & Isabelle Theories') {
 			steps {
-				echo "════════════════════════════════════════════════════════════"
-				echo "  🔬 Running Formal Verification & Isabelle Theory Build"
-				echo "════════════════════════════════════════════════════════════"
+				sh 'echo "════════════════════════════════════════════════════════════"'
+				sh 'echo "  🔬 Running Formal Verification & Isabelle Theory Build"'
+				sh 'echo "════════════════════════════════════════════════════════════"'
 
 				// Check if Isabelle is available
 				sh '''
@@ -362,7 +362,7 @@ pipeline {
 
 		stage('📚 Documentation Build') {
 			steps {
-				echo "Generating all documentation (API, Isabelle, LaTeX)..."
+				sh 'echo "Generating all documentation (API, Isabelle, LaTeX)..."'
 
 				// Build all documentation
 				sh '''
@@ -385,12 +385,12 @@ pipeline {
 
 		stage('📦 Package Build (DEB & RPM)') {
 			steps {
-				echo "════════════════════════════════════════════════════════════"
-				echo "  📦 Building Distribution Packages (AMD64 + RPi4)"
-				echo "════════════════════════════════════════════════════════════"
+				sh 'echo "════════════════════════════════════════════════════════════"'
+				sh 'echo "  📦 Building Distribution Packages (AMD64 + RPi4)"'
+				sh 'echo "════════════════════════════════════════════════════════════"'
 
 				// === AMD64 PACKAGES ===
-				echo "Building AMD64 packages..."
+				sh 'echo "Building AMD64 packages..."'
 				sh '''
                     echo "Building AMD64 optimized binary..."
                     make clean && make fastest 2>&1 | tee ${LOG_DIR}/package-build-amd64.log
@@ -438,7 +438,7 @@ pipeline {
                 '''
 
 				// === ARM (RPi4) PACKAGES ===
-				echo "Building ARM (RPi4) packages..."
+				sh 'echo "Building ARM (RPi4) packages..."'
 				sh '''
                     echo "Building ARM (RPi4) optimized binary..."
                     make clean && make rpi4-fastest 2>&1 | tee ${LOG_DIR}/package-build-arm64.log || echo "RPi4 cross-compilation tools not available - skipping ARM packages"
@@ -493,7 +493,7 @@ pipeline {
 
 		stage('📋 Generate Test Report') {
 			steps {
-				echo "Generating comprehensive test report..."
+				sh 'echo "Generating comprehensive test report..."'
 				sh '''
                     cat > ${ARTIFACT_DIR}/test-report.md << 'EOFMD'
 # StarForth Torture Test Report
@@ -563,7 +563,7 @@ All logs are available in the ${LOG_DIR} directory.
 EOFMD
                 '''
 
-				echo "Test report generated!"
+				sh 'echo "Test report generated!"'
 			}
 		}
 	}
