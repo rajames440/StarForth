@@ -374,7 +374,7 @@ benchmark: $(TARGET)
 # ASSEMBLY OUTPUT & ANALYSIS
 # ==============================================================================
 
-# Generate assembly files for inspection
+# Generate assembly files for inspection # TODO. Broken.
 asm: banner
 	@echo "📝 Generating assembly output..."
 	$(MAKE) ASM=1 CFLAGS="$(BASE_CFLAGS) $(ARCH_FLAGS) $(ARCH_DEFINES) -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1" LDFLAGS="" $(TARGET)
@@ -412,7 +412,7 @@ api-docs:
 	@echo "✅ API documentation generated: docs/src/appendix/"
 
 # Convert all AsciiDoc to LaTeX
-latex:
+latex: # TODO Broken
 	@echo "📄 Converting AsciiDoc to LaTeX..."
 	@if [ ! -f scripts/asciidoc-to-latex.sh ]; then \
 		echo "Error: scripts/asciidoc-to-latex.sh not found"; \
@@ -437,10 +437,8 @@ docs/starforth.info:
 		fi; \
 	fi
 
-info: docs/starforth.info
-
 # Generate all documentation
-docs: api-docs latex
+docs: api-docs
 	@echo "✅ All documentation generated!"
 	@echo ""
 	@echo "📂 Documentation locations:"
@@ -457,7 +455,7 @@ clean-docs:
 # INSTALLATION
 # ==============================================================================
 
-install: build/starforth
+install: build/starforth # TODO Broken
 	@echo "📦 Installing StarForth to $(PREFIX)..."
 	@install -d $(BINDIR)
 	@install -m 755 build/starforth $(BINDIR)/starforth
@@ -492,35 +490,7 @@ uninstall:
 # PACKAGING
 # ==============================================================================
 
-# Build Debian package
-deb: build/starforth man/starforth.1
-	@echo "📦 Building Debian package..."
-	@if ! command -v dpkg-buildpackage >/dev/null 2>&1; then \
-		echo "Error: dpkg-buildpackage not found. Install with: sudo apt-get install dpkg-dev"; \
-		exit 1; \
-	fi
-	@dpkg-buildpackage -us -uc
-	@echo "✅ Debian package built: ../starforth_*.deb"
-
-# Build RPM package
-rpm: build/starforth man/starforth.1
-	@echo "📦 Building RPM package..."
-	@if ! command -v rpmbuild >/dev/null 2>&1; then \
-		echo "Error: rpmbuild not found. Install with: sudo dnf install rpm-build"; \
-		exit 1; \
-	fi
-	@mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-	@tar czf ~/rpmbuild/SOURCES/starforth-$(VERSION).tar.gz \
-		--transform 's,^,starforth-$(VERSION)/,' \
-		--exclude=build --exclude=.git --exclude=debian \
-		.
-	@cp starforth.spec ~/rpmbuild/SPECS/
-	@rpmbuild -ba ~/rpmbuild/SPECS/starforth.spec
-	@echo "✅ RPM package built: ~/rpmbuild/RPMS/*/starforth-*.rpm"
-
-# Build all packages
-package: deb rpm info
-	@echo "✅ All packages built successfully!"
+# TODO packaging
 
 # ==============================================================================
 # CLEANUP
@@ -532,7 +502,7 @@ clean:
 	@rm -f src/*.gcda src/word_source/*.gcda src/*.gcno src/word_source/*.gcno
 	@echo "✓ Clean complete"
 
-clean-obj:
+clean-obj: # TODO Broken. does not recurse.
 	@rm -rf build/*.o build/**/*.o
 
 # ==============================================================================
