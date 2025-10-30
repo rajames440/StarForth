@@ -386,38 +386,106 @@ pipeline {
 		stage('📦 Package Build (DEB & RPM)') {
 			steps {
 				echo "════════════════════════════════════════════════════════════"
-				echo "  📦 Building Distribution Packages"
+				echo "  📦 Building Distribution Packages (AMD64 + RPi4)"
 				echo "════════════════════════════════════════════════════════════"
 
-				// Ensure we have a clean optimized build
-				sh 'make clean && make fastest 2>&1 | tee ${LOG_DIR}/package-build.log'
-
-				// Build DEB package
+				// === AMD64 PACKAGES ===
+				echo "Building AMD64 packages..."
 				sh '''
-                    echo "Building Debian package..."
+                    echo "Building AMD64 optimized binary..."
+                    make clean && make fastest 2>&1 | tee ${LOG_DIR}/package-build-amd64.log
+
+                    # Extract version from binary or VERSION file
+                    VERSION=$(./build/starforth --help 2>&1 | grep -oP 'StarForth.*' | head -1 | sed 's/.*v\([0-9.]*\).*/\1/' || echo "2.0.0")
+                    echo "Detected version: $VERSION"
+
+                    # Build AMD64 DEB package with architecture and version
+                    echo "Building AMD64 Debian package..."
                     if command -v fpm &> /dev/null; then
-                        make deb 2>&1 | tee ${LOG_DIR}/deb-build.log
-                        # Archive DEB package
-                        if [ -d package/deb ]; then
-                            cp package/deb/*.deb ${ARTIFACT_DIR}/ 2>/dev/null || true
-                        fi
+                        fpm -s dir \
+                            -t deb \
+                            -n starforth-amd64 \
+                            -v "$VERSION" \
+                            -a amd64 \
+                            -C build \
+                            --description "StarForth Forth VM - AMD64" \
+                            -m "StarForth Dev" \
+                            starforth=/usr/local/bin/starforth \
+                            2>&1 | tee ${LOG_DIR}/deb-build-amd64.log
+                        cp starforth-amd64_${VERSION}_amd64.deb ${ARTIFACT_DIR}/ 2>/dev/null || true
                     else
                         echo "⚠️  fpm not found - skipping DEB build"
                         echo "    Install with: sudo apt-get install ruby-dev && gem install fpm"
                     fi
-                '''
 
-				// Build RPM package
-				sh '''
-                    echo "Building RPM package..."
+                    # Build AMD64 RPM package with architecture and version
+                    echo "Building AMD64 RPM package..."
                     if command -v fpm &> /dev/null; then
-                        make rpm 2>&1 | tee ${LOG_DIR}/rpm-build.log
-                        # Archive RPM package
-                        if [ -d package/rpm ]; then
-                            cp package/rpm/*.rpm ${ARTIFACT_DIR}/ 2>/dev/null || true
-                        fi
+                        fpm -s dir \
+                            -t rpm \
+                            -n starforth-amd64 \
+                            -v "$VERSION" \
+                            -a x86_64 \
+                            -C build \
+                            --description "StarForth Forth VM - AMD64" \
+                            -m "StarForth Dev" \
+                            starforth=/usr/local/bin/starforth \
+                            2>&1 | tee ${LOG_DIR}/rpm-build-amd64.log
+                        cp starforth-amd64-${VERSION}-1.x86_64.rpm ${ARTIFACT_DIR}/ 2>/dev/null || true
                     else
                         echo "⚠️  fpm not found - skipping RPM build"
+                    fi
+                '''
+
+				// === ARM (RPi4) PACKAGES ===
+				echo "Building ARM (RPi4) packages..."
+				sh '''
+                    echo "Building ARM (RPi4) optimized binary..."
+                    make clean && make rpi4-fastest 2>&1 | tee ${LOG_DIR}/package-build-arm64.log || echo "RPi4 cross-compilation tools not available - skipping ARM packages"
+
+                    # Only proceed if build succeeded
+                    if [ -f build/starforth ]; then
+                        # Extract version from binary or VERSION file
+                        VERSION=$(./build/starforth --help 2>&1 | grep -oP 'StarForth.*' | head -1 | sed 's/.*v\([0-9.]*\).*/\1/' || echo "2.0.0")
+                        echo "Detected version: $VERSION"
+
+                        # Build ARM DEB package with architecture and version
+                        echo "Building ARM Debian package..."
+                        if command -v fpm &> /dev/null; then
+                            fpm -s dir \
+                                -t deb \
+                                -n starforth-arm64 \
+                                -v "$VERSION" \
+                                -a arm64 \
+                                -C build \
+                                --description "StarForth Forth VM - ARM64" \
+                                -m "StarForth Dev" \
+                                starforth=/usr/local/bin/starforth \
+                                2>&1 | tee ${LOG_DIR}/deb-build-arm64.log
+                            cp starforth-arm64_${VERSION}_arm64.deb ${ARTIFACT_DIR}/ 2>/dev/null || true
+                        else
+                            echo "⚠️  fpm not found - skipping DEB build"
+                        fi
+
+                        # Build ARM RPM package with architecture and version
+                        echo "Building ARM RPM package..."
+                        if command -v fpm &> /dev/null; then
+                            fpm -s dir \
+                                -t rpm \
+                                -n starforth-arm64 \
+                                -v "$VERSION" \
+                                -a aarch64 \
+                                -C build \
+                                --description "StarForth Forth VM - ARM64" \
+                                -m "StarForth Dev" \
+                                starforth=/usr/local/bin/starforth \
+                                2>&1 | tee ${LOG_DIR}/rpm-build-arm64.log
+                            cp starforth-arm64-${VERSION}-1.aarch64.rpm ${ARTIFACT_DIR}/ 2>/dev/null || true
+                        else
+                            echo "⚠️  fpm not found - skipping RPM build"
+                        fi
+                    else
+                        echo "⚠️  ARM build did not produce binary - cross-compilation tools may not be available"
                     fi
                 '''
 			}
