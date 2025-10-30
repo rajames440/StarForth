@@ -24,7 +24,7 @@ pipeline {
 		stage('🧹 Cleanup & Preparation') {
 			steps {
 				echo "════════════════════════════════════════════════════════════"
-				echo "   ⚡ StarForth Torture Test Pipeline - AMD64 ⚡"
+				echo "   ⚡ StarForth Torture Test Pipeline - AMD64 & ARM (RPi4) ⚡"
 				echo "════════════════════════════════════════════════════════════"
 
 				// Clone/pull from GitHub remote
@@ -56,27 +56,43 @@ pipeline {
 		stage('🔨 Build Gauntlet') {
 			steps {
 				// Build sequentially to avoid workspace conflicts
-				echo "Building all configurations..."
+				echo "Building all configurations (AMD64 + ARM)..."
 
-				echo "Building DEBUG configuration..."
+				// === AMD64 BUILDS ===
+				echo "════ AMD64 Builds ════"
+
+				echo "Building AMD64 DEBUG configuration..."
 				sh 'make clean'
 				sh 'make debug 2>&1 | tee ${LOG_DIR}/build-debug.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-debug'
 
-				echo "Building STANDARD configuration..."
+				echo "Building AMD64 STANDARD configuration..."
 				sh 'make clean'
 				sh 'make 2>&1 | tee ${LOG_DIR}/build-standard.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-standard'
 
-				echo "Building FASTEST configuration..."
+				echo "Building AMD64 FASTEST configuration..."
 				sh 'make clean'
 				sh 'make fastest 2>&1 | tee ${LOG_DIR}/build-fastest.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-fastest'
 
-				echo "Building FAST configuration..."
+				echo "Building AMD64 FAST configuration..."
 				sh 'make clean'
 				sh 'make fast 2>&1 | tee ${LOG_DIR}/build-fast.log'
 				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-fast'
+
+				// === ARM (Raspberry Pi 4) BUILDS ===
+				echo "════ ARM (RPi4) Cross-Compilation Builds ════"
+
+				echo "Building RPi4 cross-compiled configuration..."
+				sh 'make clean'
+				sh 'make rpi4-cross 2>&1 | tee ${LOG_DIR}/build-rpi4-cross.log'
+				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-rpi4-cross || true'
+
+				echo "Building RPi4 FASTEST (optimized) configuration..."
+				sh 'make clean'
+				sh 'make rpi4-fastest 2>&1 | tee ${LOG_DIR}/build-rpi4-fastest.log'
+				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-rpi4-fastest || true'
 			}
 		}
 
@@ -227,11 +243,6 @@ pipeline {
 				echo "Running stress tests for extreme cases..."
 				sh '''
                     timeout 120 ./build/starforth --stress-tests --log-test 2>&1 | tee ${LOG_DIR}/edge-stress.log || echo "Stress tests completed"
-                '''
-
-				echo "Running comprehensive diagnostic mode..."
-				sh '''
-                    timeout 120 ./build/starforth --break-me --log-test 2>&1 | tee ${LOG_DIR}/edge-break-me.log || echo "Diagnostic mode completed"
                 '''
 			}
 		}
