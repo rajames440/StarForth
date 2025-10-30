@@ -21,7 +21,7 @@ pipeline {
 	}
 
 	stages {
-		stage('🧹 Cleanup & Preparation') {
+		stage('Cleanup & Preparation') {
 			steps {
 				sh 'echo "════════════════════════════════════════════════════════════"'
 				sh 'echo "   ⚡ StarForth Torture Test Pipeline - AMD64 & ARM (RPi4) ⚡"'
@@ -396,7 +396,10 @@ pipeline {
                     make clean && make fastest 2>&1 | tee ${LOG_DIR}/package-build-amd64.log
 
                     # Extract version from binary or VERSION file
-                    VERSION=$(./build/starforth --help 2>&1 | grep -oP 'StarForth.*' | head -1 | sed 's/.*v\([0-9.]*\).*/\1/' || echo "2.0.0")
+                    VERSION="2.0.0"
+                    if [ -f build/starforth ]; then
+                        VERSION=$(./build/starforth --help 2>&1 | grep -o '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*' | head -1 || echo "2.0.0")
+                    fi
                     echo "Detected version: $VERSION"
 
                     # Build AMD64 DEB package with architecture and version
@@ -446,7 +449,8 @@ pipeline {
                     # Only proceed if build succeeded
                     if [ -f build/starforth ]; then
                         # Extract version from binary or VERSION file
-                        VERSION=$(./build/starforth --help 2>&1 | grep -oP 'StarForth.*' | head -1 | sed 's/.*v\([0-9.]*\).*/\1/' || echo "2.0.0")
+                        VERSION="2.0.0"
+                        VERSION=$(./build/starforth --help 2>&1 | grep -o '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*' | head -1 || echo "2.0.0")
                         echo "Detected version: $VERSION"
 
                         # Build ARM DEB package with architecture and version
