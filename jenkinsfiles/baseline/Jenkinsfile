@@ -21,11 +21,11 @@ pipeline {
 	}
 
 	stages {
-		stage('🧹 Cleanup & Preparation') {
+		stage('Cleanup & Preparation') {
 			steps {
-				echo "════════════════════════════════════════════════════════════"
-				echo "   ⚡ StarForth Torture Test Pipeline - AMD64 ⚡"
-				echo "════════════════════════════════════════════════════════════"
+				sh 'echo "════════════════════════════════════════════════════════════"'
+				sh 'echo "   ⚡ StarForth Nightly Baseline - Comprehensive ⚡"'
+				sh 'echo "════════════════════════════════════════════════════════════"'
 
 				// Clone/pull from GitHub remote
 				sh '''
