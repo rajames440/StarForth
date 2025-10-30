@@ -1,0 +1,517 @@
+= StarForth C↔Isabelle Refinement Implementation Roadmap
+:toc: left
+:toclevels: 2
+:sectnums:
+:source-highlighter: rouge
+:icons: font
+
+== Executive Summary
+
+This roadmap establishes the phased approach to proving that the StarForth C implementation correctly refines the Isabelle formal specifications.
+
+**Overall Goal:** Complete end-to-end refinement verification of running code against theory.
+
+**Timeline:** 6-8 months (estimated, aggressive schedule)
+
+**Success Criteria:** All critical VM functions have complete refinement proofs with no remaining `sorry`s.
+
+---
+
+== Vision & Philosophy
+
+**What we're building:** A proof system that ensures the C implementation:
+1. Implements exactly what the theory specifies 2. Maintains all proven invariants 3. Handles all edge cases correctly
+
+**Our approach:**
+- Iterative: Find discrepancies → Fix theory or code → Prove → Repeat - Transparent: Every defect logged, tracked, and explained - Pragmatic: Start with core VM, expand systematically - Auditor-friendly: All documentation publically reviewable
+
+---
+
+## Phase 1: VM Core Refinement
+
+**Duration:** 4-6 weeks
+**Effort:** ~320 developer-hours
+**Team:** 2-3 (1 Isabelle specialist, 1-2 C developers)
+
+### Scope
+
+Prove that `src/vm.c` correctly implements:
+- Stack operations (push, pop, overflow handling) - Return stack operations (CALL, RET) - Instruction dispatch mechanism - Program counter management - Error state consistency
+
+### Deliverables
+
+1. **Annotated source** - All vm.c functions have REFINEMENT headers
+2. **Proof file** - `StarForth_Refinement.thy` with lemmas for each function
+3. **CAPA updates** - All 3 initial defects (DEFECT-001, 002, 003) resolved
+4. **Tests** - Unit tests verifying stack invariants under all conditions
+
+### Key Functions to Refine
+
+[cols="1,2,2,1"]
+|===
+| Function | Theory | Est. Hours | Status
+
+| `stack_push()` | `VM_Stacks.thy::push` | 20 | OPEN
+| `stack_pop()` | `VM_Stacks.thy::pop` | 20 | OPEN
+| `execute_call()` | `VM_Stacks.thy::call` | 25 | OPEN
+| `execute_return()` | `VM_Stacks.thy::ret` | 25 | OPEN
+| `execute_instruction()` | `VM_Core.thy::exec_instr` | 60 | OPEN
+| `dispatch_* helpers` | VM_*_Words.thy | 80 | OPEN
+| Stack invariants (proofs) | VM_StackRuntime.thy | 50 | OPEN
+|===
+
+### Success Criteria
+
+- ✅ No remaining `sorry` statements in refinement proofs
+- ✅ All stack bounds violations caught and proven impossible
+- ✅ All error paths formally verified
+- ✅ All tests pass without instrumentation
+- ✅ DEFECT log shows 0 OPEN items for Phase 1
+
+### Risks
+
+**High Risk:**
+- Pre/post-increment semantics mismatch (mitigated by careful lemmas)
+
+**Medium Risk:**
+- Error handling complexity (plan: explicit state modeling)
+
+**Low Risk:**
+- Stack size assumptions (clearly specified and checked)
+
+### Dependencies
+
+- Isabelle/HOL installed and working
+- Existing VM_Stacks.thy theory complete
+- C code has no undefined behavior (must audit first)
+
+### Successor
+
+Cannot proceed to Phase 2 until Phase 1 complete.
+
+---
+
+## Phase 2: Utility Functions & Memory Management
+
+**Duration:** 2-3 weeks
+**Effort:** ~160 developer-hours
+**Team:** 1-2
+
+### Scope
+
+Prove correctness of:
+- Memory allocation/deallocation patterns - Initialization sequences - Resource cleanup - Error recovery (if applicable) - All root-level .c files
+
+### Deliverables
+
+1. Memory model formalization in Isabelle
+2. Proof that allocations don't exceed bounds
+3. Proof that cleanup prevents leaks
+4. Updated CAPA log
+
+### Success Criteria
+
+- ✅ All OPEN defects resolved
+- ✅ Memory model and C code proven equivalent
+- ✅ No unsafe patterns in utility code
+
+### Dependencies
+
+- Phase 1 complete
+
+---
+
+## Phase 3: Test Harness Integration
+
+**Duration:** 1-2 weeks
+**Effort:** ~80 developer-hours
+**Team:** 1
+
+### Scope
+
+Prove that the test framework validates theory-level properties:
+- Test assertions map to Isabelle lemmas - Test execution traces provable execution paths - Test coverage covers all critical theory cases
+
+### Deliverables
+
+1. Test-to-theory mapping document
+2. Isabelle theorems for key test properties
+3. Coverage report linking tests to theory
+
+### Success Criteria
+
+- ✅ Every critical theory property has a test
+- ✅ Tests and proofs are consistent
+- ✅ Test suite achieves >95% branch coverage
+
+### Dependencies
+
+- Phase 1 complete
+
+---
+
+## Phase 4: Primitive Dictionary (Forth Words)
+
+**Duration:** 6-8 weeks
+**Effort:** ~320 developer-hours
+**Team:** 2-3
+
+### Scope
+
+**LARGEST PHASE** - Systematically prove every Forth word:
+
+- Arithmetic: `+`, `-`, `*`, `/`, `MOD`, `ABS`, etc.
+- Logic: `AND`, `OR`, `XOR`, `NOT`, etc.
+- Stack: `DUP`, `DROP`, `SWAP`, `ROT`, `PICK`, `ROLL`
+- Memory: `@`, `!`, `C@`, `C!`
+- Control: `IF`, `ELSE`, `BEGIN`, `UNTIL`, `DO`, `LOOP`
+- I/O: `EMIT`, `KEY`, `.` (print)
+- Physics: Custom words in Physics_Formal.thy
+
+### Approach
+
+**Batch-wise delivery:**
+
+**Batch 4.1 (Weeks 1-2):** Core arithmetic & stack ops - Most fundamental, highest ROI - ~40% of typical Forth programs
+
+**Batch 4.2 (Weeks 3-4):** Memory operations - Required for data structures - Higher complexity (address space reasoning)
+
+**Batch 4.3 (Weeks 5-6):** Control flow - Most complex (loop invariants) - Highest proof difficulty
+
+**Batch 4.4 (Weeks 7-8):** I/O & domain-specific words - External effects (harder to formalize) - Physics-specific operations
+
+### Deliverables Per Batch
+
+- Annotated C implementation
+- Isabelle refinement lemmas
+- Property tests
+- CAPA updates
+
+### Success Criteria (Overall)
+
+- ✅ All ~200 Forth words have refinement proofs
+- ✅ No sorry's in refinement layer
+- ✅ All definitions reach theory equivalence
+
+### Complexity Estimate
+
+- **Simple words** (DUP, DROP): 2-4 hours each
+- **Medium words** (arithmetic): 4-8 hours each
+- **Complex words** (control flow): 12-24 hours each
+- **Average across all:** ~4 hours per word × 200 = 800 hours
+- **Parallelizable:** Can split by category (arith, logic, stack, control)
+
+### Dependencies
+
+- Phase 1 complete
+- Primitive word implementations in C complete/frozen
+
+---
+
+## Phase 5: VM Expansion & Iteration
+
+**Duration:** Ongoing
+**Effort:** ~40 hours per feature
+**Team:** 1+ per new feature
+
+### Scope
+
+When adding new features to the VM:
+1. Add theory definitions first (or in parallel) 2. Implement C code 3. Write annotated code with REFINEMENT headers 4. Prove refinement before merge 5. Update REFINEMENT_CAPA.adoc
+
+### Workflow
+
+```
+New Feature Request
+        ↓
+Update theory (VM_*.thy)
+        ↓
+Implement C code
+        ↓
+Annotate with REFINEMENT
+        ↓
+Write refinement proofs
+        ↓
+CI: make refinement-phase1/2/3/4/5
+        ↓
+Tests pass? YES → Merge
+          NO  → Debug (theory or code)
+```
+
+### Success Criteria
+
+- ✅ All new features have refinement proofs before merge
+- ✅ No theory-code mismatches introduced
+- ✅ Proof maintenance is integrated into development
+
+### Dependencies
+
+- All previous phases complete
+- Development team trained on refinement workflow
+
+---
+
+## Timeline Overview
+
+```
+Week 1-2:     Phase 1 setup, DEFECT-001, basic stack proofs
+Week 3-6:     Phase 1 complete (stack, call/ret, dispatch)
+Week 7-8:     Phase 2 (utilities, memory model)
+Week 9:       Phase 3 (test integration)
+Week 10-17:   Phase 4 (primitives, 4 batches)
+Week 18+:     Phase 5 (ongoing, feature expansion)
+
+TOTAL: ~6 months to core completion, ~8 months to full dictionary
+```
+
+**Gantt Chart:**
+
+```
+Phase 1 |████████████████████| (Weeks 1-6)
+  Phase 2  |██████████| (Weeks 7-8)
+    Phase 3 |██████| (Week 9)
+        Phase 4 |████████████████| (Weeks 10-17)
+              Phase 5 |→→→→→→→→→ (ongoing)
+```
+
+---
+
+## Critical Path
+
+**Must complete in order:**
+1. Phase 1 ← **BLOCKER for all others**
+2. Phase 2 ← Unlocks complete VM testing 3. Phases 3, 4 ← Can proceed in parallel after Phase 1
+
+**CRITICAL DECISION POINTS:**
+
+- **End of Phase 1 (Week 6):** Refinement framework working?
+- YES → Proceed to Phase 4 (biggest payoff)
+- NO → Major review needed before continuing
+
+- **Mid-Phase 4 (Week 13):** Is proof velocity sustainable?
+- YES → Continue to full dictionary
+- NO → Consider reduced scope (core 50 words only)
+
+---
+
+## Resource Requirements
+
+### Personnel
+
+**Mandatory:**
+- 1 Isabelle/HOL expert (40 hrs/week)
+- Proof architecture
+- Lemma design
+- Difficult proof cases
+
+- 1-2 C developers (20 hrs/week)
+- Code annotation
+- Refactoring for proofs
+- Test case development
+
+**Optional (accelerators):**
+- Second Isabelle specialist (adds 50% velocity, enables parallelism) - Automated proof tool (SMT solvers like Z3, adds 20% velocity)
+
+### Tools & Infrastructure
+
+Required:
+- Isabelle 2025+ (already have) - Python/Bash for automation - Version control (already have)
+
+Optional (nice-to-have):
+- Sledgehammer (proof search) - included with Isabelle - Why3/Frama-C (for enhanced C semantics) - cost: 40 hours setup - Coq (alternative; only if switching frameworks) - not recommended
+
+### Compute
+
+Modest requirements:
+- Proof checking: < 5 minutes per rebuild - Build machine: 4 cores, 8GB RAM sufficient - Storage: ~2 GB for Isabelle session caches
+
+---
+
+## Risk Assessment & Mitigation
+
+### Risk Matrix
+
+[cols="2,2,1,2,2"]
+|===
+| Risk | Probability | Impact | Mitigation | Contingency
+
+| Theory spec incomplete | Medium | High | Weekly theory audit | Skip incomplete areas, revisit later
+| C code has subtle bugs | Medium | High | Formal code review | Unit test first, then prove
+| Proofs become intractable | Low | Critical | Research harder lemmas | Simplify spec (less ambitious)
+| Team turnover | Low | Medium | Documentation | Cross-training, recorded sessions
+| Isabelle version issues | Low | Low | Version lock | Pin to Isabelle 2025
+|===
+
+### Contingency Plans
+
+**If proofs become intractable:**
+1. Reduce scope to core 50 words (high ROI subset) 2. Use `sorry` for complex lemmas, mark as TODO 3. Revisit after proof technique improvements
+
+**If Phase 1 extends beyond 6 weeks:**
+1. Allocate +2 people for parallel proofs 2. Drop nice-to-have defects (low severity) 3. Extend timeline, compress Phase 4
+
+---
+
+## Success Metrics
+
+### Phase-by-Phase
+
+| Phase | Metric | Target | Method | |-------|--------|--------|--------| | 1 | Proof completeness | 0 `sorry`s | `grep "sorry" *.thy` | | 1 | Defect closure | 100% OPEN→CLOSED | REFINEMENT_CAPA.adoc | | 2 | Memory safety | No leaks | Valgrind + proofs | | 3 | Test coverage | > 95% branch | `gcov` analysis | | 4 | Word coverage | 100% of ~200 | grep word list | | 4 | Proof QC | Zero sorry's | Isabelle build -c |
+
+### Overall
+
+**HARD STOP CRITERIA (go/no-go):**
+- All Phase 1 proofs compile without `sorry`
+- No bugs found in code by auditors during Phase 1 - Refinement framework proves faster than expected → Accelerate Phase 4
+
+**SOFT TARGETS:**
+- 90%+ of dictionary proven by end of Phase 4 - < 1 major theory revision needed during implementation
+
+---
+
+## How to Use This Roadmap
+
+### For Team Members
+
+1. **Check current phase:** `make refinement-status`
+2. **See what's blocked:** `grep OPEN docs/REFINEMENT_CAPA.adoc`
+3. **Pick a defect:** Choose smallest OPEN item
+4. **Resolve it:** Follow REFINEMENT_ANNOTATIONS.adoc guide
+5. **Update status:** Edit REFINEMENT_CAPA.adoc, commit
+
+### For Project Managers
+
+- **Track progress:**
+```bash make refinement-status # Weekly make refinement-report # Monthly ```
+
+- **Identify risks:**
+- Is phase extending beyond estimate?
+- Are proof complexity metrics increasing?
+- Is defect resolution rate dropping?
+
+- **Make course corrections:**
+- Add specialists if velocity < 3 hours/proof
+- Reduce scope if facing 2+ week delays
+- Consider parallelizing (multiple independent words)
+
+### For Auditors
+
+1. **Review current status:** `docs/REFINEMENT_CAPA.adoc`
+2. **Examine code:** Look for REFINEMENT: headers in `src/vm.c`
+3. **Check proofs:** `docs/src/internal/formal/StarForth_Refinement.thy`
+4. **Request details:** Link to specific DEFECT entries
+
+---
+
+## Phase Completion Checklist
+
+### Phase 1 Completion Criteria
+
+- [ ] All stack operations have complete proofs
+- [ ] All return stack operations have complete proofs
+- [ ] All three defects (DEFECT-001, 002, 003) marked CLOSED
+- [ ] No `sorry` statements remain in refinement proofs
+- [ ] Code review: vm.c passes security/correctness audit
+- [ ] Tests: All stack tests pass with 100% coverage
+- [ ] Documentation: REFINEMENT headers on all functions
+- [ ] Sign-off: Isabelle expert and C lead approve
+
+**Readiness for Phase 2:** YES / NO
+
+### Phase 2 Completion Criteria
+
+- [ ] Memory model formalized
+- [ ] All utility functions annotated
+- [ ] Memory safety properties proven
+- [ ] All OPEN defects for this phase resolved
+- [ ] Code review: Root-level .c files audited
+- [ ] Sign-off: Both C lead and formal methods lead approve
+
+**Readiness for Phase 3:** YES / NO
+
+### Phase 3 Completion Criteria
+
+- [ ] Test-to-theory mapping complete
+- [ ] All critical properties have tests
+- [ ] Test coverage > 95%
+- [ ] Test assertions match lemma postconditions
+- [ ] Sign-off: QA lead and formal methods lead
+
+**Readiness for Phase 4:** YES / NO
+
+### Phase 4 Completion Criteria
+
+- [ ] All ~200 Forth words have refinement proofs
+- [ ] No `sorry` statements in refinement layer
+- [ ] Physics-specific words proven
+- [ ] CAPA log: 0 HIGH severity items open
+- [ ] Code review: All word implementations audited
+- [ ] Batch sign-offs: Each batch formally accepted
+
+**Ready for Phase 5 (ongoing):** YES / NO
+
+---
+
+## Beyond Phase 5: Future Work
+
+Once core refinement is complete:
+
+1. **Verified compilation** - Use CompCert for C→Assembly with correctness proofs
+2. **Scheduler formalization** - Prove multitasking/concurrency properties
+3. **Performance certification** - Prove complexity bounds on critical paths
+4. **Formal specification of Forth standard** - Align with ISO Forth
+5. **Automated proof generation** - Machine learning for lemma discovery
+
+---
+
+## Questions & Support
+
+**Q: Can we parallelize phases?**
+A: Phase 4 (primitives) can be split into independent proofs.
+Phases 1-3 must be sequential (each is blocker).
+
+**Q: What if we find a major bug?**
+A: Log CAPA defect, fix code or theory, continue.
+Bugs found early = cost savings.
+
+**Q: How much time should each proof take?**
+A: Simple: 2-4 hrs.
+Medium: 4-12 hrs.
+Complex: 12-24 hrs.
+Average across phase: ~6 hours/function.
+
+**Q: Can we use automated tactics?**
+A: Yes!
+Isabelle's Sledgehammer, SMT solvers (Z3, CVC4) highly recommended.
+Reduces manual time by 20-30%.
+
+**Q: Should we prove the Forth bootloader too?**
+A: Out of scope for Phase 1-4. Added to Phase 5 as advanced work.
+
+---
+
+## Version Control
+
+This roadmap is maintained in:
+- **File:** `docs/REFINEMENT_ROADMAP.adoc`
+- **Updates:** When phases complete, when risks materialize - **Authority:** Project lead + Formal methods lead
+
+**Status:** ACTIVE PLANNING
+**Last Updated:** 2025-10-30
+**Next Review:** End of Phase 1 (Week 6)
+
+---
+
+## Appendix: Detailed Effort Breakdown
+
+### Phase 1 Detailed Estimate (320 hours)
+
+| Task | Hours | Notes | |------|-------|-------| | Annotate vm.c | 20 | Add REFINEMENT headers | | Stack ops proofs | 40 | push, pop + invariants | | Call/ret proofs | 50 | Pre/post semantics | | Dispatch refactor | 30 | Make provable | | Dispatch proofs | 60 | Case analysis over opcodes | | Testing/validation | 40 | Unit tests, edge cases | | Bug fixes | 40 | Issues found during proof | | Documentation | 20 | CAPA updates, guides | | **TOTAL** | **320** | ~6 weeks at 2 FTE |
+
+### Phase 4 Detailed Estimate (320 hours)
+
+| Batch | Words | Hours | Notes | |-------|-------|-------|-------| | 4.1 | DUP, DROP, SWAP, +, -, *, / | 80 | Core ops, straightforward | | 4.2 | @, !, C@, C!, memory ops | 90 | More complex (addresses) | | 4.3 | IF/ELSE/BEGIN/LOOP | 80 | Hardest (invariants) | | 4.4 | I/O, Physics, misc | 70 | Mixed difficulty | | Overhead | Documentation, reviews | 40 | Cross-cutting | | **TOTAL** | **~200 words** | **320** | ~8 weeks at 2 FTE |
+
+---
+
+Generated: {docdate}

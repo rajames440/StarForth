@@ -1,5 +1,5 @@
 theory Physics_Observation
-  imports Physics_Formal.Physics_StateMachine
+  imports Physics_StateMachine
 begin
 
 section \<open>Observation windows and word metadata\<close>
