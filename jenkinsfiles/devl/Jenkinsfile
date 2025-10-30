@@ -113,17 +113,17 @@ pipeline {
 
 				echo "Stack operations stress test (10M iterations)..."
 				sh '''
-                    /usr/bin/time -v ./build/starforth --benchmark 10000000 --log-none 2>&1 | tee ${LOG_DIR}/bench-stack-torture.log || true
+                    /usr/bin/time -v ./build/starforth -c ": STACK-TORTURE 10000000 0 DO 1 2 3 4 5 DROP DROP DROP DROP DROP LOOP ; STACK-TORTURE BYE" 2>&1 | tee ${LOG_DIR}/bench-stack-torture.log || true
                 '''
 
 				echo "Arithmetic operations stress test (10M iterations)..."
 				sh '''
-                    /usr/bin/time -v ./build/starforth --benchmark 10000000 --log-none 2>&1 | tee ${LOG_DIR}/bench-math-torture.log || true
+                    /usr/bin/time -v ./build/starforth -c ": MATH-TORTURE 10000000 0 DO 123 456 + 789 * 999 / 111 MOD DROP LOOP ; MATH-TORTURE BYE" 2>&1 | tee ${LOG_DIR}/bench-math-torture.log || true
                 '''
 
 				echo "Logic operations stress test (10M iterations)..."
 				sh '''
-                    /usr/bin/time -v ./build/starforth --benchmark 10000000 --log-none 2>&1 | tee ${LOG_DIR}/bench-logic-torture.log || true
+                    /usr/bin/time -v ./build/starforth -c ": LOGIC-TORTURE 10000000 0 DO 255 DUP AND DUP OR DUP XOR NOT DROP DROP LOOP ; LOGIC-TORTURE BYE" 2>&1 | tee ${LOG_DIR}/bench-logic-torture.log || true
                 '''
 			}
 		}
@@ -133,27 +133,27 @@ pipeline {
 				// Run stress tests sequentially to avoid interference
 				echo "Testing deep recursion limits..."
 				sh '''
-                    timeout 300 ./build/starforth --stress-tests --log-none 2>&1 | tee ${LOG_DIR}/stress-recursion.log || echo "Recursion limit reached (expected)"
+                    timeout 300 ./build/starforth -c ": RECURSE DUP 0> IF 1- RECURSE THEN ; 1000 RECURSE BYE" 2>&1 | tee ${LOG_DIR}/stress-recursion.log || echo "Recursion limit reached (expected)"
                 '''
 
 				echo "Testing maximum stack depth..."
 				sh '''
-                    timeout 300 ./build/starforth --stress-tests --log-none 2>&1 | tee ${LOG_DIR}/stress-stack-depth.log || echo "Stack depth limit reached (expected)"
+                    timeout 300 ./build/starforth -c ": STACK-DEPTH 1000 0 DO I LOOP 1000 0 DO DROP LOOP ; STACK-DEPTH BYE" 2>&1 | tee ${LOG_DIR}/stress-stack-depth.log || echo "Stack depth limit reached (expected)"
                 '''
 
 				echo "Testing memory allocation patterns..."
 				sh '''
-                    timeout 300 ./build/starforth --stress-tests --log-none 2>&1 | tee ${LOG_DIR}/stress-memory.log || echo "Memory stress completed/failed"
+                    timeout 300 ./build/starforth -c ": MEM-STRESS 10000 0 DO CREATE HERE 1024 ALLOT DROP LOOP ; MEM-STRESS BYE" 2>&1 | tee ${LOG_DIR}/stress-memory.log || echo "Memory stress completed/failed"
                 '''
 
 				echo "Testing long-running computation stability..."
 				sh '''
-                    timeout 600 ./build/starforth --benchmark 50000000 --log-none 2>&1 | tee ${LOG_DIR}/stress-long-run.log
+                    timeout 600 ./build/starforth -c ": LONG-RUN 50000000 0 DO 2 2 + DROP LOOP ; LONG-RUN BYE" 2>&1 | tee ${LOG_DIR}/stress-long-run.log
                 '''
 
 				echo "Testing deeply nested loops..."
 				sh '''
-                    timeout 300 ./build/starforth --stress-tests --log-none 2>&1 | tee ${LOG_DIR}/stress-nested-loops.log
+                    timeout 300 ./build/starforth -c ": NESTED 1000 0 DO 1000 0 DO 1000 0 DO 1 DROP LOOP LOOP LOOP ; NESTED BYE" 2>&1 | tee ${LOG_DIR}/stress-nested-loops.log
                 '''
 			}
 		}
@@ -174,7 +174,7 @@ pipeline {
                         MONITOR_PID=$!
 
                         # Run sustained benchmark
-                        /usr/bin/time -v ./build/starforth --benchmark 100000000 --log-none 2>&1 | tee ${LOG_DIR}/thermal-test.log || true
+                        /usr/bin/time -v ./build/starforth -c ": THERMAL-TEST 100000000 0 DO 1 2 + DROP LOOP ; THERMAL-TEST BYE" 2>&1 | tee ${LOG_DIR}/thermal-test.log || true
 
                         # Stop monitoring
                         kill $MONITOR_PID || true
@@ -221,22 +221,22 @@ pipeline {
 				// Run edge case tests sequentially to avoid conflicts
 				echo "Testing division by zero handling..."
 				sh '''
-                    echo "Skipping division by zero test (requires -c flag)" 2>&1 | tee ${LOG_DIR}/edge-div-zero.log || echo "Handled division by zero"
+                    ./build/starforth -c "1 0 / BYE" 2>&1 | tee ${LOG_DIR}/edge-div-zero.log || echo "Handled division by zero"
                 '''
 
 				echo "Testing stack underflow handling..."
 				sh '''
-                    echo "Skipping stack underflow test (requires -c flag)" 2>&1 | tee ${LOG_DIR}/edge-stack-underflow.log || echo "Handled stack underflow"
+                    ./build/starforth -c "DROP BYE" 2>&1 | tee ${LOG_DIR}/edge-stack-underflow.log || echo "Handled stack underflow"
                 '''
 
 				echo "Testing stack overflow handling..."
 				sh '''
-                    timeout 60 echo "Skipping stack overflow test (requires -c flag)" 2>&1 | tee ${LOG_DIR}/edge-stack-overflow.log || echo "Handled stack overflow"
+                    timeout 60 ./build/starforth -c ": OVERFLOW BEGIN 1 DUP REPEAT ; OVERFLOW BYE" 2>&1 | tee ${LOG_DIR}/edge-stack-overflow.log || echo "Handled stack overflow"
                 '''
 
 				echo "Testing invalid memory access handling..."
 				sh '''
-                    echo "Skipping invalid memory access test (requires -c flag)" 2>&1 | tee ${LOG_DIR}/edge-invalid-memory.log || echo "Handled invalid memory access"
+                    ./build/starforth -c "999999999 @ BYE" 2>&1 | tee ${LOG_DIR}/edge-invalid-memory.log || echo "Handled invalid memory access"
                 '''
 			}
 		}
@@ -250,14 +250,14 @@ pipeline {
 
                     # Stack operations
                     START=$(date +%s.%N)
-                    ./build/starforth --benchmark 1000000 --log-none || true
+                    ./build/starforth -c ": BENCH 1000000 0 DO 1 2 + DROP LOOP ; BENCH BYE" --log-none
                     END=$(date +%s.%N)
                     DURATION=$(echo "$END - $START" | bc)
                     echo "$(date +%s),stack_ops,1000000,$DURATION" >> ${LOG_DIR}/performance-baseline.csv
 
                     # Arithmetic operations
                     START=$(date +%s.%N)
-                    ./build/starforth --benchmark 1000000 --log-none || true
+                    ./build/starforth -c ": BENCH 1000000 0 DO 10 20 + DROP LOOP ; BENCH BYE" --log-none
                     END=$(date +%s.%N)
                     DURATION=$(echo "$END - $START" | bc)
                     echo "$(date +%s),arithmetic,1000000,$DURATION" >> ${LOG_DIR}/performance-baseline.csv
@@ -286,15 +286,14 @@ pipeline {
 			}
 		}
 
-		
-	stage('🔬 Formal Verification & Isabelle Theories') {
-		steps {
-			echo "════════════════════════════════════════════════════════════"
-			echo "  🔬 Running Formal Verification & Isabelle Theory Build"
-			echo "════════════════════════════════════════════════════════════"
+		stage('🔬 Formal Verification & Isabelle Theories') {
+			steps {
+				echo "════════════════════════════════════════════════════════════"
+				echo "  🔬 Running Formal Verification & Isabelle Theory Build"
+				echo "════════════════════════════════════════════════════════════"
 
-			// Check if Isabelle is available
-			sh '''
+				// Check if Isabelle is available
+				sh '''
                     if command -v isabelle &> /dev/null; then
                         echo "✅ Isabelle found: $(isabelle version 2>&1 | head -1)"
                     else
@@ -304,8 +303,8 @@ pipeline {
                     fi
                 '''
 
-			// Generate comprehensive Isabelle documentation (audit mode - never fails)
-			sh '''
+				// Generate comprehensive Isabelle documentation (audit mode - never fails)
+				sh '''
                     echo "Step 1: Building Isabelle theories (audit mode)..."
                     make docs-isabelle 2>&1 | tee ${LOG_DIR}/isabelle-build.log || echo "⚠️  Some theories incomplete (see build.log)"
 
@@ -315,8 +314,8 @@ pipeline {
                     fi
                 '''
 
-			// Refinement verification status
-			sh '''
+				// Refinement verification status
+				sh '''
                     echo "Step 2: Checking refinement status..."
                     if [ -f docs/REFINEMENT_CAPA.adoc ]; then
                         echo "Refinement tracking document exists"
@@ -327,14 +326,14 @@ pipeline {
                     fi
                 '''
 
-			// Code annotation validation
-			sh '''
+				// Code annotation validation
+				sh '''
                     echo "Step 3: Validating code annotations..."
                     make refinement-annotate-check 2>&1 | tee ${LOG_DIR}/annotation-check.log || true
                 '''
 
-			// Generate refinement report
-			sh '''
+				// Generate refinement report
+				sh '''
                     echo "Step 4: Generating refinement report..."
                     make refinement-report 2>&1 | tee ${LOG_DIR}/refinement-report.log || true
                     if [ -f docs/reports/refinement-status.md ]; then
@@ -342,8 +341,8 @@ pipeline {
                     fi
                 '''
 
-			// Archive all formal verification artifacts
-			sh '''
+				// Archive all formal verification artifacts
+				sh '''
                     echo "Step 5: Archiving formal verification artifacts..."
                     if [ -f docs/REFINEMENT_ANNOTATIONS.adoc ]; then
                         cp docs/REFINEMENT_ANNOTATIONS.adoc ${ARTIFACT_DIR}/
@@ -352,15 +351,15 @@ pipeline {
                         cp docs/REFINEMENT_ROADMAP.adoc ${ARTIFACT_DIR}/
                     fi
                 '''
+			}
 		}
-	}
 
-	stage('📚 Documentation Build') {
-		steps {
-			echo "Generating all documentation (API, Isabelle, LaTeX)..."
+		stage('📚 Documentation Build') {
+			steps {
+				echo "Generating all documentation (API, Isabelle, LaTeX)..."
 
-			// Build all documentation
-			sh '''
+				// Build all documentation
+				sh '''
                     echo "Building API documentation..."
                     make api-docs 2>&1 | tee ${LOG_DIR}/api-docs-build.log || echo "⚠️  API docs build had issues"
 
@@ -375,20 +374,20 @@ pipeline {
                         cp -r docs/latex ${ARTIFACT_DIR}/latex-docs || true
                     fi
                 '''
+			}
 		}
-	}
 
-	stage('📦 Package Build (DEB & RPM)') {
-		steps {
-			echo "════════════════════════════════════════════════════════════"
-			echo "  📦 Building Distribution Packages"
-			echo "════════════════════════════════════════════════════════════"
+		stage('📦 Package Build (DEB & RPM)') {
+			steps {
+				echo "════════════════════════════════════════════════════════════"
+				echo "  📦 Building Distribution Packages"
+				echo "════════════════════════════════════════════════════════════"
 
-			// Ensure we have a clean optimized build
-			sh 'make clean && make fastest 2>&1 | tee ${LOG_DIR}/package-build.log'
+				// Ensure we have a clean optimized build
+				sh 'make clean && make fastest 2>&1 | tee ${LOG_DIR}/package-build.log'
 
-			// Build DEB package
-			sh '''
+				// Build DEB package
+				sh '''
                     echo "Building Debian package..."
                     if command -v fpm &> /dev/null; then
                         make deb 2>&1 | tee ${LOG_DIR}/deb-build.log
@@ -402,8 +401,8 @@ pipeline {
                     fi
                 '''
 
-			// Build RPM package
-			sh '''
+				// Build RPM package
+				sh '''
                     echo "Building RPM package..."
                     if command -v fpm &> /dev/null; then
                         make rpm 2>&1 | tee ${LOG_DIR}/rpm-build.log
@@ -415,10 +414,10 @@ pipeline {
                         echo "⚠️  fpm not found - skipping RPM build"
                     fi
                 '''
+			}
 		}
-	}
 
-stage('📋 Generate Test Report') {
+		stage('📋 Generate Test Report') {
 			steps {
 				echo "Generating comprehensive test report..."
 				sh '''
