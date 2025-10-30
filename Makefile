@@ -515,19 +515,21 @@ docs-isabelle:
 # Refinement status dashboard
 refinement-status:
 	@echo "════════════════════════════════════════════════════════════"
-	@echo "  🔍 StarForth C ⊑ Isabelle Refinement Status"
+	@echo "  StarForth C ⊑ Isabelle Refinement Status"
 	@echo "════════════════════════════════════════════════════════════"
 	@echo ""
 	@if [ ! -f docs/REFINEMENT_CAPA.adoc ]; then \
-		echo "⚠️  No REFINEMENT_CAPA.adoc found. Create with: make refinement-init"; \
-		exit 1; \
+		echo "⚠️  No REFINEMENT_CAPA.adoc found. Initialize with: make refinement-init"; \
+		echo ""; \
+		echo "Refinement infrastructure status: UNINITIALIZED"; \
+	else \
+		echo "📋 Defect Summary:"; \
+		echo ""; \
+		echo -n "  Total Defects:    "; grep -c "^== DEFECT-" docs/REFINEMENT_CAPA.adoc || echo "0"; \
+		echo -n "  OPEN:             "; grep "| OPEN" docs/REFINEMENT_CAPA.adoc | wc -l; \
+		echo -n "  IN-PROGRESS:      "; grep "| IN-PROGRESS" docs/REFINEMENT_CAPA.adoc | wc -l; \
+		echo -n "  CLOSED:           "; grep "| CLOSED" docs/REFINEMENT_CAPA.adoc | wc -l; \
 	fi
-	@echo "📋 Defect Summary:"
-	@echo ""
-	@echo -n "  Total Defects:    "; grep -c "^== DEFECT-" docs/REFINEMENT_CAPA.adoc || echo "0"
-	@echo -n "  OPEN:             "; grep "Status. | OPEN" docs/REFINEMENT_CAPA.adoc | wc -l
-	@echo -n "  IN-PROGRESS:      "; grep "Status. | IN-PROGRESS" docs/REFINEMENT_CAPA.adoc | wc -l
-	@echo -n "  CLOSED:           "; grep "Status. | CLOSED" docs/REFINEMENT_CAPA.adoc | wc -l
 	@echo ""
 	@echo "🏆 Phase Status:"
 	@echo "  Phase 1: vm.c core .............. NOT STARTED"
