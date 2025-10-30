@@ -398,7 +398,7 @@ pipeline {
                     # Extract version from binary or VERSION file
                     VERSION="2.0.0"
                     if [ -f build/starforth ]; then
-                        VERSION=$(./build/starforth --help 2>&1 | grep -o '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*' | head -1 || echo "2.0.0")
+                        VERSION=$(./build/starforth --help 2>&1 | grep -o '[0-9]*\\.[0-9]*\\.[0-9]*' | head -1 || echo "2.0.0")
                     fi
                     echo "Detected version: $VERSION"
 
@@ -450,7 +450,7 @@ pipeline {
                     if [ -f build/starforth ]; then
                         # Extract version from binary or VERSION file
                         VERSION="2.0.0"
-                        VERSION=$(./build/starforth --help 2>&1 | grep -o '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*' | head -1 || echo "2.0.0")
+                        VERSION=$(./build/starforth --help 2>&1 | grep -o '[0-9]*\\.[0-9]*\\.[0-9]*' | head -1 || echo "2.0.0")
                         echo "Detected version: $VERSION"
 
                         # Build ARM DEB package with architecture and version
