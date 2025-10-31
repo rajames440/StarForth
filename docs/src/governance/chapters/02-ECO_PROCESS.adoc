@@ -1,0 +1,463 @@
+////
+Engineering Change Order (ECO) Process
+
+Document Metadata:
+- Document ID: 02-ECO_PROCESS
+- Version: 1.0.0
+- Created: 2025-10-30T00:00:00Z
+- Purpose: Define ECO approval and backlog entry workflow
+- Scope: ECO creation, PM approval gate, FMEA decision, backlog entry
+- Document Type: Process Definition
+- Part of: GOVERNANCE_REFERENCE_MANUAL.adoc (Chapter 2)
+////
+
+= Chapter 2: Engineering Change Order (ECO) Process
+
+**Document ID:** 02-ECO_PROCESS
+**Version:** 1.0.0
+**Status:** Active
+**Last Updated:** October 30, 2025
+**Owner:** Robert A. James (PM)
+
+---
+
+== Chapter Overview
+
+An **Engineering Change Order (ECO)** is the formal approval record that converts an approved **ECR** into a backlog item ready for implementation. ECO is where:
+- PM approves feature for implementation
+- FMEA decision is made (if applicable)
+- Feature is assigned to backlog with priority
+- Developer begins implementation work
+
+**Key Distinction:**
+- **ECR** = "Should we do this?" (PM evaluation)
+- **ECO** = "Yes, we're doing this. Here are the constraints." (PM approval + conditions)
+
+---
+
+== ECO Lifecycle
+
+```
+ECR-2025-001 (APPROVED)
+    ↓
+┌─────────────────────────────────────┐
+│ STEP 1: CREATE ECO ISSUE            │
+│ PM creates ECO-2025-001              │
+│ • Links to ECR-2025-001              │
+│ • Adds conditions/constraints         │
+│ • Determines FMEA requirement        │
+│ Status: CREATED                     │
+└────────────┬────────────────────────┘
+             │
+┌────────────▼────────────────────────┐
+│ STEP 2: FMEA DECISION GATE          │
+│ PM reviews risk classification      │
+│ • No FMEA: Low-risk features       │
+│ • Optional FMEA: Medium risk        │
+│ • Required FMEA: High-risk features │
+│ Status: FMEA_DECIDED               │
+└────────────┬────────────────────────┘
+             │
+    ┌────────┴────────┐
+    │                 │
+   LOW/MED           HIGH
+   (Optional FMEA)   (Required FMEA)
+    │                 │
+    │          ┌──────▼───────┐
+    │          │ QA CONDUCTS  │
+    │          │ FMEA         │
+    │          │              │
+    │          │ See Chapter 4│
+    │          │ (FMEA_PROCESS)
+    │          │              │
+    │          └──────┬───────┘
+    │                 │
+┌───┴─────────────────▼──────┐
+│ STEP 3: ADD TO BACKLOG     │
+│ • Set priority             │
+│ • Ready for sprint         │
+│ • Wait for developer       │
+│ Status: BACKLOG_READY      │
+└────────────┬───────────────┘
+             │
+┌────────────▼───────────────────┐
+│ STEP 4: IMPLEMENTATION         │
+│ Developer creates PR           │
+│ • References ECO-2025-001      │
+│ • Implements feature           │
+│ • Adds tests, proofs           │
+│ Status: IN_IMPLEMENTATION      │
+└────────────┬───────────────────┘
+             │
+      [See Chapter 3: CAPA_PROCESS.adoc for defect fixes]
+             │
+┌────────────▼───────────────────┐
+│ STEP 5: RELEASED              │
+│ • Merged to master            │
+│ • Version tagged              │
+│ • Users can access feature    │
+│ Status: RELEASED              │
+└────────────────────────────────┘
+```
+
+---
+
+== ECO Creation (PM Action)
+
+When PM approves an ECR, immediately create a new GitHub issue:
+
+=== ECO Issue Template
+
+```markdown
+## ECO-YYYY-###: {Feature Name} - Engineering Change Order
+
+### 1. Related ECR
+Closes: ECR-YYYY-###
+
+### 2. What Will Be Implemented
+Copy/refine the acceptance criteria from ECR:
+- [ ] Acceptance criterion 1
+- [ ] Acceptance criterion 2
+- [ ] Acceptance criterion 3
+
+### 3. Implementation Constraints
+Any specific requirements or constraints:
+- Must maintain ≥85% test coverage
+- Must include formal Isabelle proof (if applicable)
+- No breaking changes to FORTH-79 core words
+- Must pass security review
+
+### 4. FMEA Decision
+Risk assessment (PM determined):
+- [ ] LOW RISK - No FMEA required
+- [ ] MEDIUM RISK - Optional FMEA (brief risk assessment)
+- [ ] HIGH RISK - FMEA REQUIRED (formal analysis by QA)
+
+### 5. Backlog Priority
+- [ ] Critical (blocks release)
+- [ ] High (next sprint)
+- [ ] Medium (within quarter)
+- [ ] Low (future consideration)
+
+### 6. Effort Estimate (Refined)
+Developer will refine this estimate:
+- Small (< 1 day)
+- Medium (1-3 days)
+- Large (> 3 days)
+
+### 7. Success Criteria
+Feature is "done" when:
+- All acceptance criteria met
+- ≥85% code coverage maintained
+- All tests pass (devL → test → qual)
+- 100% Isabelle proofs (if applicable)
+- Security review passed
+- Documentation updated
+
+### 8. Follow-Up Process
+- Implementation: Developer creates PR (references ECO-YYYY-###)
+- Testing: GitHub Actions validates (devL → test → qual)
+- Release: PM approves when ready; merged to master
+- Closure: ECO closed when released to users
+```
+
+=== ECO Naming Convention
+
+**GitHub Issue:** ECO-YYYY-### (PM assigns, sequential numbering)
+
+Example: `ECO-2025-001: Implement MYWORD Arithmetic Operation`
+
+---
+
+== FMEA Decision Matrix
+
+When creating ECO, PM uses this matrix to decide if FMEA is required:
+
+[cols="1,2,3,2"]
+|===
+|Risk Level |Examples |Decision |Process
+
+|**LOW RISK** |Documentation, test additions, simple refactoring |NO FMEA |Add to backlog; proceed with implementation
+|**MEDIUM RISK** |Standard algorithm, feature in safe area, medium complexity |OPTIONAL FMEA |Brief risk assessment; proceed if acceptable
+|**HIGH RISK** |Memory ops, security-sensitive, complex algorithm, verified code changes |REQUIRED FMEA |QA must conduct formal FMEA before implementation
+|===
+
+=== Risk Scoring Guidance
+
+**Triggers for MEDIUM/HIGH RISK:**
+
+[cols="1,3,2"]
+|===
+|Factor |Description |Risk Level
+
+|Cyclomatic Complexity |>10 per function (complex logic) |MEDIUM → HIGH
+|Memory Operations |Touches @, !, ERASE (memory access) |MEDIUM → HIGH
+|Security Sensitivity |Input validation, state manipulation |MEDIUM → HIGH
+|Verified Code Change |Modifies formally-verified FORTH-79 word |MEDIUM → HIGH
+|Backward Compatibility |Changes existing behavior |MEDIUM
+|Performance Impact |New algorithm or data structure |LOW → MEDIUM
+|Test Coverage |New code <50% coverage initially |MEDIUM
+|===
+
+=== FMEA Decision Example
+
+**ECO: Add MYWORD Arithmetic Operation**
+
+```
+FMEA Risk Assessment:
+  - Cyclomatic complexity: 6 (moderate)
+  - Memory access: None (pure stack operation)
+  - Security: Input range validation needed (medium)
+  - Verified code: Yes, affects arithmetic lemmas (high)
+  - Backward compat: No change (low)
+  - Performance: <5% impact (low)
+
+Verdict: MEDIUM RISK
+- Touches verified code (stack semantics)
+- Standard arithmetic algorithm (not novel)
+- Well-defined acceptance criteria
+- Previous similar words validated
+
+Decision: Optional FMEA (brief risk assessment sufficient)
+QA Action: Document risk assessment in CAPA or ECO comments
+```
+
+---
+
+== PM Approval Checklist
+
+Before adding ECO to backlog:
+
+```
+ECO APPROVAL CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+ECO: ECO-2025-001
+PM: Robert A. James
+Date: {Date}
+
+LINKAGE
+☐ Related ECR identified (ECR-YYYY-###)
+☐ ECR was approved (PM verified)
+☐ ECR link added to ECO issue
+
+SPECIFICATIONS
+☐ Acceptance criteria clear and testable
+☐ No conflicting requirements
+☐ Implementation constraints documented
+☐ Success criteria measurable
+
+QUALITY ALIGNMENT
+☐ Feature aligns with QUALITY_POLICY.adoc objectives
+☐ Will maintain ≥99% test pass rate
+☐ Will maintain ≥85% code coverage
+☐ No foreseeable security risks
+☐ No performance regression >10%
+
+FMEA DECISION
+☐ Risk level assigned (LOW/MEDIUM/HIGH)
+☐ FMEA requirement determined
+☐ If HIGH RISK: FMEA scheduled with QA
+☐ If MEDIUM RISK: Brief risk assessment noted
+☐ If LOW RISK: Proceed without FMEA
+
+BACKLOG READINESS
+☐ Priority assigned (Critical/High/Medium/Low)
+☐ Effort estimate provided (refined estimate)
+☐ No blocking dependencies
+☐ Resources available for implementation
+
+APPROVAL
+☐ All checks passed
+☐ Feature ready for implementation
+
+PM Signature: Robert A. James
+Date: {Date}
+═══════════════════════════════════════════════════════════════
+```
+
+---
+
+== Backlog Entry & Priority Management
+
+Once ECO is approved, add to backlog using this structure:
+
+=== Backlog Priority Levels
+
+[cols="1,2,3,2"]
+|===
+|Priority |Definition |Action |Timeline
+
+|**CRITICAL** |Blocks release, security fix, P0 bug |Implement immediately |Next sprint
+|**HIGH** |Next planned feature, user demand |Schedule for sprint |1-2 sprints
+|**MEDIUM** |Planned feature, enhancement |Schedule for quarter |2-4 sprints
+|**LOW** |Future enhancement, nice-to-have |Consider for next cycle |TBD
+|===
+
+=== Backlog Management Process
+
+1. **Backlog View** (in GitHub Projects/Kanban)
+   ```
+   Column: "Backlog (Ready for Dev)"
+   │
+   ├─ ECO-2025-001: MYWORD arithmetic (HIGH)
+   ├─ ECO-2025-002: Block storage optimization (MEDIUM)
+   ├─ ECO-2025-003: Documentation update (LOW)
+   │
+   Ordering: CRITICAL → HIGH → MEDIUM → LOW
+   ```
+
+2. **Sprint Selection** (Next sprint planning)
+   - PM selects next ECO from Backlog
+   - Assign to developer
+   - Move to "In Progress" column
+   - Developer begins implementation
+
+3. **Implementation** (Developer work)
+   - Create feature branch: `feature/eco-2025-001`
+   - Implement per acceptance criteria
+   - Add tests (maintain ≥85% coverage)
+   - Add formal proofs (if verified code)
+   - Create PR linked to ECO
+
+4. **Release** (After all stages pass)
+   - PM approves release (1-day SLA)
+   - Tag version in git
+   - Update release notes
+   - Close ECO issue
+
+---
+
+== ECO → Development Workflow
+
+When developer starts work on ECO:
+
+```
+ECO-2025-001 (In Backlog)
+    ↓ (PM assigns to developer)
+Developer: git checkout -b feature/eco-2025-001
+    ↓
+Implement feature per acceptance criteria
+    ↓
+Add/update tests (maintain ≥85% coverage)
+    ↓
+Add/update Isabelle proofs (if applicable)
+    ↓
+Developer: git push origin feature/eco-2025-001
+    ↓
+Create PR on GitHub:
+  - Title: "ECO-2025-001: Implement MYWORD arithmetic"
+  - Description: Links to ECO issue (Closes ECO-2025-001)
+  - References acceptance criteria from ECO
+    ↓
+GitHub Actions runs:
+  - devL stage: Build + smoke test
+  - test stage: Full test suite + coverage
+  - qual stage: Formal verification
+    ↓
+All stages PASS?
+  ├─ YES: PR ready for QA/PM review
+  └─ NO: Developer fixes and re-tests
+    ↓
+QA reviews PR (FMEA if required in ECO)
+    ↓
+PM approves release (1-day SLA)
+    ↓
+PR merged to master (prod pipeline runs)
+    ↓
+Feature released to users
+    ↓
+ECO-2025-001 marked CLOSED
+```
+
+See **Chapter 3: CAPA_PROCESS.adoc** for defect handling during implementation.
+
+---
+
+== High-Risk FMEA Workflow
+
+If ECO is marked HIGH RISK, FMEA is required:
+
+```
+ECO-2025-001: MARKED HIGH RISK
+    ↓
+PM notifies QA: "FMEA required"
+    ↓
+QA creates FMEA issue (FMEA-2025-001)
+  - Links to ECO-2025-001
+  - Documents failure modes
+  - Identifies controls/mitigations
+    ↓
+[See Chapter 4: FMEA_PROCESS.adoc]
+    ↓
+FMEA completed and signed off
+    ↓
+Implementation proceeds (developer can now start)
+    ↓
+Development, testing, release
+```
+
+---
+
+== ECO Closure
+
+ECO is closed when:
+
+1. **Feature Released** (Primary closure)
+   - PR merged to master
+   - Version tagged
+   - Users can access feature
+   - **Action:** PM closes ECO issue with comment:
+     ```
+     ✅ RELEASED in v2.0.2
+
+     Feature implemented, tested, and released to users.
+     See https://github.com/rajames440/StarForth/releases/tag/v2.0.2
+     ```
+
+2. **Deferred/Cancelled** (Secondary closure)
+   - If feature is deferred to future release
+   - If feature is cancelled
+   - **Action:** PM closes ECO with comment:
+     ```
+     ❌ DEFERRED to Phase 2
+
+     Reason: Depends on seL4 port (Phase 2 requirement).
+     Will re-open ECO-YYYY-### when Phase 2 begins.
+     ```
+
+---
+
+== Compliance References
+
+This ECO process aligns with:
+
+- **ISO 9001:2015** § 8.3 (Control of externally provided processes)
+- **ISO/IEC 12207:2017** § 6.3 (Development process)
+- **IEC 62304:2015** § 7.1 (Software development planning)
+
+---
+
+== Change History
+
+[cols="1,2,3"]
+|===
+|Version |Date |Changes
+
+|1.0.0 |2025-10-30 |Initial ECO process with PM approval gate, FMEA decision matrix, backlog management, and closure procedures
+|===
+
+---
+
+**Next:** Chapter 3 - CAPA_PROCESS.adoc (Defect tracking and fixes)
+
+**Related:**
+- Chapter 1 - ECR_PROCESS.adoc - ECR submission and approval
+- Chapter 4 - FMEA_PROCESS.adoc - Formal failure analysis (if HIGH RISK)
+- QUALITY_POLICY.adoc - Quality objectives ECOs must support
+
+---
+
+**Maintained by:** Robert A. James (PM)
+**Last Updated:** October 30, 2025
+**Status:** ACTIVE - Ready for immediate use

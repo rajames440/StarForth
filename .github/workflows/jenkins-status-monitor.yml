@@ -1,0 +1,182 @@
+name: Monitor Jenkins Pipeline Status
+
+# Runs on schedule OR manual trigger to check pipeline progress
+on:
+  schedule:
+    # Check every 10 minutes during business hours (optional - uncomment to enable)
+    # - cron: '*/10 9-18 * * 1-5'  # 9 AM - 6 PM, Mon-Fri
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Optional: PR number to check (auto-finds if not provided)'
+        required: false
+        type: string
+
+jobs:
+  check-jenkins-status:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Find Active PR on devl
+        id: find-pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // If PR number provided as input, use it
+            const inputPR = '${{ inputs.pr_number }}';
+            if (inputPR && inputPR !== '') {
+              console.log(`Using provided PR: ${inputPR}`);
+              return inputPR;
+            }
+
+            // Otherwise, find the most recent open PR against devl
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              base: 'devl',
+              sort: 'updated',
+              direction: 'desc',
+              per_page: 1
+            });
+
+            if (prs.data.length === 0) {
+              console.log('No open PRs found against devl - checking closed PRs with devl pushes');
+              return null;
+            }
+
+            const prNum = prs.data[0].number;
+            console.log(`Found active PR: #${prNum}`);
+            return prNum;
+
+      - name: Query Jenkins API for Build Status
+        id: jenkins-status
+        env:
+          JENKINS_URL: ${{ secrets.JENKINS_URL }}
+          JENKINS_USER: ${{ secrets.JENKINS_USER }}
+          JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+        run: |
+          # Check if Jenkins credentials are configured
+          if [ -z "$JENKINS_URL" ] || [ -z "$JENKINS_USER" ] || [ -z "$JENKINS_TOKEN" ]; then
+            echo "❌ Jenkins credentials not configured in GitHub Secrets"
+            echo "Configure JENKINS_URL, JENKINS_USER, JENKINS_TOKEN in repo settings"
+            exit 1
+          fi
+
+          # Query Jenkins API for each job
+          echo "🔍 Checking Jenkins pipeline status..."
+
+          # Function to get job status
+          get_job_status() {
+            local job_name=$1
+            local api_url="${JENKINS_URL}/job/${job_name}/lastBuild/api/json"
+
+            local response=$(curl -s -u "${JENKINS_USER}:${JENKINS_TOKEN}" "$api_url" 2>/dev/null || echo '{}')
+
+            # Extract result and building status
+            local result=$(echo "$response" | grep -o '"result":"[^"]*' | cut -d'"' -f4 || echo "UNKNOWN")
+            local building=$(echo "$response" | grep -o '"building":[a-z]*' | cut -d':' -f2 || echo "unknown")
+            local display_name=$(echo "$response" | grep -o '"displayName":"[^"]*' | cut -d'"' -f4 || echo "N/A")
+            local duration=$(echo "$response" | grep -o '"duration":[0-9]*' | cut -d':' -f2 || echo "0")
+
+            # Convert duration to seconds
+            local duration_sec=$((duration / 1000))
+
+            echo "RESULT=$result"
+            echo "BUILDING=$building"
+            echo "DISPLAY=$display_name"
+            echo "DURATION=$duration_sec"
+          }
+
+          # Check devl job
+          echo "📦 DevL Job:"
+          eval "$(get_job_status 'starforth-devl')"
+          DEVL_STATUS=$RESULT
+          DEVL_BUILDING=$BUILDING
+
+          # Check test job
+          echo "🧪 Test Job:"
+          eval "$(get_job_status 'starforth-test')"
+          TEST_STATUS=$RESULT
+          TEST_BUILDING=$BUILDING
+
+          # Check qual job
+          echo "✅ Qual Job:"
+          eval "$(get_job_status 'starforth-qual')"
+          QUAL_STATUS=$RESULT
+          QUAL_BUILDING=$BUILDING
+
+          # Export for next step
+          echo "devl_status=$DEVL_STATUS" >> $GITHUB_OUTPUT
+          echo "devl_building=$DEVL_BUILDING" >> $GITHUB_OUTPUT
+          echo "test_status=$TEST_STATUS" >> $GITHUB_OUTPUT
+          echo "test_building=$TEST_BUILDING" >> $GITHUB_OUTPUT
+          echo "qual_status=$QUAL_STATUS" >> $GITHUB_OUTPUT
+          echo "qual_building=$QUAL_BUILDING" >> $GITHUB_OUTPUT
+
+      - name: Post Pipeline Status to PR
+        if: steps.find-pr.outputs.result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = '${{ steps.find-pr.outputs.result }}';
+            const devlStatus = '${{ steps.jenkins-status.outputs.devl_status }}';
+            const devlBuilding = '${{ steps.jenkins-status.outputs.devl_building }}';
+            const testStatus = '${{ steps.jenkins-status.outputs.test_status }}';
+            const testBuilding = '${{ steps.jenkins-status.outputs.test_building }}';
+            const qualStatus = '${{ steps.jenkins-status.outputs.qual_status }}';
+            const qualBuilding = '${{ steps.jenkins-status.outputs.qual_building }}';
+
+            // Helper to get emoji and status
+            const getStatusEmoji = (status, building) => {
+              if (building === 'true') return '🔨 **BUILDING**';
+              if (status === 'SUCCESS') return '✅ **PASSED**';
+              if (status === 'FAILURE') return '❌ **FAILED**';
+              if (status === 'UNSTABLE') return '⚠️ **UNSTABLE**';
+              if (status === 'ABORTED') return '⏸️ **ABORTED**';
+              if (status === 'UNKNOWN') return '❓ **PENDING**';
+              return '⏳ **NOT STARTED**';
+            };
+
+            const statusMsg = `### 📊 Pipeline Status Update
+
+**DevL Job:** ${getStatusEmoji(devlStatus, devlBuilding)}
+**Test Job:** ${getStatusEmoji(testStatus, testBuilding)}
+**Qual Job:** ${getStatusEmoji(qualStatus, qualBuilding)}
+
+**Pipeline Progression:**
+1. DevL (Build + Smoke) → ${devlStatus === 'SUCCESS' ? '✅' : '⏳'}
+2. Test (Full Suite) → ${testStatus === 'SUCCESS' ? '✅' : '⏳'}
+3. Qual (Formal Verify) → ${qualStatus === 'SUCCESS' ? '✅' : '⏳'}
+4. Prod (Release) → Ready for PM approval
+
+**Last Updated:** ${new Date().toISOString()}
+
+[🔗 View in Jenkins](${{ secrets.JENKINS_URL }}/job/starforth-devl/)`;
+
+            // Post comment to PR
+            try {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(prNumber),
+                body: statusMsg
+              });
+              console.log(`✅ Posted status comment to PR #${prNumber}`);
+            } catch (error) {
+              console.log(`⚠️ Could not post to PR #${prNumber}: ${error.message}`);
+              console.log('This may be normal if PR was already closed/merged');
+            }
+
+      - name: No Active PR Found
+        if: '!steps.find-pr.outputs.result'
+        run: |
+          echo "ℹ️ No active PR found on devl branch"
+          echo "Status check skipped (no PR to update)"

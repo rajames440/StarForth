@@ -1,0 +1,54 @@
+name: PR→DevL: Auto-merge and trigger Jenkins pipeline
+
+# Triggers when PR is CLOSED (merged) against devl branch
+# This ensures the PR is actually merged before we trigger Jenkins
+on:
+  pull_request:
+    branches:
+      - devl
+    types:
+      - closed
+
+jobs:
+  auto-merge-to-devl:
+    # Only run if PR was actually merged (not just closed)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: devl
+
+      - name: Configure Git
+        run: |
+          git config user.email "github-actions[bot]@github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Comment PR - Pipeline Starting
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ **PR Merged to DevL**\n\n⏳ Jenkins DevL pipeline will auto-trigger via webhook...\n\n**Pipeline Timeline (auto-merge enabled):**\n1. **DevL** (~5 min): Build + Smoke Test\n   → On success: Auto-merge to **test** branch\n2. **Test** (~20 min): Full test suite + benchmarks\n   → On success: Auto-merge to **qual** branch\n3. **Qual** (~25 min): Formal verification + CAPAs\n   → On success: Ready for PM approval\n4. **PM Approval** (manual): Release decision\n5. **Prod** (~2 min): Tag release, merge to master\n\n**Total time:** ~55 minutes (if all stages pass)\n\n🔗 [View in Jenkins](https://your-jenkins-url/job/starforth-devl/)'
+            })
+
+      - name: Ensure devl is up to date
+        run: |
+          git fetch origin
+          git merge origin/devl --no-edit || echo "Already up to date"
+          git log --oneline -3
+
+      - name: Success notification
+        run: |
+          echo "✅ PR merged to devl branch"
+          echo "Jenkins webhook should trigger automatically on this push"
+          echo "Monitor progress in Jenkins UI"

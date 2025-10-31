@@ -1,0 +1,343 @@
+////
+QA FMEA Decision Checklist Template
+
+Document Metadata:
+- Document ID: 08-QA_CHECKLIST_TEMPLATE
+- Version: 1.0.0
+- Created: 2025-10-30T00:00:00Z
+- Purpose: QA decision checklist for determining if FMEA is required
+- Scope: Reusable checklist for FMEA risk assessment
+- Document Type: Template
+- Part of: GOVERNANCE_REFERENCE_MANUAL.adoc (Chapter 8)
+////
+
+= Chapter 8: QA FMEA Decision Checklist Template
+
+**Document ID:** 08-QA_CHECKLIST_TEMPLATE
+**Version:** 1.0.0
+**Status:** Active
+**Last Updated:** October 30, 2025
+**Owner:** Robert A. James (QA)
+
+---
+
+== QA FMEA Decision Checklist
+
+Use this checklist to decide if CAPA or ECO requires formal FMEA analysis.
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ QA FMEA DECISION CHECKLIST                                      │
+├────────────────────────────────────────────────────────────────┤
+
+Issue:         CAPA #NNN or ECO-YYYY-###
+Title:         {Brief description}
+QA Lead:       Robert A. James
+Decision Date: {Date}
+
+════════════════════════════════════════════════════════════════
+
+FMEA RISK ASSESSMENT QUESTIONNAIRE
+──────────────────────────────────────────────────────────────────
+
+Answer these 8 questions. High "YES" count → HIGH RISK → FMEA REQUIRED
+
+QUESTION 1: Verified Code Impact
+─────────────────────────────────
+Does this change affect formally-verified code?
+  ☐ YES - Touches Isabelle-proven FORTH-79 words
+  ☐ YES - Modifies memory operations (@, !, ERASE)
+  ☐ YES - Changes stack semantics or invariants
+  ☐ NO  - Only affects unverified code
+
+Count YES: {0-3}
+
+QUESTION 2: Complexity
+─────────────────────
+Is the implementation complex?
+  ☐ YES - Cyclomatic complexity expected >10
+  ☐ YES - New algorithm (not standard pattern)
+  ☐ YES - Multi-function interdependency
+  ☐ NO  - Simple, straightforward change
+
+Count YES: {0-3}
+
+QUESTION 3: Memory Operations
+──────────────────────────────
+Does this involve memory access?
+  ☐ YES - Buffer operations, allocation, pointers
+  ☐ YES - Stack manipulation, unsafe operations
+  ☐ YES - Resource management (cleanup required)
+  ☐ NO  - Purely computational, no memory access
+
+Count YES: {0-3}
+
+QUESTION 4: Security Sensitivity
+─────────────────────────────────
+Is this security-sensitive?
+  ☐ YES - Input validation required
+  ☐ YES - Privilege/access control involved
+  ☐ YES - Could impact confidentiality/integrity
+  ☐ NO  - No security concerns
+
+Count YES: {0-3}
+
+QUESTION 5: Systemic Risk
+──────────────────────────
+Could this problem occur elsewhere?
+  ☐ YES - Same issue likely in other code paths
+  ☐ YES - Systemic problem (affects architecture)
+  ☐ YES - Suggests need for pattern-wide fix
+  ☐ NO  - Isolated to single location
+
+Count YES: {0-3}
+
+QUESTION 6: Test Coverage
+─────────────────────────
+Is test coverage adequate?
+  ☐ YES - New code initially <50% coverage
+  ☐ YES - Difficult to test edge cases
+  ☐ YES - Previous similar code had issues
+  ☐ NO  - Well-covered, standard patterns
+
+Count YES: {0-3}
+
+QUESTION 7: Severity Assessment
+────────────────────────────────
+What is the potential impact if something goes wrong?
+  ☐ YES - CRITICAL (crash, data loss, security)
+  ☐ YES - MAJOR (feature broken, significant pain)
+  ☐ YES - Data corruption potential
+  ☐ NO  - MINOR (user workaround exists)
+
+Count YES: {0-3}
+
+QUESTION 8: Historical Pattern
+───────────────────────────────
+Has similar code caused issues before?
+  ☐ YES - Previous CAPAs in same code area
+  ☐ YES - Known difficult code to maintain
+  ☐ YES - High bug count relative to lines
+  ☐ NO  - Stable, well-tested code area
+
+Count YES: {0-3}
+
+════════════════════════════════════════════════════════════════
+
+RISK SCORING
+──────────────────────────────────────────────────────────────────
+
+Total "YES" count: {Sum of all questions}
+
+Risk Level:
+  ☐ 0-2 YES → LOW RISK
+  ☐ 3-5 YES → MEDIUM RISK
+  ☐ 6-8 YES → HIGH RISK
+
+════════════════════════════════════════════════════════════════
+
+FMEA REQUIREMENT DECISION
+──────────────────────────────────────────────────────────────────
+
+Based on risk level:
+
+If LOW RISK (0-2 YES):
+  ☐ NO FMEA REQUIRED
+  Rationale: Simple change, low complexity, limited impact
+  Next step: Proceed to release approval
+
+If MEDIUM RISK (3-5 YES):
+  ☐ OPTIONAL FMEA - Brief risk assessment
+  Rationale: Moderate risk, consider brief analysis
+  Options:
+    ☐ Brief risk assessment (30 min document)
+    ☐ Skip FMEA, proceed with enhanced testing
+  Your choice: {Brief or Skip}
+  Next step: Proceed to release approval
+
+If HIGH RISK (6-8 YES):
+  ☐ FMEA REQUIRED - Formal analysis
+  Rationale: Complex change with significant potential impact
+  Action: Schedule formal FMEA workshop
+  Timeline: 3-5 days for completion
+  Dependencies: Cannot proceed without FMEA completion
+  Next step: Conduct FMEA per Chapter 4
+
+════════════════════════════════════════════════════════════════
+
+FMEA DECISION DETAIL
+──────────────────────────────────────────────────────────────────
+
+DECISION: ☐ NO FMEA  ☐ OPTIONAL FMEA  ☐ FMEA REQUIRED
+
+Reasoning:
+{Explanation of decision based on risk assessment}
+
+Risk Factors Contributing to Decision:
+{List the 1-2 primary factors influencing FMEA decision}
+
+════════════════════════════════════════════════════════════════
+
+SIGN-OFF
+──────────────────────────────────────────────────────────────────
+
+QA Lead: Robert A. James
+Decision Date: {Date}
+Time Invested: {Estimate: 15-30 min typical}
+
+Signature/Confirmation: Robert A. James - {Date & Time}
+
+════════════════════════════════════════════════════════════════
+```
+
+---
+
+== Decision Examples
+
+### Example 1: Simple Bug Fix (LOW RISK)
+
+```
+CAPA #42: Stack underflow in DROP
+
+Assessment:
+  Q1 Verified code - YES (touches verified DROP word) [1]
+  Q2 Complex - NO (single bounds check) [0]
+  Q3 Memory - YES (memory access involved) [1]
+  Q4 Security - NO (not security-sensitive) [0]
+  Q5 Systemic - NO (isolated to DROP function) [0]
+  Q6 Test coverage - NO (will add test, >85%) [0]
+  Q7 Severity - YES (crash potential, critical) [1]
+  Q8 Historical - NO (first issue in DROP) [0]
+
+Total YES: 3 → MEDIUM RISK
+
+Decision: OPTIONAL FMEA - Brief assessment sufficient
+Rationale: Touches verified code but simple fix (one-liner).
+          Potential for data loss (CRITICAL severity).
+          Brief risk assessment: No systemic risk detected.
+          Single root cause, isolated to DROP function.
+```
+
+---
+
+### Example 2: Performance Optimization (MEDIUM RISK)
+
+```
+ECO-2025-001: Block storage performance optimization
+
+Assessment:
+  Q1 Verified code - NO (unverified optimization) [0]
+  Q2 Complex - YES (algorithm redesign expected) [1]
+  Q3 Memory - YES (buffer management changes) [1]
+  Q4 Security - NO (doesn't touch input validation) [0]
+  Q5 Systemic - YES (could apply to other buffers) [1]
+  Q6 Test coverage - YES (difficult to benchmark) [1]
+  Q7 Severity - NO (performance only, no crash) [0]
+  Q8 Historical - NO (new code area) [0]
+
+Total YES: 4 → MEDIUM RISK
+
+Decision: OPTIONAL FMEA - Brief assessment OR enhanced testing
+Rationale: Algorithm redesign with systemic potential.
+          Could occur in other buffer code.
+          Performance-only impact (no crash risk).
+          Option: Skip FMEA, add comprehensive benchmarks instead.
+```
+
+---
+
+### Example 3: Security Fix (HIGH RISK)
+
+```
+CAPA #123: Buffer overflow in WORD parser
+
+Assessment:
+  Q1 Verified code - YES (touches verified lexer) [1]
+  Q2 Complex - YES (buffer management bug) [1]
+  Q3 Memory - YES (buffer overflow, severe) [1]
+  Q4 Security - YES (security vulnerability, CVE) [1]
+  Q5 Systemic - YES (likely pattern in other words) [1]
+  Q6 Test coverage - YES (hard to test edge cases) [1]
+  Q7 Severity - YES (CRITICAL: data corruption, crash) [1]
+  Q8 Historical - YES (similar buffer issue 2 years ago) [1]
+
+Total YES: 8 → HIGH RISK
+
+Decision: FMEA REQUIRED - Formal analysis mandatory
+Rationale: Security vulnerability with systemic potential.
+          Touches verified code (lexer/parser).
+          Similar issue in history suggests pattern.
+          FMEA must identify if other buffer paths vulnerable.
+          Cannot proceed without FMEA completion.
+```
+
+---
+
+## Quick Decision Tree
+
+```
+START: Is this CAPA or ECO?
+
+  ├─ Touches verified code (Isabelle)?
+  │   ├─ YES + simple change (1-line fix)? → MEDIUM RISK
+  │   └─ YES + complex change? → HIGH RISK
+  │
+  ├─ Buffer/memory operations?
+  │   ├─ YES + security issue? → HIGH RISK
+  │   ├─ YES + algorithm redesign? → MEDIUM RISK
+  │   └─ YES + simple bounds check? → LOW/MEDIUM RISK
+  │
+  ├─ Input validation / security?
+  │   ├─ YES + CVE-level? → HIGH RISK
+  │   └─ YES + minor issue? → MEDIUM RISK
+  │
+  ├─ Systemic pattern?
+  │   ├─ YES + affects multiple components? → HIGH RISK
+  │   └─ YES + isolated to one area? → MEDIUM RISK
+  │
+  └─ Simple fix with no above factors? → LOW RISK
+
+Result: LOW → NO FMEA
+Result: MEDIUM → OPTIONAL FMEA (or enhanced testing)
+Result: HIGH → FMEA REQUIRED
+```
+
+---
+
+## Time Investment
+
+Typical QA FMEA decision:
+
+- **Answering questionnaire:** 10-15 min
+- **Assessing risk:** 5-10 min
+- **Documenting decision:** 5 min
+
+**Total:** ~20-30 minutes per CAPA/ECO
+
+If FMEA required: Additional 3-5 days for formal analysis (Chapter 4)
+
+---
+
+## Compliance References
+
+This checklist supports:
+
+- **ISO 14971:2019** (Risk management)
+- **IEC 62304:2015** (Software safety assessment)
+
+---
+
+## Change History
+
+[cols="1,2,3"]
+|===
+|Version |Date |Changes
+
+|1.0.0 |2025-10-30 |Initial QA FMEA decision checklist with 8-question risk assessment and 3-tier decision framework
+|===
+
+---
+
+**Maintained by:** Robert A. James (QA)
+**Last Updated:** October 30, 2025
+**Status:** ACTIVE - Use for every CAPA/ECO risk assessment

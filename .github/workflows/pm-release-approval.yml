@@ -1,0 +1,193 @@
+name: PM Release Approval Gate
+
+# Manual dispatch only - PM must explicitly approve release to prod
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version (e.g., 2.0.0)'
+        required: true
+        type: string
+        default: '2.0.0'
+      auto_merge_master:
+        description: 'Auto-merge prod→master after release?'
+        required: true
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+        default: 'true'
+
+jobs:
+  pm-release-approval:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: prod
+
+      - name: Verify qual branch is ready
+        run: |
+          git fetch origin qual
+          QUAL_AHEAD=$(git rev-list --count origin/master..origin/qual || echo "0")
+          if [ "$QUAL_AHEAD" -eq 0 ]; then
+            echo "⚠️  qual branch is not ahead of master"
+            echo "This likely means no changes are ready for release"
+            exit 1
+          fi
+          echo "✅ qual branch has $QUAL_AHEAD commit(s) ahead of master"
+
+      - name: PM Release Approval - Starting
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Post to workflow dispatch event context if available
+            console.log('🎯 PM Release Approval Gate Starting');
+            console.log(`Release Version: ${{ inputs.release_version }}`);
+            console.log(`Auto-merge prod→master: ${{ inputs.auto_merge_master }}`);
+
+      - name: Trigger Jenkins Prod Pipeline
+        id: jenkins-trigger
+        env:
+          JENKINS_URL: ${{ secrets.JENKINS_URL }}
+          JENKINS_USER: ${{ secrets.JENKINS_USER }}
+          JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+        run: |
+          if [ -z "$JENKINS_URL" ] || [ -z "$JENKINS_USER" ] || [ -z "$JENKINS_TOKEN" ]; then
+            echo "❌ Jenkins credentials not configured in GitHub Secrets"
+            echo "Required: JENKINS_URL, JENKINS_USER, JENKINS_TOKEN"
+            exit 1
+          fi
+
+          RELEASE_VERSION="${{ inputs.release_version }}"
+          AUTO_MERGE="${{ inputs.auto_merge_master }}"
+
+          echo "🚀 Triggering Jenkins prod job with release v${RELEASE_VERSION}"
+
+          # Construct Jenkins job trigger URL with parameters
+          # This assumes Jenkins prod job accepts parameters
+          curl -v \
+            -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+            "${JENKINS_URL}/job/starforth-prod/buildWithParameters?RELEASE_VERSION=${RELEASE_VERSION}&AUTO_MERGE_MASTER=${AUTO_MERGE}" \
+            -X POST \
+            || {
+              echo "❌ Failed to trigger Jenkins job"
+              exit 1
+            }
+
+          echo "✅ Jenkins prod job triggered"
+          echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Monitor Jenkins Prod Job
+        id: monitor-prod
+        env:
+          JENKINS_URL: ${{ secrets.JENKINS_URL }}
+          JENKINS_USER: ${{ secrets.JENKINS_USER }}
+          JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+        run: |
+          RELEASE_VERSION="${{ steps.jenkins-trigger.outputs.release_version }}"
+          TIMEOUT_SECONDS=600  # 10 minutes max wait
+          POLL_INTERVAL=30     # Check every 30 seconds
+          ELAPSED=0
+
+          echo "⏳ Monitoring Jenkins prod pipeline (max 10 minutes)..."
+          echo "Release: v${RELEASE_VERSION}"
+
+          while [ $ELAPSED -lt $TIMEOUT_SECONDS ]; do
+            # Query last build status
+            RESPONSE=$(curl -s -u "${JENKINS_USER}:${JENKINS_TOKEN}" \
+              "${JENKINS_URL}/job/starforth-prod/lastBuild/api/json" || echo '{}')
+
+            # Extract build status
+            RESULT=$(echo "$RESPONSE" | grep -o '"result":"[^"]*' | cut -d'"' -f4 || echo "")
+            BUILDING=$(echo "$RESPONSE" | grep -o '"building":[a-z]*' | cut -d':' -f2 || echo "true")
+            DISPLAY_NAME=$(echo "$RESPONSE" | grep -o '"displayName":"[^"]*' | cut -d'"' -f4 || echo "")
+
+            if [ "$BUILDING" = "false" ]; then
+              echo "✅ Build completed: $DISPLAY_NAME"
+              echo "Result: $RESULT"
+
+              if [ "$RESULT" = "SUCCESS" ]; then
+                echo "prod_status=SUCCESS" >> $GITHUB_OUTPUT
+                exit 0
+              else
+                echo "prod_status=$RESULT" >> $GITHUB_OUTPUT
+                exit 1
+              fi
+            fi
+
+            echo "⏳ Still building... ($ELAPSED/$TIMEOUT_SECONDS seconds)"
+            sleep $POLL_INTERVAL
+            ELAPSED=$((ELAPSED + POLL_INTERVAL))
+          done
+
+          echo "❌ Timeout waiting for Jenkins prod job (10 minutes exceeded)"
+          exit 1
+
+      - name: Verify master branch updated
+        if: success()
+        run: |
+          git fetch origin master prod
+          MASTER_HEAD=$(git rev-parse origin/master)
+          PROD_HEAD=$(git rev-parse origin/prod)
+
+          echo "Master HEAD: $MASTER_HEAD"
+          echo "Prod HEAD:   $PROD_HEAD"
+
+          if [ "$MASTER_HEAD" = "$PROD_HEAD" ]; then
+            echo "✅ Master branch is in sync with prod (canonical truth preserved)"
+          else
+            echo "⚠️ Warning: Master and prod HEADs differ"
+            echo "This may be normal if prod has additional commits"
+          fi
+
+      - name: Release Success Notification
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('✅ RELEASE COMPLETE');
+            console.log(`Release: v${{ inputs.release_version }}`);
+            console.log(`Git tag created and pushed`);
+            console.log(`Master branch updated${String('${{ inputs.auto_merge_master }}') === 'true' ? ' (auto-merged)' : ''}`);
+
+      - name: Release Failure Notification
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('❌ RELEASE FAILED');
+            console.log(`Release: v${{ inputs.release_version }}`);
+            console.log('Check Jenkins logs for details');
+            console.log(`Jenkins: ${{ secrets.JENKINS_URL }}/job/starforth-prod/`);
+
+      - name: Post to Run Summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## Release v${{ inputs.release_version }} - PM Approval
+
+          ### Status
+          ${{ job.status == 'success' && '✅ **SUCCESS**' || '❌ **FAILED**' }}
+
+          ### Release Details
+          - **Version:** v${{ inputs.release_version }}
+          - **Auto-merge master:** ${{ inputs.auto_merge_master }}
+          - **Prod Status:** ${{ steps.monitor-prod.outputs.prod_status || 'PENDING' }}
+
+          ### Actions Taken
+          - Verified qual branch ready for release
+          - Triggered Jenkins prod pipeline
+          - Monitored build completion
+          - Verified master branch sync
+
+          ### Next Steps
+          ${{ job.status == 'success' && '✅ Release artifacts are available at Jenkins' || '❌ Check Jenkins logs and retry' }}
+
+          [View Release Details](https://github.com/${{ github.repository }}/releases/tag/v${{ inputs.release_version }})
+          EOF
