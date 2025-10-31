@@ -1,0 +1,345 @@
+////
+PM ECR Review Checklist Template
+
+Document Metadata:
+- Document ID: 07-PM_CHECKLIST_TEMPLATE
+- Version: 1.0.0
+- Created: 2025-10-30T00:00:00Z
+- Purpose: PM evaluation checklist for ECR approval decisions
+- Scope: Reusable checklist for ECR review
+- Document Type: Template
+- Part of: GOVERNANCE_REFERENCE_MANUAL.adoc (Chapter 7)
+////
+
+= Chapter 7: PM ECR Review Checklist Template
+
+**Document ID:** 07-PM_CHECKLIST_TEMPLATE
+**Version:** 1.0.0
+**Status:** Active
+**Last Updated:** October 30, 2025
+**Owner:** Robert A. James (PM)
+
+---
+
+== PM ECR Review Checklist (Reusable Template)
+
+Use this checklist for every ECR submission. Print/copy and complete for your records.
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ PM ECR REVIEW & APPROVAL DECISION                              │
+├────────────────────────────────────────────────────────────────┤
+
+ECR #:         {GitHub issue number}
+Title:         {ECR title}
+Submitter:     {Name}
+Submitted:     {Date}
+PM Reviewer:   Robert A. James
+Review Date:   {Date}
+Decision SLA:   7 days (due {Date + 7 days})
+
+════════════════════════════════════════════════════════════════
+
+SECTION 1: REQUIREMENT CLARITY (5 min read)
+──────────────────────────────────────────────────────────────────
+
+☐ Submission complete?
+  ☐ Problem statement clear
+  ☐ Acceptance criteria defined (testable)
+  ☐ Theory justification provided OR marked N/A
+  ☐ Implementation approach described (helpful for evaluation)
+  ☐ Effort estimate reasonable
+
+☐ No ambiguity in requirements?
+  ☐ Acceptance criteria are specific (not vague)
+  ☐ No conflicting requirements
+  ☐ Edge cases considered
+
+STATUS: ☐ CLEAR ☐ NEEDS CLARIFICATION
+  If unclear: Request clarification from submitter (restart 7-day clock)
+
+════════════════════════════════════════════════════════════════
+
+SECTION 2: ALIGNMENT WITH QUALITY POLICY (5 min review)
+──────────────────────────────────────────────────────────────────
+
+Reference: QUALITY_POLICY.adoc
+
+☐ Will maintain ≥99% test pass rate?
+  Reasoning: {Comment if concerns}
+
+☐ Will maintain ≥85% code coverage?
+  Reasoning: {Comment if concerns}
+
+☐ Will maintain 100% lemmas proven (if verified code)?
+  Reasoning: {Comment if concerns}
+
+☐ Will maintain ≤10% performance regression?
+  Reasoning: {Comment if concerns}
+
+☐ No known security vulnerabilities?
+  Reasoning: {Comment if concerns}
+
+STATUS: ☐ YES - Aligns ☐ NO - Concerns ☐ CONDITIONAL
+
+If NO or CONDITIONAL: List conditions/concerns
+  {Specific concerns}
+
+════════════════════════════════════════════════════════════════
+
+SECTION 3: SCOPE & FEASIBILITY (5-10 min analysis)
+──────────────────────────────────────────────────────────────────
+
+☐ Scope is well-defined?
+  ☐ Feature is bounded (not open-ended)
+  ☐ Effort estimate is reasonable
+  ☐ No scope creep risk
+
+☐ Feasible with available resources?
+  ☐ Required skillsets available
+  ☐ Can complete in estimated time
+  ☐ No blocking dependencies
+
+☐ Doesn't break FORTH-79 standard?
+  ☐ New word doesn't conflict with standard
+  ☐ Stack semantics preserved
+  ☐ Backward compatible
+
+STATUS: ☐ FEASIBLE ☐ CONCERNS ☐ NOT FEASIBLE
+
+If CONCERNS/NOT FEASIBLE: Explain
+  {Specific feasibility concerns}
+
+════════════════════════════════════════════════════════════════
+
+SECTION 4: VERIFIED CODE IMPACT (5 min assessment)
+──────────────────────────────────────────────────────────────────
+
+Reference: THEORY_JUSTIFICATION_GUIDE.adoc
+
+☐ Does feature touch formally-verified code?
+  ☐ YES → Theory justification provided? {Yes/No}
+  ☐ NO → N/A
+
+☐ If theory change required: Is *.thy file complete?
+  ☐ YES - Proofs complete
+  ☐ PARTIAL - Needs completion
+  ☐ MISSING - Will be added post-approval
+
+STATUS: ☐ THEORY OK ☐ THEORY INCOMPLETE ☐ N/A
+
+If INCOMPLETE: Note as condition
+  Condition: "*.thy file must be completed before release"
+
+════════════════════════════════════════════════════════════════
+
+SECTION 5: ARCHITECTURE & INTEGRATION (5-10 min review)
+──────────────────────────────────────────────────────────────────
+
+☐ Fits StarForth architecture?
+  ☐ Compatible with L4Re integration
+  ☐ No fundamental redesign required
+  ☐ Clean integration point
+  ☐ No technical debt introduced
+
+☐ Doesn't conflict with other work?
+  ☐ No other pending ECR/ECO conflicts
+  ☐ Doesn't block Phase 2 (StarshipOS)
+  ☐ Doesn't defer critical fixes
+
+STATUS: ☐ FITS ☐ MINOR ADJUSTMENT ☐ MAJOR CONCERNS
+
+If ADJUSTMENT NEEDED: Specify conditions
+  {Design constraints or modifications required}
+
+════════════════════════════════════════════════════════════════
+
+SECTION 6: RISK ASSESSMENT (5 min)
+──────────────────────────────────────────────────────────────────
+
+☐ Risk classification:
+  ☐ LOW RISK - No FMEA needed
+  ☐ MEDIUM RISK - Optional FMEA (brief assessment)
+  ☐ HIGH RISK - FMEA REQUIRED
+
+Risk factors (check all that apply):
+  ☐ Complex algorithm (>10 cyclomatic complexity)
+  ☐ Memory operations (@, !, ERASE)
+  ☐ Security-sensitive (input validation)
+  ☐ Affects verified code (Isabelle)
+  ☐ Novel approach (not standard algorithm)
+  ☐ Multi-component interaction
+
+FMEA Decision: {LOW/MEDIUM/HIGH}
+
+STATUS: ☐ RISK ACCEPTABLE ☐ RISK CONDITIONAL
+
+════════════════════════════════════════════════════════════════
+
+SECTION 7: BACKLOG PRIORITY (2 min decision)
+──────────────────────────────────────────────────────────────────
+
+If APPROVED, assign priority:
+
+☐ CRITICAL (blocks release, security fix, P0)
+  Reason: {Why critical}
+
+☐ HIGH (planned feature, user demand)
+  Reason: {Why high priority}
+
+☐ MEDIUM (planned for quarter)
+  Reason: {Why medium priority}
+
+☐ LOW (future consideration)
+  Reason: {Why deferred}
+
+PRIORITY: {Selected level}
+
+════════════════════════════════════════════════════════════════
+
+FINAL DECISION
+──────────────────────────────────────────────────────────────────
+
+Select ONE:
+
+☐ ✅ APPROVED - Create ECO with this priority
+   Next: PM creates ECO-YYYY-### immediately
+   Timeline: ECO in backlog, ready for sprint assignment
+
+☐ ✅ APPROVED WITH CONDITIONS
+   Conditions: {List specific conditions}
+   Next: PM creates ECO-YYYY-### with conditions noted
+   Condition must be met before implementation starts
+
+☐ ❌ REJECTED - Return to requester for revision
+   Reason: {Specific explanation}
+   Guidance: {What needs to change for re-submission}
+   Can resubmit: {Timing or conditions}
+
+☐ ❌ DEFERRED - Hold for future consideration
+   Reason: {Specific explanation}
+   Next review: {Date}
+   Condition for reconsideration: {e.g., Phase 2, resource availability}
+
+════════════════════════════════════════════════════════════════
+
+APPROVAL DOCUMENTATION
+──────────────────────────────────────────────────────────────────
+
+PM Reviewer:     Robert A. James
+Review Date:     {Date}
+Decision Date:   {Date}
+Decision SLA:    7 days
+Time Spent:      {Estimate: 15-30 min for typical ECR}
+Decision:        {Select from Final Decision above}
+
+Comments:
+{Any additional reasoning or notes}
+
+Signature / Confirmation: Robert A. James - {Date & Time}
+
+════════════════════════════════════════════════════════════════
+```
+
+---
+
+== Common PM Decision Patterns
+
+=== Pattern 1: Low-Risk Feature (Approved Immediately)
+
+```
+ECR: "Add MYWORD arithmetic operation"
+  ✓ Fits in architecture
+  ✓ Simple algorithm (3 cyclomatic complexity)
+  ✓ Doesn't touch verified code → Standard FORTH word
+  ✓ Well-defined acceptance criteria
+  ✓ Minimal theory changes
+
+DECISION: ✅ APPROVED
+PRIORITY: HIGH
+FMEA: No FMEA required
+```
+
+---
+
+=== Pattern 2: High-Risk Feature (Conditional Approval)
+
+```
+ECR: "Optimize memory allocator"
+  ? Complex algorithm (15 cyclomatic complexity)
+  ? Affects verified stack operations
+  ? Performance critical
+  ? Novel approach (not standard)
+
+DECISION: ✅ APPROVED WITH CONDITIONS
+CONDITION: "FMEA required before implementation starts"
+FMEA: HIGH RISK - QA must conduct formal FMEA
+PRIORITY: HIGH (but conditional on FMEA completion)
+```
+
+---
+
+=== Pattern 3: Out-of-Scope Feature (Deferred)
+
+```
+ECR: "Add hardware driver support"
+  ✗ Belongs to StarshipOS Phase 3, not StarForth Phase 1
+  ✗ Would require architectural redesign
+  ✗ Blocks other features
+
+DECISION: ❌ DEFERRED to Phase 2+
+REASON: Out of scope for Phase 1 (StarForth-only)
+NEXT REVIEW: When Phase 2 begins (seL4 port)
+```
+
+---
+
+== Time Investment
+
+Typical PM ECR review:
+
+- **Reading/Understanding:** 5-10 min
+- **Quality Policy Check:** 5 min
+- **Feasibility Assessment:** 5-10 min
+- **Risk Classification:** 5 min
+- **Decision & Documentation:** 5-10 min
+
+**Total:** ~25-50 minutes per ECR
+
+**Note:** First ECR may take longer as you establish patterns. Subsequent ECRs should be faster.
+
+---
+
+== Using This Template
+
+1. **Copy this checklist** for each new ECR
+2. **Fill in relevant sections** as you review
+3. **Complete the final decision** box
+4. **Save checklist** in GitHub issue comments or local file
+5. **Comment on ECR** with decision
+
+---
+
+== Compliance References
+
+This template supports:
+
+- **ISO 9001:2015** § 8.3 (Control of externally provided processes)
+- **ISO/IEC 12207:2017** (Acquisition and supply process)
+
+---
+
+## Change History
+
+[cols="1,2,3"]
+|===
+|Version |Date |Changes
+
+|1.0.0 |2025-10-30 |Initial PM ECR review checklist template with 7 sections, decision criteria, and common patterns
+|===
+
+---
+
+**Maintained by:** Robert A. James (PM)
+**Last Updated:** October 30, 2025
+**Status:** ACTIVE - Use for every ECR review

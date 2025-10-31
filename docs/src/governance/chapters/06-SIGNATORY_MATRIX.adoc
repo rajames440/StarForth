@@ -1,0 +1,294 @@
+////
+Signatory Matrix: Who Signs What
+
+Document Metadata:
+- Document ID: 06-SIGNATORY_MATRIX
+- Version: 1.0.0
+- Created: 2025-10-30T00:00:00Z
+- Purpose: Define who approves/signs off on each governance artifact
+- Scope: Signatory roles, approval authorities, escalation paths
+- Document Type: Authority Matrix
+- Part of: GOVERNANCE_REFERENCE_MANUAL.adoc (Chapter 6)
+////
+
+= Chapter 6: Signatory Matrix
+
+**Document ID:** 06-SIGNATORY_MATRIX
+**Version:** 1.0.0
+**Status:** Active
+**Last Updated:** October 30, 2025
+**Owner:** Robert A. James (PM)
+
+---
+
+== Overview
+
+StarForth uses a **minimum signatory model**: PM is the minimum required approver for release decisions. Other roles (QA, Engineering Manager, etc.) may be added as team grows.
+
+**Current Team:**
+- **PM/Owner:** Robert A. James (You)
+- **QA Lead:** Robert A. James (You)
+- **Developer:** Robert A. James (You)
+
+---
+
+== Signatory Authority Matrix
+
+[cols="1,2,2,2"]
+|===
+|Document |Submitter |Reviewer |Approver (Final Authority)
+
+|**ECR** |Developer/User |PM |PM ✓
+|**ECO** |PM |— |PM ✓
+|**CAPA** |Developer/QA |QA |PM ✓
+|**FMEA** |QA |QA |QA (verification); PM (risk acceptance) ✓
+|**Release (v2.0.2)** |Developer |QA |PM ✓
+|**Security Incident** |Reporter |QA |PM ✓
+|**QUALITY_POLICY.adoc** |QA |— |PM ✓
+|**TEST_STRATEGY.adoc** |QA |— |PM ✓
+|===
+
+---
+
+== Role Definitions (Current: Single Person)
+
+=== PM Role (Robert A. James - You)
+
+**Responsibilities:**
+- ✅ ECR evaluation (7-day SLA)
+- ✅ ECO creation and backlog management
+- ✅ Release approval (1-day SLA)
+- ✅ Quality policy ownership
+- ✅ Final authority on all releases
+- ✅ Risk acceptance decisions
+
+**Authority:**
+- Creates ECO from approved ECR
+- Approves release version and timing
+- Determines if FMEA required
+- Accepts residual risk
+
+**Escalation:**
+- (Currently none - you are final authority)
+
+---
+
+=== QA Role (Robert A. James - You)
+
+**Responsibilities:**
+- ✅ CAPA validation
+- ✅ Test case review
+- ✅ FMEA execution (if required)
+- ✅ Security review
+- ✅ Regression test validation
+
+**Authority:**
+- Approves/rejects CAPA fixes
+- Determines FMEA need
+- Validates code quality
+- Conducts FMEA analysis
+
+**Escalation:**
+- High-risk issues → PM for risk acceptance
+
+---
+
+=== Developer Role (Robert A. James - You)
+
+**Responsibilities:**
+- ✅ Code implementation
+- ✅ Test writing
+- ✅ Bug fixing
+- ✅ Formal proof maintenance
+
+**Authority:**
+- Self-reviews code
+- Submits PR for approval
+- Recommends FMEA requirement
+
+**Escalation:**
+- Complex decisions → PM/QA
+
+---
+
+## Future Signatory Roles (When Team Grows)
+
+If team expands, additional roles:
+
+### Engineering Manager (Future)
+
+**Potential Responsibilities:**
+- Architecture decisions
+- Trade-off analysis (performance vs. correctness)
+- Cross-component impact assessment
+
+**Signatory Authority:**
+- Co-approve complex ECRs (with PM)
+- Escalated design reviews
+- Budget/resource decisions
+
+### QA Team Lead (Future)
+
+**Potential Responsibilities:**
+- QA process management
+- Test strategy oversight
+- Risk assessment
+- Security compliance
+
+**Signatory Authority:**
+- FMEA sign-off authority
+- Test adequacy decisions
+- Release quality certification
+
+### Release Manager (Future)
+
+**Potential Responsibilities:**
+- Version management
+- Release note authoring
+- Communication to users
+
+**Signatory Authority:**
+- Release timing decisions (in coordination with PM)
+- Change log accuracy verification
+
+---
+
+== Approval Workflows (Current)
+
+### ECR Approval (PM Role)
+
+```
+ECR #123 Submitted
+  ↓ (PM review, 7-day max)
+☐ Yes → Create ECO-2025-001
+☐ No → Comment with rejection reason
+  ↓
+ECR CLOSED (with ECO link or rejection)
+```
+
+**Signatory:** PM (Robert A. James)
+
+---
+
+### CAPA Approval (QA → PM Chain)
+
+```
+CAPA #456 Submitted
+  ↓ (QA review)
+☐ Approve → Proceed to FMEA decision
+☐ Reject → Return to developer
+  ↓
+FMEA Decision (QA determines need)
+  ↓
+☐ No FMEA → Proceed to PM
+☐ Optional FMEA → Brief assessment, proceed to PM
+☐ Required FMEA → Conduct FMEA, then to PM
+  ↓
+PM Release Decision (1-day max)
+  ↓
+☐ Approve → Release
+☐ Hold → Specify blocker
+☐ Defer → Defer to next release
+  ↓
+CAPA CLOSED (with version tag)
+```
+
+**Signatories:** QA approves → PM approves (PM final authority)
+
+---
+
+### FMEA Sign-Off (QA Role)
+
+```
+FMEA-2025-001 Analysis
+  ↓ (QA conducts analysis)
+Complete failure mode table
+Assign severity/occurrence/detection scores
+Identify risk controls
+  ↓ (QA review)
+Risk acceptable?
+  ├─ YES → QA sign-off
+  └─ NO → Identify additional controls
+  ↓
+PM Risk Acceptance (If required)
+  ↓
+FMEA CLOSED
+```
+
+**Signatories:** QA (analysis & technical sign-off); PM (risk acceptance if needed)
+
+---
+
+### Release Approval (PM Role, 1-Day SLA)
+
+```
+PR Ready (All tests pass, QA approved, FMEA complete if required)
+  ↓ (PM review, 1-day max)
+☐ Approve → Merge to master, tag v2.0.2
+☐ Hold → Specify blocker
+☐ Defer → Defer to next release
+  ↓
+VERSION TAGGED & RELEASED
+```
+
+**Signatory:** PM (Robert A. James)
+
+---
+
+== Sign-Off Documentation
+
+### Electronic Signature (Future)
+
+When multi-person team exists, use GitHub:
+- PR "Approve" button = signature
+- "Approved" label = formal sign-off
+- Comments with approval timestamp
+
+---
+
+## Escalation Path
+
+Current (single person team):
+```
+All approval decisions → PM (You)
+         ↓
+    (You decide)
+         ↓
+    Execute decision
+```
+
+Future (multi-person team):
+```
+Developer question → QA/PM
+         ↓
+QA question → PM
+         ↓
+PM decision → Cannot escalate (final authority)
+```
+
+---
+
+== Compliance References
+
+This signatory matrix aligns with:
+
+- **21 CFR Part 11** (Authenticated electronic signatures)
+- **ISO 9001:2015** (Management responsibility and authority)
+- **IEC 62304:2015** (Design review and approval)
+
+---
+
+== Change History
+
+[cols="1,2,3"]
+|===
+|Version |Date |Changes
+
+|1.0.0 |2025-10-30 |Initial signatory matrix with PM minimum authority, QA validation, and future role definitions for expanded team
+|===
+
+---
+
+**Maintained by:** Robert A. James (PM)
+**Last Updated:** October 30, 2025
+**Status:** ACTIVE

@@ -1,0 +1,120 @@
+// TEST PIPELINE - Comprehensive testing (20 minutes)
+// Triggered: Auto-sync from devl branch
+// Purpose: Full test suite, benchmarks, stress tests
+// Gate: PASS auto-merges to qual, FAIL generates CAPA and rejects
+
+pipeline {
+	agent any
+
+	environment {
+		ARCH = 'amd64'
+		BUILD_DIR = 'build'
+		ARTIFACT_DIR = 'artifacts'
+		LOG_DIR = 'logs'
+		CAPA_DIR = 'docs/internal/capa'
+		BENCHMARK_ITERATIONS = '5000000'
+	}
+
+	options {
+		skipDefaultCheckout(false)
+		buildDiscarder(logRotator(numToKeepStr: '20'))
+		timeout(time: 45, unit: 'MINUTES')
+		timestamps()
+	}
+
+	stages {
+		stage('Cleanup & Build') {
+			steps {
+				sh 'git reset --hard origin/HEAD && make clean || true'
+				sh 'rm -rf ${ARTIFACT_DIR} ${LOG_DIR} && mkdir -p ${ARTIFACT_DIR} ${LOG_DIR}'
+				sh 'make fastest 2>&1 | tee ${LOG_DIR}/build-fastest.log'
+				sh 'cp build/starforth ${ARTIFACT_DIR}/starforth-test'
+			}
+		}
+
+		stage('Smoke Test') {
+			steps {
+				sh 'make smoke 2>&1 | tee ${LOG_DIR}/smoke-test.log'
+			}
+		}
+
+		stage('Comprehensive Test Suite') {
+			steps {
+				sh 'make test 2>&1 | tee ${LOG_DIR}/full-test-suite.log'
+				sh '''
+                    echo "Test Results Summary:" | tee ${LOG_DIR}/test-summary.txt
+                    grep -E "(passed|failed|skipped)" ${LOG_DIR}/full-test-suite.log | tail -5 | tee -a ${LOG_DIR}/test-summary.txt || true
+                '''
+			}
+		}
+
+		stage('Benchmark Gauntlet') {
+			steps {
+				timeout(time: 10, unit: 'MINUTES') {
+					sh 'make bench 2>&1 | tee ${LOG_DIR}/bench-quick.log'
+					sh 'make benchmark 2>&1 | tee ${LOG_DIR}/bench-full.log'
+					sh '''
+                        /usr/bin/time -v ./build/starforth --benchmark ${BENCHMARK_ITERATIONS} --log-none 2>&1 | tee ${LOG_DIR}/bench-stack.log || true
+                        /usr/bin/time -v ./build/starforth --benchmark ${BENCHMARK_ITERATIONS} --log-none 2>&1 | tee ${LOG_DIR}/bench-math.log || true
+                        /usr/bin/time -v ./build/starforth --benchmark ${BENCHMARK_ITERATIONS} --log-none 2>&1 | tee ${LOG_DIR}/bench-logic.log || true
+                    '''
+				}
+			}
+		}
+
+		stage('Stress Tests') {
+			steps {
+				timeout(time: 5, unit: 'MINUTES') {
+					sh 'timeout 300 ./build/starforth --stress-tests --log-none 2>&1 | tee ${LOG_DIR}/stress.log || true'
+				}
+			}
+		}
+
+		stage('Memory Leak Detection') {
+			when {
+				expression { fileExists('/usr/bin/valgrind') }
+			}
+			steps {
+				timeout(time: 5, unit: 'MINUTES') {
+					sh 'make clean && make debug'
+					sh '''
+                        timeout 300 valgrind --leak-check=summary --log-file=${LOG_DIR}/valgrind.log \
+                            ./build/starforth --benchmark 1000 || true
+                    '''
+				}
+			}
+		}
+
+		stage('Code Quality') {
+			steps {
+				sh '''
+                    make clean
+                    make CFLAGS="$(make -n | grep CFLAGS | head -1 | sed 's/.*CFLAGS=//' | cut -d' ' -f1-20) -Wall -Wextra -Wpedantic" 2>&1 | tee ${LOG_DIR}/warnings.log || true
+                '''
+			}
+		}
+	}
+
+	post {
+		always {
+			archiveArtifacts artifacts: 'logs/**, artifacts/**', allowEmptyArchive: true
+		}
+
+		success {
+			sh '''
+                echo "✅ TEST PASSED"
+                git checkout qual || git checkout -b qual
+                git merge test --no-edit
+                git push origin qual
+            '''
+		}
+
+		failure {
+			sh '''
+                echo "❌ TEST FAILED - Reverting test branch"
+                git reset --hard origin/devl
+                git push origin test --force-with-lease || true
+            '''
+		}
+	}
+}

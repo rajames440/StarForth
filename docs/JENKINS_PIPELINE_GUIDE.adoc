@@ -1,0 +1,580 @@
+= StarForth Jenkins Pipeline Guide
+:toc: left
+:toclevels: 2
+:sectnums:
+:source-highlighter: groovy
+:icons: font
+
+== Overview
+
+This document describes the StarForth Jenkins pipeline architecture and how to use it across different environments (Developer, Test, QA, Production).
+
+**Current Status:** Developer Pipeline (baseline) is complete
+**Next Steps:** Test/QA/Production pipelines derived from this baseline
+
+---
+
+== Pipeline Architecture
+
+### Current: Developer Pipeline (Jenkinsfile)
+
+A comprehensive torture test and verification pipeline for continuous integration during development.
+
+**Duration:** ~2 hours
+**Scope:** Full system validation + formal verification + packaging
+
+**Pipeline Flow:**
+
+```
+1.  🧹 Cleanup & Preparation
+    ↓
+2.  🔨 Build Gauntlet (4 configurations)
+    ├─ DEBUG
+    ├─ STANDARD
+    ├─ FASTEST
+    └─ FAST
+    ↓
+3.  🧪 Smoke Test
+    ↓
+4.  ✅ Comprehensive Test Suite (936 tests)
+    ↓
+5.  🏇 Benchmark Gauntlet
+    ├─ Quick benchmark (1M iterations)
+    ├─ Full benchmark suite
+    ├─ Stack operations stress (10M)
+    ├─ Arithmetic operations stress (10M)
+    └─ Logic operations stress (10M)
+    ↓
+6.  💀 Extreme Stress Tests
+    ├─ Deep recursion limits
+    ├─ Maximum stack depth
+    ├─ Memory allocation patterns
+    ├─ Long-running stability
+    └─ Nested loops
+    ↓
+7.  🔥 Thermal & Performance Monitoring
+    ↓
+8.  🧠 Memory Leak Detection (Valgrind)
+    ↓
+9.  ⚡ Profile-Guided Optimization Build
+    ↓
+10. 📊 PGO Performance Comparison
+    ↓
+11. 🎯 Edge Case Testing
+    ├─ Division by zero
+    ├─ Stack underflow
+    ├─ Stack overflow
+    └─ Invalid memory access
+    ↓
+12. 📈 Performance Regression Check
+    ↓
+13. 🔍 Code Quality Checks
+    ├─ Compiler warnings
+    └─ Lines of code analysis
+    ↓
+14. 🔬 Formal Verification & Isabelle Theories
+    ├─ Build Isabelle theories (audit mode)
+    ├─ Refinement status check
+    ├─ Code annotation validation
+    ├─ Refinement report generation
+    └─ Archive formal verification artifacts
+    ↓
+15. 📚 Documentation Build
+    ├─ API documentation (Doxygen)
+    ├─ LaTeX conversion
+    └─ Archive documentation
+    ↓
+16. 📦 Package Build (DEB & RPM)
+    ├─ Debian package (if fpm available)
+    └─ RPM package (if fpm available)
+    ↓
+17. 📋 Generate Test Report
+    ↓
+    ✅ SUCCESS or ❌ FAILURE
+```
+
+---
+
+## Stage Details
+
+### Stages 1-13: Existing Testing & Analysis
+See Jenkinsfile comments for details. These validate:
+- ✅ Code compilation (4 configurations)
+- ✅ Functional correctness (936 tests)
+- ✅ Performance (benchmarks & regression)
+- ✅ Stability (stress tests, thermal monitoring)
+- ✅ Memory safety (leak detection)
+- ✅ Resilience (edge cases, error handling)
+- ✅ Code quality (warnings, metrics)
+
+### Stage 14: 🔬 Formal Verification & Isabelle Theories (NEW)
+
+**Purpose:** Verify C implementation against formal spec
+
+**Steps:**
+1. Check Isabelle availability
+2. Build Isabelle theories (audit mode - never fails even with incomplete proofs)
+3. Check refinement status (CAPA tracking)
+4. Validate code annotations against theory
+5. Generate refinement report
+6. Archive all formal verification artifacts
+
+**Artifacts Produced:**
+- `isabelle-docs/` - Theory documentation (AsciiDoc + build logs)
+- `REFINEMENT_CAPA.adoc` - Defect tracking log
+- `refinement-status.md` - Status report
+- `REFINEMENT_ANNOTATIONS.adoc` - Code annotation guide
+- `REFINEMENT_ROADMAP.adoc` - Implementation roadmap
+- Logs: `isabelle-build.log`, `refinement-status.log`, `annotation-check.log`
+
+**Logs:**
+- `isabelle-build.log` - Theory verification output (most critical)
+- `refinement-status.log` - Refinement defect counts
+- `annotation-check.log` - Code annotation coverage
+
+**Success Criteria:**
+- Stage always succeeds (graceful handling if Isabelle not installed)
+- All artifacts archived for auditor review
+
+### Stage 15: 📚 Documentation Build (NEW)
+
+**Purpose:** Generate complete documentation suite
+
+**Generates:**
+- API documentation from Doxygen (XML → AsciiDoc)
+- LaTeX versions for formal reports
+- All documentation properly archived
+
+**Artifacts:**
+- `api-docs/` - API reference documentation
+- `latex-docs/` - LaTeX sources for formal documents
+
+### Stage 16: 📦 Package Build (DEB & RPM) (NEW)
+
+**Purpose:** Build distribution packages
+
+**Requirements:**
+- `fpm` (Effing Package Manager) for packaging
+  ```bash
+  sudo apt-get install ruby-dev
+  gem install fpm
+  ```
+
+**Produces:**
+- `starforth_*.deb` - Debian package
+- `starforth-*.rpm` - Red Hat package
+
+**Graceful Degradation:**
+- Skips if `fpm` not installed
+- Shows helpful installation message
+
+---
+
+## Artifacts & Logs
+
+All artifacts and logs are archived in Jenkins and available for download.
+
+### Artifacts Directory (`artifacts/`)
+
+```
+artifacts/
+├── starforth-debug              # Debug build (O0, symbols)
+├── starforth-standard           # Standard optimized build
+├── starforth-fastest            # Maximum optimization build
+├── starforth-fast               # Fast build (no LTO)
+├── starforth-pgo                # PGO optimized build
+├── starforth_*.deb              # Debian package
+├── starforth-*.rpm              # Red Hat package
+│
+├── isabelle-docs/               # Isabelle theory documentation
+├── REFINEMENT_CAPA.adoc         # Formal verification defect log
+├── refinement-status.md         # Refinement status report
+├── REFINEMENT_ANNOTATIONS.adoc  # Code annotation guide
+├── REFINEMENT_ROADMAP.adoc      # Implementation roadmap
+│
+├── api-docs/                    # API documentation
+├── latex-docs/                  # LaTeX documentation
+│
+└── test-report.md               # Comprehensive test report
+```
+
+### Logs Directory (`logs/`)
+
+```
+logs/
+├── system-info.log              # Build machine info
+│
+├── build-debug.log              # DEBUG build output
+├── build-standard.log           # STANDARD build output
+├── build-fastest.log            # FASTEST build output
+├── build-fast.log               # FAST build output
+├── build-pgo.log                # PGO build output
+├── compiler-warnings.log        # Compiler warnings
+├── loc-analysis.txt             # Lines of code analysis
+│
+├── smoke-test.log               # Smoke test output
+├── full-test-suite.log          # Complete test suite (936 tests)
+├── test-summary.txt             # Test results summary
+│
+├── bench-quick.log              # Quick benchmark (1M iterations)
+├── bench-full.log               # Full benchmark suite
+├── bench-stack-torture.log      # Stack operations (10M)
+├── bench-math-torture.log       # Arithmetic operations (10M)
+├── bench-logic-torture.log      # Logic operations (10M)
+├── pgo-comparison.log           # PGO vs regular performance
+├── performance-baseline.csv     # Performance metrics
+│
+├── stress-recursion.log         # Recursion limit test
+├── stress-stack-depth.log       # Stack depth test
+├── stress-memory.log            # Memory allocation test
+├── stress-long-run.log          # Long-running stability
+├── stress-nested-loops.log      # Nested loops test
+│
+├── edge-div-zero.log            # Division by zero handling
+├── edge-stack-underflow.log     # Stack underflow handling
+├── edge-stack-overflow.log      # Stack overflow handling
+├── edge-invalid-memory.log      # Invalid memory access
+│
+├── thermal-test.log             # Sustained load test
+├── system-metrics.csv           # System load during test
+│
+├── valgrind-leak-check.log      # Memory leak detection
+│
+├── isabelle-build.log           # Isabelle theory build (CRITICAL)
+├── refinement-status.log        # Refinement status
+├── annotation-check.log         # Code annotation validation
+├── refinement-report.log        # Refinement report generation
+│
+├── api-docs-build.log           # API documentation build
+├── docs-latex-build.log         # LaTeX conversion
+│
+├── package-build.log            # Package build configuration
+├── deb-build.log                # Debian package build
+└── rpm-build.log                # RPM package build
+```
+
+---
+
+## Pipeline Variants (Future)
+
+The current Developer Pipeline is the baseline. Future variants:
+
+### Test Pipeline (Jenkinsfile.test)
+- Reduced scope: Stages 1-8, 13-17
+- Skip: Stages 9-12 (PGO, performance comparison, regression)
+- Focus: Correctness + formal verification + packaging
+- Duration: ~1 hour
+- Use: Integration testing, per-commit validation
+
+### QA Pipeline (Jenkinsfile.qa)
+- Focus on validation: Stages 1-7, 13-17
+- Include: Edge case testing, code quality
+- Skip: Long-running stress tests, PGO builds
+- Add: Artifact signing, release notes generation
+- Duration: ~45 minutes
+- Use: Release candidates, manual QA gates
+
+### Production Pipeline (Jenkinsfile.prod)
+- Minimal scope: Stages 1-4, 13-17
+- Add: Security scanning, package signing, upload to repositories
+- Focus: Fast feedback, artifact publication
+- Skip: Benchmarks, stress tests, memory leak detection
+- Duration: ~15 minutes
+- Use: Final release builds, automatic repository upload
+
+**Derivation Pattern:**
+```
+Developer Pipeline (baseline - all stages)
+    ↓
+    ├─→ Test Pipeline (stages: 1-8, 13-17)
+    ├─→ QA Pipeline (stages: 1-7, 13-17)
+    └─→ Production Pipeline (stages: 1-4, 13-17)
+```
+
+---
+
+## Using the Pipeline
+
+### Local Development
+
+Run equivalent stages locally:
+```bash
+# Single stage testing
+make smoke              # Stage 3
+make test              # Stage 4
+make bench             # Stage 5
+make docs-isabelle     # Stage 14 (partial)
+make refinement-status # Stage 14 (partial)
+
+# Full pipeline equivalent
+make clean && make fastest    # Stages 1-2
+make test                     # Stage 4
+make docs-isabelle            # Stage 14
+make deb                       # Stage 16
+```
+
+### Jenkins Integration
+
+**To use this pipeline:**
+
+1. **Create a Jenkins job with this Jenkinsfile**
+   ```
+   Job Name: StarForth-Develop
+   Pipeline Script from SCM
+   Repository: https://github.com/rajames440/StarForth.git
+   Branch: master
+   Script Path: Jenkinsfile
+   ```
+
+2. **Install required tools on build agent:**
+   ```bash
+   # Isabelle (optional but recommended)
+   wget https://isabelle.in.tum.de/dist/Isabelle2025_linux.tar.gz
+   tar -xzf Isabelle2025_linux.tar.gz
+   # Add to PATH
+
+   # FPM (for packaging)
+   sudo apt-get install ruby-dev
+   sudo gem install fpm
+
+   # Valgrind (for memory testing)
+   sudo apt-get install valgrind
+
+   # Doxygen (for API docs)
+   sudo apt-get install doxygen
+   ```
+
+3. **Configure Jenkins agent:**
+   ```
+   Node: any (or specific builder)
+   Timeout: 2 hours
+   Workspace cleanup: enable (optional)
+   Build retention: 10 builds
+   ```
+
+4. **Run the pipeline:**
+   ```
+   Trigger: Push to master (or manual)
+   Monitor: Jenkins UI → StarForth-Develop → Build logs
+   Artifacts: Jenkins UI → Build artifacts
+   ```
+
+### Reading the Pipeline Output
+
+**Key metrics to watch:**
+
+1. **Build Stage** - Should complete in < 2 minutes per configuration
+2. **Test Stage** - Should pass 936/936 tests
+3. **Benchmark Stage** - Baseline for performance regression checks
+4. **Stress Tests** - Verify stability under extreme load
+5. **Memory Leak Detection** - Should show "No leaks" in summary
+6. **Formal Verification** - Check `isabelle-build.log` for theory errors
+7. **Refinement Status** - Monitor OPEN defects in REFINEMENT_CAPA.adoc
+8. **Package Build** - Verify .deb and .rpm created successfully
+
+---
+
+## Customization
+
+### Adding New Stages
+
+To add a new stage (e.g., performance regression):
+
+```groovy
+stage('📊 New Analysis') {
+    steps {
+        echo "Running new analysis..."
+        sh 'make new-target 2>&1 | tee ${LOG_DIR}/new-analysis.log'
+
+        // Archive results
+        sh 'cp results.json ${ARTIFACT_DIR}/ || true'
+    }
+}
+```
+
+### Conditional Execution
+
+Skip stages based on conditions:
+
+```groovy
+stage('Name') {
+    when {
+        expression {
+            currentBuild.result == null || currentBuild.result == 'SUCCESS'
+        }
+    }
+    steps {
+        // Only run if previous stages passed
+    }
+}
+```
+
+### Parallel Execution
+
+Run independent tests in parallel:
+
+```groovy
+stage('Parallel Tests') {
+    parallel {
+        stage('Benchmark') {
+            steps { sh 'make bench' }
+        }
+        stage('Memory Check') {
+            steps { sh 'valgrind ./build/starforth' }
+        }
+    }
+}
+```
+
+---
+
+## Troubleshooting
+
+### "Isabelle not found"
+**Solution:**
+```bash
+# Install Isabelle
+wget https://isabelle.in.tum.de/dist/Isabelle2025_linux.tar.gz
+tar -xzf Isabelle2025_linux.tar.gz
+# Add to PATH:
+export PATH=$PATH:/path/to/Isabelle2025/bin
+```
+
+### "fpm not found" (packaging skipped)
+**Solution:**
+```bash
+sudo apt-get install ruby-dev
+sudo gem install fpm
+```
+
+### "Valgrind: command not found"
+**Solution:**
+```bash
+sudo apt-get install valgrind
+```
+
+### Build timeout (2 hours exceeded)
+**Solution:**
+1. Skip PGO build (Stages 9-10)
+2. Skip thermal monitoring (Stage 7)
+3. Reduce stress test iterations
+4. Use faster hardware
+
+### Pipeline fails at formal verification
+**Cause:** Isabelle theories have errors
+**Action:**
+1. Review `logs/isabelle-build.log`
+2. Check `REFINEMENT_CAPA.adoc` for tracked issues
+3. Run `make refinement-status` locally
+4. See REFINEMENT_ROADMAP.adoc for resolution steps
+
+---
+
+## Metrics & Reporting
+
+### Performance Baseline
+
+Captured in `performance-baseline.csv`:
+```csv
+timestamp,operation,iterations,duration_seconds
+1635696000,stack_ops,1000000,1.234
+1635696010,arithmetic,1000000,2.567
+```
+
+**Use:** Track performance regressions across builds
+
+### Test Coverage
+
+From test suite logs:
+- Total tests: 936
+- Passing: (tracked by test runner)
+- Failing: (indicates bugs or regressions)
+
+### Memory Profile
+
+From valgrind logs:
+```
+LEAK SUMMARY:
+   definitely lost: 0 bytes
+   indirectly lost: 0 bytes
+   possibly lost: 0 bytes
+```
+
+**Success Criteria:** Zero leaks reported
+
+### Formal Verification Metrics
+
+From refinement status:
+- Total defects: (count in REFINEMENT_CAPA.adoc)
+- OPEN: (active issues)
+- IN-PROGRESS: (being worked on)
+- CLOSED: (resolved)
+
+**Success Criteria:** OPEN → 0 as phases complete
+
+---
+
+## Best Practices
+
+### For Developers
+
+1. **Check pipeline logs before pushing** - Run locally first
+2. **Monitor formal verification** - Review REFINEMENT_CAPA.adoc regularly
+3. **Keep stress tests passing** - Don't regress stability
+4. **Follow annotation guide** - Add REFINEMENT headers to new code
+
+### For DevOps
+
+1. **Archive all artifacts** - Keep 10+ builds for analysis
+2. **Monitor disk space** - Logs and artifacts accumulate
+3. **Set alerts on failure** - Email or Slack notifications
+4. **Rotate logs** - Keep for audit trail (90+ days)
+
+### For Auditors
+
+1. **Review formal verification section** - Core correctness evidence
+2. **Check REFINEMENT_CAPA.adoc** - Tracking of all discrepancies
+3. **Inspect code annotations** - Theory↔code correspondence
+4. **Validate test coverage** - 936 tests + edge cases
+5. **Check memory safety** - Valgrind reports
+
+---
+
+## Support & Questions
+
+**Q: How do I run the developer pipeline locally?**
+A: Use `make` targets directly:
+```bash
+make smoke              # Quick validation
+make test              # Full test suite
+make docs-isabelle     # Formal verification
+make deb rpm           # Packaging
+```
+
+**Q: Can I run stages in parallel?**
+A: Some can (benchmarks, memory check). See "Parallel Execution" section.
+
+**Q: How do I skip certain stages?**
+A: Modify the Jenkinsfile to remove unwanted stages. Or create a new pipeline (test/qa).
+
+**Q: Where are the artifacts?**
+A: Jenkins → Build → Artifacts tab, or `artifacts/` directory in workspace.
+
+**Q: How do I integrate formal verification into my CI?**
+A: The pipeline already does! See Stage 14.
+
+---
+
+## Version Control
+
+This pipeline is maintained in:
+- **File:** `Jenkinsfile` (developer baseline)
+- **Future:** `Jenkinsfile.test`, `Jenkinsfile.qa`, `Jenkinsfile.prod`
+
+**Status:** ACTIVE
+**Last Updated:** 2025-10-30
+**Next Review:** After first production deployment
+
+---
+
+Generated: {docdate}

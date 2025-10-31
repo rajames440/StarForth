@@ -1,0 +1,349 @@
+////
+Cross-Reference Guide: ECR/ECO/CAPA/FMEA Linking
+
+Document Metadata:
+- Document ID: 05-CROSS_REFERENCE_GUIDE
+- Version: 1.0.0
+- Created: 2025-10-30T00:00:00Z
+- Purpose: Define how ECR/ECO/CAPA/FMEA issues cross-reference and link
+- Scope: Issue linking, traceability, audit trail
+- Document Type: Reference Guide
+- Part of: GOVERNANCE_REFERENCE_MANUAL.adoc (Chapter 5)
+////
+
+= Chapter 5: Cross-Reference Guide
+
+**Document ID:** 05-CROSS_REFERENCE_GUIDE
+**Version:** 1.0.0
+**Status:** Active
+**Last Updated:** October 30, 2025
+**Owner:** Robert A. James (PM)
+
+---
+
+== Overview
+
+StarForth uses GitHub Issues as the primary traceability system. All governance artifacts (ECR, ECO, CAPA, FMEA) link together to create a complete audit trail.
+
+```
+ECR-2025-001 (New Feature Request)
+    ↓ (PM approves)
+ECO-2025-001 (Engineering Change Order)
+    ↓ (Backlog entry)
+Git commits + PR (Implementation)
+    ↓ (All tests pass)
+v2.0.2 (Git tag = Release)
+    │
+    ├─ Associated CAPA #42 (If defect found)
+    │   ↓ (QA validates)
+    │   FMEA-2025-001 (If HIGH RISK)
+    │
+    └─ Complete audit trail in git history
+```
+
+---
+
+== Issue ID Hierarchy
+
+[cols="1,2,3,2"]
+|===
+|Type |Format |Example |Purpose
+
+|**ECR** |No prefix (uses GitHub issue #) |#123 |Feature request
+|**ECO** |ECO-YYYY-### |ECO-2025-001 |Approved feature for backlog
+|**CAPA** |No prefix (uses GitHub issue #) |#456 |Defect tracking
+|**FMEA** |FMEA-YYYY-### |FMEA-2025-001 |Risk analysis
+|**Release Tag** |vMAJOR.MINOR.PATCH |v2.0.2 |Version marker
+|===
+
+---
+
+== Linking Procedures
+
+=== ECR → ECO Link
+
+**When:** PM approves ECR and creates ECO
+
+**GitHub:**
+```
+ECR Issue #123:
+  Title: "ECR: Add MYWORD arithmetic"
+  Status: APPROVED
+
+ECO Issue (new):
+  Title: "ECO-2025-001: Implement MYWORD arithmetic"
+  Description: "Closes ECR #123"
+```
+
+**Result:** GitHub links ECR #123 → ECO-2025-001 via "Closes" reference
+
+---
+
+=== ECO → Git Commits Link
+
+**When:** Developer implements ECO feature
+
+**Git Commit:**
+```
+commit abc123
+Author: Developer
+Date: 2025-10-30
+
+feat: ECO-2025-001 - Implement MYWORD arithmetic
+
+Detailed description of what was implemented.
+
+References: ECO-2025-001
+```
+
+**GitHub PR:**
+```
+Title: "ECO-2025-001: Implement MYWORD arithmetic"
+Description: "Closes ECO-2025-001"
+```
+
+**Result:** PR merged → ECO issue auto-closes (via "Closes" reference)
+
+---
+
+=== Implementation → Release Tag Link
+
+**When:** PR merged to master after approval
+
+**Git Tag:**
+```
+$ git tag v2.0.2
+$ git push origin v2.0.2
+```
+
+**Release Notes:**
+```
+v2.0.2 Release Notes
+
+ECO-2025-001: Add MYWORD arithmetic operation
+- Implements addition of new arithmetic word
+- Merged via PR #XXX
+- All tests pass (99.7%)
+```
+
+**Result:** Tag v2.0.2 marks the release commit
+
+---
+
+=== CAPA → FMEA Link (If Applicable)
+
+**When:** QA determines FMEA required for high-risk CAPA
+
+**CAPA Issue #456:**
+```
+Title: "Stack underflow in DROP word"
+Status: VALIDATING (QA review)
+Comment: "HIGH RISK - FMEA required"
+```
+
+**FMEA Issue (new):**
+```
+Title: "FMEA-2025-001: Stack underflow failure analysis"
+Description: "Analyzes CAPA #456 failure modes"
+Links to: CAPA #456
+```
+
+**Result:** FMEA-2025-001 linked to CAPA #456 in GitHub
+
+---
+
+== Traceability Matrix (Complete Audit Trail)
+
+```
+Feature Implementation Audit Trail
+═══════════════════════════════════════════════════════════════
+
+REQUEST PHASE
+├─ ECR #123: "Add MYWORD arithmetic"
+│   ├─ Submitted: 2025-10-25
+│   ├─ Submitter: User
+│   └─ Status: SUBMITTED
+│
+APPROVAL PHASE
+├─ PM Review: 2025-10-27 (7 days max)
+│ ├─ Decision: ✅ APPROVED
+│ ├─ Criteria: Meets quality policy, low risk
+│ └─ Next: Create ECO
+│
+├─ ECO-2025-001: "Implement MYWORD arithmetic"
+│   ├─ Created: 2025-10-27
+│   ├─ Creator: PM (Robert A. James)
+│   ├─ FMEA Decision: No FMEA required (low risk)
+│   ├─ Priority: HIGH
+│   ├─ Effort: Small (1 day)
+│   └─ Status: BACKLOG_READY
+│
+IMPLEMENTATION PHASE
+├─ Developer assigned: 2025-10-28
+│ ├─ Branch: feature/eco-2025-001
+│ ├─ Implementation: 2025-10-29
+│ └─ Test addition: tests/test_myword.c
+│
+├─ Commit abc123: "feat: ECO-2025-001 - Implement MYWORD"
+│   ├─ Date: 2025-10-29
+│   ├─ Files changed: src/arithmetic_words.c, tests/test_myword.c
+│   ├─ Diff: +15 lines, -0 lines
+│   └─ Status: Ready for PR
+│
+├─ PR #XXX: "ECO-2025-001: Implement MYWORD arithmetic"
+│   ├─ Created: 2025-10-29
+│   ├─ Linked to: ECO-2025-001 (Closes ECO-2025-001)
+│   ├─ Tests: ✓ 939/939 pass
+│   ├─ Coverage: ✓ 87.2% (maintained)
+│   ├─ QA Review: ✓ Approved
+│   ├─ PM Approval: ✓ Approved (1 day)
+│   └─ Status: READY_TO_MERGE
+│
+RELEASE PHASE
+├─ Merge: 2025-10-30
+│ ├─ Merged by: PM
+│ ├─ Status: ECO-2025-001 auto-closed
+│ └─ Next: Tag release
+│
+├─ Tag v2.0.2: 2025-10-30
+│   ├─ Commit: abc123 (the MYWORD implementation)
+│   ├─ Release Notes: "MYWORD arithmetic implementation"
+│   ├─ References: ECO-2025-001, PR #XXX
+│   └─ Available: Users can download v2.0.2
+│
+POTENTIAL DEFECT PHASE (If Issue Found)
+├─ CAPA #XXX: "MYWORD returns wrong result in edge case"
+│   ├─ Reported: 2025-11-15 (after release)
+│   ├─ Severity: MAJOR (affects users)
+│   ├─ Affects version: v2.0.2
+│   └─ Next: Developer fixes
+│
+├─ Fix commit: "fix: CAPA #XXX - Handle negative inputs"
+│ ├─ References: CAPA #XXX, ECO-2025-001 (related)
+│ ├─ Regression test: tests/test_capa_xxx.c
+│ └─ Status: PR created
+│
+├─ QA Validation: ✓ Approved
+├─ FMEA Decision: No (isolated fix)
+├─ PM Approval: ✓ Approved
+│
+├─ Release v2.0.3: "CAPA #XXX - Fixed MYWORD edge case"
+│   ├─ References: CAPA #XXX, ECO-2025-001 (related)
+│   └─ Available: Users can upgrade
+│
+COMPLETE TRACE
+├─ ECR #123 → ECO-2025-001 → PR #XXX → v2.0.2 → [CAPA #XXX] → v2.0.3
+├─ Audit chain: GitHub issues + Git commits + Tags
+└─ Governance records: Complete and traceable
+═══════════════════════════════════════════════════════════════
+```
+
+---
+
+== GitHub Issue Linking Syntax
+
+=== "Closes" Reference (Auto-closes issue)
+
+```
+When merging PR, include in commit or PR description:
+
+Closes #123
+
+Result: GitHub automatically closes issue #123 when PR merges
+```
+
+=== "References" Syntax (Manual linking)
+
+```
+Reference related issue without auto-closing:
+
+References: CAPA #456
+See also: ECO-2025-001
+
+Result: Manual link visible in GitHub issue
+```
+
+=== Cross-Repository References
+
+Currently all issues in single repo (StarForth), but if future expansion:
+
+```
+Cross-repo reference format:
+rajames440/StarForth#123  (within repo)
+rajames440/StarshipOS#456 (external repo)
+```
+
+---
+
+== Audit Trail Checklist
+
+When reviewing governance completeness:
+
+```
+AUDIT TRAIL COMPLETENESS CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+For each released feature (v2.0.2):
+
+☐ ECR issue exists (#NNN with full description)
+☐ ECO issue exists (ECO-YYYY-### linked to ECR)
+☐ At least 1 Git commit references ECR/ECO
+☐ PR exists with link to issue (Closes #NNN or Closes ECO-YYYY-###)
+☐ Git tag exists for release (vX.Y.Z)
+☐ Release notes mention feature and related issues
+☐ Test cases added for feature (maintained ≥85% coverage)
+☐ Formal proofs updated (if verified code)
+
+If HIGH RISK feature:
+☐ FMEA-YYYY-### issue created
+☐ FMEA-YYYY-### linked to ECO or CAPA
+☐ FMEA analysis documented
+☐ Risk controls implemented
+☐ FMEA sign-off by QA
+
+If defect found post-release:
+☐ CAPA issue created (#NNN)
+☐ CAPA linked to original ECO (References: ECO-YYYY-###)
+☐ Fix commit references CAPA #NNN
+☐ Regression test added for defect
+☐ Defect fix released in next version
+
+RESULT: ☐ COMPLETE - All artifacts present
+        ☐ INCOMPLETE - List missing artifacts
+═══════════════════════════════════════════════════════════════
+```
+
+---
+
+== Compliance References
+
+This cross-reference guide aligns with:
+
+- **IEEE 1220:2019** (Requirements traceability)
+- **ISO/IEC 12207:2017** (Traceability matrix)
+- **IEC 62304:2015** (Design and implementation traceability)
+
+---
+
+== Change History
+
+[cols="1,2,3"]
+|===
+|Version |Date |Changes
+
+|1.0.0 |2025-10-30 |Initial cross-reference guide with ECR→ECO→CAPA→FMEA linking and complete audit trail template
+|===
+
+---
+
+**Related:**
+- Chapter 1 - ECR_PROCESS.adoc
+- Chapter 2 - ECO_PROCESS.adoc
+- Chapter 3 - CAPA_PROCESS.adoc
+- Chapter 4 - FMEA_PROCESS.adoc
+
+---
+
+**Maintained by:** Robert A. James (PM)
+**Last Updated:** October 30, 2025
+**Status:** ACTIVE - Reference guide

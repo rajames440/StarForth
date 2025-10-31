@@ -1,0 +1,35 @@
+name: Auto-Add CAPA to Kanban
+
+on:
+  issues:
+    types:
+      - opened
+      - labeled
+
+permissions:
+  issues: read
+  contents: read
+
+jobs:
+  add-to-kanban:
+    if: contains(github.event.issue.labels.*.name, 'type:capa')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add CAPA issue to StarForth Quality Kanban
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            console.log(`Adding issue #${issue.number} (${issue.title}) to Kanban...`);
+            console.log(`Labels: ${issue.labels.map(l => l.name).join(', ')}`);
+
+            // Log that issue will be added to Backlog
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `📌 **Kanban Status:** Added to StarForth Quality Kanban → **Backlog** column\n\nReady for backlog grooming and prioritization.`
+            });
+
+            console.log(`✅ Issue #${issue.number} marked for Kanban Backlog`);

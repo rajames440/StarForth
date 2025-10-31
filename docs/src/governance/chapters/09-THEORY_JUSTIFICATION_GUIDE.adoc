@@ -1,0 +1,380 @@
+////
+Theory Justification Guide: When/How to Use Isabelle Proofs
+
+Document Metadata:
+- Document ID: 09-THEORY_JUSTIFICATION_GUIDE
+- Version: 1.0.0
+- Created: 2025-10-30T00:00:00Z
+- Purpose: Guide for when formal verification (Isabelle) is required vs optional
+- Scope: Theory requirements, proof standards, exemption criteria
+- Document Type: Guidance Document
+- Part of: GOVERNANCE_REFERENCE_MANUAL.adoc (Chapter 9)
+////
+
+= Chapter 9: Theory Justification Guide
+
+**Document ID:** 09-THEORY_JUSTIFICATION_GUIDE
+**Version:** 1.0.0
+**Status:** Active
+**Last Updated:** October 30, 2025
+**Owner:** Robert A. James (QA)
+
+---
+
+== Overview
+
+StarForth uses **Isabelle/HOL** for formal verification of critical FORTH-79 operations. This chapter defines:
+
+1. **When theory is required** (mandatory for certain code)
+2. **When theory is optional** (nice-to-have)
+3. **When theory is N/A** (not applicable to code type)
+4. **How to document exemptions** (if theory skipped)
+
+---
+
+== Theory Requirement Matrix
+
+| Code Category | Example | Theory Required? | Rationale |
+|---|---|---|---|
+| **FORTH-79 Core Words** | DUP, DROP, SWAP, +, -, @, ! | ✅ YES | Formal verification part of standard |
+| **Memory Operations** | @, !, ERASE, stack storage | ✅ YES | Safety-critical, potential corruption |
+| **Control Flow Primitives** | IF/THEN/ELSE, DO/LOOP | ✅ YES | Invariants must hold across branching |
+| **Arithmetic** | +, -, *, / with overflow checks | ✅ YES | Mathematical correctness critical |
+| **Block Storage** | BLOCK, BUFFER, sector ops | ⚠️ OPTIONAL | Important but lower risk than core |
+| **I/O Operations** | KEY, EMIT, TYPE, ACCEPT | ❌ NO | Input/output layer, not formally verifiable |
+| **System Operations** | QUIT, ABORT, error handling | ❌ NO | System-level, not formally verifiable |
+| **Utility Functions** | Helper functions, internal tools | ❌ NO | Not user-facing critical functionality |
+| **Documentation** | Comments, README, guides | ❌ NO | Not code logic |
+| **Tests** | New test cases, test data | ❌ NO | Tests validate, don't require proof |
+
+---
+
+## When Theory is REQUIRED
+
+Formal Isabelle/HOL proof is **mandatory** for:
+
+1. **FORTH-79 Core Word Implementation**
+   - Adding new FORTH word (e.g., MYWORD)
+   - Modifying existing core word behavior
+   - Reason: FORTH-79 standard compliance
+
+2. **Memory Safety Operations**
+   - Implementing or modifying @, !, ERASE
+   - Changes to stack pointer management
+   - Buffer bounds checking
+   - Reason: Prevention of memory corruption
+
+3. **Invariant-Critical Operations**
+   - Control flow (IF/THEN/ELSE) that affects stack invariant
+   - Loop semantics (DO/LOOP) that change iteration behavior
+   - Reason: Proof that stack invariants maintained
+
+4. **Arithmetic with Safety Properties**
+   - Implementing overflow detection
+   - Division by zero handling
+   - Reason: Correctness of error conditions
+
+**Quality Policy Connection:**
+- QUALITY_POLICY.adoc requirement: "100% of critical lemmas proven"
+- Failure to provide theory = CAPA/ECO rejection
+
+---
+
+## When Theory is OPTIONAL
+
+Formal proof is **recommended but not required** for:
+
+1. **Block Storage Enhancements**
+   - Optimizations to BLOCK/BUFFER operations
+   - New caching strategies
+   - Reason: Important but not core language feature
+
+2. **Performance Improvements**
+   - Algorithm optimization in non-critical path
+   - Reason: Functional behavior unchanged
+
+3. **Error Message Improvements**
+   - Better error reporting (no logic change)
+   - Reason: User-facing, not mathematical
+
+**Decision:** QA may request OPTIONAL theory if:
+- High complexity detected
+- Previous bugs in similar code
+- Critical path operations affected
+
+---
+
+## When Theory is NOT APPLICABLE
+
+Formal proof is **not required** for:
+
+1. **I/O Operations**
+   - KEY, EMIT, TYPE, ACCEPT
+   - Reason: Cannot be formally verified (hardware-dependent)
+
+2. **System Operations**
+   - QUIT, ABORT, initialization
+   - Reason: System-level control
+
+3. **Tests**
+   - Adding test cases for existing functionality
+   - Reason: Tests validate; they don't need proof
+
+4. **Documentation**
+   - Comments, README, guides
+   - Reason: Not executable code
+
+5. **Utility Functions**
+   - Helper functions used internally
+   - Reason: Not user-facing critical functionality
+
+**Exception:**  If utility function is used BY formally-verified code, may require minimal proof
+
+---
+
+## Theory Exemption Documentation
+
+If theory cannot be provided (OPTIONAL or N/A case), document explicitly:
+
+### Example 1: OPTIONAL Theory Skipped
+
+```
+ECO-2025-002: Block Storage Optimization
+
+Implementation: Implement LRU cache for block buffer
+
+Theory Required: OPTIONAL (block storage)
+Theory Provided: NO
+Justification: Cache optimization doesn't change FORTH-79 semantics.
+              Block storage behavior identical to user.
+              Cache is internal optimization only.
+              Test coverage validates correctness.
+              Risk: LOW (algorithm change, no language change)
+
+Compensation: Enhanced benchmarking validates performance improvement
+             without regression.
+```
+
+### Example 2: N/A Theory
+
+```
+ECO-2025-003: Improve Error Messages
+
+Implementation: Add more descriptive error messages to arithmetic
+
+Theory Required: N/A (error messages, not logic change)
+Theory Provided: N/A
+Justification: Error messages are text output only.
+              Arithmetic logic unchanged (existing word, no modification).
+              Only EMIT (I/O) operation changed.
+              Cannot formally verify user-facing text.
+
+Compensation: Manual review of error text for clarity and accuracy.
+             No risk to logic or safety.
+```
+
+---
+
+## Theory Submission Checklist
+
+When theory is required, use this checklist:
+
+```
+THEORY SUBMISSION CHECKLIST
+═════════════════════════════════════════════════════════════
+
+ECR/ECO: {Issue number and name}
+Developer: {Name}
+Isabelle File: {*.thy file name}
+Date: {Date}
+
+COMPLETENESS
+☐ New *.thy file created (or existing updated)
+☐ All new lemmas included
+☐ All lemmas have proofs (no "sorry" or "admit")
+☐ Proofs are complete (no unsolved goals)
+☐ Proof comments explain non-obvious steps
+☐ Theory compiles without errors: make qual
+
+CORRECTNESS
+☐ Lemmas match FORTH-79 specification
+☐ Lemmas match implementation code
+☐ Invariants stated and preserved
+☐ Edge cases covered (boundary conditions)
+☐ Error conditions included
+
+DOCUMENTATION
+☐ Lemma names are descriptive
+☐ Lemma purpose documented in comments
+☐ Proof strategy documented (if complex)
+☐ References to FORTH-79 standard included
+☐ Related lemmas cross-referenced
+
+QA REVIEW (By QA lead before acceptance)
+☐ Theory matches code implementation
+☐ All lemmas logically sound
+☐ Proofs are rigorous (not hand-waved)
+☐ Coverage is sufficient (no gaps in logic)
+☐ Documentation is clear
+
+SIGN-OFF
+Developer: {Name} - {Date}
+QA Review: Robert A. James - {Date}
+Status: ☐ APPROVED ☐ NEEDS REVISION
+
+═════════════════════════════════════════════════════════════
+```
+
+---
+
+## Common Theory Scenarios
+
+### Scenario 1: Adding New FORTH Word (REQUIRED THEORY)
+
+```
+Feature: Add MYWORD arithmetic word
+
+FORTH-79 Spec:
+  MYWORD: ( n1 n2 -- n3 )
+  n3 = n1 OP n2 (mathematical operation)
+
+Implementation:
+  : MYWORD ( n1 n2 -- n3 )
+    { Stack implementation } ;
+
+Isabelle Theory Required: YES
+
+Lemmas to prove:
+  1. myword_stack_effect: MYWORD removes 2 items, adds 1
+  2. myword_correctness: Result equals mathematical operation
+  3. myword_no_underflow: Requires ≥2 stack items
+  4. myword_invariant: Stack invariant maintained
+
+Proof Effort: 1-2 hours for simple operation
+Complexity: ~50 lines of Isabelle proof code
+```
+
+---
+
+### Scenario 2: Memory Safety Fix (REQUIRED THEORY)
+
+```
+Feature: Add bounds checking to DROP
+
+CAPA #42: Stack underflow in DROP
+
+Current Code:
+  : DROP ( n -- )
+    sp -- ;  // No bounds check!
+
+Fixed Code:
+  : DROP ( n -- )
+    dup sp <= if error else sp -- then ;
+
+Isabelle Theory Required: YES
+
+Lemmas to prove:
+  1. drop_requires_elements: Proves ≥1 element needed
+  2. drop_safety: Bounds check prevents underflow
+  3. drop_invariant: Stack invariant maintained
+  4. drop_error_handling: Error path correct
+
+Proof Effort: 2-3 hours (memory safety proofs are complex)
+Complexity: ~100 lines of Isabelle proof code
+```
+
+---
+
+### Scenario 3: Performance Optimization (OPTIONAL THEORY)
+
+```
+Feature: Optimize block cache lookup
+
+ECO-2025-002: Implement LRU cache for blocks
+
+Current: Linear search through block list
+New: Hash-based lookup with LRU eviction
+
+External Behavior: Identical to user
+Internal Change: Algorithm/data structure only
+User-Facing: No difference in FORTH semantics
+
+Isabelle Theory Required: OPTIONAL
+
+Recommended:
+  - Simple proof that hash lookup finds same blocks as linear search
+  - Proof that LRU eviction policy maintains correctness
+  - Optional but advised if cache is complex
+
+Proof Effort: If done, ~1-2 hours
+Complexity: ~50 lines if included
+```
+
+---
+
+## Decision Tree: Is Theory Required?
+
+```
+Question 1: Is this a FORTH-79 core word?
+  ├─ YES → THEORY REQUIRED
+  │         (Must prove correctness per standard)
+  │
+  └─ NO → Question 2
+
+Question 2: Does this touch memory operations (@, !, ERASE)?
+  ├─ YES → THEORY REQUIRED
+  │         (Safety-critical, must prove bounds)
+  │
+  └─ NO → Question 3
+
+Question 3: Does this change control flow (IF/LOOP semantics)?
+  ├─ YES → THEORY REQUIRED
+  │         (Must prove invariants maintained)
+  │
+  └─ NO → Question 4
+
+Question 4: Is this I/O or system-level operation?
+  ├─ YES → THEORY NOT APPLICABLE
+  │         (Cannot formally verify hardware operations)
+  │
+  └─ NO → Question 5
+
+Question 5: Is this a complex algorithm or new approach?
+  ├─ YES → THEORY OPTIONAL
+  │         (Consider FMEA + proof if high risk)
+  │
+  └─ NO → THEORY NOT APPLICABLE
+           (Simple changes don't need theory)
+
+DECISION:
+  → REQUIRED: Cannot proceed without theory
+  → OPTIONAL: Recommended if high complexity/risk
+  → N/A: Not applicable to code type
+```
+
+---
+
+## Compliance References
+
+This theory justification aligns with:
+
+- **ISO/IEC 25010:2023** § 5 (Reliability, Security characteristics)
+- **IEC 62304:2015** § 7.3 (Formal verification)
+- **DO-178C** (Formal methods for avionics - reference)
+
+---
+
+## Change History
+
+[cols="1,2,3"]
+|===
+|Version |Date |Changes
+
+|1.0.0 |2025-10-30 |Initial theory justification guide with requirement matrix, exemption procedures, and decision tree for Isabelle proof requirement
+|===
+
+---
+
+**Maintained by:** Robert A. James (QA)
+**Last Updated:** October 30, 2025
+**Status:** ACTIVE - Reference guide for theory decisions

@@ -1,0 +1,42 @@
+// DEVL PIPELINE - Quick feedback for developers (5 min)
+pipeline {
+	agent any
+	environment {
+		ARCH = 'amd64'
+		BUILD_DIR = 'build'
+		ARTIFACT_DIR = 'artifacts'
+		LOG_DIR = 'logs'
+	}
+	options {
+		skipDefaultCheckout(false)
+		buildDiscarder(logRotator(numToKeepStr: '20'))
+		timeout(time: 10, unit: 'MINUTES')
+		timestamps()
+	}
+	stages {
+		stage('Cleanup & Build') {
+			steps {
+				sh 'git reset --hard origin/HEAD'
+				sh 'make clean || true'
+				sh 'rm -rf ${ARTIFACT_DIR} ${LOG_DIR} && mkdir -p ${ARTIFACT_DIR} ${LOG_DIR}'
+				sh 'make fastest 2>&1 | tee ${LOG_DIR}/build.log'
+			}
+		}
+		stage('Smoke Test') {
+			steps {
+				sh 'make smoke 2>&1 | tee ${LOG_DIR}/smoke-test.log'
+			}
+		}
+	}
+	post {
+		always {
+			archiveArtifacts artifacts: 'logs/**', allowEmptyArchive: true
+		}
+		success {
+			sh 'echo "✅ DEVL PASSED"'
+		}
+		failure {
+			sh 'echo "❌ DEVL FAILED - Check logs"'
+		}
+	}
+}
