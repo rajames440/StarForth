@@ -4,6 +4,49 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## 🚨 CURRENT SESSION STATUS (2025-10-31 Evening)
+
+**WHERE WE ARE:**
+
+- Repository in DEGRADED but RECOVERABLE state
+- Git integrity: CLEAN (251 commits, no corruption)
+- Critical issue: Missing submodule config (.gitmodules removed)
+- Data loss risk: 8 controlled documents in backup (backed up, safe)
+
+**WHAT'S HAPPENING:**
+Captain Bob is designing a comprehensive **Workflow & Governance Plan** to establish:
+
+- Formal roles (PROJ_MGR, QUAL_MGR, ENG_MGR)
+- Version scheme (X.y.z with timestamps)
+- Dual-stamp pattern (human approval + CI/CD execution)
+- Document injection workflows (validated → StarForth-Governance/in_basket)
+
+**FILES TO REVIEW:**
+
+1. `/home/rajames/CLionProjects/RECOVERY_SESSION_2025-10-31.md` - Recovery context
+2. `/home/rajames/CLionProjects/StarForth/WORKFLOW_GOVERNANCE_PLAN_DRAFT_2025-10-31.md` - Governance plan (UNREGULATED
+   DRAFT)
+
+**NEXT MORNING TASKS:**
+
+1. Read this section + the two files above
+2. Captain Bob will provide decisions on 14 gap analysis sections (see WORKFLOW_GOVERNANCE_PLAN_DRAFT_2025-10-31.md PART
+   2)
+3. Once gaps filled: design workflow templates and integration
+4. Implement in Makefile, Jenkins, GitHub
+
+**KEY DECISION MADE:**
+
+- Simplified model: Two separate repos (no complex read-only submodule)
+- Document flow: Validated workflows → directly inject to StarForth-Governance/in_basket
+- Humans ONLY interact through validated workflows (never direct vault edits)
+- Each item type (CAPA, Feature, etc.) gets own workflow definition
+
+**BACKUP LOCATION:**
+`/home/rajames/CLionProjects/in_basket_backup_1761947819.tar.gz` (verified, 88K, all data safe)
+
+---
+
 ## Quick Start Commands
 
 ### Build
