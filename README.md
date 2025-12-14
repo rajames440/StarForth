@@ -41,9 +41,9 @@ The physics-driven adaptive runtime, execution heat model, rolling window of tru
 
 ## 🎯 What is StarForth?
 
-**StarForth** is a FORTH-79 compliant virtual machine written in strict ANSI C99, featuring the world's first **physics-grounded self-adaptive runtime** with formally proven deterministic behavior. It achieves what conventional wisdom says is impossible: **adaptive optimization without sacrificing reproducibility**.
+**StarForth** is a FORTH-79 compliant virtual machine written in strict ANSI C99, featuring a **math based self-adaptive runtime** with proven deterministic behavior. It achieves an: **adaptive optimization without sacrificing reproducibility**.
 
-**Key Achievement:** **0% algorithmic variance** across 90 experimental runs, proving that adaptive systems can be deterministic and formally verifiable.
+**Key Achievement:** **~0% CV algorithmic variance** across 90 experimental runs, proving that adaptive systems can be deterministic and formally verifiable.
 
 ### The Innovation
 
