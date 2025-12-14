@@ -53,8 +53,6 @@ StarForth introduces a novel approach to VM optimization based on a **thermodyna
 - **Inference Engine** - Statistical adaptation using ANOVA and Levene's test
 - **Hot-Words Cache** - Frequency-driven dictionary reordering
 
-**Result:** 25.4% performance improvement while maintaining perfect determinism.
-
 ### The Vision
 
 StarForth is not just a VM—it's the foundation for an entirely new computing stack:
