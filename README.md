@@ -10,7 +10,7 @@
 ```
 
 <p align="center">
-  <strong>A Physics-Driven Adaptive FORTH-79 Virtual Machine</strong><br>
+  <strong>A Thermodynamically-Inspired Adaptive FORTH-79 Virtual Machine</strong><br>
   The Foundation for StarKernel and StarshipOS
 </p>
 
@@ -33,7 +33,7 @@
 **Applicant:** Robert A. James
 **Status:** Provisional Patent Pending
 
-The physics-driven adaptive runtime, execution heat model, rolling window of truth, and deterministic inference mechanisms described in this repository are proprietary innovations covered by pending patent protection.
+The adaptive runtime system, frequency-based optimization mechanisms, rolling window of truth, and deterministic inference algorithms described in this repository are proprietary innovations covered by pending patent protection.
 
 **For licensing inquiries, contact:** rajames440@gmail.com (Robert A. James aka Captain Bob)
 
@@ -47,8 +47,8 @@ The physics-driven adaptive runtime, execution heat model, rolling window of tru
 
 ### The Innovation
 
-StarForth introduces a novel approach to VM optimization based on a **thermodynamic metaphor**:
-- **Execution Heat Model** - Words that execute frequently "heat up"
+StarForth introduces a novel approach to VM optimization using frequency-based metrics:
+- **Execution Heat Model** - Tracks word execution frequency with weighted counters
 - **Rolling Window of Truth** - Deterministic execution history capture
 - **Inference Engine** - Statistical adaptation using ANOVA and Levene's test
 - **Hot-Words Cache** - Frequency-driven dictionary reordering
@@ -68,7 +68,7 @@ Linux, L4Re              Bare metal                Self-hosting
 
 ## 🚀 Key Innovation
 
-### Physics-Driven Adaptive Runtime (Formally Proven)
+### Adaptive Runtime with Formal Convergence Guarantees
 
 StarForth implements **seven physics feedback loops** that drive self-optimization while maintaining determinism:
 
@@ -90,7 +90,7 @@ StarForth implements **seven physics feedback loops** that drive self-optimizati
 - Completely reproducible behavior
 
 **Theorem 2: Adaptive Convergence**
-- **25.4% performance improvement** via physics-driven optimization
+- **25.4% performance improvement** via adaptive frequency-based optimization
 - Early runs: 10.20 ms → Late runs: 7.61 ms
 - Measurable, reproducible gains
 
@@ -215,7 +215,7 @@ make book-html   # HTML with dark theme
 **Status:** Production-ready, formally validated
 
 - ✅ FORTH-79 compliant interpreter
-- ✅ Physics-driven adaptive runtime
+- ✅ Adaptive runtime with deterministic convergence
 - ✅ 0% algorithmic variance proven
 - ✅ 780+ tests passing
 - ✅ Runs on Linux, L4Re/Fiasco.OC
@@ -362,7 +362,7 @@ This is a permissive license that grants broad freedoms:
 
 **Sole requirement:** Permanent attribution to **R.A. James (Captain Bob)** must be preserved in all distributions and derivative works.
 
-**Patent Notice:** This license does **not** grant patent rights. The physics-driven adaptive runtime innovations are subject to **pending patent protection**. See [Patent Pending](#-patent-pending) section above for licensing inquiries.
+**Patent Notice:** This license does **not** grant patent rights. The adaptive runtime system innovations are subject to **pending patent protection**. See [Patent Pending](#-patent-pending) section above for licensing inquiries.
 
 **Third-party components:**
 - Fiasco.OC and L4Re remain **GPLv2** (external dependencies)

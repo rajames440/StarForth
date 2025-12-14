@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-StarForth is a FORTH-79 compliant virtual machine written in strict ANSI C99, featuring a physics-driven adaptive runtime. It serves as the primary userland execution engine for StarshipOS and can run standalone on Linux, L4Re/Fiasco.OC, and bare-metal targets.
+StarForth is a FORTH-79 compliant virtual machine written in strict ANSI C99, featuring a thermodynamically-inspired adaptive runtime. It serves as the primary userland execution engine for StarshipOS and can run standalone on Linux, L4Re/Fiasco.OC, and bare-metal targets.
 
-**Key distinguishing feature:** Physics-grounded self-adaptive runtime with formally proven deterministic behavior (0% algorithmic variance across 90 experimental runs).
+**Key distinguishing feature:** Frequency-based self-adaptive runtime with formally proven deterministic behavior (0% algorithmic variance across 90 experimental runs).
 
 ## Build Commands
 
@@ -46,7 +46,7 @@ make clean
 
 - `STRICT_PTR=1` - Enforce pointer safety checks (default: on)
 - `USE_ASM_OPT=1` - Enable architecture-specific assembler optimizations (set automatically per TARGET)
-- `ENABLE_HOTWORDS_CACHE=1` - Physics-driven hot-words cache (default: off for baseline experiments, enable for production)
+- `ENABLE_HOTWORDS_CACHE=1` - Frequency-driven hot-words cache (default: off for baseline experiments, enable for production)
 - `ENABLE_PIPELINING=1` - Speculative execution via word transition prediction (default: off for baseline experiments, enable for production)
 - `HEARTBEAT_THREAD_ENABLED=1` - Background heartbeat thread for adaptive tuning (default: on)
 
@@ -118,15 +118,15 @@ StarForth uses a Hardware Abstraction Layer (HAL) to enable portability across m
 
 **Architecture Vision: StarForth → StarKernel → StarshipOS**
 
-1. **StarForth** (current) - VM + physics runtime on hosted platforms
+1. **StarForth** (current) - VM + adaptive runtime on hosted platforms
 2. **StarKernel** (in progress) - UEFI-bootable kernel with Forth as native control plane
 3. **StarshipOS** (future) - Full OS with storage, networking, process model
 
 See `docs/03-architecture/hal/` for comprehensive HAL documentation.
 
-### Physics-Driven Adaptive Runtime
+### Adaptive Runtime System
 
-The VM features a unique physics-grounded optimization system:
+The VM features a thermodynamically-inspired optimization system (see ONTOLOGY.md for formal definitions):
 
 1. **Execution Heat Model** (`dictionary_heat_optimization.c`) - Tracks word execution frequency
 2. **Rolling Window of Truth** (`rolling_window_of_truth.c`) - Circular buffer capturing execution history
@@ -177,7 +177,7 @@ Test files are in `src/test_runner/modules/` - each `*_test.c` file tests one wo
 - Dictionary words with `WORD_IMMEDIATE` flag execute during compilation
 - `STRICT_PTR=1` enforces bounds checking (disable only for benchmarking)
 
-## Physics Feedback Loops
+## Adaptive Feedback Loops
 
 The adaptive runtime has 7 configurable feedback loops (toggled via Makefile):
 

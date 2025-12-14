@@ -125,7 +125,7 @@ The **physics-driven adaptive runtime** consists of six coordinated subsystems:
 
 ### 1. Execution Heat Model (`dictionary_heat_optimization.c`)
 
-**Metaphor:** Words that execute frequently "heat up"
+**Mechanism:** Words that execute frequently accumulate higher execution counts
 
 **Implementation:**
 ```c
