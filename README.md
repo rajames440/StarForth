@@ -35,7 +35,7 @@
 
 The physics-driven adaptive runtime, execution heat model, rolling window of truth, and deterministic inference mechanisms described in this repository are proprietary innovations covered by pending patent protection.
 
-**For licensing inquiries, contact:** [Patent licensing contact information]
+**For licensing inquiries, contact:** rajames440@gmail.com (Robert A. James aka Captain Bob)
 
 ---
 
