@@ -6,9 +6,12 @@ Thank you for your interest in contributing to StarForth! This document provides
 
 1. **Fork and clone** the repository
 2. **Build** the project: `make`
-3. **Run tests**: `make test` (all 936+ tests must pass)
-4. **Read** `docs/CLAUDE.md` for project overview
-5. **Explore** `docs/03-architecture/` for architecture details
+3. **Run tests**: `make test` (all 780+ tests must pass)
+4. **Read** [ONTOLOGY.md](ONTOLOGY.md) for formal definitions and terminology
+5. **Read** `docs/CLAUDE.md` for project overview
+6. **Explore** `docs/03-architecture/` for architecture details
+
+**Important:** All contributors must use terminology from [ONTOLOGY.md](ONTOLOGY.md) in code comments and documentation. This ensures precise, academically rigorous language throughout the project.
 
 ## Code Standards
 

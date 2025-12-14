@@ -2,6 +2,16 @@
 
 This directory contains all documentation for the StarForth project, organized by topic.
 
+## 📖 START HERE: Formal Definitions
+
+**[ONTOLOGY.md](ONTOLOGY.md)** - Authoritative definitions for all technical terms, explicit metaphor labeling, and academic writing guidelines.
+
+**[ACADEMIC_WORDING_GUIDELINES.md](ACADEMIC_WORDING_GUIDELINES.md)** - Language discipline rules to maintain scientific rigor.
+
+**All contributors and academic authors must reference the ontology for term definitions.**
+
+---
+
 ## Quick Navigation
 
 - **[01-getting-started/](01-getting-started/)** - New user guides and quick-start documentation

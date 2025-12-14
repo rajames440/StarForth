@@ -15,6 +15,7 @@
 </p>
 
 <p align="center">
+  <a href="ONTOLOGY.md">📖 Ontology</a> •
   <a href="#-key-innovation">Key Innovation</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-documentation">Documentation</a> •
@@ -36,6 +37,22 @@
 The adaptive runtime system, frequency-based optimization mechanisms, rolling window of truth, and deterministic inference algorithms described in this repository are proprietary innovations covered by pending patent protection.
 
 **For licensing inquiries, contact:** rajames440@gmail.com (Robert A. James aka Captain Bob)
+
+---
+
+## 📖 Academic Framework & Definitions
+
+**For formal definitions and precise academic terminology, see [ONTOLOGY.md](ONTOLOGY.md)**
+
+The ontology provides:
+- **Precise Definitions** - Formal lexicon for all technical terms (execution frequency, decay coefficients, etc.)
+- **Metaphor Labeling** - Explicit documentation of what's metaphorical vs. literal implementation
+- **Mathematical Formalism** - Complete equations and formal relationships
+- **Academic Writing Guidelines** - How to discuss StarForth in papers without ambiguity
+
+**All academic work referencing StarForth should cite the ontology for authoritative term definitions.**
+
+See also: [ACADEMIC_WORDING_GUIDELINES.md](docs/ACADEMIC_WORDING_GUIDELINES.md) for language discipline rules.
 
 ---
 
