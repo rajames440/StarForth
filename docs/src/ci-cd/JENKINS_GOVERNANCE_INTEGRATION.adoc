@@ -1,0 +1,413 @@
+= Jenkins Governance Integration Guide
+:doctype: article
+:toc:
+:toc-placement: preamble
+:sectnums:
+:sectanchors:
+:source-highlighter: highlightjs
+
+== Document Information
+
+[cols="1,3"]
+|===
+|Document Version|1.0.0
+|Document Date|2025-11-03
+|Status|Governance Integration Specification
+|Classification|CI/CD Process Documentation
+|===
+
+== Overview
+
+This document specifies how **Jenkins pipeline jobs** must integrate with the **StarForth governance system** by routing all outputs to the `in_basket` gating mechanism as the single entry point for governance-relevant artifacts.
+
+**Core Principle:** All governance inputs, regardless of source (GitHub Actions OR Jenkins), MUST flow through:
+
+```
+Development Output (Jenkins Job)
+    ↓
+in_basket/ (Single Gating Point)
+    ↓
+QA Triage (per INTAKE_PROCEDURES.adoc)
+    ↓
+[VAULT] Disposition
+```
+
+== Jenkins Jobs in StarForth Pipeline
+
+The StarForth CI/CD pipeline includes three primary Jenkins jobs:
+
+[cols="1,1,1,2"]
+|===
+|Job Name|Trigger|Purpose|Artifacts to Vault
+|`starforth-devl`|Webhook (PR on devl)|Build + Smoke Test|Build log, test summary
+|`starforth-test`|Auto-triggered after devl|Full test suite execution|Test results, coverage metrics
+|`starforth-qual`|Auto-triggered after test|Formal verification, benchmarks|Benchmarks, SBOM, verification reports
+|===
+
+== Governance Integration Requirements
+
+=== 1. SSH/Git Access to StarForth-Governance
+
+Each Jenkins job that produces governance artifacts **MUST** have:
+
+1. **SSH credentials** configured in Jenkins for StarForth-Governance repo
+2. **Read/Write access** to the governance repository
+3. **Submodule permissions** (if StarForth-Governance is a submodule)
+
+**Configuration:**
+```groovy
+// In Jenkinsfile or Job DSL:
+credentials {
+  sshUserPrivateKey('starforth-governance-ssh', 'Jenkins SSH Key for StarForth-Governance')
+}
+```
+
+=== 2. Cloning StarForth-Governance Submodule
+
+Each job must initialize the governance repo for artifact staging:
+
+```groovy
+stage('Setup Governance Path') {
+    steps {
+        script {
+            // Initialize submodule
+            sh '''
+                git submodule update --init --recursive
+                # Verify governance repo is accessible
+                ls -la StarForth-Governance/in_basket/
+            '''
+        }
+    }
+}
+```
+
+=== 3. Artifact Routing Pattern
+
+All Jenkins jobs MUST follow this pattern when generating governance artifacts:
+
+```groovy
+stage('Route Artifacts to Governance') {
+    steps {
+        script {
+            sh '''
+                # Ensure in_basket subdirectories exist
+                mkdir -p StarForth-Governance/in_basket/Test_Results
+                mkdir -p StarForth-Governance/in_basket/Performance_Data
+                mkdir -p StarForth-Governance/in_basket
+
+                # Generate submission metadata
+                SUBMISSION_ID="JENKINS-$(date +%Y%m%d-%H%M%S)"
+                TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+                # Copy artifacts with metadata
+                # (See examples below for each job type)
+            '''
+        }
+    }
+}
+```
+
+== Job-Specific Governance Integration
+
+=== starforth-devl Job
+
+**Outputs:** Build log, smoke test results
+
+**Routing:**
+
+```groovy
+post {
+    always {
+        // Publish build log to in_basket
+        script {
+            sh '''
+                SUBMISSION_ID="DEVL-$(date +%Y%m%d-%H%M%S)"
+                VAULT_PATH="StarForth-Governance/in_basket/Test_Results"
+                mkdir -p "$VAULT_PATH"
+
+                # Copy build artifacts
+                cp -r build/logs "$VAULT_PATH/${SUBMISSION_ID}_build_log/" || true
+                cp build/*.log "$VAULT_PATH/${SUBMISSION_ID}_build.log" || true
+
+                # Create submission metadata
+                cat > "$VAULT_PATH/${SUBMISSION_ID}_DEVL_SUMMARY.adoc" << EOF
+                = Jenkins DevL Build Results
+                :submission-id: $SUBMISSION_ID
+                :submission-date: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+                == Build Status
+                - Build: ${BUILD_RESULT:-UNKNOWN}
+                - Smoke Test: PASS/FAIL
+                - Artifacts: build/starforth (x86_64-linux-gnu)
+
+                == Disposition
+                Submitted by:: Jenkins starforth-devl job
+                Status:: Awaiting QA Triage
+                Pathway:: Test_Results
+                SLA:: 3 business days
+
+                == References
+                - Jenkins: ${BUILD_URL}
+                - PR: ${CHANGE_URL:-N/A}
+                EOF
+
+                echo "✅ DevL artifacts routed to governance: $VAULT_PATH"
+            '''
+        }
+    }
+}
+```
+
+=== starforth-test Job
+
+**Outputs:** Test suite results, logs, pass/fail metrics
+
+**Routing:**
+
+```groovy
+post {
+    always {
+        // Publish test results to in_basket
+        script {
+            sh '''
+                SUBMISSION_ID="TEST-$(date +%Y%m%d-%H%M%S)"
+                VAULT_PATH="StarForth-Governance/in_basket/Test_Results"
+                mkdir -p "$VAULT_PATH"
+
+                # Copy test artifacts
+                cp -r test-results "$VAULT_PATH/${SUBMISSION_ID}_test_results/" || true
+                cp -r logs "$VAULT_PATH/${SUBMISSION_ID}_logs/" || true
+
+                # Generate test summary
+                cat > "$VAULT_PATH/${SUBMISSION_ID}_TEST_SUMMARY.adoc" << EOF
+                = Jenkins Test Results
+                :submission-id: $SUBMISSION_ID
+                :submission-date: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+                == Test Execution
+
+                [cols="1,1,1"]
+                |===
+                |Test Suite|Result|Coverage
+                |Unit Tests|${TEST_COUNT_PASS}/${TEST_COUNT_TOTAL}|${TEST_COVERAGE}%
+                |Integration|PASS/FAIL|N/A
+                |Regression|PASS/FAIL|Full suite
+                |===
+
+                == Disposition
+                Submitted by:: Jenkins starforth-test job
+                Status:: Awaiting QA Evaluation
+                Pathway:: Test_Results
+                SLA:: 3 business days
+
+                == References
+                - Jenkins: ${BUILD_URL}
+                - Branch: ${GIT_BRANCH}
+                - Commit: ${GIT_COMMIT}
+                EOF
+
+                echo "✅ Test results routed to governance: $VAULT_PATH"
+            '''
+        }
+    }
+}
+```
+
+=== starforth-qual Job
+
+**Outputs:** Benchmarks, SBOM, formal verification reports
+
+**Routing:**
+
+```groovy
+post {
+    always {
+        // Publish QUAL artifacts to in_basket
+        script {
+            sh '''
+                SUBMISSION_ID="QUAL-$(date +%Y%m%d-%H%M%S)"
+                PERF_PATH="StarForth-Governance/in_basket/Performance_Data"
+                SBOM_PATH="StarForth-Governance/in_basket"
+                mkdir -p "$PERF_PATH"
+
+                # Copy benchmark results
+                cp -r builds/benchmark "$PERF_PATH/${SUBMISSION_ID}_benchmark/" || true
+
+                # Copy SBOM
+                cp -r builds/sbom "$SBOM_PATH/${SUBMISSION_ID}_sbom/" || true
+
+                # Copy verification reports
+                cp -r verification-reports "$PERF_PATH/${SUBMISSION_ID}_verification/" || true
+
+                # Generate QUAL summary
+                cat > "$PERF_PATH/${SUBMISSION_ID}_QUAL_SUMMARY.adoc" << EOF
+                = Jenkins QUAL Stage Results
+                :submission-id: $SUBMISSION_ID
+                :submission-date: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+                == Benchmark Results
+
+                [cols="1,1,1"]
+                |===
+                |Metric|Value|Status
+                |Throughput|${THROUGHPUT_VALUE}|${THROUGHPUT_STATUS}
+                |Latency P50|${LATENCY_P50}ms|${LATENCY_STATUS}
+                |Memory Usage|${MEMORY_MB}MB|OK
+                |===
+
+                == SBOM
+                - Generated: YES
+                - Format: SPDX
+                - Location: ${SUBMISSION_ID}_sbom/
+
+                == Disposition
+                Submitted by:: Jenkins starforth-qual job
+                Status:: Awaiting QA Evaluation
+                Pathway:: Performance_Data + Compliance_Evidence
+                SLA:: 5 business days (performance), 7 business days (SBOM)
+
+                == References
+                - Jenkins: ${BUILD_URL}
+                - Build ID: ${BUILD_ID}
+                - Previous stages: DevL✅ Test✅
+                EOF
+
+                echo "✅ QUAL results routed to governance"
+            '''
+        }
+    }
+}
+```
+
+== Best Practices
+
+=== 1. Consistent Submission IDs
+
+Always generate unique submission IDs with timestamp to avoid collisions:
+
+```groovy
+SUBMISSION_ID = "${JOB_NAME}-${BUILD_ID}-$(date +%Y%m%d-%H%M%S)"
+```
+
+=== 2. Metadata Documentation
+
+Every submission **MUST** include a summary document (`.adoc` format) with:
+- Submission ID and date
+- Source (Jenkins job name, run ID)
+- Artifact list and locations
+- Disposition pathway (per INTAKE_PROCEDURES.adoc)
+- SLA for QA triage
+
+=== 3. Audit Trail
+
+Maintain traceable links back to Jenkins:
+- Jenkins build URL in metadata
+- Commit hash and branch
+- Build parameters and environment
+
+=== 4. Error Handling
+
+Ensure `post` blocks run even on failure:
+
+```groovy
+post {
+    always {  // Not 'success' - we need records even when tests fail
+        script {
+            // Route results to in_basket
+        }
+    }
+}
+```
+
+=== 5. Logging
+
+Log all routing operations for troubleshooting:
+
+```groovy
+echo "✅ Successfully routed artifacts"
+echo "📁 Location: $VAULT_PATH"
+echo "📋 Submission ID: $SUBMISSION_ID"
+ls -la "$VAULT_PATH"
+```
+
+== Verification Checklist
+
+For each Jenkins job modification, verify:
+
+- [ ] `git submodule update --init --recursive` runs before routing
+- [ ] `StarForth-Governance/in_basket/` directory exists and is accessible
+- [ ] Submission ID includes timestamp to avoid collisions
+- [ ] Metadata document (`.adoc` format) created with all required fields
+- [ ] Artifacts copied to correct in_basket subdirectory
+- [ ] Post block uses `always`, not `success` only
+- [ ] Logging shows successful routing
+- [ ] Jenkins has SSH credentials for governance repo
+
+== Security Considerations
+
+=== SSH Key Management
+
+- **Where:** Jenkins credentials (Manage Jenkins → Credentials)
+- **Who:** Jenkins admin, shared with devops team
+- **Rotation:** Per security policy (recommend: quarterly)
+- **Access:** Only Jenkins service account should have access
+
+=== Governance Repo Permissions
+
+- Jenkins account needs: Read + Write to StarForth-Governance
+- No broad public access
+- Restrict branch protection rules if needed
+
+=== Artifact Sensitivity
+
+Some artifacts may contain sensitive data (performance metrics, internal timing info):
+- Mark in metadata if sensitive
+- Control access via repository permissions
+- Document in security policy
+
+== Troubleshooting
+
+=== Submodule Not Initialized
+
+```
+Error: StarForth-Governance not found
+Solution: Ensure 'git submodule update --init' runs before routing
+```
+
+=== Permission Denied Writing to Vault
+
+```
+Error: Permission denied: StarForth-Governance/in_basket/
+Solution: Verify Jenkins SSH key has write access to governance repo
+         Check repo permissions: Settings → Collaborators
+```
+
+=== Artifacts Not Found
+
+```
+Error: No such file or directory: builds/benchmark
+Solution: Use 'continue-on-error: true' or '|| true' in copy commands
+         Some artifacts (benchmarks, SBOM) may not exist in all runs
+```
+
+== References
+
+- **INTAKE_PROCEDURES.adoc** - Full governance intake workflow
+- **GOVERNANCE_REFERENCE_MANUAL.adoc** - Master governance document
+- **test-stage.yml** - GitHub Actions test routing (reference example)
+- **qual-stage.yml** - GitHub Actions QUAL routing (reference example)
+- **Groovy Job DSL Examples** - jenkins/jobs/*.groovy
+
+== Change History
+
+[cols="1,1,1,2"]
+|===
+|Version|Date|Author|Changes
+|1.0.0|2025-11-03|Claude Code|Initial governance integration specification
+|===
+
+== Approval
+
+**Prepared By:** StarForth Governance System
+**Date:** 2025-11-03
+**Status:** Ready for Jenkins Administration Review

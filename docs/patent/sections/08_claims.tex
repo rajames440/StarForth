@@ -1,0 +1,137 @@
+% ===========================================
+% 08_claims.tex
+% Claims
+% ===========================================
+
+\section{Claims}
+
+\noindent\textbf{Claim 1 (Independent – System).}  
+A computer-implemented virtual machine system comprising:  
+(a) a runtime state vector storing values representing real-time execution
+characteristics of a workload, the values including at least execution heat,
+entropy, and a measure of stability;  
+(b) a plurality of feedback loops configured to modify internal runtime
+parameters in response to the values of the runtime state vector;  
+(c) a set of two or more execution modes, each execution mode defining a
+respective configuration of the feedback loops; and  
+(d) a supervisory mode selector configured to select one of the execution
+modes based on the runtime state vector and to control transitions between
+execution modes in a bounded, non-oscillatory manner;  
+wherein the virtual machine adjusts its runtime behavior during program
+execution by selecting among the execution modes in response to the observed
+workload.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 2 (Independent – Method).}  
+A method for adaptive execution of a program in a virtual machine, the method
+comprising:  
+(a) computing a runtime state vector including values that characterize current
+workload behavior;  
+(b) updating one or more feedback loops using the runtime state vector;  
+(c) classifying the workload into at least one behavioral category selected
+from stable, temporal, volatile, or transitional;  
+(d) selecting, by a supervisory controller, an execution mode from among a
+plurality of execution modes based on the runtime state vector and the
+classification; and  
+(e) adjusting internal interpreter or runtime parameters according to the
+selected execution mode;  
+whereby the virtual machine achieves stable and optimized performance across
+changing workload conditions.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 3 (Independent – Shape-Invariant Operation).}  
+A computer-implemented system for achieving shape-invariant runtime performance
+comprising:  
+(a) a measurement subsystem configured to compute entropy, variance, and
+execution heat of a workload;  
+(b) a mode-selection subsystem configured to select one of multiple execution
+modes based on the measurements; and  
+(c) a stabilization subsystem configured to regulate transitions between the
+execution modes such that performance variance remains below a threshold for a
+plurality of waveform families;  
+wherein the system maintains substantially consistent performance across
+distinct input waveforms.
+
+\vspace{1.5em}
+
+% -------------------------------
+% DEPENDENT CLAIMS
+% -------------------------------
+
+\noindent\textbf{Claim 4.}  
+The system of Claim 1, wherein the runtime state vector further comprises
+pipeline pressure, lookup latency, cache hit rate, or a decay parameter.
+\par\medskip
+\noindent\textbf{Claim 5.}  
+The system of Claim 1, wherein at least one feedback loop modifies a decay rate
+for execution heat based on temporal characteristics of the workload.
+\par\medskip
+\noindent\textbf{Claim 6.}  
+The system of Claim 1, wherein one feedback loop performs statistical inference
+on historical measurements to generate predictive indicators used in mode
+selection.
+\par\medskip
+\noindent\textbf{Claim 7.}  
+The system of Claim 1, wherein the supervisory mode selector applies hysteresis
+thresholds to prevent oscillatory transitions between execution modes.
+\par\medskip
+\noindent\textbf{Claim 8.}  
+The system of Claim 1, wherein the execution modes comprise at least a baseline
+mode, a temporal mode, an inference-driven mode, and a fully adaptive mode.
+\par\medskip
+\noindent\textbf{Claim 9.}  
+The system of Claim 1, wherein the virtual machine converges to a stable
+steady-state configuration when variance of recent execution timings falls
+below a threshold.
+\par\medskip
+\noindent\textbf{Claim 10.}  
+The system of Claim 2, wherein classifying the workload comprises evaluating an
+entropy window representing distributional characteristics of execution heat.
+\par\medskip
+\noindent\textbf{Claim 11.}  
+The system of Claim 2, wherein execution heat is increased upon invocation of a
+word or instruction and decays over time according to a selected decay function.
+\par\medskip
+\noindent\textbf{Claim 12.}  
+The system of Claim 2, wherein selecting the execution mode comprises comparing
+the runtime state vector to one or more pre-validated configuration profiles.
+\par\medskip
+\noindent\textbf{Claim 13.}  
+The system of Claim 3, wherein waveform families comprise at least sinusoidal,
+square-wave, triangular, burst-like, or mixed-input patterns.
+
+\noindent\textbf{Claim 14.}  
+The system of Claim 3, wherein performance consistency is measured using
+coefficient of variation.
+\par\medskip
+\noindent\textbf{Claim 15.}  
+The system of Claim 1, wherein feedback loops collectively modify lookup
+strategies of the virtual machine.
+\par\medskip
+\noindent\textbf{Claim 16.}  
+The system of Claim 1, wherein the supervisory mode selector prevents mode
+transitions until a confidence value computed from the runtime state vector
+exceeds a threshold.
+\par\medskip
+\noindent\textbf{Claim 17.}  
+The method of Claim 2, wherein adjusting internal runtime parameters comprises
+modifying caching behavior, prefetching behavior, or traversal logic of a
+dictionary-based interpreter.
+\par\medskip
+\noindent\textbf{Claim 18.}  
+The method of Claim 2, wherein the workload classification employs rolling
+measurements or sliding windows.
+\par\medskip
+\noindent\textbf{Claim 19.}  
+The system of Claim 1, wherein the virtual machine comprises a stack-based
+interpreter, a threaded-code interpreter, a just-in-time compilation
+environment, an embedded controller, or a microkernel component.
+\par\medskip
+\noindent\textbf{Claim 20.}  
+The system of Claim 1, wherein the state vector is maintained independently for
+each execution thread in a multi-threaded environment.
+
+\newpage
+

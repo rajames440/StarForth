@@ -1,0 +1,7 @@
+"Metric","Value","Unit"
+"DoE Best Config","31,592,404","ns/word"
+"DoE Worst Config","59,482,612","ns/word"
+"DoE Range","27,890,208","ns/word"
+"Runoff Winner","30,836,651","ns/word"
+"L8 ADAPTIVE (mean across workloads)","0.0038514","ns/word"
+"Shape-Invariant CV","2.09%","%"

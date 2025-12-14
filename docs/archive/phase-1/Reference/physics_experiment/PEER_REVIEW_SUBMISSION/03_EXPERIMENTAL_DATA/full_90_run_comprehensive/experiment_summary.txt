@@ -1,0 +1,16 @@
+
+Experiment Start: 2025-11-07T06:40:43
+Output Directory: physics_experiment/full_90_run_comprehensive
+Runs per Configuration: 30
+Total Runs: 90
+Benchmark Iterations: 100000
+Build Profile: fastest
+Execution: Randomized order (eliminates temporal bias)
+
+
+Experiment End: 2025-11-07T06:49:08
+Total Runtime: 8 minutes (505 seconds)
+Results CSV: physics_experiment/full_90_run_comprehensive/experiment_results.csv
+Run Logs: physics_experiment/full_90_run_comprehensive/run_logs/
+Test Matrix: physics_experiment/full_90_run_comprehensive/run_logs/test_matrix.txt
+

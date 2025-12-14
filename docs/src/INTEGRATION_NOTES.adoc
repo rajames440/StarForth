@@ -1,0 +1,455 @@
+== Integration Scripts Documentation
+:toc: left
+:toc-title: Contents
+:toclevels: 3
+xref:./README.adoc[← Back to Documentation Index]
+
+
+
+=== Overview
+
+Two complementary sync scripts for bidirectional integration between
+StarForth and StarshipOS.
+
+=== Scripts
+
+==== 1. `+integrator.sh+` (StarForth → StarshipOS) ✅ WORKING
+
+* *Location*: `+StarForth/maint/integrator.sh+`
+* *Direction*: StarForth → StarshipOS
+* *Source*: StarForth root
+* *Destination*: `+$STARSHIPOS_ROOT/l4/pkg/starforth/server+`
+* *Quarantine*: `+StarForth/maint/quarantine+`
+* *Path stripping*: Strips `+server/+` prefix from files
+* *Status*: Fully debugged and tested (spent all day on this)
+
+==== 2. `+integrator.sh+` (StarshipOS → StarForth) 🆕 NEW
+
+* *Final Location*: `+StarshipOS/maint/integrator.sh+`
+* *Direction*: StarshipOS → StarForth (reverse)
+* *Source*: StarshipOS root
+* *Destination*: `+$STARFORTH_ROOT+`
+* *Quarantine*: `+StarshipOS/maint/quarantine+`
+* *Path stripping*: Strips `+l4/pkg/starforth/server/+` prefix from
+files
+* *Status*: Generated based on working integrator.sh, needs testing
+
+=== The Rules (Cap’t Bob Sez)
+
+[arabic]
+. *Never mkdir into target* — both repos must already exist
+. *Blacklist = Law* — anything matching it is ignored
+. *If file exists at same relative path in destination* → overwrite
+(green)
+. *Otherwise* → quarantine for review (orange)
+
+=== How They Work
+
+Both scripts: 1. Read files from `+maint/mergefiles.txt+` (or generate
+from `+git diff --name-only HEAD~1+`) 2. Check each file against
+`+maint/blacklist.txt+` 3. Strip appropriate path prefix to compute
+destination path 4. If destination exists → overwrite (safe) 5. If
+destination doesn’t exist → quarantine for Captain’s review 6. Refresh
+git index when done
+
+=== Next Steps
+
+* [ ] Move `+integrator.sh+` to `+StarshipOS/maint/+`
+* [ ] Test `+integrator.sh+` in StarshipOS
+* [ ] Verify blacklist.txt and mergefiles.txt exist in StarshipOS/maint/
+* [ ] Test round-trip sync (both directions)
+
+=== Notes
+
+* Both scripts are meant to be run from their respective repository
+roots
+* Quarantine prevents accidental file creation in unexpected locations
+* The path stripping logic is the key difference between the two scripts
+
+=== ⚠️ Special Cases
+
+==== Documentation Directory (`+docs/+`)
+
+*Issue*: Documentation needs bidirectional sync but has different paths:
+- StarForth: `+docs/+` - StarshipOS: `+l4/pkg/starforth/docs/+`
+
+*Current Status*: ⏳ *NOT YET INTEGRATED* - Manual handling required
+*Captain’s Note*: Will be integrated into integrator.sh later with
+custom path mapping logic
+
+*Paths*: - `+/home/rajames/CLionProjects/StarForth/docs+` -
+`+/home/rajames/CLionProjects/StarshipOS/l4/pkg/starforth/docs+`
+
+*Future Enhancement*: Add special case handling in both integrators for
+`+docs/+` directory with custom path transformations
+
+'''''
+
+=== Test & Repair Cycle (StarshipOS → StarForth)
+
+==== Date: 2025-10-19
+
+==== Status: ✅ PRODUCTION READY
+
+This section documents the complete debugging process for
+`+StarshipOS/maint/integrator.sh+`. Use this methodology to test and
+debug the reverse script (`+StarForth/maint/integrator.sh+`).
+
+'''''
+
+==== 🐛 Bugs Found & Fixed
+
+===== Bug #1: Blacklist Regex Matching (Line 43) - CRITICAL
+
+*Problem*: Used `+grep -Fqx+` which treats patterns as *fixed strings*,
+but `+blacklist.txt+` contains *regex patterns* like
+`+(^|/)?Makefile($|[.].*)+`.
+
+*Symptom*: Makefiles and blacklisted files were NOT being blocked.
+
+*Original Code*:
+
+[source,bash]
+----
+if grep -Fqx -f "$BLACKLIST" <<< "$FILE"; then
+----
+
+*Fix*:
+
+[source,bash]
+----
+if grep -Eq -f <(sed '/^[[:space:]]*$/d; /^[[:space:]]*#/d' "$BLACKLIST") <<< "$FILE"; then
+----
+
+*Changes*: - `+-F+` removed (enables regex) - `+-x+` removed (allows
+partial line matching) - `+-E+` added (extended regex) - `+sed+` filter
+added (see Bug #2)
+
+'''''
+
+===== Bug #2: Empty Lines in Blacklist - CRITICAL
+
+*Problem*: Line 5 in `+blacklist.txt+` is empty. Empty patterns in
+`+grep -f+` match *everything*.
+
+*Symptom*: ALL files were being blocked when blacklist was enabled.
+
+*Test*:
+
+[source,bash]
+----
+# This blocks EVERYTHING because of empty line:
+echo "any_file.txt" | grep -Eq -f blacklist.txt && echo "BLOCKED"
+
+# This works correctly:
+echo "any_file.txt" | grep -Eq -f <(sed '/^[[:space:]]*$/d; /^[[:space:]]*#/d' blacklist.txt)
+----
+
+*Fix*: Filter out empty lines and comments using
+`+sed '/^[[:space:]]*$/d; /^[[:space:]]*#/d'+`
+
+'''''
+
+===== Bug #3: Case Sensitivity in mergefiles.txt - MINOR
+
+*Problem*: `+mergefiles.txt+` listed `+testing.md+` but actual file is
+`+TESTING.md+`.
+
+*Symptom*: File skipped by line 40 (`+[[ -f "$SRC" ]] || continue+`).
+
+*Fix*: Corrected filename in `+mergefiles.txt+`.
+
+'''''
+
+==== 📋 Testing Methodology
+
+===== Phase 1: Basic Execution Test
+
+[source,bash]
+----
+# Run with existing mergefiles.txt
+bash maint/integrator.sh
+----
+
+*Expected*: Script runs without errors, processes files listed in
+`+mergefiles.txt+`.
+
+'''''
+
+===== Phase 2: Blacklist Enforcement Test
+
+Create comprehensive test file:
+
+[source,bash]
+----
+cat > maint/mergefiles_blacklist_test.txt << 'EOF'
+l4/pkg/starforth/server/Makefile
+l4/pkg/starforth/server/Makefile.inc
+l4/pkg/starforth/server/README.md
+l4/pkg/starforth/server/src/panic.c
+l4/pkg/starforth/server/src/core.c
+l4/pkg/starforth/server/Control
+maint/integrator.sh
+EOF
+
+# Create test file that should be quarantined
+touch l4/pkg/starforth/server/src/core.c
+
+# Clear quarantine
+rm -rf maint/quarantine/*
+
+# Swap mergefiles and run test
+cp maint/mergefiles.txt maint/mergefiles.txt.backup
+cp maint/mergefiles_blacklist_test.txt maint/mergefiles.txt
+bash maint/integrator.sh
+----
+
+*Expected Results*: | File | Expected Action | Reason | |——|—————-|———|
+| `+Makefile+` | 🔴 *BLOCKED* | Matches `+(^|/)?Makefile($|[.].*)+` | |
+`+Makefile.inc+` | 🔴 *BLOCKED* | Matches `+(^|/)?Makefile($|[.].*)+` |
+| `+README.md+` | 🟢 *OVERWRITE* | Not blacklisted, exists in StarForth
+| | `+panic.c+` | 🔴 *BLOCKED* | Matches `+server/src/panic\.c$+` | |
+`+core.c+` | 🟠 *QUARANTINE* | Not blacklisted, doesn’t exist in
+StarForth | | `+Control+` | 🔴 *BLOCKED* | Matches
+`+(^|/)?Control($|/)+` | | `+integrator.sh+` | 🟢 *OVERWRITE* | Not
+blacklisted, exists in StarForth |
+
+*Verify Blacklist*:
+
+[source,bash]
+----
+# Test individual patterns
+echo "l4/pkg/starforth/server/Makefile" | grep -Eq -f <(sed '/^[[:space:]]*$/d; /^[[:space:]]*#/d' maint/blacklist.txt) && echo "BLOCKED" || echo "NOT BLOCKED"
+
+echo "l4/pkg/starforth/server/src/panic.c" | grep -Eq -f <(sed '/^[[:space:]]*$/d; /^[[:space:]]*#/d' maint/blacklist.txt) && echo "BLOCKED" || echo "NOT BLOCKED"
+----
+
+'''''
+
+===== Phase 3: Path Stripping Verification
+
+*Test*: Verify that `+l4/pkg/starforth/server/+` prefix is correctly
+stripped.
+
+[source,bash]
+----
+# Check where files land in destination
+FILE="l4/pkg/starforth/server/README.md"
+RELATIVE="${FILE#l4/pkg/starforth/server/}"
+echo "Source: $FILE"
+echo "Destination: $STARFORTH_ROOT/$RELATIVE"
+----
+
+*Expected*: - Source: `+l4/pkg/starforth/server/README.md+` -
+Destination: `+/home/rajames/CLionProjects/StarForth/README.md+`
+
+*Verify*:
+
+[source,bash]
+----
+diff l4/pkg/starforth/server/README.md $STARFORTH_ROOT/README.md && echo "✓ Synced correctly"
+----
+
+'''''
+
+===== Phase 4: Overwrite vs Quarantine Logic
+
+*Rule 3*: If file exists at destination → *overwrite* (green) *Rule 4*:
+If file doesn’t exist → *quarantine* (orange)
+
+*Test Overwrite*:
+
+[source,bash]
+----
+# README.md exists in StarForth root
+test -f $STARFORTH_ROOT/README.md && echo "Exists → should OVERWRITE"
+----
+
+*Test Quarantine*:
+
+[source,bash]
+----
+# core.c doesn't exist in StarForth
+test -f $STARFORTH_ROOT/src/core.c || echo "Doesn't exist → should QUARANTINE"
+
+# Verify it's quarantined
+test -f maint/quarantine/l4/pkg/starforth/server/src/core.c && echo "✓ Correctly quarantined"
+----
+
+'''''
+
+===== Phase 5: Auto-Generation from Git (Webhook Mode)
+
+*Test*: Script generates `+mergefiles.txt+` from
+`+git diff --name-only HEAD~1+` when file doesn’t exist.
+
+[source,bash]
+----
+# Remove mergefiles.txt to trigger auto-generation
+mv maint/mergefiles.txt maint/mergefiles.txt.manual
+
+# Run script - should auto-generate
+bash maint/integrator.sh
+
+# Check what was generated
+cat maint/mergefiles.txt
+----
+
+*Expected Output*:
+
+....
+[INFO] No mergefiles list found — generating diff from last commit.
+....
+
+*Verify*:
+
+[source,bash]
+----
+git diff --name-only HEAD~1  # Should match mergefiles.txt content
+----
+
+'''''
+
+==== ✅ Final Production Test
+
+[source,bash]
+----
+# 1. Restore original mergefiles.txt
+cp maint/mergefiles.txt.backup maint/mergefiles.txt
+
+# 2. Clear quarantine
+rm -rf maint/quarantine/*
+
+# 3. Run production test
+bash maint/integrator.sh
+
+# 4. Verify sync
+diff maint/integrator.sh $STARFORTH_ROOT/maint/integrator.sh && echo "✓ Synced"
+----
+
+*Expected Output*:
+
+....
+🛰️  Quark webhook engaged — StarshipOS → StarForth (Reverse Sync)
+
+[Quarantining] l4/pkg/starforth/server/TESTING.md
+[Overwriting] maint/integrator.sh
+
+🧾 First Officer's Reverse Report:
+  • Destination base: /home/rajames/CLionProjects/StarForth
+  • Quarantine:       /home/rajames/CLionProjects/StarshipOS/maint/quarantine
+  • Merge list:       2 files processed
+
+Awaiting Cappy's signature: Captain Bob ✍️
+....
+
+'''''
+
+==== 🔧 Debugging Commands Reference
+
+===== Check Blacklist Patterns
+
+[source,bash]
+----
+# View blacklist with line numbers
+cat -n maint/blacklist.txt
+
+# Test specific file against blacklist
+FILE="l4/pkg/starforth/server/Makefile"
+grep -Eq -f <(sed '/^[[:space:]]*$/d; /^[[:space:]]*#/d' maint/blacklist.txt) <<< "$FILE" && echo "BLOCKED" || echo "NOT BLOCKED"
+----
+
+===== Verify Path Stripping
+
+[source,bash]
+----
+# For StarshipOS → StarForth
+FILE="l4/pkg/starforth/server/src/vm.c"
+RELATIVE="${FILE#l4/pkg/starforth/server/}"
+echo "$RELATIVE"  # Should output: src/vm.c
+
+# For StarForth → StarshipOS (reverse)
+FILE="server/src/vm.c"
+RELATIVE="${FILE#server/}"
+echo "$RELATIVE"  # Should output: src/vm.c
+----
+
+===== Check File Existence
+
+[source,bash]
+----
+# Check source
+ls -la l4/pkg/starforth/server/TESTING.md
+
+# Check destination
+ls -la $STARFORTH_ROOT/TESTING.md
+
+# Check quarantine
+ls -la maint/quarantine/l4/pkg/starforth/server/TESTING.md
+----
+
+===== Monitor Git Index Refresh
+
+[source,bash]
+----
+# Manual refresh (what script does)
+cd $STARFORTH_ROOT && git update-index --really-refresh
+----
+
+'''''
+
+==== 🎯 Apply to StarForth → StarshipOS Script
+
+Use the same methodology to test `+StarForth/maint/integrator.sh+`:
+
+*Key Differences*: 1. *Path stripping*: `+server/+` →
+`+l4/pkg/starforth/server/+` 2. *Direction*: StarForth → StarshipOS 3.
+*Blacklist patterns*: Different (StarForth-specific patterns)
+
+*Same Fixes Needed*: - Change `+grep -Fqx+` → `+grep -Eq+` - Add `+sed+`
+filter for empty lines and comments - Verify case sensitivity in
+mergefiles.txt
+
+*Test Pattern*:
+
+[source,bash]
+----
+cd /home/rajames/CLionProjects/StarForth
+
+# Phase 1: Basic test
+bash maint/integrator.sh
+
+# Phase 2: Blacklist test (create test mergefiles)
+# Phase 3: Path stripping test
+# Phase 4: Overwrite vs quarantine test
+# Phase 5: Auto-generation test
+----
+
+'''''
+
+==== 📊 Test Results Summary
+
+[width="100%",cols="51%,26%,23%",options="header",]
+|===
+|Test Category |Status |Notes
+|Basic Execution |✅ PASS |Script runs without errors
+
+|Blacklist Enforcement |✅ PASS |Regex patterns work, empty lines
+filtered
+
+|Path Stripping |✅ PASS |`+l4/pkg/starforth/server/+` removed correctly
+
+|Overwrite Logic |✅ PASS |Existing files overwritten (README.md, vm.h)
+
+|Quarantine Logic |✅ PASS |New files quarantined (TESTING.md, core.c)
+
+|Auto-Generation |✅ PASS |Generates from `+git diff HEAD~1+`
+
+|Git Index Refresh |✅ PASS |StarForth index updated
+|===
+
+*Final Status*: 🚀 *PRODUCTION READY* for git push webhook
+
+'''''
+
+_Debugged: 2025-10-19_ _Captain Bob ✍️_

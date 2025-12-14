@@ -1,0 +1,795 @@
+= Mama Forth: Multi-VM Supervisor Architecture
+:toc: left
+:toclevels: 2
+xref:../README.adoc[← Back to Documentation Index]
+
+== Executive Summary
+
+**Mama Forth** is the governing FORTH VM that orchestrates a multi-VM ecosystem. Unlike traditional supervisors, Mama Forth is itself a FORTH VM—a first-class citizen with full physics instrumentation.
+
+The architecture is:
+
+```
+                    ┌─────────────────┐
+                    │   Mama Forth    │
+                    │   (Supervisor)  │
+                    │  + Physics      │
+                    └────────┬────────┘
+                             │
+                    ┌────────┴────────┐
+                    │                 │
+              ┌─────▼────┐      ┌─────▼────┐
+              │ Child VM1 │      │ Child VM2 │
+              │+ Physics  │      │+ Physics  │
+              └─────┬────┘      └─────┬────┘
+                    │                 │
+           ┌────────┴─────┐  ┌────────┴─────┐
+           │              │  │              │
+      ┌────▼──┐      ┌────▼──┐         ┌────▼──┐
+      │Block  │      │Block  │   ...   │Block  │
+      │Device1│      │Device2│         │DeviceN│
+      │Physics│      │Physics│         │Physics│
+      └────────┘      └────────┘        └────────┘
+```
+
+**Key insight**: Physics metadata is now a three-tier hierarchy:
+1. **Word-level**: Per-word metrics (entropy, temperature, latency)
+2. **VM-level**: Per-VM aggregate metrics (child health, resource usage)
+3. **Block-level**: Per-block device metrics (I/O patterns, thermal distribution)
+
+Mama Forth observes all three tiers and makes system-level decisions:
+- When to spawn/kill child VMs
+- How to allocate block devices to children
+- How to enforce governance across the ecosystem
+- How to respond to emergencies (thermal runaway, memory pressure, etc.)
+
+---
+
+== Part 1: VM-LEVEL PHYSICS METADATA
+
+=== Current State (Word-Level Only)
+
+Today's physics model tracks per-word metrics:
+
+```c
+typedef struct {
+    uint16_t temperature_q8;        // Thermal state [0x0000, 0xFFFF]
+    uint64_t last_active_ns;        // Last execution timestamp
+    uint32_t entropy;               // Execution randomness
+    int16_t entropy_slope;          // Rate of entropy change
+    uint32_t avg_latency_ns;        // P50 latency
+    // ... more fields
+} DictPhysics;
+```
+
+This is attached to each `DictEntry` (word).
+
+=== New: VM-Level Aggregation
+
+Each VM now has its own physics metadata reflecting aggregate state:
+
+```c
+typedef struct {
+    // Thermal state (aggregate across all words)
+    uint16_t vm_temperature_q8;             // Warmest word temperature
+    uint16_t vm_avg_temperature_q8;         // Average across all words
+    uint32_t vm_hot_word_count;             // Words with temp > 0x8000
+
+    // Execution load (how busy is this VM?)
+    uint64_t total_word_executions;         // Cumulative execution count
+    uint64_t execution_rate_per_sec;        // Words/sec this VM is executing
+    uint64_t last_execution_ns;             // Most recent word execution
+
+    // Memory pressure
+    uint32_t dictionary_used_bytes;         // Current dict heap usage
+    uint32_t dictionary_max_bytes;          // Capacity
+    float dictionary_pressure_pct;          // Used / max
+
+    // Error/reliability metrics
+    uint32_t error_count;                   // Total errors encountered
+    uint32_t error_rate_per_sec;            // Errors/sec
+    uint32_t recovery_count;                // Successful recoveries
+
+    // Child VM health (for Mama Forth)
+    uint32_t child_vm_count;                // How many children spawned
+    uint32_t active_child_vm_count;         // Currently alive
+    uint16_t hottest_child_temp;            // Hottest child's temperature
+    uint32_t total_child_latency_ns;        // Sum of all children's latencies
+
+    // Block device affinity
+    uint32_t blocks_allocated;              // Total blocks in use
+    uint32_t blocks_hot;                    // Hot blocks (temp > 0x8000)
+    uint32_t blocks_cold;                   // Cold blocks (temp < 0x2000)
+
+    // Lifecycle state
+    uint32_t vm_uptime_ns;                  // Time since VM started
+    uint32_t vm_age_ns;                     // For time-based decisions
+    uint8_t vm_state;                       // RUNNING, PAUSED, DRAINING, DEAD
+    uint8_t vm_criticality;                 // System, critical, normal, background
+} VMPhysics;
+```
+
+=== Where This Attaches
+
+```c
+typedef struct VM {
+    // ... existing VM fields ...
+    Cell *data_stack;
+    Cell *return_stack;
+    DictEntry *dictionary;
+
+    // NEW: Physics state for this VM
+    VMPhysics physics;
+
+    // ... rest of VM struct ...
+} VM;
+```
+
+=== How It's Maintained
+
+Every physics event updates VM-level metrics:
+
+```c
+// In physics_metadata_touch() (src/physics_metadata.c)
+void physics_metadata_touch(DictEntry *word, uint32_t entropy, uint64_t now) {
+    // Update word metrics (existing)
+    word->physics.temperature_q8 = ...;
+    word->physics.last_active_ns = now;
+
+    // NEW: Update VM metrics
+    VM *vm = get_current_vm();  // Thread-local or context-aware
+
+    vm->physics.total_word_executions++;
+    if (word->physics.temperature_q8 > vm->physics.vm_temperature_q8) {
+        vm->physics.vm_temperature_q8 = word->physics.temperature_q8;
+    }
+
+    // Recalculate running aggregates
+    physics_update_vm_aggregates(vm);
+}
+
+void physics_update_vm_aggregates(VM *vm) {
+    uint32_t total_temp = 0;
+    uint32_t hot_count = 0;
+
+    for (DictEntry *w = vm->dictionary; w; w = w->link) {
+        total_temp += w->physics.temperature_q8;
+        if (w->physics.temperature_q8 > 0x8000) hot_count++;
+    }
+
+    vm->physics.vm_avg_temperature_q8 = total_temp / dict_entry_count;
+    vm->physics.vm_hot_word_count = hot_count;
+    vm->physics.execution_rate_per_sec =
+        calculate_rate(vm->physics.total_word_executions, vm->physics.vm_uptime_ns);
+}
+```
+
+---
+
+== Part 2: BLOCK DEVICE PHYSICS METADATA
+
+=== Current State
+
+Block storage (1024 blocks × 1024 bytes) is managed by:
+
+- `src/block_subsystem.c` - Logical → physical mapping
+- `blkio_factory.c` - Backend pluggability (RAM, file, L4Re)
+- No observability beyond capacity tracking
+
+=== New: Per-Block Metrics
+
+Each block device gets physics metadata:
+
+```c
+typedef struct {
+    // Thermal state (access frequency)
+    uint16_t block_temperature_q8;          // Hot = frequently accessed
+    uint64_t last_read_ns;                  // Last read timestamp
+    uint64_t last_write_ns;                 // Last write timestamp
+
+    // Access patterns
+    uint64_t read_count;                    // Total reads
+    uint64_t write_count;                   // Total writes
+    uint32_t read_avg_latency_ns;           // P50 read latency
+    uint32_t write_avg_latency_ns;          // P50 write latency
+    uint32_t read_p99_latency_ns;           // P99 read latency
+
+    // Ownership
+    uint32_t owner_vm_id;                   // Which VM owns this block
+    uint32_t owner_word_id;                 // Which word uses it (if any)
+
+    // Content type (hints for optimization)
+    uint8_t block_type;                     // BLOCK_TYPE_CODE, DATA, HEAP, SPILLED
+    uint8_t access_pattern;                 // PATTERN_SEQUENTIAL, RANDOM, CACHED
+
+    // Corruption/health
+    uint32_t crc32;                         // Current block checksum
+    uint8_t is_dirty;                       // Unflushed writes?
+    uint8_t is_corrupted;                   // Detection flag
+    uint32_t error_count;                   // Read/write errors
+} BlockPhysics;
+```
+
+=== Where This Attaches
+
+```c
+// In include/block_subsystem.h
+typedef struct {
+    uint32_t block_num;
+    uint8_t *data;                  // 1024 bytes
+
+    // NEW: Physics metadata for this block
+    BlockPhysics physics;
+
+    // Lifecycle
+    time_t last_modified;
+    uint8_t is_locked;              // Currently in use?
+} Block;
+
+typedef struct {
+    Block blocks[MAX_BLOCKS];       // Array of 1024 blocks
+    uint32_t block_count;
+
+    // NEW: Aggregate block device stats
+    struct {
+        uint64_t total_reads;
+        uint64_t total_writes;
+        uint32_t hottest_block_temp;
+        uint32_t coldest_block_temp;
+        uint32_t avg_block_temp;
+        uint32_t fragmentation_pct;  // How scattered are active blocks?
+    } device_physics;
+} BlockDevice;
+```
+
+=== How It's Maintained
+
+When accessing blocks:
+
+```c
+// In block_subsystem.c
+Block *block_read(uint32_t block_num) {
+    uint64_t start = sf_monotonic_ns();
+
+    Block *blk = &g_block_device.blocks[block_num];
+    uint8_t *data = blkio_read(block_num);  // Actual I/O
+
+    uint64_t latency = sf_monotonic_ns() - start;
+
+    // Update block physics
+    blk->physics.last_read_ns = sf_monotonic_ns();
+    blk->physics.read_count++;
+    blk->physics.read_avg_latency_ns =
+        (blk->physics.read_avg_latency_ns + latency) / 2;  // EMA
+
+    // Thermal update (read activity indicates heat)
+    blk->physics.block_temperature_q8 =
+        update_temperature_from_read_frequency(blk->physics.read_count);
+
+    // Check for corruption
+    uint32_t crc = crc32_calc(data, BLOCK_SIZE);
+    if (crc != blk->physics.crc32) {
+        blk->physics.is_corrupted = 1;
+        blk->physics.error_count++;
+        log_error("Block %u corruption detected!", block_num);
+    }
+
+    return blk;
+}
+
+Block *block_write(uint32_t block_num, const uint8_t *data) {
+    uint64_t start = sf_monotonic_ns();
+
+    Block *blk = &g_block_device.blocks[block_num];
+    blkio_write(block_num, data);  // Actual I/O
+
+    uint64_t latency = sf_monotonic_ns() - start;
+
+    // Update block physics
+    blk->physics.last_write_ns = sf_monotonic_ns();
+    blk->physics.write_count++;
+    blk->physics.write_avg_latency_ns =
+        (blk->physics.write_avg_latency_ns + latency) / 2;  // EMA
+
+    blk->physics.is_dirty = 0;  // Now clean
+    blk->physics.crc32 = crc32_calc(data, BLOCK_SIZE);
+
+    // Thermal update (write activity = heat)
+    blk->physics.block_temperature_q8 =
+        update_temperature_from_write_frequency(blk->physics.write_count);
+
+    return blk;
+}
+```
+
+---
+
+== Part 3: MAMA FORTH ARCHITECTURE
+
+=== Mama's Responsibilities
+
+Mama Forth is a special FORTH VM with elevated privileges:
+
+```
+┌──────────────────────────────────────┐
+│         Mama Forth VM                │
+│    (Privileged Supervisor)           │
+├──────────────────────────────────────┤
+│ OBSERVE:                             │
+│  • All word executions in children   │
+│  • All block device I/O              │
+│  • All child VM lifecycle events     │
+│  • All errors and anomalies          │
+├──────────────────────────────────────┤
+│ CONTROL:                             │
+│  • Spawn/kill child VMs              │
+│  • Allocate blocks to children       │
+│  • Enforce governance policies       │
+│  • Redirect critical work            │
+│  • Scale up/down based on load       │
+├──────────────────────────────────────┤
+│ COORDINATE:                          │
+│  • Resource sharing (blocks)         │
+│  • Deadlock prevention               │
+│  • Load balancing across children    │
+│  • Graceful degradation under stress │
+└──────────────────────────────────────┘
+```
+
+=== Mama's Own Physics
+
+Mama Forth itself is instrumented:
+
+```c
+typedef struct {
+    // Mama's execution load
+    uint64_t supervision_cycles;        // How often Mama checks state
+    uint64_t decision_count;            // Decisions made
+    uint32_t decision_latency_ns;       // Decision time
+
+    // Child management
+    uint32_t child_vm_created_total;    // Lifetime creations
+    uint32_t child_vm_killed_total;     // Lifetime terminations
+    uint32_t child_spawn_rate_per_sec;
+
+    // Block device management
+    uint32_t block_realloc_count;       // How many rebalancings
+    uint32_t block_fragmentation_pct;
+    uint32_t block_compaction_latency_ns;
+
+    // Emergency events
+    uint32_t thermal_warnings;          // Hot child warnings issued
+    uint32_t memory_pressure_events;    // High pressure detected
+    uint32_t orphan_recovery_count;     // Recovered dead children's blocks
+
+    // Governance
+    uint32_t governance_violations_detected;
+    uint32_t policy_enforcement_count;
+    uint32_t audit_events_logged;
+} MamaPhysics;
+```
+
+=== Mama's Control Loop
+
+Mama Forth runs a supervision loop:
+
+```c
+// In src/mama_forth.c (new)
+void mama_supervision_loop(void) {
+    while (mama_vm.running) {
+        // Step 1: Observe all child VMs
+        for (int i = 0; i < child_vm_count; i++) {
+            VM *child = child_vms[i];
+
+            // Collect child's VM-level physics
+            VMPhysics child_physics = child->physics;
+
+            // Check for anomalies
+            if (child_physics.vm_temperature_q8 > THERMAL_WARNING) {
+                mama_handle_hot_child(child);
+            }
+
+            if (child_physics.dictionary_pressure_pct > 90) {
+                mama_handle_memory_pressure(child);
+            }
+
+            if (child_physics.error_rate_per_sec > ERROR_THRESHOLD) {
+                mama_handle_error_surge(child);
+            }
+        }
+
+        // Step 2: Observe all block devices
+        BlockDevice *dev = &g_block_device;
+
+        if (dev->device_physics.hottest_block_temp > THERMAL_WARNING) {
+            mama_cool_hot_blocks(dev);
+        }
+
+        if (dev->device_physics.fragmentation_pct > 70) {
+            mama_defragment_blocks(dev);
+        }
+
+        // Step 3: Make load-balancing decisions
+        mama_balance_load_across_children();
+
+        // Step 4: Enforce governance
+        mama_check_governance_compliance();
+
+        // Step 5: Sleep until next supervision cycle
+        uint64_t supervision_interval =
+            mama_vm.physics.decision_latency_ns * 2;  // Adaptive
+        sf_sleep_ns(supervision_interval);
+    }
+}
+```
+
+=== Key Mama Decisions
+
+**When to spawn a child VM**:
+
+```c
+void mama_maybe_spawn_child(void) {
+    // Conditions for spawning:
+    // 1. Current child VMs are too hot (temperature > 0xD000)
+    // 2. Block device fragmentation > 50%
+    // 3. Incoming work queue depth > threshold
+    // 4. Have spare blocks available
+
+    int current_children = count_active_children();
+    float avg_temp = calculate_avg_child_temp();
+
+    if (avg_temp > 0xD000 && current_children < MAX_CHILDREN) {
+        VM *new_child = create_child_vm();
+        child_vms[current_children] = new_child;
+
+        // Allocate blocks to child
+        allocate_blocks_to_child(new_child, BLOCKS_PER_CHILD);
+
+        // Load-balance work
+        rebalance_work_queue();
+
+        mama_vm.physics.child_spawn_rate_per_sec++;
+    }
+}
+```
+
+**When to kill a child VM**:
+
+```c
+void mama_maybe_kill_child(VM *child) {
+    // Conditions for killing:
+    // 1. Child VM is dead (error_flag set and can't recover)
+    // 2. Child is idle (no executions in last N seconds)
+    // 3. Child's memory pressure unrecoverable
+    // 4. System needs to shed load
+
+    if (child->physics.error_count > ERROR_TOLERANCE &&
+        !child->physics.recovery_count) {
+        // Dead child, can't recover
+
+        // Orphan recovery: reassign child's blocks
+        mama_recover_orphan_blocks(child);
+
+        // Kill child
+        vm_cleanup(child);
+
+        mama_vm.physics.child_vm_killed_total++;
+    }
+}
+```
+
+**When to rebalance blocks**:
+
+```c
+void mama_rebalance_block_allocation(void) {
+    // Mama observes:
+    // - Which blocks each child is using (owner_vm_id)
+    // - Which blocks are hot (high temperature)
+    // - Which blocks are cold (low temperature)
+
+    // Strategy:
+    // - Hot blocks should be near child that uses them most
+    // - Cold blocks can be shared/archived
+    // - Fragmented allocation should be compacted
+
+    // For each child:
+    for (int i = 0; i < child_vm_count; i++) {
+        VM *child = child_vms[i];
+
+        // Find hottest blocks owned by this child
+        Block *hottest = find_hottest_child_blocks(child, 10);
+
+        // Group them together (reduce fragmentation)
+        compact_block_range(hottest);
+
+        // Update child's block allocation pointer
+        child->block_start = hottest[0].block_num;
+        child->block_end = hottest[9].block_num;
+    }
+
+    mama_vm.physics.block_realloc_count++;
+}
+```
+
+---
+
+== Part 4: THREE-TIER FEEDBACK LOOP
+
+=== How Metrics Flow Upward
+
+```
+TIER 1: Word Execution
+  word.physics.temperature_q8 ← entropy update
+  word.physics.latency_ns ← measured execution time
+           │
+           ↓
+  aggregated by VM
+
+TIER 2: VM State
+  vm.physics.vm_avg_temperature_q8 ← aggregate of words
+  vm.physics.dictionary_pressure_pct ← heap usage
+  vm.physics.execution_rate_per_sec ← word executions
+           │
+           ↓
+  aggregated by Mama Forth
+
+TIER 3: System State
+  mama.physics.decision_latency_ns ← how fast Mama responds
+  mama.physics.child_spawn_rate_per_sec ← how many created
+  mama.physics.block_fragmentation_pct ← block disorder
+           │
+           ↓
+  logged to analytics heap (all three tiers)
+```
+
+=== How Decisions Flow Downward
+
+```
+MAMA FORTH Decision
+  "Child 2 is too hot, spawn Child 3"
+           │
+           ↓
+Create new VM, allocate blocks
+           │
+           ↓
+CHILD VM Adjustment
+  "New work assigned, need to optimize"
+  - Adjust word batch groups
+  - Increase sampling rate
+  - Monitor for overload
+           │
+           ↓
+WORD-LEVEL Optimization
+  "This word is hot, boost priority"
+  - Increase temperature target
+  - Reduce stack depth limit
+  - Monitor latency SLO
+           │
+           ↓
+BLOCK DEVICE Response
+  "Child 2's blocks are hot"
+  - Move cold blocks to Child 3
+  - Compact fragmented allocation
+  - Pre-fetch predicted accesses
+```
+
+---
+
+== Part 5: CONCRETE EXAMPLE: THERMAL EMERGENCY
+
+=== Scenario: Child VM Goes Critical
+
+```
+T=0s:
+  Child VM1 executing normally
+  All blocks allocated to Child1
+  Mama monitoring periodically
+
+T=5s:
+  Word BLOCK_WRITE becomes very hot
+  word.physics.temperature_q8 = 0xC000
+  Word passes temperature to VM1
+
+T=5.5s:
+  VM1.physics.vm_temperature_q8 = 0xC000
+  VM1.physics.hot_word_count = 15
+  Mama's next supervision cycle detects this
+
+T=6s:
+  MAMA OBSERVES:
+    Child1.vm_temperature_q8 > THERMAL_WARNING (0xC000)
+    Child1.dictionary_pressure_pct > 70%
+    Child1.error_rate_per_sec = 100 errors/sec (anomaly!)
+
+  MAMA DECISIONS:
+    1. Spawn Child VM2 (load shedding)
+    2. Reassign cold work from Child1 to Child2
+    3. Mark Child1's hot blocks as protected (no eviction)
+    4. Increase Child1's heap size (temporary override)
+    5. Log thermal emergency to governance
+
+  MAMA ACTIONS:
+    vm2 = create_child_vm();
+    allocate_blocks_to_child(vm2, 100);
+    rebalance_work_queue();
+    set_child_priority(vm1, PRIORITY_CRITICAL);
+
+T=6.5s:
+  Child1 starts recovering
+  vm_temperature_q8 stabilizing at 0xB000
+  error_rate_per_sec dropping (was 100, now 80)
+
+T=7s:
+  Child2 now executing cold work
+  Child1 focusing on hot critical path
+  Load distributed
+
+T=10s:
+  System stabilized
+  Mama decides: keep Child2 (now has useful work)
+  Will kill only if Child1 cools below THERMAL_OK
+```
+
+---
+
+== Part 6: IMPLEMENTATION PHASES
+
+=== Phase 1: Foundation (Current)
+- ✅ Word-level physics metadata (existing)
+- ✅ Execution hooks wired
+- ⏳ VM-level aggregation (add VMPhysics struct)
+- ⏳ Block device physics (add BlockPhysics struct)
+
+=== Phase 2: Single-VM Control
+- ✅ Word-level scheduling hints
+- ✅ Word-level memory management
+- ⏳ VM-level health monitoring
+- ⏳ Mama Forth basic supervision (observe only)
+
+=== Phase 3: Multi-VM Orchestration
+- ⏳ Child VM spawning/killing
+- ⏳ Block reallocation
+- ⏳ Load balancing across children
+- ⏳ Emergency response (thermal, memory, error)
+
+=== Phase 4: Mama Optimization
+- ⏳ Mama's own physics optimization
+- ⏳ Predictive spawning (before threshold)
+- ⏳ ML-guided load balancing
+- ⏳ Governance enforcement at scale
+
+---
+
+== Data Structures Summary
+
+=== New in vm.h
+
+```c
+// Attach to VM struct
+typedef struct {
+    // ... 20+ fields as described above ...
+} VMPhysics;
+
+typedef struct VM {
+    // ... existing ...
+    VMPhysics physics;      // NEW
+    // ... existing ...
+} VM;
+```
+
+=== New in block_subsystem.h
+
+```c
+// Attach to each Block
+typedef struct {
+    // ... 15+ fields as described above ...
+} BlockPhysics;
+
+typedef struct {
+    uint32_t block_num;
+    uint8_t *data;
+    BlockPhysics physics;   // NEW
+} Block;
+
+// Attach to BlockDevice
+typedef struct {
+    Block blocks[MAX_BLOCKS];
+    struct {
+        // ... device-level aggregate fields ...
+    } device_physics;       // NEW
+} BlockDevice;
+```
+
+=== New: mama_forth.h (new file)
+
+```c
+typedef struct {
+    // ... 10+ fields as described above ...
+} MamaPhysics;
+
+typedef struct {
+    VM vm;                  // Mama is a VM
+    MamaPhysics physics;
+    VM **child_vms;         // Array of children
+    uint32_t child_count;
+} MamaForth;
+
+extern MamaForth mama_forth;
+
+// Supervision functions
+void mama_supervision_loop(void);
+void mama_maybe_spawn_child(void);
+void mama_maybe_kill_child(VM *child);
+void mama_rebalance_block_allocation(void);
+void mama_check_governance_compliance(void);
+```
+
+---
+
+== Integration Points
+
+=== In src/physics_metadata.c
+
+Update `physics_metadata_touch()` to also update VM-level metrics:
+
+```c
+void physics_metadata_touch(DictEntry *word, uint32_t entropy, uint64_t now) {
+    // ... update word metrics ...
+
+    // NEW: Update parent VM metrics
+    VM *vm = get_current_vm();
+    vm->physics.total_word_executions++;
+    if (word->physics.temperature_q8 > vm->physics.vm_temperature_q8) {
+        vm->physics.vm_temperature_q8 = word->physics.temperature_q8;
+    }
+    physics_update_vm_aggregates(vm);
+}
+```
+
+=== In src/block_subsystem.c
+
+Update `block_read()` and `block_write()` to track block physics:
+
+```c
+Block *block_read(uint32_t block_num) {
+    // ... existing read logic ...
+    uint64_t latency = sf_monotonic_ns() - start;
+
+    // NEW: Update block physics
+    Block *blk = get_block(block_num);
+    blk->physics.last_read_ns = now;
+    blk->physics.read_count++;
+    blk->physics.read_avg_latency_ns =
+        (blk->physics.read_avg_latency_ns + latency) / 2;
+    blk->physics.block_temperature_q8 =
+        compute_temperature_from_frequency(blk->physics.read_count);
+}
+```
+
+=== In src/main.c
+
+Spawn Mama Forth as separate thread or coroutine:
+
+```c
+int main(int argc, char *argv[]) {
+    // Initialize Mama Forth VM
+    mama_forth_init();
+
+    // Start Mama's supervision loop (in background or main loop)
+    mama_supervision_loop();
+
+    // Start child VMs as needed
+    // ...
+}
+```
+
+---
+
+== References
+
+- Physics Implementation Status: xref:./PHYSICS_IMPLEMENTATION_STATUS.adoc[PHYSICS_IMPLEMENTATION_STATUS.adoc]
+- Physics Control System: xref:./PHYSICS_CONTROL_SYSTEM_DESIGN.adoc[PHYSICS_CONTROL_SYSTEM_DESIGN.adoc]
+- Physics Implementation Options: xref:./PHYSICS_IMPLEMENTATION_OPTIONS.adoc[PHYSICS_IMPLEMENTATION_OPTIONS.adoc]
+- Block Subsystem: `src/block_subsystem.c`, `include/block_subsystem.h`
+- VM Core: `src/vm.c`, `include/vm.h`
+- Governance: `docs/src/governance/` (compliance framework)

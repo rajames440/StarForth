@@ -1,0 +1,28 @@
+Block 3001
+: INNER-SEQ ( -- )
+  1 2 + 3 4 + * DROP ;
+
+: MIDDLE-SEQ ( -- )
+  10 0 DO INNER-SEQ LOOP ;
+
+: OUTER-SEQ ( -- )
+  5 0 DO MIDDLE-SEQ LOOP ;
+
+: HOT-WORD ( -- n )
+  42 DUP + DUP * ;
+
+Block 3002
+: LOCALITY-TEST ( -- )
+  100 0 DO
+    HOT-WORD DROP
+    HOT-WORD DROP
+    HOT-WORD DROP
+  LOOP ;
+
+: MAIN
+  1000 0 DO
+    OUTER-SEQ
+    LOCALITY-TEST
+  LOOP
+;
+MAIN

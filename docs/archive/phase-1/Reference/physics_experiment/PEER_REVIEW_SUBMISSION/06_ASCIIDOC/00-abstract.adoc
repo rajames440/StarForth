@@ -1,0 +1,8 @@
+[[abstract]]
+== Abstract
+
+[TODO: Write abstract (150-250 words). Key points to cover:]
+- [TODO: Problem statement]
+- [TODO: Proposed solution]
+- [TODO: Key results]
+- [TODO: Significance/impact]

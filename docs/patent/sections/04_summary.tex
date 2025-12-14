@@ -1,0 +1,59 @@
+% ===========================================
+% 04_summary.tex
+% Summary of the Invention
+% ===========================================
+
+\section{Summary of the Invention}
+
+The invention introduces an adaptive virtual machine architecture that
+continuously modifies its internal execution behavior in response to real-time
+workload characteristics. Unlike traditional systems that rely on fixed or
+manually selected configuration parameters, the disclosed architecture employs
+a coordinated network of feedback loops, statistical inference mechanisms,
+and supervisory mode selection to achieve autonomous, stable, and optimized
+execution across heterogeneous and time-varying workloads.
+\par\medskip
+The system maintains a multi-dimensional \textit{runtime state vector}
+representing execution frequency counters (referred to as ``execution heat''
+by analogy), workload variability metrics (statistical variance, referred to
+as ``entropy'' by analogy to information theory), time-based decay parameters,
+instruction queue depth, stability metrics, and short-term statistical summaries.
+As the workload evolves, these quantitative measurements provide a description
+of its current behavioral characteristics, enabling classification as stable,
+temporal, volatile, transitional, or mixed.
+\par\medskip
+A plurality of feedback loops (L1–L7) operate concurrently to regulate
+different aspects of execution, such as cache usage, dictionary lookup strategies,
+time-based decay coefficients, pattern recognition confidence weighting, and
+statistical observation window sizing. Each loop responds to changes in the
+state vector, enabling the system to reduce execution variance and optimize
+throughput without manual tuning.
+\par\medskip
+A supervisory controller (L8), referred to as the Mode Selector (the name
+``Jacquard'' being used by historical analogy to automated pattern selection),
+evaluates the state vector and selects among multiple internally validated
+execution modes. Each mode corresponds to a specific configuration of the
+feedback loops and represents a stable, high-performance operating point
+identified through design space exploration and empirical validation.
+Transitions between modes are governed by bounded, non-oscillatory mechanisms
+such as hysteresis thresholds or confidence scoring to ensure predictable
+behavior even under rapidly shifting workloads.
+\par\medskip
+Through this combination of state-vector analysis, feedback-loop coordination,
+and supervisory mode selection, the invention achieves robust and
+shape-invariant execution performance across diverse input waveforms,
+including sinusoidal, triangular, square-wave, burst-like, random, and
+mixed-pattern workloads. The system converges quickly to an appropriate
+steady-state configuration and maintains low variance even when exposed to
+non-stationary or highly dynamic execution patterns.
+\par\medskip
+The invention is applicable to a wide range of execution environments,
+including interpreters, stack-based virtual machines, embedded runtimes,
+just-in-time compilation systems, microkernel-based platforms, distributed
+execution engines, and real-time or soft–real-time systems. By providing a
+general-purpose, workload-aware, and self-optimizing architecture, the
+invention overcomes long-standing limitations of static configuration
+approaches and enables predictable, stable, and high-performance behavior
+without manual tuning or workload-specific adjustment.
+
+\newpage

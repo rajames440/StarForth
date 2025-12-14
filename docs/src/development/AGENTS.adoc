@@ -1,0 +1,75 @@
+== Repository Guidelines
+:toc: left
+:toc-title: Contents
+:toclevels: 3
+xref:../README.adoc[← Back to Documentation Index]
+
+
+
+=== Project Structure & Module Organization
+
+* `+src/+` hosts the VM core; `+platform/+` and `+test_runner/+` cover
+host glue plus the in-process harness.
+* `+word_source/+` (and matching headers) carries FORTH words—keep the
+`+<domain>_words.*+` naming when extending.
+* `+include/+` is the public boundary; stash private helpers in `+src/+`
+to avoid leaking symbols.
+* `+docs/+`, `+scripts/+`, and `+maint/+` hold manuals and automation;
+`+disks/+` + `+conf/init.4th+` seed block images, while `+build/+` stays
+disposable.
+
+=== Build, Test, and Development Commands
+
+* `+make fastest+` builds the release binary with LTO, assembly fast
+paths, and `+STRICT_PTR=1+` checks.
+* `+make debug+` yields a `+-O0 -g+` target; prefer `+make clean+`
+before switching modes.
+* `+make test+` runs the harness; use `+./build/starforth --run-tests+`
+when a binary already exists.
+* `+make benchmark+` or
+`+./build/starforth --benchmark 1000 --log-none+` records performance,
+and `+scripts/update-init.sh+` refreshes `+conf/init.4th+` from
+`+disks/+`.
+
+=== Coding Style & Naming Conventions
+
+* Stick to ANSI C99, four-space indentation, and same-line braces
+(`+static VM *init_vm(void) {+`).
+* Use `+snake_case+` for symbols, reserve `+g_+` for module statics, and
+keep macros uppercase.
+* Hide new behavior behind flags (`+STRICT_PTR+`, `+USE_ASM_OPT+`) and
+document additions in headers.
+* Keep exported APIs covered by concise `+/** ... */+` comments, rely on
+light `+//+` notes inside, and maintain a warning-clean build
+(`+-Wall -Wextra -Werror+`).
+
+=== Testing Guidelines
+
+* Add suites in `+src/test_runner/modules/+` with a `+run_<area>_tests+`
+entry and hook them in `+test_runner.c+`.
+* Give cases lowercase IDs and reuse helpers from `+test_common.c+`.
+* Run `+make test+` before every push and record benchmarks when
+touching hot paths.
+* For a smoke check, run
+`+./build/starforth --disk-img=disks/starforth-dev.img --ram-disk=10 --run-tests+`.
+
+=== Commit & Pull Request Guidelines
+
+* Summaries follow the sentence-style seen in history
+(`+StarForth->StarshipOS fast and easy port integration utility.+`);
+stay under 72 characters.
+* Use bodies for rationale, flags, and rollout steps; keep commits
+focused.
+* PRs should note purpose, verification commands, and any init/disk/doc
+updates.
+* Loop in subsystem maintainers early and surface open questions for
+quick review.
+
+=== Security & Configuration Tips
+
+* Treat `+disks/+` contents as shared fixtures—clone before
+experimenting and avoid direct edits.
+* Regenerate `+conf/init.4th+` and tool binaries via the scripts instead
+of tweaking generated files.
+* When touching `+src/platform/+`, mirror the cleanup patterns in
+`+src/main.c:cleanup_blkio+` to keep ownership explicit.

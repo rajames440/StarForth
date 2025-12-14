@@ -1,0 +1,454 @@
+// StarForth Ontology Visualizations
+// GraphViz/DOT format
+// Version 1.0 - 2025-12-13
+//
+// Generate images with:
+//   dot -Tpng ontology_diagrams.dot -o ontology_full.png
+//   dot -Tsvg ontology_diagrams.dot -o ontology_full.svg
+//
+// Or render individual graphs:
+//   dot -Tpng -Gname=ontology_main ontology_diagrams.dot -o ontology_main.png
+//   dot -Tpng -Gname=taxonomy ontology_diagrams.dot -o taxonomy.png
+//   dot -Tpng -Gname=feedback_loops ontology_diagrams.dot -o feedback.png
+
+// ============================================================================
+// DIAGRAM 1: Main Ontology (Concept Hierarchy)
+// ============================================================================
+
+digraph ontology_main {
+    label="StarForth Ontology: Core Concepts and Relationships";
+    labelloc=t;
+    fontsize=16;
+    fontname="Helvetica Bold";
+
+    // Graph settings
+    rankdir=TB;
+    node [shape=box, style=rounded, fontname="Helvetica"];
+    edge [fontname="Helvetica", fontsize=10];
+
+    // Root concept
+    root [label="StarForth\nAdaptive Runtime", shape=ellipse, style=filled, fillcolor=lightblue];
+
+    // Primary categories
+    metrics [label="Execution\nMetrics", style=filled, fillcolor=lightgreen];
+    adaptive [label="Adaptive\nMechanisms", style=filled, fillcolor=lightyellow];
+    convergence [label="Convergence\nProperties", style=filled, fillcolor=lightcoral];
+    analysis [label="Analysis\nFrameworks", style=filled, fillcolor=plum1];
+
+    root -> metrics;
+    root -> adaptive;
+    root -> convergence;
+    root -> analysis;
+
+    // Execution Metrics subconcepts
+    freq [label="Execution\nFrequency", shape=note];
+    decay [label="Temporal\nDecay", shape=note];
+    trans [label="Transition\nProbability", shape=note];
+
+    metrics -> freq;
+    metrics -> decay [label="derives"];
+    metrics -> trans [label="derives"];
+
+    // Adaptive Mechanisms subconcepts
+    cache [label="Frequency-Based\nCaching", shape=note];
+    window [label="Window-Based\nInference", shape=note];
+    prune [label="Decay-Based\nPruning", shape=note];
+
+    adaptive -> cache;
+    adaptive -> window;
+    adaptive -> prune;
+
+    // Convergence Properties subconcepts
+    determ [label="Deterministic\nBehavior", shape=note];
+    steady [label="Steady-State\nEquilibrium", shape=note];
+    variance [label="Variance\nReduction", shape=note];
+
+    convergence -> determ;
+    convergence -> steady;
+    convergence -> variance;
+
+    // Analysis Frameworks subconcepts
+    dynamical [label="Dynamical\nSystems View", shape=note];
+    statistical [label="Statistical\nInference View", shape=note];
+    control [label="Control\nTheory View", shape=note];
+
+    analysis -> dynamical;
+    analysis -> statistical;
+    analysis -> control;
+
+    // Cross-relationships (important connections)
+    freq -> cache [label="enables", style=dashed, color=blue];
+    decay -> prune [label="implements", style=dashed, color=blue];
+    window -> variance [label="reduces", style=dashed, color=blue];
+    steady -> determ [label="implies", style=dashed, color=red];
+    dynamical -> steady [label="characterizes", style=dashed, color=green];
+}
+
+// ============================================================================
+// DIAGRAM 2: Taxonomy (5-Layer Architecture)
+// ============================================================================
+
+digraph taxonomy {
+    label="StarForth Taxonomy: Component Hierarchy";
+    labelloc=t;
+    fontsize=16;
+    fontname="Helvetica Bold";
+
+    rankdir=TB;
+    node [shape=box, fontname="Helvetica"];
+    edge [fontname="Helvetica"];
+
+    // Root
+    system [label="Adaptive Runtime\nSystem", shape=box3d, style=filled, fillcolor=lightblue];
+
+    // 5 Layers
+    measure [label="1. Measurement Layer", style=filled, fillcolor="#E8F5E9"];
+    transform [label="2. Transformation Layer", style=filled, fillcolor="#FFF9C4"];
+    infer [label="3. Inference Layer", style=filled, fillcolor="#FFE0B2"];
+    actuate [label="4. Actuation Layer", style=filled, fillcolor="#F8BBD0"];
+    coord [label="5. Coordination Layer", style=filled, fillcolor="#E1BEE7"];
+
+    system -> measure;
+    system -> transform;
+    system -> infer;
+    system -> actuate;
+    system -> coord;
+
+    // Measurement Layer components
+    freq_track [label="Execution Frequency\nTracking"];
+    temp_rec [label="Temporal Recording\n(Rolling Window)"];
+    trans_track [label="Transition Tracking\n(Word-to-Word)"];
+
+    measure -> freq_track;
+    measure -> temp_rec;
+    measure -> trans_track;
+
+    // Transformation Layer components
+    decay_models [label="Decay Models"];
+    norm [label="Normalization"];
+
+    linear_decay [label="Linear Decay\n(Loop #3)"];
+    exp_decay [label="Exponential Decay\n(Loop #6)"];
+    rank_norm [label="Frequency Ranking"];
+    prob_calc [label="Probability Calc"];
+
+    transform -> decay_models;
+    transform -> norm;
+    decay_models -> linear_decay;
+    decay_models -> exp_decay;
+    norm -> rank_norm;
+    norm -> prob_calc;
+
+    // Inference Layer components
+    window_infer [label="Window Width Inference\n(Loop #5)"];
+    slope_infer [label="Decay Slope Inference\n(Loop #6)"];
+
+    levene [label="Variance Analysis\n(Levene's Test)"];
+    binary_search [label="Binary Search\n(Inflection Point)"];
+    exp_reg [label="Exponential\nRegression"];
+    least_sq [label="Least Squares\nFitting"];
+
+    infer -> window_infer;
+    infer -> slope_infer;
+    window_infer -> levene;
+    window_infer -> binary_search;
+    slope_infer -> exp_reg;
+    slope_infer -> least_sq;
+
+    // Actuation Layer components
+    hotwords [label="Hot-Words Cache\n(Loop #1)"];
+    speculative [label="Speculative Execution\n(Loop #4)"];
+
+    freq_sort [label="Frequency-Based\nSorting"];
+    topk [label="Top-K Selection"];
+    fastpath [label="Fast-Path Lookup"];
+    trans_prob [label="Transition Probability\nCalculation"];
+    prefetch [label="Prefetch Decision"];
+
+    actuate -> hotwords;
+    actuate -> speculative;
+    hotwords -> freq_sort;
+    hotwords -> topk;
+    hotwords -> fastpath;
+    speculative -> trans_prob;
+    speculative -> prefetch;
+
+    // Coordination Layer components
+    heartbeat [label="Heartbeat System\n(Loop #7)"];
+
+    tick_gen [label="Time-Driven\nTick Generation"];
+    loop_orch [label="Loop\nOrchestration"];
+    adaptive_rate [label="Adaptive\nTick Rate"];
+
+    coord -> heartbeat;
+    heartbeat -> tick_gen;
+    heartbeat -> loop_orch;
+    heartbeat -> adaptive_rate;
+}
+
+// ============================================================================
+// DIAGRAM 3: Feedback Loop Interactions
+// ============================================================================
+
+digraph feedback_loops {
+    label="StarForth Feedback Loops: Interactions and Classifications";
+    labelloc=t;
+    fontsize=16;
+    fontname="Helvetica Bold";
+
+    rankdir=LR;
+    node [shape=box, fontname="Helvetica"];
+    edge [fontname="Helvetica", fontsize=10];
+
+    // Execution event (trigger)
+    exec_event [label="Execution\nEvent", shape=ellipse, style=filled, fillcolor=yellow];
+
+    // Loop #1 (Positive)
+    loop1 [label="Loop #1:\nExecution Heat\nTracking", style=filled, fillcolor="#FFCDD2"];
+    freq_inc [label="Frequency\nIncrement"];
+    cache_rank [label="Cache\nRank ↑"];
+    lookup_fast [label="Lookup\nSpeed ↑"];
+
+    exec_event -> loop1;
+    loop1 -> freq_inc;
+    freq_inc -> cache_rank;
+    cache_rank -> lookup_fast;
+    lookup_fast -> exec_event [label="positive\nfeedback", color=red, style=bold];
+
+    // Loop #2 (Neutral)
+    loop2 [label="Loop #2:\nRolling Window\nHistory", style=filled, fillcolor="#E0E0E0"];
+    record [label="Record\nHistory"];
+    history_db [label="Historical\nData"];
+
+    exec_event -> loop2;
+    loop2 -> record;
+    record -> history_db;
+
+    // Loop #3 (Negative)
+    loop3 [label="Loop #3:\nLinear Decay", style=filled, fillcolor="#C8E6C9"];
+    decay_apply [label="Decay\nApplication"];
+    freq_reduce [label="Frequency\nReduction"];
+
+    freq_inc -> loop3;
+    loop3 -> decay_apply;
+    decay_apply -> freq_reduce;
+    freq_reduce -> freq_inc [label="negative\nfeedback", color=blue, style=bold];
+
+    // Loop #4 (Positive)
+    loop4 [label="Loop #4:\nPipelining\nMetrics", style=filled, fillcolor="#FFCDD2"];
+    trans_rec [label="Transition\nRecord"];
+    pred_improve [label="Prediction\nImprove"];
+    prefetch_hit [label="Prefetch\nHit ↑"];
+
+    exec_event -> loop4;
+    loop4 -> trans_rec;
+    trans_rec -> pred_improve;
+    pred_improve -> prefetch_hit;
+    prefetch_hit -> exec_event [label="positive\nfeedback", color=red, style=bold];
+
+    // Loop #5 (Negative)
+    loop5 [label="Loop #5:\nWindow Width\nInference", style=filled, fillcolor="#C8E6C9"];
+    var_detect [label="Variance\nDetection"];
+    window_shrink [label="Window\nShrink"];
+    var_reduce [label="Variance ↓"];
+
+    history_db -> loop5;
+    loop5 -> var_detect;
+    var_detect -> window_shrink [label="if σ² ↑"];
+    window_shrink -> var_reduce;
+    var_reduce -> var_detect [label="negative\nfeedback", color=blue, style=bold];
+
+    // Loop #6 (Negative)
+    loop6 [label="Loop #6:\nDecay Slope\nInference", style=filled, fillcolor="#C8E6C9"];
+    unstable_detect [label="Instability\nDetection"];
+    lambda_increase [label="λ ↑\n(Steeper Decay)"];
+    stabilize [label="Stabilization"];
+
+    history_db -> loop6;
+    loop6 -> unstable_detect;
+    unstable_detect -> lambda_increase [label="if unstable"];
+    lambda_increase -> stabilize;
+    stabilize -> unstable_detect [label="negative\nfeedback", color=blue, style=bold];
+
+    // Loop #7 (Meta)
+    loop7 [label="Loop #7:\nAdaptive\nHeartbeat", shape=doubleoctagon, style=filled, fillcolor="#E1BEE7"];
+    stability_mon [label="Stability\nMonitor"];
+    tick_adjust [label="Tick Rate\nAdjust"];
+
+    var_reduce -> loop7;
+    stabilize -> loop7;
+    loop7 -> stability_mon;
+    stability_mon -> tick_adjust [label="if stable:\nslower ticks"];
+    tick_adjust -> loop3 [style=dotted, label="coordinates"];
+    tick_adjust -> loop5 [style=dotted, label="coordinates"];
+    tick_adjust -> loop6 [style=dotted, label="coordinates"];
+}
+
+// ============================================================================
+// DIAGRAM 4: Phase Space and Convergence
+// ============================================================================
+
+digraph phase_space {
+    label="StarForth Phase Space: Attractor Basin Visualization (Conceptual)";
+    labelloc=t;
+    fontsize=16;
+    fontname="Helvetica Bold";
+
+    rankdir=TB;
+    node [shape=circle, fontname="Helvetica"];
+    edge [fontname="Helvetica"];
+
+    // Initial states (multiple starting points)
+    init1 [label="Initial State 1\n(w=4096, λ=0.1, σ²=high)", style=filled, fillcolor=pink];
+    init2 [label="Initial State 2\n(w=2048, λ=0.05, σ²=med)", style=filled, fillcolor=pink];
+    init3 [label="Initial State 3\n(w=1024, λ=0.2, σ²=low)", style=filled, fillcolor=pink];
+
+    // Intermediate states (trajectory)
+    inter1 [label="Adapting\n(w↓, λ↑, σ²↓)", style=filled, fillcolor=lightyellow];
+    inter2 [label="Adapting\n(w↑, λ↓, σ²↓)", style=filled, fillcolor=lightyellow];
+    inter3 [label="Adapting\n(w stable, λ↑, σ²↓)", style=filled, fillcolor=lightyellow];
+
+    // Attractor (steady state)
+    attractor [label="Attractor\n(w*=512, λ*=0.08, σ²→0)",
+               shape=doublecircle, style=filled, fillcolor=lightgreen, penwidth=3];
+
+    // Trajectories (convergence paths)
+    init1 -> inter1 [label="Loop #5\nwindow adapt"];
+    init2 -> inter2 [label="Loop #5\nwindow adapt"];
+    init3 -> inter3 [label="Loop #6\nslope adapt"];
+
+    inter1 -> attractor [label="converge", color=blue, penwidth=2];
+    inter2 -> attractor [label="converge", color=blue, penwidth=2];
+    inter3 -> attractor [label="converge", color=blue, penwidth=2];
+
+    // Self-loop at attractor (stability)
+    attractor -> attractor [label="stable fixed point", color=green];
+
+    // Legend
+    subgraph cluster_legend {
+        label="Legend";
+        style=dashed;
+
+        leg_init [label="Initial State", style=filled, fillcolor=pink, shape=box];
+        leg_adapt [label="Adaptive Phase", style=filled, fillcolor=lightyellow, shape=box];
+        leg_steady [label="Steady State", style=filled, fillcolor=lightgreen, shape=box];
+
+        leg_init -> leg_adapt [style=invis];
+        leg_adapt -> leg_steady [style=invis];
+    }
+
+    // Note
+    note [label="All trajectories converge to\nsame attractor (deterministic)\n\nPhase Space Axes:\n• w: window size\n• λ: decay coefficient\n• σ²: variance",
+          shape=note, style=filled, fillcolor=lightyellow];
+}
+
+// ============================================================================
+// DIAGRAM 5: Metaphorical Mapping (Thermodynamics → Execution)
+// ============================================================================
+
+digraph metaphor_mapping {
+    label="Thermodynamic Metaphor: Conceptual Mapping (NOT Literal Physics)";
+    labelloc=t;
+    fontsize=16;
+    fontname="Helvetica Bold";
+
+    rankdir=LR;
+    node [shape=box, fontname="Helvetica"];
+    edge [fontname="Helvetica", fontsize=11];
+
+    // Thermodynamic concepts (left)
+    subgraph cluster_thermo {
+        label="Thermodynamic Concepts\n(Metaphorical)";
+        style=filled;
+        fillcolor=lightblue;
+
+        heat [label="Thermal Energy"];
+        temp [label="Temperature"];
+        cooling [label="Heat Dissipation\n(Cooling)"];
+        equilib [label="Thermal\nEquilibrium"];
+        cool_rate [label="Cooling Rate"];
+    }
+
+    // Execution concepts (right)
+    subgraph cluster_exec {
+        label="Execution Concepts\n(Literal Implementation)";
+        style=filled;
+        fillcolor=lightgreen;
+
+        freq [label="Execution Frequency\n(uint64_t counter)"];
+        rank [label="Normalized Rank\n(position in sorted list)"];
+        decay [label="Exponential Decay\n(f(t) = f₀·e^(-λt))"];
+        steady [label="Steady-State\nConvergence"];
+        lambda [label="Decay Coefficient λ\n[1/time]"];
+    }
+
+    // Metaphorical mappings
+    heat -> freq [label="≈", style=dashed, color=blue, penwidth=2];
+    temp -> rank [label="≈", style=dashed, color=blue, penwidth=2];
+    cooling -> decay [label="≈", style=dashed, color=blue, penwidth=2];
+    equilib -> steady [label="≈", style=dashed, color=blue, penwidth=2];
+    cool_rate -> lambda [label="≈", style=dashed, color=blue, penwidth=2];
+
+    // Warning label
+    warning [label="⚠ CAUTION ⚠\n\nThese are METAPHORICAL ANALOGIES.\nNo actual thermodynamic processes\nor physics equations are involved.\n\nFor academic writing, qualify as:\n'thermodynamically-inspired metaphor'",
+             shape=note, style=filled, fillcolor=yellow, penwidth=2];
+}
+
+// ============================================================================
+// DIAGRAM 6: Data Flow (Execution Event → Optimized Lookup)
+// ============================================================================
+
+digraph data_flow {
+    label="StarForth Data Flow: From Execution Event to Optimized Lookup";
+    labelloc=t;
+    fontsize=16;
+    fontname="Helvetica Bold";
+
+    rankdir=TB;
+    node [shape=box, fontname="Helvetica"];
+    edge [fontname="Helvetica"];
+
+    // Input
+    input [label="Execution Event\n(word executed)", shape=ellipse, style=filled, fillcolor=yellow];
+
+    // Measurement
+    measure_freq [label="Increment\nFrequency Counter", style=filled, fillcolor="#E8F5E9"];
+    measure_window [label="Record in\nRolling Window", style=filled, fillcolor="#E8F5E9"];
+
+    input -> measure_freq;
+    input -> measure_window;
+
+    // Transformation
+    apply_decay [label="Apply\nDecay Function", style=filled, fillcolor="#FFF9C4"];
+
+    measure_freq -> apply_decay;
+
+    // Inference (background)
+    infer_window [label="Infer Window Width\n(Levene's Test)", style=filled, fillcolor="#FFE0B2"];
+    infer_slope [label="Infer Decay Slope\n(Exp. Regression)", style=filled, fillcolor="#FFE0B2"];
+
+    measure_window -> infer_window;
+    measure_window -> infer_slope;
+
+    // Actuation
+    reorganize [label="Reorganize\nHot-Words Cache", style=filled, fillcolor="#F8BBD0"];
+
+    apply_decay -> reorganize;
+    infer_window -> reorganize [style=dashed, label="tuning"];
+    infer_slope -> reorganize [style=dashed, label="tuning"];
+
+    // Output
+    output [label="Optimized Lookup\n(O(1) cache hit)", shape=ellipse, style=filled, fillcolor=lightgreen];
+
+    reorganize -> output;
+
+    // Feedback
+    output -> input [label="increased\nexecution rate", style=dotted, color=red];
+
+    // Coordination
+    heartbeat [label="Heartbeat\nCoordination", shape=diamond, style=filled, fillcolor="#E1BEE7"];
+
+    heartbeat -> apply_decay [style=dotted, label="tick trigger"];
+    heartbeat -> infer_window [style=dotted, label="tick trigger"];
+    heartbeat -> infer_slope [style=dotted, label="tick trigger"];
+}

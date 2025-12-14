@@ -1,0 +1,34 @@
+= Governance Export Notes (Physics Phase 1)
+:author: StarForth Physics Working Group
+:revdate: 2025-10-23
+
+This checklist captures which Phase 1 artefacts must be mirrored into the
+`StarForth-Governance` repository.
+
+== Runtime Interfaces
+
+[%header,cols="1,2,3"]
+|===
+|Artefact |Location (VM repo) |Governance action
+|`physics_runtime.h` |`include/physics_runtime.h` |Copy header verbatim; annotate protocol version and magic constants.
+|HOLA protocol memo |`docs/src/internal/HOLA_PROTOCOL.adoc` |Mirror as governance RFC; keep version history.
+|Physics formal models |`docs/src/internal/formal/Physics_StateMachine.thy`, `Physics_Observation.thy` |Import into governance proofs tree to allow cross-repository review.
+|Scheduler plan updates |`docs/src/internal/PHYSICS_SCHEDULING_PLAN.adoc` |Reference from governance scheduling playbook (Phase 1 appendix).
+|Signal map updates |`docs/src/internal/PHYSICS_SIGNAL_MAP.adoc` |Link from governance telemetry charter.
+|===
+
+== Process Notes
+
+1. Governance repo retains source-of-truth for ABI versions.
+Any change to
+`HOLA_PROTOCOL.adoc` or the analytics header MUST update
+`HOLA_PROTOCOL_VERSION` there before landing.
+2. Formal Isabelle theories should be bundled with build instructions (Holmake or isabelle-jedit session) so governance reviewers can replay proofs.
+3. Export scripts should verify the analytics heap size and event channel table to keep governance dashboards consistent.
+4. Phase 1 governance deliverables live under `governance/physics/phase1/`; this document should accompany the initial export to serve as a checklist.
+
+== Open Items For Governance
+
+- Decide whether the governance repo will ship pre-built analyzer binaries or just the protocol description.
+- Clarify signature requirements for future ABI bumps (magic change or command addition).
+- Define approval flow for new HOLA opcodes before Phase 2 experiments begin.

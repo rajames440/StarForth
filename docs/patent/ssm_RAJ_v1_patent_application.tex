@@ -1,0 +1,350 @@
+% ============================================================================
+% ssm_RAJ_v1_patent_application.tex
+%
+% UNITED STATES PATENT APPLICATION
+% SOLID STATE MACHINE FOR SELF-REGULATING COMPUTATIONAL SYSTEMS
+%
+% Inventor: Robert A. James
+% Filing Date: December 2025
+%
+% This document uses the original non-versioned section content which is
+% language-agnostic and concept-focused, protecting the SSM concept itself
+% ============================================================================
+
+\documentclass[12pt,letterpaper]{article}
+
+% ============================================================================
+% PACKAGES
+% ============================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+\graphicspath{{figures/}}
+
+% ============================================================================
+% PAGE SETUP
+% ============================================================================
+\setlength{\parindent}{0.5in}
+\setlength{\parskip}{0.5em}
+\setlength{\headheight}{14.5pt}
+\onehalfspacing
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Application No.: [To Be Assigned]}
+\lhead{Docket No.: SSM-001}
+\rfoot{Page \thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0pt}
+
+\newcommand{\figref}[1]{FIG.~#1}
+
+% ============================================================================
+% BEGIN DOCUMENT
+% ============================================================================
+\begin{document}
+
+% ============================================================================
+% TITLE PAGE
+% ============================================================================
+\begin{center}
+\Large\textbf{UNITED STATES PATENT APPLICATION}
+\vspace{2em}
+
+\LARGE\textbf{STEADY STATE MACHINE FOR}\\[0.3em]
+\LARGE\textbf{SELF-REGULATING COMPUTATIONAL SYSTEMS}
+\vspace{1em}
+
+\large\textit{An Adaptive Runtime System Exhibiting}\\
+\large\textit{Autonomous Workload Optimization and Deterministic Convergence}
+\vspace{2em}
+
+\normalsize
+\begin{tabular}{ll}
+\textbf{Inventor:} & Robert A. James \\
+\textbf{Assignee:} & [To Be Determined] \\
+\textbf{Filing Date:} & December 2025 \\
+\textbf{Application Type:} & Utility Patent Application \\
+\end{tabular}
+\end{center}
+
+\vspace{2em}
+
+\noindent\textbf{Technical Field:} Adaptive Virtual Machines, Self-Regulating Computational Systems, Feedback-Loop Control Architectures, Runtime Optimization
+
+\vspace{1em}
+
+\noindent\textbf{Related Systems:} Virtual Machine Runtimes, Adaptive Execution Environments, Embedded Systems, Microkernel Subsystems
+
+\clearpage
+
+% ============================================================================
+% TABLE OF CONTENTS
+% ============================================================================
+\tableofcontents
+\clearpage
+
+% ============================================================================
+% INCLUDE ORIGINAL NON-VERSIONED SECTIONS
+% These sections are language-agnostic and concept-focused
+% ============================================================================
+
+\input{sections/02_field.tex}
+\input{sections/03_background.tex}
+\input{sections/04_summary.tex}
+
+% ============================================================================
+% DRAWINGS AND FIGURES
+% ============================================================================
+\FloatBarrier
+\section{Brief Description of the Drawings}
+
+The following figures illustrate representative embodiments and experimental
+validation of the Solid State Machine architecture. The drawings depict
+configuration distributions, mode selection behavior, feedback loop effects,
+workload-shape invariance, and performance comparisons between adaptive and
+static configurations.
+
+\subsection{Configuration Space Analysis}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch1_config_distribution.png}
+	\caption{\textbf{FIG. 1 -- Configuration Space Distribution.} Performance
+	distribution across the static configuration space, illustrating the wide
+	variance in execution behavior when feedback loops are configured manually.
+	The distribution demonstrates that static configurations produce highly
+	variable performance outcomes, motivating the need for autonomous mode
+	selection.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch1_config_ranking.png}
+	\caption{\textbf{FIG. 2 -- Configuration Ranking.} Ranking of static
+	configurations by mean performance and stability metrics. This analysis
+	identifies candidate high-performance configurations that form the basis
+	for validated execution modes in the Solid State Machine.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch1_main_effects.png}
+	\caption{\textbf{FIG. 3 -- Main Effects Analysis.} Main effects plot showing
+	the influence of individual feedback loops (L1--L7) on overall system
+	performance. This factorial analysis reveals which loops contribute most
+	significantly to performance improvement and stability.}
+\end{figure}
+
+\subsection{Mode Selection and Optimization}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch2_runoff_boxplot.png}
+	\caption{\textbf{FIG. 4 -- Configuration Runoff Comparison.} Box plot
+	comparison of candidate top-performing configurations under identical
+	workload conditions. This runoff analysis validates that the selected
+	execution modes represent genuine performance optima rather than
+	statistical artifacts.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch2_optimality_scores.png}
+	\caption{\textbf{FIG. 5 -- Optimality Analysis.} Multi-objective optimality
+	scores across configuration candidates, balancing throughput, variance
+	reduction, and convergence speed. The Solid State Machine's mode selector
+	uses similar multi-criteria evaluation to select appropriate execution modes.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{phase_space_portrait.png}
+	\caption{\textbf{FIG. 6 -- Optimality Analysis.} Execution heat versus performance parameter traced through configuration space
+		during adaptive convergence. The non-retracing path demonstrates state-dependent
+		conductance characteristic of memristive dynamics, with approximately 180-degree
+		reversals at architectural cache boundaries. Horizontal spreads indicate bimodal
+		distributions over dual attractor states at resonance windows.}
+\end{figure}
+\subsection{Workload Shape Invariance}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch3_shape1_performance.png}
+	\caption{\textbf{FIG. 7 -- Workload Shape Performance (Set I).} Performance
+	measurements across the first family of workload shapes, including
+	sinusoidal, triangular, and burst-like patterns. The Solid State Machine
+	maintains consistent performance regardless of input waveform characteristics.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch5_shape2_performance.png}
+	\caption{\textbf{FIG. 8 -- Workload Shape Performance (Set II).} Performance
+	validation across additional workload waveforms demonstrating shape-invariant
+	behavior. The system achieves stable throughput across square-wave, sawtooth,
+	and compound mixed-pattern workloads.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch5_cv_comparison.png}
+	\caption{\textbf{FIG. 9 -- Coefficient of Variation Analysis.} Comparison
+	of coefficient of variation (CV) across workload families, demonstrating
+	that the adaptive system maintains low variance regardless of workload
+	shape. Low CV indicates predictable, stable execution behavior.}
+\end{figure}
+
+\subsection{Adaptive Mode Behavior}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch4_mode_usage_stacked.png}
+	\caption{\textbf{FIG. 10 -- Mode Usage Distribution.} Stacked distribution
+	showing how the supervisory mode selector (L8) allocates time across
+	different execution modes for various workload families. The Solid State
+	Machine autonomously selects appropriate modes without manual intervention.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{ch4_l8_vs_static.png}
+	\caption{\textbf{FIG. 11 -- Adaptive vs. Static Performance.} Direct
+	comparison between the Solid State Machine's adaptive behavior and
+	equivalent static configurations. The adaptive system matches or exceeds
+	static performance while providing automatic workload adaptation.}
+\end{figure}
+
+\subsection{State Vector Dynamics}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{fig1_snake_trajectory.pdf}
+	\caption{\textbf{FIG. 12 -- State Vector Trajectory.} Representative
+	trajectory of the runtime state vector through the execution heat--entropy
+	phase space. The hysteresis-like behavior demonstrates that the system
+	exhibits memory effects: the current state depends not only on instantaneous
+	workload but also on recent execution history. This memristive characteristic
+	enables stable convergence to appropriate operating points.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{fig2_K_vs_window.pdf}
+	\caption{\textbf{FIG. 13 -- Performance Scaling Relationship.} Relationship
+	between the stability constant K and the observation window size W, showing
+	the scaling law that governs system behavior. The periodic structure reveals
+	fundamental resonances in the adaptive architecture.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{fig3_FFT_spectrum.pdf}
+	\caption{\textbf{FIG. 14 -- Spectral Analysis.} Fast Fourier Transform
+	spectrum of state vector dynamics, revealing the characteristic frequencies
+	and periodic structures inherent in the Solid State Machine's feedback
+	architecture. Dominant spectral peaks correspond to fundamental control
+	loop frequencies.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{fig4_golden_ratio_penalties.pdf}
+	\caption{\textbf{FIG. 15 -- Golden Ratio Interference Pattern.} Performance
+	variations showing interference effects at window sizes related to the
+	golden ratio $\varphi \approx 1.618$. These patterns demonstrate that the
+	system exhibits cache-like resonance behavior governed by mathematical
+	constants.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{fig5_bimodal_distributions.pdf}
+	\caption{\textbf{FIG. 16 -- Bimodal State Distributions.} Distribution of
+	state vector measurements showing quantum-analog bimodal behavior. Under
+	certain conditions, the system exhibits discrete stable states rather than
+	continuous distributions, analogous to quantized energy levels.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{fig6_performance_vs_k.pdf}
+	\caption{\textbf{FIG. 17 -- Performance Correlation with K.} Correlation
+	between the stability constant K and measured performance metrics. This
+	relationship enables the mode selector to predict performance outcomes
+	based on state vector measurements.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{fig7_performance_by_regime.pdf}
+	\caption{\textbf{FIG. 18 -- Performance by Operating Regime.} Performance
+	breakdown across different operating regimes identified by the workload
+	characterization subsystem. Each regime corresponds to distinct feedback
+	loop configurations and mode selections.}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{architecture.png}
+	\caption{\textbf{FIG. 19 -- System Architecture.} }
+\end{figure}
+
+\FloatBarrier
+
+\newpage
+
+% ============================================================================
+% DETAILED DESCRIPTION
+% ============================================================================
+\input{sections/06_detailed_description.tex}
+
+% ============================================================================
+% CLAIMS
+% ============================================================================
+\input{sections/08_claims.tex}
+
+% ============================================================================
+% ABSTRACT OF THE DISCLOSURE
+% ============================================================================
+\clearpage
+\section*{Abstract of the Disclosure}
+\addcontentsline{toc}{section}{Abstract of the Disclosure}
+
+\begin{center}
+\textbf{A STEADY STATE MACHINE FOR SELF-REGULATING COMPUTATIONAL SYSTEMS}
+\end{center}
+
+A Steady State Machine (SSM) is disclosed that provides autonomous, self-regulating
+control of computational workloads through coordinated feedback loops operating
+within a virtual or physical execution environment. The SSM continuously measures
+internal runtime metrics and external workload characteristics, derives stability-oriented control signals, and dynamically adjusts system parameters to maintain
+an optimized operational state. Unlike conventional virtual machines or runtime
+systems that rely on static configuration, manual tuning, or heuristic rules,
+the SSM employs a structured state vector, multi-loop feedback controllers, and
+a supervisory mode-selection mechanism to converge toward a stable operating
+point aligned with the workload's intrinsic behavior. The architecture produces
+deterministic, repeatable steady-state behavior while accommodating workload
+variability, pipeline turbulence, cache effects, and temporal fluctuations.
+Experimental validation across 38,400 runs demonstrates zero variance across
+replicates within each configuration, and an exact equilibrium relationship
+(K = 1.0) governing resource allocation. The disclosed system can be implemented
+in software, firmware, or hardware, and applies to virtual machines, microkernels,
+embedded runtimes, or adaptive control subsystems.
+
+\vspace{1em}
+
+\end{document}

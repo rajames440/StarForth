@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  -  StarForth — Steady-State Virtual Machine Runtime
+  -
+  -  Copyright (c) 2023–2025 Robert A. James
+  -  All rights reserved.
+  -
+  -  This file is part of the StarForth project.
+  -
+  -  Licensed under the StarForth License, Version 1.0 (the "License");
+  -  you may not use this file except in compliance with the License.
+  -
+  -  You may obtain a copy of the License at:
+  -      https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  -
+  -  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  -  express or implied, including but not limited to the warranties of
+  -  merchantability, fitness for a particular purpose, and noninfringement.
+  -
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -
+  - StarForth — Steady-State Virtual Machine Runtime
+  -  Copyright (c) 2023–2025 Robert A. James
+  -  All rights reserved.
+  -
+  -  This file is part of the StarForth project.
+  -
+  -  Licensed under the StarForth License, Version 1.0 (the "License");
+  -  you may not use this file except in compliance with the License.
+  -
+  -  You may obtain a copy of the License at:
+  -       https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  -
+  -  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  -  express or implied, including but not limited to the warranties of
+  -  merchantability, fitness for a particular purpose, and noninfringement.
+  -
+  -  See the License for the specific language governing permissions and
+  -  limitations under the License.
+  -
+  -->
+
+<svg width="960" height="540" viewBox="0 0 960 540" xmlns="http://www.w3.org/2000/svg">
+  <!-- Title (outside boundary) -->
+  <text x="480" y="30" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">
+    Figure 5: Bimodal K Distributions (Dual Attractor States)
+  </text>
+
+  <!-- Panel 1: W=4096B (Anti-resonance, Zero Variance) -->
+  <g transform="translate(60, 80)">
+    <text x="110" y="-10" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">
+      W = 4096B (Anti-resonance)
+    </text>
+
+    <!-- Axes -->
+    <line x1="0" y1="350" x2="220" y2="350" stroke="black" stroke-width="1.25" />
+    <line x1="0" y1="0" x2="0" y2="350" stroke="black" stroke-width="1.25" />
+
+    <!-- X-axis label -->
+    <text x="110" y="385" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">
+      K Statistic
+    </text>
+
+    <!-- Y-axis label -->
+    <text x="-175" y="-15" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle" transform="rotate(-90)">
+      Count (out of 30 runs)
+    </text>
+
+    <!-- X-axis ticks -->
+    <line x1="0" y1="350" x2="0" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="0" y="375" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">0.0</text>
+
+    <line x1="110" y1="350" x2="110" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="110" y="375" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">0.5</text>
+
+    <line x1="220" y1="350" x2="220" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="220" y="375" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">1.0</text>
+
+    <!-- Y-axis ticks -->
+    <line x1="-5" y1="350" x2="0" y2="350" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="355" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">0</text>
+
+    <line x1="-5" y1="233" x2="0" y2="233" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="238" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">10</text>
+
+    <line x1="-5" y1="117" x2="0" y2="117" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="122" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">20</text>
+
+    <line x1="-5" y1="0" x2="0" y2="0" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="5" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">30</text>
+
+    <!-- Single bar at K=0.0625 (all 30 runs) -->
+    <!-- K=0.0625 -> x = 0.0625 * 220 = 13.75 -->
+    <rect x="10" y="0" width="15" height="350" fill="blue" stroke="black" stroke-width="1.25" />
+    <text x="17.5" y="-5" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">30</text>
+
+    <!-- Annotation -->
+    <text x="110" y="180" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" text-anchor="middle" fill="blue" font-weight="bold">
+      Single Attractor
+    </text>
+    <text x="110" y="195" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle" fill="blue">
+      100% locked regime
+    </text>
+    <text x="110" y="210" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle" fill="blue">
+      CV = 0% (zero variance)
+    </text>
+  </g>
+
+  <!-- Panel 2: W=6144B (Resonance #1, 53% bimodal) -->
+  <g transform="translate(350, 80)">
+    <text x="110" y="-10" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">
+      W = 6144B (Resonance Peak #1)
+    </text>
+
+    <!-- Axes -->
+    <line x1="0" y1="350" x2="220" y2="350" stroke="black" stroke-width="1.25" />
+    <line x1="0" y1="0" x2="0" y2="350" stroke="black" stroke-width="1.25" />
+
+    <!-- X-axis label -->
+    <text x="110" y="385" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">
+      K Statistic
+    </text>
+
+    <!-- X-axis ticks -->
+    <line x1="0" y1="350" x2="0" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="0" y="375" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">0.0</text>
+
+    <line x1="110" y1="350" x2="110" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="110" y="375" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">0.5</text>
+
+    <line x1="220" y1="350" x2="220" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="220" y="375" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">1.0</text>
+
+    <!-- Y-axis ticks -->
+    <line x1="-5" y1="350" x2="0" y2="350" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="355" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">0</text>
+
+    <line x1="-5" y1="233" x2="0" y2="233" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="238" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">10</text>
+
+    <line x1="-5" y1="117" x2="0" y2="117" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="122" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">20</text>
+
+    <line x1="-5" y1="0" x2="0" y2="0" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="5" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">30</text>
+
+    <!-- Bimodal distribution: 14 runs locked (K≈0.042), 16 runs escaped (K→1.0) -->
+    <!-- Locked peak: K=0.042 -> x = 0.042 * 220 = 9.24, count = 14 -->
+    <rect x="5" y="187" width="12" height="163" fill="green" stroke="black" stroke-width="1.25" />
+    <text x="11" y="180" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">14</text>
+
+    <!-- Escaped peak: K≈0.7-1.0 spread, count = 16 -->
+    <!-- Show as gradient/spread from K=0.7 to K=1.0 -->
+    <rect x="154" y="233" width="8" height="117" fill="red" fill-opacity="0.5" stroke="black" stroke-width="1.25" />
+    <rect x="165" y="233" width="8" height="117" fill="red" fill-opacity="0.6" stroke="black" stroke-width="1.25" />
+    <rect x="176" y="175" width="8" height="175" fill="red" fill-opacity="0.7" stroke="black" stroke-width="1.25" />
+    <rect x="187" y="233" width="8" height="117" fill="red" fill-opacity="0.8" stroke="black" stroke-width="1.25" />
+    <rect x="198" y="233" width="8" height="117" fill="red" fill-opacity="0.9" stroke="black" stroke-width="1.25" />
+    <rect x="209" y="292" width="8" height="58" fill="red" stroke="black" stroke-width="1.25" />
+
+    <text x="190" y="165" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="red">16</text>
+
+    <!-- Annotation -->
+    <text x="110" y="40" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" text-anchor="middle" fill="red" font-weight="bold">
+      Dual Attractor (Bimodal)
+    </text>
+    <text x="110" y="55" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle" fill="green">
+      47% locked (K≈0.042)
+    </text>
+    <text x="110" y="70" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle" fill="red">
+      53% escaped (K→1.0)
+    </text>
+    <text x="110" y="85" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">
+      CV = 114%
+    </text>
+
+    <!-- Perfect K=1.0 marker -->
+    <line x1="220" y1="292" x2="220" y2="350" stroke="gold" stroke-width="3" />
+    <text x="220" y="280" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="8" text-anchor="middle" fill="gold" font-weight="bold">★</text>
+    <text x="220" y="270" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="7" text-anchor="middle" fill="gold">K=1.0</text>
+  </g>
+
+  <!-- Panel 3: W=16384B (Resonance #2, 47% bimodal) -->
+  <g transform="translate(640, 80)">
+    <text x="110" y="-10" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">
+      W = 16384B (Resonance Peak #2)
+    </text>
+
+    <!-- Axes -->
+    <line x1="0" y1="350" x2="220" y2="350" stroke="black" stroke-width="1.25" />
+    <line x1="0" y1="0" x2="0" y2="350" stroke="black" stroke-width="1.25" />
+
+    <!-- X-axis label -->
+    <text x="110" y="385" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">
+      K Statistic
+    </text>
+
+    <!-- X-axis ticks -->
+    <line x1="0" y1="350" x2="0" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="0" y="375" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">0.0</text>
+
+    <line x1="110" y1="350" x2="110" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="110" y="375" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">0.5</text>
+
+    <line x1="220" y1="350" x2="220" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="220" y="375" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">1.0</text>
+
+    <!-- Y-axis ticks -->
+    <line x1="-5" y1="350" x2="0" y2="350" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="355" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">0</text>
+
+    <line x1="-5" y1="233" x2="0" y2="233" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="238" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">10</text>
+
+    <line x1="-5" y1="117" x2="0" y2="117" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="122" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">20</text>
+
+    <line x1="-5" y1="0" x2="0" y2="0" stroke="black" stroke-width="1.25" />
+    <text x="-10" y="5" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="end">30</text>
+
+    <!-- Bimodal distribution: 16 runs locked (K≈0.016), 14 runs escaped (K→1.0) -->
+    <!-- Locked peak: K=0.016 -> x = 0.016 * 220 = 3.52, count = 16 -->
+    <rect x="1" y="163" width="12" height="187" fill="green" stroke="black" stroke-width="1.25" />
+    <text x="7" y="155" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">16</text>
+
+    <!-- Escaped peak: K≈0.6-1.0 spread, count = 14 -->
+    <rect x="132" y="233" width="8" height="117" fill="red" fill-opacity="0.5" stroke="black" stroke-width="1.25" />
+    <rect x="143" y="233" width="8" height="117" fill="red" fill-opacity="0.6" stroke="black" stroke-width="1.25" />
+    <rect x="154" y="187" width="8" height="163" fill="red" fill-opacity="0.7" stroke="black" stroke-width="1.25" />
+    <rect x="165" y="233" width="8" height="117" fill="red" fill-opacity="0.8" stroke="black" stroke-width="1.25" />
+    <rect x="176" y="233" width="8" height="117" fill="red" fill-opacity="0.9" stroke="black" stroke-width="1.25" />
+    <rect x="187" y="233" width="8" height="117" fill="red" fill-opacity="0.7" stroke="black" stroke-width="1.25" />
+    <rect x="198" y="233" width="8" height="117" fill="red" fill-opacity="0.6" stroke="black" stroke-width="1.25" />
+    <rect x="209" y="292" width="8" height="58" fill="red" stroke="black" stroke-width="1.25" />
+
+    <text x="170" y="175" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="red">14</text>
+
+    <!-- Annotation -->
+    <text x="110" y="40" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" text-anchor="middle" fill="red" font-weight="bold">
+      Dual Attractor (Bimodal)
+    </text>
+    <text x="110" y="55" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle" fill="green">
+      53% locked (K≈0.016)
+    </text>
+    <text x="110" y="70" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle" fill="red">
+      47% escaped (K→1.0)
+    </text>
+    <text x="110" y="85" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" text-anchor="middle">
+      CV = 177%
+    </text>
+
+    <!-- Perfect K=1.0 marker -->
+    <line x1="220" y1="292" x2="220" y2="350" stroke="gold" stroke-width="3" />
+    <text x="220" y="280" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="8" text-anchor="middle" fill="gold" font-weight="bold">★</text>
+    <text x="220" y="270" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="7" text-anchor="middle" fill="gold">K=1.0</text>
+  </g>
+
+  <!-- Legend (bottom) -->
+  <g transform="translate(150, 495)">
+    <rect x="0" y="-8" width="12" height="15" fill="blue" stroke="black" stroke-width="1.25" />
+    <text x="17" y="4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Single attractor (anti-resonance, locked regime only)</text>
+
+    <rect x="370" y="-8" width="12" height="15" fill="green" stroke="black" stroke-width="1.25" />
+    <text x="387" y="4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Locked regime (K ≈ 256/W)</text>
+
+    <rect x="570" y="-8" width="12" height="15" fill="red" stroke="black" stroke-width="1.25" />
+    <text x="587" y="4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Escaped regime (K → 1.0)</text>
+  </g>
+
+  <!-- Overall annotation -->
+  <text x="480" y="465" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle" font-weight="bold">
+    Quantum-Analog Phenomenon: Measurement-Induced State Collapse at Resonance
+  </text>
+  <text x="480" y="480" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" text-anchor="middle">
+    System occupies dual attractors simultaneously with probabilistic tunneling between states
+  </text>
+</svg>

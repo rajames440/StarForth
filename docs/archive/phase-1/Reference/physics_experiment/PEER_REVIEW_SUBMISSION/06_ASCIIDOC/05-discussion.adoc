@@ -1,0 +1,22 @@
+[[discussion]]
+== Discussion
+
+=== Implications for Formal Verification
+
+[TODO: How variance decomposition enables formal verification. Physics model is formally verifiable independent of environment.]
+
+=== Comparison with Existing Approaches
+
+[TODO: How this compares to JIT, ML-based optimization, traditional DVFS.]
+
+=== Limitations
+
+[TODO: Discuss Fibonacci workload limitations, single-threaded assumption, applicability boundaries.]
+
+=== Future Work
+
+[TODO: Validation on real FORTH code, ML-assisted tuning, hybrid approaches.]
+
+=== Deployment Considerations
+
+[TODO: Service level agreements, performance guarantees, practical integration.]

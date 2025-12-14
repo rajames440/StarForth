@@ -1,0 +1,411 @@
+% StarForth Ontology - LaTeX Version
+% For inclusion in academic papers
+% Version 1.0 - 2025-12-13
+
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{positioning,shapes,arrows}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\title{StarForth Ontology: Formal Conceptual Framework for\\
+       Thermodynamically-Inspired Adaptive Virtual Machine}
+\author{StarForth Project}
+\date{Version 1.0 -- December 13, 2025}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document establishes a formal ontology, taxonomy, and lexicon for the StarForth adaptive runtime system. We provide precise mathematical definitions to eliminate ambiguity in academic discourse, explicitly distinguishing metaphorical concepts (thermodynamic analogies) from literal implementations (frequency counters, exponential decay functions). This framework enables reproducible research and rigorous peer review.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Introduction}
+
+The StarForth adaptive runtime employs concepts from thermodynamics, dynamical systems theory, and statistical inference. To avoid imprecise terminology, this ontology provides:
+
+\begin{itemize}
+    \item \textbf{Formal definitions} with mathematical notation
+    \item \textbf{Taxonomic hierarchy} of system components
+    \item \textbf{Explicit scope limitations} (what is/isn't claimed)
+    \item \textbf{Usage guidelines} for academic writing
+\end{itemize}
+
+% ============================================================================
+\section{Core Lexicon}
+
+\subsection{Primary Measurable Quantities}
+
+\begin{description}[style=nextline]
+\item[Execution Frequency $f$]
+Count of times a dictionary entry has been executed, potentially adjusted by decay.
+\begin{equation}
+f(t) = f_0 \cdot e^{-\lambda t}
+\end{equation}
+where $f_0$ is initial frequency and $\lambda$ is decay coefficient.
+
+\textit{Measurement}: Unsigned 64-bit integer (\texttt{uint64\_t execution\_heat}).
+
+\textit{Note}: ``Heat'' is metaphorical naming; actual quantity is frequency.
+
+\item[Decay Coefficient $\lambda$]
+Rate parameter controlling exponential reduction in execution frequency.
+\begin{equation}
+\lambda \in \mathbb{R}^+, \quad \text{units: } [1/\text{time}]
+\end{equation}
+
+\textit{Measurement}: Derived via exponential regression; stored as Q48.16 fixed-point.
+
+\item[Window Size $w$]
+Number of recent execution events retained in rolling buffer.
+\begin{equation}
+w \in [w_{\text{min}}, w_{\text{max}}], \quad w \in \mathbb{N}
+\end{equation}
+
+\textit{Measurement}: Configurable parameter (default: 4096).
+\end{description}
+
+\subsection{Derived Metrics}
+
+\begin{description}[style=nextline]
+\item[Transition Probability $P(B|A)$]
+Conditional probability that word $B$ executes immediately after word $A$.
+\begin{equation}
+P(B|A) = \frac{\text{count}(A \to B)}{\text{count}(A)}
+\end{equation}
+
+\item[Coefficient of Variation $CV$]
+Normalized measure of dispersion.
+\begin{equation}
+CV = \frac{\sigma}{\mu}
+\end{equation}
+where $\sigma$ is standard deviation and $\mu$ is mean.
+
+\textit{Convergence criterion}: $CV \to 0$ as $t \to \infty$.
+
+\item[Variance Inflection Point $w^*$]
+Window size where variance begins to increase when window shrinks.
+\begin{equation}
+w^* = \arg\min_{w \in [w_{\text{min}}, w_{\text{current}}]} \text{Var}(w)
+\end{equation}
+\end{description}
+
+% ============================================================================
+\section{Mathematical Formalism}
+
+\subsection{Frequency Evolution Model}
+
+\textbf{Discrete-time update}:
+\begin{equation}
+f[t+1] = f[t] + \Delta_{\text{exec}}[t] - \Delta_{\text{decay}}[t]
+\end{equation}
+where
+\begin{align}
+\Delta_{\text{exec}}[t] &= \begin{cases}
+1 & \text{if word executed at tick } t \\
+0 & \text{otherwise}
+\end{cases} \\
+\Delta_{\text{decay}}[t] &= \lambda \cdot f[t] \cdot \Delta t
+\end{align}
+
+\textbf{Continuous-time model}:
+\begin{equation}
+\frac{df}{dt} = r(t) - \lambda f(t)
+\end{equation}
+where $r(t)$ is execution rate [executions/second].
+
+\textbf{Solution}:
+\begin{equation}
+f(t) = e^{-\lambda t} \left[ f_0 + \int_0^t r(\tau) e^{\lambda \tau} d\tau \right]
+\end{equation}
+
+\subsection{Hot-Words Cache Selection}
+
+Dictionary entry $e$ is cached if and only if:
+\begin{equation}
+\text{rank}(e) \leq K
+\end{equation}
+where
+\begin{equation}
+\text{rank}(e) = |\{e' \in \text{Dictionary} : f(e') > f(e)\}| + 1
+\end{equation}
+and $K$ is cache size (constant).
+
+\subsection{Window Width Inference}
+
+\textbf{Objective}: Find optimal window size $w^*$ minimizing variance.
+
+\textbf{Method}: Binary search with Levene's test for variance homogeneity.
+
+\begin{algorithm}[H]
+\caption{Variance Inflection Point Search}
+\begin{algorithmic}
+\State Initialize: $w_{\text{low}} \gets w_{\text{min}}, w_{\text{high}} \gets w_{\text{current}}$
+\While{$w_{\text{high}} - w_{\text{low}} > \epsilon$}
+    \State $w_{\text{mid}} \gets \lfloor (w_{\text{low}} + w_{\text{high}}) / 2 \rfloor$
+    \State Compute $\text{Var}(w_{\text{mid}})$ from trajectory
+    \State Perform Levene's test: $F \gets \text{Levene}(w_{\text{mid}}, w_{\text{current}})$
+    \If{$p\text{-value}(F) < \alpha$}
+        \State $w_{\text{low}} \gets w_{\text{mid}}$ \Comment{Variance increased, search right}
+    \Else
+        \State $w_{\text{high}} \gets w_{\text{mid}}$ \Comment{Variance stable, search left}
+    \EndIf
+\EndWhile
+\State \Return $w^* \gets w_{\text{mid}}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Decay Slope Inference}
+
+\textbf{Given}: Time series $\{(t_i, f_i)\}_{i=1}^N$ from rolling window.
+
+\textbf{Model}: Exponential decay
+\begin{equation}
+f(t) = f_0 \cdot e^{-\lambda t}
+\end{equation}
+
+\textbf{Log-transform}:
+\begin{equation}
+\ln(f) = \ln(f_0) - \lambda t
+\end{equation}
+
+\textbf{Least squares solution}:
+\begin{equation}
+\lambda^* = \arg\min_{\lambda} \sum_{i=1}^N \left[ \ln(f_i) - (\ln(f_0) - \lambda t_i) \right]^2
+\end{equation}
+
+Closed-form solution via linear regression on log-transformed data.
+
+% ============================================================================
+\section{Taxonomy}
+
+\subsection{Component Hierarchy}
+
+\begin{enumerate}
+\item \textbf{Measurement Layer}
+    \begin{itemize}
+        \item Execution Frequency Tracking
+        \item Temporal Recording (Rolling Window)
+        \item Transition Tracking (Word-to-Word)
+    \end{itemize}
+
+\item \textbf{Transformation Layer}
+    \begin{itemize}
+        \item Decay Models (Linear, Exponential)
+        \item Normalization (Ranking, Probability)
+    \end{itemize}
+
+\item \textbf{Inference Layer}
+    \begin{itemize}
+        \item Window Width Inference (Levene's Test)
+        \item Decay Slope Inference (Exponential Regression)
+    \end{itemize}
+
+\item \textbf{Actuation Layer}
+    \begin{itemize}
+        \item Hot-Words Cache (Frequency-Sorted)
+        \item Speculative Execution (Prefetch)
+    \end{itemize}
+
+\item \textbf{Coordination Layer}
+    \begin{itemize}
+        \item Heartbeat System (Time-Driven Ticks)
+        \item Loop Orchestration
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Feedback Loop Classification}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Loop} & \textbf{Type} & \textbf{Mechanism} \\
+\midrule
+\#1 Execution Heat & Positive & $f \uparrow \Rightarrow \text{rank} \uparrow \Rightarrow \text{cache hit} \Rightarrow f \uparrow$ \\
+\#2 Rolling Window & Neutral & Record history (monitoring only) \\
+\#3 Linear Decay & Negative & $f \uparrow \Rightarrow \text{decay} \uparrow \Rightarrow f \downarrow$ \\
+\#4 Pipelining & Positive & Transition $\uparrow \Rightarrow$ prediction $\uparrow$ \\
+\#5 Window Inference & Negative & $\sigma^2 \uparrow \Rightarrow w \downarrow \Rightarrow \sigma^2 \downarrow$ \\
+\#6 Slope Inference & Negative & Unstable $\Rightarrow \lambda \uparrow \Rightarrow$ stabilize \\
+\#7 Adaptive Heartbeat & Meta & Stable $\Rightarrow$ slower ticks \\
+\bottomrule
+\end{tabular}
+\caption{Feedback loop classification by type and mechanism}
+\end{table}
+
+% ============================================================================
+\section{Convergence Theory}
+
+\subsection{Deterministic Convergence}
+
+\begin{definition}[Deterministic Convergence]
+A system exhibits deterministic convergence if, for all executions $i, j$ of identical workloads:
+\begin{equation}
+\lim_{t \to \infty} \frac{|\text{metric}_i(t) - \text{metric}_j(t)|}{\sigma} < \epsilon
+\end{equation}
+where $\epsilon \to 0$ and $\sigma$ is pooled standard deviation.
+\end{definition}
+
+\begin{theorem}[0\% Variance Convergence]
+Under continuous execution with fixed workload, the coefficient of variation of steady-state metrics approaches zero:
+\begin{equation}
+\lim_{t \to \infty} CV(t) = \lim_{t \to \infty} \frac{\sigma(t)}{\mu(t)} = 0
+\end{equation}
+\end{theorem}
+
+\begin{proof}[Sketch]
+\begin{enumerate}
+    \item Frequency evolution is governed by contractive mapping $T: f \mapsto f + r - \lambda f$.
+    \item Fixed point $f^*$ exists by Banach fixed-point theorem when $\lambda > 0$.
+    \item Rolling window deterministically seeds metrics from identical initial conditions.
+    \item Levene's test-based adaptation reduces variance monotonically.
+    \item Therefore, all runs converge to same fixed point $\Rightarrow \sigma \to 0$.
+\end{enumerate}
+\end{proof}
+
+\subsection{Attractor Characterization}
+
+\begin{definition}[Phase Space]
+The system state space is defined as:
+\begin{equation}
+\mathcal{S} = \{(w, \lambda, \sigma^2) \mid w \in \mathbb{N}, \lambda \in \mathbb{R}^+, \sigma^2 \in \mathbb{R}^+\}
+\end{equation}
+\end{definition}
+
+\begin{definition}[Attractor]
+A point $\mathbf{x}^* = (w^*, \lambda^*, \sigma^{*2})$ is an attractor if:
+\begin{equation}
+\mathbf{x}_{t+1} = F(\mathbf{x}_t) \quad \text{and} \quad F(\mathbf{x}^*) = \mathbf{x}^*
+\end{equation}
+where $F$ is the state transition function.
+\end{definition}
+
+Empirically, StarForth exhibits a \textit{stable fixed-point attractor} in $(w, \lambda, \sigma^2)$ space, confirmed across 90 experimental runs.
+
+% ============================================================================
+\section{Metaphorical Mappings}
+
+\subsection{Thermodynamic Analogy}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Thermodynamic Concept} & \textbf{Execution Analog} \\
+\midrule
+Thermal Energy & Execution Frequency (count) \\
+Heat Dissipation & Exponential Decay ($e^{-\lambda t}$) \\
+Temperature & Normalized Frequency Rank \\
+Thermal Equilibrium & Steady-State Convergence \\
+Cooling Rate & Decay Coefficient $\lambda$ \\
+\bottomrule
+\end{tabular}
+\caption{Thermodynamic metaphor mapping (conceptual only)}
+\end{table}
+
+\textbf{Important Caveat}: These are \textit{conceptual analogies}, not literal physical processes. No actual thermodynamic equations or hardware temperature measurements are involved.
+
+% ============================================================================
+\section{Scope Limitations}
+
+\subsection{What This Framework DOES Cover}
+\begin{itemize}
+    \item Execution frequency measurement and temporal decay
+    \item Adaptive caching via frequency-based ranking
+    \item Statistical inference for parameter tuning
+    \item Dynamical systems characterization of convergence
+\end{itemize}
+
+\subsection{What This Framework DOES NOT Cover}
+\begin{itemize}
+    \item Actual thermodynamic processes or physics simulations
+    \item Machine learning or neural network training
+    \item Quantum computing or quantum-inspired algorithms
+    \item Biological neural systems or biomimicry
+\end{itemize}
+
+% ============================================================================
+\section{Usage Guidelines}
+
+\subsection{Academic Writing Conventions}
+
+\paragraph{In Abstracts/Titles:} Use precise, non-metaphorical terminology.
+\begin{itemize}
+    \item {\color{green!50!black}$\checkmark$} ``Thermodynamically-Inspired Adaptive Runtime''
+    \item {\color{red}$\times$} ``Physics-Based Virtual Machine''
+\end{itemize}
+
+\paragraph{In Technical Sections:} Qualify metaphors explicitly.
+\begin{quote}
+    ``We employ a \textit{thermodynamic metaphor} where execution frequency is treated as `heat' that dissipates exponentially over time, mathematically modeled as $f(t) = f_0 e^{-\lambda t}$.''
+\end{quote}
+
+\paragraph{In Formalism:} Use mathematical definitions, not analogies.
+\begin{itemize}
+    \item {\color{green!50!black}$\checkmark$} ``Frequency evolves as $df/dt = r(t) - \lambda f(t)$''
+    \item {\color{red}$\times$} ``Heat cools like Newton's law of cooling''
+\end{itemize}
+
+% ============================================================================
+\section{Conclusion}
+
+This ontology provides a formal foundation for precise academic discourse on the StarForth adaptive runtime system. By explicitly distinguishing metaphorical concepts from literal implementations, we enable rigorous peer review and reproducible research.
+
+% ============================================================================
+\appendix
+\section{Notation Summary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Symbol} & \textbf{Definition} \\
+\midrule
+$f$ & Execution frequency \\
+$\lambda$ & Decay coefficient \\
+$w$ & Window size \\
+$K$ & Cache size \\
+$\sigma$ & Standard deviation \\
+$\mu$ & Mean \\
+$CV$ & Coefficient of variation \\
+$P(B|A)$ & Transition probability \\
+$w^*$ & Variance inflection point \\
+$\mathcal{S}$ & State space \\
+\bottomrule
+\end{tabular}
+\caption{Mathematical notation used in this document}
+\end{table}
+
+% ============================================================================
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+
+\bibitem{strogatz2015}
+Strogatz, S. (2015). \textit{Nonlinear Dynamics and Chaos: With Applications to Physics, Biology, Chemistry, and Engineering}. Westview Press.
+
+\bibitem{astrom2008}
+Åström, K. J., \& Murray, R. M. (2008). \textit{Feedback Systems: An Introduction for Scientists and Engineers}. Princeton University Press.
+
+\bibitem{casella2002}
+Casella, G., \& Berger, R. L. (2002). \textit{Statistical Inference}. Duxbury Press.
+
+\bibitem{bolz2009}
+Bolz, C. F., Cuni, A., Fijalkowski, M., \& Rigo, A. (2009). Tracing the meta-level: PyPy's tracing JIT compiler. In \textit{Proceedings of the 4th workshop on the Implementation, Compilation, Optimization of Object-Oriented Languages and Programming Systems} (pp. 18-25).
+
+\bibitem{ertl1996}
+Ertl, M. A. (1996). Stack caching for interpreters. In \textit{ACM SIGPLAN Notices} (Vol. 30, No. 6, pp. 315-327).
+
+\end{thebibliography}
+
+\end{document}

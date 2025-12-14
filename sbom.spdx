@@ -1,0 +1,526 @@
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: StarForth
+DocumentNamespace: https://anchore.com/syft/dir/StarForth-02c4c541-5622-462e-b41a-cfb5a7908b67
+LicenseListVersion: 3.27
+Creator: Organization: Anchore, Inc
+Creator: Tool: syft-1.36.0
+Created: 2025-10-30T02:15:58Z
+
+##### Unpackaged files
+
+FileName: .venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/METADATA
+SPDXID: SPDXRef-File-...METADATA-fbfff036196d4b5a
+FileType: TEXT
+FileChecksum: SHA1: a1a5b127513a557a880de520803c72b756c8f955
+FileChecksum: SHA256: 8047632c683ce7a3fa0e905bbd7acef4c7fef4ec477c33447765c248eb275446
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/RECORD
+SPDXID: SPDXRef-File-...RECORD-eb2048469ff1ecd3
+FileType: TEXT
+FileChecksum: SHA1: 30952917909354723cb6cac5317fae886aef838c
+FileChecksum: SHA256: 1397be88957ad85bb70f30c88c158730269cfead6af46d8ffe31ff3c2bcdbcfb
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/pip/_vendor/distlib/t32.exe
+SPDXID: SPDXRef-File-...pip--vendor-distlib-t32.exe-3ca040677f72cfb7
+FileType: APPLICATION
+FileType: BINARY
+FileChecksum: SHA1: c6f8034e2e8183d35d3f2b035405294ee01fa273
+FileChecksum: SHA256: 6b4195e640a85ac32eb6f9628822a622057df1e459df7c17a12f97aeabc9415b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/pip/_vendor/distlib/t64-arm.exe
+SPDXID: SPDXRef-File-...pip--vendor-distlib-t64-arm.exe-22de00e9ece51f65
+FileType: APPLICATION
+FileType: BINARY
+FileChecksum: SHA1: c88f99bb82cbbf96992c36b61f6c614a15abc9d6
+FileChecksum: SHA256: ebc4c06b7d95e74e315419ee7e88e1d0f71e9e9477538c00a93a9ff8c66a6cfc
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/pip/_vendor/distlib/t64.exe
+SPDXID: SPDXRef-File-...pip--vendor-distlib-t64.exe-a2de916587f93a57
+FileType: APPLICATION
+FileType: BINARY
+FileChecksum: SHA1: 0d0c5e3b06f56ad12a77da46ab3fdab81acda628
+FileChecksum: SHA256: 81a618f21cb87db9076134e70388b6e9cb7c2106739011b6a51772d22cae06b7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/pip/_vendor/distlib/w32.exe
+SPDXID: SPDXRef-File-...pip--vendor-distlib-w32.exe-de56b279e1843ee1
+FileType: APPLICATION
+FileType: BINARY
+FileChecksum: SHA1: 3a1e4e67422d9dd54f7e8bba2bb014474d2f6ea0
+FileChecksum: SHA256: 47872cc77f8e18cf642f868f23340a468e537e64521d9a3a416c8b84384d064b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/pip/_vendor/distlib/w64-arm.exe
+SPDXID: SPDXRef-File-...pip--vendor-distlib-w64-arm.exe-5118d63d25601f7e
+FileType: APPLICATION
+FileType: BINARY
+FileChecksum: SHA1: e0db21e02eea22f0da5b44745d1dd0184ddc6ebe
+FileChecksum: SHA256: c5dc9884a8f458371550e09bd396e5418bf375820a31b9899f6499bf391c7b2e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/pip/_vendor/distlib/w64.exe
+SPDXID: SPDXRef-File-...pip--vendor-distlib-w64.exe-eaa3876ff2d360dc
+FileType: APPLICATION
+FileType: BINARY
+FileChecksum: SHA1: 34d3e30bcbf87581902409bf5f621f48c5fc2b10
+FileChecksum: SHA256: 7a319ffaba23a017d7b1e18ba726ba6c54c53d6446db55f92af53c279894f8ad
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/METADATA
+SPDXID: SPDXRef-File-...pip-25.1.1.dist-info-METADATA-401d82b643527256
+FileType: TEXT
+FileChecksum: SHA1: 09b606885861bc42ef728f0ee459c2e3cf58cd33
+FileChecksum: SHA256: 405c63d6d2e993c8465ab8102d1849614a70a3fd45a81af8dce4f4b2b2197265
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/RECORD
+SPDXID: SPDXRef-File-...pip-25.1.1.dist-info-RECORD-a679af0b926125ad
+FileType: TEXT
+FileChecksum: SHA1: beb88e0d1c2ff3bff1f08441badc5302028c7255
+FileChecksum: SHA256: abd27e5c9e63ecd943075a09a9dfac630aab7ebd33e47b6adaf5c54c7f133c54
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/top_level.txt
+SPDXID: SPDXRef-File-...pip-25.1.1.dist-info-top-level.txt-e95b6d3e4a6f322f
+FileType: TEXT
+FileChecksum: SHA1: d7a03141d5d6b1e88b6b59ef08b6681df212c599
+FileChecksum: SHA256: ceebae7b8927a3227e5303cf5e0f1f7b34bb542ad7250ac03fbcde36ec2f1508
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/top_level.txt
+SPDXID: SPDXRef-File-...top-level.txt-d46cc8e43e3908c5
+FileType: TEXT
+FileChecksum: SHA1: 81cbb5258ad2f96f36db11c2deabdf7fb46df2af
+FileChecksum: SHA256: 76bdbaa69f784426108e9c70f2e7b35bc10ad443f7debfc477c1163edc6329e3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .github/workflows/claude-code-review.yml
+SPDXID: SPDXRef-File-...workflows-claude-code-review.yml-6365c3520008470a
+FileType: TEXT
+FileChecksum: SHA1: a818f068d0be77f3dff54ded78551ea1098ee225
+FileChecksum: SHA256: 4c568b40f09bcbe85c6985c7333959067dd99bc4a80ef6fda179617d029eeed8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .github/workflows/claude.yml
+SPDXID: SPDXRef-File-.github-workflows-claude.yml-9ed5d9816677dc24
+FileType: TEXT
+FileChecksum: SHA1: 0dd19f65eee92016a75d5cb11e85a9eaec652cfd
+FileChecksum: SHA256: 887e633ee5cbba7299cad49c22722e8c9789a3369804b2eee3ccf15b6e6c7a8b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: .github/workflows/makefile.yml
+SPDXID: SPDXRef-File-.github-workflows-makefile.yml-97afabd9b59ca8c0
+FileType: TEXT
+FileChecksum: SHA1: 1e60711b638d71f105ae6e71fd5a208dfa41f74e
+FileChecksum: SHA256: 727e84c1b6dc74ece2385f2d091341303453d1004b8436ff724df1c4f02e6aca
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+##### Package: StarForth
+
+PackageName: StarForth
+SPDXID: SPDXRef-DocumentRoot-Directory-StarForth
+PackageVersion: 2.0.0
+PackageSupplier: NOASSERTION
+PackageDownloadLocation: NOASSERTION
+PrimaryPackagePurpose: FILE
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+##### Package: Simple Launcher
+
+PackageName: Simple Launcher
+SPDXID: SPDXRef-Package-binary-Simple-Launcher-18d1c2ee8b95e7fc
+PackageVersion: 1.1.0.14
+PackageSupplier: Organization: Simple Launcher User
+PackageOriginator: Organization: Simple Launcher User
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/w32.exe
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*
+
+##### Package: Simple Launcher
+
+PackageName: Simple Launcher
+SPDXID: SPDXRef-Package-binary-Simple-Launcher-35552f3856609d65
+PackageVersion: 1.1.0.14
+PackageSupplier: Organization: Simple Launcher User
+PackageOriginator: Organization: Simple Launcher User
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/t64-arm.exe
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*
+
+##### Package: Simple Launcher
+
+PackageName: Simple Launcher
+SPDXID: SPDXRef-Package-binary-Simple-Launcher-579d5252da48c7d5
+PackageVersion: 1.1.0.14
+PackageSupplier: Organization: Simple Launcher User
+PackageOriginator: Organization: Simple Launcher User
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/w64.exe
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*
+
+##### Package: Simple Launcher
+
+PackageName: Simple Launcher
+SPDXID: SPDXRef-Package-binary-Simple-Launcher-c4cdf727dbd6b544
+PackageVersion: 1.1.0.14
+PackageSupplier: Organization: Simple Launcher User
+PackageOriginator: Organization: Simple Launcher User
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/w64-arm.exe
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*
+
+##### Package: Simple Launcher
+
+PackageName: Simple Launcher
+SPDXID: SPDXRef-Package-binary-Simple-Launcher-c79ababe4dbe3a48
+PackageVersion: 1.1.0.14
+PackageSupplier: Organization: Simple Launcher User
+PackageOriginator: Organization: Simple Launcher User
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/t32.exe
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*
+
+##### Package: Simple Launcher
+
+PackageName: Simple Launcher
+SPDXID: SPDXRef-Package-binary-Simple-Launcher-ebef367b40b8ae7f
+PackageVersion: 1.1.0.14
+PackageSupplier: Organization: Simple Launcher User
+PackageOriginator: Organization: Simple Launcher User
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/t64.exe
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*
+
+##### Package: actions/checkout
+
+PackageName: actions/checkout
+SPDXID: SPDXRef-Package-github-action-actions-checkout-1bec2ee042cb8e11
+PackageVersion: v4
+PackageSupplier: Organization: GitHub
+PackageOriginator: Organization: GitHub
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/claude.yml
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:actions\/checkout:actions\/checkout:v4:*:*:*:*:*:*:*
+ExternalRef: PACKAGE-MANAGER purl pkg:github/actions/checkout@v4
+
+##### Package: actions/checkout
+
+PackageName: actions/checkout
+SPDXID: SPDXRef-Package-github-action-actions-checkout-54090dcf93e63a94
+PackageVersion: v4
+PackageSupplier: Organization: GitHub
+PackageOriginator: Organization: GitHub
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/claude-code-review.yml
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:actions\/checkout:actions\/checkout:v4:*:*:*:*:*:*:*
+ExternalRef: PACKAGE-MANAGER purl pkg:github/actions/checkout@v4
+
+##### Package: actions/checkout
+
+PackageName: actions/checkout
+SPDXID: SPDXRef-Package-github-action-actions-checkout-e02263312ad47474
+PackageVersion: v4
+PackageSupplier: Organization: GitHub
+PackageOriginator: Organization: GitHub
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/makefile.yml
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:actions\/checkout:actions\/checkout:v4:*:*:*:*:*:*:*
+ExternalRef: PACKAGE-MANAGER purl pkg:github/actions/checkout@v4
+
+##### Package: anthropics/claude-code-action
+
+PackageName: anthropics/claude-code-action
+SPDXID: SPDXRef-Package-github-action-anthropics-claude-code-action-1a3314539723f7c9
+PackageVersion: v1
+PackageSupplier: Organization: anthropics
+PackageOriginator: Organization: anthropics
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/claude.yml
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude-code-action:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude-code-action:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude_code_action:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude_code_action:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude-code:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude-code:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude_code:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude_code:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: PACKAGE-MANAGER purl pkg:github/anthropics/claude-code-action@v1
+
+##### Package: anthropics/claude-code-action
+
+PackageName: anthropics/claude-code-action
+SPDXID: SPDXRef-Package-github-action-anthropics-claude-code-action-7658eb64e48e30e8
+PackageVersion: v1
+PackageSupplier: Organization: anthropics
+PackageOriginator: Organization: anthropics
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/claude-code-review.yml
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude-code-action:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude-code-action:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude_code_action:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude_code_action:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude-code:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude-code:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude_code:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude_code:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude:anthropics\/claude-code-action:v1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:anthropics\/claude:anthropics\/claude_code_action:v1:*:*:*:*:*:*:*
+ExternalRef: PACKAGE-MANAGER purl pkg:github/anthropics/claude-code-action@v1
+
+##### Package: git-filter-repo
+
+PackageName: git-filter-repo
+SPDXID: SPDXRef-Package-python-git-filter-repo-c584447c275b50af
+PackageVersion: 2.47.0
+PackageSupplier: Person: Elijah Newren (newren@gmail.com)
+PackageOriginator: Person: Elijah Newren (newren@gmail.com)
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from installed python package manifest file: /.venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/METADATA, /.venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/RECORD, /.venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/top_level.txt
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: MIT
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newren_project:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newren_project:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newrenproject:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newrenproject:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newren_project:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newren_project:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git-filter-repo:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git-filter-repo:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git_filter_repo:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git_filter_repo:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah-newren-\<newren:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah-newren-\<newren:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newren:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newren:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newrenproject:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newrenproject:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git-filter:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git-filter:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git_filter:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git_filter:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git-filter-repo:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git-filter-repo:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git_filter_repo:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git_filter_repo:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git-filter-repo:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git-filter-repo:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git_filter_repo:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git_filter_repo:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah-newren-\<newren:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah-newren-\<newren:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newren:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:elijah_newren_\<newren:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git-filter:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git-filter:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git_filter:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git_filter:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git-filter:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git-filter:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git_filter:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git_filter:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git-filter-repo:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git-filter-repo:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git_filter_repo:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git_filter_repo:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git-filter:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git-filter:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git_filter:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git_filter:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-git:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_git:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git:git-filter-repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:git:git_filter_repo:2.47.0:*:*:*:*:*:*:*
+ExternalRef: PACKAGE-MANAGER purl pkg:pypi/git-filter-repo@2.47.0
+
+##### Package: pip
+
+PackageName: pip
+SPDXID: SPDXRef-Package-python-pip-431d845a93680e3f
+PackageVersion: 25.1.1
+PackageSupplier: Person: The pip developers (distutils-sig@python.org)
+PackageOriginator: Person: The pip developers (distutils-sig@python.org)
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from installed python package manifest file: /.venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/METADATA, /.venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/RECORD, /.venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/top_level.txt
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: MIT
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip_developers_\<distutils_sig_project:python-pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip_developers_\<distutils_sig_project:python_pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip_developers_\<distutils_sigproject:python-pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip_developers_\<distutils_sigproject:python_pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip_developers_\<distutils_sig_project:pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip-developers-\<distutils-sig:python-pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip-developers-\<distutils-sig:python_pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip_developers_\<distutils_sig:python-pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip_developers_\<distutils_sig:python_pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip_developers_\<distutils_sigproject:pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip-developers-\<distutils-sig:pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip_developers_\<distutils_sig:pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-pip:python-pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-pip:python_pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_pip:python-pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_pip:python_pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python:python-pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python:python_pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pypa:python-pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pypa:python_pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip:python-pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip:python_pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python-pip:pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python_pip:pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:python:pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pypa:pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:pip:pip:25.1.1:*:*:*:*:*:*:*
+ExternalRef: PACKAGE-MANAGER purl pkg:pypi/pip@25.1.1
+
+##### Relationships
+
+Relationship: SPDXRef-Package-binary-Simple-Launcher-18d1c2ee8b95e7fc OTHER SPDXRef-File-...pip--vendor-distlib-w32.exe-de56b279e1843ee1
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-github-action-anthropics-claude-code-action-1a3314539723f7c9 OTHER SPDXRef-File-.github-workflows-claude.yml-9ed5d9816677dc24
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-github-action-actions-checkout-1bec2ee042cb8e11 OTHER SPDXRef-File-.github-workflows-claude.yml-9ed5d9816677dc24
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-binary-Simple-Launcher-35552f3856609d65 OTHER SPDXRef-File-...pip--vendor-distlib-t64-arm.exe-22de00e9ece51f65
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-python-pip-431d845a93680e3f OTHER SPDXRef-File-...pip-25.1.1.dist-info-METADATA-401d82b643527256
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-python-pip-431d845a93680e3f OTHER SPDXRef-File-...pip-25.1.1.dist-info-RECORD-a679af0b926125ad
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-python-pip-431d845a93680e3f OTHER SPDXRef-File-...pip-25.1.1.dist-info-top-level.txt-e95b6d3e4a6f322f
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-github-action-actions-checkout-54090dcf93e63a94 OTHER SPDXRef-File-...workflows-claude-code-review.yml-6365c3520008470a
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-binary-Simple-Launcher-579d5252da48c7d5 OTHER SPDXRef-File-...pip--vendor-distlib-w64.exe-eaa3876ff2d360dc
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-github-action-anthropics-claude-code-action-7658eb64e48e30e8 OTHER SPDXRef-File-...workflows-claude-code-review.yml-6365c3520008470a
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-binary-Simple-Launcher-c4cdf727dbd6b544 OTHER SPDXRef-File-...pip--vendor-distlib-w64-arm.exe-5118d63d25601f7e
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-python-git-filter-repo-c584447c275b50af OTHER SPDXRef-File-...top-level.txt-d46cc8e43e3908c5
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-python-git-filter-repo-c584447c275b50af OTHER SPDXRef-File-...RECORD-eb2048469ff1ecd3
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-python-git-filter-repo-c584447c275b50af OTHER SPDXRef-File-...METADATA-fbfff036196d4b5a
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-binary-Simple-Launcher-c79ababe4dbe3a48 OTHER SPDXRef-File-...pip--vendor-distlib-t32.exe-3ca040677f72cfb7
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-github-action-actions-checkout-e02263312ad47474 OTHER SPDXRef-File-.github-workflows-makefile.yml-97afabd9b59ca8c0
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-Package-binary-Simple-Launcher-ebef367b40b8ae7f OTHER SPDXRef-File-...pip--vendor-distlib-t64.exe-a2de916587f93a57
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-binary-Simple-Launcher-c79ababe4dbe3a48
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-binary-Simple-Launcher-35552f3856609d65
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-binary-Simple-Launcher-ebef367b40b8ae7f
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-binary-Simple-Launcher-18d1c2ee8b95e7fc
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-binary-Simple-Launcher-c4cdf727dbd6b544
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-binary-Simple-Launcher-579d5252da48c7d5
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-github-action-actions-checkout-54090dcf93e63a94
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-github-action-actions-checkout-1bec2ee042cb8e11
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-github-action-actions-checkout-e02263312ad47474
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-github-action-anthropics-claude-code-action-7658eb64e48e30e8
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-github-action-anthropics-claude-code-action-1a3314539723f7c9
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-python-git-filter-repo-c584447c275b50af
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-python-pip-431d845a93680e3f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-DocumentRoot-Directory-StarForth
+

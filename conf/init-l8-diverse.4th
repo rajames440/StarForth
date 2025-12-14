@@ -1,0 +1,28 @@
+Block 3001
+: MIXED-OPS ( -- )
+  50 0 DO
+    I 5 MOD CASE
+      0 OF 42 DUP * DROP ENDOF
+      1 OF 1 100 DO I LOOP DROP ENDOF
+      2 OF 999 123 + - ABS . ENDOF
+      3 OF HERE @ DROP ENDOF
+      4 OF BASE @ DUP . BASE ! ENDOF
+    ENDCASE
+  LOOP ;
+
+Block 3002
+: STACK-CHURN ( -- )
+  30 0 DO
+    I DUP DUP + SWAP DROP
+    I 2 * DUP ROT + DROP DROP
+  LOOP ;
+
+Block 3003
+: MAIN
+  1000000 0 DO
+    MIXED-OPS
+    STACK-CHURN
+  LOOP
+;
+
+MAIN

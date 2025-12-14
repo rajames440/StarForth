@@ -1,0 +1,543 @@
+== StarForth INIT System
+:toc: left
+:toc-title: Contents
+:toclevels: 3
+xref:../README.adoc[← Back to Documentation Index]
+
+
+
+=== Overview
+
+StarForth features a deterministic initialization system that loads
+foundational Forth definitions from `+./conf/init.4th+` at startup. This
+system provides a clean separation between boot-time initialization and
+runtime operation, with automatic cleanup and protection mechanisms.
+
+=== Architecture
+
+==== Components
+
+[arabic]
+. *`+./conf/init.4th+`* - Version-controlled initialization file
+. *`+INIT+` word* - Core initialization primitive (starforth_words.c)
+. *`+(-+` comment word* - Metadata marker for init blocks
+. *Dictionary fence* - Protection mechanism for init words
+. *Block subsystem* - Transient block storage for init code
+
+==== Design Principles
+
+* *Deterministic boot* - Same init.4th always produces same system state
+* *Transient initialization* - Init blocks execute then vanish (zeroed)
+* *Protected dictionary* - Init words cannot be FORGOTten
+* *No dependencies* - Runtime has no file dependencies after boot
+* *Platform agnostic* - Works with both filesystem (Linux) and ROMFS
+(L4Re)
+
+=== Init.4th Format
+
+==== File Structure
+
+[source,forth]
+----
+Block <original-number>
+(- <description> )
+<forth-source-code>
+
+Block <original-number>
+(- <description> )
+<forth-source-code>
+----
+
+==== Example
+
+[source,forth]
+----
+Block 2048
+(- Large Letter F )
+: STAR   42 EMIT ;
+: STARS  0 DO STAR LOOP ;
+: MARGIN CR 30 SPACES ;
+: BLIP   MARGIN STAR ;
+: BAR    MARGIN 5 STARS ;
+: F      BAR BLIP BAR BLIP BLIP ;
+
+Block 3000
+(- Add Me to init.4th )
+: E      BAR BLIP BAR BLIP BAR ;
+
+Block 3001
+(- Add Me to init.4th )
+E F CR
+----
+
+==== Format Rules
+
+[arabic]
+. *Block headers* - Each block starts with `+Block <number>+`
+. *Metadata comments* - Each block should have a `+(-+` comment
+describing its purpose
+. *Sequential loading* - Blocks are loaded in file order (1, 2, 3…)
+regardless of original numbers
+. *LOAD rewriting* - References like `+2048 LOAD+` are automatically
+remapped to sequential numbers
+. *Newline preservation* - Newlines in blocks are preserved for proper
+parsing
+. *No `+-->+` in init* - Use separate blocks instead of `+-->+` for
+clarity
+
+=== The INIT Word
+
+==== Execution Flow
+
+....
+1. Read ./conf/init.4th (or ROMFS in L4Re)
+2. Parse Block headers and build mapping table
+   - Block 2048 → Sequential block 1
+   - Block 3000 → Sequential block 2
+   - Block 3001 → Sequential block 3
+3. Copy block content sequentially
+   - Rewrite LOAD references (2048 LOAD → 1 LOAD)
+   - Preserve newlines for proper parsing
+4. Execute blocks via LOAD (1 LOAD, 2 LOAD, 3 LOAD...)
+5. Switch to FORTH vocabulary context
+6. Zero all init blocks (1-N) for userspace
+7. Set dictionary fence (main.c)
+....
+
+==== Stack Effect
+
+[source,forth]
+----
+INIT  ( -- )
+----
+
+==== Error Handling
+
+* If init.4th cannot be opened → VM halts with error
+* If block allocation fails → VM halts with error
+* If block execution fails → VM halts with error
+* On any error, system cannot start REPL
+
+==== Platform Support
+
+===== Linux (IDE Mode)
+
+[source,c]
+----
+FILE *fp = fopen("./conf/init.4th", "r");
+// Read, parse, execute
+----
+
+===== L4Re (Production Mode)
+
+[source,c]
+----
+#ifdef L4RE_TARGET
+// TODO: Read from ROMFS
+// Defined in modules.list
+#endif
+----
+
+=== The (- Comment Word
+
+==== Purpose
+
+The `+(-+` word serves dual purposes:
+
+[arabic]
+. *Runtime* - Standard Forth comment (like `+(+` but with dash)
+. *Tooling* - Metadata marker for extraction/documentation tools
+
+==== Syntax
+
+[source,forth]
+----
+(- <text until closing paren> )
+----
+
+==== Behavior
+
+* Consumes input from `+(-+` to the first unmatched `+)+`
+* Handles nested parentheses correctly
+* No stack effect
+* Logs at DEBUG level for tracing
+
+==== Usage in init.4th
+
+[source,forth]
+----
+Block 2048
+(- Large Letter F )          \ Metadata for tooling
+: STAR 42 EMIT ;             \ Actual code
+----
+
+=== Dictionary Fence Protection
+
+==== Problem
+
+After init completes, all init words (F, E, STAR, BAR, etc.) are in the
+dictionary. If a user issues `+FORGET F+`, it would:
+
+[arabic]
+. Free F and all words defined after it
+. Leave E with broken references to BAR and BLIP
+. Cause segfault when E executes
+
+==== Solution
+
+After INIT completes, main.c sets the dictionary fence:
+
+[source,c]
+----
+/* Set dictionary fence after INIT to protect foundational words from FORGET */
+vm.dict_fence_latest = vm.latest;
+vm.dict_fence_here = vm.here;
+log_message(LOG_INFO, "Dictionary fence set - init words protected from FORGET");
+----
+
+This prevents FORGET from removing any init words, ensuring system
+stability.
+
+==== Effect
+
+[source,forth]
+----
+ok> FORGET F
+\ Silently fails - F is protected
+ok> F
+\ F still works - no crash
+----
+
+=== Block Lifecycle
+
+==== During INIT
+
+....
+Blocks 1-N: [init code from init.4th]
+- Block 1: STAR, STARS, MARGIN, BLIP, BAR, F
+- Block 2: E
+- Block 3: E F CR
+....
+
+==== After INIT
+
+....
+Blocks 1-N: [all zeros - ready for userspace]
+Dictionary: F, E, STAR, BAR, BLIP, MARGIN, STARS, INIT, (-
+            ^ All protected by fence
+....
+
+==== Runtime
+
+....
+Blocks 1-992: [available for userspace programs]
+- No init dependency
+- Clean slate for applications
+- Can be loaded, edited, saved
+....
+
+=== Startup Sequence
+
+==== Full Boot Process
+
+....
+1. Parse command line arguments
+2. Open block device (FILE or RAM backend)
+3. Initialize VM (vm_init)
+4. Initialize block subsystem (1MB RAM blocks 0-1023)
+5. Register all FORTH-79 words
+6. Run INIT word
+   - Load init.4th
+   - Execute blocks
+   - Clean up
+7. Set dictionary fence
+8. Start REPL
+....
+
+==== Logging Example
+
+....
+[08:30:26] INFO: Running system initialization (INIT)...
+[08:30:26] INFO: INIT: Starting system initialization from init.4th
+[08:30:26] DEBUG: INIT: Block mapping: 2048 -> 1
+[08:30:26] DEBUG: INIT: Block mapping: 3000 -> 2
+[08:30:26] DEBUG: INIT: Block mapping: 3001 -> 3
+[08:30:26] INFO: INIT: Copied block content to block 1 (173 bytes)
+[08:30:26] INFO: INIT: Rewrote 2048 LOAD -> 1 LOAD
+[08:30:26] INFO: INIT: Copied block content to block 2 (68 bytes)
+[08:30:26] INFO: INIT: Copied block content to block 3 (7 bytes)
+[08:30:26] INFO: INIT: Loaded 3 blocks from init.4th
+[08:30:26] INFO: INIT: Executing initialization blocks...
+[08:30:26] DEBUG: INIT: Executing block 1 (LOAD)
+[08:30:26] DEBUG: INIT: Executing block 2 (LOAD)
+[08:30:26] DEBUG: INIT: Executing block 3 (LOAD)
+[08:30:26] INFO: INIT: Switching to FORTH vocabulary
+[08:30:26] INFO: INIT: Zeroing 3 init blocks for userspace use
+[08:30:26] DEBUG: INIT: Zeroed block 1
+[08:30:26] DEBUG: INIT: Zeroed block 2
+[08:30:26] DEBUG: INIT: Zeroed block 3
+[08:30:26] INFO: INIT: System initialization complete - blocks freed, FORTH context active
+[08:30:26] INFO: Dictionary fence set - init words protected from FORGET
+[08:30:26] INFO: Starting Forth REPL
+....
+
+=== Development Workflow
+
+==== IDE Mode (Linux)
+
+[arabic]
+. *Edit init.4th* - Modify `+./conf/init.4th+` directly
+. *Test* - Run `+./build/starforth+` to see results
+. *Commit* - Version control tracks plain text changes
+. *PR Review* - Reviewers see diffs of init.4th
+
+==== Disk Image Workflow (Future)
+
+[arabic]
+. *Work in disk images* - Edit Forth code in `+./disks/*.img+`
+. *Mark blocks* - Use `+(-+` comments to mark blocks for extraction
+. *Extract* - Tools in `+./tools/+` scan images and update init.4th
+. *Review* - init.4th changes show up in git diff
+. *Commit* - Both disk images (LFS) and init.4th (git) are tracked
+
+==== L4Re Deployment
+
+[arabic]
+. *Build* - init.4th is packed into ROMFS at build time
+. *modules.list* - Defines init.4th as a module
+. *Boot* - L4Re loads ROMFS, INIT reads from ROMFS
+. *Runtime* - No filesystem dependency
+
+=== Implementation Details
+
+==== LOAD Rewriting Algorithm
+
+[source,c]
+----
+// First pass: Build mapping table
+Block 2048 -> Sequential 1
+Block 3000 -> Sequential 2
+Block 3001 -> Sequential 3
+
+// Second pass: Copy with rewriting
+while (copying block content) {
+    if (found "NNNN LOAD" pattern) {
+        lookup NNNN in mapping
+        replace with mapped number
+        write "M LOAD" to block
+    }
+}
+----
+
+==== Memory Layout
+
+....
+VM Memory (5MB):
+├─ Dictionary (grows up)
+│  ├─ System words (protected by fence)
+│  ├─ Init words (F, E, STAR... - protected by fence)
+│  └─ User words (can be FORGOTten)
+└─ HERE (current allocation point)
+
+Block RAM (1MB):
+├─ Block 0: Reserved (volume metadata)
+├─ Blocks 1-992: User blocks (zeroed after INIT)
+└─ Blocks 993-1023: Reserved
+
+External Disk (if attached):
+└─ Blocks 1024+: Persistent storage
+....
+
+==== Performance
+
+* *Init time*: <10ms typical (depends on init.4th size)
+* *Memory overhead*: Transient (blocks zeroed after init)
+* *Dictionary size*: Proportional to init.4th definitions
+* *No runtime cost*: Init happens once at boot
+
+=== Best Practices
+
+==== Writing init.4th
+
+[arabic]
+. *Keep it minimal* - Only foundational definitions
+. *Document blocks* - Always use `+(-+` comments
+. *Avoid cross-references* - Define dependencies first
+. *Test incrementally* - Add blocks one at a time
+. *No side effects* - Init should define words, not execute actions
+(except testing in last block)
+
+==== Managing Dependencies
+
+[source,forth]
+----
+\ GOOD: Dependencies defined first
+Block 1
+(- Foundation words )
+: HELPER1 ... ;
+: HELPER2 ... ;
+
+Block 2
+(- Uses helpers )
+: MAIN HELPER1 HELPER2 ;
+
+\ BAD: Forward reference
+Block 1
+(- Uses undefined word )
+: MAIN HELPER1 ;  \ HELPER1 not defined yet!
+
+Block 2
+(- Define helper )
+: HELPER1 ... ;
+----
+
+==== Avoiding `+-->+`
+
+[source,forth]
+----
+\ GOOD: Separate blocks
+Block 1
+(- First part )
+: FOO ... ;
+
+Block 2
+(- Second part )
+: BAR FOO ;
+
+\ BAD: Using --> in init
+Block 1
+(- Spanning definition )
+: BIGWORD
+  part1
+-->
+Block 2
+  part2 ;
+\ Problem: INIT loads blocks sequentially, --> causes block 2 to execute twice
+----
+
+=== Troubleshooting
+
+==== "`INIT: Failed to open ./conf/init.4th`"
+
+*Cause*: File missing or wrong working directory *Fix*: Ensure init.4th
+exists and run from project root
+
+==== "`INIT: Error executing block N`"
+
+*Cause*: Syntax error or undefined word in block N *Fix*: Check block N
+content, ensure dependencies are defined first
+
+==== "`UNKNOWN WORD: '`FOO`'`"
+
+*Cause*: FOO referenced before definition *Fix*: Reorder blocks so FOO
+is defined before use
+
+==== Segfault after FORGET
+
+*Cause*: Attempted to FORGET init word (shouldn’t be possible after
+fence) *Fix*: Verify fence is set in main.c after INIT
+
+==== Words missing after INIT
+
+*Cause*: LOAD not executing properly, or blocks zeroed too early *Fix*:
+Check LOAD implementation, verify zeroing happens after execution
+
+=== Code References
+
+==== INIT Word Implementation
+
+*File*: `+src/word_source/starforth_words.c:214-495+`
+
+Key sections:
+
+* Line 234-240: Open init.4th file
+* Line 272-305: First pass - build block mapping table
+* Line 307-418: Second pass - copy blocks with LOAD rewriting
+* Line 336-398: LOAD reference rewriting logic
+* Line 447-465: Execute blocks via LOAD
+* Line 468-481: Switch to FORTH vocabulary
+* Line 484-493: Zero init blocks
+
+==== Dictionary Fence Setting
+
+*File*: `+src/main.c:488-491+`
+
+[source,c]
+----
+/* Set dictionary fence after INIT to protect foundational words from FORGET */
+vm.dict_fence_latest = vm.latest;
+vm.dict_fence_here = vm.here;
+log_message(LOG_INFO, "Dictionary fence set - init words protected from FORGET");
+----
+
+==== FORGET Implementation
+
+*File*: `+src/word_source/defining_words.c:530-612+`
+
+Key section:
+
+* Line 559-571: Check if target is newer than fence (prevent forgetting
+protected words)
+* Line 586-606: Free entries and relink dictionary chain
+
+==== LOAD Implementation
+
+*File*: `+src/word_source/block_words.c:191-213+`
+
+[source,c]
+----
+void block_word_load(VM *vm) {
+    // ... get block buffer ...
+
+    /* Interpret the block content as Forth source */
+    char block_text[1025];
+    memcpy(block_text, buf, 1024);
+    block_text[1024] = '\0';
+
+    /* Interpret the block content */
+    vm_interpret(vm, block_text);
+}
+----
+
+==== `+-->+` Implementation
+
+*File*: `+src/word_source/block_words.c:289-309+`
+
+Continues interpretation to next sequential block (SCR + 1).
+
+=== Future Enhancements
+
+==== Planned Features
+
+[arabic]
+. *Tool: extract-init* - Extract init.4th from disk images
+. *Tool: validate-init* - Syntax check init.4th
+. *Tool: merge-init* - Merge multiple init.4th files
+. *INIT options* - `+INIT-VERBOSE+`, `+INIT-DEBUG+` flags
+. *Hot reload* - Reload init.4th without restart (dev mode)
+. *Init profiles* - Multiple init files for different environments
+
+==== L4Re Integration
+
+[source,c]
+----
+// Planned L4Re ROMFS support
+#ifdef L4RE_TARGET
+    L4Re::Env::env()->get_cap<L4Re::Dataspace>("init.4th");
+    // Map dataspace, read content
+#endif
+----
+
+=== References
+
+* FORTH-79 Standard (LOAD, BLOCK, LIST)
+* Block Storage Guide (docs/BLOCK_STORAGE_GUIDE.md)
+* L4Re Integration (docs/L4RE_INTEGRATION.md)
+* StarForth Architecture (docs/ARCHITECTURE.md)
+
+=== See Also
+
+* `+src/word_source/starforth_words.c+` - INIT and (- implementation
+* `+src/word_source/block_words.c+` - LOAD, –>, THRU implementation
+* `+src/main.c+` - Startup sequence and fence setting
+* `+conf/init.4th+` - Example initialization file

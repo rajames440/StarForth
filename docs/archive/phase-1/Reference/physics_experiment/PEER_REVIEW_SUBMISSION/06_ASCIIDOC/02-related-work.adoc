@@ -1,0 +1,24 @@
+[[related-work]]
+== Related Work
+
+[TODO: Survey existing literature]
+
+=== Formal Verification of VMs
+
+[TODO: Isabelle/HOL, seL4, etc.]
+
+=== Adaptive Runtime Systems
+
+[TODO: DVFS, JIT, dynamic optimization]
+
+=== FORTH Implementations
+
+[TODO: StarForth, existing FORTH research]
+
+=== Physics-Based Models in Computing
+
+[TODO: Thermal models, execution profiling]
+
+=== Distinguishing Our Contribution
+
+[TODO: What's novel compared to prior work]

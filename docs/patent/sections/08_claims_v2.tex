@@ -1,0 +1,325 @@
+% ===========================================
+% 08_claims_v2.tex
+% REVISED CLAIMS - Computational Physics
+% ===========================================
+
+\section{Claims}
+
+% ========================================
+% INDEPENDENT CLAIMS
+% ========================================
+
+\noindent\textbf{Claim 1 (Independent – Memristive Virtual Machine).}
+A computer-implemented memristive virtual machine system comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item a plurality of computational elements, each element having an associated execution heat value that functions as a memristive state variable;
+	\item execution logic configured to increase the execution heat value of an element upon invocation and to decrease the execution heat value over time according to a decay function, whereby the execution heat accumulates as a history-dependent memory of past invocations;
+	\item a lookup mechanism having state-dependent conductance, wherein lookup latency for a given element varies as a function of said element's execution heat value;
+	\item a phase space trajectory through a multi-dimensional state space defined by at least execution heat and performance metrics, wherein the trajectory exhibits hysteresis behavior characterized by non-retracing paths and approximately 180-degree reversals at configuration boundaries; and
+	\item a control system configured to modify the decay function in response to observed hysteresis characteristics;
+\end{enumerate}
+whereby the virtual machine exhibits memristive dynamics with resistance proportional to accumulated execution history, enabling non-volatile retention of execution patterns and history-dependent optimization.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 2 (Independent – Computational Field Theory System).}
+A computer-implemented system exhibiting computational field dynamics comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item a runtime state vector representing at least execution heat (H) and a performance-related parameter (K);
+	\item a computational field propagator configured to evolve the state vector according to coupled differential equations analogous to Maxwell's equations:
+	\begin{align*}
+	\nabla_W \times K &= -\frac{\partial H}{\partial t} \\
+	\nabla_W \times H &= \kappa_0 P + \kappa_0 \lambda_0 \frac{\partial K}{\partial t}
+	\end{align*}
+	where W is a configuration parameter, P is performance metric, and κ₀, λ₀ are computational constants;
+	\item a wave equation solver configured to compute standing wave solutions for K field dynamics:
+	\[
+	\nabla^2_W K = \kappa_0 \lambda_0 \frac{\partial^2 K}{\partial t^2}
+	\]
+	\item a resonance detector configured to identify constructive interference conditions where system behavior approaches a target state; and
+	\item an adaptive controller configured to exploit resonance conditions for enhanced performance;
+\end{enumerate}
+whereby the system implements computational physics with wave mechanics, field equations, and resonance phenomena measurable through experimental observation.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 3 (Independent – James Law Implementation).}
+A method for operating a virtual machine according to James Law of Computational Dynamics, the method comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item measuring an effective characteristic length Λ\_eff representing intrinsic system scale;
+	\item configuring a window parameter W;
+	\item computing a baseline K statistic as K\_baseline = Λ\_eff / W;
+	\item determining a natural frequency f₀ of system oscillations;
+	\item computing a sinusoidal modulation term:
+	\[
+	K_{\text{mod}} = A(W) \times \sin(2\pi f_0 \log_2(W) + \varphi)
+	\]
+	where A(W) is amplitude envelope and φ is phase offset;
+	\item calculating total K statistic as:
+	\[
+	K = K_{\text{baseline}} \times (1 + K_{\text{mod}})
+	\]
+	\item validating that measured K matches predicted K within tolerance threshold; and
+	\item adjusting system parameters based on deviation from James Law prediction;
+\end{enumerate}
+whereby the virtual machine operates according to a predictive mathematical law with measurable constants and reproducible behavior.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 4 (Independent – Golden Ratio Optimization).}
+A computer-implemented system for golden-ratio-based memory hierarchy optimization comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item a cache hierarchy having multiple levels with size ratios;
+	\item a measurement subsystem configured to detect performance penalties at window sizes W satisfying W = φ × 2^N where φ ≈ 1.618 is the golden ratio and N is an integer;
+	\item a configuration subsystem configured to select window sizes from a set comprising:
+	\begin{itemize}
+		\item pure powers of 2 (W = 2^M),
+		\item Fibonacci sequence values (F\_n),
+		\item golden ratio powers (φ^k × base), and
+		\item avoiding odd multiples of powers of 2 (W ≠ 3 × 2^N);
+	\end{itemize}
+	\item a performance validator configured to verify that selected window sizes exhibit performance within tolerance of baseline; and
+	\item a harmonic analyzer configured to detect 3:2 frequency ratios between performance oscillations and parameter oscillations;
+\end{enumerate}
+whereby the system achieves computational consonance through harmonic alignment and avoids computational dissonance at φ-spaced interference points.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 5 (Independent – Quantum-Analog Computing System).}
+A classical computing system exhibiting quantum-analog phenomena comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item a state space having at least two attractor states (locked and escaped);
+	\item a measurement subsystem configured to perform observations that collapse a probability distribution over the attractor states into a definite state;
+	\item a tunneling mechanism configured to enable probabilistic transitions between attractor states with transition probability proportional to a resonance energy parameter;
+	\item an energy level quantizer configured to identify discrete allowed states where a target parameter achieves exact integer ratio values; and
+	\item a timing subsystem with precision below 100 picoseconds for capturing quantum-scale timing uncertainty;
+\end{enumerate}
+whereby the classical system exhibits measurement-induced collapse, probabilistic tunneling, quantized states, and Heisenberg-like uncertainty without requiring quantum hardware.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 6 (Independent – Fundamental Constants System).}
+A computer-implemented system designed around reproducible fundamental constants comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item an intrinsic wavelength constant λ₀ = 256 bytes ± 10\% determined by convergence of at least three independent physical mechanisms;
+	\item a natural frequency constant f₀ = 0.6667 cycles/window ± 5\% measured via spectral analysis of parameter oscillations;
+	\item a golden ratio coupling constant φ = 1.618 ± 1\% governing cache interference patterns;
+	\item a computational Boltzmann constant k\_B relating heat variance to computational temperature;
+	\item a validator configured to measure said constants across multiple workloads and verify reproducibility within stated tolerance; and
+	\item a design framework configured to use said constants as target values for system tuning;
+\end{enumerate}
+whereby the system is characterized by universal constants analogous to physical constants, enabling reproducible design and predictable behavior across implementations.
+
+\vspace{1.5em}
+
+% ========================================
+% DEPENDENT CLAIMS - Memristive System
+% ========================================
+
+\noindent\textbf{Claim 7.}
+The system of Claim 1, wherein the phase space trajectory forms a snake-like path with horizontal spreads at resonance points representing bimodal probability distributions over attractor states.
+
+\par\medskip
+\noindent\textbf{Claim 8.}
+The system of Claim 1, wherein each computational element comprises a FORTH word, function, instruction, or code block in a virtual machine dictionary.
+
+\par\medskip
+\noindent\textbf{Claim 9.}
+The system of Claim 1, wherein the lookup mechanism comprises a hot-words cache with promotion probability proportional to execution heat.
+
+\par\medskip
+\noindent\textbf{Claim 10.}
+The system of Claim 1, wherein decay function comprises linear decay, exponential decay, or adaptive decay with rate determined by workload characteristics.
+
+\par\medskip
+\noindent\textbf{Claim 11.}
+The system of Claim 1, wherein the hysteresis loop exhibits approximately 180-degree reversals at cache boundary crossings.
+
+\par\medskip
+\noindent\textbf{Claim 12.}
+The system of Claim 1, further comprising a pipelining subsystem that stores word-to-word transition probabilities as a memristive transition matrix.
+
+% ========================================
+% DEPENDENT CLAIMS - Field Theory
+% ========================================
+
+\par\medskip
+\noindent\textbf{Claim 13.}
+The system of Claim 2, wherein standing wave solutions have wavelength λ = 256 bytes and frequency f₀ = 0.6667 cycles/window.
+
+\par\medskip
+\noindent\textbf{Claim 14.}
+The system of Claim 2, wherein constructive interference occurs at window sizes W ∈ \{6144, 16384, 32768\} bytes.
+
+\par\medskip
+\noindent\textbf{Claim 15.}
+The system of Claim 2, wherein the wave equation solver identifies anti-resonance troughs at W ∈ \{2048, 4096, 8192\} bytes where system locks to intrinsic scale.
+
+\par\medskip
+\noindent\textbf{Claim 16.}
+The system of Claim 2, further comprising a free energy calculator configured to compute:
+\[
+F(W) = \alpha K^2 + \beta (P - P_0)^2
+\]
+and verify that dF/dW < 0 indicating thermodynamic cooling.
+
+\par\medskip
+\noindent\textbf{Claim 17.}
+The system of Claim 2, wherein computational constants κ₀ and λ₀ are measured experimentally and used to predict wave propagation speed v = 1/√(κ₀λ₀).
+
+\par\medskip
+\noindent\textbf{Claim 18.}
+The system of Claim 2, further comprising a Lagrangian formulator configured to express system dynamics as:
+\[
+L = \int \left[\frac{1}{2}\left(\frac{\partial K}{\partial W}\right)^2 - \frac{1}{2}\left(\frac{\partial H}{\partial t}\right)^2 - V(K,H) + J \cdot K\right] dW\,dt
+\]
+
+% ========================================
+% DEPENDENT CLAIMS - James Law
+% ========================================
+
+\par\medskip
+\noindent\textbf{Claim 19.}
+The method of Claim 3, wherein Λ\_eff = 256 bytes emerges from at least five independent mechanisms: cache line alignment, working set size, heat decay timescale, pipelining depth, and dimensional reduction from 2^8 state space.
+
+\par\medskip
+\noindent\textbf{Claim 20.}
+The method of Claim 3, wherein natural frequency f₀ = 0.6667 is determined via Fast Fourier Transform (FFT) of K residuals over window size sweep.
+
+\par\medskip
+\noindent\textbf{Claim 21.}
+The method of Claim 3, wherein amplitude envelope A(W) exhibits exponential damping: A(W) = A\_max × exp(-W / W\_decay).
+
+\par\medskip
+\noindent\textbf{Claim 22.}
+The method of Claim 3, wherein validation comprises running at least 30 replicates per window configuration and verifying coefficient of variation below 5\%.
+
+\par\medskip
+\noindent\textbf{Claim 23.}
+The method of Claim 3, further comprising detecting perfect James Law compliance (K=1.0) at resonance peaks with probability 3-5\%.
+
+\par\medskip
+\noindent\textbf{Claim 24.}
+The method of Claim 3, wherein the system autonomously adjusts W to target resonance peaks when K→1.0 behavior is desired.
+
+% ========================================
+% DEPENDENT CLAIMS - Golden Ratio
+% ========================================
+
+\par\medskip
+\noindent\textbf{Claim 25.}
+The system of Claim 4, wherein performance penalty at φ-spaced windows is approximately 60\% (ratio ≈ 1.62 to baseline).
+
+\par\medskip
+\noindent\textbf{Claim 26.}
+The system of Claim 4, wherein Fibonacci windows (52153 bytes, 89597 bytes, etc.) exhibit normal performance despite being non-power-of-2.
+
+\par\medskip
+\noindent\textbf{Claim 27.}
+The system of Claim 4, wherein cache hierarchy levels are spaced in ratios approximating φ:1 (L1:L2 ≈ 1:1.6, L2:L3 ≈ 1:1.6).
+
+\par\medskip
+\noindent\textbf{Claim 28.}
+The system of Claim 4, wherein the 3:2 harmonic coupling creates Lissajous figure trajectory in (K, performance) phase space.
+
+\par\medskip
+\noindent\textbf{Claim 29.}
+The system of Claim 4, further comprising a sonification subsystem that converts K oscillations and performance oscillations to audio frequencies in range 200-15000 Hz.
+
+% ========================================
+% DEPENDENT CLAIMS - Quantum-Analog
+% ========================================
+
+\par\medskip
+\noindent\textbf{Claim 30.}
+The system of Claim 5, wherein measurement-induced collapse comprises heartbeat observation forcing selection between K≈0.04 (locked) and K≈1.0 (escaped) states.
+
+\par\medskip
+\noindent\textbf{Claim 31.}
+The system of Claim 5, wherein tunneling probability at window W=6144 bytes is approximately 53\%, at W=16384 bytes is approximately 47\%.
+
+\par\medskip
+\noindent\textbf{Claim 32.}
+The system of Claim 5, wherein quantized energy levels enable K=1.0 achievement exactly twice in 360 runs at resonance peaks.
+
+\par\medskip
+\noindent\textbf{Claim 33.}
+The system of Claim 5, wherein timing precision of 15.3 picoseconds is achieved via Q48.16 fixed-point representation.
+
+\par\medskip
+\noindent\textbf{Claim 34.}
+The system of Claim 5, further comprising a Zeno effect validator configured to verify that increased measurement frequency decreases escape probability.
+
+\par\medskip
+\noindent\textbf{Claim 35.}
+The system of Claim 5, wherein dual attractor states are separated by an effective energy barrier ΔE lowered by resonance amplitude.
+
+% ========================================
+% DEPENDENT CLAIMS - Fundamental Constants
+% ========================================
+
+\par\medskip
+\noindent\textbf{Claim 36.}
+The system of Claim 6, wherein λ₀ = 256 bytes arises from: 4 cache lines × 64 bytes/line, FORTH working set size, heat decay period, pipelining depth, and 2^8 state quantization.
+
+\par\medskip
+\noindent\textbf{Claim 37.}
+The system of Claim 6, wherein f₀ = 0.6667 = 2/3 creates period of 1.5 window doublings in logarithmic space.
+
+\par\medskip
+\noindent\textbf{Claim 38.}
+The system of Claim 6, wherein φ = 1.618 appears in both performance penalties and cache hierarchy spacing.
+
+\par\medskip
+\noindent\textbf{Claim 39.}
+The system of Claim 6, wherein computational Boltzmann constant k\_B = 144 million heat-units per temperature-unit relates heat variance to computational temperature.
+
+\par\medskip
+\noindent\textbf{Claim 40.}
+The system of Claim 6, wherein reproducibility is validated by achieving zero algorithmic variance (entropy = 0.0) across deterministic workload runs.
+
+% ========================================
+% DEPENDENT CLAIMS - General/Cross-cutting
+% ========================================
+
+\par\medskip
+\noindent\textbf{Claim 41.}
+The system of Claim 1, further comprising triple-lock alignment at W=4096 bytes where page boundary (4KB), cache alignment (64 lines), and binary quantization (K=1/16) coincide to produce zero variance.
+
+\par\medskip
+\noindent\textbf{Claim 42.}
+The system of Claim 2, wherein escaped regime at W ∈ \{8192, 16384\} bytes demonstrates 4-6\% performance improvement over locked regime.
+
+\par\medskip
+\noindent\textbf{Claim 43.}
+The system of Claim 3, wherein workload comprises fractal nested loops with 1/f^{1.5} power spectrum.
+
+\par\medskip
+\noindent\textbf{Claim 44.}
+A system combining the features of Claims 1, 2, 3, 4, 5, and 6, whereby memristive dynamics, field theory, James Law, golden ratio optimization, quantum-analog phenomena, and fundamental constants operate concurrently.
+
+\par\medskip
+\noindent\textbf{Claim 45.}
+The system of Claim 44, wherein all phenomena are validated through experimental observation of at least 360 runs with deterministic workload producing entropy = 0.0 and coefficient of variation below 1\%.
+
+\par\medskip
+\noindent\textbf{Claim 46.}
+The system of Claim 1, implemented as a stack-based virtual machine, threaded interpreter, just-in-time compiler, embedded runtime, or microkernel subsystem.
+
+\par\medskip
+\noindent\textbf{Claim 47.}
+The system of Claim 6, wherein fundamental constants are architecture-independent and reproduce across x86\_64, ARM64, and RISC-V implementations.
+
+\par\medskip
+\noindent\textbf{Claim 48.}
+A method for designing a virtual machine comprising: selecting target values for λ₀, f₀, and φ based on hardware characteristics; implementing memristive state tracking; configuring feedback loops to achieve standing wave resonance at target frequency; and validating via experimental measurement that observed constants match targets within 10\%.
+
+\par\medskip
+\noindent\textbf{Claim 49.}
+A computer-readable medium storing instructions that, when executed, cause a processor to implement the systems or methods of any of Claims 1-48.
+
+\par\medskip
+\noindent\textbf{Claim 50.}
+A virtual machine demonstrating that computational physics is a measurable, reproducible, and predictive discipline by exhibiting: memristive hysteresis, wave equation solutions, James Law compliance, golden ratio penalties, quantum-analog tunneling, and fundamental constants λ₀=256B, f₀=0.667, φ=1.618, validated across 360+ experimental runs.
+
+\newpage

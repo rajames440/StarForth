@@ -1,0 +1,69 @@
+# ---------------------------------------------------------
+# StarForth clang-tidy ignore file
+# ---------------------------------------------------------
+# All platform ports get skipped.
+# They rely on OS-specific headers, syscalls, or L4Re glue.
+# clang-tidy will ALWAYS false-positive them. Always.
+# ---------------------------------------------------------
+
+src/platform/**
+src/platform/*
+
+# ---------------------------------------------------------
+# Skip test infrastructure
+# These tests are intentionally pathological, push UB,
+# and stress edge conditions clang-tidy will never grok.
+# ---------------------------------------------------------
+
+src/test_runner/**
+src/test_runner/*
+
+# ---------------------------------------------------------
+# Skip word definitions generated or "mechanically patterned"
+# These are repetitive, macro-heavy, stack-manipulation code.
+# clang-tidy gives ZERO useful feedback on them.
+# ---------------------------------------------------------
+
+src/word_source/string_words.c
+src/word_source/block_words.c
+src/word_source/arithmetic_words.c
+src/word_source/mixed_arithmetic_words.c
+src/word_source/return_stack_words.c
+src/word_source/defining_words.c
+src/word_source/stack_words.c
+src/word_source/logical_words.c
+src/word_source/memory_words.c
+src/word_source/io_words.c
+src/word_source/dictionary_words.c
+src/word_source/dictionary_manipulation_words.c
+src/word_source/vocabulary_words.c
+src/word_source/system_words.c
+src/word_source/starforth_words.c
+src/word_source/editor_words.c
+src/word_source/format_words.c
+
+# ---------------------------------------------------------
+# Skip headers belonging to the word system
+# Same reason: no signal, infinite false positives.
+# ---------------------------------------------------------
+
+src/word_source/include/*
+
+# ---------------------------------------------------------
+# Skip anything that implements performance knobs,
+# profiling glue, macro-driven stack ops, or inline ASM.
+# These are meant to be weird, and tidy can't reason about them.
+# ---------------------------------------------------------
+
+src/stack_management.c
+src/profiler.c
+src/vm_debug.c
+src/physics_runtime.c
+
+# ---------------------------------------------------------
+# Skip integration + stress torture-tests.
+# These *intentionally* do UB-like bullshit.
+# ---------------------------------------------------------
+
+src/test_runner/modules/*stress*
+src/test_runner/modules/*integration*

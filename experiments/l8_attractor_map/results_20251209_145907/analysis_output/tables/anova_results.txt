@@ -1,0 +1,12 @@
+ANOVA: Tick Count ~ Workload
+═══════════════════════════════════════════════════════════════
+             Df Sum Sq Mean Sq F value Pr(>F)
+init_script   5   48.2   9.632   0.983   0.43
+Residuals   174 1705.5   9.802               
+
+
+ANOVA: Duration ~ Workload
+═══════════════════════════════════════════════════════════════
+             Df    Sum Sq   Mean Sq F value Pr(>F)
+init_script   5 3.592e+16 7.184e+15   0.987  0.427
+Residuals   174 1.267e+18 7.279e+15               

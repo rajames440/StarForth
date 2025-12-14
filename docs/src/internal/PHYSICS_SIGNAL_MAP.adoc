@@ -1,0 +1,194 @@
+= Physics Signal Inventory
+:toc: left
+:toclevels: 2
+xref:../README.adoc[← Back to Documentation Index]
+
+This memo enumerates what telemetry we can sense today from both the L4Re microkernel (via the StarshipOS loader stack) and from an in-process StarForth VM.
+Treat it as the input stage of the physics-driven scheduler—our "op-amp" metaphor: tie the positive input to real host signals, the negative input to VM-internal counters, and let the Bayesian inference loop stabilise the gain.
+
+== L4Re / Microkernel Signals
+
+=== Kernel Interface Page (KIP)
+
+[cols="1,2",options="header"]
+|===
+|Symbol |Signal
+|`l4_kip_clock()` / `l4_kip_clock_ns()` (`l4/pkg/l4re-core/l4sys/include/kip.h`) |Microsecond/nanosecond monotonic clock directly from the kernel; use for high-resolution timings when RTC is absent.
+|`l4_kip_version_string()` |Kernel build fingerprint for correlating inference data with kernel revisions.
+|`l4_kernel_info_t::sched_granularity` (available via KIP struct) |Smallest scheduling quantum promised by the kernel—sets an upper bound on how fine-grained our physics scheduler can react.
+|KIP memory descriptors (`l4_kernel_info_mem_desc`) |Physical memory layout: figure out how much RAM we can earmark for in-RAM inference buffers without starving the VM.
+|`l4_kip_platform_info` |Platform name and SMP flag; informs whether we should expect cross-core noise in timing measurements.
+| |Noise injection hook: SMP availability lets us deliberately schedule work on sibling cores to introduce controlled jitter and keep the physics model honest.
+|===
+
+=== Scheduler Object
+
+[cols="1,2",options="header"]
+|===
+|Symbol |Signal / Usage
+|`l4_scheduler_info()` (`l4/pkg/l4re-core/l4sys/include/scheduler.h`) |Current online CPU bitmap + maximum observed CPU count. Tells us how many physics loops can run in parallel.
+|`l4_sched_param_t` (`prio`, `quantum`) |Actual thread priority and timeslice configured by the loader. We can log these as part of the prior for each VM.
+|`L4_SCHEDULER_CLASS_*` flags |Indicates whether fixed-priority or WFQ scheduling is active; affects how aggressively we can heat/cool words.
+|`l4_sched_cpu_set()` helper |Lets us pin StarForth’s main thread (or physics worker) to a subset of cores when running experiments.
+|===
+
+=== Loader / Environment Capabilities
+
+The loader script (`l4/pkg/starforth/server/conf/quark.lua`) wires in several named capabilities we can tap:
+
+[cols="1,2",options="header"]
+|===
+|Capability |What we can ask for
+|`vbus_storage` (IO server) |Enumerate block devices, fetch geometry & capability strings, query driver-level statistics (queue depth, error counts) via the IO framework.
+|`ahci_chan` |Direct channel to AHCI driver; exposes completion interrupt rates and per-port error registers if we add thin wrappers.
+|`rtc_ns` |RTC service for wall-clock sync; already used in `platform/l4re/time.c` to seed `sf_time_backend_l4re`.
+|`cons_mux` |Console multiplexer; we can feed user input cadence or console backlog into the inference loop as a proxy for interactive heat.
+|`L4.Env.log` |Kernel log capability; useful for capturing scheduler or hardware warnings that should influence word temperature decay.
+|`L4.Env.vesa` |Framebuffer; latency of refresh / blit operations can be sampled if graphics words need physics metadata.
+|===
+
+=== Other Kernel APIs Worth Exposing
+
+- `l4_thread_control()` / `l4_thread_ex_regs()` give us per-thread UTCB pointers and instruction pointers—hooks for correlating VM stalls with microkernel scheduling.
+- `l4_ipc_error()` exposes IPC failure codes that we could propagate into entropy penalties for words that trigger repeated faults (e.g., storage walkers).
+- IRQ virtual devices (scheduler hotplug IRQ, AHCI IRQs) can be counted to derive environmental noise injected into the VM.
+
+== StarForth VM Signals
+
+=== Core Runtime State
+
+[cols="1,2",options="header"]
+|===
+|Source |Signal
+|`DictEntry.entropy` (`include/vm.h:118`) |Execution counter per word; baseline for the macro temperature (Maxwell lens).
+|`DictEntry.physics` (planned fields) |Holds temperature, last-active timestamp, mass, etc.—the knobs the inference loop will tune.
+|Stack pointers (`VM.dsp`, `VM.rsp`) |Current stack depth; steep excursions imply turbulent execution and can feed into Bayesian variance estimates.
+|`vm->mode`, `state_var`, `current_executing_entry` |Tell us whether we’re in interpret vs. compile modes and which word currently owns the CPU.
+|`vm->error`, `vm->halted` |Binary fault signals; spike entropy decay when they flip.
+|`log_set_level()` + `log_message()` (`include/log.h`) |Expose log volume or severity mix as telemetry—lots of warnings might cool down risky words.
+|===
+
+=== Profiler & Instrumentation
+
+[cols="1,2",options="header"]
+|===
+|Source |Signal
+|`WordProfile` (`include/profiler.h:94`) |Per-word total time, call count, min/avg/max latency—direct feed for `avg_latency_ns` and Bayesian likelihoods.
+|`MemoryProfile` (`include/profiler.h:110`) |Read/write counts and bytes; a proxy for mass/energy when scheduling words that thrash memory.
+|`profiler_state.counters` (`include/profiler.h:130`) |VM cycles, dictionary lookups, stack ops, allocations—good priors for default temperature or heat capacity.
+|`profiler_word_count()` (`src/vm.c:485`) |Always available (even without detailed profiling) to at least keep frequency estimates fresh.
+|`vm_debug_dump_state()` (`include/vm_debug.h`) |Structured dump for post-mortem analysis; can be parsed by the Bayesian tool to reset priors after crashes.
+|===
+
+=== Block & Storage Subsystem
+
+[cols="1,2",options="header"]
+|===
+|Source |Signal
+|`block_subsystem.c` globals (`g.total_blkio_blocks_1k`, `g.dirty_ram`, `g.bam_dirty`) |Working-set size, dirty block counts, BAM churn—feed into the inference window for storage-backed words.
+|`blkio_info()` (`include/blkio.h`) |Device geometry and read-only bit; informs whether cooling a word should migrate it to RAM vs. disk tiers.
+|`blkio_read/write` return codes |Immediate error feedback; can spike entropy decay or trigger ACL adjustments.
+|Cache slots (`cache_slot_t`) |Track hit/miss rate and write-back frequency to infer block subsystem momentum.
+|===
+
+=== Other Useful Hooks
+
+- REPL IO (`server/src/repl_io.c` in the L4 build) tracks console throughput; map it to user-driven heat injections.
+- `test_runner` statistics (`src/test_runner/test_runner.c`) expose module-level success/failure counts if we run diagnostics as part of the observation window.
+- `log_persistent.c` (L4 port) keeps logs in a ring buffer—can be mined in RAM by the Bayesian tool without hitting a filesystem.
+
+== Op-Amp Analogy / Signal Flow
+
+1. **Positive input (microkernel)**: real-world noise—CPU availability, IO latency, RTC drift, IRQ storms.
+2. **Negative input (VM)**: internal state—entropy, latency, stack tension, storage dirty set.
+3. **Amplifier**: Bayesian inference loop (Section "Tooling") adjusts priors and updates word physics.
+4. **Output**: Updated `DictPhysics` structs and scheduler hints that modulate execution order and block placement.
+5. **Feedback**: Adjust observation window width based on variance (gauge study) and repeat.
+
+=== Messaging & IPC Considerations
+
+- **Shared-memory first**: Treat the pub/sub backbone as a ring buffer + sequence counters living inside the dedicated analytics heap (default 10 MiB).
+Producers write events, flip a counter, and carry on—no blocking semantics inside the VM.
+- **L4Re notifications**: Because L4 IPC is synchronous, use it only as a notification channel.
+A publisher pokes a dedicated notification thread with a short IPC, that thread drains the ring buffer and forwards messages to subscribers.
+Virtual IRQs (e.g., the scheduler hotplug IRQ) are another option for non-blocking wakeups.
+- **POSIX portability**: On Linux builds the same API can be backed by condition variables or eventfd, but the interface must live behind a common shim so the VM path stays identical.
+- **Documented TODOs**: Any temporary stubs should spell out whether they are L4-only or POSIX-only, keeping concerns separated until the full messaging stack lands.
+
+All state remains resident in RAM inside a fixed-size analytics heap; no dynamic expansion is permitted.
+The analytics heap (default 10 MiB) is separate from the VM arena (`VM_MEMORY_SIZE` stays 5 MiB), so dictionary, stacks, and block subsystem budgets remain untouched.
+
+=== Host Snapshot Shim & Analytics Heap
+
+Phase 1 ships a concrete implementation of the items above:
+
+- `physics_runtime_init()` reserves a dedicated analytics heap (default 10 MiB) whose layout is documented in <<hola>>.
+- `physics_host_snapshot()` abstracts POSIX vs.
+L4Re scheduler probes and feeds ring-buffer events via `physics_analytics_publish_event()`.
+- The heap header, event records, and mailbox schema live in `include/physics_runtime.h`; the runtime implementation resides in `src/physics_runtime.c`.
+
+The shim exposes portable scheduler hints—monotonic clocks, logical CPU count, runnable thread estimates—and keeps the interface ABI-stable so governance tooling can evolve independently.
+
+== Immediate Research Tasks
+
+1. Prototype a thin KIP/scheduler shim that exposes the bullet-listed signals to userland C code (no filesystem).
+On L4Re it should pull KIP pointers via `l4re_kip()` / `L4::Env::env()->kip()`; on POSIX builds the stub just feeds monotonic time and scheduler defaults—keep the abstraction boundary clean.
+2. Inventory the IO server (vbus) protocol to pull queue depth/error counters for AHCI, NVMe, or virtio backends.
+3. Define the shared-memory layout between the VM and the Bayesian analyzer (event ring buffer, summary slots).
+Default to a 10 MiB analytics heap (header + ~6 MiB event ring + ~3 MiB summary/scratch + padding) unless developers explicitly shrink it.
+Messaging must respect platform split: POSIX builds can use normal mutex/condition pairs; the L4 path should emulate async behaviour over fundamentally blocking IPC by pairing shared-memory queues with lightweight notification IPC (or virtual IRQ) so publishers never stall the VM.
+4. Extend the StarForth profiler to snapshot MemoryProfile deltas without enabling full verbose mode—keep overhead low.
+5. Derive initial priors for key primitives (control words, IO, block) based on handcrafted knowledge plus the loader configuration (priority, quantum).
+
+*Note*: The host snapshot shim will surface unknown fields as flagged defaults (no runtime defects).
+Platform-specific TODOs should be annotated clearly until the L4Re scheduler hooks land.
+The observation window will combine time-based heartbeat and event-count triggers; events act as "excitement" (boost entropy), while publish/decay operations cool at roughly half that rate (tunable).
+All computations use 64-bit fixed-point integers.
+Physics snapshots can optionally be persisted into Forth block storage and reloaded during `(INIT)` to simulate a warm boot or run a training sequence.
+Descriptor inheritance flows from module/vocabulary/VM defaults down to individual words so we can seed sensible priors at multiple levels, and every tier exposes the same attribute schema (temperature, latency, mass, state flags, ACL hints, pub/sub mask, pinned flag) for a clean integration story.
+
+VM-level rollups mirror the per-word metrics and define operating bands (`COLD`, `WARM`, `HOT`, `CRITICAL`) that higher layers (governance, scheduler shim) can respond to.
+
+Isabelle will capture the formal state machine, invariants, and IPC handshake proofs, while HOLA defines the shared-memory layout and control protocol consumed by both the VM and external analyzers.
+
+=== Host Snapshot Shim & Analytics Heap (Implemented)
+
+- `physics_runtime_init()` provisions the analytics heap (default 10 MiB) and publishes the header/region descriptors consumed by HOLA.
+- `physics_host_snapshot()` abstracts POSIX vs.
+L4Re backends and feeds event channel `0x00000002` via `physics_analytics_publish_event()`.
+- Structures live in `include/physics_runtime.h`; implementation in `src/physics_runtime.c`.
+
+These hooks are intentionally ABI-stable so governance scripts can mirror them into the external repository without pulling in C sources.
+
+Phase 1 (POSIX path) captures additional host signals:
+
+- Linux PSI values (`/proc/pressure/*`) mapped into `psi_*_avg{10,60,300}_milli`.
+- `/proc/stat` totals for total/idle jiffies so analyzers can derive load without re-reading procfs.
+- cgroup v2 `cpu.stat` and `memory.current` usage figures (when available).
+- Flag bits (`PHYSICS_HOST_FLAG_*`) advertise which sources were populated.
+
+[[hola]]
+=== HOLA Shared-Memory Schema & Command Protocol
+
+See <<docs/src/internal/HOLA_PROTOCOL.adoc,HOLA_PROTOCOL.adoc>> for the Phase 1 contract (header layout, ring buffer semantics, command mailbox).
+Consumers **must** validate the magic/version triple before touching the heap.
+
+=== Formal Artefacts
+
+- Observation/state machine: `docs/src/internal/formal/Physics_StateMachine.thy`.
+- Observation invariants & host coupling: `docs/src/internal/formal/Physics_Observation.thy`.
+- Governance hand-off plan: summarised updates in <<docs/src/internal/PHYSICS_SCHEDULING_PLAN.adoc,PHYSICS_SCHEDULING_PLAN.adoc>> plus forthcoming governance repository notes.
+- Export checklist: `docs/src/internal/GOVERNANCE_EXPORT_NOTES.adoc` outlines what moves to the governance repository.
+
+=== Primitive Seed Table
+
+`physics_metadata_apply_seed()` introduces initial priors for a handful of high-impact primitives (control flow, I/O, block subsystem, save-system).
+Seeds live in `src/physics_metadata.c` and keep temperature/latency estimates from starting at absolute zero; governance tooling can extend or override the table once the Bayesian loop is in place.
+
+=== Morning Pickup Notes
+
+- Implement the host snapshot shim (POSIX + L4Re) and analytics heap scaffolding.
+- Draft initial Isabelle models for the physics state machine and observation window invariants.
+- Specify HOLA’s shared-memory schema and command protocol that matches the plan above.
+- Something else I can't recall.
+I just remembered, we should generate some formal docs for the Governance Repository too.

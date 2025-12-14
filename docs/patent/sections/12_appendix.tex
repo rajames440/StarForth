@@ -1,0 +1,121 @@
+% ===========================================
+% 12_appendix.tex
+% Appendix (Non-limiting Supplemental Material)
+% ===========================================
+
+\section*{Appendix}
+
+This Appendix provides non-limiting supplemental material intended to support
+technical understanding of the invention. The contents herein are provided for
+clarity and completeness only and shall not be construed as limiting the scope
+of the invention or the claims set forth in this application.
+
+\subsection{Terminology Glossary}
+
+\textbf{Execution Heat} — A scalar value representing recency and frequency of
+invoked instructions.
+
+\textbf{Entropy Window} — A rolling distribution describing variability of
+execution heat over a selected interval.
+
+\textbf{Pipeline Pressure} — A measure of how heavily the execution pipeline is
+utilized under current workload conditions.
+
+\textbf{Stability Score} — A value derived from variance or coefficient of
+variation of recent execution timings.
+
+\textbf{Feedback Loop} — A control mechanism governing internal runtime
+parameters based on observed signals.
+
+\textbf{Execution Mode} — A pre-validated configuration profile describing a
+specific arrangement of active feedback loops.
+
+\textbf{Jacquard Mode Selector (L8)} — Supervisory controller that selects
+execution modes based on the runtime state vector.
+
+\textbf{Shape-Invariant Operation} — Maintenance of stable performance metrics
+across multiple input waveform families.
+
+\subsection{Experimental Setup (Non-limiting)}
+
+The validation experiments described herein were performed using representative
+virtual machine builds. While specific implementations may vary, typical
+evaluation conditions included:
+
+\begin{itemize}
+	\item factorial sweeps across multiple feedback-loop combinations;
+	\item 30-rep and 300-rep test batches for statistical robustness;
+	\item comparable workloads across stable, diverse, volatile, temporal, and
+	transitional categories;
+	\item waveform-based evaluation including sinusoidal, triangular, square-wave,
+	burst-pattern, and mixed-pattern sequences;
+	\item measurement of mean time per word, variance, coefficient of variation,
+	heat distributions, and adaptive mode usage.
+\end{itemize}
+
+Representative results are summarized in the figures and tables referenced in
+Sections 05 and 09.
+
+\subsection{Representative Mode Configuration Profiles}
+
+The following profiles illustrate typical mode configurations. These examples
+are non-exclusive and non-exhaustive.
+
+\textbf{Mode 0 – Baseline:} L7 active; minimal inference weighting.
+
+\textbf{Mode 1 – Temporal:} L3 emphasized; decay rate modulation active; L5
+stabilization applied.
+
+\textbf{Mode 2 – Inference:} L2 and L6 emphasized; predictive weighting enabled.
+
+\textbf{Mode 3 – Full Adaptive:} L1–L7 coordinated; dynamic switching thresholds
+adjusted based on entropy slope and stability score.
+
+\subsection{Alternate Formulations of the State Vector}
+
+The state vector may be implemented in various forms including:
+
+\begin{itemize}
+	\item fixed-length numeric vector;
+	\item sliding-window statistics coupled with temporal markers;
+	\item probability distribution parameters;
+	\item sparse event-driven representation;
+	\item hybrid combinations thereof.
+\end{itemize}
+
+Any formulation capable of characterizing runtime behavior falls within the
+scope of the invention.
+
+\subsection{Supplementary Notes on Stability Analysis}
+
+The system’s convergence behavior may be analyzed using:
+
+\begin{itemize}
+	\item coefficient of variation thresholds,
+	\item rolling-variance collapse detection,
+	\item entropy-slope flattening,
+	\item or mode-transition damping curves.
+\end{itemize}
+
+These analyses are provided for explanatory purposes only and are not required
+for practicing the invention.
+
+\subsection{Representative Workload Families}
+
+The following generalized workload families were used in validation:
+
+\begin{itemize}
+	\item \textbf{Stable:} Repetitive inner loops with minimal structural change.
+	\item \textbf{Temporal:} Gradually shifting operation sequences.
+	\item \textbf{Volatile:} Burst-driven or highly irregular workloads.
+	\item \textbf{Transitional:} Workload shifts occurring over short periods.
+	\item \textbf{Mixed:} Stochastic combinations of the above patterns.
+\end{itemize}
+
+\subsection{Implementation Neutrality Statement}
+
+All examples in this Appendix are illustrative. The invention may be practiced
+in any programming language, virtual machine architecture, or hardware-
+software integration capable of maintaining a state vector, coordinating
+feedback loops, and selecting among runtime modes.
+

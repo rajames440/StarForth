@@ -1,0 +1,142 @@
+= Physics-Driven Scheduling Metadata Plan
+:toc: left
+:toclevels: 2
+xref:../README.adoc[← Back to Documentation Index]
+
+== Purpose
+
+This note captures the planning context for extending the StarForth dictionary word definition (see `include/vm.h:117`) with physics-inspired metadata.
+Phase 1 focuses on the *macro* model—think Maxwell-era thermodynamics—where entropy doubles as temperature: colder words (low entropy) become archival candidates while hot words stay in high-availability tiers.
+The long-term arc includes reflecting the same properties onto whole VM instances and wiring into a physics-aware scheduler (phase 2), while still cooperating with the external L4Re/Fiasco.OC task scheduler.
+The document is written for on-demand LLM recall so later sessions can fast-forward into the same design space.
+
+== Current Dictionary Signals
+
+The dictionary record already holds general usage counters and a placeholder physics block (`DictPhysics`) that ships with stub fields such as `observations`, `entropy_reciprocal`, `mass`, and `momentum` (`include/vm.h:101-124`).
+None of the fields are populated today.
+Outside the struct, we get the following free signals:
+
+- `DictEntry.entropy` – global usage counter that increments on word execution (acts like a coarse temperature reading).
+- Profiler timers (`include/profiler.h`) – per-word call counts and nanosecond timing when profiling is enabled.
+- Word flags (`WORD_IMMEDIATE`, `WORD_COMPILED`, etc.) – proxy indicators for control flow roles.
+- VM memory layout – lets us approximate footprint (`mass`) by measuring span from definition header to current HERE.
+
+These existing hooks give us enough data to begin a physics model without intrusive runtime changes.
+
+== Minimum Viable Physics Metadata (Phase 1: Macro Thermodynamics)
+
+Phase 1 drives storage layout and coarse scheduling decisions using thermodynamic metaphors.
+Entropy already exists as the macro temperature gauge; the fields below refine it just enough to steer block storage placement per VM while staying lightweight.
+
+[cols="1,1,1,2",options="header"]
+|===
+|Field |Type |Source |Why it matters
+|`temperature_q8` |`uint16_t` |Derived from `entropy` delta over sliding window |Quantifies thermal state; hotter words stick to fast blocks; colder ones migrate outward.
+|`last_active_ns` |`uint64_t` |Monotonic timestamp from lightweight clock hook |Supports cooling/decay models and idle detection.
+|`mass_bytes` |`uint32_t` |Word footprint (HERE diff or cached at compile) |Represents resource inertia; heavier words resist rapid rescheduling or eviction.
+|`avg_latency_ns` |`uint32_t` |Optional rolling average when profiler ≥ `PROFILE_DETAILED` |Encodes execution cost so storage and future scheduler can weigh hot-but-expensive words.
+|`state_flags` |`uint8_t` |Bitfield (e.g. I/O, pure, control) derived from flags/registry |Acts like charge/spin without extra enums; guides affinity and ACL placement.
+|`acl_hint` |`uint8_t` |Reserved slot |Leave space for richer ACL controls per word.
+|`pubsub_mask` |`uint16_t` |Reserved slot |Future linkage into Mama Forth messaging backbone.
+|===
+
+This MVP keeps the struct under 24 bytes, fits cache lines, and only requires a lightweight monotonic timer plus a rolling window accumulator.
+
+== Practical Maximum (Phase 2: Physics Scheduler)
+
+Phase 2 introduces the physics-driven scheduler that consumes the Phase 1 signals.
+The external L4Re/Fiasco.OC scheduler continues juggling whole VMs; internally, these metrics will determine word execution order, throttling, and potential pre-heating.
+When profiler-assisted sampling or physics mode is enabled we can expand metadata to capture richer "particle" behaviour.
+The fields below stay optional and lazily maintained so baseline runs incur no extra cost.
+
+[cols="1,1,1,2",options="header"]
+|===
+|Field |Type |Source |Scheduler / analytics benefit
+|`momentum_vec[3]` |`int32_t[3]` |Directional call rates (interpret, compile, test contexts) |Treats execution contexts as axes; enables anisotropic scheduling.
+|`acceleration_q16` |`int32_t` |Derivative of call rate (EWMA) |Detects surges; helps pre-heat caches or throttle oscillations.
+|`energy_quanta` |`uint32_t` |`avg_latency_ns * temperature_q8` |Supports energy-based prioritisation and cooling heuristics.
+|`coherence_band` |`uint16_t` |Similarity grouping (call graph clustering) |Allows locality-aware placement, messaging cohorts, and L4Re affinity wiring.
+|`charge_enum` |`uint8_t` |Categorical: `{neutral, IO, memory, control, meta}` |Aligns with scheduler safety (e.g., isolate IO-heavy words).
+|`spin_state` |`uint8_t` |Maps to word type: `{scalar, colon, immediate, compile-only}` |Assists interpreter vs. compiler dispatch.
+|`entropy_half_life` |`uint16_t` |Configurable decay constant per word |Fine-grained cooling; can be tuned by governance metadata.
+|`heat_capacity` |`uint16_t` |Upper bound on allowed temperature rise per interval |Prevents runaway hot spots; scheduler clamps high-variance words.
+|`l4re_binding` |`uint16_t` |Slot or capability ID for L4Re wiring (0 = native VM) |Reserve space for ABI wiring without altering core structs later.
+|`instrumentation_mask` |`uint32_t` |Which optional probes are active |Allows dynamic toggling of heavy metrics.
+|===
+
+This expanded footprint stays within 64 bytes, still cache-friendly, and interoperates with existing profiler data.
+
+== Instrumentation Strategy
+
+- **Sampling cadence**: default to lazy updates when a word executes; allow global maintenance ticks for decay/half-life.
+- **Profiler integration**: reuse `profiler_word_enter/exit` to compute `avg_latency_ns`, `momentum_vec`, and `energy` when profiling is active, otherwise skip.
+- **Memory footprint calculation**: store `mass_bytes` at definition time by diffing HERE before/after compiling the word; avoid per-execution recomputation.
+- **Decay model**: maintain `temperature_q8` via exponential moving average plus configurable `entropy_half_life` when present; fallback to global constant.
+- **L4Re wiring**: keep `l4re_binding` dormant in native builds but populate when porting the scheduler into the L4Re task graph.
+- **Pub/Sub readiness**: reserve the `pubsub_mask` for Mama Forth’s messaging backbone so words can subscribe to thermal or governance channels without reworking the structure later.
+- **ACL evolution**: treat `acl_hint` as a staging byte for richer access models once physics metadata influences security policy (e.g., high-energy words requiring elevated review).
+
+=== Handling Primitives vs. Colon Definitions
+
+- **Shared header path**: both primitives registered from C (`register_word()` → `vm_create_word()`) and colon definitions ultimately flow through `vm_create_word()`, so the physics block can be initialised consistently.
+- **Primitive defaults**: for built-in words the body payload is just the aligned data cell; capture a fixed `mass_bytes`
+equal to the header size (or pull from a compile-time table for finer resolution).
+Temperature starts cold but locks to a minimal floor so primitives do not evaporate from storage tiers.
+- **Colon words**: snapshot `mass_bytes` after `vm_exit_compile_mode()` once the threaded body is sealed.
+Their mass may change if the word is redefined; physics init should therefore run after redefinition too.
+- **Late overrides**: allow a per-word descriptor table so select primitives (e.g., I/O or control words) can seed
+`state_flags`, `acl_hint`, or even a starting temperature distinct from the default.
+Support hierarchical descriptors so modules/vocabularies inherit defaults (e.g., block words, block devices, dictionaries, entire VM contexts) before per-word overrides apply.
+- **Pinned entropy**: respect the existing `WORD_PINNED` flag as an immutable temperature/entropy anchor—words marked as pinned bypass cooling/heating adjustments (other metrics can still track observational data).
+- **Uniform metadata**: every component in the hierarchy—VM, dictionaries, vocabularies, modules, individual words—exposes the same attribute set (temperature, latency, mass, state flags, ACL hints, pub/sub mask, pinned flag) so integration stays tidy and predictable.
+- **User supplied primitives**: if future tooling injects primitives at runtime (e.g., Mama Forth plug-ins) they inherit the same bootstrap flow; optional host metadata blobs can fill in the reserved ACL/pubsub fields on registration.
+
+== Tooling & Bayesian Inference Loop
+
+- **Prior assumptions**: primitives ship with seeded priors (temperature floor, expected latency, side-effect flags).
+These form the baseline belief before any runtime observations.
+- **Observation window**: maintain a large rolling buffer of execution events per word (`entropy`, `avg_latency_ns`, temperature deltas).
+Initial window width stays broad to limit early noise and serves the “macro” Maxwell lens.
+Window length is tracked in both time (configurable heartbeat, later tuned by inference) and event count.
+- **Inference update**: periodically run Bayesian updates to adjust word-specific probability distributions (e.g., likelihood that a hot word is also latency-heavy).
+The posterior feeds back into temperature and scheduling weights.
+- **Adaptive window**: perform a gauge study (ANOVA or similar) on the buffered samples to measure variance; narrow or widen the observation window so inference stays both responsive and statistically reliable.
+- **Feedback loop**: once the posterior converges, reflavor `temperature_q8`, `heat_capacity`, or other metrics, then persist summary stats so subsequent runs boot with informed priors rather than cold starts.
+- **Tooling pipeline**: plan for a host-side analyzer that ingests runtime telemetry (over IPC/shared buffer), executes the Bayesian update, and emits refreshed metadata structures.
+No filesystem touches: the VM retains inference state inside a statically sized analytics heap—no dynamic growth permitted.
+Optional checkpoints can be stored in block storage and reloaded during `(INIT)` to emulate warm boots or kick off a training session.
+HOLA owns the analyzer interface contract so every consumer speaks the same shared-memory/command dialect.
+- **VM-level aggregation**: roll per-word fields into VM-level metrics (temperature, entropy flux, latency profile, mass, state flags).
+Use those to maintain operating bands (`COLD`, `WARM`, `HOT`, `CRITICAL`), trigger governance hooks, and request scheduler adjustments when available.
+
+=== Runtime Integration Notes (Phase 1)
+
+- `physics_runtime_init()` is invoked from `main.c` once logging is configured; failure to allocate the analytics heap emits a warning but does not abort the VM.
+- `physics_host_snapshot()` captures scheduler hints on both POSIX and L4Re builds and pushes deltas into HOLA channel `0x00000002` via `physics_analytics_publish_event()`.
+- `physics_runtime_shutdown()` runs during final teardown so analytics heaps are never left mapped across runs.
+- The shared-memory schema and command protocol are captured in <<docs/src/internal/HOLA_PROTOCOL.adoc,HOLA_PROTOCOL.adoc>> and must remain in sync with any governance-side consumers.
+- On Linux the shim now records PSI metrics, `/proc/stat` totals, and cgroup usage.
+Use the `PHYSICS_HOST_FLAG_*` bits to gate scheduler reactions when running on kernels that lack those files.
+- Primitive seeding: `physics_metadata_apply_seed()` preloads temperature/latency hints for high-impact words (`IF`, `LOOP`, `EMIT`, block words, etc.) so the inference loop starts from sensible priors.
+
+== Open Questions
+
+- Do we require persistent storage of physics metadata across restarts, or is it runtime-only?
+- Should `state_flags` or `charge_enum` derive from author annotations (e.g. custom defining words) instead of heuristics?
+- What minimum clock precision do we guarantee on every target (Linux vs.
+L4Re) for `last_active_ns`?
+- How does physics scheduling interact with strict pointer safety mode (`STRICT_PTR=1`)?
+Any need for additional guards?
+- Should governance policy files specify default `heat_capacity`/`half_life` bands for safety-critical words?
+- What metadata has to lift from words to whole VM instances so phase-1 placement flows naturally into multi-VM physics?
+- How do we encode the Isabelle formal models (state machine, Bayesian invariants, IPC handshake) so they stay in sync with the HOLA interface and runtime implementation?
+
+== Next Steps
+
+1. Validate the Phase 1 field budget (temperature, timestamps, mass, latency, state, ACL/PubSub placeholders) against the current dictionary footprint.
+2. Prototype lightweight temperature + mass updates in a feature branch guarded by a compile-time flag.
+3. Extend the profiler to expose momentum/energy data so higher levels can be toggled at runtime.
+4. Draft the L4Re ABI requirements and map them onto the reserved `l4re_binding` field.
+5. Begin mapping how Mama Forth messaging topics will consume the reserved `pubsub_mask` slots.
+- **Fixed-point maths**: All Bayesian and decay computations use 64-bit signed fixed-point integers so they stay deterministic and/compiler friendly.
+Inline assembly is an option if a specific multiply/divide becomes a bottleneck.

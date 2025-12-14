@@ -1,0 +1,31 @@
+\begin{abstract}
+	\normalsize
+	
+	A virtual machine architecture and adaptive execution system are disclosed that
+	dynamically modifies internal runtime behavior in response to real-time workload
+	characteristics. The system maintains a continuously updated runtime state vector
+	representing execution heat, entropy, variance, temporal decay dynamics, pipeline
+	pressure, and related stability indicators. A plurality of coordinated feedback
+	loops adjust internal parameters including decay functions, inference weights,
+	lookup strategies, cache behavior, and prefetch timing. A supervisory controller
+	selects among multiple execution modes, each mode defining a distinct and
+	validated configuration of feedback-loop activity, and regulates transitions
+	using bounded, non-oscillatory mechanisms such as hysteresis thresholds,
+	confidence scoring, or convergence constraints.
+\par\medskip
+	The system characterizes workloads into behavioral families—including stable,
+	temporal, volatile, transitional, and mixed patterns—and autonomously selects the
+	execution mode appropriate to each condition. This enables the virtual machine to
+	maintain consistent performance, reduced variance, and shape-invariant behavior
+	across heterogeneous, non-stationary, and waveform-diverse workloads. The
+	architecture operates without manual tuning or fixed parameters and is robust to
+	sudden workload shifts, burst-like behavior, and long-term temporal drift. The
+	invention is applicable to stack-based interpreters, embedded runtimes,
+	just-in-time compilation environments, microkernel subsystems, distributed
+	execution engines, and real-time or soft–real-time systems requiring predictable
+	and stable execution characteristics. The disclosed architecture provides a
+	general-purpose method for achieving autonomous optimization, rapid convergence
+	to steady-state behavior, and high stability through integrated feedback,
+	statistical inference, and supervisory mode selection.
+	
+\end{abstract}

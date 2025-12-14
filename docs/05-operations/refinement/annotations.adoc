@@ -1,0 +1,627 @@
+= StarForth Refinement Code Annotation Guide
+:toc: left
+:toclevels: 2
+:sectnums:
+:source-highlighter: rouge
+:icons: font
+
+== Overview
+
+This guide standardizes how C code is annotated to map to Isabelle formal specifications.
+
+**Goal:** Make the correspondence between implementation and theory explicit and verifiable.
+
+**Scope:** Every function in scope for refinement verification gets annotated.
+
+---
+
+== Annotation Standards
+
+=== File Header Annotation
+
+Every C source file undergoing refinement should begin with a refinement mapping header:
+
+[source,c]
+----
+/**
+ * ============================================================================
+ * FILE: vm.c
+ * REFINEMENT TARGET: VM core execution semantics
+ *
+ * This file implements the following Isabelle theories:
+ * - VM_Core.thy .................. Core VM state and instruction execution
+ * - VM_Stacks.thy ................ Data and return stack operations
+ * - VM_StackRuntime.thy .......... Stack runtime invariants
+ * - VM_Register.thy .............. Register and program counter management
+ *
+ * REFINEMENT STATUS: PHASE 1 IN-PROGRESS
+ * RELATED CAPAs: DEFECT-001, DEFECT-002, DEFECT-003
+ * LAST VERIFIED: 2025-10-30
+ *
+ * NOTATION:
+ *   REFINEMENT: Code path → Isabelle definition (precondition/postcondition)
+ *   INVARIANT:  Property that must hold after execution
+ *   TODO_PROOF: Refinement proof still needed
+ * ============================================================================
+ */
+----
+
+=== Function Header Annotation
+
+Every function with an Isabelle counterpart gets this pattern:
+
+[source,c]
+----
+/**
+ * REFINEMENT: VM_Stacks.thy::push (line 42)
+ *
+ * Implements the abstract stack push operation.
+ *
+ * C Signature: void stack_push(vm_state_t *state, uint16_t value)
+ * Theory Signature: push :: nat → vm_state → vm_state
+ *
+ * Preconditions (must be verified by caller or this function):
+ *  - dsp < STACK_MAX - 1 (stack has room)
+ *  - state is valid (initialized)
+ *
+ * Postconditions (guaranteed after execution):
+ *  - If precondition held: dsp increased by 1, value stored
+ *  - If precondition violated: error flag set, state unchanged
+ *  - 0 ≤ dsp < STACK_MAX always (INVARIANT)
+ *
+ * Related CAPAs: DEFECT-001 (stack bounds)
+ * Proof Status: TODO_PROOF (see StarForth_Refinement.thy line NNN)
+ */
+void stack_push(vm_state_t *state, uint16_t value) {
+    // Implementation
+}
+----
+
+=== Inline Code Annotations
+
+For critical code sections, add inline comments mapping to theory:
+
+[source,c]
+----
+void stack_push(vm_state_t *state, uint16_t value) {
+    // REFINEMENT PRECONDITION CHECK
+    // Theory requires: dsp < STACK_MAX - 1
+    // Code enforces:
+    if (state->dsp >= STACK_MAX - 1) {
+        // REFINEMENT: Error case from theory
+        // Corresponds to theory's error_push case
+        state->error = VM_ERROR_STACK_OVERFLOW;
+        return;  // Failure path - state unchanged
+    }
+
+    // REFINEMENT SUCCESS PATH
+    // This corresponds exactly to theory_push:
+    // dsp' = dsp + 1
+    // stack'[dsp'] = value
+    state->data_stack[++state->dsp] = value;
+    state->error = VM_ERROR_NONE;
+
+    // INVARIANT: 0 ≤ dsp < STACK_MAX
+    // Verified by: precondition check above + increment operation
+}
+----
+
+---
+
+== Annotation Patterns by Type
+
+=== Pure Functions
+
+Functions that are deterministic, no side effects:
+
+[source,c]
+----
+/**
+ * REFINEMENT: VM_DataStack_Words.thy::dup_top (line 89)
+ * Pure function: input → output (no state modification)
+ *
+ * Theory: dup_top(stack: list) → list
+ * Code: duplicates top of stack
+ *
+ * Precondition: stack not empty
+ * Postcondition: top element duplicated
+ */
+uint16_t dup_top(const uint16_t *stack, size_t sp) {
+    return stack[sp];  // Simply return top element
+}
+----
+
+=== State Transformation Functions
+
+Functions that modify VM state:
+
+[source,c]
+----
+/**
+ * REFINEMENT: VM_Core.thy::execute_instr (line 156)
+ * State transformation: vm_state → vm_state
+ *
+ * Theory: execute_instr(state, instr) → state'
+ * Code: Modifies state based on instruction
+ *
+ * Precondition: state valid, instruction valid
+ * Postcondition: state updated per instruction semantics
+ * Invariant: 0 ≤ pc < PROGRAM_SIZE (maintained)
+ */
+void execute_instruction(vm_state_t *state, uint16_t instr) {
+    // Get opcode (high byte)
+    uint8_t opcode = (instr >> 8) & 0xFF;
+
+    // Get argument (low byte)
+    uint8_t arg = instr & 0xFF;
+
+    // REFINEMENT: Case analysis over all opcodes
+    // Each case corresponds to theory's instr_case in exec_instr
+    switch(opcode) {
+        case OP_PUSH:
+            // REFINEMENT: Corresponds to theory_push_instr
+            stack_push(state, arg);
+            state->pc++;
+            break;
+
+        case OP_DUP:
+            // REFINEMENT: Corresponds to theory_dup_instr
+            // (Details in VM_DataStack_Words.thy line 89)
+            code_dup(state);
+            state->pc++;
+            break;
+
+        // ... more cases ...
+    }
+
+    // INVARIANT: PC always incremented (unless jump/call)
+    // INVARIANT: error flag set iff operation failed
+}
+----
+
+=== Functions with Multiple Theories
+
+When one C function implements multiple theory operations:
+
+[source,c]
+----
+/**
+ * REFINEMENT: Multiple theories
+ * - VM_StackRuntime.thy::stack_pop_safe (line 234)
+ * - VM_Stacks.thy::pop (line 51)
+ * - VM_Core.thy::pop_error_handling (line 78)
+ *
+ * This function implements both:
+ * 1. The abstract pop operation
+ * 2. The error handling for underflow
+ */
+void stack_pop(vm_state_t *state, uint16_t *out) {
+    if (state->dsp == 0) {
+        // REFINEMENT: Theory case pop_empty from VM_StackRuntime.thy
+        state->error = VM_ERROR_STACK_UNDERFLOW;
+        return;
+    }
+
+    // REFINEMENT: Theory case pop_nonempty from VM_Stacks.thy
+    *out = state->data_stack[state->dsp--];
+    state->error = VM_ERROR_NONE;
+}
+----
+
+=== Functions with Helper Lemmas
+
+When a function needs auxiliary lemmas to verify:
+
+[source,c]
+----
+/**
+ * REFINEMENT: VM_Words.thy::add_word (line 201)
+ *
+ * Note: This refinement requires auxiliary lemmas:
+ *  - add_preserves_bounds (add doesn't overflow 16-bit bounds)
+ *  - add_commutative (proven in theory)
+ *  - stack_push_pop_inverse (proven in VM_Stacks.thy)
+ *
+ * Proof location: StarForth_Refinement.thy, lemmas:
+ *  - code_add_refines_theory_add
+ *  - add_word_error_handling
+ */
+void code_add(vm_state_t *state) {
+    uint16_t b = stack_pop_unchecked(state);
+    uint16_t a = stack_pop_unchecked(state);
+    uint16_t result = a + b;
+    stack_push(state, result);
+}
+----
+
+=== Partially Implemented Functions
+
+When theory-code correspondence is incomplete/evolving:
+
+[source,c]
+----
+/**
+ * REFINEMENT: VM_Core.thy::exec_instr (PARTIAL)
+ *
+ * TODO_PROOF: This function is still being refined.
+ * Current status:
+ *  ✅ PUSH instruction: complete proof
+ *  ⚠️ DUP instruction: proof in progress (DEFECT-003)
+ *  ❌ DROP instruction: not yet matched to theory
+ *
+ * Related CAPAs:
+ *  - DEFECT-003: Instruction dispatch mapping
+ *  - DEFECT-004: DROP operation missing from theory
+ *
+ * Do NOT trust this function for auditing until all cases verified.
+ */
+void execute_instruction(vm_state_t *state, uint16_t instr) {
+    // ...
+}
+----
+
+---
+
+== Cross-Reference Patterns
+
+=== Theory → Code References
+
+In Isabelle theory files, add comments linking back to C:
+
+[source,isabelle]
+----
+(* REFINEMENT: This definition is implemented in C as:
+   File: src/vm.c, line 145
+   Function: stack_push()
+
+   See: docs/REFINEMENT_CAPA.adoc::DEFECT-001
+*)
+definition push :: "nat ⇒ vm_state ⇒ vm_state" where
+  "push val state =
+    state⦇data_stack := (data_stack state) @ [val],
+          dsp := dsp state + 1⦈"
+----
+
+=== Code → Theory References
+
+In C code, reference theory line numbers:
+
+[source,c]
+----
+// REFINEMENT: VM_Stacks.thy line 42
+// See: definition push :: "nat ⇒ vm_state ⇒ vm_state"
+void stack_push(vm_state_t *state, uint16_t value) {
+----
+
+---
+
+== Invariant Documentation
+
+=== Global Invariants
+
+Add to vm.h or appropriate header:
+
+[source,c]
+----
+/**
+ * REFINEMENT INVARIANTS
+ * These properties must hold after every operation.
+ * They are proven in the Isabelle theories.
+ *
+ * INV-001: Stack Bounds
+ *   0 ≤ dsp < STACK_MAX AND 0 ≤ rsp < STACK_MAX
+ *   Theory: VM_StackRuntime.thy::stack_bounds_invariant
+ *
+ * INV-002: PC Validity
+ *   0 ≤ pc < PROGRAM_SIZE OR pc == HALT_PC
+ *   Theory: VM_Core.thy::pc_validity
+ *
+ * INV-003: Error State Consistency
+ *   error ≠ NONE ⟹ last operation failed
+ *   error = NONE ⟹ last operation succeeded
+ *   Theory: VM_Core.thy::error_consistency
+ *
+ * These are maintained by every operation.
+ * If any operation violates them, it's a bug in either:
+ *  - The code (implementation wrong)
+ *  - The theory (specification was wrong)
+ */
+----
+
+=== Per-Function Invariants
+
+[source,c]
+----
+void stack_push(vm_state_t *state, uint16_t value) {
+    // On entry: INV-001, INV-002, INV-003 hold
+
+    if (state->dsp >= STACK_MAX - 1) {
+        state->error = VM_ERROR_STACK_OVERFLOW;
+        // On exit (error path): INV-001, INV-002, INV-003 still hold
+        return;
+    }
+
+    state->data_stack[++state->dsp] = value;
+    state->error = VM_ERROR_NONE;
+    // On exit (success path): INV-001, INV-002, INV-003 still hold
+}
+----
+
+---
+
+## Error Handling Patterns
+
+=== Explicit Error Cases
+
+[source,c]
+----
+/**
+ * REFINEMENT: Error handling per VM_Core.thy::error_cases
+ *
+ * All operations return error status via state->error.
+ * Errors are NOT exceptions; they're part of the state machine.
+ *
+ * Theory models error as:
+ *   type error_flag = OK | STACK_OVERFLOW | STACK_UNDERFLOW | INVALID_INSTR
+ *
+ * Code maps to:
+ *   VM_ERROR_NONE → OK
+ *   VM_ERROR_STACK_OVERFLOW → STACK_OVERFLOW
+ *   VM_ERROR_STACK_UNDERFLOW → STACK_UNDERFLOW
+ *   VM_ERROR_INVALID_INSTRUCTION → INVALID_INSTR
+ */
+----
+
+=== Precondition Violations
+
+[source,c]
+----
+/**
+ * REFINEMENT: Precondition checking
+ *
+ * If a function has preconditions in the theory (e.g., "stack not empty"),
+ * the C code must either:
+ *
+ * A) Verify the precondition and return error if violated
+ *    (Error handling code path)
+ *
+ * B) Assume caller verified it (assert in debug builds)
+ *    (Unsafe - must document clearly)
+ *
+ * For refinement, we recommend option A.
+ */
+----
+
+---
+
+## Proof Status Markers
+
+Use these consistently:
+
+[source,c]
+----
+// ✅ PROVEN: This refinement is proven in Isabelle
+//    Proof: StarForth_Refinement.thy::code_push_refines_theory_push
+
+// ⚠️ IN-PROGRESS: Proof is being worked on
+//    Proof attempt at: StarForth_Refinement.thy line 456
+//    Issue: DEFECT-001
+
+// ❌ TODO_PROOF: Refinement proof needed but not started
+//    Theory: VM_Core.thy::exec_instr
+//    CAPA: DEFECT-003
+
+// 📋 NOT-APPLICABLE: No Isabelle counterpart for this code
+//    Reason: Helper/utility function (logging, debugging)
+//    OK to leave unproven
+----
+
+---
+
+## Checklist for Annotating a Function
+
+Use this when adding annotations to existing C code:
+
+[source]
+----
+☐ 1. Find the Isabelle theory this implements
+     Theory name: _________________
+     Definition/lemma: ____________
+     Line number: __________________
+
+☐ 2. Write function header with REFINEMENT block
+     C signature documented
+     Theory signature documented
+     Preconditions listed
+     Postconditions listed
+
+☐ 3. Add inline comments for:
+     Precondition checks
+     Success/failure paths
+     Invariant maintenance
+
+☐ 4. Set proof status marker
+     ☐ ✅ PROVEN (reference proof)
+     ☐ ⚠️ IN-PROGRESS (reference CAPA)
+     ☐ ❌ TODO_PROOF (reference theory)
+     ☐ 📋 NOT-APPLICABLE (explain why)
+
+☐ 5. Cross-reference the CAPA document
+     Related defect(s): ___________
+     Resolution plan: _____________
+
+☐ 6. Create/update Isabelle proof
+     File: StarForth_Refinement.thy
+     Lemma: code_FUNCTION_refines_theory_FUNCTION
+     Status: started / in-progress / complete
+----
+
+---
+
+## Example: Full Annotation
+
+Here's a complete, fully-annotated example:
+
+[source,c]
+----
+/**
+ * ============================================================================
+ * FUNCTION: stack_push()
+ * ============================================================================
+ *
+ * REFINEMENT: VM_Stacks.thy::push (line 42)
+ *
+ * Implements: abstract stack push operation from formal specification
+ * Purpose: Add element to data stack, maintaining size invariants
+ *
+ * SIGNATURES:
+ *   C code:      void stack_push(vm_state_t *state, uint16_t value)
+ *   Isabelle:    push :: nat ⇒ vm_state ⇒ vm_state
+ *
+ * PRECONDITIONS (must hold before call):
+ *   1. state ≠ NULL (valid pointer)
+ *   2. dsp < STACK_MAX - 1 (room for one more element)
+ *   Verified by: this function checks #2; caller ensures #1
+ *
+ * POSTCONDITIONS (guaranteed after return):
+ *   On success:
+ *     - dsp increased by exactly 1
+ *     - stack[dsp] = value (new top element)
+ *     - error = VM_ERROR_NONE
+ *     - All invariants maintained
+ *
+ *   On error (dsp overflow):
+ *     - dsp unchanged
+ *     - stack unchanged
+ *     - error = VM_ERROR_STACK_OVERFLOW
+ *     - All invariants maintained
+ *
+ * RELATED CAPA ENTRIES:
+ *   - DEFECT-001: Stack Push Error Handling
+ *     Status: IN-PROGRESS
+ *     Issue: Precondition checking formalization
+ *
+ * PROOF STATUS: ⚠️ IN-PROGRESS
+ *   Proof location: docs/src/internal/formal/StarForth_Refinement.thy
+ *   Lemma: stack_push_refines (line 156)
+ *   Dependencies:
+ *     - lemma stack_bounds_preserved
+ *     - lemma error_flag_consistency
+ *   Blockers: None
+ *
+ * INVARIANTS MAINTAINED:
+ *   - INV-001 (Stack Bounds): 0 ≤ dsp < STACK_MAX
+ *   - INV-003 (Error Consistency): error ≠ NONE ↔ operation failed
+ *
+ * RELATED FUNCTIONS:
+ *   - stack_pop() (inverse operation)
+ *   - stack_push_unchecked() (unsafe version, NOT for refinement)
+ *
+ * VERSION HISTORY:
+ *   2025-10-30: Initial annotation, proof in progress
+ */
+void stack_push(vm_state_t *state, uint16_t value) {
+    // REFINEMENT PRECONDITION CHECK
+    // Theory: push requires dsp < STACK_MAX - 1
+    // Code implementation:
+    if (state->dsp >= STACK_MAX - 1) {
+        // FAILURE PATH: Corresponds to theory's push_overflow case
+        // Theory: error_push :: "dsp >= STACK_MAX - 1 ⟹ error = STACK_OVERFLOW"
+        state->error = VM_ERROR_STACK_OVERFLOW;
+        return;  // State unchanged on error
+    }
+
+    // SUCCESS PATH: Corresponds to theory's push_ok case
+    // Theory equations to verify:
+    //   dsp' = dsp + 1
+    //   stack'[dsp'] = value
+    //   error' = OK
+
+    state->data_stack[++state->dsp] = value;  // REFINEMENT: This matches "dsp' = dsp + 1"
+    state->error = VM_ERROR_NONE;              // REFINEMENT: error' = OK
+
+    // INVARIANT CHECK: 0 ≤ dsp < STACK_MAX
+    // Justified:
+    //   - dsp was < STACK_MAX - 1 (from precondition check above)
+    //   - We incremented dsp by 1
+    //   - Therefore dsp ≤ STACK_MAX - 1, i.e., dsp < STACK_MAX ✓
+    //   - dsp ≥ 0 (was ≥ 0 before, still ≥ 0 after increment) ✓
+}
+----
+
+---
+
+## Tools & Automation
+
+=== grep for Finding Annotations
+
+[source,bash]
+----
+# Find all REFINEMENT annotations
+grep -r "REFINEMENT:" src/
+
+# Find all TODO_PROOF items
+grep -r "TODO_PROOF" src/
+
+# Find functions without annotations
+grep -r "^void " src/ | grep -v "^[[:space:]]*//" | grep -v "REFINEMENT"
+----
+
+=== Validation Script
+
+Create `scripts/check-refinement-annotations.sh`:
+
+[source,bash]
+----
+#!/bin/bash
+# Check that all functions in phase 1 scope have REFINEMENT annotations
+
+PHASE1_FUNCTIONS=(
+    "stack_push"
+    "stack_pop"
+    "execute_instruction"
+    "execute_call"
+    "execute_return"
+)
+
+for func in "${PHASE1_FUNCTIONS[@]}"; do
+    if ! grep -q "REFINEMENT.*$func" src/vm.c; then
+        echo "ERROR: Function $func missing REFINEMENT annotation"
+        exit 1
+    fi
+done
+
+echo "✅ All Phase 1 functions have refinement annotations"
+----
+
+---
+
+## Version Control
+
+When committing annotated code:
+
+[source]
+----
+Commit message format:
+
+    docs(refinement): Annotate vm.c stack operations
+
+    - Add REFINEMENT header to stack_push() (DEFECT-001)
+    - Add REFINEMENT header to stack_pop() (DEFECT-002)
+    - Add proof status markers
+    - Link to Isabelle lemmas in StarForth_Refinement.thy
+
+    Related: DEFECT-001, DEFECT-002
+    Theory: VM_Stacks.thy
+----
+
+---
+
+== Summary
+
+Good refinement annotations enable:
+- ✅ Auditors understand code-theory correspondence - ✅ Developers track proof status without external documents - ✅ Automated tools to find gaps - ✅ Clear assignment of responsibilities - ✅ Traceable defect-to-proof links
+
+Follow this guide consistently, and your code becomes a bridge between implementation and specification.
+
+Generated: {docdate}

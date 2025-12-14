@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  -  StarForth — Steady-State Virtual Machine Runtime
+  -
+  -  Copyright (c) 2023–2025 Robert A. James
+  -  All rights reserved.
+  -
+  -  This file is part of the StarForth project.
+  -
+  -  Licensed under the StarForth License, Version 1.0 (the "License");
+  -  you may not use this file except in compliance with the License.
+  -
+  -  You may obtain a copy of the License at:
+  -      https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  -
+  -  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  -  express or implied, including but not limited to the warranties of
+  -  merchantability, fitness for a particular purpose, and noninfringement.
+  -
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -
+  - StarForth — Steady-State Virtual Machine Runtime
+  -  Copyright (c) 2023–2025 Robert A. James
+  -  All rights reserved.
+  -
+  -  This file is part of the StarForth project.
+  -
+  -  Licensed under the StarForth License, Version 1.0 (the "License");
+  -  you may not use this file except in compliance with the License.
+  -
+  -  You may obtain a copy of the License at:
+  -       https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  -
+  -  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  -  express or implied, including but not limited to the warranties of
+  -  merchantability, fitness for a particular purpose, and noninfringement.
+  -
+  -  See the License for the specific language governing permissions and
+  -  limitations under the License.
+  -
+  -->
+
+<svg width="960" height="540" viewBox="0 0 960 540" xmlns="http://www.w3.org/2000/svg">
+  <!-- Title (outside boundary) -->
+  <text x="480" y="30" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">
+    Figure 4: Golden Ratio Performance Penalties (Cache Interference)
+  </text>
+
+  <!-- Main plot area -->
+  <g transform="translate(80, 70)">
+    <!-- Axes -->
+    <line x1="0" y1="400" x2="800" y2="400" stroke="black" stroke-width="1.25" />
+    <line x1="0" y1="0" x2="0" y2="400" stroke="black" stroke-width="1.25" />
+
+    <!-- X-axis label -->
+    <text x="400" y="450" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="14" text-anchor="middle">
+      Window Size (bytes, log₂ scale)
+    </text>
+
+    <!-- Y-axis label -->
+    <text x="-200" y="-35" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="14" text-anchor="middle" transform="rotate(-90)">
+      Performance (ms/word)
+    </text>
+
+    <!-- X-axis tick marks and labels -->
+    <line x1="0" y1="400" x2="0" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="0" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">512</text>
+
+    <line x1="100" y1="400" x2="100" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="100" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">1K</text>
+
+    <line x1="200" y1="400" x2="200" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="200" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">2K</text>
+
+    <line x1="300" y1="400" x2="300" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="300" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">4K</text>
+
+    <line x1="400" y1="400" x2="400" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="400" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">8K</text>
+
+    <line x1="500" y1="400" x2="500" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="500" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">16K</text>
+
+    <line x1="600" y1="400" x2="600" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="600" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">32K</text>
+
+    <line x1="700" y1="400" x2="700" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="700" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">64K</text>
+
+    <!-- Y-axis tick marks and labels (30 to 60 ms) -->
+    <line x1="-10" y1="400" x2="0" y2="400" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="405" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">30</text>
+
+    <line x1="-10" y1="333" x2="0" y2="333" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="338" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">35</text>
+
+    <line x1="-10" y1="267" x2="0" y2="267" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="272" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">40</text>
+
+    <line x1="-10" y1="200" x2="0" y2="200" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="205" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">45</text>
+
+    <line x1="-10" y1="133" x2="0" y2="133" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="138" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">50</text>
+
+    <line x1="-10" y1="67" x2="0" y2="67" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="72" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">55</text>
+
+    <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="5" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">60</text>
+
+    <!-- Baseline performance (horizontal reference line) -->
+    <line x1="0" y1="333" x2="800" y2="333" stroke="green" stroke-width="1.25" stroke-dasharray="3,3" />
+
+    <!-- Performance data points and bars -->
+    <!-- Scale: Y: 30-60ms -> 400-0px, so 1ms = 13.33px -->
+
+    <!-- W=512B: 35.4ms -> y = 400 - (35.4-30)*13.33 = 328 -->
+    <circle cx="0" cy="328" r="6" fill="green" stroke="black" stroke-width="1.25" />
+    <rect x="-8" y="328" width="16" height="72" fill="green" fill-opacity="0.2" stroke="none" />
+
+    <!-- W=1024B: 35.8ms -> y = 322.7 -->
+    <circle cx="100" cy="323" r="6" fill="green" stroke="black" stroke-width="1.25" />
+    <rect x="92" y="323" width="16" height="77" fill="green" fill-opacity="0.2" stroke="none" />
+
+    <!-- W=1536B: 57.0ms -> y = 40 - PENALTY -->
+    <circle cx="150" cy="40" r="8" fill="red" stroke="black" stroke-width="2" />
+    <rect x="142" y="40" width="16" height="360" fill="red" fill-opacity="0.2" stroke="none" />
+    <text x="150" y="25" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" font-weight="bold" fill="red" text-anchor="middle">3×512</text>
+
+    <!-- W=2048B: 35.8ms -> y = 323 -->
+    <circle cx="200" cy="323" r="6" fill="green" stroke="black" stroke-width="1.25" />
+    <rect x="192" y="323" width="16" height="77" fill="green" fill-opacity="0.2" stroke="none" />
+
+    <!-- W=3072B: 57.6ms -> y = 32 - PENALTY -->
+    <circle cx="250" cy="32" r="8" fill="red" stroke="black" stroke-width="2" />
+    <rect x="242" y="32" width="16" height="368" fill="red" fill-opacity="0.2" stroke="none" />
+    <text x="250" y="17" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" font-weight="bold" fill="red" text-anchor="middle">3×1024</text>
+
+    <!-- W=4096B: 35.8ms -> y = 323 -->
+    <circle cx="300" cy="323" r="6" fill="green" stroke="black" stroke-width="1.25" />
+    <rect x="292" y="323" width="16" height="77" fill="green" fill-opacity="0.2" stroke="none" />
+
+    <!-- W=6144B: 57.5ms -> y = 33.3 - PENALTY -->
+    <circle cx="450" cy="33" r="8" fill="red" stroke="black" stroke-width="2" />
+    <rect x="442" y="33" width="16" height="367" fill="red" fill-opacity="0.2" stroke="none" />
+    <text x="450" y="18" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" font-weight="bold" fill="red" text-anchor="middle">3×2048</text>
+
+    <!-- W=8192B: 36.6ms -> y = 312 -->
+    <circle cx="400" cy="312" r="6" fill="green" stroke="black" stroke-width="1.25" />
+    <rect x="392" y="312" width="16" height="88" fill="green" fill-opacity="0.2" stroke="none" />
+
+    <!-- W=16384B: 36.1ms -> y = 319.3 -->
+    <circle cx="500" cy="319" r="6" fill="green" stroke="black" stroke-width="1.25" />
+    <rect x="492" y="319" width="16" height="81" fill="green" fill-opacity="0.2" stroke="none" />
+
+    <!-- W=32768B: 41.5ms -> y = 246.7 -->
+    <circle cx="600" cy="247" r="6" fill="orange" stroke="black" stroke-width="1.25" />
+    <rect x="592" y="247" width="16" height="153" fill="orange" fill-opacity="0.2" stroke="none" />
+
+    <!-- W=52153B (Fibonacci): 36.2ms -> y = 317.3 -->
+    <polygon points="675,312 681,324 669,324" fill="blue" stroke="black" stroke-width="1.25" />
+    <rect x="667" y="317" width="16" height="83" fill="blue" fill-opacity="0.2" stroke="none" />
+    <text x="675" y="305" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" fill="blue" text-anchor="middle">Fibonacci</text>
+
+    <!-- W=65536B: 41.1ms -> y = 252 -->
+    <circle cx="700" cy="252" r="6" fill="orange" stroke="black" stroke-width="1.25" />
+    <rect x="692" y="252" width="16" height="148" fill="orange" fill-opacity="0.2" stroke="none" />
+
+    <!-- Connecting line through power-of-2 points -->
+    <polyline points="0,328 100,323 200,323 300,323 400,312 500,319 600,247 700,252"
+              stroke="green" stroke-width="1.5" fill="none" />
+
+    <!-- Connecting line through penalty points -->
+    <polyline points="150,40 250,32 450,33"
+              stroke="red" stroke-width="2" fill="none" stroke-dasharray="5,5" />
+  </g>
+
+  <!-- Annotations -->
+  <g transform="translate(80, 70)">
+    <!-- Golden ratio calculation box -->
+    <rect x="550" y="80" width="230" height="120" fill="white" stroke="black" stroke-width="1.5" />
+    <text x="665" y="100" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">
+      Golden Ratio Analysis
+    </text>
+    <text x="560" y="120" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">
+      Penalty performance: 57.0 ms
+    </text>
+    <text x="560" y="135" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">
+      Baseline performance: 35.4 ms
+    </text>
+    <text x="560" y="155" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" font-weight="bold">
+      Ratio = 57.0 / 35.4 = 1.61
+    </text>
+    <text x="560" y="175" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" font-weight="bold" fill="red">
+      φ = 1.618 (0.5% error)
+    </text>
+    <text x="560" y="190" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">
+      Measured: φ = 1.608 ± 0.002
+    </text>
+
+    <!-- Cache interference label -->
+    <text x="300" y="110" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" fill="red" font-weight="bold">
+      Cache Interference Penalties
+    </text>
+    <text x="300" y="125" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" fill="red">
+      (3 × 2^N windows misalign cache)
+    </text>
+
+    <!-- Fibonacci avoids penalty -->
+    <path d="M 675,300 L 675,250" stroke="blue" stroke-width="1.25" marker-end="url(#arrowblue)" />
+    <text x="600" y="280" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" fill="blue">
+      Fibonacci window
+    </text>
+    <text x="600" y="295" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" fill="blue">
+      avoids penalty
+    </text>
+  </g>
+
+  <!-- Legend (below plot) -->
+  <g transform="translate(100, 495)">
+    <circle cx="5" cy="0" r="5" fill="green" stroke="black" stroke-width="1.25" />
+    <text x="15" y="4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Power-of-2 windows (optimal performance)</text>
+
+    <circle cx="280" cy="0" r="6" fill="red" stroke="black" stroke-width="2" />
+    <text x="292" y="4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">3×2^N windows (φ-ratio penalty, ~60% slower)</text>
+
+    <polygon points="570,-5 576,7 564,7" fill="blue" stroke="black" stroke-width="1.25" />
+    <text x="582" y="4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Fibonacci sequence (harmonic alignment)</text>
+  </g>
+
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowblue" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="blue" />
+    </marker>
+  </defs>
+</svg>

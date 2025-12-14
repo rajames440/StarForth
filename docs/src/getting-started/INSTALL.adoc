@@ -1,0 +1,510 @@
+== StarForth Installation Guide
+:toc: left
+:toc-title: Contents
+:toclevels: 3
+xref:../README.adoc[← Back to Documentation Index]
+
+
+
+Complete installation instructions for StarForth FORTH-79 virtual
+machine.
+
+'''''
+
+=== Table of Contents
+
+[arabic]
+. link:#prerequisites[Prerequisites]
+. link:#building-from-source[Building from Source]
+. link:#installation-methods[Installation Methods]
+. link:#package-installation[Package Installation]
+. link:#platform-specific-notes[Platform-Specific Notes]
+. link:#verification[Verification]
+. link:#uninstallation[Uninstallation]
+
+'''''
+
+=== Prerequisites
+
+==== Required
+
+* *GCC* >= 7.0 (or Clang >= 6.0)
+* *GNU Make*
+* *glibc* (for standard builds)
+
+==== Optional
+
+* *texinfo* - for GNU info documentation
+(`+sudo apt-get install texinfo+`)
+* *dpkg-dev* - for Debian packages (`+sudo apt-get install dpkg-dev+`)
+* *rpm-build* - for RPM packages (`+sudo dnf install rpm-build+`)
+
+'''''
+
+=== Building from Source
+
+==== Quick Build (Recommended)
+
+[source,bash]
+----
+make fastest
+----
+
+This creates the fastest optimized binary with all performance features
+enabled.
+
+==== Build Options
+
+[width="100%",cols="25%,42%,33%",options="header",]
+|===
+|Target |Description |Performance
+|`+make fastest+` |Maximum performance build |⭐⭐⭐⭐⭐
+|`+make pgo+` |Profile-guided optimization |⭐⭐⭐⭐⭐⭐ (5-15% faster)
+|`+make all+` |Standard optimized build |⭐⭐⭐⭐
+|`+make debug+` |Debug build with symbols |⭐
+|`+make minimal+` |Minimal/embedded build |⭐⭐⭐
+|===
+
+'''''
+
+=== Installation Methods
+
+==== Method 1: System-Wide Installation (Recommended)
+
+[source,bash]
+----
+make fastest
+sudo make install
+----
+
+*Installs to:*
+
+* Binary: `+/usr/local/bin/starforth+`
+* Config: `+/usr/local/etc/starforth/init.4th+`
+* Man page: `+/usr/local/share/man/man1/starforth.1+`
+* Docs: `+/usr/local/share/doc/starforth/+`
+* Info: `+/usr/local/share/info/starforth.info+`
+
+==== Method 2: Custom Installation Prefix
+
+[source,bash]
+----
+make fastest
+make install PREFIX=$HOME/.local
+----
+
+==== Method 3: Debian Package
+
+[source,bash]
+----
+make deb
+sudo dpkg -i ../starforth_1.1.0-1_amd64.deb
+----
+
+==== Method 4: RPM Package
+
+[source,bash]
+----
+make rpm
+sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/starforth-1.1.0-1.x86_64.rpm
+----
+
+'''''
+
+=== Package Installation
+
+==== Debian/Ubuntu
+
+[source,bash]
+----
+# Build package
+make deb
+
+# Install
+sudo dpkg -i ../starforth_1.1.0-1_amd64.deb
+
+# Install dependencies if needed
+sudo apt-get install -f
+----
+
+==== Fedora/RHEL/CentOS
+
+[source,bash]
+----
+# Build package
+make rpm
+
+# Install
+sudo dnf install ~/rpmbuild/RPMS/x86_64/starforth-1.1.0-1.x86_64.rpm
+----
+
+==== Arch Linux (Manual PKGBUILD)
+
+[source,bash]
+----
+# Create PKGBUILD (example)
+cat > PKGBUILD << 'EOF'
+pkgname=starforth
+pkgver=1.1.0
+pkgrel=1
+pkgdesc="High-performance FORTH-79 virtual machine"
+arch=('x86_64' 'aarch64')
+url="https://github.com/rajames/starforth"
+license=('CC0')
+depends=('glibc')
+makedepends=('gcc' 'make')
+source=("starforth-$pkgver.tar.gz")
+
+build() {
+    cd "$srcdir/starforth-$pkgver"
+    make fastest
+}
+
+package() {
+    cd "$srcdir/starforth-$pkgver"
+    make install PREFIX="$pkgdir/usr"
+}
+EOF
+
+# Build and install
+makepkg -si
+----
+
+'''''
+
+=== Platform-Specific Notes
+
+==== x86_64 (Linux)
+
+Standard installation works out of the box:
+
+[source,bash]
+----
+make fastest
+sudo make install
+----
+
+==== ARM64 (Raspberry Pi 4, etc.)
+
+*Native build on ARM64:*
+
+[source,bash]
+----
+make rpi4
+sudo make install
+----
+
+*Cross-compile from x86_64:*
+
+[source,bash]
+----
+# Install cross-compiler
+sudo apt-get install gcc-aarch64-linux-gnu
+
+# Build
+make rpi4-cross
+
+# Copy to ARM64 device
+scp build/starforth user@arm64-device:~/
+----
+
+==== macOS (Experimental)
+
+[source,bash]
+----
+# Install Xcode Command Line Tools
+xcode-select --install
+
+# Build (use clang)
+make fastest CC=clang
+
+# Install to /usr/local
+sudo make install
+----
+
+==== Windows (WSL)
+
+[source,bash]
+----
+# Inside WSL2 (Ubuntu):
+make fastest
+make install PREFIX=$HOME/.local
+
+# Add to PATH
+echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+----
+
+'''''
+
+=== Verification
+
+==== Test Installation
+
+[source,bash]
+----
+# Check version
+starforth --version
+
+# Run test suite
+starforth --run-tests
+
+# Try REPL
+starforth
+----
+
+==== View Documentation
+
+[source,bash]
+----
+# Man page
+man starforth
+
+# Info documentation
+info starforth
+
+# Help
+starforth --help
+----
+
+==== Example Usage
+
+[source,bash]
+----
+# Execute Forth code
+starforth -c ': HELLO .\" Hello, World!\" CR ; HELLO BYE'
+
+# Run benchmark
+starforth --benchmark 10000
+
+# Enable profiling
+starforth --profile-level 1 --profile-report
+----
+
+'''''
+
+=== Uninstallation
+
+==== From Source Install
+
+[source,bash]
+----
+sudo make uninstall
+----
+
+==== From Debian Package
+
+[source,bash]
+----
+sudo dpkg -r starforth
+----
+
+==== From RPM Package
+
+[source,bash]
+----
+sudo rpm -e starforth
+----
+
+'''''
+
+=== Troubleshooting
+
+==== Build Issues
+
+*Problem:* `+gcc: command not found+`
+
+[source,bash]
+----
+# Debian/Ubuntu
+sudo apt-get install build-essential
+
+# Fedora/RHEL
+sudo dnf groupinstall "Development Tools"
+----
+
+*Problem:* Missing man page or info documentation
+
+[source,bash]
+----
+# Install texinfo
+sudo apt-get install texinfo
+
+# Rebuild info documentation
+make info
+sudo make install
+----
+
+==== Runtime Issues
+
+*Problem:* `+starforth: command not found+` after installation
+
+[source,bash]
+----
+# Check installation path
+which starforth
+
+# If using custom PREFIX, add to PATH
+export PATH=$HOME/.local/bin:$PATH
+----
+
+*Problem:* Cannot find init.4th
+
+[source,bash]
+----
+# Set STARFORTH_INIT environment variable
+export STARFORTH_INIT=/usr/local/etc/starforth/init-4.4th
+----
+
+'''''
+
+=== Advanced Options
+
+==== Performance Tuning
+
+[source,bash]
+----
+# Profile-guided optimization (best performance)
+make pgo
+sudo make install
+
+# With perf analysis
+make pgo-perf
+----
+
+==== Custom Builds
+
+[source,bash]
+----
+# Minimal build (embedded systems)
+make minimal
+make install PREFIX=/opt/starforth
+
+# Debug build
+make debug
+make install PREFIX=$HOME/starforth-debug
+----
+
+==== Multi-Architecture Support
+
+[source,bash]
+----
+# Build for current platform
+make fastest
+
+# Cross-compile for Raspberry Pi 4
+make rpi4-cross
+
+# Build for ARM64 with maximum optimization
+make rpi4-fastest
+----
+
+'''''
+
+=== Building the Complete Manual
+
+StarForth uses *comprehensive documentation sources* that contain
+EVERYTHING - API docs, man pages, info docs, and all markdown
+documentation.
+
+==== Build Comprehensive Documentation
+
+Generate *LaTeX source + PDF* (the gold standard for print/PDF):
+
+[source,bash]
+----
+make book
+----
+
+This creates:
+
+* *LaTeX Source:* `+docs/build/latex/StarForth-Manual.tex+` (editable,
+version-controllable)
+* *PDF Manual:* `+docs/build/StarForth-Manual-LaTeX.pdf+` (compiled from
+LaTeX)
+
+Generate *HTML documentation* (single-page + multi-page with your
+dark.css):
+
+[source,bash]
+----
+make book-html
+----
+
+This creates:
+
+* *Single-page HTML:* `+docs/build/html/StarForth-Manual.html+`
+(scrollable, styled)
+* *Multi-page HTML:* `+docs/build/html/book/index.html+` (navigable,
+styled)
+
+==== What’s Included
+
+Both LaTeX and HTML books are *comprehensive sources of authority*
+containing:
+
+*Part I: API Documentation*
+
+* Doxygen API reference (generated fresh)
+* Man pages (embedded)
+* GNU Info docs (referenced)
+
+*Part II: User Documentation*
+
+* README and Project Overview (FIRST!)
+* Installation Guide
+* Testing Documentation
+* Architecture Documentation
+* Gap Analysis
+* Break Me Diagnostic Report
+
+*Appendix*
+
+* License Information
+
+==== Editing and Recompiling
+
+You can edit the LaTeX source directly and recompile:
+
+[source,bash]
+----
+cd docs/build/latex
+pdflatex StarForth-Manual.tex
+----
+
+==== From These Sources You Can Generate
+
+* ✅ PDF (from LaTeX - already working!)
+* ✅ HTML (single + multi-page - already working!)
+* ✅ DocBook (export from LaTeX or HTML)
+* ✅ Markdown (export from either)
+* ✅ ePub/Mobi (from HTML)
+* ✅ Paper books (from LaTeX/PDF)
+* ✅ Any format you need!
+
+'''''
+
+=== Additional Resources
+
+* *Man Page:* `+man starforth+`
+* *Info Docs:* `+info starforth+`
+* *Complete Manual:* `+make book+` →
+`+docs/build/StarForth-Manual-LaTeX.pdf+`
+* *Online Docs:* `+/usr/local/share/doc/starforth/+`
+* *Source Code:* https://github.com/rajames/starforth
+* *Issues:* https://github.com/rajames/starforth/issues
+
+'''''
+
+=== License
+
+StarForth is released into the public domain under the Creative Commons
+Zero v1.0 Universal license.
+
+See LICENSE file for details.
+
+'''''
+
+*Made with ❤️ by Robert A. James*
+
+*Quality assured by Santino 🐾*

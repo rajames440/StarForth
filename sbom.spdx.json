@@ -1,0 +1,1371 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "StarForth",
+  "documentNamespace": "https://anchore.com/syft/dir/StarForth-8fb587f2-ddbd-48b2-a6bd-9143ad57fea6",
+  "creationInfo": {
+    "licenseListVersion": "3.27",
+    "creators": [
+      "Organization: Anchore, Inc",
+      "Tool: syft-1.36.0"
+    ],
+    "created": "2025-10-30T02:15:58Z"
+  },
+  "packages": [
+    {
+      "name": "Simple Launcher",
+      "SPDXID": "SPDXRef-Package-binary-Simple-Launcher-c79ababe4dbe3a48",
+      "versionInfo": "1.1.0.14",
+      "supplier": "Organization: Simple Launcher User",
+      "originator": "Organization: Simple Launcher User",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/t32.exe",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "name": "Simple Launcher",
+      "SPDXID": "SPDXRef-Package-binary-Simple-Launcher-35552f3856609d65",
+      "versionInfo": "1.1.0.14",
+      "supplier": "Organization: Simple Launcher User",
+      "originator": "Organization: Simple Launcher User",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/t64-arm.exe",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "name": "Simple Launcher",
+      "SPDXID": "SPDXRef-Package-binary-Simple-Launcher-ebef367b40b8ae7f",
+      "versionInfo": "1.1.0.14",
+      "supplier": "Organization: Simple Launcher User",
+      "originator": "Organization: Simple Launcher User",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/t64.exe",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "name": "Simple Launcher",
+      "SPDXID": "SPDXRef-Package-binary-Simple-Launcher-18d1c2ee8b95e7fc",
+      "versionInfo": "1.1.0.14",
+      "supplier": "Organization: Simple Launcher User",
+      "originator": "Organization: Simple Launcher User",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/w32.exe",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "name": "Simple Launcher",
+      "SPDXID": "SPDXRef-Package-binary-Simple-Launcher-c4cdf727dbd6b544",
+      "versionInfo": "1.1.0.14",
+      "supplier": "Organization: Simple Launcher User",
+      "originator": "Organization: Simple Launcher User",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/w64-arm.exe",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "name": "Simple Launcher",
+      "SPDXID": "SPDXRef-Package-binary-Simple-Launcher-579d5252da48c7d5",
+      "versionInfo": "1.1.0.14",
+      "supplier": "Organization: Simple Launcher User",
+      "originator": "Organization: Simple Launcher User",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from the following paths: /.venv/lib/python3.13/site-packages/pip/_vendor/distlib/w64.exe",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:Simple_Launcher:Simple_Launcher:1.1.0.14:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "name": "actions/checkout",
+      "SPDXID": "SPDXRef-Package-github-action-actions-checkout-54090dcf93e63a94",
+      "versionInfo": "v4",
+      "supplier": "Organization: GitHub",
+      "originator": "Organization: GitHub",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/claude-code-review.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/checkout:actions\\/checkout:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/checkout@v4"
+        }
+      ]
+    },
+    {
+      "name": "actions/checkout",
+      "SPDXID": "SPDXRef-Package-github-action-actions-checkout-1bec2ee042cb8e11",
+      "versionInfo": "v4",
+      "supplier": "Organization: GitHub",
+      "originator": "Organization: GitHub",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/claude.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/checkout:actions\\/checkout:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/checkout@v4"
+        }
+      ]
+    },
+    {
+      "name": "actions/checkout",
+      "SPDXID": "SPDXRef-Package-github-action-actions-checkout-e02263312ad47474",
+      "versionInfo": "v4",
+      "supplier": "Organization: GitHub",
+      "originator": "Organization: GitHub",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/makefile.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/checkout:actions\\/checkout:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/checkout@v4"
+        }
+      ]
+    },
+    {
+      "name": "anthropics/claude-code-action",
+      "SPDXID": "SPDXRef-Package-github-action-anthropics-claude-code-action-7658eb64e48e30e8",
+      "versionInfo": "v1",
+      "supplier": "Organization: anthropics",
+      "originator": "Organization: anthropics",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/claude-code-review.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude-code-action:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude-code-action:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude_code_action:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude_code_action:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude-code:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude-code:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude_code:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude_code:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/anthropics/claude-code-action@v1"
+        }
+      ]
+    },
+    {
+      "name": "anthropics/claude-code-action",
+      "SPDXID": "SPDXRef-Package-github-action-anthropics-claude-code-action-1a3314539723f7c9",
+      "versionInfo": "v1",
+      "supplier": "Organization: anthropics",
+      "originator": "Organization: anthropics",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/claude.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude-code-action:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude-code-action:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude_code_action:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude_code_action:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude-code:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude-code:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude_code:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude_code:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude:anthropics\\/claude-code-action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anthropics\\/claude:anthropics\\/claude_code_action:v1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/anthropics/claude-code-action@v1"
+        }
+      ]
+    },
+    {
+      "name": "git-filter-repo",
+      "SPDXID": "SPDXRef-Package-python-git-filter-repo-c584447c275b50af",
+      "versionInfo": "2.47.0",
+      "supplier": "Person: Elijah Newren (newren@gmail.com)",
+      "originator": "Person: Elijah Newren (newren@gmail.com)",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed python package manifest file: /.venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/METADATA, /.venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/RECORD, /.venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/top_level.txt",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newren_project:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newren_project:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newrenproject:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newrenproject:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newren_project:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newren_project:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git-filter-repo:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git-filter-repo:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git_filter_repo:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git_filter_repo:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah-newren-\\<newren:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah-newren-\\<newren:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newren:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newren:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newrenproject:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newrenproject:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git-filter:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git-filter:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git_filter:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git_filter:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git-filter-repo:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git-filter-repo:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git_filter_repo:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git_filter_repo:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git-filter-repo:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git-filter-repo:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git_filter_repo:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git_filter_repo:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah-newren-\\<newren:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah-newren-\\<newren:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newren:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:elijah_newren_\\<newren:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git-filter:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git-filter:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git_filter:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git_filter:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git-filter:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git-filter:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git_filter:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git_filter:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git-filter-repo:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git-filter-repo:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git_filter_repo:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git_filter_repo:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git-filter:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git-filter:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git:python-git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git:python_git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git_filter:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git_filter:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-git:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_git:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git:git-filter-repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:git:git_filter_repo:2.47.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/git-filter-repo@2.47.0"
+        }
+      ]
+    },
+    {
+      "name": "pip",
+      "SPDXID": "SPDXRef-Package-python-pip-431d845a93680e3f",
+      "versionInfo": "25.1.1",
+      "supplier": "Person: The pip developers (distutils-sig@python.org)",
+      "originator": "Person: The pip developers (distutils-sig@python.org)",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed python package manifest file: /.venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/METADATA, /.venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/RECORD, /.venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/top_level.txt",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip_developers_\\<distutils_sig_project:python-pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip_developers_\\<distutils_sig_project:python_pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip_developers_\\<distutils_sigproject:python-pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip_developers_\\<distutils_sigproject:python_pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip_developers_\\<distutils_sig_project:pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip-developers-\\<distutils-sig:python-pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip-developers-\\<distutils-sig:python_pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip_developers_\\<distutils_sig:python-pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip_developers_\\<distutils_sig:python_pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip_developers_\\<distutils_sigproject:pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip-developers-\\<distutils-sig:pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip_developers_\\<distutils_sig:pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-pip:python-pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-pip:python_pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_pip:python-pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_pip:python_pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:python-pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:python_pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pypa:python-pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pypa:python_pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip:python-pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip:python_pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-pip:pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_pip:pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pypa:pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:pip:pip:25.1.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pip@25.1.1"
+        }
+      ]
+    },
+    {
+      "name": "StarForth",
+      "SPDXID": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "versionInfo": "2.0.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "FILE"
+    }
+  ],
+  "files": [
+    {
+      "fileName": ".github/workflows/claude-code-review.yml",
+      "SPDXID": "SPDXRef-File-...workflows-claude-code-review.yml-6365c3520008470a",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "a818f068d0be77f3dff54ded78551ea1098ee225"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4c568b40f09bcbe85c6985c7333959067dd99bc4a80ef6fda179617d029eeed8"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".github/workflows/claude.yml",
+      "SPDXID": "SPDXRef-File-.github-workflows-claude.yml-9ed5d9816677dc24",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "0dd19f65eee92016a75d5cb11e85a9eaec652cfd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "887e633ee5cbba7299cad49c22722e8c9789a3369804b2eee3ccf15b6e6c7a8b"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".github/workflows/makefile.yml",
+      "SPDXID": "SPDXRef-File-.github-workflows-makefile.yml-97afabd9b59ca8c0",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "1e60711b638d71f105ae6e71fd5a208dfa41f74e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "727e84c1b6dc74ece2385f2d091341303453d1004b8436ff724df1c4f02e6aca"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/METADATA",
+      "SPDXID": "SPDXRef-File-...METADATA-fbfff036196d4b5a",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "a1a5b127513a557a880de520803c72b756c8f955"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8047632c683ce7a3fa0e905bbd7acef4c7fef4ec477c33447765c248eb275446"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/RECORD",
+      "SPDXID": "SPDXRef-File-...RECORD-eb2048469ff1ecd3",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "30952917909354723cb6cac5317fae886aef838c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1397be88957ad85bb70f30c88c158730269cfead6af46d8ffe31ff3c2bcdbcfb"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/git_filter_repo-2.47.0.dist-info/top_level.txt",
+      "SPDXID": "SPDXRef-File-...top-level.txt-d46cc8e43e3908c5",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "81cbb5258ad2f96f36db11c2deabdf7fb46df2af"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "76bdbaa69f784426108e9c70f2e7b35bc10ad443f7debfc477c1163edc6329e3"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/METADATA",
+      "SPDXID": "SPDXRef-File-...pip-25.1.1.dist-info-METADATA-401d82b643527256",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "09b606885861bc42ef728f0ee459c2e3cf58cd33"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "405c63d6d2e993c8465ab8102d1849614a70a3fd45a81af8dce4f4b2b2197265"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/RECORD",
+      "SPDXID": "SPDXRef-File-...pip-25.1.1.dist-info-RECORD-a679af0b926125ad",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "beb88e0d1c2ff3bff1f08441badc5302028c7255"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "abd27e5c9e63ecd943075a09a9dfac630aab7ebd33e47b6adaf5c54c7f133c54"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/pip-25.1.1.dist-info/top_level.txt",
+      "SPDXID": "SPDXRef-File-...pip-25.1.1.dist-info-top-level.txt-e95b6d3e4a6f322f",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "d7a03141d5d6b1e88b6b59ef08b6681df212c599"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ceebae7b8927a3227e5303cf5e0f1f7b34bb542ad7250ac03fbcde36ec2f1508"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/pip/_vendor/distlib/t32.exe",
+      "SPDXID": "SPDXRef-File-...pip--vendor-distlib-t32.exe-3ca040677f72cfb7",
+      "fileTypes": [
+        "APPLICATION",
+        "BINARY"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "c6f8034e2e8183d35d3f2b035405294ee01fa273"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6b4195e640a85ac32eb6f9628822a622057df1e459df7c17a12f97aeabc9415b"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/pip/_vendor/distlib/t64-arm.exe",
+      "SPDXID": "SPDXRef-File-...pip--vendor-distlib-t64-arm.exe-22de00e9ece51f65",
+      "fileTypes": [
+        "APPLICATION",
+        "BINARY"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "c88f99bb82cbbf96992c36b61f6c614a15abc9d6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ebc4c06b7d95e74e315419ee7e88e1d0f71e9e9477538c00a93a9ff8c66a6cfc"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/pip/_vendor/distlib/t64.exe",
+      "SPDXID": "SPDXRef-File-...pip--vendor-distlib-t64.exe-a2de916587f93a57",
+      "fileTypes": [
+        "APPLICATION",
+        "BINARY"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "0d0c5e3b06f56ad12a77da46ab3fdab81acda628"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "81a618f21cb87db9076134e70388b6e9cb7c2106739011b6a51772d22cae06b7"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/pip/_vendor/distlib/w32.exe",
+      "SPDXID": "SPDXRef-File-...pip--vendor-distlib-w32.exe-de56b279e1843ee1",
+      "fileTypes": [
+        "APPLICATION",
+        "BINARY"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "3a1e4e67422d9dd54f7e8bba2bb014474d2f6ea0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "47872cc77f8e18cf642f868f23340a468e537e64521d9a3a416c8b84384d064b"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/pip/_vendor/distlib/w64-arm.exe",
+      "SPDXID": "SPDXRef-File-...pip--vendor-distlib-w64-arm.exe-5118d63d25601f7e",
+      "fileTypes": [
+        "APPLICATION",
+        "BINARY"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "e0db21e02eea22f0da5b44745d1dd0184ddc6ebe"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c5dc9884a8f458371550e09bd396e5418bf375820a31b9899f6499bf391c7b2e"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".venv/lib/python3.13/site-packages/pip/_vendor/distlib/w64.exe",
+      "SPDXID": "SPDXRef-File-...pip--vendor-distlib-w64.exe-eaa3876ff2d360dc",
+      "fileTypes": [
+        "APPLICATION",
+        "BINARY"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "34d3e30bcbf87581902409bf5f621f48c5fc2b10"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7a319ffaba23a017d7b1e18ba726ba6c54c53d6446db55f92af53c279894f8ad"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-binary-Simple-Launcher-18d1c2ee8b95e7fc",
+      "relatedSpdxElement": "SPDXRef-File-...pip--vendor-distlib-w32.exe-de56b279e1843ee1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-anthropics-claude-code-action-1a3314539723f7c9",
+      "relatedSpdxElement": "SPDXRef-File-.github-workflows-claude.yml-9ed5d9816677dc24",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-actions-checkout-1bec2ee042cb8e11",
+      "relatedSpdxElement": "SPDXRef-File-.github-workflows-claude.yml-9ed5d9816677dc24",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-binary-Simple-Launcher-35552f3856609d65",
+      "relatedSpdxElement": "SPDXRef-File-...pip--vendor-distlib-t64-arm.exe-22de00e9ece51f65",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-pip-431d845a93680e3f",
+      "relatedSpdxElement": "SPDXRef-File-...pip-25.1.1.dist-info-METADATA-401d82b643527256",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-pip-431d845a93680e3f",
+      "relatedSpdxElement": "SPDXRef-File-...pip-25.1.1.dist-info-RECORD-a679af0b926125ad",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-pip-431d845a93680e3f",
+      "relatedSpdxElement": "SPDXRef-File-...pip-25.1.1.dist-info-top-level.txt-e95b6d3e4a6f322f",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-actions-checkout-54090dcf93e63a94",
+      "relatedSpdxElement": "SPDXRef-File-...workflows-claude-code-review.yml-6365c3520008470a",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-binary-Simple-Launcher-579d5252da48c7d5",
+      "relatedSpdxElement": "SPDXRef-File-...pip--vendor-distlib-w64.exe-eaa3876ff2d360dc",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-anthropics-claude-code-action-7658eb64e48e30e8",
+      "relatedSpdxElement": "SPDXRef-File-...workflows-claude-code-review.yml-6365c3520008470a",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-binary-Simple-Launcher-c4cdf727dbd6b544",
+      "relatedSpdxElement": "SPDXRef-File-...pip--vendor-distlib-w64-arm.exe-5118d63d25601f7e",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-git-filter-repo-c584447c275b50af",
+      "relatedSpdxElement": "SPDXRef-File-...top-level.txt-d46cc8e43e3908c5",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-git-filter-repo-c584447c275b50af",
+      "relatedSpdxElement": "SPDXRef-File-...RECORD-eb2048469ff1ecd3",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-git-filter-repo-c584447c275b50af",
+      "relatedSpdxElement": "SPDXRef-File-...METADATA-fbfff036196d4b5a",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-binary-Simple-Launcher-c79ababe4dbe3a48",
+      "relatedSpdxElement": "SPDXRef-File-...pip--vendor-distlib-t32.exe-3ca040677f72cfb7",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-actions-checkout-e02263312ad47474",
+      "relatedSpdxElement": "SPDXRef-File-.github-workflows-makefile.yml-97afabd9b59ca8c0",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-binary-Simple-Launcher-ebef367b40b8ae7f",
+      "relatedSpdxElement": "SPDXRef-File-...pip--vendor-distlib-t64.exe-a2de916587f93a57",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-binary-Simple-Launcher-c79ababe4dbe3a48",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-binary-Simple-Launcher-35552f3856609d65",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-binary-Simple-Launcher-ebef367b40b8ae7f",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-binary-Simple-Launcher-18d1c2ee8b95e7fc",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-binary-Simple-Launcher-c4cdf727dbd6b544",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-binary-Simple-Launcher-579d5252da48c7d5",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-actions-checkout-54090dcf93e63a94",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-actions-checkout-1bec2ee042cb8e11",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-actions-checkout-e02263312ad47474",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-anthropics-claude-code-action-7658eb64e48e30e8",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-anthropics-claude-code-action-1a3314539723f7c9",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-python-git-filter-repo-c584447c275b50af",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relatedSpdxElement": "SPDXRef-Package-python-pip-431d845a93680e3f",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-DocumentRoot-Directory-StarForth",
+      "relationshipType": "DESCRIBES"
+    }
+  ]
+}
