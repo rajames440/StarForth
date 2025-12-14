@@ -1,0 +1,315 @@
+<!--
+  ~  StarForth — Steady-State Virtual Machine Runtime
+  ~
+  ~  Copyright (c) 2023–2025 Robert A. James
+  ~  All rights reserved.
+  ~
+  ~  This file is part of the StarForth project.
+  ~
+  ~  Licensed under the StarForth License, Version 1.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~
+  ~  You may obtain a copy of the License at:
+  ~      https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  ~
+  ~  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  ~  express or implied, including but not limited to the warranties of
+  ~  merchantability, fitness for a particular purpose, and noninfringement.
+  ~
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  ~ StarForth — Steady-State Virtual Machine Runtime
+  ~  Copyright (c) 2023–2025 Robert A. James
+  ~  All rights reserved.
+  ~
+  ~  This file is part of the StarForth project.
+  ~
+  ~  Licensed under the StarForth License, Version 1.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~
+  ~  You may obtain a copy of the License at:
+  ~       https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  ~
+  ~  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  ~  express or implied, including but not limited to the warranties of
+  ~  merchantability, fitness for a particular purpose, and noninfringement.
+  ~
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  ~
+  -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<style>body{background-color:white;}</style>
+
+  <title>StarForth DOE Full Report</title>
+</head>
+<html>
+  <body>
+    <h1>StarForth / StarshipOS – Full DOE Report</h1>
+    <p>
+      Generated:
+      2025-11-22 20:13:50.789377
+    </p>
+    <p>
+      Runs:
+      3840
+       | Configurations: 128 | Replicates: 30
+    </p>
+    <h2>1. ns_per_word Distribution</h2>
+    <img src="dist_ns_per_word.png" width="800px"/>
+    <h2>2. ANOVA – Main Effects</h2>
+    <pre>Analysis of Variance Table
+
+Response: ns_per_word
+                        Df     Sum Sq    Mean Sq   F value    Pr(&gt;F)    
+L1_heat_tracking         1 1.1066e+16 1.1066e+16  137.7718 &lt; 2.2e-16 ***
+L2_rolling_window        1 5.0304e+13 5.0304e+13    0.6263 0.4287789    
+L3_linear_decay          1 5.8253e+14 5.8253e+14    7.2523 0.0071122 ** 
+L4_pipelining_metrics    1 2.9854e+17 2.9854e+17 3716.6761 &lt; 2.2e-16 ***
+L5_window_inference      1 1.1895e+15 1.1895e+15   14.8087 0.0001209 ***
+L6_decay_inference       1 1.1406e+14 1.1406e+14    1.4200 0.2334811    
+L7_adaptive_heartrate    1 1.0177e+10 1.0177e+10    0.0001 0.9910196    
+replicate               29 2.8663e+15 9.8839e+13    1.2305 0.1841650    
+Residuals             3803 3.0547e+17 8.0324e+13                        
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</pre>
+    <h2>3. ANOVA – 2-Way Interactions</h2>
+    <pre>Analysis of Variance Table
+
+Response: ns_per_word
+                                              Df     Sum Sq    Mean Sq
+L1_heat_tracking                               1 1.1066e+16 1.1066e+16
+L2_rolling_window                              1 5.0304e+13 5.0304e+13
+L3_linear_decay                                1 5.8253e+14 5.8253e+14
+L4_pipelining_metrics                          1 2.9854e+17 2.9854e+17
+L5_window_inference                            1 1.1895e+15 1.1895e+15
+L6_decay_inference                             1 1.1406e+14 1.1406e+14
+L7_adaptive_heartrate                          1 1.0177e+10 1.0177e+10
+replicate                                     29 2.8663e+15 9.8839e+13
+L1_heat_tracking:L2_rolling_window             1 3.3408e+13 3.3408e+13
+L1_heat_tracking:L3_linear_decay               1 1.4585e+14 1.4585e+14
+L1_heat_tracking:L4_pipelining_metrics         1 4.0907e+12 4.0907e+12
+L1_heat_tracking:L5_window_inference           1 2.9834e+14 2.9834e+14
+L1_heat_tracking:L6_decay_inference            1 2.1854e+14 2.1854e+14
+L1_heat_tracking:L7_adaptive_heartrate         1 5.2887e+12 5.2887e+12
+L2_rolling_window:L3_linear_decay              1 1.7790e+14 1.7790e+14
+L2_rolling_window:L4_pipelining_metrics        1 1.2055e+12 1.2055e+12
+L2_rolling_window:L5_window_inference          1 1.9734e+15 1.9734e+15
+L2_rolling_window:L6_decay_inference           1 1.6022e+14 1.6022e+14
+L2_rolling_window:L7_adaptive_heartrate        1 2.9312e+13 2.9312e+13
+L3_linear_decay:L4_pipelining_metrics          1 1.4162e+14 1.4162e+14
+L3_linear_decay:L5_window_inference            1 1.0690e+14 1.0690e+14
+L3_linear_decay:L6_decay_inference             1 8.3390e+13 8.3390e+13
+L3_linear_decay:L7_adaptive_heartrate          1 9.7626e+13 9.7626e+13
+L4_pipelining_metrics:L5_window_inference      1 1.7568e+15 1.7568e+15
+L4_pipelining_metrics:L6_decay_inference       1 1.0848e+13 1.0848e+13
+L4_pipelining_metrics:L7_adaptive_heartrate    1 4.4680e+13 4.4680e+13
+L5_window_inference:L6_decay_inference         1 5.3923e+14 5.3923e+14
+L5_window_inference:L7_adaptive_heartrate      1 5.1947e+13 5.1947e+13
+L6_decay_inference:L7_adaptive_heartrate       1 6.6361e+13 6.6361e+13
+Residuals                                   3782 2.9952e+17 7.9197e+13
+                                              F value    Pr(&gt;F)    
+L1_heat_tracking                             139.7313 &lt; 2.2e-16 ***
+L2_rolling_window                              0.6352 0.4255153    
+L3_linear_decay                                7.3554 0.0067163 ** 
+L4_pipelining_metrics                       3769.5378 &lt; 2.2e-16 ***
+L5_window_inference                           15.0193 0.0001082 ***
+L6_decay_inference                             1.4402 0.2301860    
+L7_adaptive_heartrate                          0.0001 0.9909559    
+replicate                                      1.2480 0.1692809    
+L1_heat_tracking:L2_rolling_window             0.4218 0.5160659    
+L1_heat_tracking:L3_linear_decay               1.8415 0.1748510    
+L1_heat_tracking:L4_pipelining_metrics         0.0517 0.8202253    
+L1_heat_tracking:L5_window_inference           3.7670 0.0523467 .  
+L1_heat_tracking:L6_decay_inference            2.7595 0.0967629 .  
+L1_heat_tracking:L7_adaptive_heartrate         0.0668 0.7960994    
+L2_rolling_window:L3_linear_decay              2.2462 0.1340234    
+L2_rolling_window:L4_pipelining_metrics        0.0152 0.9018169    
+L2_rolling_window:L5_window_inference         24.9173 6.254e-07 ***
+L2_rolling_window:L6_decay_inference           2.0230 0.1550107    
+L2_rolling_window:L7_adaptive_heartrate        0.3701 0.5429767    
+L3_linear_decay:L4_pipelining_metrics          1.7882 0.1812295    
+L3_linear_decay:L5_window_inference            1.3498 0.2453881    
+L3_linear_decay:L6_decay_inference             1.0529 0.3048963    
+L3_linear_decay:L7_adaptive_heartrate          1.2327 0.2669549    
+L4_pipelining_metrics:L5_window_inference     22.1819 2.569e-06 ***
+L4_pipelining_metrics:L6_decay_inference       0.1370 0.7113271    
+L4_pipelining_metrics:L7_adaptive_heartrate    0.5642 0.4526355    
+L5_window_inference:L6_decay_inference         6.8087 0.0091070 ** 
+L5_window_inference:L7_adaptive_heartrate      0.6559 0.4180550    
+L6_decay_inference:L7_adaptive_heartrate       0.8379 0.3600511    
+Residuals                                                          
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</pre>
+    <h2>4. All 128 Configurations</h2>
+    <h3>4a. Ranked Bar Chart</h3>
+    <img src="all_128_configs_ranked.png" width="1200px"/>
+    <h3>4b. 16x8 Performance Heatmap (L1234 vs L567)</h3>
+    <img src="config_heatmap_128.png" width="900px"/>
+    <h3>4c. Variance Heatmap (CV%)</h3>
+    <img src="config_variance_128.png" width="900px"/>
+    <p>Full data: all_128_configurations.csv</p>
+    <h2>5. OPTIMAL STATE ANALYSIS (Speed + Stability)</h2>
+    <p>
+      The optimal performer is NOT just the fastest - it's the configuration that achieves 
+      both fast execution AND steady-state behavior, representing the true optimal 
+      dynamic system equilibrium.
+    </p>
+    <h3>5a. Pareto Frontier: Speed vs Stability</h3>
+    <img src="pareto_speed_stability.png" width="900px"/>
+    <p>Lower-left corner = Pareto-optimal (fast AND stable). Top 5% configs circled in red.</p>
+    <h3>5b. Optimality Score Distribution</h3>
+    <img src="optimality_distribution.png" width="800px"/>
+    <h3>5c. Bell Curve Fit with Top 5% Highlighted</h3>
+    <img src="optimality_bell_curve.png" width="900px"/>
+    <p>Green shaded region shows the top 5% of configurations by optimality score.</p>
+    <h3>5d. Top 5% Configuration Breakdown</h3>
+    <img src="top5pct_breakdown.png" width="900px"/>
+    <p>Component scores for each top 5% config: Speed, Stability, and Overall.</p>
+    <h3>5e. Loop Enrichment in Top 5%</h3>
+    <img src="top5pct_loop_enrichment.png" width="800px"/>
+    <p>Which feedback loops are over/under-represented in optimal configurations?</p>
+    <h3>5f. Top 5% Optimal Configurations</h3>
+    <pre># A tibble: 7 × 5
+  config_bits   mean_ns cv_pct optimality_score optimality_percentile
+  &lt;chr&gt;           &lt;dbl&gt;  &lt;dbl&gt;            &lt;dbl&gt;                 &lt;dbl&gt;
+1 0010111     30405972.   11.5           0.0250                 100  
+2 0100100     31102185.   10.6           0.0350                  99.2
+3 0010010     31274913.   12.0           0.0536                  98.4
+4 0110111     32061519.   11.4           0.0684                  97.7
+5 0100101     30014036.   13.7           0.0780                  96.9
+6 1000101     32362147.   12.0           0.0835                  96.1
+7 0000011     31200840.   13.8           0.0891                  95.3</pre>
+    <p>Full ranking: optimal_configurations_ranked.csv</p>
+    <h3>5g. Top 5% vs Baseline (0000000) Comparison</h3>
+    <p>Baseline config (0000000): mean = 3.12e+07 ns/word, CV = 15.12%</p>
+    <img src="top5pct_vs_baseline_speed.png" width="900px"/>
+    <h4>Speedup with Statistical Significance (T-test)</h4>
+    <img src="top5pct_speedup_vs_baseline.png" width="900px"/>
+    <h4>Dual Improvement: Speed + Stability</h4>
+    <img src="top5pct_dual_improvement.png" width="900px"/>
+    <h4>Detailed Comparison Table</h4>
+    <pre>      config_bits  mean_ns speedup_vs_baseline   cv_pct cv_improvement
+t...1     0010111 30405972           2.6819429 11.48879       3.634692
+t...2     0100100 31102185           0.4536279 10.63719       4.486293
+t...3     0010010 31274913          -0.0992112 12.02128       3.102206
+t...4     0110111 32061519          -2.6168398 11.36135       3.762131
+t...5     0100101 30014036           3.9363812 13.72019       1.403293
+t...6     1000101 32362147          -3.5790364 12.03950       3.083985
+t...7     0000011 31200840           0.1378692 13.81743       1.306052
+       t_pvalue t_significant
+t...1 0.4382246         FALSE
+t...2 0.8934640         FALSE
+t...3 0.9776704         FALSE
+t...4 0.4561293         FALSE
+t...5 0.2870176         FALSE
+t...6 0.3215805         FALSE
+t...7 0.9707036         FALSE</pre>
+    <p>Full comparison: top5pct_vs_baseline.csv</p>
+    <h2>6. All 21 Pairwise Interaction Plots</h2>
+    <h4>1. L1 x L2</h4>
+    <img src="interaction_01_L1_x_L2.png" width="700px"/>
+    <h4>2. L1 x L3</h4>
+    <img src="interaction_02_L1_x_L3.png" width="700px"/>
+    <h4>3. L1 x L4</h4>
+    <img src="interaction_03_L1_x_L4.png" width="700px"/>
+    <h4>4. L1 x L5</h4>
+    <img src="interaction_04_L1_x_L5.png" width="700px"/>
+    <h4>5. L1 x L6</h4>
+    <img src="interaction_05_L1_x_L6.png" width="700px"/>
+    <h4>6. L1 x L7</h4>
+    <img src="interaction_06_L1_x_L7.png" width="700px"/>
+    <h4>7. L2 x L3</h4>
+    <img src="interaction_07_L2_x_L3.png" width="700px"/>
+    <h4>8. L2 x L4</h4>
+    <img src="interaction_08_L2_x_L4.png" width="700px"/>
+    <h4>9. L2 x L5</h4>
+    <img src="interaction_09_L2_x_L5.png" width="700px"/>
+    <h4>10. L2 x L6</h4>
+    <img src="interaction_10_L2_x_L6.png" width="700px"/>
+    <h4>11. L2 x L7</h4>
+    <img src="interaction_11_L2_x_L7.png" width="700px"/>
+    <h4>12. L3 x L4</h4>
+    <img src="interaction_12_L3_x_L4.png" width="700px"/>
+    <h4>13. L3 x L5</h4>
+    <img src="interaction_13_L3_x_L5.png" width="700px"/>
+    <h4>14. L3 x L6</h4>
+    <img src="interaction_14_L3_x_L6.png" width="700px"/>
+    <h4>15. L3 x L7</h4>
+    <img src="interaction_15_L3_x_L7.png" width="700px"/>
+    <h4>16. L4 x L5</h4>
+    <img src="interaction_16_L4_x_L5.png" width="700px"/>
+    <h4>17. L4 x L6</h4>
+    <img src="interaction_17_L4_x_L6.png" width="700px"/>
+    <h4>18. L4 x L7</h4>
+    <img src="interaction_18_L4_x_L7.png" width="700px"/>
+    <h4>19. L5 x L6</h4>
+    <img src="interaction_19_L5_x_L6.png" width="700px"/>
+    <h4>20. L5 x L7</h4>
+    <img src="interaction_20_L5_x_L7.png" width="700px"/>
+    <h4>21. L6 x L7</h4>
+    <img src="interaction_21_L6_x_L7.png" width="700px"/>
+    <p>ANOVA results: interaction_anova_results.csv</p>
+    <h2>6. ns_per_word by Individual Factors</h2>
+    <h3>L1_heat_tracking</h3>
+    <img src="box_L1_heat_tracking.png" width="700px"/>
+    <h3>L2_rolling_window</h3>
+    <img src="box_L2_rolling_window.png" width="700px"/>
+    <h3>L3_linear_decay</h3>
+    <img src="box_L3_linear_decay.png" width="700px"/>
+    <h3>L4_pipelining_metrics</h3>
+    <img src="box_L4_pipelining_metrics.png" width="700px"/>
+    <h3>L5_window_inference</h3>
+    <img src="box_L5_window_inference.png" width="700px"/>
+    <h3>L6_decay_inference</h3>
+    <img src="box_L6_decay_inference.png" width="700px"/>
+    <h3>L7_adaptive_heartrate</h3>
+    <img src="box_L7_adaptive_heartrate.png" width="700px"/>
+    <h2>7. Metric Correlation Heatmap</h2>
+    <img src="corr_metrics.png" width="800px"/>
+    <h2>8. Factor → Metric Effect Map</h2>
+    <img src="effect_heatmap.png" width="800px"/>
+    <h2>9. Key Metrics vs Factors</h2>
+    <h3>L1_heat_tracking</h3>
+    <img src="facet_L1_heat_tracking.png" width="800px"/>
+    <h3>L2_rolling_window</h3>
+    <img src="facet_L2_rolling_window.png" width="800px"/>
+    <h3>L3_linear_decay</h3>
+    <img src="facet_L3_linear_decay.png" width="800px"/>
+    <h3>L4_pipelining_metrics</h3>
+    <img src="facet_L4_pipelining_metrics.png" width="800px"/>
+    <h3>L5_window_inference</h3>
+    <img src="facet_L5_window_inference.png" width="800px"/>
+    <h3>L6_decay_inference</h3>
+    <img src="facet_L6_decay_inference.png" width="800px"/>
+    <h3>L7_adaptive_heartrate</h3>
+    <img src="facet_L7_adaptive_heartrate.png" width="800px"/>
+    <h2>10. Missingness Profile</h2>
+    <pre># A tibble: 59 × 5
+   metric            n  n_na n_nan na_prop
+   &lt;chr&gt;         &lt;int&gt; &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;
+ 1 L1_heat        3840     0     0       0
+ 2 L2_window      3840     0     0       0
+ 3 L3_decay       3840     0     0       0
+ 4 L4_pipeline    3840     0     0       0
+ 5 L5_win_inf     3840     0     0       0
+ 6 L6_decay_inf   3840     0     0       0
+ 7 L7_heartrate   3840     0     0       0
+ 8 total_lookups  3840     0     0       0
+ 9 cache_hits     3840     0     0       0
+10 cache_hit_pct  3840     0     0       0
+# ℹ 49 more rows</pre>
+    <h2>Output Files</h2>
+    <ul>
+      <li>all_128_configurations.csv - Full config summary</li>
+      <li>interaction_anova_results.csv - ANOVA interaction p-values</li>
+      <li>doe_full_report.html - This report</li>
+    </ul>
+  </body>
+</html>
+</html>

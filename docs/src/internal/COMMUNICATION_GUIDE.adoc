@@ -1,0 +1,44 @@
+= StarshipOS Analogy Cheat Sheet
+:toc: left
+:toclevels: 1
+
+This internal crib sheet turns the “physics-driven” concept into audience-friendly language.
+Keep it handy when you need a quick mental model for different stakeholders.
+
+== Elementary School
+
+- *Classroom helper*: The OS watches when the room gets too loud or kids get tired and nudges everyone back on track so the day stays calm.
+
+== Middle School
+
+- *Video game HUD*: Think of health and energy bars.
+StarshipOS tracks “heat” and “noise” bars and changes tactics to keep them balanced.
+
+== High School
+
+- *Car dashboard + cruise control*: Sensors report speed, temperature, and fuel.
+The OS adjusts throttle and cooling to smooth the ride.
+
+== Trade Professional (HVAC / Facilities)
+
+- *Building controller*: Pressure/temperature gauges report load.
+The controller modulates fans and valves to maintain steady airflow.
+
+== University STEM Student
+
+- *Lab feedback loop*: Voltage, current, and heat readings feed a controller that keeps experiments stable.
+The OS treats compute metrics the same way.
+
+== Working Engineer / Developer
+
+- *PID around the VM*: Expose state variables (entropy, latency) as signals, enforce invariants via proofs, and let policy modules tune behaviour.
+
+== Researcher / Academic
+
+- *Dynamical system*: State variables map to thermodynamic constructs, semantics are machine-checked, and scheduling/policy operate on measurable, formally constrained signals.
+
+== Talking Points
+
+- Anchor every analogy with the concrete facts: guard proofs, telemetry fields, and runtime invariants.
+- Slide effortlessly between analogies depending on who is listening—same concept, different vocabulary.
+- Reinforce that “physics-driven” is not fluff: it’s verifiable feedback loops codified in the VM.

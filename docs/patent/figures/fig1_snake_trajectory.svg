@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  -  StarForth — Steady-State Virtual Machine Runtime
+  -
+  -  Copyright (c) 2023–2025 Robert A. James
+  -  All rights reserved.
+  -
+  -  This file is part of the StarForth project.
+  -
+  -  Licensed under the StarForth License, Version 1.0 (the "License");
+  -  you may not use this file except in compliance with the License.
+  -
+  -  You may obtain a copy of the License at:
+  -      https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  -
+  -  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  -  express or implied, including but not limited to the warranties of
+  -  merchantability, fitness for a particular purpose, and noninfringement.
+  -
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -
+  - StarForth — Steady-State Virtual Machine Runtime
+  -  Copyright (c) 2023–2025 Robert A. James
+  -  All rights reserved.
+  -
+  -  This file is part of the StarForth project.
+  -
+  -  Licensed under the StarForth License, Version 1.0 (the "License");
+  -  you may not use this file except in compliance with the License.
+  -
+  -  You may obtain a copy of the License at:
+  -       https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  -
+  -  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  -  express or implied, including but not limited to the warranties of
+  -  merchantability, fitness for a particular purpose, and noninfringement.
+  -
+  -  See the License for the specific language governing permissions and
+  -  limitations under the License.
+  -
+  -->
+
+<svg width="800" height="800" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Title (outside boundary) -->
+  <text x="400" y="30" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">
+    Figure 1: Phase Space Trajectory (Snake Path)
+  </text>
+
+  <!-- Main plot area -->
+  <g transform="translate(100, 80)">
+    <!-- Axes -->
+    <line x1="0" y1="600" x2="600" y2="600" stroke="black" stroke-width="1.25" />
+    <line x1="0" y1="0" x2="0" y2="600" stroke="black" stroke-width="1.25" />
+
+    <!-- X-axis label -->
+    <text x="300" y="660" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="14" text-anchor="middle">
+      K Statistic (James Law Ratio)
+    </text>
+
+    <!-- Y-axis label -->
+    <text x="-300" y="-50" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="14" text-anchor="middle" transform="rotate(-90)">
+      Performance (ms/word)
+    </text>
+
+    <!-- X-axis tick marks and labels -->
+    <line x1="0" y1="600" x2="0" y2="610" stroke="black" stroke-width="1.25" />
+    <text x="0" y="630" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.0</text>
+
+    <line x1="120" y1="600" x2="120" y2="610" stroke="black" stroke-width="1.25" />
+    <text x="120" y="630" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.1</text>
+
+    <line x1="240" y1="600" x2="240" y2="610" stroke="black" stroke-width="1.25" />
+    <text x="240" y="630" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.2</text>
+
+    <line x1="360" y1="600" x2="360" y2="610" stroke="black" stroke-width="1.25" />
+    <text x="360" y="630" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.3</text>
+
+    <line x1="480" y1="600" x2="480" y2="610" stroke="black" stroke-width="1.25" />
+    <text x="480" y="630" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.4</text>
+
+    <line x1="600" y1="600" x2="600" y2="610" stroke="black" stroke-width="1.25" />
+    <text x="600" y="630" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.5</text>
+
+    <!-- Y-axis tick marks and labels -->
+    <line x1="-10" y1="600" x2="0" y2="600" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="605" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">30</text>
+
+    <line x1="-10" y1="480" x2="0" y2="480" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="485" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">35</text>
+
+    <line x1="-10" y1="360" x2="0" y2="360" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="365" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">40</text>
+
+    <line x1="-10" y1="240" x2="0" y2="240" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="245" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">45</text>
+
+    <line x1="-10" y1="120" x2="0" y2="120" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="125" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">50</text>
+
+    <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="5" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">60</text>
+
+    <!-- Trajectory path (connecting lines) -->
+    <!-- Scale: X: 0.0-0.5 -> 0-600px, Y: 30-60ms -> 600-0px -->
+    <polyline points="600,479 372,477 200,24 240,477 144,17 75,477 329,17 63,470 168,473 68,393 22,500 7,443"
+              stroke="gray" stroke-width="1.25" fill="none" stroke-dasharray="3,3" />
+
+    <!-- Data points with shape coding -->
+    <!-- W=512B: K=0.500, P=35.4ms -> (600, 479) -->
+    <circle cx="600" cy="479" r="6" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="610" y="475" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">512B</text>
+
+    <!-- W=1024B: K=0.310, P=35.8ms -> (372, 477) -->
+    <rect x="366" y="471" width="12" height="12" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="382" y="475" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">1KB</text>
+
+    <!-- W=1536B: K=0.167, P=57.0ms -> (200, 24) - cache penalty -->
+    <polygon points="200,18 206,30 194,30" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="210" y="25" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">1.5KB</text>
+
+    <!-- W=2048B: K=0.125, P=35.8ms -> (240, 477) -->
+    <path d="M 234,477 L 240,471 L 246,477 L 240,483 Z" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="250" y="475" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">2KB</text>
+
+    <!-- W=3072B: K=0.083, P=57.6ms -> (144, 17) - cache penalty -->
+    <polygon points="144,11 150,23 138,23" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="154" y="20" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">3KB</text>
+
+    <!-- W=4096B: K=0.0625, P=35.8ms -> (75, 477) - triple lock -->
+    <circle cx="75" cy="477" r="6" fill="black" stroke="black" stroke-width="1.25" />
+    <text x="85" y="475" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" font-weight="bold">4KB</text>
+
+    <!-- W=6144B: K=0.274, P=57.5ms -> (329, 17) - RESONANCE #1 -->
+    <rect x="323" y="11" width="12" height="12" fill="red" stroke="black" stroke-width="1.25" />
+    <text x="339" y="20" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" font-weight="bold" fill="red">6KB</text>
+
+    <!-- W=8192B: K=0.0522, P=36.6ms -> (63, 470) -->
+    <rect x="57" y="464" width="12" height="12" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="73" y="470" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">8KB</text>
+
+    <!-- W=16384B: K=0.140, P=36.1ms -> (168, 473) - RESONANCE #2 -->
+    <rect x="162" y="467" width="12" height="12" fill="red" stroke="black" stroke-width="1.25" />
+    <text x="178" y="475" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" font-weight="bold" fill="red">16KB</text>
+
+    <!-- W=32768B: K=0.0564, P=41.5ms -> (68, 393) -->
+    <path d="M 62,393 L 68,387 L 74,393 L 68,399 Z" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="78" y="395" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">32KB</text>
+
+    <!-- W=52153B: K=0.0183, P=36.2ms -> (22, 500) - Fibonacci -->
+    <polygon points="22,494 28,506 16,506" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="32" y="505" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">52KB</text>
+
+    <!-- W=65536B: K=0.00546, P=41.1ms -> (7, 443) -->
+    <circle cx="7" cy="443" r="6" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="17" y="445" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9">64KB</text>
+  </g>
+
+  <!-- Legend (non-overlapping, to the right) -->
+  <g transform="translate(50, 710)">
+    <text x="0" y="0" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" font-weight="bold">Legend:</text>
+
+    <circle cx="10" cy="20" r="5" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="20" y="24" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Stable power-of-2</text>
+
+    <rect x="150" y="15" width="10" height="10" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="165" y="24" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Moderate bimodal</text>
+
+    <polygon points="280,15 286,27 274,27" fill="none" stroke="black" stroke-width="1.25" />
+    <text x="295" y="24" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Cache penalty (3×2^N)</text>
+
+    <circle cx="460" cy="20" r="5" fill="black" stroke="black" stroke-width="1.25" />
+    <text x="470" y="24" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Triple-lock (zero variance)</text>
+
+    <rect x="5" y="35" width="10" height="10" fill="red" stroke="black" stroke-width="1.25" />
+    <text x="20" y="44" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Resonance peak (bimodal 47-53%)</text>
+  </g>
+
+  <!-- Annotations -->
+  <g transform="translate(100, 80)">
+    <!-- Arrow showing direction -->
+    <path d="M 550,450 L 100,350" stroke="blue" stroke-width="1.5" fill="none" marker-end="url(#arrowblue)" />
+    <text x="300" y="380" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" fill="blue">Trajectory direction</text>
+    <text x="300" y="395" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" fill="blue">(increasing W)</text>
+  </g>
+
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowblue" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="blue" />
+    </marker>
+  </defs>
+</svg>

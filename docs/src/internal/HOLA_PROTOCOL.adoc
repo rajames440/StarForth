@@ -1,0 +1,124 @@
+= HOLA Shared Memory Protocol (Phase 1)
+:author: StarForth Physics Working Group
+:revdate: 2025-10-23
+
+Phase 1 introduces the **Host Observation & Logistics Adapter (HOLA)** as the stable contract between the StarForth VM and external analyzers.
+The runtime now exposes a fixed-size analytics heap (default 10 MiB) implemented by
+`physics_runtime.c`.
+This document captures the shared-memory schema and command flow expected by Phase 1 tooling.
+
+== Memory Layout
+
+The analytics heap is split into four regions:
+
+[%header,cols="1,1,1,2"]
+|===
+|Region |Offset |Size |Notes
+|Header |`0` |`sizeof(physics_analytics_header_t)` |Single producer / consumer metadata (`HOLA_SHARED_MAGIC`).
+|Event ring |`ring_offset` |`ring_bytes` |Lock-free ring buffer of physics events.
+|Summary |`summary_offset` |`summary_bytes` |Aggregated statistics & Bayesian posteriors.
+|Scratch |`scratch_offset` |`scratch_bytes` |Reserved for governance-approved features.
+|===
+
+The header matches the C structure in `include/physics_runtime.h` and MUST remain packed/aligned exactly as defined.
+All multi-byte fields use native endianness (same as the VM).
+Consumers should validate `magic`, `version_major`, and
+`version_minor` before interacting with the heap.
+
+== Event Records
+
+Each ring entry starts with `physics_analytics_event_header_t`:
+
+[,c]
+----
+struct physics_analytics_event_header {
+    uint32_t channel;        // Logical stream id
+    uint16_t payload_bytes;  // Raw payload size
+    uint16_t reserved;       // Alignment padding (zero)
+    uint64_t timestamp_ns;   // Producer timestamp (sf_monotonic_ns)
+};
+----
+
+* Payloads are 8-byte padded.
+* The producer updates `produce_seq` atomically after writing each record.
+* Consumers advance `read_offset` and bump `consume_seq` once an event is fully processed.
+* Overflow is signalled by incrementing `dropped_events` while leaving the ring untouched; consumers MUST treat the next readable event as the resynchronisation point.
+
+=== Host Snapshot Payload
+
+Channel `0x00000002` carries a binary `physics_host_snapshot_t` structure.
+All multi-byte fields use native endianness.
+New fields introduced in Phase 1:
+
+[%header,cols="1,2"]
+|===
+|Field |Description
+|`psi_*` |Pressure Stall Information averages (`avg10/60/300`) scaled by 1000.
+|`cpu_total_jiffies`, `cpu_idle_jiffies` |Snapshots of `/proc/stat` totals for consumer-side delta calculations.
+|`cgroup_cpu_usage_us` |`cpu.stat` `usage_usec` (cgroup v2). Zero when unavailable.
+|`cgroup_memory_current_bytes` |`memory.current` reading (cgroup v2). Zero when unavailable.
+|`flags` |Bitmask indicating which groups were populated (`PHYSICS_HOST_FLAG_*`).
+|===
+
+Consumers should honour the flag bits to differentiate between kernels that expose PSI, cgroup v2, or `/proc/stat` data.
+The full structure is defined in
+`include/physics_runtime.h`.
+
+Recommended channels:
+
+[%header,cols="1,3"]
+|===
+|Channel |Purpose
+|`0x00000001` |Word execution samples (`entropy`, latency, dictionary id).
+|`0x00000002` |Host snapshot deltas (compressed `physics_host_snapshot_t`).
+|`0x0000FF00` – `0x0000FFFF` |Governance-reserved control/alert events.
+|===
+
+== Command Protocol
+
+Commands travel via the summary region.
+The first 256 bytes are reserved for a simple request / response mail box:
+
+[,c]
+----
+struct hola_command {
+    uint32_t opcode;      // See table below
+    uint32_t arg0;        // Optional argument / status
+    uint64_t arg1;        // Optional payload pointer (offset from heap base)
+};
+----
+
+[%header,cols="1,2,3"]
+|===
+|Opcode |Direction |Semantics
+|`0x0000_0000` (`HOLA_NOP`) |Either |No-op; producer clears when idle.
+|`0x0000_0001` (`HOLA_REQUEST_SNAPSHOT`) |Consumer→VM |Request immediate host snapshot; VM publishes on channel `0x2`.
+|`0x0000_0002` (`HOLA_RESET_RING`) |Consumer→VM |Consumer processed all data; VM zeroes cursors when safe.
+|`0x0000_8000` (`HOLA_STATUS_OK`) |VM→Consumer |Acknowledges command completion.
+|`0x0000_8001` (`HOLA_STATUS_BUSY`) |VM→Consumer |Command deferred; consumer should retry after next tick.
+|`0x0000_8002` (`HOLA_STATUS_UNSUPPORTED`) |VM→Consumer |Opcode not understood in this protocol revision.
+|===
+
+The VM polls the command mailbox at the end of each observation window hop.
+All responses are written back into the same structure before the next poll.
+Phase 1 only implements `HOLA_REQUEST_SNAPSHOT`; other opcodes are reserved for future phases.
+
+== Synchronisation Rules
+
+* **Single producer**: the VM is the sole writer to the ring buffer.
+Multiple producers must funnel through the runtime shim.
+* **Single consumer**: Phase 1 assumes exactly one analyzer; multi-consumer support will require an additional indirection table inside the summary region.
+* **Memory ordering**: producers write payload → header → bump `produce_seq`.
+Consumers read `produce_seq` before pulling events and bump `consume_seq`
+after advancing `read_offset`.
+* **Failure semantics**: if `dropped_events` increases the consumer must treat the last coherent boundary as unknown and resynchronise from the first complete record following the drop.
+
+== Artefacts
+
+*Runtime implementation*: `include/physics_runtime.h`, `src/physics_runtime.c`
+(`physics_runtime_init`, `physics_host_snapshot`, `physics_analytics_publish_event`).
+
+*Formal model linkage*: `docs/src/internal/formal/Physics_StateMachine.thy` and
+`Physics_Observation.thy` capture the observation window semantics assumed by this protocol.
+
+Future revisions will document multi-node governance flows and captable wiring for L4Re tasks once Phase 2 moves the analyzer into a dedicated microkernel service.

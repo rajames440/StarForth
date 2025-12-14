@@ -1,0 +1,782 @@
+= Physics Engine Implementation Options: Three Paths Forward
+:toc: left
+:toclevels: 2
+xref:../README.adoc[← Back to Documentation Index]
+
+== Current State: What's Complete
+
+The physics engine infrastructure is **phase 1 complete**:
+
+- ✅ Execution hooks wired (vm.c:456, vm.c:533 call `physics_metadata_touch()`)
+- ✅ Word metadata initialized with domain knowledge (20-word seed table)
+- ✅ Temperature calculation via exponential moving average from entropy
+- ✅ Analytics heap allocated (10 MB default)
+- ✅ Host snapshots functional (POSIX comprehensive, L4Re stub)
+- ✅ Design documents created:
+  * PHYSICS_IMPLEMENTATION_STATUS.adoc (analysis)
+  * PHYSICS_CONE_OF_INFLUENCE_DESIGN.adoc (zone architecture)
+  * PHYSICS_CONTROL_SYSTEM_DESIGN.adoc (scheduling + memory integration)
+
+**Missing**: No periodic capture mechanism, no temperature decay model, no feedback loop integration.
+
+---
+
+== OPTION A: Zone 1 Discovery (1-2 hours)
+
+**Goal**: Wire the observable data stream end-to-end. Verify metrics flow from word execution → analytics heap.
+
+**Scope**: Small, focused implementation. Proves infrastructure works before building bigger systems.
+
+=== Implementation Steps
+
+==== Step 1: Add Periodic Host Snapshot Hook (30 min)
+
+**Location**: `src/main.c` (REPL loop)
+
+**Change**: Call `physics_host_snapshot()` at fixed intervals during REPL input
+
+[source,c]
+----
+// In main's input loop (currently around main.c:XXX)
+static uint64_t last_snapshot_ns = 0;
+
+while (1) {
+    // ... existing REPL loop ...
+
+    // Every 10ms: capture host snapshot
+    uint64_t now = sf_monotonic_ns();
+    if (now - last_snapshot_ns > 10_000_000) {  // 10ms
+        physics_host_snapshot_t snap;
+        physics_host_snapshot(&snap);
+        physics_analytics_publish_event(&snap, sizeof(snap));
+        last_snapshot_ns = now;
+    }
+
+    // ... continue with input/execution ...
+}
+----
+
+**Verification**:
+```bash
+# Build and run REPL
+make clean && make
+./build/starforth
+
+# Inside REPL: define a hot word and execute repeatedly
+: HOT  1 2 + DUP DUP + DUP + ;
+: LOOP-HOT  100 0 DO HOT LOOP ;
+LOOP-HOT
+
+# No visible output yet (data goes to heap, not stdout)
+```
+
+**Deliverable**: Snapshots are published to ring buffer every 10ms during execution.
+
+---
+
+==== Step 2: Add Heap Dump Diagnostic Command (30 min)
+
+**Location**: New file `src/word_source/physics_words.c`
+
+**Change**: Add FORTH words to inspect analytics heap
+
+[source,c]
+----
+// New word: PHYSICS-HEAP-DUMP
+// Prints summary of analytics heap contents
+void forth_PHYSICS_HEAP_DUMP(VM *vm) {
+    if (vm->error_flag) return;
+
+    printf("=== Analytics Heap Dump ===\n");
+    printf("Heap size: %zu bytes\n", g_runtime.analytics_heap_size);
+    printf("Heap used: %zu bytes\n", g_runtime.heap_end);
+    printf("Ring buffer position: %zu\n", g_runtime.ring_write_pos);
+
+    // Count events in heap
+    uint32_t event_count = 0;
+    char *ptr = (char *)g_runtime.analytics_heap;
+    while (ptr - (char *)g_runtime.analytics_heap < (ptrdiff_t)g_runtime.heap_end) {
+        physics_analytics_header_t *hdr = (physics_analytics_header_t *)ptr;
+        if (hdr->magic != PHYSICS_EVENT_MAGIC) break;
+
+        event_count++;
+        printf("Event %u: type=%u, timestamp=%llu\n",
+               event_count, hdr->event_type, hdr->timestamp_ns);
+
+        ptr += sizeof(*hdr) + hdr->data_size;
+    }
+
+    printf("Total events: %u\n", event_count);
+}
+
+// Register in word_registry.h
+REGISTER_WORD("PHYSICS-HEAP-DUMP", forth_PHYSICS_HEAP_DUMP),
+----
+
+**Verification**:
+```
+: HOT  1 2 + DUP + ;
+: BURN  1000 0 DO HOT LOOP ;
+BURN
+PHYSICS-HEAP-DUMP
+# Output: Shows X events published
+```
+
+**Deliverable**: User can inspect heap contents from FORTH.
+
+---
+
+==== Step 3: Add Temperature Visualization (30 min)
+
+**Location**: New FORTH word in `physics_words.c`
+
+**Change**: Print per-word temperature distribution
+
+[source,c]
+----
+// New word: PHYSICS-TEMPS
+// Show temperature distribution of recently-executed words
+void forth_PHYSICS_TEMPS(VM *vm) {
+    if (vm->error_flag) return;
+
+    printf("=== Word Temperatures ===\n");
+    printf("%-20s %8s %8s %12s\n", "Word", "Temp(q8)", "Age(sec)", "Exec Count");
+
+    DictEntry *entry = vm->dictionary;
+    int count = 0;
+    while (entry && count++ < 20) {  // Show hottest 20
+        uint64_t age_ns = sf_monotonic_ns() - entry->physics.last_active_ns;
+        uint64_t age_sec = age_ns / 1_000_000_000;
+
+        printf("%-20s 0x%04x   %8llu   %12llu\n",
+               entry->name,
+               entry->physics.temperature_q8,
+               age_sec,
+               entry->exec_count);
+
+        entry = entry->link;
+    }
+}
+
+// Register in word_registry.h
+REGISTER_WORD("PHYSICS-TEMPS", forth_PHYSICS_TEMPS),
+----
+
+**Verification**:
+```
+: A  1 + ;
+: B  A A A ;
+: C  B B B ;
+
+100 0 DO C LOOP
+PHYSICS-TEMPS
+
+# Output shows temperature distribution
+# Expected: C > B > A (C is hottest, deepest in call tree)
+```
+
+**Deliverable**: User can see per-word thermal distribution.
+
+---
+
+==== Step 4: Test End-to-End Data Flow (30 min)
+
+**Location**: New test in `src/test_runner/modules/test_physics_observation.c`
+
+**Change**: Add test that verifies metrics flow
+
+[source,c]
+----
+// In test_physics_observation.c (new file)
+static void test_physics_observation_end_to_end(void) {
+    VM vm;
+    vm_init(&vm, NULL);
+
+    // Clear analytics heap
+    physics_runtime_init(10 * 1024 * 1024);
+
+    // Define a word and execute it many times
+    vm_interpret(&vm, ": HOT  1 2 + ;");
+    vm_interpret(&vm, "1000 0 DO HOT LOOP");
+
+    // Take a snapshot
+    physics_host_snapshot_t snap;
+    physics_host_snapshot(&snap);
+    physics_analytics_publish_event(&snap, sizeof(snap));
+
+    // Verify heap has events
+    ASSERT(g_runtime.heap_end > 0, "Heap should have data");
+
+    // Verify word temperature increased
+    DictEntry *hot = dict_lookup(&vm, "HOT");
+    ASSERT(hot != NULL, "HOT word should exist");
+    ASSERT(hot->physics.temperature_q8 > 0x4000, "HOT should be warm after 1000 executions");
+
+    // Verify last_active_ns was updated
+    uint64_t age = sf_monotonic_ns() - hot->physics.last_active_ns;
+    ASSERT(age < 1_000_000, "Last execution should be recent (< 1ms)");
+
+    vm_cleanup(&vm);
+    physics_runtime_shutdown();
+}
+----
+
+**Test Output**:
+```bash
+make test
+
+# Should see: test_physics_observation_end_to_end PASS
+```
+
+**Deliverable**: Automated test confirms data flow works.
+
+---
+
+=== Summary: Zone 1 Discovery
+
+**Total Effort**: 1.5-2 hours
+
+**Deliverables**:
+- Periodic host snapshots (every 10ms)
+- Two debugging words (PHYSICS-HEAP-DUMP, PHYSICS-TEMPS)
+- End-to-end test
+- Confidence that metrics are flowing correctly
+
+**Dependencies**: None. Builds on existing infrastructure.
+
+**Next Step After**: Enables Option B (metrics infrastructure) or Option C (design questions).
+
+---
+
+== OPTION B: Metrics Infrastructure (2-3 days)
+
+**Goal**: Add comprehensive metrics collection that feeds into scheduling and memory decisions.
+
+**Scope**: Medium. Builds real observability infrastructure that will be used by control systems.
+
+=== Implementation Steps
+
+==== Step 1: Stack Depth & Recursion Tracking (3-4 hours)
+
+**Location**: New in `include/physics_metrics.h` and `src/physics_metrics.c`
+
+**Problem**: Current physics only tracks temperature. We need:
+- Per-word call stack depth (how deeply nested?)
+- Recursion detection (is word calling itself?)
+- Stack pressure (how close to overflow?)
+
+[source,c]
+----
+// In include/physics_metrics.h
+typedef struct {
+    uint16_t current_depth;      // Current call stack depth
+    uint16_t max_depth;          // Max depth observed
+    uint8_t is_recursive;        // Does word call itself?
+    uint8_t has_deep_calls;      // Calls other deep words?
+    uint32_t depth_violations;   // How many times exceeded limit?
+} stack_metrics_t;
+
+// In src/physics_metrics.c
+void physics_record_call_depth(DictEntry *word, uint16_t depth) {
+    if (depth > word->stack_metrics.max_depth) {
+        word->stack_metrics.max_depth = depth;
+    }
+    if (depth > PHYSICS_STACK_WARN_THRESHOLD) {
+        word->stack_metrics.depth_violations++;
+    }
+}
+----
+
+**Integration Point**: In `vm.c` when pushing return stack frame:
+
+[source,c]
+----
+// In execute_colon_word() where return stack is pushed
+return_stack[return_stack_ptr++] = (Cell)(uintptr_t)ip;
+
+// NEW: Track call depth
+uint16_t call_depth = return_stack_ptr;
+DictEntry *called_word = (DictEntry *)(uintptr_t)(*ip);
+physics_record_call_depth(called_word, call_depth);
+----
+
+**Test**:
+```
+: A  1 + ;
+: B  A A A ;
+: C  B B B B ;
+100 0 DO C LOOP
+PHYSICS-STACK-METRICS
+# Should show: C.max_depth = 5, A.max_depth = 3, etc.
+```
+
+**Deliverable**: Per-word call depth tracking.
+
+---
+
+==== Step 2: Latency Percentile Tracking (4-5 hours)
+
+**Location**: New in `include/physics_metrics.h` and `src/physics_metrics.c`
+
+**Problem**: Current code records latency but not percentiles. We need P50, P99, P99.9 for SLO enforcement.
+
+[source,c]
+----
+// In include/physics_metrics.h
+#define LATENCY_HISTOGRAM_BUCKETS 32
+
+typedef struct {
+    uint64_t min_ns;                    // Minimum latency observed
+    uint64_t max_ns;                    // Maximum latency observed
+    uint64_t sum_ns;                    // Total latency (for average)
+    uint64_t call_count;                // Number of executions
+    uint32_t histogram[LATENCY_HISTOGRAM_BUCKETS];  // Latency histogram
+} latency_metrics_t;
+
+// Function to record latency
+void physics_record_latency(DictEntry *word, uint64_t latency_ns) {
+    if (latency_ns < word->latency_metrics.min_ns) {
+        word->latency_metrics.min_ns = latency_ns;
+    }
+    if (latency_ns > word->latency_metrics.max_ns) {
+        word->latency_metrics.max_ns = latency_ns;
+    }
+    word->latency_metrics.sum_ns += latency_ns;
+    word->latency_metrics.call_count++;
+
+    // Histogram: bucket by magnitude
+    int bucket = 0;
+    if (latency_ns > 10000) bucket = 1;
+    if (latency_ns > 100000) bucket = 2;
+    // ... etc
+    if (bucket < LATENCY_HISTOGRAM_BUCKETS) {
+        word->latency_metrics.histogram[bucket]++;
+    }
+}
+
+// Function to compute percentiles
+uint64_t physics_latency_percentile(DictEntry *word, int percentile) {
+    // Walk histogram to find percentile
+    uint64_t target = (word->latency_metrics.call_count * percentile) / 100;
+    uint64_t cumulative = 0;
+
+    for (int i = 0; i < LATENCY_HISTOGRAM_BUCKETS; i++) {
+        cumulative += word->latency_metrics.histogram[i];
+        if (cumulative >= target) {
+            return (1000 << i);  // Return bucket upper bound
+        }
+    }
+    return word->latency_metrics.max_ns;
+}
+----
+
+**Integration Point**: In `vm.c` during word execution:
+
+[source,c]
+----
+// Outer interpreter (vm.c:533)
+uint64_t latency_start = sf_monotonic_ns();
+entry->func(vm);
+uint64_t latency_ns = sf_monotonic_ns() - latency_start;
+physics_record_latency(entry, latency_ns);
+----
+
+**Test**:
+```
+: SLOW  100000 0 DO 1 LOOP ;
+1000 0 DO SLOW LOOP
+PHYSICS-LATENCY-STATS
+# Should show: avg=XXX, p50=YYY, p99=ZZZ
+```
+
+**Deliverable**: Comprehensive latency tracking with percentiles.
+
+---
+
+==== Step 3: Call Graph Discovery (6-8 hours)
+
+**Location**: New in `include/call_graph.h` and `src/call_graph.c`
+
+**Problem**: Scheduling needs to know which words call which other words to batch them efficiently.
+
+[source,c]
+----
+// In include/call_graph.h
+#define CALL_GRAPH_MAX_EDGES 1000
+
+typedef struct {
+    DictEntry *caller;
+    DictEntry *callee;
+    uint64_t call_count;
+    uint64_t total_latency_ns;
+} call_edge_t;
+
+typedef struct {
+    call_edge_t edges[CALL_GRAPH_MAX_EDGES];
+    int edge_count;
+} call_graph_t;
+
+extern call_graph_t g_call_graph;
+
+// Record a call edge
+void call_graph_record_edge(DictEntry *caller, DictEntry *callee) {
+    // Find or create edge
+    for (int i = 0; i < g_call_graph.edge_count; i++) {
+        if (g_call_graph.edges[i].caller == caller &&
+            g_call_graph.edges[i].callee == callee) {
+            g_call_graph.edges[i].call_count++;
+            return;
+        }
+    }
+
+    // New edge
+    if (g_call_graph.edge_count < CALL_GRAPH_MAX_EDGES) {
+        call_edge_t *e = &g_call_graph.edges[g_call_graph.edge_count++];
+        e->caller = caller;
+        e->callee = callee;
+        e->call_count = 1;
+    }
+}
+----
+
+**Integration Point**: In `execute_colon_word()` when dispatching nested words:
+
+[source,c]
+----
+// When about to execute a word inside a colon definition
+call_graph_record_edge(current_colon_word, w);
+w->func(vm);  // Execute
+----
+
+**Complexity**: Tracking which word is "current" requires refactoring execution context. Moderate complexity.
+
+**Test**:
+```
+: A  1 + ;
+: B  A A ;
+: C  B B ;
+100 0 DO C LOOP
+PHYSICS-CALL-GRAPH
+# Should show edges: C→B (200), B→A (400), etc.
+```
+
+**Deliverable**: Complete call graph with edge frequencies.
+
+---
+
+==== Step 4: Composite Metrics Summary (2 hours)
+
+**Location**: FORTH words in `src/word_source/physics_words.c`
+
+**Change**: Add high-level diagnostic words
+
+[source,c]
+----
+// New word: PHYSICS-SUMMARY
+void forth_PHYSICS_SUMMARY(VM *vm) {
+    printf("=== Physics Engine Summary ===\n");
+
+    // Most frequently called
+    printf("\nTop 10 by call count:\n");
+    // ... iteration over words ...
+
+    // Hottest by temperature
+    printf("\nTop 10 by temperature:\n");
+    // ... iteration ...
+
+    // Slowest by p99 latency
+    printf("\nTop 10 by latency (p99):\n");
+    // ... iteration ...
+
+    // Deepest call stacks
+    printf("\nDeepest stack traces:\n");
+    // ... iteration ...
+
+    // Most complex call graphs
+    printf("\nMost complex (by call edges):\n");
+    // ... iteration ...
+}
+----
+
+**Deliverable**: User-friendly summary of all metrics.
+
+---
+
+=== Summary: Metrics Infrastructure
+
+**Total Effort**: 2-3 days
+
+**Deliverables**:
+- Stack depth tracking per word
+- Latency histogram with percentiles (P50, P99, P99.9)
+- Call graph with edge frequencies
+- Summary diagnostic words
+- 4-5 new tests
+- Foundation for scheduling + memory control systems
+
+**Dependencies**: Zone 1 Discovery helpful (for testing infrastructure).
+
+**Next Step After**: Ready for Option C (design questions) and implementation of Phase 2 (weak control).
+
+---
+
+== OPTION C: Design Questions Resolution (1 day)
+
+**Goal**: Make critical architectural decisions and finalize the design before building control systems.
+
+**Scope**: Small scope but high impact. Answers questions that affect all future work.
+
+=== Design Questions from PHYSICS_CONTROL_SYSTEM_DESIGN.adoc
+
+==== Question 1: Scheduling Model
+
+**Current State**: StarForth runs on top of OS scheduler. Word execution order within colon definitions is driven by return stack (not under our control).
+
+**Decision Needed**: Should we implement a VM-level scheduler?
+
+[cols="1,2,2",options="header"]
+|===
+|Option |Pros |Cons
+|A: Full VM scheduler (like Go's goroutines) |Complete control; deterministic; enable fine-grained SLO enforcement |Massive implementation; needs cooperative preemption; breaks OS integration
+|B: Advisory only (hints to OS) |Simple; works with any OS; immediate deployment |Limited control; latency unpredictable; can't enforce SLO
+|C: Hybrid (hints → batches) |Moderate complexity; decent control; works with OS |Requires learning phase to discover optimal batches; tuning work
+|D: Return stack reordering |Gives us word order control |Only works for colon definitions; doesn't affect nested calls; complex to prove correct
+|===
+
+**Recommended**: Option C (Hybrid)
+- Phase 2: Advisory hints (priority, affinity)
+- Phase 3: Batch discovery and enforcement
+
+**Design Impact**:
+- Affects how we structure `sched_control_t`
+- Determines whether we need batch learning algorithm
+- Impacts Phase 2 implementation timeline
+
+---
+
+==== Question 2: Memory Placement Strategy
+
+**Current State**: 5 MB flat dictionary heap. No physical movement of words.
+
+**Decision Needed**: How should physics drive memory placement?
+
+[cols="1,2,2",options="header"]
+|===
+|Option |Pros |Cons
+|A: Physical movement (remap pointers) |Perfect cache optimization |Extremely complex; breaks all pointers; need GC + compaction
+|B: NUMA-aware placement |Leverages multi-socket systems |Not all systems have NUMA; adds complexity
+|C: OS hints (madvise, mlock) |Simple; portable; leverages existing OS |Limited control; system-dependent behavior
+|D: Logical tiers (labels only) |Simple to implement; still effective |Not as good as physical movement; requires good scheduling
+|===
+
+**Recommended**: Option D (Logical Tiers)
+- "Tier" is a metadata label, not physical location
+- Affects which words are batched together
+- Affects which words to protect from eviction
+- Much simpler than physical movement
+
+**Design Impact**:
+- Simplifies `mem_control_t` interface
+- Tier decisions are scheduling hints, not memory operations
+- Makes implementation tractable in Phase 2
+
+---
+
+==== Question 3: GC vs. Spilling Strategy
+
+**Current State**: Dictionary grows until dict_end > limit. No eviction mechanism yet.
+
+**Decision Needed**: When memory pressure high, do we GC (forget) or spill (archive)?
+
+[cols="1,2,2",options="header"]
+|===
+|Option |Pros |Cons
+|A: Always GC |Fast; reclaims space immediately; simple |User loses definitions; can't reload
+|B: Always spill |User can reload; definitions persisted |Slow reload from disk; uses block storage
+|C: Governance policy |Flexible; per-word control; matches governance model |Complex to implement; needs config
+|===
+
+**Recommended**: Option C (Governance)
+- Add per-word metadata: `can_forget` and `can_spill` flags
+- Governance decides policy per word
+- System enforces it during eviction
+
+**Design Impact**:
+- Needs new word flags in DictEntry
+- Requires governance decision table
+- Affects FORGET and eviction logic
+
+---
+
+==== Question 4: L4Re Specifics
+
+**Current State**: POSIX implementation comprehensive. L4Re is stub (1 CPU hardcoded).
+
+**Decision Needed**: How does L4Re scheduling interact with our physics-driven scheduling?
+
+**Technical Questions**:
+- Should word priority hints map to L4Re timeslice allocation?
+- Should batch decisions affect IPC deadline deadlines?
+- Should word affinity hints affect capability delegation?
+
+**Recommended Approach**:
+1. Phase 2: Implement POSIX fully (hints + batching)
+2. Phase 3: Port to L4Re with same semantics
+3. Phase 4+: Optimize for L4Re-specific capabilities (capability-based batching, IPC SLO tightening)
+
+**Design Impact**:
+- Can defer L4Re optimization to Phase 3+
+- POSIX path unblocks Phase 2 immediately
+- L4Re team gets time to understand requirements
+
+---
+
+==== Question 5: Governance Integration
+
+**Current State**: Governance repo exists but not integrated with physics decisions.
+
+**Decision Needed**: Who decides SLOs, eviction policies, knob ranges?
+
+[cols="1,2,2",options="header"]
+|===
+|Option |Pros |Cons
+|A: System hardcodes all policies |Fast to implement; no config overhead |Inflexible; can't customize
+|B: User-tunable runtime config |Flexible; per-deployment customization |Burden on operators; hard to verify
+|C: Governance approves ranges |Auditable; compliant; operator-friendly |Implementation effort; governance integration
+|===
+
+**Recommended**: Option C (Governance)
+- Governance defines: SLO ranges, eviction policies, sampling rates
+- System reads governance at startup
+- Runtime adjustments stay within approved ranges
+
+**Design Impact**:
+- Need to load governance config at startup
+- Need governance file with physics policies
+- Audit trail for all knob changes
+
+---
+
+==== Question 6: Measurement Overhead
+
+**Current State**: Physics adds ~200-300ns per word execution for metadata touch.
+
+**Decision Needed**: Can we accept additional overhead from scheduling + memory decisions?
+
+**Estimated Costs**:
+- Scheduling hints (OS calls): +50ns per decision
+- Memory tier lookup: +10ns per decision
+- Call graph recording: +20ns per edge
+- Total: +80-100ns additional overhead
+
+**Budget**: Your latency targets?
+- Real-time system (< 1μs): Can't afford any overhead
+- High-performance (1-10μs): 80ns is ~1%, acceptable
+- Interactive (> 10μs): 80ns is < 1%, negligible
+
+**Recommended**: Measure and tune. Can use:
+- Sampling (only record 10% of events)
+- Batching (batch overhead amortization)
+- Conditional recording (only when interesting)
+
+**Design Impact**:
+- May need sampling infrastructure
+- Affects metrics accuracy
+- Trade precision for performance
+
+---
+
+=== Decision Outcomes
+
+After answering these 6 questions, we have clear direction for:
+
+1. **Architecture**: Hybrid VM scheduler with batching
+2. **Memory**: Logical tiers (advisory labels)
+3. **Eviction**: Governance-driven policy with per-word flags
+4. **L4Re**: Defer optimization to Phase 3
+5. **Governance**: Integrate at startup
+6. **Overhead**: Measure and tune Phase 2, optimize Phase 3
+
+**Next Steps**:
+- Document decisions in design rationale document
+- Update PHYSICS_CONTROL_SYSTEM_DESIGN.adoc with answers
+- Begin Phase 2 implementation with clear direction
+
+---
+
+=== Summary: Design Questions Resolution
+
+**Total Effort**: 1 day (deep design review + decision documentation)
+
+**Deliverables**:
+- Decisions on all 6 critical questions
+- Design rationale document
+- Clear Phase 2 roadmap
+- Unblocks all downstream implementation
+
+**Dependencies**: None. Can be done immediately.
+
+**Next Step After**: Clear path to Phase 2 implementation using Options A + B infrastructure.
+
+---
+
+== COMPARISON TABLE
+
+[cols="1,2,2,2,1",options="header"]
+|===
+|Criterion |Option A (Zone 1) |Option B (Metrics) |Option C (Design)
+|Duration |1-2 hours |2-3 days |1 day
+|Effort |Small |Medium |Small-Medium
+|Outcome |Data flow verified |Metrics ready |Direction set
+|Blocker? |No |No |No
+|Risk |Low |Low |Low
+|Unblocks |B, C |Phase 2 impl |A, B impl
+|===
+
+---
+
+== RECOMMENDED APPROACH
+
+**Sequence**: A → C → B → Phase 2 Implementation
+
+1. **Option A first (2 hours)**: Verify metrics flow works end-to-end
+2. **Option C immediately (1 day)**: Answer design questions while A is fresh
+3. **Option B (2-3 days)**: Implement comprehensive metrics
+4. **Phase 2**: Begin weak control with clear architecture
+
+**Why this order**:
+- A gives quick win and confidence in infrastructure
+- C guides B (what metrics to prioritize)
+- B provides data for Phase 2 implementation
+- Ready to ship Phase 2 in ~1 week
+
+**Alternative**: If you want metrics first:
+- B → A → C → Phase 2 (same end state, longer critical path)
+
+**Or if design is urgent**:
+- C → A → B → Phase 2 (risk: might redesign later)
+
+---
+
+== NEXT STEPS FOR YOU
+
+**Decision Point**: Which option first?
+
+1. **Conservative**: A → C → B (verify, design, measure)
+2. **Speed-focused**: C → A → B (design, verify, measure)
+3. **Metrics-first**: B → C → A (measure, design, verify)
+
+Once you choose:
+1. I'll create a detailed implementation plan for that option
+2. Implementation will proceed with daily updates
+3. Completion expected within 1 week for full pipeline
+
+**Recommendation**: Go with Option A → C → B (conservative path ensures no rework).
+
+---
+
+== References
+
+- PHYSICS_IMPLEMENTATION_STATUS.adoc - What's complete
+- PHYSICS_CONE_OF_INFLUENCE_DESIGN.adoc - Zone architecture
+- PHYSICS_CONTROL_SYSTEM_DESIGN.adoc - Integration architecture

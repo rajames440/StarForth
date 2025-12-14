@@ -1,0 +1,7 @@
+workload,mean_ticks,std_ticks,min_ticks,max_ticks
+diverse,23.87,2.24,19,34
+omni,23.45,3.67,15,39
+stable,23.47,2.27,13,27
+temporal,23.53,1.07,21,25
+transition,22.37,3.07,14,26
+volatile,23.13,2.6,14,27

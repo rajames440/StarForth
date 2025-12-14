@@ -1,0 +1,733 @@
+= Physics Control System: Observables → Scheduling & Memory Management
+:toc: left
+:toclevels: 2
+xref:../README.adoc[← Back to Documentation Index]
+
+== Executive Summary
+
+The physics engine provides **observability** (what is the system doing?). Scheduling and memory management provide **control** (what should the system do differently?).
+
+This document describes the integration architecture:
+
+```
+                    PHYSICS ENGINE
+                   (Observability)
+                    /    |    \
+                   /     |     \
+          entropy |   temp |  latency
+         /slope  |  trend |   p99
+        /        |        |
+       ↓         ↓        ↓
+
+   ┌──────────────┬──────────────┬──────────────┐
+   │ SCHEDULING   │   FEEDBACK   │   MEMORY     │
+   │ SYSTEM       │   CONTROL    │ MANAGEMENT   │
+   │ (Execution)  │   LOOPS      │ (Placement)  │
+   └──────────────┴──────────────┴──────────────┘
+        │                              │
+        ├─ Word priority              ├─ Cache tier
+        ├─ Core affinity              ├─ Block placement
+        ├─ Preemption hints           ├─ GC triggers
+        ├─ Latency SLO                └─ Eviction policy
+        └─ Throttling
+```
+
+---
+
+== Part 1: SCHEDULING SYSTEM
+
+=== Current State
+
+StarForth runs on top of the OS scheduler (L4Re or Linux):
+
+- VM executes on single thread (mostly)
+- Cannot directly control word execution order within VM
+- Can only hint via OS priority (`setpriority`, `sched_setparam`)
+- Return stack drives nesting order (not under our control)
+
+=== What Physics Can Control in Scheduling
+
+==== A. Direct Controls (OS Level)
+
+===== Per-Word Priority
+
+[source,c]
+----
+// In physics_metadata.c or new sched_hints.c
+typedef struct {
+    int os_priority;           // nice level or sched_priority
+    int scheduling_class;      // SCHED_OTHER, SCHED_FIFO, SCHED_RR
+    int cpu_affinity_mask;     // which cores allowed
+} sched_hint_t;
+
+// Physics engine adjusts based on:
+word->sched_hint.os_priority = (word->temperature_q8 > 0x8000) ? 5 : 10;
+//  (hotter = lower nice = higher priority)
+----
+
+===== CPU Affinity
+
+[source,c]
+----
+// Pin hot words to specific cores
+word->sched_hint.cpu_affinity_mask |= (1 << preferred_core);
+// Keep cache-sensitive words on same core
+// Separate noisy/interfering words to different cores
+----
+
+===== Preemption Hints
+
+[source,c]
+----
+// For L4Re: hint scheduler whether word is preemptible
+// For Linux: adjust time quantum request
+word->sched_hint.is_preemptible = (word->entropy_slope > 10000) ? 0 : 1;
+// Hot, rapidly-growing words = non-preemptible (batching)
+// Cold, stable words = preemptible (interactive)
+----
+
+==== B. Indirect Controls (VM Scheduler Layer)
+
+Even without OS control, we can implement a **VM-level scheduler** that respects physics metrics:
+
+===== Word Execution Order Within Colon Definitions
+
+[source,c]
+----
+// In execute_colon_word(), instead of strict FIFO on return stack:
+// Get next word to execute
+DictEntry *w = (DictEntry *)(uintptr_t)(*ip);
+
+// Check: is this word in a hot critical path?
+if (w->physics.temperature_q8 > 0xC000) {
+    // Boost execution frequency (call more often)
+    // Or: execute on preferred core if available
+    // Or: batch with related words
+    execute_with_affinity(w, preferred_core);
+} else if (w->physics.temperature_q8 < 0x2000) {
+    // Cold word: can defer or batch with others
+    // Or: execute during idle time
+    defer_or_batch(w);
+}
+----
+
+===== Adaptive Batching
+
+[source,c]
+----
+// Physics observes: certain words always called together
+// Scheduling can batch them to minimize cache misses
+// Example: IF/THEN should batch together
+
+batch_id = learned_batch_group[w->word_id];
+execute_batch(batch_id);  // Execute entire group before context switch
+----
+
+==== C. Latency SLO Enforcement
+
+===== Monitor per-word latency against SLO
+
+[source,c]
+----
+// For each word execution:
+uint64_t start = sf_monotonic_ns();
+w->func(vm);
+uint64_t elapsed = sf_monotonic_ns() - start;
+
+// Track percentiles
+physics_metadata_record_latency(w, elapsed);
+
+// Check SLO
+if (elapsed > w->sched_hint.latency_limit_ns) {
+    // Violation! Adjust knobs:
+    w->sched_hint.os_priority--;     // boost priority
+    w->sched_hint.stack_depth_limit--; // prevent deep recursion
+    w->sched_hint.batch_timeout_ms--;   // flush batches faster
+    log_slo_violation(w, elapsed);
+}
+----
+
+---
+
+== Part 2: MEMORY MANAGEMENT SYSTEM
+
+=== Current State
+
+StarForth has:
+
+- Single 5 MB dictionary heap (static allocation, no fragmentation)
+- Block storage (1024 blocks × 1024 bytes)
+- Two stacks (data + return, 1024 cells each)
+- No explicit memory manager (implicit in dictionary.c)
+
+=== What Physics Can Control in Memory
+
+==== A. Word Placement (Cache Tiers)
+
+===== Memory Hierarchy Abstraction
+
+----
+                    CPU
+                   / | \
+                  /  |  \
+            L1i/L1d  L2  L3
+               |      |   |
+               └──────┴───┴────────┐
+                     Memory        │
+                                   │
+                     Block Storage (Disk)
+----
+
+===== Physics-Aware Placement Strategy
+
+[source,c]
+----
+typedef enum {
+    MEM_TIER_L1,        // On-chip cache (fastest, smallest)
+    MEM_TIER_L2,        // L2 cache
+    MEM_TIER_L3,        // L3/unified cache
+    MEM_TIER_DRAM,      // Main memory
+    MEM_TIER_BLOCK,     // Block storage (persistent)
+} mem_tier_t;
+
+// Physics metrics drive placement:
+mem_tier_t choose_tier(DictEntry *word) {
+    if (word->physics.temperature_q8 > 0xE000) {
+        return MEM_TIER_L1;  // Super hot: cache it
+    } else if (word->physics.temperature_q8 > 0x8000) {
+        return MEM_TIER_L2;  // Hot: keep in L2
+    } else if (word->physics.temperature_q8 > 0x4000) {
+        return MEM_TIER_L3;  // Warm: L3 is ok
+    } else if (word->physics.entropy_slope > 0) {
+        return MEM_TIER_DRAM;  // Growing entropy: main memory
+    } else {
+        return MEM_TIER_BLOCK;  // Cold: evict to block storage
+    }
+}
+----
+
+===== Cache Coloring / Conflict Avoidance
+
+[source,c]
+----
+// If two words often execute together (learned from call graph),
+// place them to minimize cache conflicts
+
+struct {
+    DictEntry *word_a;
+    DictEntry *word_b;
+    int coexecution_count;  // how often do they run together?
+} word_pair_stats[];
+
+// Physics detects: word_a + word_b always run together
+// Memory management: place them in different cache sets
+// (L3 cache set assignment based on entropy + call pattern)
+----
+
+==== B. Garbage Collection & Eviction
+
+===== Trigger GC Based on Physics
+
+[source,c]
+----
+// Current: trigger GC when dict_end > threshold
+// Physics-aware: trigger based on memory pressure + workload phase
+
+void maybe_trigger_gc(void) {
+    // Get host snapshot
+    physics_host_snapshot_t snapshot;
+    physics_host_snapshot(&snapshot);
+
+    // Detect memory pressure
+    int memory_pressure = snapshot.psi_mem_some_avg10_milli;
+
+    // Count cold words
+    int cold_word_count = 0;
+    DictEntry *entry = vm->dictionary;
+    while (entry) {
+        // Not executed recently AND low temperature
+        uint64_t age = sf_monotonic_ns() - entry->physics.last_active_ns;
+        if (age > 10_000_000_000 &&  // 10 seconds old
+            entry->physics.temperature_q8 < 0x1000) {
+            cold_word_count++;
+        }
+        entry = entry->link;
+    }
+
+    // Trigger if:
+    // 1. Memory pressure high (> 50%)
+    // 2. OR dict_end > 80% full
+    // 3. AND we have cold words to evict
+    if ((memory_pressure > 50 || dict_end > DICT_SIZE * 0.8) &&
+        cold_word_count > 0) {
+        physics_guided_gc(cold_word_count);
+    }
+}
+----
+
+===== Eviction Policy: LRU with Temperature Weighting
+
+[source,c]
+----
+// Instead of pure LRU, use:
+// eviction_score = (age_in_ticks * inverse_temperature_q8)
+// Higher score = more likely to evict
+
+DictEntry *choose_eviction_candidate(void) {
+    DictEntry *best = NULL;
+    uint64_t best_score = 0;
+
+    for (DictEntry *e = vm->dictionary; e; e = e->link) {
+        uint64_t age = sf_monotonic_ns() - e->physics.last_active_ns;
+        uint16_t invtemp = 0xFFFF - e->physics.temperature_q8;
+
+        uint64_t score = (age / 1_000_000) * (invtemp + 1);
+        //  age in ms    * inverse temperature
+
+        if (score > best_score) {
+            best_score = score;
+            best = e;
+        }
+    }
+
+    return best;
+}
+----
+
+==== C. Block Storage Management
+
+===== Which Words Migrate to Disk?
+
+[source,c]
+----
+// Physics observes: cold words, low error rate, not in critical path
+// Memory management: spill to block storage
+
+void maybe_spill_to_disk(DictEntry *word) {
+    // Candidate for spilling if:
+    // 1. Cold (temperature < 0x2000)
+    // 2. Hasn't run recently (age > 5 min)
+    // 3. Not in any SLO-critical call path
+    // 4. Memory pressure > 70%
+
+    if (word->physics.temperature_q8 > 0x2000) return;  // Too hot
+
+    uint64_t age = sf_monotonic_ns() - word->physics.last_active_ns;
+    if (age < 300_000_000_000) return;  // Too recent (5 min)
+
+    if (is_in_critical_path(word)) return;  // Don't touch critical code
+
+    physics_host_snapshot_t snap;
+    physics_host_snapshot(&snap);
+    if (snap.cgroup_memory_current_bytes / snap.memory_total < 0.7) return;
+
+    // All checks passed: spill to block storage
+    spill_word_to_block(word);
+    word->flags |= WORD_SPILLED;
+}
+----
+
+===== Lazy Loading from Disk
+
+[source,c]
+----
+// When word is needed but spilled:
+void execute_potentially_spilled_word(DictEntry *word) {
+    if (word->flags & WORD_SPILLED) {
+        // Load from block storage
+        load_word_from_block(word);
+        word->flags &= ~WORD_SPILLED;
+
+        // Update physics (it was accessed)
+        physics_metadata_touch(word, word->entropy, sf_monotonic_ns());
+    }
+
+    // Now execute normally
+    if (word->func) {
+        word->func(vm);
+    }
+}
+----
+
+---
+
+== Part 3: INTEGRATION POINTS
+
+=== Data Flow: Physics → Scheduling → Memory
+
+[source]
+----
+PHYSICS ENGINE OBSERVES:
+├─ entropy↑ (word getting hot)
+├─ temperature_q8↑ (thermal state)
+├─ last_active_ns (recent execution)
+├─ latency_ns (execution cost)
+├─ call_graph (who calls whom)
+├─ stack_depth (nesting complexity)
+├─ error_rate (reliability)
+└─ memory_pressure (from host snapshot)
+
+    │
+    ↓ (feedback control)
+
+SCHEDULING SYSTEM DECIDES:
+├─ execution_priority (OS nice level)
+├─ cpu_affinity (core pinning)
+├─ batch_group (group related words)
+├─ preemption_hint (when to yield)
+├─ latency_slo (per-word guarantee)
+├─ throttle_enable (limit execution)
+└─ stack_limit (prevent overflow)
+
+    │
+    ↓ (actual execution)
+
+WORD EXECUTION:
+├─ Respects scheduling hints
+├─ Generates new metrics
+├─ Updates physics state
+└─ Triggers memory decisions
+
+    │
+    ↓ (feedback to memory)
+
+MEMORY MANAGEMENT DECIDES:
+├─ cache_tier (where to place)
+├─ block_placement (cache coloring)
+├─ gc_trigger (when to clean)
+├─ eviction_policy (what to remove)
+├─ spill_to_disk (what to archive)
+└─ prefetch_hint (what to preload)
+
+    │
+    ↓ (placement affects execution)
+
+NEXT ITERATION:
+(New metrics → new decisions)
+----
+
+=== Control Surface: APIs Between Components
+
+===== Physics → Scheduling Interface
+
+[source,c]
+----
+// In include/sched_control.h
+typedef struct {
+    int priority;           // OS priority hint
+    int cpu_mask;          // Affinity mask
+    int batch_group;       // Batch ID
+    int is_preemptible;    // True = ok to interrupt
+    uint32_t latency_limit_ns;  // SLO threshold
+    uint32_t stack_limit;  // Recursion cap
+} sched_control_t;
+
+// Called by physics engine when knobs adjust
+void sched_update_word(DictEntry *word, const sched_control_t *ctl);
+
+// Called by word executor to report state
+void sched_report_execution(DictEntry *word, uint64_t latency_ns);
+----
+
+===== Physics → Memory Interface
+
+[source,c]
+----
+// In include/mem_control.h
+typedef enum {
+    MEM_TIER_L1, MEM_TIER_L2, MEM_TIER_L3,
+    MEM_TIER_DRAM, MEM_TIER_BLOCK
+} mem_tier_t;
+
+typedef struct {
+    mem_tier_t preferred_tier;     // Cache tier hint
+    int cache_set_prefer;          // Conflict avoidance
+    uint32_t spill_threshold_age;  // How old before spill?
+    int can_evict;                 // Ok to GC this word?
+    uint32_t eviction_priority;    // Lower = evict first
+} mem_control_t;
+
+// Called by physics engine when memory knobs adjust
+void mem_update_word_placement(DictEntry *word, const mem_control_t *ctl);
+
+// Called by memory manager to report state
+void mem_report_pressure(uint64_t bytes_used, uint64_t memory_limit);
+----
+
+===== Scheduling ↔ Memory Coordination
+
+[source,c]
+----
+// When scheduler decides to batch words together,
+// memory manager should try to cache-color them
+
+void sched_batch_words(DictEntry **words, int count) {
+    // Tell memory manager about this batch
+    mem_notify_batch_group(words, count);
+
+    // Memory can now place them strategically
+    // (different cache sets, same L3, etc.)
+}
+
+// When memory manager evicts a word,
+// tell scheduler about the cost
+
+void mem_evict_word(DictEntry *word) {
+    if (sched_is_critical(word)) {
+        // Don't evict critical-path words without warning
+        log_warning("Evicting critical word: %s", word->name);
+        sched_disable_fast_path(word);
+    }
+
+    // Actually evict
+    spill_to_block(word);
+}
+----
+
+---
+
+== Part 4: IMPLEMENTATION PHASES
+
+=== Phase 1: Instrumentation (Current)
+
+- ✅ Physics engine observes metrics
+- ✅ Metrics published to analytics heap
+- ⏳ Scheduling system reads metrics (advisory only)
+- ⏳ Memory manager reads metrics (advisory only)
+
+=== Phase 2: Weak Control (Next 2-3 weeks)
+
+- ✅ Physics engine observes metrics
+- ⏳ Scheduling system adjusts OS priority hints
+- ⏳ Memory manager implements cache-tier awareness
+- ⏳ No enforcement yet (advisory)
+
+=== Phase 3: Strong Control (Weeks 3-6)
+
+- ✅ Physics engine drives decisions
+- ⏳ Scheduling system enforces latency SLO
+- ⏳ Memory manager enforces gc/eviction
+- ⏳ Closed-loop feedback working
+
+=== Phase 4: ML Integration (Weeks 6+)
+
+- ⏳ ML model predicts latency, memory, scheduling
+- ⏳ Governance approves knob adjustments
+- ⏳ Fully adaptive physics-driven system
+
+---
+
+== Part 5: CONCRETE EXAMPLES
+
+=== Example 1: Hot Word Going Critical
+
+**Scenario**: I/O word suddenly becomes hot during file operations
+
+[source]
+----
+Timeline:
+
+T=0s:
+  PHYSICS: temperature_q8(BLOCK_READ) = 0x8000 (warm)
+  ACTION: Normal operation
+
+T=5s:
+  PHYSICS: temperature_q8(BLOCK_READ) = 0xC000 (hot)
+           entropy_slope(BLOCK_READ) = 1000/sec (rapidly increasing)
+  ACTION: Alert scheduling + memory systems
+
+T=5.5s:
+  SCHEDULING REACTS:
+    - Boost priority: os_priority = -5 (above normal)
+    - Enable batching: batch_group = IO_BATCH_1
+    - Cap recursion: stack_limit = 100 (prevent deep nesting)
+    - Set SLO: latency_limit = 10000ns (must meet)
+
+  MEMORY REACTS:
+    - Cache tier: move to MEM_TIER_L2
+    - Prefetch: load related words (BLOCK_WRITE, BUFFER, UPDATE)
+    - No eviction: mark as protected
+
+T=6s:
+  EXECUTION:
+    - BLOCK_READ runs with high priority
+    - Batched with related IO words
+    - Monitored against 10μs SLO
+    - Cached in L2 for speed
+
+T=6.5s:
+  MONITORING:
+    - Latency: p99 = 8500ns ✅ (within SLO)
+    - Temperature: stabilizing at 0xD000
+    - Call pattern: periodic (file scan loop)
+
+  ACTION: Continue monitoring, may fine-tune batch size
+
+T=10s:
+  PHYSICS: temperature stabilizing, pattern learned
+  SCHEDULING: Can now be more aggressive (predict latency)
+  MEMORY: Knows this is sustained hot (don't evict)
+----
+
+=== Example 2: Cold Word Emergency Eviction
+
+**Scenario**: Memory pressure high, need to evict unused words
+
+[source]
+----
+Timeline:
+
+T=0s:
+  MEMORY: dict_end = 1.9 MB (95% full)
+  HOST SNAPSHOT: cgroup memory_current = 480MB / 500MB = 96%
+  ACTION: Trigger garbage collection
+
+T=0.5s:
+  PHYSICS: Scan all words for eviction candidates
+    - Word X: temperature=0x0200, age=2_000_000_000_000ns (33 min old)
+    - Word Y: temperature=0x1000, age=600_000_000_000ns (10 min old)
+    - Word Z: temperature=0x8000, age=100_000_000_000ns (very recent hot)
+
+  SCORES (age_ms * inverse_temp):
+    - Word X: (2,000,000) * (0xFF00) = 18.4 billion ✓ EVICT FIRST
+    - Word Y: (600,000) * (0xF000) = 5.6 billion
+    - Word Z: (100,000) * (0x7FFF) = 737 million (don't touch)
+
+T=1s:
+  EVICTION DECISION:
+    - Evict Word X (coldest, oldest)
+    - Word Y is backup if more space needed
+    - Word Z is protected (hot + critical path)
+
+T=1.5s:
+  SPILL TO DISK:
+    - Save Word X to block storage
+    - Mark as WORD_SPILLED
+    - Reclaim ~4KB of dictionary space
+
+T=2s:
+  MEMORY UPDATE:
+    - dict_end = 1.896 MB (94.8% full)
+    - Pressure satisfied
+    - Resume normal operations
+
+T=1_000s (later):
+  WORD X NEEDED AGAIN:
+    - User calls Word X
+    - Executor detects WORD_SPILLED flag
+    - Load from block storage (~50μs)
+    - Execute normally
+    - Physics re-learns its pattern
+----
+
+---
+
+== Part 6: CRITICAL DESIGN DECISIONS
+
+=== Decision 1: Scheduling Granularity
+
+**Option A: Per-word priority (fine-grained)**
+- Each word gets own OS priority
+- Problem: OS scheduler might thrash (too many priority levels)
+- Cost: More OS context switches
+
+**Option B: Word batches (coarse-grained)**
+- Group words into 5-10 priority classes
+- Batch execution (atomic from OS perspective)
+- Benefit: Fewer context switches, deterministic batching
+- Drawback: Less fine-grained control
+
+**Option C: Hybrid (initial fine → batch)**
+- Phase 2: Per-word priority
+- Phase 3: Learn optimal batches, switch to batch-based
+- Best of both worlds if well-tuned
+
+**Recommendation**: Hybrid (start fine, optimize to batch)
+
+---
+
+=== Decision 2: Memory Placement Accuracy
+
+**Option A: Static placement**
+- At word creation time, decide tier based on size/type
+- Doesn't adapt to runtime behavior
+- Fast, predictable
+
+**Option B: Dynamic migration**
+- Move words between tiers as temperature changes
+- Could cause cache thrashing (moving too often)
+- Complex to implement correctly
+
+**Option C: Hints + OS support**
+- Provide hints to OS (madvise, NUMA policies)
+- Let OS handle actual placement
+- Less control but more portable
+
+**Option D: Logical tiers (no actual movement)**
+- "Tier" is just a label/hint
+- Affects batching, scheduling, but not memory layout
+- Simpler, still effective
+
+**Recommendation**: Option D (logical tiers as scheduling hints)
+
+---
+
+=== Decision 3: GC vs. Spilling
+
+**Option A: Always GC (compact)**
+- Forget cold words completely
+- Reclaim space immediately
+- Problem: User can't redefine forgotten words
+
+**Option B: Always spill (archive)**
+- Keep definitions in block storage
+- Can reload on demand
+- Problem: Extra latency when needed
+
+**Option C: Policy-based (governance)**
+- Governance decides: GC or spill?
+- Per-word metadata: can_forget? can_spill?
+- Most flexible, most complex
+
+**Recommendation**: Option C (governance-driven)
+
+---
+
+== Part 7: OPEN QUESTIONS
+
+1. **Scheduling Model**:
+   - Should VM implement its own scheduler? Or rely entirely on OS?
+   - How strictly enforce latency SLOs within FORTH?
+
+2. **Memory Constraints**:
+   - Can we physically move words in dictionary? (would break pointers)
+   - Or only logical placement hints?
+
+3. **Block Storage Role**:
+   - Is block storage for persistence? Or active memory overflow?
+   - How quickly should spilled words be reloadable?
+
+4. **L4Re Specifics**:
+   - L4Re has IPC + capabilities
+   - Should scheduling decisions affect IPC batch deadlines?
+   - Should memory decisions affect capability delegation?
+
+5. **Governance Integration**:
+   - Who decides eviction policy? (system? user? governance?)
+   - Who approves spilling to disk?
+   - Who sets per-word SLOs?
+
+6. **Measurement Overhead**:
+   - Current physics metrics: ~200-300ns per event
+   - Will scheduling+memory control add 100ns more?
+   - Is that acceptable for your latency targets?
+
+---
+
+== References
+
+- Physics Implementation Status: xref:./PHYSICS_IMPLEMENTATION_STATUS.adoc[PHYSICS_IMPLEMENTATION_STATUS.adoc]
+- Physics Cone of Influence: xref:./PHYSICS_CONE_OF_INFLUENCE_DESIGN.adoc[PHYSICS_CONE_OF_INFLUENCE_DESIGN.adoc]
+- Platform Time Abstraction: `include/platform_time.h` (reference implementation)
+- Physics Metadata: `src/physics_metadata.c`, `include/physics_metadata.h`
+- Physics Runtime: `src/physics_runtime.c`, `include/physics_runtime.h`

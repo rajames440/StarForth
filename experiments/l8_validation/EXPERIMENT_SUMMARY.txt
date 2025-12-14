@@ -1,0 +1,113 @@
+================================================================================
+L8 JACQUARD MODE SELECTOR VALIDATION EXPERIMENT
+================================================================================
+
+IMPLEMENTED: 2025-11-26
+
+PURPOSE:
+--------
+Validate the data-driven L8 Jacquard architecture by comparing dynamic adaptive
+mode switching against static optimal configurations from the 2^7 DoE analysis.
+
+EXPERIMENTAL DESIGN:
+-------------------
+Type:           8×5 Factorial Design
+Strategies:     8 (L8_ADAPTIVE + 7 static configs)
+Workloads:      5 (STABLE, DIVERSE, VOLATILE, TEMPORAL, TRANSITION)
+Replicates:     User-specified (recommended: 50)
+Total Runs:     8 × 5 × N = 40N runs
+
+CONTROL STRATEGIES:
+------------------
+1. L8_ADAPTIVE          - Dynamic mode switching (NEW)
+2. C0_BASELINE          - All off except L7
+3. C4_TEMPORAL          - DoE top 5% rank #6 (0010001)
+4. C7_FULL_INF          - DoE top 5% ranks #2,#3 (0010111)
+5. C9_DIVERSE_DECAY     - DoE top 5% rank #5 (0100011)
+6. C11_DIVERSE_INF      - DoE top 5% rank #4 (0100110)
+7. C12_DIVERSE_TEMPORAL - DoE top 5% rank #1 (0110001)
+8. ALL_ON               - Everything except L1/L4
+
+WORKLOAD TYPES:
+--------------
+1. STABLE       - Fibonacci, factorial (predictable, low entropy/CV)
+2. DIVERSE      - Mixed ops, strings, stack churn (high entropy)
+3. VOLATILE     - Random branching, nested conditionals (high CV)
+4. TEMPORAL     - Nested loops, hot words (strong locality)
+5. TRANSITION   - Phase shifts: STABLE→DIVERSE→VOLATILE (adaptability test)
+
+FILES CREATED:
+-------------
+experiments/l8_validation/
+├── run_l8_validation.sh              - Main experiment runner
+├── README.md                         - Detailed documentation
+└── EXPERIMENT_SUMMARY.txt            - This file
+
+conf/
+├── init-l8-stable.4th                - STABLE workload
+├── init-l8-diverse.4th               - DIVERSE workload
+├── init-l8-volatile.4th              - VOLATILE workload
+├── init-l8-temporal.4th              - TEMPORAL workload
+└── init-l8-transition.4th            - TRANSITION workload
+
+HYPOTHESES:
+----------
+H1: L8 matches best static per workload (≤5% margin)
+H2: L8 shows lowest overall CV (stability)
+H3: L8 modes correlate with workload characteristics
+H4: L8 dominates on TRANSITION workload (adaptability)
+
+QUICK START:
+-----------
+cd experiments/l8_validation
+
+# Quick test (10 reps, ~8 min)
+./run_l8_validation.sh 10
+
+# Standard (50 reps, ~40 min)
+./run_l8_validation.sh 50
+
+# High precision (100 reps, ~80 min)
+./run_l8_validation.sh 100
+
+EXPECTED RESULTS:
+----------------
+If successful, L8 should:
+- Match or beat best static config per workload type
+- Show lower variance across all workloads combined
+- Converge to appropriate modes based on metrics:
+  * STABLE     → C0/C4  (low entropy, low CV)
+  * DIVERSE    → C9/C11/C12 (high entropy)
+  * VOLATILE   → C1/C7  (high CV)
+  * TEMPORAL   → C4/C12 (temporal locality)
+  * TRANSITION → Adaptive mode switching
+
+DATA-DRIVEN DESIGN RATIONALE:
+-----------------------------
+Based on 2^7 DoE (300 reps, 38,400 runs):
+- L1 disabled: Harmful in 86% of top 5% configs
+- L4 disabled: Harmful in 100% of top 5% configs
+- L7 enabled:  Beneficial in 71% of top 5% configs
+- L2/L3/L5/L6: Workload-dependent (controlled by L8)
+
+Top 5% configs showed clear workload specialization:
+- No single static config optimal across all workloads
+- Different loop combinations excel for different patterns
+- Justifies dynamic L8 mode selection
+
+SUCCESS CRITERIA:
+----------------
+1. L8 performance within 5% of best static per workload
+2. L8 CV < all static configs (pooled across workloads)
+3. L8 mode distribution aligns with workload characteristics
+4. L8 outperforms all static on TRANSITION workload
+
+NEXT STEPS AFTER EXPERIMENT:
+---------------------------
+1. Run R analysis script (to be created)
+2. Generate ANOVA interaction plots
+3. Analyze L8 mode distribution patterns
+4. Compare Pareto frontiers (speed vs stability)
+5. Decision: Keep L8 or revert to static optimal
+
+================================================================================

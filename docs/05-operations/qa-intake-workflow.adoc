@@ -1,0 +1,677 @@
+= QA Intake & CAPA Backlog Population Workflow
+
+**Document ID:** QA-INTAKE-WORKFLOW
+**Version:** 1.0.0
+**Status:** Active
+**Last Updated:** November 2, 2025
+**Owner:** QA Team Lead
+**Part of:** GOVERNANCE_REFERENCE_MANUAL (Appendix)
+
+---
+
+== Overview
+
+The **QA Intake Workflow** describes how the QA team:
+
+1. **Identifies defects** from multiple sources (manual testing, CI/CD failures, user reports)
+2. **Creates CAPA issues** in GitHub with full defect information
+3. **Triages issues** for severity and FMEA requirement
+4. **Populates the backlog** for developer assignment
+5. **Tracks resolution** through to release
+
+This is a **manual process with automated support**:
+- GitHub Actions auto-validates and labels submissions
+- Kanban board auto-updates based on status
+- Notifications alert team of new issues
+
+---
+
+== Data Sources for Defects
+
+QA receives defects from multiple sources:
+
+[cols="2,3,1"]
+|===
+| Source | Description | Trigger
+
+| **Manual Testing**
+| QA team runs feature tests, finds bugs
+| QA creates issue manually (template-guided)
+
+| **Automated CI/CD Failures**
+| baseline-torture-test detects regressions
+| Jenkins auto-creates CAPA issue + notifies QA
+
+| **User Reports**
+| End users report issues via GitHub Issues
+| QA team converts to CAPA format
+
+| **Developer Self-Report**
+| Developer finds bug during own testing
+| Developer creates CAPA issue directly
+
+| **Code Review**
+| Reviewer finds issue in PR
+| Reviewer creates CAPA issue linked to PR
+
+|===
+
+---
+
+== CAPA Issue Creation (Manual Process)
+
+=== Step 1: QA Identifies a Defect
+
+Defect sources:
+- Running manual test suite
+- Testing new feature before merge
+- Regression during nightly baseline test
+- User-reported bug
+- Code review finding
+
+=== Step 2: QA Creates GitHub Issue
+
+**Location:** https://github.com/rajames440/StarForth/issues/new
+
+**Choose Template:** "CAPA - Defect Report"
+
+Fill out the following:
+
+```markdown
+## CAPA: [Defect Title]
+
+### 1. What is the Problem?
+
+Clear, concise description of the defect:
+- What happens? (observed behavior)
+- What should happen? (expected behavior)
+- Impact: (user-facing, development blocker, data loss, etc.)
+
+**Example:**
+"When calling 'DO ... +LOOP' with negative increment, the loop
+never terminates. Expected: Loop exits after correct iterations."
+
+### 2. How to Reproduce
+
+Step-by-step instructions to reproduce:
+
+1. Build with: `make fast`
+2. Run: `./build/starforth`
+3. Execute: `5 1 DO I . -1 +LOOP CR`
+4. Observe: Infinite loop (CPU at 100%)
+5. Expected: Should print "5 4 3 2 1" and exit
+
+**Environment:**
+- StarForth version: v2.0.2
+- Platform: x86_64 (Linux)
+- Build: fast configuration
+- Compiler: GCC 11.4
+
+### 3. Expected Behavior
+
+What should happen (correct behavior):
+
+"Loop should respect the increment sign. With -1 +LOOP, it should
+count downward until the loop condition is false."
+
+### 4. Code Location (if known)
+
+Point to relevant files:
+- `src/control_words.c`: Line 156 (DO word implementation)
+- `src/control_words.c`: Line 201 (+LOOP word implementation)
+
+### 5. Severity Assessment
+
+**Severity:** Major (blocks certain use cases)
+
+- [ ] Critical (crash, data loss, security issue)
+- [ ] Major (feature broken, blocking)
+- [ ] Minor (incorrect behavior, workaround exists)
+- [ ] Low (cosmetic, documentation)
+
+### 6. Is this a Regression?
+
+- [ ] Yes, worked before
+- [ ] No, new bug
+- [ ] Unknown
+
+If yes: Last working version? When did it break?
+
+### 7. Workaround
+
+Is there a workaround?
+
+"Use positive increment: `5 5 DO I . 1 +LOOP` instead of
+negative increment."
+
+### 8. Test Case (if available)
+
+Provide a minimal test case:
+
+\`\`\`forth
+: TEST-NEGATIVE-LOOP
+  5 1 DO I . -1 +LOOP CR ;
+
+TEST-NEGATIVE-LOOP
+\`\`\`
+
+Expected output: `5 4 3 2 1`
+Actual output: (infinite loop)
+```
+
+=== Step 3: QA Monitors Automation
+
+**GitHub Actions will:**
+1. Validate CAPA template
+2. Auto-classify severity (critical/major/minor/low)
+3. Detect if it's a regression
+4. Add labels: `type:capa`, `severity:{level}`, optionally `regression`
+5. Assign to QA team
+6. Post validation comment
+7. Add to Kanban board (QA Review column)
+
+**What QA sees:**
+- Template validation passes/fails
+- Auto-assigned severity label
+- GitHub comment with next steps
+- Kanban card created
+
+=== Step 4: QA Formal Triage
+
+QA lead reviews and performs **formal triage**:
+
+```
+For each CAPA issue:
+
+☐ Reproducibility:
+  - [ ] QA reproduced the defect
+  - [ ] QA documented reproduction environment
+  - [ ] QA confirmed it's not a user error
+
+☐ Impact Assessment:
+  - [ ] Affects which users/use cases?
+  - [ ] Blocks any features or releases?
+  - [ ] Data loss or security risk?
+
+☐ Root Cause Analysis (Initial):
+  - [ ] Is this a regression? (worked before)
+  - [ ] Is this a design issue or implementation bug?
+  - [ ] Likely root cause file/function?
+
+☐ FMEA Decision:
+  - [ ] No FMEA required (simple localized fix)
+  - [ ] Optional FMEA (medium-risk fix)
+  - [ ] Required FMEA (complex, safety-critical, changes core)
+
+☐ Backlog Priority:
+  - [ ] Critical (blocker, release needed immediately)
+  - [ ] High (should fix soon, affects users)
+  - [ ] Medium (fix in normal sprint)
+  - [ ] Low (nice-to-have, can wait)
+
+☐ Assignment:
+  - [ ] Developer owner assigned (if known)
+  - [ ] Assigned to next sprint/backlog
+```
+
+**QA Comments with Findings:**
+
+```markdown
+## ✅ CAPA Triage Complete
+
+**Reproducibility:** ✓ Confirmed
+- Reproduced on x86_64 Linux (GCC 11.4)
+- Occurs consistently with: 5 1 DO I . -1 +LOOP CR
+- Not a user error
+
+**Root Cause (Preliminary):**
+Likely in `src/control_words.c:201 (+LOOP implementation)`.
+The loop limit check doesn't properly account for negative increment direction.
+
+**FMEA Decision:** OPTIONAL
+- This is a localized bug in loop control
+- Medium risk (affects loop behavior)
+- Formal FMEA can proceed after fix, not blocking development
+
+**Backlog Priority:** HIGH
+- Blocks certain DO...+LOOP patterns
+- Affects portability of some FORTH programs
+- Should fix in next 2 sprints
+
+**Labels Added:**
+- `severity:major` (feature broken)
+- `regression` (likely broke in recent change)
+- `capa:fmea-optional`
+- `priority:high`
+
+**Next:** Developer will create PR to fix. See CAPA_PROCESS.adoc step 2.
+```
+
+---
+
+== Kanban Board Integration
+
+=== Kanban Columns (StarForth Quality Kanban)
+
+```
+┌──────────────┬──────────────┬──────────────┬──────────────┬──────────────┐
+│   Backlog    │  QA Review   │  In Progress │  In Review   │    Done      │
+│              │              │              │              │              │
+│ • ECO items  │ • New CAPAs  │ • Assigned   │ • PR open    │ • Released   │
+│ • Untrieged  │ • Auto-fails │ • Developer  │ • Tests pass │ • Merged to  │
+│              │              │   working    │ • QA reviews │   master     │
+│              │              │              │              │              │
+└──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
+```
+
+=== How CAPA Issues Flow Through Kanban
+
+```
+GitHub Issue Created
+        ↓
+GitHub Actions auto-validates
+        ↓
+Kanban Card added to "QA Review"
+        ↓
+QA Triage (Manual)
+        ↓
+QA adds severity + priority labels
+        ↓
+QA Comments with triage findings
+        ↓
+Developer picks up issue
+        ↓
+Developer creates PR (Closes #CAPA-###)
+        ↓
+Card moves to "In Progress"
+        ↓
+PR triggers Jenkins pipeline
+        ↓
+Tests pass, QA approves
+        ↓
+Card moves to "In Review"
+        ↓
+PM approves release
+        ↓
+Merged to master
+        ↓
+Card moves to "Done"
+        ↓
+Issue auto-closes
+```
+
+---
+
+== Automated CAPA Creation from Test Failures
+
+=== How It Works
+
+When **baseline-torture-test** detects a test failure:
+
+1. **baseline-torture-test job fails**
+2. **Jenkins parses test output** for failures
+3. **test-failure-capa-auto-create job triggered**
+4. **GitHub issue auto-created** with:
+   - Failure description
+   - Test name and error
+   - Build configuration
+   - Platform
+   - Reproduction command
+   - Link to Jenkins logs
+5. **Kanban card added** to QA Review column
+6. **QA team notified** of new failure
+
+=== Auto-Created CAPA Format
+
+**GitHub Auto-Creates Issue:**
+
+```markdown
+## CAPA: Test Failure - test_arithmetic_words.c:156
+
+**Test:** `test_add_overflow`
+**Status:** FAILED
+**Build:** fast configuration (x86_64)
+**Failure Type:** Assertion failure
+
+### What Failed?
+
+Test `test_add_overflow` in `src/test_runner/modules/test_arithmetic_words.c`
+line 156 failed assertion.
+
+### How to Reproduce
+
+1. Build: `make fast`
+2. Run: `./build/starforth test`
+3. Observe: Test suite fails at test_add_overflow
+
+### Environment
+
+- Build Config: fast
+- Platform: x86_64
+- Compiler: GCC (default)
+- Test Suite: fail-fast harness (936 tests)
+
+### Failure Output
+
+\`\`\`
+src/test_runner/modules/test_arithmetic_words.c:156:
+Assertion failed: (result == 0xFFFFFFFFFFFFFFFF)
+Actual: 0x7FFFFFFFFFFFFFFF
+\`\`\`
+
+### Jenkins Details
+
+- Build: baseline-torture-test #342
+- Job: baseline-torture-test (scheduled nightly)
+- Date/Time: 2025-11-02 00:00:UTC
+- Log: [Link to Jenkins build log]
+
+### Type
+
+- [ ] New test failure (regression)
+- [ ] Flaky test
+- [ ] Environment issue
+- [ ] Test itself is broken
+
+### Automated Labels
+
+- `type:capa`
+- `severity:major`
+- `source:ci-failure`
+- `component:arithmetic`
+```
+
+=== QA Review of Auto-Created CAPAs
+
+**QA triages auto-created issues in the "QA Review" column:**
+
+```markdown
+## ✅ Triage of CI Test Failure
+
+**Verification:**
+- [ ] Manually reproduced on development machine
+- [ ] Confirmed in clean build environment
+- [ ] Verified on multiple platforms (if applicable)
+
+**Analysis:**
+- Likely cause: Integer overflow handling in ADD word
+- Last working version: v2.0.1
+- Breaking commit: [git hash] "Optimize ADD operation"
+
+**FMEA Decision:** REQUIRED
+- Core arithmetic operation affected
+- Could impact all programs using ADD with large numbers
+- Must complete FMEA before fix can be released
+
+**Priority:** CRITICAL
+- Blocks tests
+- Blocks release until fixed
+- Regression in core functionality
+
+**Next Steps:**
+1. Developer creates PR: `fix/capa-###-add-overflow`
+2. Implements fix for overflow handling
+3. Adds regression test preventing re-occurrence
+4. PR triggers full test suite
+5. QA validates fix
+6. PM approves release
+```
+
+---
+
+== QA Team Responsibilities
+
+=== Daily/Weekly Tasks
+
+[cols="2,3,1"]
+|===
+| Task | Description | Frequency
+
+| **Monitor New Issues**
+| Check for new CAPA submissions, validate templates
+| Daily
+
+| **Triage CAPAs in QA Review**
+| Review auto-validated issues, perform formal triage
+| Daily
+
+| **Verify Reproductions**
+| Manually reproduce reported defects
+| Daily
+
+| **Update Kanban Board**
+| Move cards between columns as status changes
+| Daily
+
+| **Monitor CI/CD Failures**
+| Check baseline-torture-test results, review auto-created CAPAs
+| Daily (after test runs)
+
+| **FMEA Analysis (if needed)**
+| Conduct formal FMEA for high-risk fixes
+| As needed (per ECO/CAPA decision)
+
+|===
+
+=== Sprint Planning
+
+Before each sprint:
+
+1. **Review Kanban backlog** (not yet assigned)
+2. **Prioritize** CAPAs and ECOs
+3. **Estimate effort** with developer input
+4. **Plan sprint** based on team capacity
+5. **Assign issues** to developers
+6. **Update Kanban** - move cards to "Backlog" → "In Progress"
+
+---
+
+== Issue Templates (GitHub)
+
+=== ECR Template (Feature Request)
+
+**Path:** `.github/ISSUE_TEMPLATE/ecr.md`
+
+See 01-ECR_PROCESS.adoc for full template
+
+=== ECO Template (Approved Feature)
+
+**Path:** `.github/ISSUE_TEMPLATE/eco.md`
+
+See 02-ECO_PROCESS.adoc for full template
+
+=== CAPA Template (Defect Report)
+
+**Path:** `.github/ISSUE_TEMPLATE/capa.md`
+
+```markdown
+---
+name: CAPA - Defect Report
+about: Report a bug or defect (automated workflow)
+title: 'CAPA: [Defect Title]'
+labels: 'type:capa, status:submitted'
+---
+
+## CAPA: [Brief Defect Description]
+
+### 1. What is the Problem?
+
+*Describe what's broken:*
+
+- What happens? (observed behavior)
+- What should happen? (expected behavior)
+- Impact level?
+
+### 2. How to Reproduce
+
+*Step-by-step instructions:*
+
+1. ...
+2. ...
+3. Observe: [defect occurs]
+
+*Environment:*
+- StarForth version:
+- Platform:
+- Build configuration:
+- Compiler:
+
+### 3. Expected Behavior
+
+*What should happen instead?*
+
+### 4. Code Location (if known)
+
+*Relevant files/functions:*
+
+### 5. Severity
+
+- [ ] Critical (crash, data loss, security)
+- [ ] Major (feature broken)
+- [ ] Minor (incorrect behavior)
+- [ ] Low (cosmetic)
+
+### 6. Is this a Regression?
+
+- [ ] Yes (worked before)
+- [ ] No (new bug)
+- [ ] Unknown
+
+### 7. Workaround
+
+*Is there a temporary workaround?*
+
+### 8. Test Case
+
+*Minimal reproducible example:*
+
+\`\`\`forth
+[code here]
+\`\`\`
+
+---
+
+*GitHub Actions will auto-validate this CAPA and add labels.*
+*QA team will triage and add to backlog.*
+```
+
+---
+
+== Metrics & Reporting
+
+=== QA Dashboard
+
+Track these metrics (weekly/monthly):
+
+[cols="2,3"]
+|===
+| Metric | Purpose
+
+| **New CAPAs per week**
+| Monitor defect discovery rate
+
+| **CAPA resolution time (average)**
+| How long from submission to fix release
+
+| **Regression rate**
+| % of CAPAs that are regressions (indicates quality issues)
+
+| **FMEA required %**
+| % of CAPAs requiring formal FMEA
+
+| **Severity distribution**
+| Critical / Major / Minor / Low breakdown
+
+| **By component**
+| Which components have most CAPAs (quality hotspots)
+
+| **CI/CD failure rate**
+| % of nightly baseline tests that fail
+
+|===
+
+---
+
+== Process Checklist for QA Lead
+
+=== Daily Standup
+
+```
+☐ Check GitHub for new CAPA submissions
+☐ Review QA Review column (new auto-created and manual issues)
+☐ Reproduce any critical/major CAPAs
+☐ Update Kanban status based on developer activity
+☐ Check Jenkins baseline-torture-test results
+☐ Notify team of any blockers
+```
+
+=== Weekly Triage Session
+
+```
+☐ Review all CAPAs in QA Review column
+☐ Perform formal triage (reproducibility, root cause, FMEA decision)
+☐ Add severity and priority labels
+☐ Comment with triage findings
+☐ Assign to developer (if ready)
+☐ Add to sprint backlog
+```
+
+=== Sprint Planning
+
+```
+☐ Review unassigned CAPAs in backlog
+☐ Estimate effort with developer input
+☐ Prioritize based on severity + impact
+☐ Assign to sprint
+☐ Move Kanban cards to "In Progress"
+☐ Notify team of assignments
+```
+
+---
+
+== Common Issues & Troubleshooting
+
+=== Issue: CAPA template validation fails
+
+**Symptom:** GitHub Actions rejects CAPA submission
+
+**Solution:**
+1. Ensure issue includes: "What is the Problem?", "How to Reproduce", "Expected Behavior"
+2. GitHub Actions will post comment with missing sections
+3. Edit issue to add required sections
+4. Validation will re-run automatically
+
+=== Issue: Regression not detected
+
+**Symptom:** Bug exists but wasn't caught by tests
+
+**Solution:**
+1. CAPA includes: "Add regression test" in developer PR requirements
+2. Developer must add test that would catch this bug
+3. Test added to `src/test_runner/modules/` relevant file
+4. Test included in full baseline torture test
+
+=== Issue: FMEA decision unclear
+
+**Symptom:** QA isn't sure if FMEA is needed
+
+**Solution:**
+- See 04-FMEA_PROCESS.adoc for decision matrix
+- When in doubt: Ask PM (Robert A. James)
+- Document decision in CAPA issue comments
+
+---
+
+== See Also
+
+- **01-ECR_PROCESS.adoc** - Feature request workflow
+- **02-ECO_PROCESS.adoc** - Approved feature workflow
+- **03-CAPA_PROCESS.adoc** - Automated CAPA pipeline after submission
+- **04-FMEA_PROCESS.adoc** - Formal risk analysis (when required)
+- **GOVERNANCE_REFERENCE_MANUAL.adoc** - Master governance document
+
+---
+
+**Document Owner:** QA Team
+**Last Updated:** 2025-11-02
+**Status:** Active

@@ -1,0 +1,580 @@
+= Kanban Workflow Validation Procedure
+:doctype: article
+:toc:
+:toc-placement: preamble
+:sectnums:
+:sectanchors:
+:source-highlighter: highlightjs
+:icons: font
+:docinfo: private
+
+== Document Information
+
+[cols="1,3"]
+|===
+|Document Version|1.0.0
+|Document Date|2025-11-02
+|Source Commit|de928e94b5f241e346c8ff917069b0bb24c9301c
+|Capture Date|2025-11-02 21:02:41 -0500
+|Status|Ready for Validation
+|Classification|Engineering Test Procedure
+|===
+
+== Overview
+
+This document defines the formal validation procedure for the **GitHub Projects V2 Kanban Workflow Automation** (Phase 3 of CAPA-032).
+
+The procedure validates all six status transitions in the automated workflow:
+
+[horizontal]
+CREATE:: Initial CAPA issue state (backlog)
+IMPLEMENT:: PR opened, issue assigned to developer
+VALIDATE:: Tests pass, ready for QA review
+APPROVE:: QA approves, ready for qualification
+RELEASE:: PM approves release version
+CLOSED:: PR merged to master, issue closed
+
+=== Referenced Workflow
+
+* **File:** `.github/workflows/capa-kanban-sync.yml`
+* **Type:** GitHub Actions Workflow
+* **Architecture:** GitHub Projects V2 GraphQL API
+* **Triggers:** PR events, workflow completion, comment patterns
+* **Scope:** Full CAPA lifecycle automation
+
+== Engineering Drawing: Status Transition Diagram
+
+[plantuml,kanban-status-flow,svg]
+----
+@startuml
+!define TRANSPARENT
+skinparam transparency 10
+skinparam backgroundColor #f0f0f0
+
+state CREATE
+state IMPLEMENT
+state VALIDATE
+state APPROVE
+state RELEASE
+state CLOSED
+
+CREATE --> IMPLEMENT: PR opened\n(extract issue #)
+IMPLEMENT --> VALIDATE: Tests pass\n(workflow success)
+VALIDATE --> APPROVE: "✅ QA Approved"\n(comment pattern)
+APPROVE --> RELEASE: "✅ PM Release vX.Y.Z"\n(comment pattern)
+RELEASE --> CLOSED: PR merged\n(merge event)
+
+note right of CREATE
+  Initial state
+  Issue created
+end note
+
+note right of IMPLEMENT
+  Developer assigned
+  PR in progress
+end note
+
+note right of VALIDATE
+  Awaiting QA approval
+  Interactive input gate
+end note
+
+note right of APPROVE
+  Passed QA review
+  Ready for qualification
+end note
+
+note right of RELEASE
+  Approved for release
+  Version determined
+end note
+
+note right of CLOSED
+  Complete
+  Issue resolved
+end note
+@enduml
+----
+
+[NOTE]
+====
+Diagram generated from PlantUML source. Engineering drawing reference: <<fig-kanban-flow>>
+
+SHA-256: `a1b2c3d4e5f6...` (see artifact manifest <<artifact-manifest>>)
+====
+
+== Prerequisites
+
+=== GitHub Project V2 Setup
+
+The following must be configured before running the test:
+
+[cols="1,2,1"]
+|===
+|Configuration|Requirement|Validation
+|Project Name|"StarForth Quality Kanban"|User creates in GitHub UI
+|Project Type|Table layout (GitHub Projects V2)|User configures
+|Custom Field|Single-select field named "Status"|Case-sensitive, exact name
+|Status Options|6 options (CREATE, IMPLEMENT, VALIDATE, APPROVE, RELEASE, CLOSED)|All must exist
+|Field Type|Single Select|Not text or other type
+|API Access|GitHub API token with repo scope|Automatic via GITHUB_TOKEN
+|===
+
+=== Required GitHub CLI Version
+
+[source,bash]
+----
+gh --version
+# Expected: gh version 2.40.0 or later
+----
+
+== Test Setup & Prerequisites Validation
+
+=== Artifact: Setup Checklist Script
+
+The following artifact contains the setup verification script:
+
+[horizontal]
+**Name:**:: KANBAN-SETUP-CHECKLIST.sh
+**Location:**:: `docs/artifacts/kanban-workflow/KANBAN-SETUP-CHECKLIST.sh`
+**SHA-256:**:: `ad9e585538aa320521e6b4af449ead6a83c9c2471e1ae2d4d592792d9bb0deaa`
+**Source Commit:**:: de928e94b5f241e346c8ff917069b0bb24c9301c
+**Permissions:**:: executable (755)
+
+[NOTE]
+====
+To verify artifact integrity:
+
+[source,bash]
+----
+cd docs/artifacts/kanban-workflow
+sha256sum KANBAN-SETUP-CHECKLIST.sh
+# Expected: ad9e585538aa320521e6b4af449ead6a83c9c2471e1ae2d4d592792d9bb0deaa
+----
+====
+
+=== Prerequisite Verification Procedure
+
+Execute the setup verification script:
+
+[source,bash,id=setup-verify-procedure]
+----
+bash docs/artifacts/kanban-workflow/KANBAN-SETUP-CHECKLIST.sh
+----
+
+The script verifies the following in order:
+
+.Verification Steps
+|===
+|Step|Verification|Expected Result
+|1|GitHub CLI installed|gh --version returns v2.40.0+
+|2|GitHub authentication|gh auth status succeeds
+|3|Repository access|gh repo view rajames440/StarForth succeeds
+|4|GitHub Project V2 exists|Project "StarForth Quality Kanban" found
+|5|Workflow deployed|capa-kanban-sync.yml on master branch
+|===
+
+[WARNING]
+====
+Do not proceed with testing until all 5 prerequisites pass.
+
+If any check fails, the script will exit with status code 1.
+====
+
+== Test Execution
+
+=== Overview
+
+The validation test consists of executing a full lifecycle test that progresses through all six status states. The test is designed to be interactive and auditable.
+
+=== Artifact: Interactive Test Script
+
+[horizontal]
+**Name:**:: KANBAN-QUICK-TEST.sh
+**Location:**:: `docs/artifacts/kanban-workflow/KANBAN-QUICK-TEST.sh`
+**SHA-256:**:: `ef13d408853a1bd221b4f31a8968a729f14ba1f9d02d5bff82cf733a39070a20`
+**Source Commit:**:: de928e94b5f241e346c8ff917069b0bb24c9301c
+**Permissions:**:: executable (755)
+**Input Parameters:**:: `<ISSUE_NUM> <PROJECT_ID>`
+
+[IMPORTANT]
+====
+To verify the artifact has not been modified:
+
+[source,bash]
+----
+cd docs/artifacts/kanban-workflow
+sha256sum KANBAN-QUICK-TEST.sh
+# Expected: ef13d408853a1bd221b4f31a8968a729f14ba1f9d02d5bff82cf733a39070a20
+----
+====
+
+=== Test Procedure
+
+==== Step 1: Identify Project ID
+
+[source,bash,id=get-project-id]
+----
+gh project list --owner rajames440
+----
+
+Expected output format:
+----
+3       DRAFT           StarForth Quality Kanban
+^
+PROJECT_ID (use this number in next step)
+----
+
+==== Step 2: Create Test Issue
+
+Create a test CAPA issue to drive the workflow:
+
+[source,bash,id=create-test-issue]
+----
+gh issue create \
+  --title "Test: Kanban Workflow Automation" \
+  --body "## CAPA:
+
+**Problem:** Testing Kanban automation workflow
+
+**Reproduce:**
+1. Create PR closing this issue
+2. Check GitHub Projects board
+
+**Expected Behavior:**
+Issue moves through all 6 status states"
+----
+
+Note the returned issue number (e.g., #147).
+
+==== Step 3: Execute Full Lifecycle Test
+
+[source,bash,id=execute-test]
+----
+bash docs/artifacts/kanban-workflow/KANBAN-QUICK-TEST.sh <ISSUE_NUM> <PROJECT_ID>
+----
+
+Example:
+[source,bash]
+----
+bash docs/artifacts/kanban-workflow/KANBAN-QUICK-TEST.sh 147 3
+----
+
+==== Test Execution Flow
+
+The script executes the following sequence:
+
+[cols="1,2,1,1"]
+|===
+|Phase|Action|Trigger|Expected Status
+|1|Create PR with issue reference|`Closes #147`|IMPLEMENT
+|2|Wait for test workflow|workflow_run success|VALIDATE
+|3|Post QA approval comment|"✅ QA Approved"|APPROVE
+|4|Post PM release comment|"✅ PM Release v0.9.5"|RELEASE
+|5|Merge PR to master|merge event|CLOSED
+|===
+
+=== Verification at Each Step
+
+==== After Phase 1: PR Creation
+
+Verify PR was created:
+
+[source,bash]
+----
+gh pr list --search "Kanban Workflow" --state open
+----
+
+Expected: PR appears in list with status "OPEN"
+
+==== After Phase 2: Test Completion
+
+Verify workflow execution:
+
+[source,bash]
+----
+gh run list --workflow capa-kanban-sync.yml --limit 1
+----
+
+Expected: Latest run shows status "completed" with conclusion "success"
+
+Check Kanban board status:
+
+[source,bash]
+----
+gh api graphql -f query='
+  query {
+    organization(login: "rajames440") {
+      projectV2(number: 3) {
+        items(first: 10) {
+          nodes {
+            content { ... on Issue { number } }
+            fieldValues(first: 5) {
+              nodes {
+                ... on ProjectV2ItemFieldSingleSelectValue {
+                  field { name }
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+'
+----
+
+Expected: Issue #147 shows field "Status" = "VALIDATE"
+
+==== After Phase 3: QA Approval
+
+Verify comment posted:
+
+[source,bash]
+----
+gh pr view <PR_NUM> --json comments -q ".comments[] | select(.body | contains(\"QA Approved\"))"
+----
+
+Check Kanban status updated:
+
+[source,bash]
+----
+# Re-run GraphQL query above
+# Expected: Issue #147 shows Status = "APPROVE"
+----
+
+==== After Phase 4: PM Release
+
+Verify comment posted:
+
+[source,bash]
+----
+gh pr view <PR_NUM> --json comments -q ".comments[] | select(.body | contains(\"PM Release\"))"
+----
+
+Check Kanban status:
+
+[source,bash]
+----
+# Re-run GraphQL query
+# Expected: Issue #147 shows Status = "RELEASE"
+----
+
+==== After Phase 5: PR Merge
+
+Verify merge:
+
+[source,bash]
+----
+gh pr view <PR_NUM> --json state
+# Expected: state = "MERGED"
+----
+
+Final Kanban verification:
+
+[source,bash]
+----
+# Re-run GraphQL query
+# Expected: Issue #147 shows Status = "CLOSED"
+----
+
+== Validation Checklist
+
+[cols="1,2,1"]
+|===
+|Requirement|Verification Method|Result
+|Issue created successfully|`gh issue view <NUM>`|☐ PASS / ☐ FAIL
+|PR created successfully|`gh pr list`|☐ PASS / ☐ FAIL
+|Status = IMPLEMENT after PR|GitHub Projects board|☐ PASS / ☐ FAIL
+|Tests complete|GitHub Actions run|☐ PASS / ☐ FAIL
+|Status = VALIDATE after tests|GraphQL query|☐ PASS / ☐ FAIL
+|QA approval comment posted|`gh pr view`|☐ PASS / ☐ FAIL
+|Status = APPROVE after QA|GitHub Projects board|☐ PASS / ☐ FAIL
+|PM release comment posted|`gh pr view`|☐ PASS / ☐ FAIL
+|Status = RELEASE after PM|GitHub Projects board|☐ PASS / ☐ FAIL
+|PR merged successfully|`gh pr view --json state`|☐ PASS / ☐ FAIL
+|Status = CLOSED after merge|GitHub Projects board|☐ PASS / ☐ FAIL
+|No workflow errors|`gh run view`|☐ PASS / ☐ FAIL
+|All 6 transitions executed|Kanban board history|☐ PASS / ☐ FAIL
+|===
+
+== Success Criteria
+
+The test is considered **SUCCESSFUL** if and only if:
+
+. All 5 prerequisite checks pass
+. All 13 validation checklist items pass
+. No exceptions in GitHub Actions logs
+. All comment patterns matched exactly
+. All 6 status transitions complete in order
+. No manual interventions required beyond comments
+
+The test is considered **FAILED** if any validation item returns FAIL status.
+
+== Troubleshooting Reference
+
+=== Common Issues and Resolutions
+
+[cols="1,2,2"]
+|===
+|Issue|Root Cause|Resolution
+|Setup script fails at step 2|GitHub CLI not authenticated|Run: `gh auth login`
+|Workflow doesn't trigger|File not on master|Run: `git push origin master`
+|Kanban status doesn't change|Project field misconfigured|Verify Status field has all 6 options (case-sensitive)
+|Comment pattern not detected|Exact match required|Use: `✅ QA Approved` (not "qa approved" or variations)
+|GraphQL query fails|Token insufficient scope|Verify GITHUB_TOKEN has repo scope
+|PR merge blocked|Branch protection rules|Check: Settings → Branches → Protection rules
+|===
+
+== Artifact Manifest
+
+[[artifact-manifest]]
+[cols="1,2,1,2"]
+|===
+|Artifact Name|Location|SHA-256|Purpose
+|KANBAN-SETUP-CHECKLIST.sh
+|docs/artifacts/kanban-workflow/
+|ad9e585538aa320521e6b4af449ead6a83c9c2471e1ae2d4d592792d9bb0deaa
+|Verify prerequisites before testing
+
+|KANBAN-QUICK-TEST.sh
+|docs/artifacts/kanban-workflow/
+|ef13d408853a1bd221b4f31a8968a729f14ba1f9d02d5bff82cf733a39070a20
+|Execute full lifecycle test (interactive)
+
+|capa-kanban-sync.yml
+|.github/workflows/
+|(reference to source)
+|Workflow definition being tested
+|===
+
+[NOTE]
+====
+To verify any artifact:
+
+[source,bash]
+----
+cd docs/artifacts/kanban-workflow
+sha256sum -c <<EOF
+ad9e585538aa320521e6b4af449ead6a83c9c2471e1ae2d4d592792d9bb0deaa  KANBAN-SETUP-CHECKLIST.sh
+ef13d408853a1bd221b4f31a8968a729f14ba1f9d02d5bff82cf733a39070a20  KANBAN-QUICK-TEST.sh
+EOF
+----
+
+Expected output:
+----
+KANBAN-SETUP-CHECKLIST.sh: OK
+KANBAN-QUICK-TEST.sh: OK
+----
+====
+
+== Expected Timeline
+
+[cols="1,2,2"]
+|===
+|Phase|Action|Expected Duration
+|1|Create PR|1 minute
+|2|Workflow processes PR opened|1 minute
+|3|Status = IMPLEMENT|1 minute
+|4|Tests run|5-10 minutes
+|5|Status = VALIDATE|1 minute
+|6|QA approval comment posted|< 1 minute (manual)
+|7|Workflow processes comment|1 minute
+|8|Status = APPROVE|1 minute
+|9|PM release comment posted|< 1 minute (manual)
+|10|Workflow processes comment|1 minute
+|11|Status = RELEASE|1 minute
+|12|PR merge|< 1 minute (manual)
+|13|Workflow processes merge|1 minute
+|14|Status = CLOSED|1 minute
+|===
+
+**Total Expected Time:** ~20 minutes (mostly CI/CD testing)
+
+== Sign-Off
+
+[cols="1,2,2"]
+|===
+|Role|Name|Date
+|Test Executor|_____________________|_________
+|Validator|_____________________|_________
+|Approval|_____________________|_________
+|===
+
+== Appendix: GraphQL Query Reference
+
+=== Query: Get Project Items with Status
+
+Used to verify status transitions during test:
+
+[source,graphql,id=graphql-project-items]
+----
+query {
+  organization(login: "rajames440") {
+    projectV2(number: 3) {
+      items(first: 10) {
+        nodes {
+          id
+          content {
+            ... on Issue {
+              number
+              title
+              labels(first: 5) {
+                nodes {
+                  name
+                }
+              }
+            }
+          }
+          fieldValues(first: 20) {
+            nodes {
+              ... on ProjectV2ItemFieldSingleSelectValue {
+                field {
+                  name
+                }
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+----
+
+[NOTE]
+====
+Replace "3" with your actual PROJECT_ID.
+
+Execute with:
+[source,bash]
+----
+gh api graphql -f query='<QUERY_ABOVE>'
+----
+====
+
+== References
+
+* **Workflow Definition:** `.github/workflows/capa-kanban-sync.yml`
+* **GitHub Projects API:** https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project
+* **GitHub GraphQL:** https://docs.github.com/en/graphql
+* **GitHub Actions:** https://docs.github.com/en/actions
+* **CAPA Process:** xref:../../CAPA_PROCESS.adoc[]
+
+== Document History
+
+[cols="1,1,2,1"]
+|===
+|Version|Date|Changes|Author
+|1.0.0|2025-11-02|Initial release with full test procedure|Claude Code
+|===
+
+---
+
+**Document Classification:** Engineering Test Procedure
+
+**Last Updated:** 2025-11-02
+
+**Source Commit:** de928e94b5f241e346c8ff917069b0bb24c9301c

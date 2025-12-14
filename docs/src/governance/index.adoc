@@ -1,0 +1,7 @@
+= Governance
+
+For complete governance documentation, see:
+
+**link:../../../StarForth-Governance/README.md[StarForth-Governance Repository →]**
+
+The governance vault contains all policies, procedures, formal specifications, and validation documentation.

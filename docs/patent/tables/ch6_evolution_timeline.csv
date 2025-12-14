@@ -1,0 +1,6 @@
+"Stage","Phase","Purpose","Configs","Observations","Key_Finding"
+"DoE 2^7",1,"Full factorial exploration",128,38400,"Massive variance, no silver bullet"
+"Runoff",2,"Top 5% validation",8,240,"Winner: 100101"
+"Shape I",3,"Early shape robustness",1,120,"Shape-invariant performance"
+"L8 Selector",4,"Adaptive mode switching",8,1200,"Adaptive beats static"
+"Shape II",5,"Final shape confirmation",1,1200,"Robust across waveforms"

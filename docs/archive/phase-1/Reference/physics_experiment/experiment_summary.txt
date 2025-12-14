@@ -1,0 +1,48 @@
+
+Experiment Start: 2025-11-06T21:30:39
+Output Directory: ./physics_experiment
+Runs per Configuration: 30
+Total Runs: 90
+Benchmark Iterations: 100000
+Build Profile: fastest
+Execution: Randomized order (eliminates temporal bias)
+
+
+Experiment End: 2025-11-06T21:37:22
+Total Runtime: 6 minutes (402 seconds)
+Results CSV: ./physics_experiment/experiment_results.csv
+Run Logs: ./physics_experiment/run_logs/
+Test Matrix: ./physics_experiment/run_logs/test_matrix.txt
+
+
+Experiment Start: 2025-11-06T22:08:03
+Output Directory: physics_experiment
+Runs per Configuration: 30
+Total Runs: 90
+Benchmark Iterations: 100000
+Build Profile: fastest
+Execution: Randomized order (eliminates temporal bias)
+
+
+Experiment End: 2025-11-06T22:13:58
+Total Runtime: 5 minutes (355 seconds)
+Results CSV: physics_experiment/experiment_results.csv
+Run Logs: physics_experiment/run_logs/
+Test Matrix: physics_experiment/run_logs/test_matrix.txt
+
+
+Experiment Start: 2025-11-06T22:16:48
+Output Directory: physics_experiment
+Runs per Configuration: 30
+Total Runs: 90
+Benchmark Iterations: 100000
+Build Profile: fastest
+Execution: Randomized order (eliminates temporal bias)
+
+
+Experiment End: 2025-11-06T22:24:00
+Total Runtime: 7 minutes (432 seconds)
+Results CSV: physics_experiment/experiment_results.csv
+Run Logs: physics_experiment/run_logs/
+Test Matrix: physics_experiment/run_logs/test_matrix.txt
+

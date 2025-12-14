@@ -1,0 +1,353 @@
+= GitHub Issues & Governance Integration
+:doctype: article
+:toc:
+:toc-placement: preamble
+:sectnums:
+:sectanchors:
+:source-highlighter: highlightjs
+
+== Document Information
+
+[cols="1,3"]
+|===
+|Document Version|1.0.0
+|Document Date|2025-11-03
+|Status|Governance Architecture Decision
+|Classification|CI/CD Process Documentation
+|===
+
+== Overview
+
+This document clarifies the relationship between **GitHub Issues** (CAPA, ECR, ECO templates) and the **StarForth governance system**, specifically regarding the in_basket gating mechanism.
+
+**Key Decision:** GitHub Issues follow a **development workflow**, NOT the governance in_basket intake pathway.
+
+```
+GitHub Issues (CAPA/ECR/ECO)
+    ↓
+Kanban Board (Development Tracking)
+    ↓
+PR Creation & Testing
+    ↓
+Governance Outputs (Test Results, Benchmarks, etc.)
+    ↓
+in_basket/ (Governance Gating)
+```
+
+== Architecture Rationale
+
+=== Why GitHub Issues Don't Go to in_basket
+
+**GitHub Issues serve development workflow purposes:**
+
+[cols="1,2,3"]
+|===
+|Issue Type|Primary Function|Tracked By
+|**CAPA**|Bug/defect reporting|Kanban → Developer fixes
+|**ECR**|Feature request evaluation|Kanban → PM decision → ECO
+|**ECO**|Implementation task|Kanban → Developer implements
+|===
+
+These items are **governance-adjacent** (they track change lifecycle) but **not governance artifacts themselves**.
+
+**True governance artifacts** (outputs from work) include:
+- Test results (from test-stage.yml / Jenkins test job)
+- Benchmark data (from qual-stage.yml / Jenkins qual job)
+- Build manifests (from prod-stage.yml)
+- SBOM outputs (from qual-stage.yml)
+- Formal verification reports (from Jenkins)
+
+**These artifacts flow to in_basket for triage.**
+
+=== Two-Path Model
+
+The system uses **two complementary paths**:
+
+**Path 1: Development Governance (GitHub Issues)**
+```
+User → GitHub Issue (CAPA/ECR/ECO)
+        → Kanban Automation (Labels, Status)
+        → Developer/PM Action
+        → PR Resolution
+```
+
+**Path 2: Operational Governance (Artifacts)**
+```
+CI/CD System → Generates Outputs (test results, benchmarks, etc.)
+             → in_basket/ (Gating)
+             → QA Triage (INTAKE_PROCEDURES.adoc)
+             → [VAULT] Disposition
+```
+
+Both paths contribute to the overall governance record, but they operate independently.
+
+== GitHub Issues Governance Tracking
+
+=== CAPA Issues
+
+**Entry:** GitHub Issue with CAPA template
+**Validation:** `capa-submission.yml` (GitHub Actions)
+**Routing:** Kanban board → Assigned to QA team
+**Deliverable:** Fix (PR closing the issue)
+
+**Governance Record:**
+- Issue # (GitHub)
+- Labels (severity, status)
+- PR reference (closes issue)
+- Test results (from test-stage.yml → in_basket)
+
+**NOT:** Direct in_basket submission (workflow is GitHub Issues system)
+
+=== ECR Issues
+
+**Entry:** GitHub Issue with ECR template
+**Validation:** `ecr-submission.yml` (GitHub Actions)
+**Routing:** Kanban board → Assigned to PM
+**Deliverable:** Decision (approve/reject) + ECO creation
+
+**Governance Record:**
+- Issue # (GitHub)
+- Labels (severity, status)
+- PM decision comment
+- Linked ECO issue (if approved)
+
+**NOT:** Direct in_basket submission (workflow is GitHub Issues system)
+
+=== ECO Issues
+
+**Entry:** GitHub Issue with ECO template (created by PM)
+**Validation:** `eco-creation.yml` (GitHub Actions)
+**Routing:** Kanban board → Developer assignment
+**Deliverable:** Implementation PR
+
+**Governance Record:**
+- Issue # (GitHub)
+- Labels (priority, status)
+- PR reference (closes ECO)
+- Test results (from workflows → in_basket)
+
+**NOT:** Direct in_basket submission (workflow is GitHub Issues system)
+
+== Audit Trail: Issues + Artifacts Combined
+
+The **complete governance record** consists of:
+
+=== GitHub Issues (Development Tracking)
+```
+CAPA-2025-001: "Stack overflow in DUP word"
+├─ Created: 2025-11-01
+├─ Reporter: jane@starforth.local
+├─ Status: In Review
+├─ Kanban: QA Review → Assigned to: qa-team
+└─ Linked PR: #42 (closes issue)
+```
+
+=== Linked PR + Test Results (Artifact Governance)
+```
+PR #42: "fix: DUP word stack overflow"
+├─ Branch: bugfix/capa-2025-001
+├─ Status: Merged to test
+└─ Test Results (via test-stage.yml)
+   ├─ TEST-20251103-120530_SUMMARY.adoc (in_basket/Test_Results/)
+   ├─ Status: Passed ✅
+   └─ QA Triage: Approved for qual
+```
+
+=== Final Record in [VAULT]
+```
+[VAULT]/Defects/
+├─ CAPA-2025-001_ROOT_CAUSE.adoc
+├─ CAPA-2025-001_FIX_VERIFICATION.adoc
+└─ GitHub Issue Link: rajames440/StarForth#32
+```
+
+**The chain is complete:** Issue → Development → Testing → Governance
+
+== Design Decision: Keep Separate?
+
+**Question:** Should CAPA/ECR/ECO issues be exported to in_basket for formal record?
+
+**Current Decision:** No, for these reasons:
+
+1. **GitHub is Source of Truth for Development**
+   - Issues already tracked in version control
+   - PR references provide audit trail
+   - Labels and timeline are preserved
+
+2. **in_basket Focused on Operational Outputs**
+   - Test results, benchmarks, SBOM
+   - Verification reports, audit findings
+   - Performance data, compliance evidence
+
+3. **Separation of Concerns**
+   - Development workflow stays in GitHub
+   - Governance artifacts flow through in_basket
+   - Cleaner audit trail (no duplication)
+
+4. **Links are Sufficient**
+   - GitHub Issue URL in PR commits
+   - PR references in test results metadata
+   - GitHub Actions logs reference issue numbers
+
+**If governance auditor needs to see CAPA-2025-001:**
+- Look up issue in GitHub (complete workflow)
+- Follow PR link to see merged changes
+- Check in_basket for test/verification results
+- View [VAULT]/Defects/ for final disposition
+
+**Traceability is preserved through links, not duplication.**
+
+== When to Export Issues to in_basket
+
+**Exceptions:** Some scenarios might warrant exporting issues to in_basket:
+
+=== 1. External Compliance Requirements
+
+If certification body (ISO, IEC, Common Criteria) requires:
+- Complete governance artifact capture
+- Consolidated record in governance repo
+
+**Action:** Create custom export process
+```bash
+# Example: Quarterly audit export
+./tools/export-capa-to-governance.sh --range 2025-Q4
+# → Exports all closed CAPA issues to in_basket/Audit_Export/
+```
+
+=== 2. Off-platform Archival
+
+If transitioning away from GitHub:
+- Export issues and PRs to governance repo
+- Create consolidated archive
+- Remove GitHub dependency
+
+**Action:** Run one-time export
+```bash
+# Export all issue history to in_basket
+./tools/archive-github-issues.sh
+# → Copies issue data, PRs, comments to [VAULT]
+```
+
+=== 3. Regulatory Audit Response
+
+If auditor requests:
+- "Show all CAPA issues processed in 2025"
+- "Demonstrate complete ECR decision record"
+
+**Action:** Generate governance report with links
+```bash
+# Create PDF governance report
+./tools/generate-governance-report.sh --type capa --year 2025
+# → Consolidates GitHub issue data + test results from in_basket
+```
+
+**These are exceptions to the normal flow, not the default.**
+
+== Best Practices
+
+=== For Issue Authors
+
+✅ Use proper templates (CAPA, ECR, ECO)
+✅ Fill in all required fields completely
+✅ Reference related issues/PRs
+✅ Document decisions in comments
+❌ Don't manually copy issues to governance repo
+❌ Don't edit after submission (use comments instead)
+
+=== For QA Team (Triaging Issues)
+
+✅ Review issue in GitHub
+✅ Apply labels (severity, status)
+✅ Assign to responsible party
+✅ Monitor Kanban progression
+✅ Link to test results in in_basket (comment with reference)
+✅ Document triage decision (why approved/rejected)
+❌ Don't export issues manually to in_basket
+❌ Don't duplicate governance records
+
+=== For [VAULT] Archival
+
+When CAPA is resolved and archived to [VAULT]:
+
+✅ Include GitHub issue URL in final record
+✅ Reference PR numbers that fixed the issue
+✅ Link to test results (in in_basket)
+✅ Document disposition decision
+
+```adoc
+= CAPA-2025-001: Stack Overflow in DUP Word
+:github-issue: https://github.com/rajames440/StarForth/issues/32
+:pr-fix: https://github.com/rajames440/StarForth/pull/42
+:test-results: in_basket/Test_Results/TEST-20251103-120530_SUMMARY.adoc
+
+== Root Cause
+[description of root cause]
+
+== Fix Verification
+See: :test-results:
+- All 936 tests pass ✅
+- No regressions detected ✅
+- Benchmark maintained ✅
+
+== References
+- GitHub Issue: :github-issue:
+- Fix PR: :pr-fix:
+- Test Results: :test-results:
+```
+
+== Troubleshooting
+
+=== "I submitted a CAPA but it's not in in_basket"
+
+✅ **This is correct behavior.**
+- GitHub Issue workflow is separate from in_basket
+- Your issue is tracked in Kanban board
+- Once fixed and tested, results appear in in_basket
+
+=== "How do I find all CAPAs from Q4 2025?"
+
+Use GitHub:
+```
+https://github.com/rajames440/StarForth/issues?q=label:type:capa created:2025-10-01..2025-12-31
+```
+
+For governance artifacts from those CAPAs:
+```bash
+ls -la StarForth-Governance/in_basket/Test_Results/ | grep -i capa
+# Shows all test results from CAPA fixes
+```
+
+=== "Auditor wants complete CAPA record"
+
+Prepare a consolidated report:
+1. List CAPA issues from GitHub (with links)
+2. Show test results from in_basket (linked by PR number)
+3. Show [VAULT]/Defects/ disposition (if archived)
+4. Explain: GitHub = tracking, in_basket = artifacts, [VAULT] = archived
+
+## References
+
+- **INTAKE_PROCEDURES.adoc** - Governance artifact pathways
+- **GOVERNANCE_REFERENCE_MANUAL.adoc** - Master governance document
+- **capa-submission.yml** - GitHub Actions CAPA automation
+- **ecr-submission.yml** - GitHub Actions ECR automation
+- **eco-creation.yml** - GitHub Actions ECO automation
+
+## Change History
+
+[cols="1,1,1,2"]
+|===
+|Version|Date|Author|Changes
+|1.0.0|2025-11-03|Claude Code|Initial GitHub Issues governance clarification
+|===
+
+## Approval
+
+**Prepared By:** StarForth Governance System
+**Date:** 2025-11-03
+**Status:** Ready for Review
+
+**Design Decision:** Confirmed by architecture review
+- GitHub Issues = Development workflow (Kanban tracked)
+- in_basket = Operational outputs (test results, benchmarks, etc.)
+- Links between systems provide complete audit trail

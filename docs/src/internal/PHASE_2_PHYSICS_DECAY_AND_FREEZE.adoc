@@ -1,0 +1,960 @@
+[[phase-2-physics-decay-and-freeze]]
+= Phase 2: Physics Model Extensions — Decay & Freeze Mechanisms
+:toc: left
+:stem: latexmath
+
+**Status:** Design Phase (Ready for Implementation)
+
+**Date:** 2025-11-07
+
+**Contributors:** Robert A. James (Captain Bob), Claude Code AI
+
+---
+
+== Executive Summary
+
+This specification extends the Phase 1 physics model (deterministic execution_heat tracking) with two critical mechanisms for realistic StarshipOS workload modeling:
+
+1. **Freeze Flag** — Locks a word's position in the execution pipeline, preventing eviction or decay
+2. **Decay Mechanism** — Reduces execution_heat over time to model word frequency resets during OS context switches and task transitions
+
+These mechanisms transform the current **static ratchet model** (heat only increases, never decreases) into a **dynamic equilibrium model** that reflects actual VM behavior under multi-tasking conditions.
+
+---
+
+== Problem Statement: Why Decay & Freeze?
+
+=== Current Model Limitations (Phase 1)
+
+The Phase 1 implementation tracks `execution_heat` with these properties:
+
+[cols="2,3"]
+|===
+| Property | Current Behavior
+
+| Heat Accumulation
+| `execution_heat += 1` per word lookup (monotonic increase)
+
+| Heat Decay
+| None — heat persists forever (ratchet model)
+
+| Heat-to-Cache Decision
+| Threshold-based: `execution_heat >= 50` → promote to hotwords cache
+
+| Implications
+| Words that were once hot stay hot indefinitely
+|===
+
+**Problem:** This doesn't reflect real VM behavior. When the OS context switches the StarForth process away (common in multi-tasking StarshipOS), a fresh task begins execution. The new task's hot words are different from the previous task's hot words. The old heat values become noise.
+
+=== StarshipOS Realistic Workload
+
+From exploration of `/home/rajames/CLionProjects/StarshipOS/l4/pkg/starforth`, we identified:
+
+**Typical Execution Sequence:**
+1. System boots, StarForth REPL starts (interactive task)
+2. User types commands (system admin: device queries, spawning tasks)
+3. OS preempts StarForth, switches to device driver task
+4. Driver completes, OS context switches back to StarForth
+5. User types new commands (different hot words than before)
+
+**Cache Coherency Problem:**
+- Old task's hot words (previous heat values) are stale data
+- New task begins with cold cache, but old heat values suggest hotness that doesn't apply to new task
+- Cache entries don't get evicted because heat never decreases
+- Memory waste: cache holds words for old task while new task suffers cache misses
+
+**Solution:**
+- Apply decay to heat values as time passes (physically: dissipation)
+- Frozen words (critical system words) resist decay
+- New tasks start with cleaner heat landscape
+
+=== Particle Physics Analogy
+
+In the elementary particle model:
+
+[cols="2,3,3"]
+|===
+| Concept | Real Physics | Phase 2 Physics
+
+| Particle Energy
+| Dissipates via radiation/friction
+| Execution heat decays via time passage
+
+| Excited State Lifetime
+| τ (tau, halflife) determines decay
+| Configurable decay rate determines heat reduction
+
+| Ground State
+| Particles settle to minimum energy
+| Words settle to execution_heat = 0 (unless pinned)
+
+| Pinned Particles
+| External field prevents decay
+| FREEZE flag prevents heat decay
+
+| Equilibrium
+| Energy in = Energy out (steady state)
+| Phase 1: no incoming energy loss (ratchet)
+| Phase 2: decay provides energy loss path
+|===
+
+---
+
+== Design: Freeze Flag
+
+=== Specification
+
+**Purpose:** Lock a word's position in the execution pipeline, preventing:
+- Removal from hotwords cache due to eviction
+- Heat decay (execution_heat stays constant)
+- Reordering in pipeline preference rankings
+
+**Implementation:**
+
+Add new word flag in `include/vm.h`:
+
+[source,c]
+----
+#define WORD_FROZEN     0x04    /* Word is frozen: heat does not decay */
+----
+
+Update DictEntry flags layout:
+
+[cols="2,2,3"]
+|===
+| Bit | Flag | Meaning
+
+| 0x80
+| WORD_IMMEDIATE
+| Executes in compile mode
+
+| 0x40
+| WORD_HIDDEN
+| Invisible to WORDS, FIND
+
+| 0x20
+| WORD_SMUDGED
+| Being defined (FORTH-79)
+
+| 0x10
+| WORD_COMPILED
+| User-compiled (not built-in)
+
+| 0x08
+| WORD_PINNED
+| Heat locked at maximum (non-decaying)
+
+| 0x04
+| WORD_FROZEN
+| Position in pipeline frozen (no decay, no eviction)
+
+| 0x02
+| (reserved)
+| Future expansion
+
+| 0x01
+| (reserved)
+| Future expansion
+|===
+
+=== Semantics
+
+**FREEZE-WORD ( caddr u -- )**
+Freeze a word by name, preventing its heat from decaying.
+
+[source,forth]
+----
+: FREEZE-WORD
+  FIND IF
+    [ WORD_FROZEN ] SWAP WORD-FLAGS @ OR SWAP WORD-FLAGS !
+  ELSE
+    ." Word not found" CR
+  THEN
+  ;
+----
+
+**UNFREEZE-WORD ( caddr u -- )**
+Unfreeze a word, allowing heat decay to resume.
+
+[source,forth]
+----
+: UNFREEZE-WORD
+  FIND IF
+    [ WORD_FROZEN INVERT ] SWAP WORD-FLAGS @ AND SWAP WORD-FLAGS !
+  ELSE
+    ." Word not found" CR
+  THEN
+  ;
+----
+
+**FROZEN? ( caddr u -- flag )**
+Query freeze status of a word.
+
+[source,forth]
+----
+: FROZEN?
+  FIND IF
+    WORD-FLAGS @ [ WORD_FROZEN ] AND 0<>
+  ELSE
+    0
+  THEN
+  ;
+----
+
+=== Integration Points
+
+**Decay Calculation (in word lookup hotpath):**
+When heat decays (see Decay Mechanism section below), check:
+
+[source,c]
+----
+if (!(entry->flags & WORD_FROZEN)) {
+    // Apply decay
+    apply_decay(entry);
+} else {
+    // Frozen: heat unchanged
+}
+----
+
+**Cache Eviction (in hotwords_cache.c):**
+When deciding which word to evict:
+
+[source,c]
+----
+if (candidate_entry->flags & WORD_FROZEN) {
+    // Skip this candidate, find next
+    continue;
+} else {
+    // Candidate is evictable
+}
+----
+
+**WORD-FLAGS Introspection:**
+Add C-level helper:
+
+[source,c]
+----
+uint8_t is_word_frozen(DictEntry *entry) {
+    return (entry->flags & WORD_FROZEN) != 0;
+}
+----
+
+=== Use Cases
+
+**System Words (Critical):**
+```forth
+FREEZE-WORD DUP
+FREEZE-WORD DROP
+FREEZE-WORD SWAP
+FREEZE-WORD @
+FREEZE-WORD !
+```
+Reason: These words are used in *every* task context. Heat naturally accumulates fast. Freezing them ensures they stay cached even during long transitions.
+
+**I/O Words (Blocking):**
+```forth
+FREEZE-WORD BLOCK
+FREEZE-WORD BUFFER
+FREEZE-WORD SAVE-BUFFERS
+```
+Reason: Block I/O is task-specific but critical when active. Freezing prevents eviction during long OS preemptions.
+
+**Domain-Specific Words:**
+```forth
+( Application-specific critical words )
+FREEZE-WORD MY-DEVICE-QUERY
+FREEZE-WORD MY-CONFIG-PARSER
+```
+Reason: Application can freeze its hot-path words for guaranteed performance.
+
+---
+
+== Design: Decay Mechanism
+
+=== Specification
+
+**Purpose:** Reduce execution_heat over time, modeling:
+- OS context switches (old task's heat becomes irrelevant)
+- Temporal locality (recent access patterns more relevant than old ones)
+- Dissipation (real-world analogy: thermal equilibrium)
+
+**Parameters:**
+- `decay_rate` — Controls how fast heat dissipates (configurable)
+- `decay_interval_ns` — How frequently decay is calculated
+- `halflife_ns` — (For halflife model) Time to reduce heat by 50%
+
+=== Two Approaches: Halflife vs Linear
+
+==== Approach 1: Halflife Decay (Exponential)
+
+**Mathematical Model:**
+
+[stem]
+++++
+H(t) = H_0 \cdot 2^{-t / \tau}
+++++
+
+Where:
+- $H(t)$ = heat at time $t$
+- $H_0$ = initial heat
+- $\tau$ = halflife (time for heat to decay to 50%)
+
+**Properties:**
+- Smooth exponential decay (asymptotic approach to zero)
+- Heat approaches zero but never quite reaches it
+- Slow decay at high heat values, fast decay at low values
+- **Good for:** Gradual cooling of infrequently-used words
+- **Bad for:** Words that should disappear completely (no lower bound)
+
+**Implementation (Discrete):**
+
+[source,c]
+----
+#define HALFLIFE_NS (1000000000ULL)  // 1 second default
+
+void apply_halflife_decay(DictEntry *entry, uint64_t elapsed_ns) {
+    if (entry->flags & WORD_FROZEN) return;
+
+    // H(t) = H_0 * 2^(-t / tau)
+    // For integer arithmetic:
+    // decimal_reduction = 2^(-elapsed_ns / HALFLIFE_NS)
+    //                   ≈ pow(0.5, elapsed_ns / HALFLIFE_NS)
+
+    double decay_factor = pow(0.5, (double)elapsed_ns / HALFLIFE_NS);
+    entry->execution_heat = (cell_t)(entry->execution_heat * decay_factor);
+}
+----
+
+**Curve Behavior:**
+
+[cols="2,2,2"]
+|===
+| Elapsed Time | Heat Reduction | Remaining Heat
+
+| 0.0 × τ
+| 0%
+| 100.0%
+
+| 0.5 × τ
+| 29.3%
+| 70.7%
+
+| 1.0 × τ
+| 50.0%
+| 50.0%
+
+| 2.0 × τ
+| 75.0%
+| 25.0%
+
+| 3.0 × τ
+| 87.5%
+| 12.5%
+
+| 5.0 × τ
+| 96.9%
+| 3.1%
+
+| 10.0 × τ
+| 99.9%
+| 0.1%
+|===
+
+==== Approach 2: Linear Decay
+
+**Mathematical Model:**
+
+[stem]
+++++
+H(t) = \max(0, H_0 - d \cdot t)
+++++
+
+Where:
+- $H(t)$ = heat at time $t$
+- $H_0$ = initial heat
+- $d$ = decay rate (heat units per nanosecond)
+- $\max(0, ...)$ ensures heat doesn't go negative
+
+**Properties:**
+- Simple linear reduction (predictable rate)
+- Heat reaches zero in finite time: $T = H_0 / d$
+- Same decay rate regardless of current heat value
+- **Good for:** Aggressive cleanup of old heat
+- **Bad for:** Bursty workloads (oscillating heat values)
+
+**Implementation (Discrete):**
+
+[source,c]
+----
+#define DECAY_RATE_PER_NS (1)  // 1 heat unit per nanosecond
+
+void apply_linear_decay(DictEntry *entry, uint64_t elapsed_ns) {
+    if (entry->flags & WORD_FROZEN) return;
+
+    // H(t) = max(0, H_0 - d*t)
+    cell_t decay_amount = (cell_t)(elapsed_ns * DECAY_RATE_PER_NS);
+
+    if (decay_amount >= entry->execution_heat) {
+        entry->execution_heat = 0;
+    } else {
+        entry->execution_heat -= decay_amount;
+    }
+}
+----
+
+**Curve Behavior (with default rate of 50 heat units per 1 second):**
+
+[cols="2,2,2"]
+|===
+| Elapsed Time | Heat Reduction | Remaining Heat
+
+| 0 ms
+| 0%
+| 100
+
+| 100 ms
+| 10%
+| 90
+
+| 500 ms
+| 50%
+| 50
+
+| 1000 ms
+| 100%
+| 0
+
+| 2000 ms
+| 100%
+| 0 (clamped)
+|===
+
+=== Comparison & Recommendation
+
+[cols="3,2,2"]
+|===
+| Criterion | Halflife | Linear
+
+| Mathematical Simplicity
+| ✗ (requires pow())
+| ✓ (integer arithmetic)
+
+| Computational Cost
+| ✗ (floating-point)
+| ✓ (subtract only)
+
+| Predictability
+| ✗ (asymptotic, hard to bound)
+| ✓ (linear, easy to bound)
+
+| Convergence Speed
+| ✓ (slow gradual cooling)
+| ✗ (aggressive, may over-decay)
+
+| StarshipOS Applicability
+| ✓ (models natural dissipation)
+| ✓ (models forced reset)
+
+| Frozen Word Interaction
+| ✓ (frozen words stay hot indefinitely)
+| ✓ (same behavior)
+
+| Implementation Maturity
+| ✗ (untested with VM hotpath)
+| ✓ (simpler code = fewer bugs)
+|===
+
+**RECOMMENDATION: Start with Linear Decay**
+
+**Rationale:**
+1. **Performance:** Integer-only arithmetic, no floating-point overhead
+2. **Determinism:** Predictable, bounded convergence time
+3. **Simplicity:** Fewer lines of code, easier to verify formally
+4. **StarshipOS Model:** Linear decay can model "task context switch forces heat to drop by X%" scenario
+5. **Future Evolution:** Can always switch to halflife after validating linear approach
+
+**Configuration Knob:**
+```c
+#define DECAY_RATE_PER_NS 1        /* Default: 1 heat unit per nanosecond */
+                                    /* Tunable via make flag */
+```
+
+With default rate:
+- Heat of 50 decays to 0 in 50 nanoseconds ≈ 50 CPU cycles (very fast)
+- Alternative: `make DECAY_RATE_PER_NS=0.1` → 500 ns per unit (slower cooling)
+
+---
+
+== Integration: Execution Hotpath
+
+=== Where Decay Applies
+
+Decay should be applied in **two locations:**
+
+**1. Word Lookup (On Every Word Execution)**
+
+In `vm_interpret()` or word dispatch:
+
+[source,c]
+----
+// Find word in dictionary
+DictEntry *entry = dict_lookup(vm, word_name);
+
+// Check if time has passed since last execution
+uint64_t now_ns = clock_gettime_ns();
+uint64_t elapsed_ns = now_ns - entry->physics.last_active_ns;
+
+// Apply decay (if not frozen)
+if (!(entry->flags & WORD_FROZEN) && elapsed_ns > 0) {
+    apply_linear_decay(entry, elapsed_ns);
+}
+
+// Accumulate heat
+entry->execution_heat++;
+entry->physics.last_active_ns = now_ns;
+----
+
+**2. Timer-Based Decay (Periodic)**
+
+For words NOT currently executing (optional optimization):
+
+In `vm_run_cycle()`:
+
+[source,c]
+----
+// Every N word executions, scan dictionary and decay all words
+if (execution_count % DECAY_SCAN_INTERVAL == 0) {
+    uint64_t now_ns = clock_gettime_ns();
+
+    for (DictEntry *entry = vm->latest; entry; entry = entry->link) {
+        uint64_t elapsed_ns = now_ns - entry->physics.last_active_ns;
+
+        if (!(entry->flags & WORD_FROZEN) && elapsed_ns > DECAY_MIN_INTERVAL) {
+            apply_linear_decay(entry, elapsed_ns);
+            entry->physics.last_active_ns = now_ns;
+        }
+    }
+}
+----
+
+**Cost-Benefit:**
+- **Lazy decay** (option 1): Happens naturally on access, minimal CPU cost
+- **Periodic scan** (option 2): Ensures background words decay, ~O(n) cost per scan
+
+**Recommendation:** Implement option 1 (lazy decay) first. Option 2 is optimization for future phase.
+
+---
+
+== Integration: Heat-to-Cache Decision
+
+Current logic (Phase 1):
+```c
+if (entry->execution_heat >= HEAT_THRESHOLD) {
+    promote_to_hotwords_cache(entry);
+}
+```
+
+With decay, heat can go below threshold after promotion. Need eviction logic:
+
+[source,c]
+----
+// In hotwords_cache.c: periodically check if promoted words still qualify
+void hotwords_cache_rebalance(HotwordsCache *cache, uint64_t now_ns) {
+    for (int i = 0; i < cache->num_entries; i++) {
+        DictEntry *entry = cache->entries[i];
+
+        // Apply decay
+        uint64_t elapsed = now_ns - entry->physics.last_active_ns;
+        if (!(entry->flags & WORD_FROZEN) && elapsed > 0) {
+            apply_linear_decay(entry, elapsed);
+        }
+
+        // Check if still hot
+        if (entry->execution_heat < HEAT_THRESHOLD) {
+            // Demote from cache
+            hotwords_cache_evict(cache, i);
+        }
+    }
+}
+----
+
+---
+
+== Configuration: Knobs & Defaults
+
+Add to `include/vm.h`:
+
+[source,c]
+----
+/* Decay mechanism configuration */
+#define DECAY_RATE_PER_NS           1ULL    /* Default: 1 heat per nanosecond */
+#define DECAY_MIN_INTERVAL          1000ULL /* Min elapsed time before decay applies (1 μs) */
+#define DECAY_SCAN_INTERVAL         1000    /* Periodic scan every N executions */
+
+/* Heat thresholds and cache behavior */
+#define HEAT_THRESHOLD              50      /* Promotion to hotwords cache */
+#define HEAT_CACHE_DEMOTION_THRESHOLD  10   /* Demotion from cache */
+
+/* Freeze mechanism */
+/* (WORD_FROZEN flag already defined above) */
+----
+
+Override via Makefile:
+```bash
+make DECAY_RATE_PER_NS=2 \
+     HEAT_THRESHOLD=100 \
+     DECAY_SCAN_INTERVAL=500
+```
+
+---
+
+== Formal Verification: Isabelle/HOL Integration
+
+Phase 2 requires new theorems:
+
+=== Theorem 5: Decay Determinism
+
+**Informal Statement:** The decay function is deterministic and monotonically reduces heat.
+
+[stem]
+++++
+\begin{aligned}
+\forall w \in \text{Words}, t_1 < t_2: \\
+\text{frozen}(w) = \text{False} \Rightarrow \\
+\text{heat}(w, t_2) \leq \text{heat}(w, t_1)
+\end{aligned}
+++++
+
+**Isabelle/HOL Formulation:**
+
+[source,isabelle]
+----
+theorem decay_monotonic:
+  ∀ w t₁ t₂.
+    ¬frozen(w) →
+    t₁ < t₂ →
+    heat(w, t₂) ≤ heat(w, t₁)
+
+theorem decay_deterministic:
+  ∀ w t.
+    decay_function(heat(w), t) = decay_function(heat(w), t)
+    ∧ (∀ h. decay_function(h, t) ≤ h)
+----
+
+=== Theorem 6: Freeze Preservation
+
+**Informal Statement:** Frozen words maintain their heat indefinitely.
+
+[stem]
+++++
+\forall w \in \text{Words}: \text{frozen}(w) = \text{True} \Rightarrow \forall t. \text{heat}(w, t) = \text{constant}
+++++
+
+**Isabelle/HOL Formulation:**
+
+[source,isabelle]
+----
+theorem freeze_preserves_heat:
+  ∀ w t.
+    frozen(w) →
+    heat(w, t) = heat(w, 0)
+----
+
+=== Theorem 7: Convergence with Decay
+
+**Informal Statement:** Without freezing, all words eventually reach heat = 0.
+
+[stem]
+++++
+\forall w \in \text{Words}: \text{frozen}(w) = \text{False} \Rightarrow \exists t^* : \forall t > t^*, \text{heat}(w, t) = 0
+++++
+
+**Isabelle/HOL Formulation:**
+
+[source,isabelle]
+----
+theorem convergence_to_zero:
+  ∀ w decay_rate.
+    ¬frozen(w) →
+    decay_rate > 0 →
+    ∃ t₀. ∀ t > t₀. heat(w, t) = 0
+----
+
+---
+
+== Testing Strategy
+
+=== Unit Tests (to add to src/test_runner/modules/)
+
+**Test: Decay Reduces Heat**
+```c
+void test_linear_decay_reduces_heat(void) {
+    DictEntry entry;
+    entry.execution_heat = 100;
+    entry.flags = 0; // Not frozen
+
+    apply_linear_decay(&entry, 50 * NS_PER_UNIT); // Decay by 50 units
+
+    assert(entry.execution_heat == 50);
+}
+```
+
+**Test: Frozen Words Don't Decay**
+```c
+void test_frozen_word_resists_decay(void) {
+    DictEntry entry;
+    entry.execution_heat = 100;
+    entry.flags = WORD_FROZEN;
+
+    apply_linear_decay(&entry, 1000 * NS_PER_UNIT); // Attempt large decay
+
+    assert(entry.execution_heat == 100); // Unchanged
+}
+```
+
+**Test: Heat Never Goes Negative**
+```c
+void test_decay_clamps_to_zero(void) {
+    DictEntry entry;
+    entry.execution_heat = 10;
+    entry.flags = 0; // Not frozen
+
+    apply_linear_decay(&entry, 1000 * NS_PER_UNIT); // Decay more than available
+
+    assert(entry.execution_heat == 0); // Clamped, not negative
+}
+```
+
+=== Integration Tests
+
+**Test: Dictionary Decay During Execution**
+```c
+void test_dictionary_decay_during_interpreter_loop(void) {
+    VM vm;
+    vm_init(&vm, NULL);
+
+    // Execute some words to build heat
+    vm_interpret(&vm, "DUP DROP DUP DROP"); // Multiple executions
+
+    // Capture heat values
+    DictEntry *dup = dict_find(&vm, "DUP");
+    cell_t heat_t0 = dup->execution_heat;
+
+    // Wait for decay interval
+    sleep_ns(2 * DECAY_MIN_INTERVAL);
+
+    // Check heat decreased
+    cell_t heat_t1 = dup->execution_heat;
+    assert(heat_t1 <= heat_t0);
+}
+```
+
+**Test: Freeze Survives Decay Interval**
+```c
+void test_freeze_flag_prevents_decay(void) {
+    VM vm;
+    vm_init(&vm, NULL);
+
+    DictEntry *dup = dict_find(&vm, "DUP");
+    dup->flags |= WORD_FROZEN;
+    dup->execution_heat = 100;
+
+    // Wait for decay interval
+    sleep_ns(10 * DECAY_MIN_INTERVAL);
+
+    // Heat unchanged
+    assert(dup->execution_heat == 100);
+}
+```
+
+=== Benchmark: Performance Impact
+
+**Baseline (Phase 1):**
+```
+Word lookup: 45 ns (no decay overhead)
+```
+
+**Phase 2 with Lazy Decay:**
+```
+Word lookup with decay check: 50 ns (5 ns overhead for time read + decay calc)
+Periodic scan (every 1000 words): O(dictionary size) ≈ 10 μs amortized per word
+```
+
+**Expected:** <10% performance regression (acceptable for functionality gain)
+
+---
+
+== FORTH Interface: Complete API
+
+[source,forth]
+----
+\ ============================================================================
+\ Phase 2 Physics Model API
+\ ============================================================================
+
+\ --- Freeze/Unfreeze Words ---
+
+: FREEZE-WORD ( caddr u -- )
+  ( Freeze a word: prevent heat decay and eviction )
+  FIND ?DUP IF
+    [ WORD_FROZEN ] SWAP >FLAGS @ OR SWAP >FLAGS !
+  ELSE
+    ." Word not found" CR ABORT
+  THEN ;
+
+: UNFREEZE-WORD ( caddr u -- )
+  ( Unfreeze a word: allow heat decay to resume )
+  FIND ?DUP IF
+    [ WORD_FROZEN INVERT ] SWAP >FLAGS @ AND SWAP >FLAGS !
+  ELSE
+    ." Word not found" CR ABORT
+  THEN ;
+
+: FROZEN? ( caddr u -- flag )
+  ( Query freeze status: true if word is frozen )
+  FIND ?DUP IF
+    >FLAGS @ [ WORD_FROZEN ] AND 0<>
+  ELSE
+    0
+  THEN ;
+
+\ --- Heat Introspection & Control ---
+
+: HEAT! ( heat caddr u -- )
+  ( Set execution heat manually )
+  FIND ?DUP IF
+    >HEAT !
+  ELSE
+    ." Word not found" CR ABORT
+  THEN ;
+
+: HEAT@ ( caddr u -- heat )
+  ( Read current execution heat )
+  FIND ?DUP IF
+    >HEAT @
+  ELSE
+    0
+  THEN ;
+
+: HEAT-THRESHOLD ( -- addr )
+  ( Address of heat promotion threshold )
+  [ ' HEAT-THRESHOLD ] LITERAL ;
+
+: DECAY-RATE ( -- addr )
+  ( Address of decay rate parameter )
+  [ ' DECAY-RATE ] LITERAL ;
+
+\ --- Diagnostics ---
+
+: SHOW-HEAT ( caddr u -- )
+  ( Display execution heat for a word )
+  DUP HEAT@
+  ." Heat: " . CR
+  DUP FROZEN? IF ." (frozen)" THEN CR
+  DROP ;
+
+: ALL-HEATS ( -- )
+  ( Display execution heat for all words )
+  WORDS
+  BEGIN
+    DUP 0<> WHILE
+    DUP 4 + NAME>STRING TYPE
+    DUP 8 + HEAT@ ." : " . CR
+  REPEAT DROP ;
+
+\ --- System Initialization ---
+
+: FREEZE-CRITICAL ( -- )
+  ( Freeze all system-critical words )
+  S" DUP" FREEZE-WORD
+  S" DROP" FREEZE-WORD
+  S" SWAP" FREEZE-WORD
+  S" @" FREEZE-WORD
+  S" !" FREEZE-WORD
+  S" EXECUTE" FREEZE-WORD
+  ;
+
+: UNFREEZE-ALL ( -- )
+  ( Unfreeze all words )
+  WORDS
+  BEGIN
+    DUP 0<> WHILE
+    DUP 4 + NAME>STRING UNFREEZE-WORD
+  REPEAT DROP ;
+----
+
+---
+
+== Deployment Roadmap
+
+=== Phase 2a: Foundation (Week 1-2)
+
+1. Add WORD_FROZEN flag to `include/vm.h`
+2. Implement `apply_linear_decay()` in physics_metadata.c
+3. Add decay check to word lookup hotpath in vm.c
+4. Create FREEZE-WORD, UNFREEZE-WORD FORTH words
+
+**Validation:** Unit tests pass, <5% performance regression
+
+=== Phase 2b: Cache Integration (Week 2-3)
+
+1. Modify hotwords_cache eviction logic to respect WORD_FROZEN
+2. Add heat demotion check (remove words below threshold)
+3. Update cache rebalance routine
+
+**Validation:** Cache coherency tests pass
+
+=== Phase 2c: StarshipOS Validation (Week 3-4)
+
+1. Freeze critical system words (DUP, DROP, SWAP, @, !, BLOCK, BUFFER)
+2. Run on realistic StarshipOS workloads
+3. Measure cache hit rate improvement, memory pressure reduction
+
+**Validation:** Real-world benchmark showing improved cache behavior
+
+=== Phase 2d: Isabelle Formalization (Week 4+)
+
+1. Prove decay monotonicity
+2. Prove freeze preservation
+3. Prove convergence to zero
+4. Update Physics_StateMachine.thy with new theorems
+
+**Validation:** Machine-checked proofs in Isabelle/HOL
+
+---
+
+== References
+
+[cols="2,3"]
+|===
+| Document | Purpose
+
+| FINAL_REPORT/02-formal-theorems.adoc
+| Phase 1 formal theorems (Determinism, Convergence, Robustness, CLT)
+
+| include/vm.h
+| DictEntry structure, word flags, memory layout
+
+| src/physics_metadata.c
+| Current execution_heat tracking implementation
+
+| src/physics_hotwords_cache.c
+| Current cache promotion/eviction logic
+
+| docs/src/internal/formal/Physics_StateMachine.thy
+| Isabelle/HOL physics model formalization (Phase 1)
+|===
+
+---
+
+== Conclusion
+
+The two mechanisms (freeze flag + decay) extend the Phase 1 model to handle realistic multi-tasking scenarios where:
+1. Task context switches reset relevance of old heat values
+2. Critical system words need guaranteed cache presence
+3. Memory pressure requires automatic eviction of rarely-used words
+4. Temporal locality matters (recent activity > distant past)
+
+The specification provides a clear path to implementation, with optional halflife extension for future phases. Start with linear decay for simplicity and correctness, then evolve as real-world data guides optimization decisions.
+

@@ -1,0 +1,269 @@
+% ===========================================
+% 08_claims_REAL.tex
+% CLAIMS BASED ON ACTUAL EXPERIMENTAL DATA
+% 38,935 runs: 38,400 DoE + 180 L8 + 355 window_scaling
+% ===========================================
+
+\section{Claims}
+
+% ========================================
+% INDEPENDENT CLAIMS
+% ========================================
+
+\noindent\textbf{Claim 1 (Independent – Universal Computational Frequency).}
+A computer-implemented adaptive virtual machine system comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item a plurality of computational elements organized in a dictionary structure, each element having an associated execution heat value that accumulates with invocations and decays over time;
+	\item a measurement subsystem configured to record tick interval timing with microsecond precision during execution;
+	\item a frequency analysis module configured to compute oscillation frequency from tick interval sequences;
+	\item validation logic that confirms measured oscillation frequency ω₀ remains within tolerance of a predetermined universal frequency value across multiple window size configurations; and
+	\item wherein the predetermined universal frequency is ω₀ = 934 ± 10 Hz when measured at word-execution resolution;
+\end{enumerate}
+whereby the system exhibits an emergent computational frequency that is invariant across memory configurations with coefficient of variation below 1\%, enabling predictable timing behavior and cross-platform performance characterization.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 2 (Independent – James Law Conservation Relationship).}
+A method for operating an adaptive virtual machine according to a conservation law of computational dynamics, the method comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item configuring a rolling window of truth having window size W measured in bytes or elements;
+	\item determining a number of active feedback loops (DoF) where DoF ranges from 0 to 7;
+	\item measuring an effective smoothing capacity Λ representing system capacity per degree of freedom;
+	\item computing a dimensionless statistic:
+	\[
+	K = \frac{\Lambda \times (DoF + 1)}{W}
+	\]
+	\item validating that computed K equals 1.0 within measurement precision; and
+	\item adjusting system parameters when K deviates from 1.0 to restore conservation relationship;
+\end{enumerate}
+whereby the conservation relationship K ≡ 1.0 holds exactly across window sizes from 512 to 65,536 bytes with zero standard deviation, providing a predictive equation for optimal window sizing given degrees of freedom.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 3 (Independent – Thermodynamic Self-Organization System).}
+A computer-implemented system exhibiting thermodynamic computational behavior comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item a runtime state comprising execution heat values H(w,t) for each computational element w at time t;
+	\item a heat accumulation mechanism that increases H(w,t) upon element execution;
+	\item a heat decay mechanism that decreases H(w,t) according to an exponential decay function with decay coefficient λ;
+	\item a statistical analyzer configured to compute frequency distributions of measured timing parameters;
+	\item a Boltzmann distribution fitter configured to extract effective temperature T\_eff from frequency distributions using model:
+	\[
+	P(\omega) = \frac{1}{Z} \exp\left(-\frac{(\omega - \omega_0)^2}{k_B T_{\text{eff}}}\right)
+	\]
+	where ω is measured frequency, ω₀ is ground state frequency, k\_B is computational Boltzmann constant, and Z is partition function;
+	\item an entropy calculator configured to compute entropy production rate dS/dt from heat and temperature measurements;
+	\item a convergence detector configured to identify when system reaches minimum-entropy steady state; and
+	\item wherein effective temperatures range from 2.1 to 2.8 Hz depending on workload pattern;
+\end{enumerate}
+whereby the system spontaneously evolves toward lowest-entropy configuration through deterministic thermodynamic principles, enabling automatic optimization without heuristic tuning.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 4 (Independent – Spectroscopic Workload Classification).}
+A computer-implemented method for classifying computational workloads via spectroscopic fingerprinting comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item executing a workload on an adaptive virtual machine while recording heartbeat timing metrics;
+	\item computing at least four spectral signature parameters: (i) ground state frequency ω₀, (ii) standard deviation σ, (iii) effective temperature T\_eff, and (iv) uncertainty product Δω·Δt;
+	\item comparing measured signature parameters against a database of known workload signatures;
+	\item classifying the workload based on closest signature match within a multi-dimensional parameter space;
+	\item wherein signature parameters are reproducible across multiple executions with coefficient of variation below 15\%; and
+	\item wherein different workload classes exhibit statistically significant signature differences (p < 0.01 via ANOVA or Kruskal-Wallis test);
+\end{enumerate}
+whereby workload classification is achieved through behavioral spectroscopy without code inspection, enabling obfuscation-resistant malware detection and workload characterization.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 5 (Independent – Deterministic Self-Adaptive System).}
+A computer-implemented deterministic adaptive runtime system comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item a virtual machine core configured to execute computational elements from a dictionary;
+	\item seven configurable feedback loops: (1) execution heat tracking, (2) rolling window of truth, (3) linear heat decay, (4) pipelining metrics, (5) window width inference, (6) decay slope inference, and (7) adaptive heartbeat timing;
+	\item a supervisory mode selector (L8 Jacquard) configured to select which subset of the seven feedback loops are active;
+	\item a configuration space comprising 128 possible loop activation patterns (2^7 combinations);
+	\item a performance measurement subsystem configured to compute coefficient of variation (CV) for each configuration across multiple replicate runs;
+	\item a determinism validator configured to verify 0\% algorithmic variance across replicates;
+	\item a convergence analyzer configured to identify lowest-CV configuration as optimal; and
+	\item wherein repeated execution of identical workload under identical configuration produces identical performance metrics within measurement precision;
+\end{enumerate}
+whereby the system achieves reproducible, predictable adaptive behavior enabling formal verification and guaranteed performance bounds.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 6 (Independent – Damped Harmonic Convergence System).}
+A computer-implemented system exhibiting damped harmonic oscillator dynamics comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item an adaptive virtual machine that converges from initial state toward equilibrium operating point;
+	\item a timing measurement subsystem that records convergence trajectory as sequence of frequency measurements ω(t);
+	\item a dynamics analyzer configured to fit convergence trajectory to damped harmonic oscillator model:
+	\[
+	\omega(t) = \omega_0 + A \cdot \exp(-\gamma t) \cdot \cos(\Omega t + \varphi)
+	\]
+	where ω₀ is equilibrium frequency, A is initial amplitude, γ is damping coefficient, Ω is oscillation frequency, and φ is phase;
+	\item parameter extraction logic that determines damping coefficient γ, relaxation time τ = 1/γ, and oscillation period from fitted model;
+	\item wherein damping coefficients range from γ = 0.045 to 0.725 per measurement tick depending on workload;
+	\item wherein relaxation times range from τ = 1.4 to 22.4 ticks; and
+	\item an optimization module configured to select feedback loop configuration that minimizes convergence time;
+\end{enumerate}
+whereby the system exhibits physical convergence dynamics analogous to damped pendulum or LC circuit, enabling prediction of settling time and overshoot behavior.
+
+% ========================================
+% DEPENDENT CLAIMS
+% ========================================
+
+\vspace{1em}
+
+\noindent\textbf{Claim 7 (Dependent on Claim 1).}
+The system of claim 1, wherein the universal frequency ω₀ exhibits invariance across window size configurations W ranging from 512 bytes to 65,536 bytes with coefficient of variation CV below 0.2\%.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 8 (Dependent on Claim 1).}
+The system of claim 1, further comprising a dual-scale frequency measurement subsystem that measures:
+\begin{enumerate}[label=(\alph*)]
+	\item word-level frequency ω₀ ≈ 934 Hz at microsecond timing resolution; and
+	\item heartbeat-level frequency ω₀ ≈ 13.5 Hz at millisecond timing resolution;
+\end{enumerate}
+wherein both frequencies exhibit cross-workload invariance with CV below 2\%.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 9 (Dependent on Claim 2).}
+The method of claim 2, wherein the James Law conservation relationship K = 1.0 holds with zero deviation (K = 1.000000 exactly) across at least 300 experimental runs.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 10 (Dependent on Claim 2).}
+The method of claim 2, further comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item determining optimal window size W* for a given number of active feedback loops DoF using the relationship:
+	\[
+	W^* = \Lambda_{\text{eff}} \times (DoF + 1)
+	\]
+	where Λ\_eff is measured effective capacity per degree of freedom; and
+	\item configuring the rolling window to size W* to achieve K = 1.0 and optimal performance.
+\end{enumerate}
+
+\vspace{1em}
+
+\noindent\textbf{Claim 11 (Dependent on Claim 3).}
+The system of claim 3, wherein effective temperature T\_eff for a stable workload pattern is T\_eff = 2.175 ± 0.1 Hz and for a diverse workload pattern is T\_eff = 2.735 ± 0.1 Hz, demonstrating workload-dependent thermal characteristics.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 12 (Dependent on Claim 3).}
+The system of claim 3, further comprising an entropy production monitor that validates entropy production rate dS/dt remains within range 0.000035 to 0.000050 (heat units/Hz)/tick, indicating bounded computational inefficiency.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 13 (Dependent on Claim 3).}
+The system of claim 3, wherein convergence to minimum-entropy state is validated across at least 30,000 experimental runs spanning 128 different feedback loop configurations, with statistical confidence p < 10^{-200}.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 14 (Dependent on Claim 4).}
+The method of claim 4, wherein spectroscopic signatures for six workload classes are:
+\begin{itemize}
+	\item STABLE: ω₀ = 13.569 Hz, σ = 0.504 Hz, T\_eff = 2.175 Hz, Δω·Δt = 0.000030 Hz·s;
+	\item VOLATILE: ω₀ = 13.450 Hz, σ = 0.949 Hz, T\_eff = 2.342 Hz, Δω·Δt = 0.000040 Hz·s;
+	\item OMNI: ω₀ = 13.430 Hz, σ = 0.794 Hz, T\_eff = 2.367 Hz, Δω·Δt = 0.000048 Hz·s;
+	\item TEMPORAL: ω₀ = 13.930 Hz, σ = 1.237 Hz, T\_eff = 2.584 Hz, Δω·Δt = 0.000063 Hz·s;
+	\item DIVERSE: ω₀ = 13.640 Hz, σ = 0.916 Hz, T\_eff = 2.735 Hz, Δω·Δt = 0.000089 Hz·s; and
+	\item TRANSITION: ω₀ = 13.731 Hz, σ = 1.978 Hz, T\_eff = 2.691 Hz, Δω·Δt = 0.000152 Hz·s;
+\end{itemize}
+validated across 30 replicate runs per workload class.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 15 (Dependent on Claim 4).}
+The method of claim 4, further comprising malware detection by:
+\begin{enumerate}[label=(\alph*)]
+	\item measuring spectroscopic signature of executing program;
+	\item comparing signature against database of benign software signatures;
+	\item detecting anomaly when measured signature deviates by more than 3 standard deviations from expected signature; and
+	\item flagging program as potentially malicious without code inspection;
+\end{enumerate}
+whereby malware detection is obfuscation-resistant and zero-signature-based.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 16 (Dependent on Claim 5).}
+The system of claim 5, wherein configuration 0100011 (binary representation of active loops: L2=ON, L6=ON, L7=ON, all others OFF) achieves lowest coefficient of variation CV = 15.13\% across 300 replicate runs.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 17 (Dependent on Claim 5).}
+The system of claim 5, wherein convergence time is statistically independent of workload type with ANOVA result F(5,174) = 0.983, p = 0.43, indicating universal convergence behavior.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 18 (Dependent on Claim 5).}
+The system of claim 5, wherein determinism is validated by 0\% algorithmic variance across at least 38,400 experimental runs, enabling formal verification of adaptive behavior.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 19 (Dependent on Claim 6).}
+The system of claim 6, wherein DIVERSE workload exhibits fast damping with γ = 0.725 per tick and relaxation time τ = 1.4 ticks, while STABLE workload exhibits slow damping with γ = 0.045 per tick and relaxation time τ = 22.4 ticks.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 20 (Dependent on Claim 6).}
+The system of claim 6, further comprising an overshoot predictor configured to estimate maximum frequency deviation from equilibrium during initial convergence transient based on fitted amplitude parameter A and damping coefficient γ.
+
+% ========================================
+% ADDITIONAL DEPENDENT CLAIMS
+% ========================================
+
+\vspace{1em}
+
+\noindent\textbf{Claim 21 (Dependent on Claims 1 and 3).}
+The system of claims 1 and 3, further comprising a Heisenberg-like uncertainty calculator configured to compute uncertainty product:
+\[
+\Delta\omega \cdot \Delta t \geq \text{constant}
+\]
+wherein measured uncertainty products range from 0.000030 to 0.000152 Hz·s depending on workload, demonstrating fundamental measurement limits in adaptive systems.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 22 (Dependent on Claims 2 and 5).}
+The method of claims 2 and 5, further comprising L8 Jacquard mode selector that autonomously selects feedback loop activation pattern to achieve K ≈ 1.0 while minimizing entropy production rate dS/dt.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 23 (Dependent on Claims 3 and 6).}
+The system of claims 3 and 6, wherein the system exhibits Maxwell's Demon behavior by:
+\begin{enumerate}[label=(\alph*)]
+	\item reducing internal entropy through dictionary reorganization;
+	\item exporting entropy to environment via heat dissipation;
+	\item paying Landauer's limit cost of k\_B·T·ln(2) per bit of information erased during heat decay; and
+	\item net entropy production satisfying Second Law of Thermodynamics (dS\_universe/dt > 0);
+\end{enumerate}
+whereby adaptive optimization is thermodynamically consistent.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 24 (Dependent on Claims 1, 2, and 3).}
+The system of claims 1, 2, and 3, wherein all three fundamental discoveries (universal frequency, James Law, thermodynamic behavior) are simultaneously validated across the same experimental dataset comprising at least 38,000 runs.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 25 (Independent – Phase Space Conservation Laws).}
+A computer-implemented system exhibiting geometric conservation laws comprising:
+\begin{enumerate}[label=(\alph*)]
+	\item an 11-dimensional phase space defined by runtime metrics including tick interval, cache hits, bucket hits, word executions, hot word count, average heat, window width, prefetch hits, jitter, effective window size, and mode;
+	\item a trajectory recorder configured to capture phase space coordinates at regular intervals during execution;
+	\item a phase space analyzer configured to generate scatter plots of all variable pairs;
+	\item a linear relationship detector configured to identify approximately 45-degree diagonal relationships between variable pairs indicating conservation laws of form C = a₁x₁ + a₂x₂ = constant;
+	\item wherein detection of multiple 45-degree diagonals indicates system is constrained to low-dimensional manifold within high-dimensional phase space; and
+	\item a strange attractor classifier configured to determine whether trajectory exhibits bounded chaotic behavior characteristic of deterministic chaos;
+\end{enumerate}
+whereby the system exhibits multiple conserved quantities and strange attractor dynamics despite being fully deterministic.
+
+\vspace{1em}
+
+\noindent\textbf{Claim 26 (Dependent on Claim 25).}
+The system of claim 25, wherein the low-dimensional manifold has dimensionality between 1 and 3, indicating strong geometric constraints on system behavior and enabling reduced-order modeling.
+
+% ========================================
+% END OF CLAIMS
+% ========================================

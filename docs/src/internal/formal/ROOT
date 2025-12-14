@@ -1,0 +1,13 @@
+session StarForth_Formal = HOL +
+  description "StarForth VM formal verification (VM semantics + Physics)"
+  options [document = false]
+  theories
+    VM_Core
+    VM_Stacks
+    VM_StackRuntime
+    VM_Words
+    VM_DataStack_Words
+    VM_ReturnStack_Words
+    VM_Register
+    Physics_StateMachine
+    Physics_Observation

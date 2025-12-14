@@ -1,0 +1,20 @@
+════════════════════════════════════════════════════════════
+   ⚡ Building the Fastest Forth in the West! ⚡
+════════════════════════════════════════════════════════════
+  Target Architecture: x86_64 (amd64)
+  Build Profile: Maximum performance build (ASM + LTO + direct threading) (fastest)
+
+Generating version header...
+  CC  src/blkio_factory.c
+  CC  src/blkio_file.c
+  CC  src/blkio_ram.c
+  CC  src/block_subsystem.c
+  CC  src/cli.c
+  CC  src/dictionary_management.c
+  CC  src/io.c
+  CC  src/log.c
+  CC  src/main.c
+  CC  src/math_portable.c
+  CC  src/memory_management.c
+  CC  src/physics_hotwords_cache.c
+make: *** [Makefile:502: build/amd64/fastest/physics_metadata.o] Terminated

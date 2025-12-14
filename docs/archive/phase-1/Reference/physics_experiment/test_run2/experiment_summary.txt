@@ -1,0 +1,9 @@
+
+Experiment Start: 2025-11-07T06:14:54
+Output Directory: physics_experiment/test_run2
+Runs per Configuration: 30
+Total Runs: 90
+Benchmark Iterations: 100000
+Build Profile: fastest
+Execution: Randomized order (eliminates temporal bias)
+

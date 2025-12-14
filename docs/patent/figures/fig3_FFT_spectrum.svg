@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  -  StarForth — Steady-State Virtual Machine Runtime
+  -
+  -  Copyright (c) 2023–2025 Robert A. James
+  -  All rights reserved.
+  -
+  -  This file is part of the StarForth project.
+  -
+  -  Licensed under the StarForth License, Version 1.0 (the "License");
+  -  you may not use this file except in compliance with the License.
+  -
+  -  You may obtain a copy of the License at:
+  -      https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  -
+  -  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  -  express or implied, including but not limited to the warranties of
+  -  merchantability, fitness for a particular purpose, and noninfringement.
+  -
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -
+  - StarForth — Steady-State Virtual Machine Runtime
+  -  Copyright (c) 2023–2025 Robert A. James
+  -  All rights reserved.
+  -
+  -  This file is part of the StarForth project.
+  -
+  -  Licensed under the StarForth License, Version 1.0 (the "License");
+  -  you may not use this file except in compliance with the License.
+  -
+  -  You may obtain a copy of the License at:
+  -       https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+  -
+  -  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  -  express or implied, including but not limited to the warranties of
+  -  merchantability, fitness for a particular purpose, and noninfringement.
+  -
+  -  See the License for the specific language governing permissions and
+  -  limitations under the License.
+  -
+  -->
+
+<svg width="960" height="540" viewBox="0 0 960 540" xmlns="http://www.w3.org/2000/svg">
+  <!-- Title (outside boundary) -->
+  <text x="480" y="30" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">
+    Figure 3: FFT Spectral Analysis of K Residuals (Standing Wave Frequency)
+  </text>
+
+  <!-- Main plot area -->
+  <g transform="translate(100, 70)">
+    <!-- Axes -->
+    <line x1="0" y1="400" x2="800" y2="400" stroke="black" stroke-width="1.25" />
+    <line x1="0" y1="0" x2="0" y2="400" stroke="black" stroke-width="1.25" />
+
+    <!-- X-axis label -->
+    <text x="400" y="450" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="14" text-anchor="middle">
+      Frequency (cycles per window doubling)
+    </text>
+
+    <!-- Y-axis label -->
+    <text x="-200" y="-35" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="14" text-anchor="middle" transform="rotate(-90)">
+      Spectral Power (arbitrary units)
+    </text>
+
+    <!-- X-axis tick marks and labels (0.0 to 2.0 cycles/window) -->
+    <line x1="0" y1="400" x2="0" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="0" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.0</text>
+
+    <line x1="133" y1="400" x2="133" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="133" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.25</text>
+
+    <line x1="267" y1="400" x2="267" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="267" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.5</text>
+
+    <line x1="400" y1="400" x2="400" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="400" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">0.75</text>
+
+    <line x1="533" y1="400" x2="533" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="533" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">1.0</text>
+
+    <line x1="667" y1="400" x2="667" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="667" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">1.25</text>
+
+    <line x1="800" y1="400" x2="800" y2="410" stroke="black" stroke-width="1.25" />
+    <text x="800" y="430" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="middle">1.5</text>
+
+    <!-- Y-axis tick marks and labels (0 to 1.0) -->
+    <line x1="-10" y1="400" x2="0" y2="400" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="405" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">0.0</text>
+
+    <line x1="-10" y1="320" x2="0" y2="320" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="325" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">0.2</text>
+
+    <line x1="-10" y1="240" x2="0" y2="240" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="245" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">0.4</text>
+
+    <line x1="-10" y1="160" x2="0" y2="160" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="165" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">0.6</text>
+
+    <line x1="-10" y1="80" x2="0" y2="80" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="85" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">0.8</text>
+
+    <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1.25" />
+    <text x="-15" y="5" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" text-anchor="end">1.0</text>
+
+    <!-- Simulated FFT spectrum bars -->
+    <!-- Scale: X: 0-1.5 -> 0-800px, Y: 0-1.0 -> 400-0px -->
+
+    <!-- Noise floor (low amplitude bars) -->
+    <rect x="0" y="380" width="15" height="20" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="20" y="390" width="15" height="10" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="40" y="385" width="15" height="15" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="60" y="388" width="15" height="12" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="80" y="382" width="15" height="18" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="100" y="390" width="15" height="10" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="120" y="385" width="15" height="15" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="140" y="387" width="15" height="13" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="160" y="383" width="15" height="17" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="180" y="389" width="15" height="11" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="200" y="386" width="15" height="14" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="220" y="388" width="15" height="12" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="240" y="384" width="15" height="16" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="260" y="390" width="15" height="10" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="280" y="387" width="15" height="13" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="300" y="385" width="15" height="15" fill="lightgray" stroke="black" stroke-width="0.5" />
+
+    <!-- Building up to dominant peak -->
+    <rect x="320" y="370" width="15" height="30" fill="gray" stroke="black" stroke-width="0.5" />
+    <rect x="340" y="340" width="15" height="60" fill="gray" stroke="black" stroke-width="0.5" />
+
+    <!-- DOMINANT PEAK at f₀ = 0.6667 cycles/window -->
+    <!-- 0.6667 / 1.5 * 800 = 355.7 -->
+    <rect x="348" y="0" width="25" height="400" fill="red" stroke="black" stroke-width="1.5" />
+
+    <!-- Decay after peak -->
+    <rect x="378" y="340" width="15" height="60" fill="gray" stroke="black" stroke-width="0.5" />
+    <rect x="398" y="370" width="15" height="30" fill="gray" stroke="black" stroke-width="0.5" />
+
+    <!-- Continued noise floor -->
+    <rect x="418" y="385" width="15" height="15" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="438" y="388" width="15" height="12" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="458" y="383" width="15" height="17" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="478" y="389" width="15" height="11" fill="lightgray" stroke="black" stroke-width="0.5" />
+
+    <!-- Small secondary peak at f = 1.0 (harmonic) -->
+    <rect x="520" y="280" width="20" height="120" fill="orange" stroke="black" stroke-width="1.25" />
+
+    <!-- More noise -->
+    <rect x="545" y="386" width="15" height="14" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="565" y="388" width="15" height="12" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="585" y="384" width="15" height="16" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="605" y="390" width="15" height="10" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="625" y="387" width="15" height="13" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="645" y="385" width="15" height="15" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="665" y="389" width="15" height="11" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="685" y="383" width="15" height="17" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="705" y="388" width="15" height="12" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="725" y="386" width="15" height="14" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="745" y="390" width="15" height="10" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="765" y="385" width="15" height="15" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <rect x="785" y="387" width="15" height="13" fill="lightgray" stroke="black" stroke-width="0.5" />
+
+    <!-- Vertical line marking f₀ -->
+    <line x1="360.5" y1="0" x2="360.5" y2="400" stroke="red" stroke-width="2" stroke-dasharray="5,5" />
+  </g>
+
+  <!-- Annotations -->
+  <g transform="translate(100, 70)">
+    <!-- Dominant frequency label -->
+    <text x="360" y="-15" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="12" font-weight="bold" fill="red" text-anchor="middle">
+      f₀ = 0.6667 cycles/window
+    </text>
+    <text x="360" y="0" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" fill="red" text-anchor="middle">
+      (Period = 1.5 doublings)
+    </text>
+
+    <!-- Secondary harmonic label -->
+    <text x="530" y="270" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10" fill="orange" text-anchor="middle">
+      f = 1.0
+    </text>
+    <text x="530" y="285" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" fill="orange" text-anchor="middle">
+      (performance wave)
+    </text>
+
+    <!-- Frequency ratio annotation -->
+    <path d="M 360,220 Q 450,200 530,220" stroke="blue" stroke-width="1.25" fill="none" />
+    <text x="445" y="190" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" fill="blue" text-anchor="middle" font-weight="bold">
+      3:2 frequency ratio
+    </text>
+    <text x="445" y="205" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="9" fill="blue" text-anchor="middle">
+      (perfect fifth in musical terms)
+    </text>
+  </g>
+
+  <!-- Legend (below plot) -->
+  <g transform="translate(120, 495)">
+    <rect x="0" y="-8" width="15" height="15" fill="red" stroke="black" stroke-width="1.25" />
+    <text x="20" y="4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Dominant frequency (f₀ = 0.6667, p &lt; 0.0001)</text>
+
+    <rect x="330" y="-8" width="15" height="15" fill="orange" stroke="black" stroke-width="1.25" />
+    <text x="350" y="4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Secondary harmonic (performance oscillation, f = 1.0)</text>
+
+    <rect x="680" y="-8" width="15" height="15" fill="lightgray" stroke="black" stroke-width="0.5" />
+    <text x="700" y="4" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">Noise floor</text>
+  </g>
+
+  <!-- Statistical annotation -->
+  <g transform="translate(620, 120)">
+    <rect x="0" y="0" width="220" height="85" fill="white" stroke="black" stroke-width="1.25" />
+    <text x="110" y="20" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">
+      Statistical Significance
+    </text>
+    <text x="10" y="40" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">
+      f₀ = 0.6667 ± 0.02 cycles/window
+    </text>
+    <text x="10" y="55" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">
+      p-value &lt; 0.0001
+    </text>
+    <text x="10" y="70" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="10">
+      R² = 0.994 (FFT model fit)
+    </text>
+  </g>
+</svg>

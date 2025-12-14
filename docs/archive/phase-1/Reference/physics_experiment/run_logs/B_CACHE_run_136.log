@@ -1,0 +1,1416 @@
+[32m[23:26:22] INFO: [0mblkio: backend=RAM fbs=1024 blocks=1024 size=1048576B ro=0
+[32m[23:26:22] INFO: [0mRegistering FORTH-79 Standard word set...
+[32m[23:26:22] INFO: [0mRegistering FORTH-79 arithmetic words...
+[32m[23:26:22] INFO: [0mFORTH-79 Standard word set registration complete
+[32m[23:26:22] INFO: [0mblk: hdr 'StarForth Volume' v2: total_devblocks(4k)=256, bam_devblocks=1, devblock_base=2, tracked=32768, total_blocks=762, free=730
+[32m[23:26:22] INFO: [0mRunning system initialization (INIT)...
+[32m[23:26:22] INFO: [0mINIT: Starting system initialization from init.4th
+[32m[23:26:22] INFO: [0mINIT: Copied block content to block 1 (173 bytes)
+[32m[23:26:22] INFO: [0mINIT: Copied block content to block 2 (68 bytes)
+[32m[23:26:22] INFO: [0mINIT: Loaded 2 blocks from init.4th
+[32m[23:26:22] INFO: [0mINIT: Executing initialization blocks...
+
+                              *****
+                              *
+                              *****
+                              *
+                              *****
+
+                              *****
+                              *
+                              *****
+                              *
+                              *
+[32m[23:26:22] INFO: [0mINIT: Switching to FORTH vocabulary
+[32m[23:26:22] INFO: [0mINIT: Zeroing 2 init blocks for userspace use
+[32m[23:26:22] INFO: [0mINIT: System initialization complete - blocks freed, FORTH context active
+[32m[23:26:22] INFO: [0mDictionary fence set - init words protected from FORGET
+[32m[23:26:22] INFO: [0mRunning comprehensive test suite...
+[32m[23:26:22] INFO: [0mStarting comprehensive FORTH-79 modular test suite...
+[32m[23:26:22] INFO: [0m==============================================
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Stack Words ===
+[32m[23:26:22] INFO: [0mRunning Stack Words Tests (Module 1: Foundation)...
+5 5 
+0 0 
+-42 -42 
+2147483647 2147483647 
+-2147483648 -2147483648 
+[31m[23:26:22] ERROR: [0mDUP: Stack underflow
+5 
+42 
+10 
+1 
+1 
+7 
+0 
+1 
+0 
+0 
+0 
+5 
+2 
+3 
+[31m[23:26:22] ERROR: [0mDROP: Stack underflow
+5 7 
+42 42 
+0 99 
+-5 10 
+[31m[23:26:22] ERROR: [0mSWAP: Insufficient stack items (need 2)
+[31m[23:26:22] ERROR: [0mSWAP: Insufficient stack items (need 2)
+5 7 5 
+0 0 0 
+-1 42 -1 
+[31m[23:26:22] ERROR: [0mOVER: Insufficient stack items (need 2)
+[31m[23:26:22] ERROR: [0mOVER: Insufficient stack items (need 2)
+1 3 2 
+0 0 0 
+-1 1 0 
+[31m[23:26:22] ERROR: [0mROT: Insufficient stack items (need 3)
+[31m[23:26:22] ERROR: [0mROT: Insufficient stack items (need 3)
+[31m[23:26:22] ERROR: [0mROT: Insufficient stack items (need 3)
+0 
+1 
+3 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Return Stack Words ===
+[32m[23:26:22] INFO: [0mRunning Return Stack Words Tests (Module 2)...
+42 42 
+0 0 
+-123 -123 
+1 1 2 2 
+[31m[23:26:22] ERROR: [0m>R: DSP underflow
+42 
+1 2 
+42 
+-1 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Memory Words ===
+[32m[23:26:22] INFO: [0mRunning Memory Words Tests (Module 3)...
+0 
+-999 
+222 
+2147483647 
+-2147483648 
+123 
+-1 
+65 
+0 
+255 
+97 
+0 
+42 
+-999 
+0 
+0 
+-1 
+8 
+16 
+0 
+0 
+-1 
+0 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Arithmetic Words ===
+[32m[23:26:22] INFO: [0mRunning Arithmetic Words Tests (Module 5)...
+12 
+42 
+-2 
+-8 
+2147483648 
+-2147483649 
+[31m[23:26:22] ERROR: [0m+: Stack underflow
+[31m[23:26:22] ERROR: [0m+: Stack underflow
+7 
+42 
+-5 
+8 
+0 
+-2147483649 
+2147483648 
+[31m[23:26:22] ERROR: [0m-: Stack underflow
+[31m[23:26:22] ERROR: [0m-: Stack underflow
+42 
+0 
+42 
+-42 
+42 
+65534 
+4294967296 
+[31m[23:26:22] ERROR: [0m*: Stack underflow
+[31m[23:26:22] ERROR: [0m*: Stack underflow
+5 
+42 
+-5 
+-5 
+5 
+2 
+[31m[23:26:22] ERROR: [0m/: Division by zero
+[31m[23:26:22] ERROR: [0m/: Stack underflow
+[31m[23:26:22] ERROR: [0m/: Stack underflow
+2 
+0 
+0 
+-2 
+2 
+3 
+[31m[23:26:22] ERROR: [0mMOD: Division by zero
+[31m[23:26:22] ERROR: [0mMOD: Stack underflow
+[31m[23:26:22] ERROR: [0mMOD: Stack underflow
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Logical Words ===
+[32m[23:26:22] INFO: [0mRunning Logical Words Tests (Module 8)...
+-1 
+0 
+0 
+0 
+17 
+[31m[23:26:22] ERROR: [0mAND: Stack underflow
+[31m[23:26:22] ERROR: [0mAND: Stack underflow
+-1 
+-1 
+-1 
+0 
+119 
+[31m[23:26:22] ERROR: [0mOR: Stack underflow
+[31m[23:26:22] ERROR: [0mOR: Stack underflow
+0 
+-1 
+-1 
+0 
+102 
+[31m[23:26:22] ERROR: [0mXOR: Stack underflow
+[31m[23:26:22] ERROR: [0mXOR: Stack underflow
+0 
+-1 
+-43 
+41 
+[31m[23:26:22] ERROR: [0mNOT: Stack underflow
+-1 
+0 
+-1 
+-1 
+0 
+[31m[23:26:22] ERROR: [0m=: Stack underflow
+[31m[23:26:22] ERROR: [0m=: Stack underflow
+-1 
+0 
+0 
+-1 
+[31m[23:26:22] ERROR: [0m<>: Stack underflow
+[31m[23:26:22] ERROR: [0m<>: Stack underflow
+-1 
+0 
+0 
+-1 
+-1 
+[31m[23:26:22] ERROR: [0m<: Stack underflow
+[31m[23:26:22] ERROR: [0m<: Stack underflow
+-1 
+0 
+0 
+-1 
+-1 
+[31m[23:26:22] ERROR: [0m>: Stack underflow
+[31m[23:26:22] ERROR: [0m>: Stack underflow
+-1 
+0 
+0 
+[31m[23:26:22] ERROR: [0m0=: Stack underflow
+-1 
+0 
+0 
+[31m[23:26:22] ERROR: [0m0<: Stack underflow
+-1 
+0 
+0 
+[31m[23:26:22] ERROR: [0m0>: Stack underflow
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Mixed Arithmetic Words ===
+[32m[23:26:22] INFO: [0mRunning Mixed Arithmetic Words Tests (Module 7)...
+10 
+20 
+0 
+210 
+10 
+-10 
+-10 
+[31m[23:26:22] ERROR: [0m*/: Division by zero
+[31m[23:26:22] ERROR: [0m*/: Stack underflow
+[31m[23:26:22] ERROR: [0m*/: Stack underflow
+10 1 
+20 0 
+0 0 
+210 0 
+11 1 
+-5 -1 
+[31m[23:26:22] ERROR: [0m*/MOD: Division by zero
+[31m[23:26:22] ERROR: [0m*/MOD: Stack underflow
+300 0 
+2147483648 0 
+-50 0 
+42 0 
+-300 0 
+0 56088 
+0 0 
+0 42 
+-1 4294911208 
+1 0 
+0 20000 
+10 0 
+12 34 
+2147913144729 6 
+42 0 
+-42949662 -96 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Double Words ===
+[32m[23:26:22] INFO: [0mRunning Double Number Words Tests (Module 6)...
+2 1 
+0 0 
+-2 -1 
+2 
+200 100 200 100 
+0 0 0 0 
+-200 -100 -200 -100 
+4 
+20 10 40 30 20 10 
+0 0 88 99 0 0 
+2 -1 4 -3 2 -1 
+6 
+20 10 40 30 
+0 0 88 99 
+42 42 42 42 
+-20 -10 40 30 
+4 
+20 10 60 50 40 30 
+0 0 2 2 1 1 
+-2 -1 -6 -5 4 3 
+6 
+600 400 
+99 42 
+-125 -50 
+0 2147483648 
+-599 -400 
+400 400 
+99 42 
+-201 -100 
+274 150 
+-1 -1 
+0 0 
+-201 -100 
+199 100 
+0 0 
+-1 -2147483647 
+200 100 
+199 100 
+0 0 
+0 -100 
+0 2147483648 
+200 100 
+99 42 
+-200 -100 
+-1 -100 
+400 300 
+99 42 
+-200 -100 
+0 100 
+-1 
+0 
+0 
+-1 
+-1 
+-1 
+0 
+0 
+-1 
+-1 
+-1 
+-1 
+0 
+0 
+0 
+0 
+-1 
+0 
+0 
+-1 
+-1 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Format Words ===
+[32m[23:26:22] INFO: [0mRunning Format Words Tests (Module 10)...
+42 
+255 
+42 
+467 
+14 
+255 
+42 
+42 
+42 
+66 
+255 
+42 
+255 
+255 
+42 
+42 
+42 
+42 
+774763251095801167872
+
+42
+5
+15
+05
+42
+0
+1234567890
+42
+42
+0
+42
+
+336 2 
+42.
+[31m[23:26:22] ERROR: [0mHOLD: byte out of range (257)
+[32m[23:26:22] INFO: [0m
+=== Testing Module: String Words ===
+[32m[23:26:22] INFO: [0mRunning String Words Tests (Module 11)...
+4 337 
+0 345 
+255 345 
+0 
+[31m[23:26:22] ERROR: [0mCOUNT: Data stack underflow
+ Test
+
+Test
+
+
+[31m[23:26:22] ERROR: [0mCMOVE: out-of-bounds (src=344 dst=5242368 n=1000)
+
+[31m[23:26:22] ERROR: [0mCMOVE>: out-of-bounds (src=344 dst=5242368 n=1000)
+0 
+-1 
+1 
+-1 
+0 
+-1 7 337 
+0 7 353 
+-1 4 369 
+0 0 376 
+
+
+
+    
+Test
+Test
+
+
+     
+
+[32m[23:26:22] INFO: [0m
+=== Testing Module: I/O Words ===
+[32m[23:26:22] INFO: [0mRunning I/O Words Tests (Module 9)...
+42 
+-42 
+0 
+2147483647 
+-2147483648 
+3 2 1 
+42 
+43 
+
+
+
+
+0 
+3 2 1 
+42  43 
+    0 
+A B
+                          42    43 
+A
+Z
+0
+ 
+
+
+A
+�
+HI
+Hell
+
+A
+1234
+[31m[23:26:22] ERROR: [0mTYPE: Data stack underflow
+[31m[23:26:22] ERROR: [0mTYPE: Data stack underflow
+0 5 
+0 345 
+255 345 
+0 
+[31m[23:26:22] ERROR: [0mCOUNT: Data stack underflow
+0 
+-1 
+-1 
+0 
+0 
+0 
+0 
+0 
+255 
+597 
+52 
+5 
+255 
+42  43 
+1 
+2 
+3 
+     42 
+1    10    100 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Block Words ===
+[32m[23:26:22] INFO: [0mRunning Block Words Tests (Module 16)...
+109106205520704 
+109106205520704 
+
+Block 1
+00:                                                                 
+01:                                                                 
+02:                                                                 
+03:                                                                 
+04:                                                                 
+05:                                                                 
+06:                                                                 
+07:                                                                 
+08:                                                                 
+09:                                                                 
+10:                                                                 
+11:                                                                 
+12:                                                                 
+13:                                                                 
+14:                                                                 
+15:                                                                 
+
+1 
+
+Block 1
+00:                                                                 
+01:                                                                 
+02:                                                                 
+03:                                                                 
+04:                                                                 
+05:                                                                 
+06:                                                                 
+07:                                                                 
+08:                                                                 
+09:                                                                 
+10:                                                                 
+11:                                                                 
+12:                                                                 
+13:                                                                 
+14:                                                                 
+15:                                                                 
+
+1 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Dictionary Words ===
+[32m[23:26:22] INFO: [0mRunning Dictionary Words Tests (Module 4)...
+-1 
+8 
+8 
+16 
+-1 
+16 
+0 
+0 
+104 
+42 
+42 
+-999 
+0 
+2147483647 
+-2147483648 
+20 20 
+0 
+0 
+0 
+0 
+0 
+0 0 
+67890 12345 
+0 0 
+-2000 -1000 
+-1 2147483647 
+-1 
+0 
+-1 
+42 
+-1 
+0 
+0 
+3 -1 
+-1 
+0 
+0 
+0 
+-1 
+43 42 
+0 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Dictionary Manipulation Words ===
+[32m[23:26:22] INFO: [0mRunning Dictionary Manipulation Words Tests (Module 14)...
+42 
+2 
+42 
+109106224776896 
+109106224892048 
+0 
+109106224822912 
+109106224844672 
+109106224844672 
+109106224892856 
+109106224893288 
+[31m[23:26:22] ERROR: [0m': word 'NONEXISTENT' not found
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Vocabulary Words ===
+[32m[23:26:22] INFO: [0mRunning Vocabulary Words Tests (Module 15)...
+109106224894608 
+11 
+[31m[23:26:22] ERROR: [0mVOCABULARY: duplicate 'TESTVOC'
+[31m[23:26:22] ERROR: [0mVOCABULARY: missing name
+42 
+109106224898112 
+109106224828624 
+109106224898112 
+109106224898656 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: System Words ===
+[32m[23:26:22] INFO: [0mRunning System Words Tests (Module 18)...
+[33m[23:26:22] WARN: [0mSome system tests marked as unimplemented due to system-level effects
+Search order: TEST-VOC8 (FIND)
+Current: TEST-VOC8
+Search order: TEST-VOC9 (FIND)
+Current: TEST-VOC9
+Search order: (FIND)
+Current: TEST-VOC9
+0 
+0 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Defining Words ===
+[32m[23:26:22] INFO: [0mRunning Defining Words Tests (Module 13)...
+Error
+42 
+[31m[23:26:22] ERROR: [0mNested ':' inside a definition is not allowed
+42 
+42 
+0 
+-1 
+42 
+-99 
+42 
+42 
+[31m[23:26:22] ERROR: [0mDOES>: compile-only
+42 
+42 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: Control Words ===
+[32m[23:26:22] INFO: [0mRunning Control Words Tests (Module 12)...
+42 
+24 
+1 
+42 
+[31m[23:26:22] ERROR: [0mIF: compile-only
+42 
+24 
+1 
+42 
+[31m[23:26:22] ERROR: [0mIF: compile-only
+[31m[23:26:22] ERROR: [0mELSE: compile-only
+[31m[23:26:22] ERROR: [0mELSE: missing IF
+[31m[23:26:22] ERROR: [0mELSE: compile-only
+[31m[23:26:22] ERROR: [0mELSE: missing IF
+[31m[23:26:22] ERROR: [0mTHEN: compile-only
+[31m[23:26:22] ERROR: [0mCF: underflow
+[31m[23:26:22] ERROR: [0mTHEN: unmatched
+[31m[23:26:22] ERROR: [0mTHEN: compile-only
+[31m[23:26:22] ERROR: [0mCF: underflow
+[31m[23:26:22] ERROR: [0mTHEN: unmatched
+5 
+5 
+[31m[23:26:22] ERROR: [0mBEGIN: compile-only
+5 
+5 
+[31m[23:26:22] ERROR: [0mBEGIN: compile-only
+0 
+[31m[23:26:22] ERROR: [0mUNTIL: compile-only
+0 
+[31m[23:26:22] ERROR: [0mUNTIL: compile-only
+5 
+0 
+[31m[23:26:22] ERROR: [0mWHILE: compile-only
+5 
+0 
+[31m[23:26:22] ERROR: [0mWHILE: compile-only
+5 
+[31m[23:26:22] ERROR: [0mREPEAT: compile-only
+5 
+[31m[23:26:22] ERROR: [0mREPEAT: compile-only
+0 1 2 3 4 
+-5 -4 -3 -2 
+0 1 2 1 2 3 2 3 4 
+0 1 2 3 4 
+-5 -4 -3 -2 
+0 1 2 1 2 3 2 3 4 
+0 1 2 3 4 
+0 1 2 2 3 4 
+0 1 2 3 4 
+0 1 2 2 3 4 
+0 1 2 3 4 
+[31m[23:26:22] ERROR: [0mLOOP: compile-only
+0 1 2 3 4 
+[31m[23:26:22] ERROR: [0mLOOP: compile-only
+0 2 4 6 8 
+10 9 8 7 6 5 4 3 2 1 0 
+0 3 6 9 
+0 2 4 6 8 
+10 9 8 7 6 5 4 3 2 1 0 
+0 3 6 9 
+[32m[23:26:22] INFO: [0m
+=== Testing Module: StarForth Words ===
+[32m[23:26:22] INFO: [0mRunning StarForth Words Tests (Module 17: StarForth Extensions)...
+0 
+0 
+0 
+[31m[23:26:22] ERROR: [0mENTROPY@: null dictionary entry
+[31m[23:26:22] ERROR: [0mENTROPY@: data stack underflow
+42 
+20 
+0 
+[31m[23:26:22] ERROR: [0mENTROPY!: null dictionary entry
+[31m[23:26:22] ERROR: [0mENTROPY!: data stack underflow
+[31m[23:26:22] ERROR: [0mENTROPY!: data stack underflow
+Word Usage Statistics (Execution Heat Counts):
+=============================================
+E: 1
+F: 1
+BAR: 10
+BLIP: 10
+MARGIN: 12
+STARS: 6
+STAR: 32
+INIT: 1
+(-: 2
+WORD-ENTROPY: 1
+ENTROPY!: 7
+ENTROPY@: 8
+STARFORTH: 1
+EXIT: 108
+J: 34
+I: 136
++LOOP: 6
+LOOP: 23
+DO: 19
+?DO: 8
+UNTIL: 8
+REPEAT: 10
+WHILE: 10
+BEGIN: 16
+THEN: 16
+ELSE: 14
+IF: 16
+(+LOOP): 40
+(LOOP): 105
+(DO): 25
+(?DO): 10
+(0BRANCH): 68
+(BRANCH): 36
+DOES>: 3
+does_rt: 1
+LITERAL: 1
+LIT: 205
+FORGET: 4
+]: 3
+[: 4
+IMMEDIATE: 6
+CONSTANT: 4
+VARIABLE: 5
+CREATE: 16
+;: 75
+:: 82
+ABORT": 3
+ABORT: 4
+QUIT: 1
+ORDER: 3
+FORTH: 12
+CURRENT: 4
+CONTEXT: 5
+DEFINITIONS: 18
+VOCABULARY: 16
+': 13
+FIND: 4
+>BODY: 12
+HIDDEN: 2
+SMUDGE: 2
+]: 3
+[: 4
+LATEST: 7
+SP@: 8
+SP!: 5
+PAD: 18
+2,: 7
+C,: 12
+,: 24
+ALLOT: 12
+HERE: 149
+SCR: 2
+THRU: 17
+LIST: 5
+LOAD: 7
+FLUSH: 3
+EMPTY-BUFFERS: 4
+SAVE-BUFFERS: 3
+UPDATE: 3
+BUFFER: 4
+BLOCK: 10
+SPACES: 21
+SPACE: 7
+TYPE: 36
+CR: 490
+EMIT: 45
+BLANK: 2
+SKIP: 4
+SCAN: 4
+SEARCH: 4
+COMPARE: 5
+CMOVE>: 4
+CMOVE: 6
+-TRAILING: 4
+LITERAL: 1
+BL: 16
+S": 29
+WORD: 15
+SPAN: 4
+EXPECT: 4
+COUNT: 14
+OCTAL: 6
+HEX: 7
+DECIMAL: 14
+BASE: 9
+SIGN: 3
+HOLD: 2
+#>: 16
+#S: 11
+#: 5
+<#: 17
+.: 705
+D0<: 7
+D0=: 7
+2ROT: 6
+2OVER: 6
+2SWAP: 7
+2DUP: 6
+2DROP: 6
+D=: 7
+D<: 8
+DMIN: 6
+DMAX: 6
+DABS: 7
+DNEGATE: 6
+D-: 8
+D+: 7
+S>D: 1
+*/MOD: 8
+*/: 10
+MOD: 9
+M/MOD: 7
+M*: 8
+M+: 7
+>: 8
+<: 49
+<>: 6
+=: 44
+0<>: 1
+0>: 4
+0<: 8
+0=: 17
+NOT: 5
+XOR: 7
+OR: 7
+AND: 8
+ABS: 1
+1-: 14
+1+: 56
+*/MOD: 8
+*/: 10
+MOD: 9
+/: 9
+*: 9
+-: 46
++: 49
+CELLS: 2
+2@: 4
+C!: 10
+C@: 16
+!: 24
+@: 45
+R@: 8
+R>: 15
+>R: 18
+DEPTH: 25
+ROT: 7
+OVER: 13
+SWAP: 37
+DUP: 113
+DROP: 52
+-------------------------------------
+Total executions: 4039
+Total words: 277
+Average executions per word: 14
+Word Usage Statistics (Execution Heat Counts):
+=============================================
+WDENT: 2
+E: 1
+F: 1
+BAR: 10
+BLIP: 10
+MARGIN: 12
+STARS: 6
+STAR: 32
+INIT: 1
+(-: 2
+WORD-ENTROPY: 2
+ENTROPY!: 7
+ENTROPY@: 8
+STARFORTH: 1
+EXIT: 110
+J: 34
+I: 136
++LOOP: 6
+LOOP: 23
+DO: 19
+?DO: 8
+UNTIL: 8
+REPEAT: 10
+WHILE: 10
+BEGIN: 16
+THEN: 16
+ELSE: 14
+IF: 16
+(+LOOP): 40
+(LOOP): 105
+(DO): 25
+(?DO): 10
+(0BRANCH): 68
+(BRANCH): 36
+DOES>: 3
+does_rt: 1
+LITERAL: 1
+LIT: 209
+FORGET: 4
+]: 3
+[: 4
+IMMEDIATE: 6
+CONSTANT: 4
+VARIABLE: 5
+CREATE: 16
+;: 76
+:: 83
+ABORT": 3
+ABORT: 4
+QUIT: 1
+ORDER: 3
+FORTH: 12
+CURRENT: 4
+CONTEXT: 5
+DEFINITIONS: 18
+VOCABULARY: 16
+': 13
+FIND: 4
+>BODY: 12
+HIDDEN: 2
+SMUDGE: 2
+]: 3
+[: 4
+LATEST: 7
+SP@: 8
+SP!: 5
+PAD: 18
+2,: 7
+C,: 12
+,: 24
+ALLOT: 12
+HERE: 149
+SCR: 2
+THRU: 17
+LIST: 5
+LOAD: 7
+FLUSH: 3
+EMPTY-BUFFERS: 4
+SAVE-BUFFERS: 3
+UPDATE: 3
+BUFFER: 4
+BLOCK: 10
+SPACES: 21
+SPACE: 7
+TYPE: 36
+CR: 490
+EMIT: 45
+BLANK: 2
+SKIP: 4
+SCAN: 4
+SEARCH: 4
+COMPARE: 5
+CMOVE>: 4
+CMOVE: 6
+-TRAILING: 4
+LITERAL: 1
+BL: 16
+S": 29
+WORD: 15
+SPAN: 4
+EXPECT: 4
+COUNT: 14
+OCTAL: 6
+HEX: 7
+DECIMAL: 14
+BASE: 9
+SIGN: 3
+HOLD: 2
+#>: 16
+#S: 11
+#: 5
+<#: 17
+.: 705
+D0<: 7
+D0=: 7
+2ROT: 6
+2OVER: 6
+2SWAP: 7
+2DUP: 6
+2DROP: 6
+D=: 7
+D<: 8
+DMIN: 6
+DMAX: 6
+DABS: 7
+DNEGATE: 6
+D-: 8
+D+: 7
+S>D: 1
+*/MOD: 8
+*/: 10
+MOD: 9
+M/MOD: 7
+M*: 8
+M+: 7
+>: 8
+<: 49
+<>: 6
+=: 44
+0<>: 1
+0>: 4
+0<: 8
+0=: 17
+NOT: 5
+XOR: 7
+OR: 7
+AND: 8
+ABS: 1
+1-: 14
+1+: 56
+*/MOD: 8
+*/: 10
+MOD: 9
+/: 9
+*: 9
+-: 46
++: 52
+CELLS: 2
+2@: 4
+C!: 10
+C@: 16
+!: 24
+@: 45
+R@: 8
+R>: 15
+>R: 18
+DEPTH: 25
+ROT: 7
+OVER: 13
+SWAP: 37
+DUP: 113
+DROP: 55
+-------------------------------------
+Total executions: 4056
+Total words: 278
+Average executions per word: 14
+Word Usage Statistics (Execution Heat Counts):
+=============================================
+WDENT: 2
+E: 1
+F: 1
+BAR: 10
+BLIP: 10
+MARGIN: 12
+STARS: 6
+STAR: 32
+INIT: 1
+(-: 2
+WORD-ENTROPY: 3
+ENTROPY!: 7
+ENTROPY@: 8
+STARFORTH: 1
+EXIT: 110
+J: 34
+I: 136
++LOOP: 6
+LOOP: 23
+DO: 19
+?DO: 8
+UNTIL: 8
+REPEAT: 10
+WHILE: 10
+BEGIN: 16
+THEN: 16
+ELSE: 14
+IF: 16
+(+LOOP): 40
+(LOOP): 105
+(DO): 25
+(?DO): 10
+(0BRANCH): 68
+(BRANCH): 36
+DOES>: 3
+does_rt: 1
+LITERAL: 1
+LIT: 209
+FORGET: 4
+]: 3
+[: 4
+IMMEDIATE: 6
+CONSTANT: 4
+VARIABLE: 5
+CREATE: 16
+;: 76
+:: 83
+ABORT": 3
+ABORT: 4
+QUIT: 1
+ORDER: 3
+FORTH: 12
+CURRENT: 4
+CONTEXT: 5
+DEFINITIONS: 18
+VOCABULARY: 16
+': 13
+FIND: 4
+>BODY: 12
+HIDDEN: 2
+SMUDGE: 2
+]: 3
+[: 4
+LATEST: 7
+SP@: 8
+SP!: 5
+PAD: 18
+2,: 7
+C,: 12
+,: 24
+ALLOT: 12
+HERE: 149
+SCR: 2
+THRU: 17
+LIST: 5
+LOAD: 7
+FLUSH: 3
+EMPTY-BUFFERS: 4
+SAVE-BUFFERS: 3
+UPDATE: 3
+BUFFER: 4
+BLOCK: 10
+SPACES: 21
+SPACE: 7
+TYPE: 36
+CR: 490
+EMIT: 45
+BLANK: 2
+SKIP: 4
+SCAN: 4
+SEARCH: 4
+COMPARE: 5
+CMOVE>: 4
+CMOVE: 6
+-TRAILING: 4
+LITERAL: 1
+BL: 16
+S": 29
+WORD: 15
+SPAN: 4
+EXPECT: 4
+COUNT: 14
+OCTAL: 6
+HEX: 7
+DECIMAL: 14
+BASE: 9
+SIGN: 3
+HOLD: 2
+#>: 16
+#S: 11
+#: 5
+<#: 17
+.: 705
+D0<: 7
+D0=: 7
+2ROT: 6
+2OVER: 6
+2SWAP: 7
+2DUP: 6
+2DROP: 6
+D=: 7
+D<: 8
+DMIN: 6
+DMAX: 6
+DABS: 7
+DNEGATE: 6
+D-: 8
+D+: 7
+S>D: 1
+*/MOD: 8
+*/: 10
+MOD: 9
+M/MOD: 7
+M*: 8
+M+: 7
+>: 8
+<: 49
+<>: 6
+=: 44
+0<>: 1
+0>: 4
+0<: 8
+0=: 17
+NOT: 5
+XOR: 7
+OR: 7
+AND: 8
+ABS: 1
+1-: 14
+1+: 56
+*/MOD: 8
+*/: 10
+MOD: 9
+/: 9
+*: 9
+-: 46
++: 52
+CELLS: 2
+2@: 4
+C!: 10
+C@: 16
+!: 24
+@: 45
+R@: 8
+R>: 15
+>R: 18
+DEPTH: 26
+ROT: 7
+OVER: 13
+SWAP: 37
+DUP: 113
+DROP: 55
+-------------------------------------
+Total executions: 4058
+Total words: 278
+Average executions per word: 14
+0 
+[31m[23:26:22] ERROR: [0mTOP-WORDS: data stack underflow
+[33m[23:26:22] WARN: [0m(- comment not terminated
+[33m[23:26:22] WARN: [0m(- comment not terminated
+[33m[23:26:22] WARN: [0m(- comment not terminated
+[33m[23:26:22] WARN: [0m(- comment not terminated
+[32m[23:26:22] INFO: [0mINIT: Starting system initialization from init.4th
+[32m[23:26:22] INFO: [0mINIT: Copied block content to block 1 (173 bytes)
+[32m[23:26:22] INFO: [0mINIT: Copied block content to block 2 (68 bytes)
+[32m[23:26:22] INFO: [0mINIT: Loaded 2 blocks from init.4th
+[32m[23:26:22] INFO: [0mINIT: Executing initialization blocks...
+Top 5 most frequently used words:
+==================================
+ 1. DROP: 6
+ 2. TOPTEST: 5
+ 3. EXIT: 5
+ 4. LIT: 5
+ 5. TOP-WORDS: 1
+Top 10 most frequently used words:
+==================================
+ 1. DROP: 6
+ 2. TOPTEST: 5
+ 3. EXIT: 5
+ 4. LIT: 5
+ 5. TOP-WORDS: 2
+ 6. ;: 1
+ 7. :: 1
+Top 5 most frequently used words:
+==================================
+ 1. TOP-WORDS: 1
+Top 1 most frequently used words:
+==================================
+ 1. TOP-WORDS: 2
+Top 100 most frequently used words:
+==================================
+ 1. TOP-WORDS: 3
+TOP-WORDS: invalid count 0
+TOP-WORDS: invalid count -5
+
+                              *****
+                              *
+                              *****
+                              *
+                              *****
+
+                              *****
+                              *
+                              *****
+                              *
+                              *
+[32m[23:26:22] INFO: [0mINIT: Switching to FORTH vocabulary
+[32m[23:26:22] INFO: [0mINIT: Zeroing 2 init blocks for userspace use
+[32m[23:26:22] INFO: [0mINIT: System initialization complete - blocks freed, FORTH context active
+[32m[23:26:22] INFO: [0mINIT: Starting system initialization from init.4th
+[32m[23:26:22] INFO: [0mINIT: Copied block content to block 1 (173 bytes)
+[32m[23:26:22] INFO: [0mINIT: Copied block content to block 2 (68 bytes)
+[32m[23:26:22] INFO: [0mINIT: Loaded 2 blocks from init.4th
+[32m[23:26:22] INFO: [0mINIT: Executing initialization blocks...
+
+                              *****
+                              *
+                              *****
+                              *
+                              *****
+
+                              *****
+                              *
+                              *****
+                              *
+                              *
+[32m[23:26:22] INFO: [0mINIT: Switching to FORTH vocabulary
+[32m[23:26:22] INFO: [0mINIT: Zeroing 2 init blocks for userspace use
+[32m[23:26:22] INFO: [0mINIT: System initialization complete - blocks freed, FORTH context active
+[32m[23:26:22] INFO: [0mFINAL TEST SUMMARY:
+[32m[23:26:22] INFO: [0m  Total tests: 782
+[32m[23:26:22] INFO: [0m  Passed: 731
+[32m[23:26:22] INFO: [0m  Failed: 0
+[32m[23:26:22] INFO: [0m  Skipped: 49
+[32m[23:26:22] INFO: [0m  Errors: 0
+[32m[23:26:22] INFO: [0mALL IMPLEMENTED TESTS PASSED!
+[32m[23:26:22] INFO: [0m==============================================
+[32m[23:26:22] INFO: [0mTest run complete.
+[32m[23:26:22] INFO: [0mStarting Forth REPL
+[36mok>[0m [92m[0mBENCH-DICT-LOOKUP: Need iteration count on stack
+ ERROR
+[36mok>[0m [92m[0mCache statistics reset.
+(reset 277 word metrics)
+ ok
+[36mok>[0m [92m[0m
+╔════════════════════════════════════════════════════════════════╗
+║  Dictionary Lookup Benchmark (Statistically Valid Sample)     ║
+║  Iterations: 100000 (confidence: 99%) [STANDARD]
+╚════════════════════════════════════════════════════════════════╝
+
+WALL-CLOCK TIMING:
+  Total time:        6.29 ms
+  Avg per lookup:    0.063 µs
+  Lookups/sec:       15898658
+
+
+╔════════════════════════════════════════════════════════════════╗
+║      Hot-Words Cache Statistics (64-bit Fixed-Point Q48.16)    ║
+╚════════════════════════════════════════════════════════════════╝
+
+LOOKUPS (Statistically Valid Sample Size):
+  Total:         100000
+  Cache hits:    17389 (17.39%)
+  Bucket hits:   82611 (82.61%)
+  Misses:        0 (0.00%)
+
+LATENCY STATISTICS (64-bit Fixed-Point Precision):
+  Cache Hits (17389 samples):
+    Min:  21.000 ns
+    Avg:  29.855 ns
+    Max:  135.000 ns
+    StdDev: 0.000 ns
+  Bucket Searches (82611 samples):
+    Min:  26.000 ns
+    Avg:  34.419 ns
+    Max:  4495.000 ns
+    StdDev: 0.000 ns
+  Speedup:        1.15× (bucket vs cache)
+
+CACHE MANAGEMENT:
+  Promotions:    1
+  Evictions:     0
+  Reorders:      0
+
+════════════════════════════════════════════════════════════════
+
+ ok
+[36mok>[0m [92m[0m
+╔════════════════════════════════════════════════════════════════╗
+║      Hot-Words Cache Statistics (64-bit Fixed-Point Q48.16)    ║
+╚════════════════════════════════════════════════════════════════╝
+
+LOOKUPS (Statistically Valid Sample Size):
+  Total:         100001
+  Cache hits:    17389 (17.39%)
+  Bucket hits:   82612 (82.61%)
+  Misses:        0 (0.00%)
+
+LATENCY STATISTICS (64-bit Fixed-Point Precision):
+  Cache Hits (17389 samples):
+    Min:  21.000 ns
+    Avg:  29.855 ns
+    Max:  135.000 ns
+    StdDev: 0.000 ns
+  Bucket Searches (82612 samples):
+    Min:  26.000 ns
+    Avg:  34.425 ns
+    Max:  4495.000 ns
+    StdDev: 0.000 ns
+  Speedup:        1.15× (bucket vs cache)
+
+CACHE MANAGEMENT:
+  Promotions:    1
+  Evictions:     0
+  Reorders:      0
+
+════════════════════════════════════════════════════════════════
+
+CACHE CONTENTS:
+  [ 0] . (execution_heat=0, temp=0x0000)
+  [ 1] CR (execution_heat=26, temp=0x16f7)
+  [ 2] HERE (execution_heat=0, temp=0x0000)
+  [ 3] EXIT (execution_heat=114, temp=0x6f00)
+  [ 4] LIT (execution_heat=100, temp=0x6100)
+  [ 5] DUP (execution_heat=0, temp=0x0000)
+  [ 6] : (execution_heat=14, temp=0x0b0c)
+  [ 7] ; (execution_heat=14, temp=0x0b0c)
+  [ 8] I (execution_heat=0, temp=0x0000)
+  [ 9] DROP (execution_heat=0, temp=0x0000)
+  [10] EMIT (execution_heat=62, temp=0x3afd)
+
+ ok
+[36mok>[0m [92m[0m
+Pipelining Statistics (Aggregate)
+====================
+Total Words in Dictionary:     277
+Words with Metrics:            277 (100.0%)
+Total Transitions Observed:    0
+Total Prefetch Attempts:       0
+Total Prefetch Hits:           0
+Total Prefetch Misses:         0
+
+ ok
+[36mok>[0m [92m[0m[31m[23:26:22] ERROR: [0mUNKNOWN WORD: 'ROLLING-WINDOW-STATS'
+ ERROR
+[36mok>[0m [92m[0mGoodbye!
+ ok

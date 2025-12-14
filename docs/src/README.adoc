@@ -1,0 +1,211 @@
+= StarForth Documentation Index
+:toc: left
+:toc-title: Documentation Index
+:toclevels: 2
+
+**Complete reference guide for StarForth development, integration, and contribution.**
+
+**Last Updated:** October 2025
+
+---
+
+== Getting Started
+
+Quick-start resources and foundational overview.
+
+[cols="1,1",options="header"]
+|===
+| Document | Purpose
+
+| link:getting-started/QUICKSTART.adoc[Quick Start Guide]
+| Build/test recipes and day-one workflows. Start here!
+
+| link:getting-started/INSTALL.adoc[Installation Guide]
+| Platform-specific setup and prerequisites.
+
+| link:getting-started/ARCHITECTURE.adoc[Architecture Deep Dive]
+| VM layout, execution model, and subsystems overview.
+
+|===
+
+== Build & Tooling
+
+Build configuration, optimization, and tooling reference.
+
+[cols="1,1",options="header"]
+|===
+| Document | Purpose
+
+| link:build-and-tooling/BUILD_OPTIONS.adoc[Build Options Reference]
+| Make targets, flags, and configuration knobs.
+
+| link:build-and-tooling/PGO_GUIDE.adoc[PGO Guide]
+| Profile-guided optimisation pipeline and verification steps.
+
+| link:build-and-tooling/INIT_TOOLS.adoc[Init Tools]
+| Utilities for managing `conf/init.4th` and block images.
+
+| link:build-and-tooling/PLATFORM_BUILD_GUIDE.adoc[Platform Build Guide]
+| Cross-compilation matrix and toolchains.
+
+| link:build-and-tooling/DOCUMENTATION_README.adoc[Documentation System]
+| Generating API docs and publishing outputs.
+
+|===
+
+== Architecture & Internals
+
+Core VM architecture, ABI, and internal systems.
+
+[cols="1,1",options="header"]
+|===
+| Document | Purpose
+
+| link:architecture-internals/ABI.adoc[ABI Reference]
+| Calling conventions and binary interfaces.
+
+| link:architecture-internals/INIT_SYSTEM.adoc[Init System]
+| Boot-time block loading and dictionary fencing.
+
+| link:architecture-internals/BLOCK_STORAGE_GUIDE.adoc[Block Storage Guide]
+| Design and tuning of the block I/O stack.
+
+| link:architecture-internals/MESSAGING.adoc[Messaging System]
+| Inter-process communication and messaging patterns.
+
+| link:architecture-internals/WORD_DEVELOPMENT.adoc[Word Development Guide]
+| Adding new words to the dictionary.
+
+|===
+
+== Platform Integration
+
+Cross-platform support and integration guides.
+
+[cols="1,1",options="header"]
+|===
+| Document | Purpose
+
+| link:platform-integration/PLATFORM_ABSTRACTION.adoc[Platform Abstraction Layer]
+| Host glue responsibilities and APIs.
+
+| link:platform-integration/L4RE_INTEGRATION.adoc[L4Re Integration]
+| Kernel porting notes and integration strategies.
+
+| link:platform-integration/L4RE_DICTIONARY_ALLOCATION.adoc[L4Re Dictionary Allocation]
+| Memory allocation patterns for L4Re environments.
+
+| link:platform-integration/l_4_re_blkio_endpoints.adoc[L4Re Block I/O Endpoints]
+| Block storage endpoint configuration.
+
+| link:platform-integration/RASPBERRY_PI_BUILD.adoc[Raspberry Pi Build]
+| ARM64 bring-up and validation checklist.
+
+|===
+
+== Performance & Profiling
+
+Optimization strategies and performance analysis.
+
+[cols="1,1",options="header"]
+|===
+| Document | Purpose
+
+| link:performance-profiling/ASM_OPTIMIZATIONS.adoc[x86_64 Assembly Optimizations]
+| Fast paths and assembly integration guidance.
+
+| link:performance-profiling/ARM64_OPTIMIZATIONS.adoc[ARM64 Assembly Strategy]
+| Architecture notes and ARM64 tuning tips.
+
+| link:performance-profiling/PROFILER.adoc[Profiler Guide]
+| Runtime profiling workflow and report formats.
+
+|===
+
+== Testing & Quality
+
+Testing strategies, validation reports, and quality metrics.
+
+[cols="1,1",options="header"]
+|===
+| Document | Purpose
+
+| link:testing-quality/TESTING.adoc[Test Suite Guide]
+| Harness structure, conventions, and extension points.
+
+| link:testing-quality/BREAK_ME_REPORT.adoc[Break-Me Report]
+| Snapshot from exhaustive stress and edge-case testing.
+
+| link:testing-quality/GAP_ANALYSIS.adoc[Gap Analysis]
+| Current coverage, remaining work, and quality metrics.
+
+|===
+
+== Development & Contribution
+
+Contribution guidelines and development standards.
+
+[cols="1,1",options="header"]
+|===
+| Document | Purpose
+
+| link:development/CONTRIBUTING.adoc[Contributing Guide]
+| Workflow expectations, PR process, and review checklist.
+
+| link:development/AGENTS.adoc[Repository Guidelines]
+| Project structure, module organization, and coding style.
+
+| link:governance/DOXYGEN_STYLE_GUIDE.adoc[Doxygen Style Guide]
+| Documentation standards for public APIs.
+
+| link:governance/DOXYGEN_QUICK_REFERENCE.adoc[Doxygen Quick Reference]
+| Quick lookup for common documentation patterns.
+
+|===
+
+== Governance & Compliance
+
+Project governance, standards, and auditor validation.
+
+[cols="1,1",options="header"]
+|===
+| Document | Purpose
+
+| link:../StarForth-Governance/GOVERNANCE.md[Governance Framework]
+| Complete governance documentation and standards.
+
+| link:../StarForth-Governance/FORTH-79_COMPLIANCE_MATRIX.adoc[FORTH-79 Compliance Matrix]
+| Compliance mapping against FORTH-79 standard.
+
+| link:../StarForth-Governance/VALIDATION_BOOK.adoc[Validation Book]
+| Comprehensive validation and testing requirements.
+
+|===
+
+== Special Topics
+
+Other important documentation.
+
+[cols="1,1",options="header"]
+|===
+| Document | Purpose
+
+| link:L4RE_INTEGRATION_TODO.adoc[L4Re Integration TODO]
+| Outstanding L4Re integration work and roadmap.
+
+| link:internal/SHARED_CLAUDE.adoc[Internal Notes]
+| Shared Claude project context and guidance.
+
+|===
+
+== Quick Links
+
+* Project Repository: link:../[Root]
+* StarForth Governance: link:../StarForth-Governance/[Governance Subtree]
+* Archives: link:../archives/[Documentation Archives]
+* API Documentation: link:appendix/index.adoc[Auto-generated API Reference]
+
+== Appendix I - StarForth API
+
+* API Documentation: link:appendix/index.adoc[Auto-generated API Reference]
+

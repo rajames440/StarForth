@@ -1,0 +1,315 @@
+= FMEA Blocking Gates Implementation
+:doctype: article
+:toc:
+:toc-placement: preamble
+:sectnums:
+
+== Document Information
+
+[cols="1,3"]
+|===
+|Document Version|1.0.0
+|Document Date|2025-11-03
+|Implementation|GitHub Workflows + Jenkins (Phase 2)
+|Status|FMEA blocking gates active in GitHub, Jenkins pending
+|===
+
+== Overview
+
+This document describes the **FMEA Blocking Gate** mechanism that prevents CAPAs, ECRs, and ECOs from proceeding without Failure Mode & Effects Analysis (FMEA) approval.
+
+**Core Concept:** FMEA acts as a mandatory side trip — when required, a ticket is blocked until all stakeholders approve the FMEA. Stakeholder signatures are collected post-submission (in comments), then FMEA is routed to in_basket for formal governance record.
+
+== When FMEA is Required
+
+=== CAPA (Auto-detected)
+
+FMEA **Required** if:
+
+1. **Severity = CRITICAL** (any type)
+   - Crashes, segfaults, data loss, security issues
+
+2. **Severity = MAJOR + Regression flag**
+   - Major defect that breaks previously working feature
+
+3. **Keywords in title/description**
+   - "architecture", "design", "data integrity", "safety"
+
+=== ECR (Explicit field)
+
+ECR submission includes **FMEA Decision** field with options:
+- `no` - FMEA not required
+- `optional` - FMEA recommended but not mandatory
+- `required` - FMEA mandatory before proceeding
+
+=== ECO (Follows ECR)
+
+ECO inherits FMEA decision from related ECR:
+- If related ECR has FMEA decision = `required`, ECO is blocked
+- FMEA must be approved before ECO implementation
+
+== Blocking Flow
+
+[source,text]
+----
+1. CAPA/ECR/ECO Created
+   ↓
+2. Auto-Assessment of FMEA Requirement
+   ↓
+3. If FMEA Required:
+   ├─ Add fmea-required + blocked labels
+   ├─ Comment: "BLOCKED: FMEA Required"
+   ├─ Link to FMEA template
+   └─ Set SLA deadline (24 hours to file FMEA)
+   ↓
+4. Developer/Manager Files FMEA Issue
+   ├─ Links to parent CAPA/ECR/ECO
+   ├─ Defines failure modes, risk assessment
+   ├─ Proposes mitigations
+   └─ Lists required stakeholders
+   ↓
+5. Stakeholder Review (parallel)
+   ├─ QA Lead review
+   ├─ Architecture review
+   ├─ Security review (if applicable)
+   └─ Each posts approval comment
+   ↓
+6. All Stakeholders Approve
+   ├─ QA Lead verifies completeness
+   ├─ Routes FMEA to in_basket/Fmea/
+   ├─ Collects digital signatures (comment-based)
+   └─ Posts final approval comment
+   ↓
+7. Unblock Parent Ticket
+   ├─ Remove blocked + fmea-required labels
+   ├─ Parent issue can proceed
+   └─ Implementation can begin
+----
+
+== Approval Process
+
+=== Stakeholder Approval Comment Format
+
+Each stakeholder posts:
+
+[source]
+----
+✅ APPROVED
+
+Stakeholder: [Your name]
+Role: [Your title - QA Lead, Architecture, etc.]
+Date: [Approval date]
+Review Scope: [What you reviewed]
+Notes: [Any conditions or concerns]
+----
+
+=== QA Lead Final Approval
+
+After all stakeholders approve, QA Lead posts:
+
+[source]
+----
+## ✅ FMEA Approved by All Stakeholders
+
+All required stakeholders have reviewed and approved.
+
+**Approvals Collected:**
+- @stakeholder1 (QA Lead) ✅
+- @stakeholder2 (Architecture) ✅
+- @stakeholder3 (Security) ✅
+
+**Final Decision:** APPROVED
+**Risk Level:** Acceptable with mitigations
+
+### Next Steps
+
+1. FMEA routed to: in_basket/Fmea/FMEA-[ID]_SUBMISSION.adoc
+2. Unblocking parent issue (removing fmea-required label)
+3. Digital signatures collected in comments
+4. Implementation can now proceed
+
+**Parent Issue:** #[number]
+**FMEA Issue:** [This issue]
+**In_basket:** StarForth-Governance/in_basket/Fmea/
+----
+
+== In_basket Routing (After Approval)
+
+Once FMEA is approved by all stakeholders:
+
+=== 1. QA Lead Routes to Governance
+
+**Command (from StarForth-Governance repo):**
+```bash
+mkdir -p in_basket/Fmea/
+cp [path/to/fmea/details] in_basket/Fmea/FMEA-[YYYYMMDD]_[PARENT_ISSUE_ID].adoc
+```
+
+=== 2. Digital Signature Collection
+
+QA Lead collects signatures by copying approval comments to final document:
+
+[source,adoc]
+----
+= FMEA Submission: [Title]
+:fmea-id: FMEA-20251103-CAPA-042
+:parent-issue: #42
+:submission-date: 2025-11-03
+
+== Stakeholder Approvals
+
+[cols="1,1,1,1"]
+|===
+|Stakeholder|Role|Date|Signature
+|Jane Smith|QA Lead|2025-11-03|✅
+|Bob Jones|Architecture|2025-11-03|✅
+|Alice Lee|Security|2025-11-03|✅
+|===
+
+[NOTE]
+Signatures collected from GitHub issue comments #42 (CAPA), #45 (FMEA)
+Digital signatures preserved in git audit trail.
+----
+
+=== 3. Unblock Parent Issue
+
+```bash
+# Remove blocking labels
+gh issue edit #42 --remove-label fmea-required,blocked
+
+# Add comment confirming unblock
+gh issue comment #42 --body "✅ FMEA Approved. Issue unblocked. Implementation can proceed."
+```
+
+=== 4. Governance Record
+
+FMEA now appears in `in_basket/Fmea/` awaiting:
+- QA triage (per INTAKE_PROCEDURES.adoc Fmea_Submissions pathway)
+- SLA: 10 business days for review/approval
+- Disposition: Move to [VAULT]/Reference/Processes/ or archive if rejected
+
+== Stakeholder Responsibilities
+
+=== QA Lead
+
+**During FMEA Review:**
+- Review failure modes for completeness
+- Assess mitigations for quality/safety coverage
+- Verify all required stakeholders invited
+- Set approval deadline (typically 5 business days)
+
+**After All Approve:**
+- Verify completeness of approvals
+- Route to in_basket
+- Unblock parent issue
+- Comment: "FMEA approved, proceeding with implementation"
+
+=== Architects/Technical Leads
+
+**Review Scope:**
+- Design impact assessment
+- Mitigation technical feasibility
+- Integration with existing architecture
+
+**Approval Means:**
+- This design change is architecturally sound
+- Proposed mitigations are sufficient
+- Implementation can proceed safely
+
+=== Security Review (if applicable)
+
+**Review Scope:**
+- Security implications of change
+- Vulnerability introduction risk
+- Mitigation adequacy for security baseline
+
+**Approval Means:**
+- Change does not introduce security risks
+- Mitigations address identified threats
+- Security baseline maintained
+
+== Timeline & SLAs
+
+[cols="1,1,1"]
+|===
+|Activity|SLA|Owner
+|File FMEA (after parent blocked)|24 hours|Developer/Manager
+|Stakeholder review window|5 business days|QA Lead sets deadline
+|All stakeholders approve|By deadline|Stakeholders
+|QA Lead routes to in_basket|2 business days|QA Lead
+|Digital signatures collected|Same day as routing|QA Lead
+|Unblock parent issue|Same day as approval|QA Lead
+|in_basket FMEA triage|10 business days|Governance QA
+|Disposition to [VAULT]|Per governance decision|QA/Governance
+|===
+
+== Jenkins Integration (Phase 2)
+
+Jenkins jobs will also check FMEA requirement before allowing pipeline progression:
+
+[source,groovy]
+----
+// In Jenkins job (devl/test/qual stages)
+
+def fmeaRequired(String issueBody) {
+  return issueBody.contains("fmea-required") ||
+         issueBody.contains("FMEA: required")
+}
+
+def isFmeaApproved(String issueNumber) {
+  // Check GitHub issue for FMEA approval
+  // Look for comments from all required stakeholders
+  // Return true only if ALL stakeholders approved
+}
+
+stage('Check FMEA Gate') {
+  when { expression { fmeaRequired(env.ISSUE_BODY) } }
+  steps {
+    script {
+      if (!isFmeaApproved(env.ISSUE_NUMBER)) {
+        error("FMEA required but not approved. Block pipeline.")
+      }
+    }
+  }
+}
+----
+
+Details: See JENKINS_GOVERNANCE_INTEGRATION.adoc (Phase 2 section)
+
+== Troubleshooting
+
+=== "FMEA is blocked but I don't think it should be"
+
+**Solution:** Contact QA Lead to review FMEA requirement assessment. If legitimate exception, QA Lead can remove blocking labels manually with documentation.
+
+=== "Stakeholders not responding to FMEA review"
+
+**Solution:**
+1. QA Lead escalates to stakeholder manager
+2. Extend deadline if needed (document reason in FMEA)
+3. If critical path: proceed with PM approval + risk acceptance document
+
+=== "FMEA approved but parent issue still blocked"
+
+**Solution:**
+1. Verify all stakeholders approved (check comments)
+2. QA Lead manually removes fmea-required + blocked labels
+3. Post comment: "FMEA approved, unblocking issue"
+
+== References
+
+- 04-FMEA_PROCESS.adoc - Complete FMEA procedure
+- CAPA_PROCESS.adoc - CAPA workflow with FMEA gate
+- ECR_PROCESS.adoc - ECR FMEA decision field
+- ECO_PROCESS.adoc - ECO inherits FMEA from ECR
+- INTAKE_PROCEDURES.adoc - Fmea_Submissions pathway (SLA: 10 business days)
+- .github/workflows/fmea-submission.yml - Workflow implementation
+- .github/ISSUE_TEMPLATES/fmea.yml - FMEA template
+
+== Sign-Off
+
+**Implemented By:** Claude Code (AI Assistant)
+**Date:** 2025-11-03
+**Status:** GitHub workflows active, Jenkins Phase 2 pending
+
+**Approval Authority:** QA Lead / Architecture

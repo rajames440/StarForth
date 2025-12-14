@@ -1,0 +1,612 @@
+= StarForth C↔Isabelle Refinement Defect Tracking
+:doctype: article
+:toc: left
+:toclevels: 3
+:sectnums:
+:source-highlighter: rouge
+:icons: font
+:sectanchors:
+
+== Overview
+
+This document tracks all discrepancies between the Isabelle formal theories and the C implementation.
+
+**Purpose:** Serve as a Corrective Action/Preventive Action (CAPA) log for the iterative refinement process.
+Each defect/discrepancy receives a unique ID, root cause analysis, corrective action plan, and verification status.
+
+**Process:**
+1. Compare Isabelle theory (spec) to C code (implementation) 2. For each discrepancy, create a DEFECT entry 3. Decide: Fix theory?
+Fix code?
+Revise both?
+4. Execute corrective action 5. Prove refinement or update CAPA 6. Close defect when verified
+
+[cols="1,2,1,2"]
+|===
+| **Phase** | **Scope** | **Status** | **Target Date**
+
+| 1 | vm.c core stack/execution | Not started | TBD
+| 2 | Root-level *.c utilities | Not started | TBD
+| 3 | Test harness integration | Not started | TBD
+| 4 | Primitive dictionary (Forth words) | Not started | TBD
+| 5 | VM expansion & iteration | Not started | TBD
+|===
+
+---
+
+== Summary Statistics
+
+[cols="1,1,1,1,1"]
+|===
+| Total Defects | Open | In Progress | Resolved | Not Applicable
+
+| 0 | 0 | 0 | 0 | 0
+|===
+
+*Last Updated:* {docdate}
+
+---
+
+== DEFECT Template
+
+[source]
+----
+== DEFECT-NNN: <Brief Title>
+
+[cols="1,3"]
+|===
+| **ID** | DEFECT-NNN
+| **Phase** | N - <Phase Name>
+| **Component** | <file.c>::<function>
+| **Theory** | <Theory.thy>::<definition/lemma>
+| **Status** | OPEN / IN-PROGRESS / CLOSED / NOT-APPLICABLE
+| **Severity** | CRITICAL / HIGH / MEDIUM / LOW
+| **Priority** | P0 / P1 / P2 / P3
+| **Date Created** | YYYY-MM-DD
+| **Date Closed** | YYYY-MM-DD (if applicable)
+|===
+
+=== Description
+
+Concise description of the discrepancy between theory and code.
+
+Example: "Theory requires precondition X, but code doesn't enforce it"
+
+=== Root Cause Analysis
+
+[ ] **Theory is incorrect** - Specification was wrong/incomplete
+[ ] **Code is incorrect** - Implementation doesn't match spec
+[ ] **Both need revision** - Specification incomplete, code needs update
+[ ] **Misunderstanding** - Actually aligned, just poorly communicated
+[ ] **Environmental** - External constraint discovered
+
+*Explanation:*
+(Detailed analysis of why the discrepancy exists)
+
+=== Impact
+
+**Correctness Impact:** (Does this break the property being proven? Yes/No/Unknown)
+
+**Scope:** (How many functions/operations affected?)
+
+**Risk:** (Could this cause runtime failure if unresolved?)
+
+=== Corrective Action Plan
+
+**Option A (Recommended):**
+(Action description)
+
+[source,c]
+----
+// Code change example if applicable
+----
+
+**Option B (Alternative):**
+(Alternative approach)
+
+**Rationale for selection:**
+(Why Option A is best)
+
+=== Verification Plan
+
+**Step 1:** (First validation step)
+
+**Step 2:** (Refinement proof to attempt)
+
+**Step 3:** (Testing/validation)
+
+**Success Criteria:** (How do we know it's resolved?)
+
+=== Implementation Status
+
+- [ ] Corrective action approved
+- [ ] Code changes implemented
+- [ ] Theory updated (if needed)
+- [ ] Refinement proof started
+- [ ] Refinement proof complete
+- [ ] Integration testing passed
+- [ ] Defect marked CLOSED
+
+=== References
+
+- **Related Defects:** (Other CAPA entries)
+- **Proof File:** (docs/src/internal/formal/StarForth_Refinement.thy, line NNN)
+- **C File:** (src/vm.c, line NNN)
+- **Theory File:** (VM_Core.thy, line NNN)
+
+=== Discussion Notes
+
+*[2025-10-30]:* Initial defect entry. Awaiting team discussion on root cause.
+
+---
+----
+
+---
+
+== PHASE 1: VM Core Refinement
+
+[cols="1,2,1,1"]
+|===
+| **ID** | **Title** | **Severity** | **Status**
+
+|===
+
+=== DEFECT-001: Stack Push Error Handling
+
+[cols="1,3"]
+|===
+| **ID** | DEFECT-001
+| **Phase** | 1 - VM Core
+| **Component** | src/vm.c::stack_push()
+| **Theory** | VM_Stacks.thy::push :: nat → vm_state → vm_state
+| **Status** | OPEN
+| **Severity** | HIGH
+| **Priority** | P0
+| **Date Created** | 2025-10-30
+|===
+
+==== Description
+
+**Theory side:** `push` is a pure function that always succeeds.
+Precondition: stack not full.
+Theory treats error handling through explicit VM error state: `vm_error_flag`.
+
+**Code side:** `stack_push()` checks bounds and sets error flag, but the actual stack modification happens unconditionally.
+
+**Discrepancy:** Does the code guarantee it won't overflow?
+Theory assumes stack is finite and bounded.
+
+==== Root Cause Analysis
+
+[x] **Code is incomplete** - Needs formal contract specification
+[ ] **Theory is incorrect**
+[ ] **Both need revision**
+
+The code correctly prevents overflow but doesn't explicitly formalize this against the theory's precondition.
+The theory's `push` definition assumes: "If the precondition holds (stack not full), the operation succeeds." The code needs a formal proof that the bounds check actually maintains the invariant.
+
+==== Impact
+
+**Correctness Impact:** YES - Stack overflow is a critical safety property
+
+**Scope:** All stack operations (push, pop, data/return stack)
+
+**Risk:** CRITICAL - Unhandled overflow could corrupt VM state
+
+==== Corrective Action Plan
+
+**Option A (Recommended): Formalize the contract**
+
+Add explicit precondition proof that shows:
+
+```
+IF dsp < STACK_SIZE THEN
+  code_push(state) = theory_push(state)
+AND
+  resulting_dsp = old_dsp + 1
+AND
+  error_flag = NO_ERROR
+```
+
+The C code must formally prove bounds enforcement.
+
+[source,c]
+----
+/**
+ * REFINEMENT: Implements VM_Stacks.thy::push (line 42)
+ * Precondition: data_stack_pointer < STACK_MAX
+ * Postcondition: push succeeds and error_flag == OK OR push fails and error_flag == STACK_OVERFLOW
+ */
+void stack_push(vm_state_t *state, uint16_t value) {
+    // Precondition check - must prove this prevents overflow
+    if (state->dsp >= STACK_MAX - 1) {
+        state->error = VM_ERROR_STACK_OVERFLOW;
+        return;  // REFINEMENT: Matches theory's error case
+    }
+
+    // Actual push - REFINEMENT: Corresponds to theory_push modification
+    state->data_stack[++state->dsp] = value;
+    state->error = VM_ERROR_NONE;
+
+    // REFINEMENT INVARIANT: 0 <= dsp < STACK_MAX always holds after this
+}
+----
+
+**Option B: Revise theory to explicit error cases**
+
+Modify theory to make error handling explicit at the HOL level.
+(More complex but gives stronger guarantees)
+
+==== Verification Plan
+
+**Step 1:** Write refinement lemma
+
+```isabelle
+lemma stack_push_refines:
+  assumes "dsp < STACK_MAX - 1"
+  shows "code_push(state, value) = theory_push(state, value)"
+  by (simp add: stack_push_def, ...)
+```
+
+**Step 2:** Write overflow lemma
+
+```isabelle
+lemma stack_push_overflow:
+  assumes "dsp ≥ STACK_MAX - 1"
+  shows "code_push_sets_error(state)"
+  by (simp add: stack_push_def, ...)
+```
+
+**Step 3:** Integration - prove `code_push ⊑ theory_push` with error handling
+
+**Step 4:** Run: `make verify-defect DEFECT=001`
+
+**Success Criteria:**
+- [ ] Isabelle proofs compile without sorry - [ ] Code annotations match theory references - [ ] Test suite passes with new invariants - [ ] No assumptions about bounds outside code
+
+==== Implementation Status
+
+- [ ] Corrective action approved
+- [ ] Code changes implemented
+- [ ] Theory updated (if needed)
+- [ ] Refinement proof started
+- [ ] Refinement proof complete
+- [ ] Integration testing passed
+- [ ] Defect marked CLOSED
+
+==== References
+
+- **C File:** src/vm.c, lines 145-165
+- **Theory File:** VM_Stacks.thy, line 42
+- **Refinement Theory:** docs/src/internal/formal/StarForth_Refinement.thy (to be created)
+
+==== Discussion Notes
+
+*[2025-10-30]:* Initial defect entry.
+Critical path item for Phase 1.
+Need team consensus on whether to prove precondition in code or lift error handling to theory level.
+
+---
+
+=== DEFECT-002: Return Stack Misalignment
+
+[cols="1,3"]
+|===
+| **ID** | DEFECT-002
+| **Phase** | 1 - VM Core
+| **Component** | src/vm.c::execute_call(), src/vm.c::execute_return()
+| **Theory** | VM_Stacks.thy::push_return, pop_return
+| **Status** | OPEN
+| **Severity** | HIGH
+| **Priority** | P0
+| **Date Created** | 2025-10-30
+|===
+
+==== Description
+
+**Theory side:** Return stack operations are modeled as a simple LIFO stack in HOL.
+Theory assumes: Each CALL pushes address, each RET pops address.
+Stack is always balanced.
+
+**Code side:** Code has asymmetric behavior:
+- CALL increments RSP *before* storing (pre-increment) - RET retrieves *then* decrements RSP (post-decrement)
+
+**Discrepancy:** Do pre vs post increment/decrement semantics match the theory's abstract model?
+
+==== Root Cause Analysis
+
+[x] **Code is incomplete** - Semantics not formally matched to theory
+[ ] **Theory is incorrect**
+[ ] **Both need revision**
+
+The implementation detail (pre vs post increment) works correctly but must be proven equivalent to the theory's model.
+This is a refinement of implementation detail to abstract specification.
+
+==== Impact
+
+**Correctness Impact:** YES - CALL/RET is core VM operation
+
+**Scope:** All subroutine calls and returns
+
+**Risk:** HIGH - Misalignment could cause deep stack corruption that's hard to detect
+
+==== Corrective Action Plan
+
+**Option A (Recommended): Prove semantic equivalence**
+
+Show that the pre/post increment patterns are equivalent to the abstract FIFO model:
+
+```isabelle
+lemma call_push_equiv:
+  assumes "valid_rsp state"
+  shows "execute_code_call state addr =
+         theory_push_return_address state addr"
+```
+
+Add detailed code comments showing correspondence:
+
+[source,c]
+----
+/**
+ * REFINEMENT: execute_call implements CALL word
+ * Theory: VM_Stacks.thy::call_instr (line 156)
+ *
+ * Implements: push return address to return stack
+ * Code pattern: rsp++ then store (pre-increment semantics)
+ * Equivalent to theory's abstract push operation
+ */
+void execute_call(vm_state_t *state, uint16_t address) {
+    // Theory: push_return(state, return_addr)
+    // Code: pre-increment then store
+    state->return_stack[++state->rsp] = state->pc + 1;
+    state->pc = address;
+}
+----
+
+==== Verification Plan
+
+**Step 1:** Formalize pre/post increment semantics in Isabelle
+
+**Step 2:** Prove equivalence to abstract FIFO model
+
+**Step 3:** Verify call/return round-trip maintains stack balance
+
+**Step 4:** Test with complex call chains (recursion, nested calls)
+
+**Success Criteria:**
+- [ ] Refinement proof for execute_call complete - [ ] Refinement proof for execute_return complete - [ ] Round-trip property proven (CALL n; ... RET restores state) - [ ] Recursion depth test passes
+
+==== Implementation Status
+
+- [ ] Corrective action approved
+- [ ] Code changes implemented
+- [ ] Theory updated (if needed)
+- [ ] Refinement proof started
+- [ ] Refinement proof complete
+- [ ] Integration testing passed
+- [ ] Defect marked CLOSED
+
+==== References
+
+- **C File:** src/vm.c, lines 280-295
+- **Theory File:** VM_Stacks.thy, lines 156-180
+- **Related:** DEFECT-001 (stack bounds)
+
+==== Discussion Notes
+
+*[2025-10-30]:* Initial defect.
+Depends on DEFECT-001 resolution (bounds checking).
+
+---
+
+=== DEFECT-003: Instruction Dispatch vs Theory Match
+
+[cols="1,3"]
+|===
+| **ID** | DEFECT-003
+| **Phase** | 1 - VM Core
+| **Component** | src/vm.c::dispatch_instruction()
+| **Theory** | VM_Core.thy::exec_instruction
+| **Status** | OPEN
+| **Severity** | MEDIUM
+| **Priority** | P1
+| **Date Created** | 2025-10-30
+|===
+
+==== Description
+
+**Theory side:** `exec_instruction` is defined as a case analysis over all instruction types.
+Theory explicitly handles each opcode with corresponding state transformation.
+
+**Code side:** Dispatch uses function pointers / switch statement.
+Some opcodes call helper functions.
+Question: Are all code paths accounted for in theory?
+Do all helpers match theory definitions?
+
+==== Root Cause Analysis
+
+[ ] **Code is incomplete** - Some opcodes not in theory?
+[ ] **Theory is incomplete** - Not all code paths captured?
+[x] **Both need revision** - Systematic mapping needed
+
+Need to enumerate every opcode in code and match against theory definitions.
+Some helpers (e.g., arithmetic operations) may need separate refinement proofs.
+
+==== Impact
+
+**Correctness Impact:** MEDIUM - Core execution but typically driven by other proofs
+
+**Scope:** All 200+ Forth words eventually
+
+**Risk:** MEDIUM - Missing opcodes could cause undefined behavior
+
+==== Corrective Action Plan
+
+**Option A (Recommended): Create opcode mapping matrix**
+
+Build explicit enumeration:
+- Column A: C opcode constant (e.g., OP_PUSH) - Column B: C function handler - Column C: Isabelle definition - Column D: Refinement status (unproven/in-progress/complete)
+
+Then systematically work through each row.
+
+[source,c]
+----
+/**
+ * REFINEMENT MAPPING TABLE:
+ * OP_PUSH (0x01)    -> code_push()      -> VM_Core.push_instr
+ * OP_DUP (0x02)     -> code_dup()       -> VM_DataStack_Words.dup_instr
+ * OP_DROP (0x03)    -> code_drop()      -> VM_DataStack_Words.drop_instr
+ * ...
+ * See docs/REFINEMENT_OPCODES.adoc for complete matrix
+ */
+----
+
+==== Verification Plan
+
+**Step 1:** Create comprehensive opcode matrix (spreadsheet or structured doc)
+
+**Step 2:** For each opcode, list: C function, Isabelle definition, proof status
+
+**Step 3:** Start with subset: PUSH, DUP, DROP, SWAP (basic stack ops)
+
+**Step 4:** Complete others in phases
+
+**Success Criteria:**
+- [ ] Opcode matrix complete and verified - [ ] All code functions have Isabelle counterpart (or documented reason for deviation) - [ ] No orphaned code paths
+
+==== Implementation Status
+
+- [ ] Corrective action approved
+- [ ] Code changes implemented
+- [ ] Theory updated (if needed)
+- [ ] Refinement proof started
+- [ ] Refinement proof complete
+- [ ] Integration testing passed
+- [ ] Defect marked CLOSED
+
+==== References
+
+- **C File:** src/vm.c, dispatch function
+- **Theory File:** VM_Core.thy, VM_DataStack_Words.thy, VM_ReturnStack_Words.thy, VM_Words.thy
+
+==== Discussion Notes
+
+*[2025-10-30]:* Umbrella defect covering opcode-by-opcode refinement.
+Will spawn individual DEFECTs as work progresses.
+
+---
+
+== PHASE 2: Utilities Refinement
+
+[cols="1,2,1,1"]
+|===
+| **ID** | **Title** | **Severity** | **Status**
+
+| (Pending Phase 1 completion) | - | - | -
+|===
+
+---
+
+== PHASE 3: Test Harness Integration
+
+[cols="1,2,1,1"]
+|===
+| **ID** | **Title** | **Severity** | **Status**
+
+| (Pending Phase 1-2 completion) | - | - | -
+|===
+
+---
+
+== PHASE 4: Primitive Dictionary
+
+[cols="1,2,1,1"]
+|===
+| **ID** | **Title** | **Severity** | **Status**
+
+| (Pending Phase 1-3 completion) | - | - | -
+|===
+
+---
+
+== PHASE 5: VM Expansion & Iteration
+
+[cols="1,2,1,1"]
+|===
+| **ID** | **Title** | **Severity** | **Status**
+
+| (Pending Phase 1-4 completion) | - | - | -
+|===
+
+---
+
+== How to Use This Document
+
+=== Adding a New Defect
+
+1. Find the next available DEFECT-NNN ID
+2. Copy the DEFECT template section
+3. Fill in all required fields
+4. Link from the appropriate Phase section
+5. Update the summary statistics table
+6. Commit with message: `docs: Add DEFECT-NNN: <title>`
+
+=== Tracking Progress
+
+Status values:
+- **OPEN** - Defect identified, awaiting action - **IN-PROGRESS** - Corrective action underway - **CLOSED** - Verified resolved - **NOT-APPLICABLE** - Found to be non-issue upon investigation
+
+Update status via:
+
+```bash
+make defect-status  # Shows current stats
+make verify-defect DEFECT=001  # Details for specific defect
+```
+
+=== Code Annotations
+
+Every C function with a theory counterpart should have a header comment:
+
+```c
+/**
+ * REFINEMENT: <Theory>::<definition> (line NNN)
+ * C Function: <function_name>
+ * Related CAPAs: DEFECT-001, DEFECT-003
+ * Status: [UNPROVEN / IN-PROGRESS / PROVEN]
+ */
+```
+
+=== Generating Reports
+
+```bash
+make refinement-status          # Summary of all defects
+make refinement-phase1          # Phase 1 details
+make refinement-capa-print      # AsciiDoc → HTML/PDF
+```
+
+---
+
+== Legend
+
+[cols="1,3"]
+|===
+| **Symbol** | **Meaning**
+
+| ✅ | Complete/Verified
+| ⚠️ | In Progress/Caution
+| ❌ | Incomplete/Blocked
+| 📋 | Pending Action
+| 🔍 | Under Investigation
+|===
+
+---
+
+== Version History
+
+[cols="1,1,2"]
+|===
+| **Date** | **Version** | **Changes**
+
+| 2025-10-30 | 1.0 | Initial CAPA document created with template and Phase 1 defects
+|===
+
+Generated: {docdate}

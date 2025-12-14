@@ -1,0 +1,73 @@
+= Kanban Workflow Artifacts Manifest
+:doctype: article
+:toc:
+
+== Overview
+
+This manifest tracks all engineering artifacts related to the Kanban Workflow Validation procedure.
+
+== Artifact Registry
+
+[cols="1,2,1,1,1"]
+|===
+|Artifact ID|Filename|Type|SHA-256|Source Commit
+|KW-SETUP-001
+|KANBAN-SETUP-CHECKLIST.sh
+|shell script (executable)
+|ad9e585538aa320521e6b4af449ead6a83c9c2471e1ae2d4d592792d9bb0deaa
+|de928e94b5f241e346c8ff917069b0bb24c9301c
+
+|KW-TEST-001
+|KANBAN-QUICK-TEST.sh
+|shell script (executable)
+|ef13d408853a1bd327a968a729f14ba1f9d02d5bff82cf733a39070a20
+|de928e94b5f241e346c8ff917069b0bb24c9301c
+
+|KW-DOC-001
+|KANBAN-WORKFLOW-VALIDATION.adoc
+|documentation (AsciiDoc)
+|(reference in parent document)
+|de928e94b5f241e346c8ff917069b0bb24c9301c
+
+|KW-FLOW-001
+|kanban-status-flow.svg
+|diagram (PlantUML generated)
+|(embedded in KANBAN-WORKFLOW-VALIDATION.adoc)
+|de928e94b5f241e346c8ff917069b0bb24c9301c
+|===
+
+== Integrity Verification
+
+To verify all artifacts have not been modified since capture:
+
+[source,bash]
+----
+cd docs/artifacts/kanban-workflow
+
+# Create verification file
+cat > CHECKSUMS.sha256 << 'EOF'
+ad9e585538aa320521e6b4af449ead6a83c9c2471e1ae2d4d592792d9bb0deaa  KANBAN-SETUP-CHECKLIST.sh
+ef13d408853a1bd327a968a729f14ba1f9d02d5bff82cf733a39070a20  KANBAN-QUICK-TEST.sh
+EOF
+
+# Verify
+sha256sum -c CHECKSUMS.sha256
+
+# Expected output:
+# KANBAN-SETUP-CHECKLIST.sh: OK
+# KANBAN-QUICK-TEST.sh: OK
+----
+
+== Document Cross-References
+
+* **Validation Procedure:** xref:../../testing-quality/KANBAN-WORKFLOW-VALIDATION.adoc[]
+* **Workflow File:** `.github/workflows/capa-kanban-sync.yml`
+* **CAPA Process:** xref:../../CAPA_PROCESS.adoc[]
+
+== Notes
+
+- All artifacts are versioned with source commit hash
+- SHA-256 checksums enable byte-for-byte verification
+- Artifacts are embedded in documentation where possible
+- External artifacts are linked with proper references
+- This manifest itself serves as the artifact index

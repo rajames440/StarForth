@@ -1,0 +1,595 @@
+[0;34m═══════════════════════════════════════════════════════════[0m
+[0;34mSTARFORTH PHYSICS ENGINE COMPREHENSIVE VALIDATION[0m
+[0;34m═══════════════════════════════════════════════════════════[0m
+[1;33m→ Experiment Design: Randomized 90-run trial with 3 configurations[0m
+[1;33m→ Benchmark: PRE warmup + RESET counters + POST measurement[0m
+[0;32m✓ CSV header created: physics_experiment/experiment_results.csv[0m
+
+[0;34m>>> Generating randomized test matrix...[0m
+[0;32m✓ Test matrix generated and shuffled: physics_experiment/run_logs/test_matrix.txt[0m
+[1;33m→ Test matrix (first 10 runs, shuffled):[0m
+  B_CACHE,1,0,8
+  A_BASELINE,0,0,17
+  C_FULL,1,1,26
+  C_FULL,1,1,15
+  B_CACHE,1,0,7
+  C_FULL,1,1,5
+  A_BASELINE,0,0,1
+  C_FULL,1,1,24
+  B_CACHE,1,0,24
+  C_FULL,1,1,14
+[0;34m═══════════════════════════════════════════════════════════[0m
+[0;34mRANDOMIZED EXPERIMENT EXECUTION (90 runs, 3 configurations)[0m
+[0;34m═══════════════════════════════════════════════════════════[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 1/90 - B_CACHE #8...[0m
+[0;32m✓ Run 1/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 2/90 - A_BASELINE #17...[0m
+[0;32m✓ Run 2/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 3/90 - C_FULL #26...[0m
+[0;32m✓ Run 3/90 completed (0s)[0m
+[1;33m→ Run 4/90 - C_FULL #15...[0m
+[0;32m✓ Run 4/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 5/90 - B_CACHE #7...[0m
+[0;32m✓ Run 5/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 6/90 - C_FULL #5...[0m
+[0;32m✓ Run 6/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 7/90 - A_BASELINE #1...[0m
+[0;32m✓ Run 7/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 8/90 - C_FULL #24...[0m
+[0;32m✓ Run 8/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 9/90 - B_CACHE #24...[0m
+[0;32m✓ Run 9/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 10/90 - C_FULL #14...[0m
+[0;32m✓ Run 10/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 11/90 - A_BASELINE #30...[0m
+[0;32m✓ Run 11/90 completed (0s)[0m
+[1;33m→ Run 12/90 - A_BASELINE #11...[0m
+[0;32m✓ Run 12/90 completed (0s)[0m
+[1;33m→ Run 13/90 - A_BASELINE #24...[0m
+[0;32m✓ Run 13/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 14/90 - C_FULL #12...[0m
+[0;32m✓ Run 14/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 15/90 - B_CACHE #1...[0m
+[0;32m✓ Run 15/90 completed (0s)[0m
+[1;33m→ Run 16/90 - B_CACHE #12...[0m
+[0;32m✓ Run 16/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 17/90 - C_FULL #3...[0m
+[0;32m✓ Run 17/90 completed (0s)[0m
+[1;33m→ Run 18/90 - C_FULL #13...[0m
+[0;32m✓ Run 18/90 completed (0s)[0m
+[1;33m→ Run 19/90 - C_FULL #17...[0m
+[0;32m✓ Run 19/90 completed (1s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 20/90 - A_BASELINE #3...[0m
+[0;32m✓ Run 20/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 21/90 - B_CACHE #10...[0m
+[0;32m✓ Run 21/90 completed (0s)[0m
+[1;33m→ Run 22/90 - B_CACHE #11...[0m
+[0;32m✓ Run 22/90 completed (0s)[0m
+[1;33m→ Run 23/90 - B_CACHE #23...[0m
+[0;32m✓ Run 23/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 24/90 - A_BASELINE #23...[0m
+[0;32m✓ Run 24/90 completed (0s)[0m
+[1;33m→ Run 25/90 - A_BASELINE #10...[0m
+[0;32m✓ Run 25/90 completed (0s)[0m
+[1;33m→ Run 26/90 - A_BASELINE #12...[0m
+[0;32m✓ Run 26/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 27/90 - B_CACHE #20...[0m
+[0;32m✓ Run 27/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 28/90 - C_FULL #21...[0m
+[0;32m✓ Run 28/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 29/90 - B_CACHE #16...[0m
+[0;32m✓ Run 29/90 completed (0s)[0m
+[1;33m→ Run 30/90 - B_CACHE #14...[0m
+[0;32m✓ Run 30/90 completed (0s)[0m
+[1;33m→ Run 31/90 - B_CACHE #2...[0m
+[0;32m✓ Run 31/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 32/90 - A_BASELINE #4...[0m
+[0;32m✓ Run 32/90 completed (0s)[0m
+[1;33m→ Run 33/90 - A_BASELINE #29...[0m
+[0;32m✓ Run 33/90 completed (0s)[0m
+[1;33m→ Run 34/90 - A_BASELINE #16...[0m
+[0;32m✓ Run 34/90 completed (0s)[0m
+[1;33m→ Run 35/90 - A_BASELINE #22...[0m
+[0;32m✓ Run 35/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 36/90 - B_CACHE #6...[0m
+[0;32m✓ Run 36/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 37/90 - C_FULL #20...[0m
+[0;32m✓ Run 37/90 completed (0s)[0m
+[1;33m→ Run 38/90 - C_FULL #16...[0m
+[0;32m✓ Run 38/90 completed (0s)[0m
+[1;33m→ Run 39/90 - C_FULL #4...[0m
+[0;32m✓ Run 39/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 40/90 - A_BASELINE #21...[0m
+[0;32m✓ Run 40/90 completed (0s)[0m
+[1;33m→ Run 41/90 - A_BASELINE #5...[0m
+[0;32m✓ Run 41/90 completed (0s)[0m
+[1;33m→ Run 42/90 - A_BASELINE #13...[0m
+[0;32m✓ Run 42/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 43/90 - C_FULL #6...[0m
+[0;32m✓ Run 43/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 44/90 - B_CACHE #28...[0m
+[0;32m✓ Run 44/90 completed (0s)[0m
+[1;33m→ Run 45/90 - B_CACHE #3...[0m
+[0;32m✓ Run 45/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 46/90 - A_BASELINE #27...[0m
+[0;32m✓ Run 46/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 47/90 - B_CACHE #18...[0m
+[0;32m✓ Run 47/90 completed (0s)[0m
+[1;33m→ Run 48/90 - B_CACHE #15...[0m
+[0;32m✓ Run 48/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 49/90 - A_BASELINE #14...[0m
+[0;32m✓ Run 49/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 50/90 - B_CACHE #25...[0m
+[0;32m✓ Run 50/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 51/90 - C_FULL #10...[0m
+[0;32m✓ Run 51/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 52/90 - B_CACHE #17...[0m
+[0;32m✓ Run 52/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 53/90 - A_BASELINE #6...[0m
+[0;32m✓ Run 53/90 completed (0s)[0m
+[1;33m→ Run 54/90 - A_BASELINE #25...[0m
+[0;32m✓ Run 54/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 55/90 - B_CACHE #4...[0m
+[0;32m✓ Run 55/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 56/90 - C_FULL #29...[0m
+[0;32m✓ Run 56/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 57/90 - A_BASELINE #15...[0m
+[0;32m✓ Run 57/90 completed (0s)[0m
+[1;33m→ Run 58/90 - A_BASELINE #20...[0m
+[0;32m✓ Run 58/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 59/90 - B_CACHE #5...[0m
+[0;32m✓ Run 59/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 60/90 - C_FULL #18...[0m
+[0;32m✓ Run 60/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 61/90 - A_BASELINE #28...[0m
+[0;32m✓ Run 61/90 completed (0s)[0m
+[1;33m→ Run 62/90 - A_BASELINE #9...[0m
+[0;32m✓ Run 62/90 completed (0s)[0m
+[1;33m→ Run 63/90 - A_BASELINE #2...[0m
+[0;32m✓ Run 63/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 64/90 - B_CACHE #21...[0m
+[0;32m✓ Run 64/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 65/90 - C_FULL #9...[0m
+[0;32m✓ Run 65/90 completed (0s)[0m
+[1;33m→ Run 66/90 - C_FULL #7...[0m
+[0;32m✓ Run 66/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 67/90 - A_BASELINE #7...[0m
+[0;32m✓ Run 67/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 68/90 - C_FULL #19...[0m
+[0;32m✓ Run 68/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 69/90 - B_CACHE #19...[0m
+[0;32m✓ Run 69/90 completed (0s)[0m
+[1;33m→ Run 70/90 - B_CACHE #29...[0m
+[0;32m✓ Run 70/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 71/90 - C_FULL #25...[0m
+[0;32m✓ Run 71/90 completed (0s)[0m
+[1;33m→ Run 72/90 - C_FULL #2...[0m
+[0;32m✓ Run 72/90 completed (0s)[0m
+[1;33m→ Run 73/90 - C_FULL #1...[0m
+[0;32m✓ Run 73/90 completed (0s)[0m
+[1;33m→ Run 74/90 - C_FULL #27...[0m
+[0;32m✓ Run 74/90 completed (0s)[0m
+[1;33m→ Run 75/90 - C_FULL #11...[0m
+[0;32m✓ Run 75/90 completed (0s)[0m
+[1;33m→ Run 76/90 - C_FULL #30...[0m
+[0;32m✓ Run 76/90 completed (0s)[0m
+[1;33m→ Run 77/90 - C_FULL #8...[0m
+[0;32m✓ Run 77/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 78/90 - B_CACHE #13...[0m
+[0;32m✓ Run 78/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 79/90 - C_FULL #23...[0m
+[0;32m✓ Run 79/90 completed (0s)[0m
+[1;33m→ Run 80/90 - C_FULL #28...[0m
+[0;32m✓ Run 80/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 81/90 - B_CACHE #30...[0m
+[0;32m✓ Run 81/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: C_FULL[0m
+
+[0;34m>>> Building Configuration: C_FULL[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=1[0m
+[0;32m✓ Build completed for C_FULL[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 82/90 - C_FULL #22...[0m
+[0;32m✓ Run 82/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 83/90 - B_CACHE #26...[0m
+[0;32m✓ Run 83/90 completed (0s)[0m
+[1;33m→ Run 84/90 - B_CACHE #27...[0m
+[0;32m✓ Run 84/90 completed (1s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 85/90 - A_BASELINE #8...[0m
+[0;32m✓ Run 85/90 completed (0s)[0m
+[1;33m→ Run 86/90 - A_BASELINE #19...[0m
+[0;32m✓ Run 86/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 87/90 - B_CACHE #9...[0m
+[0;32m✓ Run 87/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: A_BASELINE[0m
+
+[0;34m>>> Building Configuration: A_BASELINE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=0 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for A_BASELINE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 88/90 - A_BASELINE #26...[0m
+[0;32m✓ Run 88/90 completed (0s)[0m
+[1;33m→ Run 89/90 - A_BASELINE #18...[0m
+[0;32m✓ Run 89/90 completed (0s)[0m
+
+[0;34m>>> Switching to Configuration: B_CACHE[0m
+
+[0;34m>>> Building Configuration: B_CACHE[0m
+[1;33m→ make ARCH=amd64 TARGET=fastest ENABLE_HOTWORDS_CACHE=1 ENABLE_PIPELINING=0[0m
+[0;32m✓ Build completed for B_CACHE[0m
+[0;32m✓ Binary ready: /home/rajames/CLionProjects/StarForth/build/amd64/fastest/starforth[0m
+[1;33m→ Run 90/90 - B_CACHE #22...[0m
+[0;32m✓ Run 90/90 completed (0s)[0m
+[0;32m✓ All 90 randomized runs completed successfully![0m
+[0;34m═══════════════════════════════════════════════════════════[0m
+[0;34mEXPERIMENT COMPLETE[0m
+[0;34m═══════════════════════════════════════════════════════════[0m
+[0;32m✓ All 90 experiments completed successfully![0m
+[0;32m✓ Results saved to: physics_experiment/experiment_results.csv[0m
+[0;32m✓ Total runtime: 5 minutes[0m
+[0;32m✓ Run logs: physics_experiment/run_logs/[0m
+[1;33m→ CSV Results Preview (first 5 data rows):[0m
+  timestamp,configuration,run_number,total_lookups,cache_hits,cache_hit_percent,bucket_hits,bucket_hit_percent,misses,miss_percent,cache_hit_latency_ns,cache_hit_stddev_ns,cache_hit_min_ns,cache_hit_max_ns,bucket_search_latency_ns,bucket_search_stddev_ns,bucket_search_min_ns,bucket_search_max_ns,context_predictions_total,context_correct,context_accuracy_percent,window_diversity_percent,window_final_size_bytes,total_runtime_ms,memory_allocated_bytes,speedup_vs_baseline,ci_lower_95,ci_upper_95
+  2025-11-06T22:08:11,B_CACHE,8,100000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  2025-11-06T22:08:18,A_BASELINE,17,100000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  2025-11-06T22:08:25,C_FULL,26,100000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  2025-11-06T22:08:25,C_FULL,15,100000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  2025-11-06T22:08:31,B_CACHE,7,100000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+[1;33m→ Next steps:[0m
+[1;33m→   1. Review results in: physics_experiment/experiment_results.csv[0m
+[1;33m→   2. View test matrix: cat physics_experiment/run_logs/test_matrix.txt[0m
+[1;33m→   3. Run analysis: python3 scripts/analyze_physics_experiment.py physics_experiment/experiment_results.csv[0m
+[1;33m→   4. Review per-run logs in: physics_experiment/run_logs/[0m

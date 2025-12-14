@@ -1,0 +1,84 @@
+════════════════════════════════════════════════════════════
+   ⚡ Building the Fastest Forth in the West! ⚡
+════════════════════════════════════════════════════════════
+  Target Architecture: x86_64 (amd64)
+  Build Profile: Maximum performance build (ASM + LTO + direct threading) (fastest)
+
+Generating version header...
+  CC  src/blkio_factory.c
+  CC  src/blkio_file.c
+  CC  src/blkio_ram.c
+  CC  src/block_subsystem.c
+  CC  src/cli.c
+  CC  src/dictionary_management.c
+  CC  src/io.c
+  CC  src/log.c
+  CC  src/main.c
+  CC  src/math_portable.c
+  CC  src/memory_management.c
+  CC  src/physics_hotwords_cache.c
+  CC  src/physics_metadata.c
+  CC  src/physics_pipelining_metrics.c
+  CC  src/physics_runtime.c
+  CC  src/profiler.c
+  CC  src/repl.c
+  CC  src/rolling_window_of_truth.c
+  CC  src/stack_management.c
+  CC  src/vm_api.c
+  CC  src/vm.c
+  CC  src/vm_debug.c
+  CC  src/word_registry.c
+  CC  src/word_source/arithmetic_words.c
+  CC  src/word_source/block_words.c
+  CC  src/word_source/control_words.c
+  CC  src/word_source/defining_words.c
+  CC  src/word_source/dictionary_manipulation_words.c
+  CC  src/word_source/dictionary_words.c
+  CC  src/word_source/double_words.c
+  CC  src/word_source/editor_words.c
+  CC  src/word_source/format_words.c
+  CC  src/word_source/io_words.c
+  CC  src/word_source/logical_words.c
+  CC  src/word_source/memory_words.c
+  CC  src/word_source/mixed_arithmetic_words.c
+  CC  src/word_source/physics_benchmark_words.c
+  CC  src/word_source/physics_diagnostic_words.c
+  CC  src/word_source/physics_pipelining_diagnostic_words.c
+  CC  src/word_source/return_stack_words.c
+  CC  src/word_source/stack_words.c
+  CC  src/word_source/starforth_words.c
+  CC  src/word_source/string_words.c
+  CC  src/word_source/system_words.c
+  CC  src/word_source/vocabulary_words.c
+  CC  src/test_runner/test_common.c
+  CC  src/test_runner/test_runner.c
+  CC  src/test_runner/modules/arithmetic_words_test.c
+  CC  src/test_runner/modules/block_words_test.c
+  CC  src/test_runner/modules/break_me_tests.c
+  CC  src/test_runner/modules/compute_benchmark.c
+  CC  src/test_runner/modules/control_words_test.c
+  CC  src/test_runner/modules/defining_words_tests.c
+  CC  src/test_runner/modules/dictionary_manipulation_words_test.c
+  CC  src/test_runner/modules/dictionary_words_test.c
+  CC  src/test_runner/modules/double_words_test.c
+  CC  src/test_runner/modules/format_words_test.c
+  CC  src/test_runner/modules/integration_tests.c
+  CC  src/test_runner/modules/io_words_test.c
+  CC  src/test_runner/modules/logical_words_test.c
+  CC  src/test_runner/modules/memory_words_test.c
+  CC  src/test_runner/modules/mixed_arithmetic_words_test.c
+  CC  src/test_runner/modules/return_stack_words_test.c
+  CC  src/test_runner/modules/stack_words_test.c
+  CC  src/test_runner/modules/starforth_words_test.c
+  CC  src/test_runner/modules/stress_tests.c
+  CC  src/test_runner/modules/string_words_test.c
+  CC  src/test_runner/modules/system_words_test.c
+  CC  src/test_runner/modules/vocabulary_words_test.c
+  CC  src/platform/linux/time.c
+  CC  src/platform/platform_init.c
+🔗 Linking build/amd64/fastest/starforth...
+gcc -std=c99 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include -DSTRICT_PTR=1 -DENABLE_HOTWORDS_CACHE=0 -DROLLING_WINDOW_SIZE=4096 -DTRANSITION_WINDOW_SIZE=2 -DADAPTIVE_SHRINK_RATE=75 -DADAPTIVE_MIN_WINDOW_SIZE=256 -DADAPTIVE_CHECK_FREQUENCY=256 -DADAPTIVE_GROWTH_THRESHOLD=1 -march=native -DARCH_X86_64=1 -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -DNDEBUG -flto -funroll-loops -finline-functions -fomit-frame-pointer -fno-plt -fno-semantic-interposition  -o build/amd64/fastest/starforth build/amd64/fastest/blkio_factory.o build/amd64/fastest/blkio_file.o build/amd64/fastest/blkio_ram.o build/amd64/fastest/block_subsystem.o build/amd64/fastest/cli.o build/amd64/fastest/dictionary_management.o build/amd64/fastest/io.o build/amd64/fastest/log.o build/amd64/fastest/main.o build/amd64/fastest/math_portable.o build/amd64/fastest/memory_management.o build/amd64/fastest/physics_hotwords_cache.o build/amd64/fastest/physics_metadata.o build/amd64/fastest/physics_pipelining_metrics.o build/amd64/fastest/physics_runtime.o build/amd64/fastest/profiler.o build/amd64/fastest/repl.o build/amd64/fastest/rolling_window_of_truth.o build/amd64/fastest/stack_management.o build/amd64/fastest/vm_api.o build/amd64/fastest/vm.o build/amd64/fastest/vm_debug.o build/amd64/fastest/word_registry.o build/amd64/fastest/word_source/arithmetic_words.o build/amd64/fastest/word_source/block_words.o build/amd64/fastest/word_source/control_words.o build/amd64/fastest/word_source/defining_words.o build/amd64/fastest/word_source/dictionary_manipulation_words.o build/amd64/fastest/word_source/dictionary_words.o build/amd64/fastest/word_source/double_words.o build/amd64/fastest/word_source/editor_words.o build/amd64/fastest/word_source/format_words.o build/amd64/fastest/word_source/io_words.o build/amd64/fastest/word_source/logical_words.o build/amd64/fastest/word_source/memory_words.o build/amd64/fastest/word_source/mixed_arithmetic_words.o build/amd64/fastest/word_source/physics_benchmark_words.o build/amd64/fastest/word_source/physics_diagnostic_words.o build/amd64/fastest/word_source/physics_pipelining_diagnostic_words.o build/amd64/fastest/word_source/return_stack_words.o build/amd64/fastest/word_source/stack_words.o build/amd64/fastest/word_source/starforth_words.o build/amd64/fastest/word_source/string_words.o build/amd64/fastest/word_source/system_words.o build/amd64/fastest/word_source/vocabulary_words.o build/amd64/fastest/test_runner/test_common.o build/amd64/fastest/test_runner/test_runner.o build/amd64/fastest/test_runner/modules/arithmetic_words_test.o build/amd64/fastest/test_runner/modules/block_words_test.o build/amd64/fastest/test_runner/modules/break_me_tests.o build/amd64/fastest/test_runner/modules/compute_benchmark.o build/amd64/fastest/test_runner/modules/control_words_test.o build/amd64/fastest/test_runner/modules/defining_words_tests.o build/amd64/fastest/test_runner/modules/dictionary_manipulation_words_test.o build/amd64/fastest/test_runner/modules/dictionary_words_test.o build/amd64/fastest/test_runner/modules/double_words_test.o build/amd64/fastest/test_runner/modules/format_words_test.o build/amd64/fastest/test_runner/modules/integration_tests.o build/amd64/fastest/test_runner/modules/io_words_test.o build/amd64/fastest/test_runner/modules/logical_words_test.o build/amd64/fastest/test_runner/modules/memory_words_test.o build/amd64/fastest/test_runner/modules/mixed_arithmetic_words_test.o build/amd64/fastest/test_runner/modules/return_stack_words_test.o build/amd64/fastest/test_runner/modules/stack_words_test.o build/amd64/fastest/test_runner/modules/starforth_words_test.o build/amd64/fastest/test_runner/modules/stress_tests.o build/amd64/fastest/test_runner/modules/string_words_test.o build/amd64/fastest/test_runner/modules/system_words_test.o build/amd64/fastest/test_runner/modules/vocabulary_words_test.o build/amd64/fastest/platform/linux/time.o build/amd64/fastest/platform/platform_init.o -flto -s -Wl,--gc-sections 
+lto-wrapper: warning: using serial compilation of 3 LTRANS jobs
+lto-wrapper: note: see the ‘-flto’ option documentation for more information
+make: *** Deleting file 'build/amd64/fastest/starforth'
+make: *** [Makefile:497: build/amd64/fastest/starforth] Terminated

@@ -1,0 +1,51 @@
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{booktabs}
+\usepackage{float}      % For [H] float option
+\usepackage{placeins}   % For \FloatBarrier
+
+\geometry{margin=1in}
+\graphicspath{{figures/}}
+
+\input{macros/commands.tex}
+
+\begin{document}
+	
+	% --- TITLE PAGE (stay first) ---
+	\input{sections/01_title_v2}
+	
+	% --- ABSTRACT RIGHT AFTER TITLE ---
+	\input{sections/11_abstract_v2}
+	
+	% --- TOC (LATER THAN TITLE, BUT NOT TOO EARLY) ---
+	\clearpage
+	\pagenumbering{roman}
+	\tableofcontents
+	\clearpage
+	\pagenumbering{arabic}
+
+	% --- MAIN SECTIONS ---
+	\input{sections/02_field_v2}
+	\input{sections/03_background_v2}
+	\input{sections/04_summary_v2}
+	\input{sections/05_drawings}
+	\input{sections/06_detailed_description_v2}
+	\input{sections/07_embodiments}
+	\input{sections/08_claims_v2}
+	\input{sections/09_validation}
+	\input{sections/10_implementation}
+	\appendix
+	\input{sections/12_appendix}
+	
+	% --- BIBLIOGRAPHY ---
+	\clearpage
+	\input{bibliography/bibliography}
+	
+\end{document}

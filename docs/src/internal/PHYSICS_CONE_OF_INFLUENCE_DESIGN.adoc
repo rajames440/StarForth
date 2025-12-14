@@ -1,0 +1,660 @@
+= Physics Engine: Cone of Influence Design
+:toc: left
+:toclevels: 3
+xref:../README.adoc[← Back to Documentation Index]
+
+== Overview
+
+This document describes a sophisticated feedback control architecture for the physics engine, grounded in the metaphor of a "cone of influence" that narrows over time, transforming async, unpredictable pub/sub messaging into deterministic, ordered information flows.
+
+**Core Insight**: Observables from the early phase inform statistical models that adjust runtime knobs (controls), which then change behavior, which generates new observables—a closed feedback loop that gradually moves the system from high-uncertainty async communication to low-uncertainty deterministic ordering.
+
+---
+
+== The Cone of Influence Model
+
+=== Conceptual 3D Space
+
+```
+TIME AXIS (past ← present → future)
+         ↑
+   SCOPE │  Wide (Global)
+   AXIS  │     /\
+         │    /  \          Future prediction cone
+         │   /    \         (narrows as causality resolves)
+         │  /      \
+         │ /        \
+    Narrow│/__________\
+         (Word-level)
+
+DETERMINISM AXIS:
+  Async (fire-and-forget, no ordering guarantee)
+    ↓
+  Semi-deterministic (retry with ordering hints)
+    ↓
+  Deterministic (causal ordering enforced)
+```
+
+The **cone** represents the region of possible execution futures. As time progresses and observations accumulate, the cone **narrows** in three ways:
+
+1. **Temporal**: Past observations constrain present behavior
+2. **Spatial**: Initial global scope → specific word interactions
+3. **Modal**: Async uncertainty → deterministic guarantees
+
+=== Three Operational Zones
+
+==== Zone 1: WIDE & ASYNC (Discovery Phase)
+**Duration**: First N observations (bootstrapping)
+**Characteristics**:
+- Many possible execution paths
+- High entropy variance
+- Latency unpredictable
+- Scope: global (any word affects any subscriber)
+
+**Mechanics**:
+- Publish events fire-and-forget into ring buffer
+- No ordering guarantees
+- Goal: Identify what topics words publish to
+- Latency: ~200ns (minimal overhead)
+
+**Example**:
+```
+Word X first runs:
+  - entropy: 0 → 1
+  - temperature_q8: 0 → seed_value
+  - latency_ns: unknown
+  - scope: "affects everyone subscribed to X"
+  - ordering: none (best-effort)
+```
+
+**Observables Ready**:
+- Entropy changes
+- Temperature jumps
+- Host snapshots (CPU, PSI)
+- Error rates
+
+==== Zone 2: NARROWING & SEMI-DETERMINISTIC (Learning Phase)
+**Duration**: After M observations (pattern learning)
+**Characteristics**:
+- Entropy variance stabilizes
+- Temperature reaches equilibrium
+- Latency distribution narrows
+- Scope: module-level (word X affects I/O category)
+
+**Mechanics**:
+- Publish events enqueued with **causal ordering hints**
+- Messages tagged with likely destination set
+- Ring buffer maintains ordering hints (not enforced yet)
+- Goal: Learn dependency graph and subscriber patterns
+- Latency: ~250ns (tracking overhead added)
+
+**Example**:
+```
+Word X after 100 calls:
+  - entropy trajectory: slope = execution_frequency (stable)
+  - temperature: converged to Hot/Warm/Cold equilibrium
+  - latency_p99: < 500ns (known cost)
+  - scope: "affects only words in I/O category"
+  - ordering: hints available (Lamport clock assigned)
+```
+
+**New Observables**:
+- Entropy slope (rate of change)
+- Temperature stability (variance < threshold)
+- Latency percentiles (p95, p99)
+- Causal dependency graph
+
+==== Zone 3: NARROW & DETERMINISTIC (Enforcement Phase)
+**Duration**: Steady state after K warm-up cycles
+**Characteristics**:
+- Entropy plateau (no surprises)
+- Temperature bounded (throttling active if needed)
+- Latency guarantees (p99 < SLO threshold)
+- Scope: specific (word X → known targets only)
+
+**Mechanics**:
+- Publish events **ordered deterministically**
+- Causal ordering enforced (messages buffered & sorted)
+- Batch deadline enforced (T ms max wait)
+- Latency SLO guaranteed (backpressure if violated)
+- Subscriber whitelist (only known targets receive)
+- Goal: Meet latency SLO with causal guarantees
+- Latency: ~300ns (ordering overhead)
+
+**Example**:
+```
+Word X in steady state:
+  - entropy: predictable (slope = frequency_hz)
+  - temperature: controlled (decay ↔ frequency balance)
+  - latency_p99: guaranteed = SLO_LIMIT_NS
+  - scope: "only sends to {WordY, WordZ}"
+  - ordering: "enforced via causal_order_num"
+```
+
+**Full Observables**:
+- All of zone 2
+- Plus latency variance (p99)
+- Plus thermal slope (rate of temp rise)
+- Plus execution pattern periodicity
+
+---
+
+== Metrics Inventory
+
+=== A. Already Capturing ✅
+
+==== Per-Word Metrics
+- `DictEntry.entropy` - raw execution count
+- `DictEntry.physics.temperature_q8` - exponential moving average hotness
+- `DictEntry.physics.last_active_ns` - recency (monotonic timestamp)
+- `DictEntry.physics.mass_bytes` - word footprint (header + body)
+- `DictEntry.physics.avg_latency_ns` - rolling average execution time
+- `DictEntry.physics.state_flags` - execution type (immediate, pinned, etc.)
+- `DictEntry.physics.acl_hint` - reserved for ACL (stub)
+- `DictEntry.physics.pubsub_mask` - reserved for topics (stub)
+
+==== Host-Level Snapshots (analytics heap)
+[cols="1,2,1",options="header"]
+|===
+|Signal |Source |Status
+|`monotonic_time_ns` |`clock_gettime(CLOCK_MONOTONIC)` |✅ Real
+|`realtime_ns` |`clock_gettime(CLOCK_REALTIME)` |✅ Real
+|`cpu_count` |`sysconf(_SC_NPROCESSORS_ONLN)` |✅ Real
+|`scheduler_policy` |`sched_getscheduler(0)` |✅ Real
+|`scheduler_priority` |`sched_getparam()` |✅ Real
+|`scheduler_quantum_ns` |`sched_rr_get_interval()` |✅ Real
+|`runnable_threads` |Derived from load average |✅ Estimate
+|`load_avg_milli` |`getloadavg()` |✅ Real
+|`psi_cpu_*_milli` |`/proc/pressure/cpu` |✅ Real (4.20+)
+|`psi_io_*_milli` |`/proc/pressure/io` |✅ Real (4.20+)
+|`psi_mem_*_milli` |`/proc/pressure/memory` |✅ Real (4.20+)
+|`cpu_total_jiffies` |`/proc/stat` |✅ Real
+|`cpu_idle_jiffies` |`/proc/stat` |✅ Real
+|`cgroup_cpu_usage_us` |`/sys/fs/cgroup/cpu.stat` |✅ Real (cgroup v2)
+|`cgroup_memory_current_bytes` |`/sys/fs/cgroup/memory.current` |✅ Real (cgroup v2)
+|===
+
+==== Profiler Data
+- `profiler_word_count()` - call frequency per word
+- `WordProfile.total_time` - aggregate execution time
+- `WordProfile.call_count` - total invocations
+- `WordProfile.min/avg/max_latency` - latency distribution
+- `MemoryProfile.read_count/bytes` - memory read patterns
+- `MemoryProfile.write_count/bytes` - memory write patterns
+
+==== Test Infrastructure
+- `global_test_stats.total_{tests,pass,fail,skip,error}` - test outcomes
+- Log volume and severity mix
+
+---
+
+=== B. NOT Capturing But Could ⏳
+
+==== Critical for Zone 2/3 Learning
+- **Stack depth at execution** (`VM.dsp`) - nesting complexity
+- **Return stack depth** (`VM.rsp`) - colon nesting level
+- **Dictionary lookup latency** - bucket size effects
+- **Block I/O queue depth** - storage subsystem load
+- **Data flow graph** - which words call which words
+- **Error rate** - frequency of `vm->error` triggers
+
+==== Useful for ML Features
+- **Execution pattern history** - sliding window of past executions
+- **Latency percentiles** - p50, p95, p99 (not just avg)
+- **Entropy slope** - d/dt of execution count
+- **Thermal slope** - d/dt of temperature (rate of heating)
+- **Instruction count estimate** - code size as proxy
+- **Cache miss rate** - if PERF counters available
+- **CPU frequency** - P-state for latency normalization
+- **Thermal state** - CPU temperature if available
+
+==== Not Practical/Fundamental Limits
+- **Future execution patterns** - requires prediction
+- **Optimal scheduling** - NP-hard
+- **Ground-truth causality** - observer effect, entangled state
+- **Perfect zero-latency IPC** - physics limit
+- **Exact per-word cycle count** - profiling overhead
+- **Cross-core contention** - state-dependent
+
+---
+
+## The Control Layer: Runtime Knobs
+
+=== Per-Word Knobs
+
+[cols="1,2,1",options="header"]
+|===
+|Knob |Purpose |Tuning Signal
+|`execution_priority` |OS scheduler hint |temp > threshold
+|`cache_affinity` |CPU core pinning |entropy slope > threshold
+|`temperature_target_q8` |Desired operating point |temp vs. target gap
+|`entropy_half_life` |Cooling rate |stability variance
+|`latency_limit_ns` |SLO threshold |p99_latency measurement
+|`stack_depth_limit` |Recursion prevention |stack pressure
+|`acl_level` |Governance enforcement |security policy
+|===
+
+=== System-Level Knobs
+
+[cols="1,2,1",options="header"]
+|===
+|Knob |Purpose |Tuning Signal
+|`sampling_cadence_ns` |Snapshot frequency |latency_variance
+|`analytics_heap_size` |Metrics history window |memory available
+|`profiler_mode` |Overhead vs. detail |control precision needed
+|`pubsub_batch_size` |Events per IPC |throughput vs. latency
+|`pubsub_timeout_ms` |Max batch wait |latency SLO
+|`temperature_smoothing_alpha` |EMA responsiveness |oscillation detection
+|`entropy_decay_rate_q8` |Cooling aggressiveness |steady-state detection
+|===
+
+---
+
+== The Pub/Sub Gateway: 3-Phase Architecture
+
+=== The Critical Bottleneck
+
+The pub/sub gateway is where words publish observations and where the feedback control system makes decisions:
+
+```
+Word (Publisher)
+    │
+    ├─ entropy↑
+    ├─ temp↑
+    ├─ publish(event)
+    │    │
+    └────┤─────► [IPC Gateway]
+         │            │
+         │        1. Enqueue?
+         │        2. Order?
+         │        3. Batch?
+         │        4. SLO check?
+         │            │
+         │            └─────► [Remote Process / Subscriber]
+         │
+         └─ Feedback
+            (adjust knobs)
+```
+
+=== Phase 1: DISCOVERY (Zone 1)
+
+**Operations**:
+1. Word calls `physics_analytics_publish_event(topic, payload, size)`
+2. Event hash-inserted into ring buffer
+3. Gateway marks topic as "active"
+4. No ordering, no batching
+5. Latency: ~200ns
+
+**Code Pattern**:
+[source,c]
+----
+// Zone 1: Simple fire-and-forget
+physics_analytics_publish_event(PUBSUB_TOPIC_X, payload, size);
+// → Ring buffer (best effort)
+// → Consumers poll whenever ready
+// → No ordering guarantee
+----
+
+=== Phase 2: LEARNING (Zone 2)
+
+**Operations** (after M observations):
+1. Identify topic dependencies (Word A before Word B)
+2. Learn subscriber set (common targets)
+3. Insert **Lamport clock** into messages: `causal_order_num = ++g_causal_clock`
+4. Tag with **subscriber hint**: likely recipients
+5. Batch related messages together
+6. Latency: ~250ns
+
+**Code Pattern**:
+[source,c]
+----
+// Zone 2: Learning phase
+message.causal_order_num = ++g_causal_clock;
+message.subscriber_hint = learned_targets;  // "probably {WordY, WordZ}"
+physics_analytics_publish_event(PUBSUB_TOPIC_X, message, sizeof(message));
+// → Ring buffer with hints
+// → Consumers can reorder if needed
+// → Batching logic monitors patterns
+----
+
+=== Phase 3: ENFORCEMENT (Zone 3)
+
+**Operations** (steady state):
+1. **Causal ordering enforced**: Messages buffered and sorted by `causal_order_num`
+2. **Batch deadline**: Wait up to T ms, then flush
+3. **Latency SLO**: Verify p99 < threshold
+4. **Subscriber whitelist**: Only send to known targets (no surprises)
+5. **Backpressure**: If queue full, throttle publisher
+6. Latency: ~300ns (ordering overhead)
+
+**Code Pattern**:
+[source,c]
+----
+// Zone 3: Enforcement phase
+message.causal_order_num = ++g_causal_clock;
+message.subscriber_targets = learned_whitelist;  // exact set, no surprises
+message.deadline_ns = now_ns + SLO_LIMIT_NS;
+
+// Gateway enforces:
+// 1. Buffer messages for causal ordering
+// 2. Sort by causal_order_num before delivery
+// 3. Batch optimally (minimize IPC calls)
+// 4. Check: if (now > deadline) deliver (deadline → hard)
+// 5. Check: if (latency_p99 > SLO) alert & backpressure
+// 6. Check: if (queue_depth > max) reject new messages
+----
+
+---
+
+== Feedback Loop: Observation → Control → Behavior
+
+=== The Feedback Equation
+
+```
+Observable State    Detection Rule           Knob Adjustment
+─────────────────   ──────────────           ────────────────
+
+temperature_q8      if (temp > 0x8000)       exec_priority ↓
+  very hot          and entropy_slope > 0    entropy_half_life ↓
+  ↓                                          stack_limit ↓
+                                             sampling_cadence ↑
+
+latency_p99         if (p99_ns > SLO)        stack_depth_limit ↓
+  exceeds SLO       then persistent          batch_timeout ↓
+  ↓                                          pubsub_batch_size ↓
+
+entropy_plateau     if (slope < threshold)   cache_affinity ↑
+  reached steady    and variance < epsilon   temperature_target ↑
+  ↓                                          execution_priority ↑
+
+latency_variance    if (std_dev > 3% mean)   sampling_cadence ↑
+  too high          then unpredictable       profiler_mode ↑
+  ↓                                          entropy_decay_rate ↓
+
+error_rate_spike    if (error% > 2%)         acl_level_restrict
+  failures          then isolation needed    execution_priority ↓
+  ↓                                          pubsub_mask filter
+
+scheduler_noise     if (latency_var > 30%)   sampling_cadence ↑↑
+  high variance     and core_migration       cache_affinity ↑
+  ↓                 detected                 entropy_half_life ↑
+```
+
+=== Example: Hot Word Emergency Response
+
+```
+Timeline:
+
+T=0s:
+  OBSERVE: temperature_q8 = 0xAAAA (warm)
+  ACTION: Normal operation
+
+T=10s:
+  OBSERVE: temperature_q8 = 0xDDDD (hot)
+            entropy_slope = 1000 (very active)
+  ACTION: Monitor closely
+
+T=15s:
+  OBSERVE: temperature_q8 = 0xFFFF (max, saturated)
+            entropy_slope = 2000 (still climbing)
+  DETECT: Word not cooling, escalation needed
+
+T=15.5s:
+  ADJUST KNOBS:
+    1. execution_priority ↓↓ (lower OS priority)
+    2. entropy_half_life ↓↓ (accelerate cooling)
+    3. stack_depth_limit ↓ (prevent recursion)
+    4. sampling_cadence ↑ (watch closely)
+    5. Set latency_limit_ns = absolute_max
+    6. Set acl_level_restrict = true (isolate)
+
+T=16s:
+  MONITOR: Has temperature stabilized?
+    ✅ YES → Normal operation restored
+            Log event for ML training
+            Gradually restore normal priority
+    ❌ NO  → Escalate to throttling
+            Log urgent event
+            Alert governance
+
+T=20s:
+  ANALYSIS: Off-line ML learns
+    - What conditions led to overheat?
+    - Better detection heuristics?
+    - Preventive measures?
+```
+
+---
+
+== ML/Statistical Feedback Layer (Future)
+
+Once zones 1-3 are operational and we have historical data:
+
+=== Phase A: Predictive Models
+
+Learn to predict:
+- **Latency** from stack depth, load, entropy, cache state
+- **Hotness** from historical patterns and external signals
+- **Optimal batch size** for minimizing IPC latency
+
+=== Phase B: Anomaly Detection
+
+Detect unusual patterns:
+- **Execution pattern anomalies** (security, performance)
+- **Phase changes** (new workload type detected)
+- **SLO violations** (word behavior changed)
+- **Thermal runaway** (early detection)
+
+=== Phase C: Optimization
+
+Learn and tune:
+- **Core affinity** - which words run best together?
+- **Batching strategy** - optimal batch size vs. latency/throughput
+- **Priority ordering** - fair scheduling that meets SLOs
+- **Profiler mode** - when to enable detailed profiling?
+
+=== Phase D: Governance Integration
+
+Machine-checked proofs about:
+- **Observable invariants** (Isabelle)
+- **Cone narrowing theorem** (formal proof of convergence)
+- **Verified control loops** (feedback system is safe)
+- **SLO guarantees** (latency bounds proven)
+
+---
+
+== Implementation Roadmap
+
+=== Immediate (Phase 1: Zone 1 Discovery)
+
+- ✅ Execution hooks already wired
+- ⏳ Add periodic host snapshots (REPL tick)
+- ⏳ Publish to analytics ring buffer
+- ⏳ Test: Verify events appear in heap
+
+**Effort**: ~1-2 hours
+**Benefit**: Baseline observability
+
+---
+
+=== Near-term (Phase 2: Zone 2 Learning)
+
+- ⏳ Implement temperature decay model
+- ⏳ Track stack depth at execution
+- ⏳ Build call graph (word → word relationships)
+- ⏳ Implement Lamport clock in pub/sub
+- ⏳ Add latency percentile tracking (p95, p99)
+
+**Effort**: ~2-3 days
+**Benefit**: Statistical control loop functional
+
+---
+
+=== Medium-term (Phase 3: Zone 3 Enforcement)
+
+- ⏳ Implement causal ordering in gateway
+- ⏳ Add batch deadline enforcement
+- ⏳ Implement subscriber learning (build whitelist)
+- ⏳ Add SLO monitoring and backpressure
+- ⏳ Refactor physics_runtime to vtable pattern
+
+**Effort**: ~3-5 days
+**Benefit**: Deterministic pub/sub guarantees
+
+---
+
+=== Long-term (Phase 4: ML Integration)
+
+- ⏳ Build predictive models (sklearn/TF)
+- ⏳ Anomaly detection pipeline
+- ⏳ Governance-driven knob adjustment
+- ⏳ Isabelle formal proofs of cone theorem
+- ⏳ Production deployment
+
+**Effort**: ~2-3 weeks
+**Benefit**: Fully autonomous adaptive physics engine
+
+---
+
+== Design Questions for Discussion
+
+=== Q1: Cone Shape Transition
+
+How should the system transition between zones?
+
+**Option A: Time-based**
+- Always narrow after T = 30 seconds
+- Simple, predictable
+- Might be too early for slow systems
+
+**Option B: Confidence-based**
+- Narrow when entropy variance < threshold
+- Adaptive to workload
+- Harder to tune threshold
+
+**Option C: Hybrid**
+- Narrow after T = 30s OR confidence > threshold (whichever first)
+- Best of both, more complex
+
+**Recommendation**: Hybrid (can start with time-based, add confidence later)
+
+---
+
+=== Q2: Ordering Guarantees Strength
+
+How strict should deterministic phase ordering be?
+
+**Option A: Causal only**
+- Messages delivered respecting their dependencies
+- Low overhead (~50ns)
+- Allows some reordering within unrelated groups
+- Sufficient for most use cases
+
+**Option B: Total ordering**
+- All messages in strict FIFO order across all topics
+- Higher overhead (~100ns)
+- No reordering allowed
+- Simplest to reason about, might bottleneck IPC
+
+**Option C: Hybrid (Causal within module, Total globally)**
+- Words in same module: total ordering
+- Words across modules: causal only
+- Moderate overhead (~75ns)
+- Good balance of determinism and performance
+
+**Recommendation**: Hybrid (start with causal, add total within module)
+
+---
+
+=== Q3: SLO Tuning Scope
+
+Should SLOs be per-word or global?
+
+**Option A: Global SLO**
+- All words: p99 < 1000ns
+- Simple, easy to understand
+- Less flexible (penalizes naturally-slow words)
+
+**Option B: Per-word SLO**
+- I/O words: p99 < 10000ns
+- Arithmetic: p99 < 100ns
+- Fine-grained, more knobs to tune
+- Harder to validate globally
+
+**Option C: Derived SLO**
+- Governance policy specifies per-category SLOs
+- Words classified automatically
+- Best of both: simple policy, fine-grained control
+
+**Recommendation**: Derived (governance-driven classification)
+
+---
+
+=== Q4: Feedback Control Loop
+
+Open-loop or closed-loop?
+
+**Option A: Open-loop**
+- Observe state → adjust knob → move on
+- Stateless, simple
+- No way to measure knob effectiveness
+
+**Option B: Closed-loop**
+- Observe state → predict knob effect → adjust → measure result
+- Feedback-driven
+- More complex, need metric of "success"
+
+**Option C: Hybrid**
+- Most knobs open-loop (simple threshold rules)
+- Critical ones closed-loop (temperature, latency)
+
+**Recommendation**: Hybrid (start simple, add closed-loop for critical knobs)
+
+---
+
+=== Q5: ML Training Data
+
+Where does ML learning happen?
+
+**Option A: In-system learning**
+- VM learns from live observations
+- Always adapting to current workload
+- Risk: Feedback loops, instability
+
+**Option B: Offline learning**
+- Governance tool analyzes logs
+- Updates knob settings periodically
+- Safe: Can verify before deployment
+
+**Option C: Hybrid (Learning + Enforcement)**
+- Online: detect anomalies, adapt fast
+- Offline: periodic refinement, governance approval
+
+**Recommendation**: Hybrid (online anomaly response, offline ML refinement)
+
+---
+
+== References
+
+- Physics Scheduling Plan: xref:./PHYSICS_SCHEDULING_PLAN.adoc[PHYSICS_SCHEDULING_PLAN.adoc]
+- Physics Signal Map: xref:./PHYSICS_SIGNAL_MAP.adoc[PHYSICS_SIGNAL_MAP.adoc]
+- Physics Implementation Status: xref:./PHYSICS_IMPLEMENTATION_STATUS.adoc[PHYSICS_IMPLEMENTATION_STATUS.adoc]
+- HOLA Protocol: xref:./HOLA_PROTOCOL.adoc[HOLA_PROTOCOL.adoc]
+- Formal Models: `docs/src/internal/formal/Physics_StateMachine.thy`
+
+---
+
+== Appendix: Glossary
+
+**Causal ordering**: Messages are ordered by dependency (A → B if A must happen before B)
+**Lamport clock**: Simple scalar clock that respects causality (increment on observe, send, receive)
+**Cone of influence**: Region of possible execution futures, narrows as confidence grows
+**Zone**: Operating region (async discovery, learning semi-deterministic, deterministic enforcement)
+**Knob**: Runtime-adjustable parameter that affects behavior
+**SLO**: Service level objective (latency guarantee)
+**Backpressure**: Flow control (slow down publishers if queue full)
+**Whitelist**: Set of known/expected subscribers (reduces uncertainty)
+**Entropy**: Execution count per word (implicit measure of hotness)
+**Temperature**: Exponential moving average of entropy (explicit hotness)
+**Half-life**: Time for temperature to decay to 50% of peak (cooling rate)
+**EMA**: Exponential moving average (smoothing with history weighting)

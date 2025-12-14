@@ -1,0 +1,150 @@
+% ===========================================
+% 07_embodiments.tex
+% Embodiments of the Invention
+% ===========================================
+
+\section{Embodiments}
+
+The following embodiments illustrate representative implementations of the
+adaptive virtual machine architecture described herein. These embodiments
+are provided for explanatory purposes only and should not be construed as
+limiting the scope of the invention. Numerous variations, combinations,
+and extensions will be apparent to those skilled in the art.
+
+\subsection{Embodiment A: Adaptive Interpreter in a Stack-Based VM}
+
+In one embodiment, the invention is integrated directly into a stack-based
+virtual machine that executes threaded code. The runtime maintains the state
+vector, updates execution heat on each word invocation, and applies temporal
+decay and entropy filtering in background cycles.
+
+The Jacquard Mode Selector evaluates metrics such as entropy slope, pipeline
+pressure, and variance to switch between baseline, temporal, inference-driven,
+and fully adaptive modes. Each mode configures the feedback loops (L1–L7)
+differently, allowing the interpreter to maintain stable and optimized
+execution across a wide variety of program structures, including tight loops,
+branch-heavy logic, and deeply nested control flows.
+
+\subsection{Embodiment B: Embedded Runtime for Constrained Systems}
+
+In another embodiment, the invention is deployed as a compact runtime for
+resource-limited devices such as microcontrollers, industrial controllers,
+or safety-critical embedded modules. The feedback-loop architecture is
+implemented using lightweight integer arithmetic, and the state vector is
+compressed to a minimal subset (e.g., heat, entropy window, stability score).
+
+The adaptive mode system allows the device to respond intelligently to
+fluctuating sensor inputs, sporadic interrupts, and mixed real-time workloads
+without requiring complex heuristics or manual tuning. Bounded adaptation
+ensures deterministic timing when required.
+
+\subsection{Embodiment C: Multi-Threaded Execution Engine}
+
+In an alternative embodiment, the invention is implemented within a
+multi-threaded execution engine. Each thread maintains its own state vector,
+while a coordinating controller aggregates selected global metrics
+(e.g., cross-thread stability, shared pipeline pressure) to inform mode
+selection.
+
+This embodiment is well-suited for high-performance computing contexts or
+runtime environments that execute concurrent workloads exhibiting different
+temporal or statistical characteristics.
+
+\newpage
+
+\subsection{Embodiment D: Just-In-Time (JIT) Compilation Environment}
+
+In some embodiments, the invention may be integrated with a JIT compiler.
+The Jacquard Mode Selector influences JIT policies such as:
+
+\begin{itemize}
+	\item when to optimize hot paths,
+	\item how aggressively to inline functions,
+	\item whether to activate predictive prefetching,
+	\item or when to adjust code generation strategies.
+\end{itemize}
+
+The feedback loops provide input signals derived from execution heat,
+entropy stability, or workload phase changes. This integration enables the
+compiler to target stable steady-state patterns while avoiding excessive
+oscillation in code generation.
+
+\subsection{Embodiment E: Adaptive Microkernel or Runtime Orchestrator}
+
+In another embodiment, the invention is incorporated into a microkernel or
+runtime orchestration layer responsible for managing low-level tasks,
+scheduling, and resource allocation. The state vector may include
+microkernel-specific signals such as:
+
+\begin{itemize}
+	\item task execution periodicity,
+	\item inter-process message timing,
+	\item or virtualization overhead.
+\end{itemize}
+
+The adaptive modes allow the kernel to adjust scheduling heuristics,
+time-slicing strategies, and cache behavior based on observed workload
+conditions, enabling improved determinism and reduced latency.
+
+\subsection{Embodiment F: Statistical Inference-Driven Runtime}
+
+In certain embodiments, the inference loop (L2) and inference-weighting loop
+(L6) are given primary importance. The runtime employs statistical models—
+potentially including Bayesian estimators, weighted moving averages, or
+probabilistic classifiers—to predict upcoming workload shifts.
+
+This embodiment is particularly effective in environments where workloads
+exhibit repeated but non-uniform patterns, enabling the system to anticipate
+transitions and adjust modes proactively.
+
+\subsection{Embodiment G: Hybrid Adaptive System}
+
+A further embodiment combines two or more of the previously described
+approaches. For example, a stack-based interpreter may incorporate JIT-style
+optimizations only when the inference system determines that the workload has
+stabilized sufficiently. Alternatively, an embedded system may use a simplified
+state vector but rely on a kernel-level orchestration layer for global mode
+coordination.
+
+\subsection{Embodiment H: Simulation and Analysis Environment}
+
+In yet another embodiment, the invention is deployed as part of a simulation
+or analysis environment used to evaluate program behavior, runtime stability,
+or performance characteristics. The feedback loops and mode selector operate
+normally, but no direct program is executed; instead, synthetic or replayed
+workloads drive the system.
+
+This embodiment enables developers to observe the adaptive behavior of the
+system under controlled conditions, perform design space exploration, or
+validate workload-specific behaviors.
+
+\subsection{Embodiment I: Minimal-Loop Configuration}
+
+Certain embodiments implement a reduced set of loops—for instance, using only
+L1, L3, and L7—while still leveraging the Jacquard Mode Selector to control
+adaptive behavior. This embodiment may be used in systems where power,
+latency, or resource constraints preclude the use of more complex feedback
+structures, while still providing workload-aware adaptation.
+
+\subsection{Embodiment J: Distributed or Networked Runtime}
+
+In some embodiments, the invention is implemented in a distributed execution
+environment where multiple runtime nodes share or exchange selected metrics.
+Each node maintains its own state vector, but a global or partially shared
+controller may influence mode transitions to maintain stable behavior across
+the distributed system.
+
+This embodiment is suited for cloud, edge-compute, and multi-agent processing
+environments.
+
+\subsection{Summary of Embodiments}
+
+The embodiments described above demonstrate that the invention is applicable
+to a wide variety of execution environments, including interpreters, embedded
+systems, microkernels, JIT-enabled runtimes, and distributed execution engines.
+All such embodiments fall within the scope of the invention so long as they
+maintain a state vector, coordinate internal feedback loops, characterize
+workloads, and select or adjust execution modes in response to observed
+runtime conditions.
+
+\newpage

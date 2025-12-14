@@ -1,0 +1,20 @@
+[[introduction]]
+== Introduction
+
+[TODO: Establish context and motivation]
+
+=== Background
+
+[TODO: Background on FORTH VMs, formal verification, adaptive systems]
+
+=== Problem Statement
+
+[TODO: What problem does this work address?]
+
+=== Contributions
+
+[TODO: List main contributions]
+
+=== Paper Organization
+
+[TODO: Brief outline of sections]

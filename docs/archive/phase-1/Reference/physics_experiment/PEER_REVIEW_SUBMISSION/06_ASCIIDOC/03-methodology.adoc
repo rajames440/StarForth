@@ -1,0 +1,6 @@
+[[methodology]]
+== Methodology
+
+include::03-experimental-methodology.adoc[leveloffset=+1]
+
+include::04-variance-analysis.adoc[leveloffset=+1]

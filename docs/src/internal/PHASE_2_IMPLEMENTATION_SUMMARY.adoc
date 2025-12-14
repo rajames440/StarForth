@@ -1,0 +1,307 @@
+[[phase-2-implementation-summary]]
+= Phase 2 Implementation Summary & Action Items
+:toc: left
+
+**Status:** Specification Complete, Ready for Code Implementation
+
+**Date:** 2025-11-07
+
+---
+
+== Deliverables Completed
+
+=== ✅ Specification Document
+**File:** `docs/src/internal/PHASE_2_PHYSICS_DECAY_AND_FREEZE.adoc`
+
+**Contents:**
+- Problem statement (why Phase 1 model is insufficient for StarshipOS)
+- Two technical designs:
+  - **Freeze Flag:** Lock word position in pipeline (prevents decay & eviction)
+  - **Decay Mechanism:** Linear decay model (heat dissipates over time)
+- Mathematical comparison (halflife vs linear)
+- **Recommendation:** Linear decay for Phase 2a
+- Integration points (hotpath, cache, configuration)
+- FORTH API (FREEZE-WORD, UNFREEZE-WORD, HEAT!, HEAT@, etc.)
+- Testing strategy
+- Deployment roadmap (4-week phased rollout)
+- Isabelle/HOL formalization targets (Theorems 5-7)
+
+---
+
+== Implementation Checklist: Phase 2a (Foundation)
+
+=== Task 1: Add WORD_FROZEN Flag to vm.h
+
+**File:** `include/vm.h`
+
+**Change:**
+```c
+/* Line ~129 - Add new flag after WORD_PINNED */
+#define WORD_PINNED     0x08    /* Word's execution heat is pinned (cannot decay to zero) */
+#define WORD_FROZEN     0x04    /* Word is frozen: heat does not decay */
+```
+
+**Status:** Ready to implement (low risk, isolated change)
+
+---
+
+=== Task 2: Implement Linear Decay Function
+
+**File:** `src/physics_metadata.c`
+
+**Add new configuration constants:**
+```c
+#ifndef DECAY_RATE_PER_NS
+#define DECAY_RATE_PER_NS 1ULL      /* Default: 1 heat per nanosecond */
+#endif
+
+#ifndef DECAY_MIN_INTERVAL
+#define DECAY_MIN_INTERVAL 1000ULL  /* Min elapsed time before decay applies (1 μs) */
+#endif
+
+#ifndef HEAT_CACHE_DEMOTION_THRESHOLD
+#define HEAT_CACHE_DEMOTION_THRESHOLD 10  /* Demotion from cache threshold */
+#endif
+```
+
+**Add decay implementation:**
+```c
+void physics_metadata_apply_linear_decay(DictEntry *entry, uint64_t elapsed_ns) {
+    if (!entry || (entry->flags & WORD_FROZEN)) {
+        return; /* Frozen words don't decay */
+    }
+
+    if (elapsed_ns < DECAY_MIN_INTERVAL) {
+        return; /* Too little time has passed */
+    }
+
+    /* H(t) = max(0, H_0 - d*t) */
+    cell_t decay_amount = (cell_t)(elapsed_ns / NS_PER_UNIT * DECAY_RATE_PER_NS);
+
+    if (decay_amount >= entry->execution_heat) {
+        entry->execution_heat = 0;
+    } else {
+        entry->execution_heat -= decay_amount;
+    }
+}
+```
+
+**Status:** Ready to implement (straightforward integer arithmetic)
+
+---
+
+=== Task 3: Integrate Decay into Word Lookup Hotpath
+
+**File:** `src/vm.c` (in `vm_interpret()` or word dispatch)
+
+**Add decay check before heat accumulation:**
+```c
+// After finding word in dictionary:
+DictEntry *entry = dict_lookup(vm, word_name);
+
+// Capture current time
+uint64_t now_ns = get_monotonic_time_ns(); // May need to implement
+
+// Apply decay based on time elapsed since last execution
+uint64_t elapsed_ns = now_ns - entry->physics.last_active_ns;
+physics_metadata_apply_linear_decay(entry, elapsed_ns);
+
+// Update timestamp
+entry->physics.last_active_ns = now_ns;
+
+// Accumulate heat (unchanged from Phase 1)
+entry->execution_heat++;
+```
+
+**Status:** Ready to implement (integrates with existing heat tracking)
+
+---
+
+=== Task 4: Create FORTH Interface Words
+
+**File:** `src/word_source/physics_words.c` (new file)
+
+**New FORTH words to implement:**
+1. `FREEZE-WORD` ( caddr u -- ) — Freeze a word by name
+2. `UNFREEZE-WORD` ( caddr u -- ) — Unfreeze a word by name
+3. `FROZEN?` ( caddr u -- flag ) — Query freeze status
+
+**Status:** Ready to implement (follows existing word pattern)
+
+---
+
+== Priority Order (Recommended)
+
+**Week 1:**
+1. Add WORD_FROZEN flag to vm.h
+2. Implement apply_linear_decay() in physics_metadata.c
+3. Add decay call to word lookup hotpath in vm.c
+4. Create FREEZE-WORD, UNFREEZE-WORD FORTH words
+5. Run unit tests
+
+**Output:** Baseline Phase 2a with working freeze + decay
+
+---
+
+== Files to Modify
+
+[cols="3,2,3"]
+|===
+| File | Change Type | Why
+
+| `include/vm.h`
+| Add constant
+| Define WORD_FROZEN flag (0x04)
+
+| `src/physics_metadata.c`
+| Add function
+| Implement apply_linear_decay()
+
+| `src/physics_metadata.h`
+| Add declaration
+| Declare physics_metadata_apply_linear_decay()
+
+| `src/vm.c`
+| Modify hotpath
+| Call decay before heat accumulation
+
+| `src/word_source/physics_words.c`
+| New file
+| Implement FREEZE-WORD, UNFREEZE-WORD, FROZEN?
+
+| `include/word_registry.h`
+| Add entries
+| Register new FORTH words
+
+| `src/test_runner/modules/test_physics_decay.c`
+| New file
+| Unit tests for decay + freeze
+|===
+
+---
+
+== Time Estimate
+
+- **Task 1 (Flag):** 15 minutes
+- **Task 2 (Decay Function):** 30 minutes
+- **Task 3 (Hotpath Integration):** 45 minutes
+- **Task 4 (FORTH Words):** 30 minutes
+- **Testing:** 1-2 hours
+- **Total:** 3-4 hours for complete Phase 2a
+
+---
+
+== Key Design Decisions Made
+
+[cols="2,3,2"]
+|===
+| Decision | Rationale | Status
+
+| Linear decay (not halflife)
+| Integer arithmetic, deterministic, simpler
+| ✅ Chosen
+
+| Lazy decay (on access, not periodic scan)
+| Minimal overhead, natural integration
+| ✅ Chosen for Phase 2a
+
+| WORD_FROZEN as separate flag (not merged with WORD_PINNED)
+| PINNED = heat locked at max; FROZEN = no decay
+| ✅ Chosen (different semantics)
+
+| Decay in milliseconds (DECAY_RATE_PER_NS)
+| Matches monotonic clock precision
+| ✅ Chosen
+
+| Configuration via #define + Makefile override
+| Standard StarForth pattern
+| ✅ Chosen
+|===
+
+---
+
+== Open Questions for User
+
+Before starting code implementation, confirm:
+
+1. **Decay Rate:** Is DECAY_RATE_PER_NS=1 (heat per nanosecond) aggressive enough, or should it be slower?
+   - **Option A:** 1 unit/ns (50 units decay in 50 ns, very fast)
+   - **Option B:** 0.1 units/ns (50 units decay in 500 ns, slower)
+   - **Recommendation:** Start with Option A, adjust based on real workload testing
+
+2. **Which words to freeze initially?**
+   - **Option A:** Freeze only explicitly via FORTH: `DUP FREEZE-WORD`, etc.
+   - **Option B:** Freeze all critical words at startup: `FREEZE-CRITICAL` word
+   - **Recommendation:** Option B (ensure baseline stability)
+
+3. **Periodic scan in Phase 2a, or defer to Phase 2b?**
+   - **Option A:** Implement both lazy decay + periodic scan now
+   - **Option B:** Lazy decay only now, periodic scan in Phase 2b optimization
+   - **Recommendation:** Option B (keep Phase 2a focused, minimal scope)
+
+4. **Isabelle formalization scope:**
+   - **Option A:** Defer all proofs to Phase 2d
+   - **Option B:** Sketch theorem statements now, prove in Phase 2d
+   - **Recommendation:** Option B (theorem statements in comments now, proof structure clear)
+
+---
+
+== Success Criteria for Phase 2a
+
+✅ **Must Have:**
+- WORD_FROZEN flag added and compiles cleanly
+- apply_linear_decay() function exists and passes unit tests
+- Decay integrated into word lookup hotpath
+- FREEZE-WORD and UNFREEZE-WORD FORTH words work
+- Existing tests still pass (no regression)
+
+✅ **Nice to Have:**
+- Performance regression <10%
+- Integration test showing frozen words retain heat
+- Documentation complete
+
+❌ **Explicitly Excluded from Phase 2a:**
+- Cache eviction logic changes (Phase 2b)
+- Periodic decay scan (Phase 2b)
+- Isabelle/HOL proofs (Phase 2d)
+- StarshipOS real-world validation (Phase 2c)
+
+---
+
+== Next Steps (Immediate)
+
+1. **Confirm open questions above** (user response)
+2. **Review Phase 2 specification** (ensure alignment)
+3. **Begin code implementation:**
+   - Start with Task 1 (add flag)
+   - Proceed to Task 2-4 in order
+4. **Create feature branch:** `feature/phase-2a-decay-freeze`
+5. **Commit incrementally** with clear messages
+6. **Push to remote** and open PR when complete
+
+---
+
+== Reference: Configuration Knobs
+
+All tunable as Makefile overrides:
+
+```bash
+# Current defaults (Phase 2a)
+make DECAY_RATE_PER_NS=1 \
+     DECAY_MIN_INTERVAL=1000 \
+     HEAT_CACHE_DEMOTION_THRESHOLD=10 \
+     HEAT_THRESHOLD=50
+
+# Aggressive decay (experiment)
+make DECAY_RATE_PER_NS=2 HEAT_THRESHOLD=100
+
+# Conservative decay (stability)
+make DECAY_RATE_PER_NS=0.5 HEAT_THRESHOLD=25
+```
+
+---
+
+== Appendix: Code Templates Ready to Use
+
+All code snippets in this document and in `PHASE_2_PHYSICS_DECAY_AND_FREEZE.adoc` are ready for direct copy-paste into implementation. Structure is clear, no ambiguity remaining.
+

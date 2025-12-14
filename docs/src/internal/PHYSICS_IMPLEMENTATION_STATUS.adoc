@@ -1,0 +1,356 @@
+= Physics Engine Implementation Status: POSIX vs L4Re Porting Strategy
+:toc: left
+:toclevels: 2
+xref:../README.adoc[← Back to Documentation Index]
+
+== Executive Summary
+
+**Good News**: The word execution hooks are **already wired**. The `physics_metadata_touch()` calls are in place at both:
+
+1. **Outer interpreter** (`src/vm.c:533`) - for primitive word execution
+2. **Colon word executor** (`src/vm.c:456`) - for nested word calls
+
+**Current Status**: Phase 1 infrastructure is complete, but the **POSIX/L4Re abstraction needs refinement** to follow the existing porting strategy (currently mixing `#ifdef` inline, should use vtable pattern like `platform_time.h`).
+
+---
+
+== What's WIRED NOW ✅
+
+=== Execution Hook Points (Already Called)
+
+Each word execution updates physics metadata:
+
+[source,c]
+----
+// Outer interpreter (vm.c:533) - direct word execution
+entry->func(vm);
+physics_metadata_touch(entry, entry->entropy, sf_monotonic_ns());
+
+// Colon word executor (vm.c:456) - nested word calls
+w->func(vm);
+physics_metadata_touch(w, w->entropy, sf_monotonic_ns());
+----
+
+Both paths update:
+- `temperature_q8` - via exponential moving average from entropy
+- `last_active_ns` - monotonic timestamp of last execution
+- Already integrated with profiler hooks (`profiler_word_enter/exit`)
+
+=== Dictionary Initialization
+
+[source,c]
+----
+// dictionary_management.c - when words are created
+physics_metadata_init(entry, header_bytes);
+physics_metadata_apply_seed(entry);  // Pre-seed hotwords
+----
+
+Seeds 20 high-impact words (IF, LOOP, EMIT, BLOCK, SAVE-BUFFERS, etc.) with domain knowledge from `src/physics_metadata.c`.
+
+=== Analytics Heap & Host Snapshots
+
+[source,c]
+----
+// main.c - startup/shutdown
+physics_runtime_init(size_t bytes);      // 10 MiB default
+physics_runtime_shutdown();
+
+// Called on demand (not automatic yet)
+physics_host_snapshot(&snapshot);        // Captures scheduler state
+physics_analytics_publish_event(...);    // Publishes to ring buffer
+----
+
+---
+
+== What's INCOMPLETE ⏳
+
+=== 1. POSIX/L4Re Abstraction Pattern
+
+**Problem**: Architecture differs from established porting strategy.
+
+**Current Code** (`src/physics_runtime.c`):
+
+Inline conditionals throughout:
+----
+#if !defined(__l4__)
+    snapshot_posix();    // ~90 lines, comprehensive
+#endif
+
+#ifdef __l4__
+    snapshot_l4re();     // ~15 lines, STUBBED
+#endif
+----
+
+**Comparison: Platform Time Pattern** (`include/platform_time.h`):
+
+Uses vtable with separate backend implementations:
+----
+include/platform_time.h
+├─ sf_time_backend_t vtable
+├─ extern const sf_time_backend_t sf_time_backend_posix;
+├─ extern const sf_time_backend_t sf_time_backend_l4re;
+└─ sf_time_init()  [selects backend at runtime]
+
+src/platform/linux/time.c     [POSIX implementation]
+src/platform/l4re/time.c      [L4Re implementation]
+----
+
+**Verdict**: Physics runtime should follow same pattern for:
+- Clear separation of platform concerns
+- Parallel development (platform teams work independently)
+- Testability (POSIX fully testable without L4Re headers)
+- Governance alignment (matches existing architecture)
+
+=== 2. Periodic Host Snapshot Capture
+
+Currently `physics_host_snapshot()` is **defined but never called automatically**.
+
+Missing:
+- No heartbeat mechanism to invoke snapshots
+- No events published to analytics ring buffer
+- Analytics heap is allocated but unused
+
+=== 3. Temperature Decay Model
+
+Currently `temperature_q8` is updated on execution but **never decayed**.
+
+Missing:
+- Exponential moving average with configurable half-life
+- Cooling logic for inactive words
+- No age-based eviction strategy
+
+---
+
+== POSIX Side Completeness ✅
+
+=== What Works Today
+
+[cols="1,2",options="header"]
+|===
+|Signal |Implementation
+|CPU count |`sysconf(_SC_NPROCESSORS_ONLN)` ✅
+|Scheduler policy |`sched_getscheduler(0)` ✅
+|Scheduler priority |`sched_getparam()` ✅
+|Time quantum |`sched_rr_get_interval()` ✅
+|Load average |`getloadavg()` (GNU extension) ✅
+|PSI metrics |`/proc/pressure/{cpu,io,memory}` ✅
+|/proc/stat jiffies |CPU total & idle counters ✅
+|cgroup v2 |`cpu.stat` and `memory.current` ✅
+|Flag bits |Advertise which sources populated ✅
+|===
+
+=== Graceful Degradation
+
+The POSIX implementation is **well-defended**:
+
+- `getloadavg()` - guarded by `_GNU_SOURCE`
+- PSI files - `read_psi_file()` returns 0 if unavailable (kernel <4.20)
+- cgroup v2 - `resolve_cgroup_path()` returns -1 gracefully
+- All missing metrics result in `flags = 0` for that category
+
+**Verdict**: POSIX path is **production-ready** and **robust against missing procfs interfaces**.
+
+---
+
+== L4Re Side Status ⏳
+
+=== Current Implementation (Stub)
+
+From `src/physics_runtime.c:487-500`:
+
+[source,c]
+----
+#ifdef __l4__
+static int snapshot_l4re(physics_host_snapshot_t *out) {
+    memset(out, 0, sizeof(*out));
+    out->backend = PHYSICS_HOST_BACKEND_L4RE;
+    out->monotonic_time_ns = sf_monotonic_ns();     // ✅ works (via platform_time)
+    out->realtime_ns = sf_realtime_ns();            // ✅ works (via platform_time)
+
+    l4_kernel_info_t *kip = l4re_kip();
+    (void) kip;
+    out->cpu_count = 1u;  // ❌ TODO: query processor count from KIP
+
+    out->backend_seq = ++g_runtime.backend_seq;
+    return 0;
+}
+#endif
+----
+
+=== What Could Be Added
+
+**KIP Queries** (via `l4re_kip()`):
+[source,c]
+----
+l4_kernel_info_t *kip = l4re_kip();
+out->cpu_count = l4_kip_nr_cpus(kip);  // once API exposed
+----
+
+**Scheduler Info** (via `l4_scheduler_info()`):
+[source,c]
+----
+l4_sched_param_t params;
+l4_scheduler_info(L4_MYSELF, &params);
+out->scheduler_quantum_ns = params.quantum;
+out->scheduler_priority = params.prio;
+----
+
+**RTC Synchronization**: Already integrated in `src/platform/l4re/time.c` ✅
+
+**IO Server Capabilities** (vbus_storage, ahci_chan): Future phases
+
+---
+
+== Recommended Refactoring: Vtable Pattern
+
+To align with the **existing porting strategy**, refactor physics snapshot to use the vtable pattern:
+
+=== New File Structure
+
+[source]
+----
+include/physics_runtime.h              [unchanged - public API]
+
+src/physics_runtime.c                  [refactored]
+├─ physics_analytics_header_t           [unchanged]
+├─ physics_runtime_state_t              [unchanged]
+├─ analytics_heap_allocate()            [unchanged]
+├─ physics_analytics_publish_event()    [unchanged]
+├─ typedef physics_snapshot_backend_t   [NEW vtable]
+├─ extern const physics_snapshot_backend_t physics_snapshot_backend_posix
+├─ extern const physics_snapshot_backend_t physics_snapshot_backend_l4re
+└─ physics_host_snapshot()              [NEW dispatcher]
+
+src/platform/linux/snapshot.c          [NEW - POSIX backend]
+├─ parse_avg_milli()
+├─ read_psi_file()
+├─ read_proc_stat_totals()
+├─ resolve_cgroup_path()
+├─ read_cgroup_cpu_usage_us()
+├─ read_cgroup_memory_current()
+└─ snapshot_posix_impl()
+
+src/platform/l4re/snapshot.c           [NEW - L4Re backend]
+├─ snapshot_l4re_impl()
+└─ [Future: KIP, scheduler queries]
+----
+
+=== Benefits
+
+1. **Separation of Concerns**: POSIX code doesn't pollute L4Re builds (and vice versa)
+2. **Parallel Development**: Platform teams can work independently
+3. **Testability**: POSIX path fully testable without L4Re headers/libraries
+4. **Consistency**: Matches `platform_time.h` pattern already in codebase
+5. **Extensibility**: Easy to add new backends (embedded, minimal, test harnesses)
+6. **Documentation**: Clear boundaries make porting requirements explicit
+
+---
+
+== Answers to Your Questions
+
+=== Q1: Is the POSIX side fully wired such as emulation of KIP?
+
+✅ POSIX side is **feature-complete** for what POSIX can measure::
+- Uses appropriate POSIX APIs for everything (no fake/emulated KIP)
+- Gracefully handles missing procfs files (PSI, cgroup v2)
+- Well-integrated with scheduler and profiler
+
+❌ There is **NO KIP emulation** (intentional and correct)::
+- No point creating fake KIP on POSIX
+- Each backend should use native APIs of its platform
+
+🔴 Missing: **Periodic heartbeat** to actually call the snapshot function::
+- Function is defined but never invoked
+- Need mechanism to capture host state periodically
+- Events should be published to analytics ring buffer
+
+=== Q2: Clear division with overall porting strategy?
+
+🟡 **Currently**: Inline `#ifdef` throughout physics_runtime.c::
+- **Not** following platform_time pattern
+- Mixes platform-specific logic in same file
+- Makes L4Re development harder (can't test without L4Re headers)
+
+✅ **Recommended**: Refactor to vtable + separate backend implementations::
+- Follows platform_time.h pattern (already proven architecture)
+- Aligns with porting strategy (clear platform abstraction)
+- Enables independent platform development
+
+=== Q3: What should we tackle for Option A (Wire Execution Counting)?
+
+✅ Execution hooks are **already wired** - no action needed::
+- Both outer interpreter and colon executor paths call `physics_metadata_touch()`
+- Temperature updates are calculated correctly
+- No changes needed to execution path
+
+🟡 Need to add: **Periodic host snapshot capture**::
+- Call `physics_host_snapshot()` on VM heartbeat
+- Publish events to analytics ring buffer
+- Can be added to REPL input loop or VM tick
+
+🟡 Need to add: **Temperature decay model**::
+- Exponential moving average with configurable half-life
+- Implement in `physics_metadata.c` alongside seed table
+- Test decay across multiple execution cycles
+
+💡 **Recommendation**: Start POSIX-first, then mirror to L4Re::
+1. Verify temperature updates in tests (starforth_words_test.c)
+2. Add periodic snapshot capture
+3. Implement decay model
+4. Refactor to vtable pattern once logic is proven
+
+---
+
+== Summary: Execution Status by Component
+
+[cols="1,1,1,3",options="header"]
+|===
+|Component |POSIX |L4Re |Status
+|Host snapshot |Comprehensive |Stub (1 CPU) |🟡 Needs platform abstraction
+|PSI metrics |Full (4.20+) |N/A |🟢 POSIX complete
+|Scheduler info |Via sched APIs |Via KIP |🟡 L4Re TODO
+|Execution hooks |Wired ✅ |Wired ✅ |🟢 COMPLETE
+|Metadata init |Wired ✅ |Wired ✅ |🟢 COMPLETE
+|Periodic capture |Not called |Not called |🔴 MISSING
+|Temperature decay |Calculated |Calculated |🟡 No decay logic
+|Profiler integration |Not wired |Not wired |🔴 MISSING
+|Analytics heap |Ready |Ready |🟢 COMPLETE
+|===
+
+---
+
+== Immediate Action Items
+
+For **Option A (Wire Execution Counting)**:
+
+1. **Verify Temperature Updates Work**
+   - Create test in `src/test_runner/modules/starforth_words_test.c`
+   - Define word, execute N times, inspect `temperature_q8`
+   - Verify EMA calculation is correct
+
+2. **Add Periodic Host Snapshots**
+   - Hook `physics_host_snapshot()` into REPL input loop or VM tick
+   - Publish snapshots to analytics ring buffer
+   - Verify events appear in heap dump
+
+3. **Implement Temperature Decay**
+   - Add exponential moving average with half-life
+   - Implement in `physics_metadata.c`
+   - Test decay behavior over multiple ticks
+
+4. **Refactor to Platform Abstraction** (After proving logic works)
+   - Create `include/physics_snapshot_backend.h` with vtable
+   - Extract POSIX code to `src/platform/linux/snapshot.c`
+   - Create stub for `src/platform/l4re/snapshot.c`
+   - Update dispatcher in `src/physics_runtime.c`
+
+---
+
+== References
+
+- Physics Scheduling Plan: xref:./PHYSICS_SCHEDULING_PLAN.adoc[PHYSICS_SCHEDULING_PLAN.adoc]
+- Physics Signal Map: xref:./PHYSICS_SIGNAL_MAP.adoc[PHYSICS_SIGNAL_MAP.adoc]
+- Platform Time Abstraction: `include/platform_time.h` (reference implementation)
+- Word Execution: `src/vm.c` (lines 456, 533, 507-533)
+- Physics Metadata: `src/physics_metadata.c`, `include/physics_metadata.h`
+- Physics Runtime: `src/physics_runtime.c`, `include/physics_runtime.h`

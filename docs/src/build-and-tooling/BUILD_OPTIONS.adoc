@@ -1,0 +1,1039 @@
+== StarForth Build Options Reference
+:toc: left
+:toc-title: Contents
+:toclevels: 3
+xref:../README.adoc[← Back to Documentation Index]
+
+
+
+*Comprehensive guide to all build-time configuration options and
+preprocessor defines*
+
+'''''
+
+=== Overview
+
+StarForth supports numerous build-time configuration options that
+control optimizations, features, platform support, and debugging
+capabilities. This document catalogs all available options with
+descriptions, valid values, and usage examples.
+
+'''''
+
+=== Table of Contents
+
+[arabic]
+. link:#performance-optimization-options[Performance Optimization
+Options]
+. link:#architecture-options[Architecture Options]
+. link:#platformtarget-options[Platform/Target Options]
+. link:#debugging-and-profiling-options[Debugging and Profiling Options]
+. link:#block-system-options[Block System Options]
+. link:#memory-configuration-options[Memory Configuration Options]
+. link:#feature-flags[Feature Flags]
+. link:#build-system-variables[Build System Variables]
+
+'''''
+
+=== Performance Optimization Options
+
+==== `+USE_ASM_OPT+`
+
+*Enable hand-optimized assembly implementations for critical operations*
+
+* *Type:* Integer (0 or 1)
+* *Default:* 0 (disabled)
+* *Affects:* Stack operations, arithmetic, string operations, min/max,
+bit operations
+
+*Description:*
+
+Enables architecture-specific assembly optimizations for:
+
+* `+vm_push+` / `+vm_pop+` - Data stack operations
+* `+vm_rpush+` / `+vm_rpop+` - Return stack operations
+* `+vm_add_check_overflow+` / `+vm_sub_check_overflow+` - Arithmetic
+with overflow detection
+* `+vm_mul+` / `+vm_div+` - Multiply/divide optimizations
+* `+vm_strcmp_asm+` / `+vm_memcpy_asm+` - String/memory operations
+* `+vm_min_asm+` / `+vm_max_asm+` - Conditional move optimizations
+* `+vm_abs_asm+` - Absolute value (ARM64)
+* `+vm_clz+` / `+vm_ctz+` - Count leading/trailing zeros (ARM64)
+* `+vm_prefetch+` / `+vm_prefetch_stream+` - Cache prefetching (ARM64)
+
+*Performance impact:* ~20-25% speedup on x86_64, ~15-20% on ARM64
+
+*Enabled by:*
+
+[source,bash]
+----
+make fastest    # USE_ASM_OPT=1
+make fast       # USE_ASM_OPT=1
+make turbo      # USE_ASM_OPT=1
+make pgo        # USE_ASM_OPT=1
+----
+
+*Manual usage:*
+
+[source,bash]
+----
+make CFLAGS="$(BASE_CFLAGS) -DUSE_ASM_OPT=1 -O3"
+----
+
+*See also:* ASM_OPTIMIZATIONS.md
+
+'''''
+
+==== `+USE_DIRECT_THREADING+`
+
+*Enable direct-threaded inner interpreter with computed goto*
+
+* *Type:* Integer (0 or 1)
+* *Default:* 0 (disabled, uses indirect threading)
+* *Affects:* Inner interpreter dispatch mechanism
+
+*Description:*
+
+Switches from *indirect threading* (traditional Forth) to *direct
+threading* using GCC’s computed goto extension ( `+&&label+` and
+`+goto *ptr+`). In direct threading, each word’s code address points
+directly to native code instead of through an indirection table.
+
+*Benefits:*
+
+* Eliminates one level of indirection in the inner interpreter
+* Better branch prediction and instruction cache utilization
+* Typically 30-40% faster than indirect threading
+
+*Requirements:*
+
+* GCC or Clang (uses `+__label__+` and computed goto)
+* Must be combined with `+USE_ASM_OPT=1+`
+
+*Performance impact:* ~30-40% speedup when combined with ASM
+optimizations
+
+*Enabled by:*
+
+[source,bash]
+----
+make fastest    # USE_DIRECT_THREADING=1
+make fast       # USE_DIRECT_THREADING=1
+make pgo        # USE_DIRECT_THREADING=1
+----
+
+*Manual usage:*
+
+[source,bash]
+----
+make CFLAGS="$(BASE_CFLAGS) -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -O3"
+----
+
+*Architectural support:*
+
+* *x86_64:* Full support (see `+vm_inner_interp_asm.h+`)
+* *ARM64:* Full support (see `+vm_inner_interp_arm64.h+`)
+
+'''''
+
+==== `+NDEBUG+`
+
+*Disable assertions and enable aggressive optimizations*
+
+* *Type:* Preprocessor flag (defined or not)
+* *Default:* Undefined (assertions enabled)
+* *Affects:* `+assert()+` macros, debug logging in hot paths
+
+*Description:*
+
+Standard C macro that disables `+assert()+` checks. When defined, all
+assertion overhead is removed from the binary. Also used by StarForth to
+conditionally disable debug logging in performance-critical sections.
+
+*Performance impact:* ~5-10% speedup (removes assertion checks)
+
+*Enabled by:*
+
+[source,bash]
+----
+make fastest    # -DNDEBUG
+make fast       # -DNDEBUG
+make turbo      # -DNDEBUG
+make pgo        # -DNDEBUG
+----
+
+*Manual usage:*
+
+[source,bash]
+----
+make CFLAGS="$(BASE_CFLAGS) -DNDEBUG -O3"
+----
+
+'''''
+
+==== `+STARFORTH_PERFORMANCE+`
+
+*Enable aggressive performance optimizations with reduced safety checks*
+
+* *Type:* Preprocessor flag
+* *Default:* Undefined
+* *Affects:* Stack bounds checking, overflow detection
+
+*Description:*
+
+Experimental flag that trades safety for speed. When enabled:
+
+* Reduces stack bounds checking in hot paths (DUP, SWAP, etc.)
+* Uses `+UNLIKELY()+` hints to optimize for common case
+* Assumes well-behaved Forth code
+
+*⚠️ Warning:* Only use for production code that has been thoroughly
+tested. Stack overflows may go undetected.
+
+*Performance impact:* ~5-8% additional speedup over standard
+optimizations
+
+*Manual usage:*
+
+[source,bash]
+----
+make CFLAGS="$(BASE_CFLAGS) -DSTARFORTH_PERFORMANCE -DNDEBUG -O3"
+----
+
+*Code references:*
+
+* `+src/word_source/stack_words.c:58+` - DUP optimization
+* `+src/word_source/stack_words.c:117+` - SWAP optimization
+
+'''''
+
+=== Architecture Options
+
+==== `+ARCH_X86_64+`
+
+*Target x86-64 architecture (AMD64, Intel 64)*
+
+* *Type:* Integer (0 or 1)
+* *Default:* Auto-detected from compiler macros
+* *Set by:* `+arch_detect.h+` automatically
+
+*Auto-detection:*
+
+[source,c]
+----
+#if defined(__x86_64__) || defined(_M_X64) || defined(__amd64__)
+#define ARCH_X86_64 1
+----
+
+*Enables:*
+
+* x86_64 assembly optimizations (`+vm_asm_opt.h+`)
+* SSE4.2 string instructions (if supported)
+* x86_64 direct threading (`+vm_inner_interp_asm.h+`)
+
+*Makefile support:*
+
+[source,bash]
+----
+# Auto-detected
+make fastest
+
+# Manual override
+make ARCH_DEFINES="-DARCH_X86_64=1" ARCH_FLAGS="-march=native"
+----
+
+'''''
+
+==== `+ARCH_ARM64+`
+
+*Target ARM64 architecture (AArch64, ARMv8-A)*
+
+* *Type:* Integer (0 or 1)
+* *Default:* Auto-detected from compiler macros
+* *Set by:* `+arch_detect.h+` automatically
+
+*Auto-detection:*
+
+[source,c]
+----
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(__arm64__)
+#define ARCH_ARM64 1
+----
+
+*Enables:*
+
+* ARM64 assembly optimizations (`+vm_asm_opt_arm64.h+`)
+* NEON SIMD instructions (if supported)
+* ARM64 direct threading (`+vm_inner_interp_arm64.h+`)
+* ARM-specific instructions: CLZ, CTZ, RBIT, REV, etc.
+
+*Makefile support:*
+
+[source,bash]
+----
+# Native ARM64 build
+make rpi4
+
+# Cross-compile from x86_64
+make rpi4-cross
+----
+
+'''''
+
+==== `+ARCH_NAME+`
+
+*Human-readable architecture string*
+
+* *Type:* String literal
+* *Values:* `+"x86_64"+`, `+"ARM64"+`, `+"Unknown"+`
+* *Default:* Auto-set based on detected architecture
+
+*Usage:*
+
+[source,bash]
+----
+make help  # Shows "CURRENT PLATFORM: x86_64"
+----
+
+'''''
+
+=== Platform/Target Options
+
+==== `+STARFORTH_MINIMAL+`
+
+*Build minimal/embedded version without standard library dependencies*
+
+* *Type:* Preprocessor flag
+* *Default:* Undefined (full-featured build)
+* *Affects:* I/O, logging, memory allocation
+
+*Description:*
+
+Enables minimal build mode for embedded systems or bare-metal
+environments. When defined:
+
+* Disables ANSI color codes in logging
+* Uses minimal I/O (no fprintf colors)
+* Prepares for custom memory allocators
+* Suitable for microkernel environments (L4Re)
+
+*Compiler flags added:*
+
+[source,bash]
+----
+-DSTARFORTH_MINIMAL=1 -nostdlib -ffreestanding
+----
+
+*Linker flags:*
+
+[source,bash]
+----
+-nostdlib
+----
+
+*Enabled by:*
+
+[source,bash]
+----
+make minimal
+make l4re
+----
+
+*Code references:*
+
+* `+src/log.c:36-46+` - Minimal logging (no colors)
+* `+src/log.c:110-118+` - Simplified log output
+
+'''''
+
+==== `+L4RE_TARGET+`
+
+*Build for L4Re microkernel environment*
+
+* *Type:* Preprocessor flag
+* *Default:* Undefined
+* *Affects:* Block I/O backend selection, ROMFS usage
+
+*Description:*
+
+Targets the L4Re microkernel operating system. Enables:
+
+* L4Re-specific block storage backend (when implemented)
+* ROMFS file access instead of POSIX filesystem
+* Minimal build mode (implies `+STARFORTH_MINIMAL=1+`)
+
+*Status:* Partially implemented (ROMFS TODO)
+
+*Enabled by:*
+
+[source,bash]
+----
+make l4re
+----
+
+*Code references:*
+
+* `+src/word_source/starforth_words.c:225+` - L4Re ROMFS check (TODO)
+* `+include/blkio_factory.h+` - Backend selection
+
+*See also:* L4RE_INTEGRATION.md
+
+'''''
+
+=== Debugging and Profiling Options
+
+==== `+DEBUG+`
+
+*Enable debug build with symbols and verbose logging*
+
+* *Type:* Preprocessor flag
+* *Default:* Undefined
+* *Affects:* Optimization level, debugging symbols
+
+*Description:*
+
+Debug builds include:
+
+* Full debugging symbols (`+-g+`)
+* No optimization (`+-O0+`)
+* All assertions enabled
+* Verbose logging throughout
+
+*Enabled by:*
+
+[source,bash]
+----
+make debug
+----
+
+*Compiler flags:*
+
+[source,bash]
+----
+-O0 -g -DDEBUG
+----
+
+'''''
+
+==== `+PROFILE_ENABLED+`
+
+*Enable built-in profiler for performance analysis*
+
+* *Type:* Integer (0 or 1)
+* *Default:* 0 (disabled)
+* *Affects:* Profiler instrumentation
+
+*Description:*
+
+Enables StarForth’s built-in profiler which tracks:
+
+* Per-word execution counts
+* Call graph (caller/callee relationships)
+* Stack operation counts
+* Total instruction counts
+
+*Performance overhead:* ~10-15% when enabled
+
+*Enabled by:*
+
+[source,bash]
+----
+make profile
+----
+
+*Runtime usage:*
+
+[source,bash]
+----
+./build/starforth --profile 2      # Enable with depth 2
+./build/starforth --profile-report # Show profiling results
+----
+
+*See also:* `+include/profiler.h+`
+
+'''''
+
+==== `+STRICT_PTR+`
+
+*Enable strict pointer mode (VM_STRICT_PTR)*
+
+* *Type:* Integer (0 or 1)
+* *Default:* 1 (enabled)
+* *Affects:* Forth address ↔ pointer conversions
+
+*Description:*
+
+Controls how Forth addresses (cell_t) map to C pointers:
+
+* *STRICT_PTR=1 (default):* Forth addresses ARE real pointers (cell_t =
+uintptr_t)
+* *STRICT_PTR=0:* Forth addresses are indices/offsets (for segmented
+memory models)
+
+*Usage:*
+
+[source,bash]
+----
+# Default (strict pointers)
+make
+
+# Disable strict pointers
+make STRICT_PTR=0
+----
+
+*Code references:*
+
+* `+src/vm_api.c:202+` - `+vm_addr_from_ptr+` implementation
+* `+Makefile:37+` - `+BASE_CFLAGS+` includes
+`+-DSTRICT_PTR=$(STRICT_PTR)+`
+
+'''''
+
+=== Block System Options
+
+==== `+BLKCFG_DEFAULT_FBS+`
+
+*Default Forth Block Size*
+
+* *Type:* Integer (bytes)
+* *Default:* 1024
+* *Affects:* Block I/O buffer sizes
+
+*Description:*
+
+Sets the default block size for Forth block storage. Standard Forth uses
+1024-byte blocks.
+
+*Valid values:* Typically 1024, 2048, or 4096
+
+*Code references:*
+
+* `+include/blkcfg.h+` - Block configuration constants
+
+'''''
+
+==== `+BLKCFG_PATH_MAX+`
+
+*Maximum path length for block storage files*
+
+* *Type:* Integer (bytes)
+* *Default:* 4096
+* *Affects:* Path buffer allocation
+
+'''''
+
+==== `+BLK_FORTH_SYS_RESERVED+`
+
+*Number of system-reserved Forth blocks*
+
+* *Type:* Integer (block count)
+* *Default:* 32 (blocks 0-31)
+* *Affects:* LBN→PBN mapping
+
+*Description:*
+
+Reserves the first N blocks in RAM for system use (INIT blocks,
+bootstrap code, etc.). These blocks are hidden from normal user access.
+
+'''''
+
+==== `+BLK_DISK_SYS_RESERVED+`
+
+*Number of system-reserved disk blocks*
+
+* *Type:* Integer (block count)
+* *Default:* 32 (PBN 1024-1055)
+* *Affects:* Persistent block storage mapping
+
+'''''
+
+=== Memory Configuration Options
+
+==== `+DATA_STACK_SIZE+`
+
+*Size of data stack*
+
+* *Type:* Integer (cells)
+* *Default:* 256
+* *Affects:* Data stack allocation
+
+*Code references:*
+
+* `+include/vm.h+` - VM structure definition
+
+'''''
+
+==== `+RETURN_STACK_SIZE+`
+
+*Size of return stack*
+
+* *Type:* Integer (cells)
+* *Default:* 256
+* *Affects:* Return stack allocation
+
+'''''
+
+==== `+STARFORTH_STATE_BYTES+`
+
+*Total state buffer size for minimal builds*
+
+* *Type:* Integer (bytes)
+* *Default:* 8192
+* *Affects:* State buffer allocation in main.c
+
+*Code references:*
+
+* `+src/main.c:40-42+` - State buffer definition
+
+'''''
+
+==== `+SF_FC_BUCKETS+`
+
+*Number of forget-chain hash buckets*
+
+* *Type:* Integer (count)
+* *Default:* Defined in vm.h
+* *Affects:* Dictionary management performance
+
+'''''
+
+=== Feature Flags
+
+==== `+STARFORTH_ANSI+`
+
+*Enable ANSI escape codes for terminal control*
+
+* *Type:* Preprocessor flag
+* *Default:* Undefined
+* *Affects:* LIST and EDIT word rendering
+
+*Description:*
+
+When defined, enables ANSI terminal control sequences for:
+
+* Screen clearing (`+\x1b[2J+`)
+* Cursor positioning (`+\x1b[H+`)
+* Colored line numbers in EDIT
+
+*Code references:*
+
+* `+src/word_source/editor_words.c:74+` - Line rendering
+* `+src/word_source/editor_words.c:188+` - Screen clear
+* `+src/word_source/editor_words.c:202+` - Colored line numbers
+
+*Manual usage:*
+
+[source,bash]
+----
+make CFLAGS="$(BASE_CFLAGS) -DSTARFORTH_ANSI -O2"
+----
+
+'''''
+
+==== `+VM_HAS_CURRENT_ENTRY+`
+
+*Enable current dictionary entry tracking*
+
+* *Type:* Preprocessor flag
+* *Default:* Defined (feature enabled)
+* *Affects:* Dictionary management, SEE word
+
+*Description:*
+
+Enables `+vm->current_entry+` field which tracks the currently-compiling
+word. Required for:
+
+* SEE decompiler
+* Recursive word definitions
+* Dictionary introspection
+
+*Code references:*
+
+* `+include/vm.h+` - VM structure
+* `+src/word_source/dictionary_words.c+` - SEE implementation
+
+'''''
+
+=== Build System Variables
+
+==== `+CC+`
+
+*C compiler*
+
+* *Type:* String
+* *Default:* `+gcc+`
+* *Valid values:* `+gcc+`, `+clang+`, `+aarch64-linux-gnu-gcc+`
+
+*Usage:*
+
+[source,bash]
+----
+make CC=clang
+make CC=aarch64-linux-gnu-gcc  # Cross-compile for ARM64
+----
+
+'''''
+
+==== `+CFLAGS+`
+
+*Compiler flags*
+
+* *Type:* String
+* *Default:* See Makefile BASE_CFLAGS + optimizations
+
+*Usage:*
+
+[source,bash]
+----
+make CFLAGS="-O3 -march=native -DUSE_ASM_OPT=1"
+----
+
+'''''
+
+==== `+LDFLAGS+`
+
+*Linker flags*
+
+* *Type:* String
+* *Default:*
+`+-Wl,--gc-sections -s -flto=auto -fuse-linker-plugin -static+`
+
+*Usage:*
+
+[source,bash]
+----
+make LDFLAGS="-static -s"
+----
+
+'''''
+
+==== `+MINIMAL+`
+
+*Enable minimal build*
+
+* *Type:* Integer (0 or 1)
+* *Default:* 0
+
+*Usage:*
+
+[source,bash]
+----
+make MINIMAL=1
+----
+
+*Effect:* Sets `+STARFORTH_MINIMAL=1+`, adds
+`+-nostdlib -ffreestanding+`
+
+'''''
+
+==== `+ASM+`
+
+*Generate assembly output*
+
+* *Type:* Integer (0 or 1)
+* *Default:* 0
+
+*Usage:*
+
+[source,bash]
+----
+make ASM=1
+----
+
+*Effect:* Generates `+.s+` assembly files alongside `+.o+` object files
+in `+build/+`
+
+'''''
+
+=== Configuration Matrix
+
+==== Common Build Configurations
+
+[width="100%",cols="14%,13%,22%,8%,19%,24%",options="header",]
+|===
+|Target |USE_ASM_OPT |USE_DIRECT_THREADING |NDEBUG |Optimization |Use
+Case
+|`+debug+` |0 |0 |No |-O0 -g |Development, debugging
+
+|`+all+` |1 |0 |No |-O2 |Default build
+
+|`+turbo+` |1 |0 |Yes |-O3 -flto |Fast without threading
+
+|`+fast+` |1 |1 |Yes |-O3 |Fast, readable asm
+
+|`+fastest+` |1 |1 |Yes |-O3 -flto |Maximum performance
+
+|`+pgo+` |1 |1 |Yes |-O3 -fprofile-use |Absolute fastest
+
+|`+minimal+` |0 |0 |No |-O2 |Embedded/bare-metal
+
+|`+l4re+` |0 |0 |No |-O2 |L4Re microkernel
+
+|`+profile+` |0 |0 |No |-O1 -g |Profiling enabled
+|===
+
+'''''
+
+=== Architecture Detection
+
+StarForth automatically detects the target architecture at compile time.
+The following macros are checked (in order):
+
+==== x86_64 Detection
+
+[source,c]
+----
+#if defined(__x86_64__) || defined(_M_X64) || defined(__amd64__)
+  ARCH_X86_64 = 1
+----
+
+*Compilers:* GCC, Clang, MSVC
+
+'''''
+
+==== ARM64 Detection
+
+[source,c]
+----
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(__arm64__)
+  ARCH_ARM64 = 1
+----
+
+*Compilers:* GCC, Clang (aarch64-linux-gnu-gcc), Apple Clang
+
+'''''
+
+==== Unknown Architecture
+
+[source,c]
+----
+#else
+  #warning "Unknown architecture, assembly optimizations disabled"
+----
+
+Falls back to pure C implementations.
+
+'''''
+
+=== Optimization Level Guidelines
+
+==== Development (`+-O0 -g+`)
+
+* *Fastest compile time*
+* *Slowest runtime* (10x slower than optimized)
+* Full debugging symbols
+* All assertions enabled
+* Best for: Initial development, debugging crashes
+
+==== Balanced (`+-O2+`)
+
+* *Good compile time* (~2-3x slower than -O0)
+* *Decent runtime* (3-4x faster than -O0)
+* Some inlining, loop optimizations
+* Best for: Default builds, testing
+
+==== High Performance (`+-O3+`)
+
+* *Slower compile time* (~5x slower than -O0)
+* *Fast runtime* (5-6x faster than -O0)
+* Aggressive inlining, vectorization
+* Best for: Production builds
+
+==== Maximum Performance (`+-O3 -flto -march=native -fprofile-use+`)
+
+* *Slowest compile time* (10x+ slower than -O0, multi-stage)
+* *Fastest runtime* (7-8x faster than -O0)
+* Link-time optimization, CPU-specific instructions, profile-guided
+optimization
+* Best for: Release builds, benchmarking
+
+'''''
+
+=== Usage Examples
+
+==== Example 1: Maximum Performance Native Build
+
+[source,bash]
+----
+make clean
+make pgo
+----
+
+*Result:* PGO-optimized binary with ASM + direct threading + LTO
+
+'''''
+
+==== Example 2: Debug Build with Profiler
+
+[source,bash]
+----
+make clean
+make profile
+./build/starforth --profile 3 --profile-report
+----
+
+*Result:* Instrumented binary with profiling enabled, depth 3 call graph
+
+'''''
+
+==== Example 3: Cross-Compile for Raspberry Pi 4
+
+[source,bash]
+----
+make rpi4-cross
+scp build/starforth pi@raspberrypi.local:~/
+----
+
+*Result:* Static ARM64 binary optimized for Cortex-A72
+
+'''''
+
+==== Example 4: Minimal Build for Embedded System
+
+[source,bash]
+----
+make minimal
+----
+
+*Result:* Bare-metal binary with no libc dependencies
+
+'''''
+
+==== Example 5: Custom Optimization Build
+
+[source,bash]
+----
+make clean
+make CFLAGS="$(BASE_CFLAGS) -O3 -march=znver3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -DNDEBUG" \
+     LDFLAGS="-flto -s"
+----
+
+*Result:* AMD Zen 3 optimized build with all features
+
+'''''
+
+==== Example 6: Generate Assembly Listings
+
+[source,bash]
+----
+make asm
+less build/stack_management.s
+----
+
+*Result:* Assembly output for all source files in `+build/*.s+`
+
+'''''
+
+=== Compiler-Specific Notes
+
+==== GCC (Recommended)
+
+* *Minimum version:* GCC 7.0+
+* *Best version:* GCC 11.0+ (improved PGO, better ARM64 codegen)
+* Full support for all optimizations
+
+==== Clang
+
+* *Minimum version:* Clang 10.0+
+* Full support for ASM optimizations
+* Computed goto supported (direct threading works)
+* May produce slightly different code than GCC
+
+==== Cross-Compilation
+
+*ARM64 from x86_64:*
+
+[source,bash]
+----
+sudo apt-get install gcc-aarch64-linux-gnu
+make CC=aarch64-linux-gnu-gcc rpi4-cross
+----
+
+*Requirements:*
+
+* Cross-compiler toolchain
+* Static linking recommended (`+-static+`)
+
+'''''
+
+=== Troubleshooting
+
+==== Issue: "`Unknown architecture`" warning
+
+*Cause:* Compiling on unsupported platform (32-bit, RISC-V, etc.)
+
+*Solution:*
+
+[arabic]
+. Assembly optimizations disabled automatically
+. Falls back to pure C implementations
+. To add support, modify `+arch_detect.h+`
+
+'''''
+
+==== Issue: Direct threading not working
+
+*Symptoms:* Build succeeds but no performance gain
+
+*Check:*
+
+[arabic]
+. Ensure `+USE_DIRECT_THREADING=1+` is set
+. Verify `+USE_ASM_OPT=1+` is also set (required)
+. Check architecture is x86_64 or ARM64
+. GCC/Clang compiler (not MSVC)
+
+*Verify at runtime:*
+
+[source,forth]
+----
+ok> WORDS-INFO
+( Look for "Direct threading: ENABLED" )
+----
+
+'''''
+
+==== Issue: PGO warnings about coverage mismatch
+
+*Cause:* Source changed between instrumentation and optimization builds
+
+*Solution:*
+
+[source,bash]
+----
+make clean
+make pgo  # Runs full clean rebuild automatically
+----
+
+'''''
+
+=== Performance Tuning Checklist
+
+For absolute maximum performance:
+
+* ✅ Use `+make pgo+` (profile-guided optimization)
+* ✅ Enable `+USE_ASM_OPT=1+` (assembly optimizations)
+* ✅ Enable `+USE_DIRECT_THREADING=1+` (direct threading)
+* ✅ Define `+NDEBUG+` (disable assertions)
+* ✅ Use `+-O3 -flto -march=native+` (aggressive optimization)
+* ✅ Use `+-fno-plt -fno-semantic-interposition+` (reduce indirection)
+* ✅ Use `+-funroll-loops -finline-functions+` (code expansion)
+* ✅ Static linking (`+-static+`) to eliminate PLT overhead
+* ✅ Strip symbols (`+-s+`) to reduce binary size
+
+*Result:* ~7-8x faster than debug build, ~1.2-1.5x faster than standard
+`+-O3+`
+
+'''''
+
+=== See Also
+
+* PGO_GUIDE.md - Profile-guided optimization guide
+* ASM_OPTIMIZATIONS.md - Assembly optimization details
+* ARCHITECTURE.md - System architecture overview
+* RASPBERRY_PI_BUILD.md - ARM64 build guide
+* L4RE_INTEGRATION.md - Microkernel integration
+
+'''''
+
+*End of Build Options Reference*

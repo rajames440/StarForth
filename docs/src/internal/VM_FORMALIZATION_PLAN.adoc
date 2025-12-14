@@ -1,0 +1,117 @@
+= VM Formalization Roadmap
+:toc: left
+:toclevels: 2
+
+This stub captures the staged approach for proving StarForth’s virtual machine.
+It grows alongside the `.thy` files in `docs/src/internal/formal/`.
+
+== Objectives
+
+* Preserve room for architectural refactors while formal proofs evolve.
+* Treat the physics metadata proofs (`Physics_StateMachine`,
+`Physics_Observation`) as the first pillar and snap additional modules onto the same Isabelle session.
+* Keep proof obligations discoverable from C headers and document invariants close to the runtime code.
+
+== Session Layout
+
+[cols="1,2",options="header"]
+|===
+|Theory |Purpose (current status)
+|`VM_Core` |VM state record plus pointer accounting and control-flag helpers (decoupled from physics; scaffolding in place).
+|`VM_Stacks` |List-backed stack model locale and basic depth lemmas (scaffolding).
+|`VM_Words` |Abstract wrappers for `>R` / `R>` stack transfers tied to locale lemmas (scaffolding).
+|`VM_Register` |Dictionary model for `register_word` and the return-stack registration helper (scaffolding).
+|`Physics_StateMachine` |Ring buffer + mailbox invariants for HOLA (under development, fluid).
+|`Physics_Observation` |Per-word physics updates, frame composition (under development, fluid).
+|`VM_Dictionary` |_Planned:_ dictionary lifecycle, physics metadata wiring.
+|`VM_Interpreter` |_Planned:_ interpreter state machine, execution semantics.
+|`VM_IO` |_Planned:_ host capability shims, scheduler integration obligations.
+|===
+
+The `VM_Formal` Isabelle session now captures `VM_Core` through
+`VM_Register` and builds independently of the physics layer.
+`Physics_Formal` extends it, keeping the observation machinery available while acknowledging that those theories are still fluid.
+Each planned theory should continue importing the prior layers so the overall workspace stays incrementally checkable (`isabelle build -D
+docs/src/internal/formal`).
+
+== Development Guidelines
+
+1. **Pair source and proof** – when a C module gains new invariants, add or update the matching `.thy` and mention the link in file-level comments.
+2. **Prefer locales** – define subsystem properties via locales; extend them in follow-up theories rather than rewriting existing ones.
+3. **Document assumptions** – every lemma should state the runtime assumptions it relies on (e.g., stack depth bounds, profiler hooks).
+4. **Keep proofs fast** – favour algebraic lemmas over brute-force tactics so developers can replay the session during normal builds.
+5. **Track TODOs** – leave `text` blocks or FIXME notes in the theory files indicating which runtime invariants still need encoding.
+
+== Next Actions
+
+. Prioritise a green `VM_Formal` session build before layering physics obligations.
+. Flesh out `VM_Core` with stack depth and dictionary registry invariants once the corresponding C helpers stabilise.
+. Introduce a `VM_Stacks.thy` that captures data/return stack well- formedness and pointer safety (aligned with `STRICT_PTR`).
+. Model dictionary entries by referencing `DictEntry` and connect the physics metadata lemmas to the compiler pipeline.
+. Decide on the C-to-Isabelle modelling path (AutoCorres vs. manual abstraction) before tackling the interpreter loop.
+. Wire the future Makefile target to `isabelle build -D
+docs/src/internal/formal` so CI can gate on proofs as they expand.
+
+== VM Proof Checklist (Multi-day)
+
+. **Session Baseline**
+.. Record the theory order in `docs/src/internal/formal/ROOT` and keep the hierarchy (`VM_Core` → `VM_Stacks` → `VM_Words` → word modules).
+.. Run the full session once to snapshot current failures; stash the output alongside this document for reference.
+. **VM Core Invariants**
+.. Expand `VM_Core` with pointer/limit invariants, error-flag rules, and separate assumptions for IO-facing capabilities.
+.. Ensure every invariant is phrased as a lemma inside the `vm_core`
+locale so later theories can reuse it.
+. **Stack Model Helpers**
+.. Add peek/push/pop transfer lemmas in `VM_Stacks` for each stack direction (data↔return, control, IO).
+.. Prove both success and guard-failure variants plus runtime versions that expose `dsp`/`rsp` relationships.
+. **Word Semantic Wrappers**
+.. Split per-module theories (e.g., `Arithmetic_Words.thy`) that import
+`VM_Words` and define `word_*` functions.
+.. Derive success/no-op lemmas by reusing the helper facts; keep proofs to one or two lines via `simp` where possible.
+. **Dictionary Registration**
+.. Centralise registration lemmas in `VM_Register` (or a future
+`VM_Dictionary`) so lookups prove which semantics back each entry.
+.. Guard against reserved names and note unresolved conflicts inline.
+. **Module March Template**
+.. For each of the ~19 word modules: identify the C helper, confirm a matching Isabelle helper exists, create the wrapper lemma, register the word, and rerun the session before moving on.
+.. Track status in a simple table (module, helper, lemmas, dictionary) to keep day-to-day progress visible.
+. **IO / External Hooks**
+.. Stub locale assumptions for side-effecting words; document what still needs modelling so later work can refine the assumptions.
+. **Housekeeping**
+.. Rebuild the Isabelle session nightly; treat a green build as the gate for committing.
+.. Keep TODOs/FIXMEs close to the impacted lemma and reference this checklist when deferring work.
+. **Stretch Goal**
+.. Once every startup word is proven, aim for a consolidated theorem:
+“All registered words satisfy their claimed semantics,” combining the lookup lemmas with the per-word proofs.
+
+== Verification Roadmap (VM-first)
+
+. **Stack primitives** — model `vm_push`, `vm_pop`, `vm_rpush`, `vm_rpop` (e.g. in `VM_StackRuntime.thy`), prove they refine the abstract transfers and raise `vm_error_active` precisely on overflow/underflow.
+. **Return-stack words** — connect `return_stack_words.c` to the Isabelle wrappers, showing each word delegates to the stack helpers and preserves error semantics.
+. **Data-stack transfer words** — verify `DROP`, `DUP`, `SWAP`, etc., using the same helper pattern so core stack combinators are certified early.
+. **Arithmetic & logic modules** — once stack discipline is trusted, focus on data transformations for arithmetic/comparison/bitwise words.
+. **Dictionary & lookup words** — formalise `CREATE`, `FIND`, `IMMEDIATE`, fence management, and tie results into `VM_Register`.
+. **Control-flow words** — cover branches and loops, proving return-stack discipline and `vm_exit` behaviour match the runtime.
+. **Compiler / interpreter infrastructure** — model `vm_compile_*`, `execute_colon_word`, `vm_interpret_word`; prove the interpreter halts on `vm_error_active` and honours abort/exit flags.
+. **System / IO words** — handle host-facing words last, stubbing required capabilities and documenting any remaining assumptions.
+
+== Status Snapshot (Week of YYYY-MM-DD)
+
+*Stack & Return Stack*
+- `vm_push_sem`, `vm_pop_sem`, `vm_rpush_sem`, `vm_rpop_sem`: complete with success/overflow/underflow lemmas (`VM_StackRuntime.thy`).
+- Parameter-stack words `DROP`, `DUP`, `?DUP`, `SWAP`, `OVER`, `ROT`, `-ROT`, `DEPTH`, `PICK`, `ROLL`: abstract semantics and runtime correspondence proven; dictionary registration wired (`VM_DataStack_Words.thy`, `VM_Register.thy`).
+- Return-stack words `>R`, `R>`, `R@`: abstract semantics and runtime equality established (`VM_ReturnStack_Words.thy`).
+
+*Model Infrastructure*
+- Stack model now exposes `cell_to_int` / `int_to_cell` conversions so cells can be treated as indices where needed.
+- `VM_Formal` session builds cleanly with the new theories ordered as `VM_Core` → `VM_Stacks` → `VM_StackRuntime` → `VM_DataStack_Words` → `VM_ReturnStack_Words` → `VM_Words` → `VM_Register`.
+
+*Next Milestones*
+- Introduce an IP/memory abstraction so `(BRANCH)` and `(0BRANCH)` can be specified without referencing C internals.
+- Model loop frames on the return stack (`?DO`, `DO`, `LOOP`, `+LOOP`, `LEAVE`, `I`, `J`) to capture their guard conditions and index semantics.
+- Formalise the compile-time control-flow stack so words like `IF`, `ELSE`, `WHILE`, etc., can be reasoned about at registration time.
+- Once the control-flow primitives are proven, extend the dictionary lemmas and move on to arithmetic/logical modules.
+
+Achieving these steps positions us to claim: *StarForth is, to our knowledge, the first open-source Forth VM accompanied by a full proof corpus of its core primitives in Isabelle/HOL, enabling proof-carrying reference builds and machine-verified stack discipline.*
+
+This document will expand as new proofs land; treat it as the architecture map for VM-level verification.

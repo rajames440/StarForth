@@ -1,0 +1,48 @@
+Block 3001
+VARIABLE RNG-STATE
+12345 RNG-STATE !
+
+: RAND ( -- n )
+  RNG-STATE @ 1103515245 * 12345 +
+  DUP RNG-STATE !
+  65535 AND ;
+
+Block 3002
+: VOLATILE-BRANCH ( -- )
+  100 0 DO
+    RAND 7 MOD CASE
+      0 OF 1 2 + DROP ENDOF
+      1 OF 10 0 DO I LOOP DROP ENDOF
+      2 OF 5 DUP * DROP ENDOF
+      3 OF 100 50 - DROP ENDOF
+      4 OF 42 . ENDOF
+      5 OF HERE @ DROP ENDOF
+      6 OF BASE @ BASE ! ENDOF
+    ENDCASE
+  LOOP ;
+
+Block 3003
+: NESTED-COND ( n -- )
+  DUP 10 < IF
+    DUP 5 < IF
+      DROP 1
+    ELSE
+      DROP 2
+    THEN
+  ELSE
+    DUP 20 < IF
+      DROP 3
+    ELSE
+      DROP 4
+    THEN
+  THEN DROP
+;
+
+:MAIN
+  1000000 0 DO
+    RAND 30 MOD NESTED-COND
+    VOLATILE-BRANCH
+  LOOP
+;
+MAIN
+

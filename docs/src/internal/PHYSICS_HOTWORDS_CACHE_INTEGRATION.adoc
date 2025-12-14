@@ -1,0 +1,399 @@
+= Hot-Words Cache Integration Guide
+:toc: left
+:toclevels: 2
+xref:../README.adoc[← Back to Documentation Index]
+
+== Executive Summary
+
+The hot-words cache is a **frequency-driven dictionary acceleration** feature that:
+
+- Uses per-word execution counts (entropy) to optimize dictionary lookups
+- Maintains a small LRU cache of most-frequently-used words
+- Reorders buckets by frequency to reduce average search depth
+- Provides compile-time feature switch for benchmarking
+- Allows before/after comparison across all build variants
+
+**Expected Impact**: 2-4× speedup on dictionary lookups for hot words (IF, THEN, DO, LOOP, etc.)
+
+---
+
+== Implementation Checklist
+
+=== Step 1: Add Cache to VM Structure
+
+**File**: `include/vm.h`
+
+Add to struct VM:
+
+[source,c]
+----
+typedef struct VM {
+    // ... existing fields ...
+
+    // NEW: Physics hot-words cache
+    HotwordsCache hotwords_cache;
+
+    // ... rest of VM ...
+} VM;
+----
+
+Include header at top of vm.h:
+
+[source,c]
+----
+#include "physics_hotwords_cache.h"
+----
+
+---
+
+=== Step 2: Initialize Cache in VM Init
+
+**File**: `src/vm.c` (in `vm_init()` or equivalent)
+
+[source,c]
+----
+void vm_init(VM *vm, ...) {
+    // ... existing initialization ...
+
+    // NEW: Initialize hot-words cache
+    hotwords_cache_init(&vm->hotwords_cache);
+
+    // ... rest of init ...
+}
+----
+
+---
+
+=== Step 3: Modify Dictionary Lookup
+
+**File**: `src/dictionary_management.c` (in `vm_find_word()`)
+
+Replace the bucket search logic with cache-aware lookup:
+
+[source,c]
+----
+DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
+    if (UNLIKELY(!vm || !name || len == 0)) return NULL;
+
+    /* Keep the index in sync with dictionary head */
+    if (UNLIKELY(sf_cached_latest != vm->latest)) sf_try_fast_append(vm);
+
+    const unsigned char first = (unsigned char) name[0];
+    DictEntry **bucket = sf_fc_list[first];
+    size_t n = sf_fc_count[first];
+    if (UNLIKELY(!bucket || n == 0)) return NULL;
+
+    // NEW: Use hot-words cache
+    return hotwords_cache_lookup(&vm->hotwords_cache, bucket, n, name, len);
+}
+----
+
+---
+
+=== Step 4: Update Makefile
+
+**File**: `Makefile`
+
+Add feature switch to all build targets:
+
+[source,makefile]
+----
+# Hot-words cache feature switch (default: enabled)
+ENABLE_HOTWORDS_CACHE ?= 1
+
+# Add to CFLAGS for all targets:
+CFLAGS += -DENABLE_HOTWORDS_CACHE=$(ENABLE_HOTWORDS_CACHE)
+
+# Optional: separate targets for baseline comparison
+all: ENABLE_HOTWORDS_CACHE := 1
+baseline: ENABLE_HOTWORDS_CACHE := 0
+
+baseline: clean all
+	# Builds same as 'all' but with cache disabled
+
+# Example targets for before/after comparison:
+bench-with-cache: ENABLE_HOTWORDS_CACHE := 1
+	$(MAKE) clean && $(MAKE) test && @echo "Cache: ENABLED"
+
+bench-without-cache: ENABLE_HOTWORDS_CACHE := 0
+	$(MAKE) clean && $(MAKE) test && @echo "Cache: DISABLED"
+----
+
+---
+
+=== Step 5: Register Benchmark Words
+
+**File**: `src/word_registry.c` (in `register_forth79_words()`)
+
+Add after other word registrations:
+
+[source,c]
+----
+void register_forth79_words(VM *vm) {
+    // ... existing registrations ...
+
+    register_physics_benchmark_words(vm);  // NEW
+}
+----
+
+Include header at top:
+
+[source,c]
+----
+#include "word_source/include/physics_benchmark_words.h"
+----
+
+---
+
+=== Step 6: Add Source Files to Build
+
+**File**: `Makefile`
+
+Add to SOURCES variable:
+
+[source,makefile]
+----
+SOURCES += src/physics_hotwords_cache.c
+SOURCES += src/word_source/physics_benchmark_words.c
+----
+
+---
+
+== Before/After Measurement Protocol
+
+=== Step 1: Build and Test Baseline
+
+[source,bash]
+----
+# Build WITHOUT cache
+make clean
+make ENABLE_HOTWORDS_CACHE=0 test
+
+# In REPL or test:
+PHYSICS-BUILD-INFO
+PHYSICS-RESET-STATS
+1000 BENCH-DICT-LOOKUP
+----
+
+**Record output**:
+- Total time (ms)
+- Avg per lookup (µs)
+- Lookups/sec
+
+=== Step 2: Build and Test WITH Cache
+
+[source,bash]
+----
+# Build WITH cache
+make clean
+make ENABLE_HOTWORDS_CACHE=1 test
+
+# In REPL or test:
+PHYSICS-BUILD-INFO
+PHYSICS-RESET-STATS
+1000 BENCH-DICT-LOOKUP
+----
+
+**Record output** and compare.
+
+=== Step 3: Runtime Toggle Testing
+
+[source,forth]
+----
+PHYSICS-BUILD-INFO
+PHYSICS-RESET-STATS
+
+\ Benchmark with cache ON
+1000 BENCH-DICT-LOOKUP
+PHYSICS-CACHE-STATS
+
+\ Toggle cache OFF at runtime
+PHYSICS-TOGGLE-CACHE
+
+\ Reset and benchmark without cache
+PHYSICS-RESET-STATS
+1000 BENCH-DICT-LOOKUP
+PHYSICS-CACHE-STATS
+----
+
+---
+
+== Comparison Across Build Variants
+
+The feature switch works with all build profiles:
+
+[source,bash]
+----
+# Test each variant
+for variant in standard fast fastest turbo; do
+    echo "=== $variant WITHOUT cache ==="
+    make clean
+    make -j $(nproc) $variant ENABLE_HOTWORDS_CACHE=0 test
+    # Run benchmarks
+
+    echo "=== $variant WITH cache ==="
+    make clean
+    make -j $(nproc) $variant ENABLE_HOTWORDS_CACHE=1 test
+    # Run benchmarks
+
+    echo "---"
+done
+----
+
+---
+
+== REPL Diagnostic Commands
+
+After integration, these words are available:
+
+[cols="1,2"]
+|===
+| Command | Purpose
+
+| `1000 BENCH-DICT-LOOKUP` | Run 1000 dictionary lookups and show timing
+| `PHYSICS-CACHE-STATS` | Display detailed cache hit rate and statistics
+| `PHYSICS-TOGGLE-CACHE` | Enable/disable cache at runtime (for A/B testing)
+| `PHYSICS-RESET-STATS` | Reset statistics for clean before/after comparison
+| `PHYSICS-BUILD-INFO` | Show current build configuration (cache enabled/disabled)
+|===
+
+---
+
+== Expected Results
+
+Based on typical FORTH workloads:
+
+[cols="1,1,1"]
+|===
+| Scenario | Cache Hit Rate | Speedup
+
+| Hot-word heavy (IF, THEN, DO, LOOP) | 40-60% | 2-4×
+| Balanced workload | 20-30% | 1.3-1.8×
+| Cold word heavy | 5-15% | 1.1-1.2×
+|===
+
+**Cache Size**: 32 entries (configurable in `physics_hotwords_cache.h`)
+**Memory Overhead**: ~512 bytes (1 pointer array + stats struct)
+**CPU Overhead**: Negligible (array lookup << bucket search)
+
+---
+
+== Architecture: How It Works
+
+=== Hot-Words Cache Structure
+
+```
+┌─────────────────────────────────────┐
+│  HotwordsCache                      │
+├─────────────────────────────────────┤
+│  cache[32] = [IF, THEN, DO, ...]    │
+│  cache_count = 12                   │
+│  lru_index = 3 (for eviction)       │
+│  enabled = 1                        │
+│  stats { hits, misses, latency... } │
+└─────────────────────────────────────┘
+```
+
+=== Lookup Flow
+
+```
+vm_find_word(name)
+    ↓
+hotwords_cache_lookup(name)
+    ├─ Check cache[0..cache_count]
+    │   ├─ Hit? Return immediately (cache_hits++)
+    │   └─ Miss? Continue to bucket
+    │
+    ├─ Search bucket[0..n] for name
+    │   ├─ Found & hot? Promote to cache (promotions++)
+    │   ├─ Found & cold? Return (bucket_hits++)
+    │   └─ Not found? Return NULL (misses++)
+    │
+    └─ LRU eviction if cache full
+        └─ Oldest entry replaced (evictions++)
+```
+
+---
+
+== Configuration Tuning
+
+### Cache Size
+
+**File**: `include/physics_hotwords_cache.h`
+
+[source,c]
+----
+#define HOTWORDS_CACHE_SIZE 32  // Increase for more cached words
+----
+
+**Trade-off**: Larger cache → more hits but slower linear search
+
+### Entropy Threshold
+
+[source,c]
+----
+#define HOTWORDS_ENTROPY_THRESHOLD 50  // Words executed 50+ times
+----
+
+**Trade-off**: Higher threshold → stricter cache admission (fewer entries)
+
+### Bucket Reordering
+
+[source,c]
+----
+#define HOTWORDS_ENTROPY_DELTA_THRESHOLD 100  // Reorder if delta > 100
+----
+
+**Trade-off**: Higher delta → less frequent reordering (less CPU) but staler ordering
+
+---
+
+## Integration Testing
+
+=== Unit Tests
+
+Create test in `src/test_runner/modules/test_physics_cache.c`:
+
+[source,c]
+----
+void test_hotwords_cache_basic_ops(void) {
+    HotwordsCache cache;
+    hotwords_cache_init(&cache);
+
+    // Create test words
+    DictEntry w1 = {.name = "TEST1", .name_len = 5, .entropy = 100};
+    DictEntry w2 = {.name = "TEST2", .name_len = 5, .entropy = 50};
+
+    // Promote
+    hotwords_cache_promote(&cache, &w1);
+    assert(cache.cache_count == 1);
+    assert(cache.cache[0] == &w1);
+
+    // Lookup
+    DictEntry *found = hotwords_cache_lookup(&cache, NULL, 0, "TEST1", 5);
+    assert(found == &w1);
+}
+----
+
+=== Performance Tests
+
+Run benchmarks across variants:
+
+[source,bash]
+----
+make clean && make fastest ENABLE_HOTWORDS_CACHE=1 test
+# Should show ~3-4× improvement on lookups
+
+make clean && make standard ENABLE_HOTWORDS_CACHE=1 test
+# Should show ~2-3× improvement (less aggressive optimization)
+----
+
+---
+
+## References
+
+- Physics Implementation Status: xref:./PHYSICS_IMPLEMENTATION_STATUS.adoc[PHYSICS_IMPLEMENTATION_STATUS.adoc]
+- Physics Control System: xref:./PHYSICS_CONTROL_SYSTEM_DESIGN.adoc[PHYSICS_CONTROL_SYSTEM_DESIGN.adoc]
+- Hot-Words Cache Header: `include/physics_hotwords_cache.h`
+- Hot-Words Cache Implementation: `src/physics_hotwords_cache.c`
+- Benchmark Words: `src/word_source/physics_benchmark_words.c`

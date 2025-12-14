@@ -1,0 +1,27 @@
+# build artifacts
+build/
+target/
+out/
+
+# IDE crap
+.idea/
+.vscode/
+*.iml
+
+# generated headers
+include/version.h
+
+# bundles / archives
+*.bundle
+*.tar
+*.tar.gz
+*.zip
+
+# experiment scratch outputs ONLY (keep raw CSVs!)
+experiments/**/results/tmp/
+experiments/**/results/cache/
+experiments/**/results/*.log
+
+# OS junk
+.DS_Store
+Thumbs.db

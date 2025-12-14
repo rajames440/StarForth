@@ -1,0 +1,80 @@
+% ===========================================
+% 03_background.tex
+% Background of the Invention
+% ===========================================
+
+\section{Background}
+
+Virtual machines, interpreters, and software execution engines traditionally
+operate using a fixed set of internal configuration parameters. These
+parameters govern runtime behavior such as lookup mechanisms, caching
+strategies, decay functions, and instruction scheduling heuristics. In most
+systems, these internal settings are static: they are either hard-coded,
+selected at compile-time, or chosen manually by the developer based on
+anticipated workloads.
+\par\medskip
+While such static approaches may provide acceptable performance for narrowly
+defined or predictable execution patterns, they suffer significant limitations
+in real-world conditions where workloads may vary widely over time. Modern
+software environments frequently exhibit heterogeneous and dynamic execution
+characteristics, including:
+
+\begin{itemize}
+	\item highly repetitive or stable workloads,
+	\item gradually shifting temporal patterns,
+	\item intermittent bursts of unpredictable activity,
+	\item transitions between different workload phases,
+	\item and non-stationary sequences that do not conform to a single
+	behavioral profile.
+\end{itemize}
+
+The inability of static configuration systems to adapt to these diverse
+conditions often leads to suboptimal performance, elevated variance, and
+instability. In particular, virtual machines with multiple interacting
+parameters may exhibit strong sensitivity to the selection of initial settings.
+A configuration that performs well under one workload may perform poorly under
+another, resulting in a substantial performance spread across the possible
+parameter space.
+\par\medskip
+Efforts to address this problem in existing systems typically rely on either
+(1) manual tuning based on domain expertise, or (2) simplistic heuristics that
+enable limited runtime adjustment. Manual tuning is labor-intensive, brittle,
+and non-generalizable. Heuristic-based adaptation, on the other hand, often lacks
+robustness: it may overreact to short-term fluctuations, underreact to sustained
+changes, or oscillate between competing strategies. Such approaches generally
+fail to maintain predictable or stable behavior across diverse conditions.
+\par\medskip
+Additionally, most adaptive mechanisms found in prior systems do not incorporate
+statistical inference, coarse-grained workload characterization, or coordinated
+feedback-loop orchestration. Instead, they adjust isolated parameters in
+isolation, without understanding the underlying structure of the workload or the
+interdependencies between internal subsystems. As a result, they frequently
+introduce instability, variance, or pathological behavior when faced with
+non-stationary execution patterns.
+\newpage
+Furthermore, existing literature and industrial practice provide little
+guidance for achieving shape-invariant performance — that is, maintaining
+consistent and predictable execution characteristics across different workload
+waveforms or input signal shapes. Without such invariance, adaptive systems may
+behave unpredictably when presented with novel or diverse execution patterns.
+\par\medskip
+In summary, the state of the art lacks:
+
+\begin{itemize}
+	\item robust, workload-aware adaptation mechanisms,
+	\item coordinated feedback-loop control for virtual machine internals,
+	\item systems capable of identifying and selecting optimal runtime
+	configurations dynamically,
+	\item methods for stable, non-oscillatory adaptation,
+	\item and provably consistent behavior across heterogeneous workload shapes.
+\end{itemize}
+
+These deficiencies motivate the need for a new class of virtual machine
+architecture — one that is capable of autonomously characterizing workloads
+through statistical analysis, selecting appropriate execution modes via
+supervisory control logic, coordinating multiple feedback mechanisms through
+a unified state vector, and maintaining stable behavior across diverse workload
+characteristics including varying execution patterns, variability levels, and
+temporal dynamics.
+
+\newpage

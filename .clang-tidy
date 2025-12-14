@@ -1,0 +1,32 @@
+Checks: >
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -clang-analyzer-security.*,
+  -clang-analyzer-cplusplus.*,   # ignore all C++ checks
+  -clang-analyzer-core.CallAndMessage, # massive false-positive creator
+  -modernize-*,
+  -cppcoreguidelines-*,          # not a C++ project
+  -hicpp-*,                      # C++ only
+  -misc-unused-parameters        # you handle these via Werror
+
+WarningsAsErrors: [ ]
+
+HeaderFilterRegex: '^src/.*|^include/.*'
+
+AnalyzeTemporaryDtors: false
+FormatStyle: none
+
+# Treat missing includes as non-fatal
+CompileFlags:
+  Add: [
+    "-std=c99",
+    "-DSTRICT_PTR=1",
+    "-DNDEBUG",
+    "-DUSE_ASM_OPT=1",
+    "-Iinclude",
+    "-Isrc",
+    "-Isrc/word_source"
+  ]
