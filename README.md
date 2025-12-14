@@ -106,7 +106,7 @@ StarForth implements **seven physics feedback loops** that drive self-optimizati
 - Production systems can guarantee performance bounds
 - Statistical validation via Central Limit Theorem
 
-**See the complete study:** [FINAL_REPORT/book.adoc](FINAL_REPORT/book.adoc) (121 pages, peer-review ready)
+**See the complete study:** [Peer Review Materials](docs/archive/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/) (formal theorems, experimental methodology, variance analysis)
 
 ---
 
@@ -198,7 +198,7 @@ md5sum run_*.csv
 - **[Heartbeat System](docs/03-architecture/heartbeat-system/)** - Time-driven coordination
 
 ### Research & Validation
-- **[Academic Paper](FINAL_REPORT/book.adoc)** - 121-page peer-review ready study
+- **[Peer Review Materials](docs/archive/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/)** - Formal theorems and experimental validation
 - **[Experiments](docs/02-experiments/)** - DoE protocols and results
 - **[Quality Assurance](docs/04-quality/)** - Testing and validation
 
@@ -314,7 +314,7 @@ StarshipOS builds on StarKernel to create a complete operating system:
 - **90 experimental runs** with statistical validation
 - **Design of Experiments (DoE)** methodology
 - **ANOVA, Levene's test** for statistical inference
-- **Peer-review ready** academic paper (121 pages)
+- **Peer-review ready** materials (formal theorems, experimental methodology, proofs)
 
 ### Code Quality
 - **ANSI C99 compliance** - strict, no warnings
@@ -354,14 +354,22 @@ We welcome contributions aligned with:
 
 ## 📜 License
 
-**StarForth is released under CC0 / Public Domain.**
+**StarForth is released under the Starship License 1.0 (SL-1.0).**
 
-You are free to use, modify, and distribute StarForth for any purpose without restriction.
+This is a permissive license that grants broad freedoms:
+- ✅ **Use** for any purpose (personal, commercial, research, embedded)
+- ✅ **Modify** and create derivative works
+- ✅ **Distribute** in source or binary form
+- ✅ **Relicense** under different terms
 
-**However:** The physics-driven adaptive runtime innovations are subject to **pending patent protection**. See [Patent Pending](#-patent-pending) section above for details.
+**Sole requirement:** Permanent attribution to **R.A. James (Captain Bob)** must be preserved in all distributions and derivative works.
+
+**Patent Notice:** This license does **not** grant patent rights. The physics-driven adaptive runtime innovations are subject to **pending patent protection**. See [Patent Pending](#-patent-pending) section above for licensing inquiries.
 
 **Third-party components:**
 - Fiasco.OC and L4Re remain **GPLv2** (external dependencies)
+
+**Full license:** See [LICENSE](LICENSE) file for complete terms.
 
 ---
 
