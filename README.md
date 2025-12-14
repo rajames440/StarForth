@@ -29,7 +29,7 @@
 **This technology is subject to a provisional patent application filed with the USPTO.**
 
 **Patent Application:** Physics-Grounded Self-Adaptive Runtime System for Virtual Machines
-**Filing Date:** December 2024
+**Filing Date:** December 2025
 **Applicant:** Robert A. James
 **Status:** Provisional Patent Pending
 
