@@ -67,7 +67,7 @@ make test
 
 All contributions **must**:
 
-✅ Pass all 936+ unit tests:
+✅ Pass all 780+ unit tests:
 ```bash
 make test
 ```

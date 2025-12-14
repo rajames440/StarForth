@@ -23,7 +23,7 @@ make pgo
 # Debug build with symbols
 make debug
 
-# Run full test suite (936+ tests)
+# Run full test suite (780+ tests)
 make test
 
 # Quick smoke test (verifies basic operation)
@@ -44,11 +44,11 @@ make clean
 
 ### Key Build Flags
 
-- `STRICT_PTR=1` - Enforce pointer safety checks (default on)
-- `USE_ASM_OPT=1` - Enable architecture-specific assembler optimizations
-- `ENABLE_HOTWORDS_CACHE=1` - Physics-driven hot-words cache (default on)
-- `ENABLE_PIPELINING=1` - Speculative execution via word transition prediction (default on)
-- `HEARTBEAT_THREAD_ENABLED=1` - Background heartbeat thread for adaptive tuning (default on)
+- `STRICT_PTR=1` - Enforce pointer safety checks (default: on)
+- `USE_ASM_OPT=1` - Enable architecture-specific assembler optimizations (set automatically per TARGET)
+- `ENABLE_HOTWORDS_CACHE=1` - Physics-driven hot-words cache (default: off for baseline experiments, enable for production)
+- `ENABLE_PIPELINING=1` - Speculative execution via word transition prediction (default: off for baseline experiments, enable for production)
+- `HEARTBEAT_THREAD_ENABLED=1` - Background heartbeat thread for adaptive tuning (default: on)
 
 ### Important: Linker Configuration
 

@@ -461,7 +461,7 @@ uint64_t hal_time_now_ns(void) {
 ✅ FORTH-79 compliant interpreter
 ✅ Physics-driven adaptive runtime
 ✅ 0% algorithmic variance proven
-✅ 936+ tests passing
+✅ 780+ tests passing
 ✅ Runs on Linux, L4Re
 
 ### Phase 2: HAL Migration (IN PROGRESS)
@@ -515,7 +515,7 @@ See `hal/starkernel-integration.md` for implementation details.
 |----------|-------------|---------------|
 | Fibonacci (recursive) | 100M iterations/sec | `make fastest` |
 | Ackermann(3,9) | 15s | `make fastest` |
-| DoE full suite | 2.3s | 936+ tests, `make test` |
+| DoE full suite | 2.3s | 780+ tests, `make test` |
 
 **Key Insight:** Physics overhead < 5% on average workloads.
 
