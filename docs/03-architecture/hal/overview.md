@@ -1,5 +1,7 @@
 # Hardware Abstraction Layer (HAL) Architecture
 
+> **⚠️ Important Note**: This document describes the **target HAL architecture** with standardized `hal_*` function naming. The current codebase uses `sf_time_backend_t` and similar abstractions with different naming conventions. See [migration-plan.md](migration-plan.md) for the refactoring steps to migrate existing platform code to the HAL interfaces described here.
+
 ## Executive Summary
 
 The Hardware Abstraction Layer (HAL) is the architectural foundation that enables StarForth to evolve from a hosted VM into StarKernel while preserving the physics-driven adaptive runtime's deterministic behavior across all platforms.
