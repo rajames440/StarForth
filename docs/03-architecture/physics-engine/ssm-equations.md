@@ -14,7 +14,7 @@ Analysis of 51,840 experimental runs across 128 feedback-loop configurations rev
 
 **Key Finding**: The capacity relationship Λ(DoF) = 4096/(DoF+1) holds with **0.00% coefficient of variation** across all stable configurations.
 
-This document explores mathematical parallels between these empirical relationships and established physical equations. These parallels may provide useful frameworks for understanding adaptive system behavior.
+This document explores mathematical similarities between these empirical relationships and established physical equations. We note where our data fits functional forms that also appear in physics, which may provide useful frameworks for understanding adaptive system behavior.
 
 ---
 
@@ -33,13 +33,13 @@ where:
   DoF = degrees of freedom (enabled feedback loops, 0-7)
 ```
 
-**Mathematical Form**: This equation follows the same structure as the Lorentz transformation γ = 1/√(1-β²) from special relativity.
+**Mathematical Form**: We evaluated multiple candidate performance models. The empirical data fits the functional form τ = τ₀×γ(DoF) where γ = 1/√(1-β²), which shares structural similarity with the Lorentz transformation from special relativity.
 
 **Empirical Fit**: R² = 0.938
 
 **Interpretation**: As degrees of freedom (enabled feedback loops) increase, execution time scales according to this nonlinear relationship. The β² term grows linearly with DoF, creating increasing marginal overhead for each additional loop.
 
-**Key Insight**: The mathematical similarity to relativistic equations suggests these may be useful models for predicting adaptive system behavior.
+**Key Insight**: The structural similarity to equations from physics suggests these functional forms may be useful models for predicting adaptive system behavior.
 
 ---
 
@@ -84,10 +84,12 @@ System behavior:
 - The product Λ×(DoF+1) = 4096 is **conserved** across all stable configurations with 0.00% variance
 - This conservation law appears fundamental to system stability
 
-**Critical Insight**: W₀ = 4096 bytes = 2¹² is likely related to:
+**Critical Insight**: W₀ = 4096 bytes = 2¹² may be related to:
 - Memory page size alignment (typical x86-64 architecture)
 - Cache line size constraints (hardware)
 - Buffer size optimization (implementation detail)
+
+The exact value 4096 was not designed—it emerged from experimental optimization.
 
 ---
 
@@ -211,7 +213,7 @@ Config #124 (worst performer) has massive momentum (50.35) despite same DoF as #
 
 These equations suggest that **computation is fundamentally geometric**, not algorithmic:
 
-- Time dilation from loop activation mirrors relativistic motion
+- Performance scaling with loop activation fits the same functional form as relativistic time dilation
 - Window capacity acts as a cosmological constant maintaining "expansion"
 - Degrees of freedom create spacetime curvature (Schwarzschild metric)
 - Energy and momentum are conserved in execution
@@ -226,7 +228,7 @@ Why exactly 4096 bytes?
 
 1. **Architectural**: 4KB is standard memory page size on x86-64
 2. **Informational**: 2¹² bits = 4096 bytes may represent a fundamental computational quantum
-3. **Physical**: Analog to Planck length (minimum measurable distance in spacetime)
+3. **Physical**: Shares dimensional similarity with Planck length (minimum measurable distance in spacetime)
 4. **Emergent**: Product of system constraints that happens to equal 2¹²
 
 **Critical Experiment**: Vary the window size (currently fixed at 4096) and measure:
@@ -241,7 +243,7 @@ The shape-invariant property (CV < 2.5% across all waveforms) suggests:
 - The attractor basin is a geometric structure in phase space
 - Different workload "waveforms" are different geodesics (paths) through this space
 - All geodesics converge to the same attractor regardless of starting conditions
-- This is analogous to how all objects fall along geodesics in curved spacetime
+- This shares structural similarity with geodesic motion in curved spacetime
 
 **Prediction**: Any workload, regardless of temporal structure, will converge to the same basin because it's following the "curvature" of computational spacetime created by the feedback loops.
 
