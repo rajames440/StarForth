@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StarForth Experimental Figures Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header {
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #64748b;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #10b981;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+
+        .controls {
+            margin: 30px 0;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .filter-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .info-box h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .category-section {
+            margin: 50px 0;
+        }
+
+        .category-section h2 {
+            color: #1e40af;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        .category-info {
+            color: #64748b;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .figure-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .figure-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .figure-image {
+            width: 100%;
+            height: 280px;
+            background: #f9fafb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+        }
+
+        .figure-image object {
+            max-width: 100%;
+            max-height: 100%;
+            pointer-events: none;
+        }
+
+        .figure-info {
+            padding: 20px;
+        }
+
+        .figure-info h3 {
+            color: #1e40af;
+            margin-bottom: 8px;
+            font-size: 1em;
+            word-break: break-word;
+        }
+
+        .figure-info p {
+            color: #64748b;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .figure-meta {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.8em;
+            color: #94a3b8;
+            flex-wrap: wrap;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #10b981;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75em;
+        }
+
+        .download-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        .download-link:hover {
+            background: #1d4ed8;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+            color: #64748b;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>StarForth Experimental Figures Gallery</h1>
+            <p class="subtitle">112 Standalone & Reusable SVG Visualizations from Real Experimental Data</p>
+            <div>
+                <span class="badge">✓ Standalone</span>
+                <span class="badge">✓ Reusable</span>
+                <span class="badge">✓ Scalable</span>
+                <span class="badge">✓ Real Data</span>
+            </div>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <span class="stat-value" id="total-count">112</span>
+                <span class="stat-label">SVG Figures</span>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <span class="stat-value">42K+</span>
+                <span class="stat-label">Experimental Runs</span>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <span class="stat-value">~13 MB</span>
+                <span class="stat-label">Total Size</span>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <span class="stat-value">6</span>
+                <span class="stat-label">Experiment Sets</span>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>About These Figures</h3>
+            <p>
+                All 112 figures are generated from <strong>real experimental data</strong> collected during StarForth VM experiments.
+                These are <strong>Scalable Vector Graphics (SVG)</strong> files regenerated from CSV data (NO PNG conversion).
+            </p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>Opened directly in any web browser (standalone)</li>
+                <li>Embedded in HTML, LaTeX, Markdown, PowerPoint (reusable)</li>
+                <li>Scaled to any size without quality loss (vector graphics)</li>
+                <li>Click any figure to open it full-screen in your browser</li>
+            </ul>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="search" placeholder="🔍 Search figures by name or description...">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">All (112)</button>
+                <button class="filter-btn" data-filter="l8_analysis">L8 Analysis (11)</button>
+                <button class="filter-btn" data-filter="l8_report">L8 Report (11)</button>
+                <button class="filter-btn" data-filter="doe30">DoE 30 Reps (38)</button>
+                <button class="filter-btn" data-filter="doe300">DoE 300 Reps (39)</button>
+                <button class="filter-btn" data-filter="window_scaling">Window Scaling (5)</button>
+                <button class="filter-btn" data-filter="l8_validation">L8 Validation (8)</button>
+            </div>
+        </div>
+
+        <div id="gallery-container"></div>
+
+        <div class="info-box" style="margin-top: 50px;">
+            <h3>How to Use These Figures</h3>
+            <p><strong>Standalone:</strong> Click any figure to open it directly in your browser. Right-click and "Save As" to download.</p>
+            <p><strong>Reusable:</strong> Copy SVG files to your project and embed using:</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li><strong>HTML:</strong> <code>&lt;img src="figure.svg"&gt;</code></li>
+                <li><strong>LaTeX:</strong> <code>\includegraphics{figure.svg}</code></li>
+                <li><strong>Markdown:</strong> <code>![Caption](figure.svg)</code></li>
+            </ul>
+            <p style="margin-top: 10px;">See <a href="README.md" style="color: #2563eb;">README.md</a> and <a href="SVG_GENERATION_SUMMARY.md" style="color: #2563eb;">SVG_GENERATION_SUMMARY.md</a> for detailed documentation.</p>
+        </div>
+
+        <footer>
+            <p>Generated from real experimental data | StarForth Project | December 2025</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                Data sources: L8 Attractor (4,351 ticks), DoE 30 Reps (3,840 runs), DoE 300 Reps (38,400 runs), Window Scaling (355 runs), L8 Validation (1,813 runs)<br>
+                All charts regenerated from CSV data using R/ggplot2 | No PNG conversion
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // SVG Figure Database
+        const figures = {
+            l8_analysis: {
+                title: 'L8 Attractor Analysis Charts (Existing)',
+                info: 'Original analysis output from experiments/l8_attractor_map/results_20251209_145907/',
+                figures: [
+                    { file: 'binary_2cycle_analysis.svg', title: 'Binary 2-Cycle Analysis', desc: 'Temporal analysis of binary 2-cycle workload behavior', type: 'Time Series' },
+                    { file: 'duration_vs_ticks.svg', title: 'Duration vs Tick Count', desc: 'Scatter plot showing run duration correlation with tick count', type: 'Scatter' },
+                    { file: 'heat_timeseries_runNA.svg', title: 'Heat Evolution Over Time', desc: 'Word heat (execution frequency) temporal evolution', type: 'Time Series' },
+                    { file: 'heat_vs_jitter.svg', title: 'Heat vs Jitter Correlation', desc: 'Relationship between execution heat and timing jitter', type: 'Scatter' },
+                    { file: 'hotwords_timeseries_runNA.svg', title: 'Hot Words Count Evolution', desc: 'Number of hot words (frequently executed) over time', type: 'Time Series' },
+                    { file: 'hotwords_vs_interval.svg', title: 'Hot Words vs Tick Interval', desc: 'Correlation between hot word count and tick intervals', type: 'Scatter' },
+                    { file: 'interval_hist_all.svg', title: 'Tick Interval Distribution (All)', desc: 'Histogram of tick intervals across all experimental runs', type: 'Histogram' },
+                    { file: 'interval_hist_by_workload.svg', title: 'Tick Interval by Workload', desc: 'Tick interval distribution faceted by workload type', type: 'Faceted Histogram' },
+                    { file: 'jitter_hist_by_workload.svg', title: 'Jitter Distribution by Workload', desc: 'Timing jitter distribution for each workload pattern', type: 'Faceted Histogram' },
+                    { file: 'jitter_timeseries_runNA.svg', title: 'Jitter Evolution Over Time', desc: 'Temporal evolution of estimated timing jitter', type: 'Time Series' },
+                    { file: 'tick_count_boxplot.svg', title: 'Tick Count by Workload', desc: 'Box plot comparing tick counts across different workloads', type: 'Box Plot' }
+                ]
+            },
+            l8_report: {
+                title: 'L8 Attractor Report Charts (Regenerated)',
+                info: 'New charts regenerated from heartbeat_all.csv (4,351 rows, 180 experimental runs)',
+                figures: [
+                    { file: 'l8_autocorrelation.svg', title: 'Autocorrelation Function', desc: 'ACF of tick intervals for run 180', type: 'Bar Chart' },
+                    { file: 'l8_boxplot_comparison.svg', title: 'Tick Count by Workload', desc: 'Box plot comparison across workloads', type: 'Box Plot' },
+                    { file: 'l8_distributions_by_workload.svg', title: 'Distributions by Workload', desc: 'Tick interval density distributions', type: 'Faceted Density' },
+                    { file: 'l8_heart_rate_evolution.svg', title: 'Heart Rate Evolution', desc: 'Temporal evolution of heart rate over time', type: 'Time Series' },
+                    { file: 'l8_heart_rate_variability.svg', title: 'Heart Rate Variability', desc: 'Variability of heart rate by workload', type: 'Box Plot' },
+                    { file: 'l8_heat_correlation.svg', title: 'Heat vs Interval Correlation', desc: 'Correlation between heat and tick interval', type: 'Scatter + Regression' },
+                    { file: 'l8_phase_space_portrait.svg', title: 'Phase Space Portrait (Heat vs Interval)', desc: 'Phase space visualization of heat and interval', type: 'Scatter' },
+                    { file: 'l8_phase_space_portrait_II.svg', title: 'Phase Space Portrait (Hot Words vs Heat)', desc: 'Phase space of hot words vs heat', type: 'Scatter' },
+                    { file: 'l8_timeseries_runs.svg', title: 'Heat Time Series (First 10 Runs)', desc: 'Temporal heat evolution for first 10 runs', type: 'Multi-line' },
+                    { file: 'l8_violin_plot.svg', title: 'Tick Interval Distribution', desc: 'Violin plot of mean intervals by workload', type: 'Violin Plot' },
+                    { file: 'l8_word_heat_temporal.svg', title: 'Word Heat Temporal Evolution', desc: 'Temporal evolution with smoothing', type: 'Scatter + Loess' }
+                ]
+            },
+            doe30: {
+                title: 'DoE 30 Reps Experiment',
+                info: '3,840 experimental runs (2^7 factorial × 30 replicates) from doe_results_20251122_085656.csv',
+                figures: [
+                    { file: 'doe30_dist_ns_per_word.svg', title: 'Performance Distribution', desc: 'Histogram of ns/word performance metric', type: 'Histogram' },
+                    { file: 'doe30_box_L1_heat_tracking.svg', title: 'L1 Heat Tracking', desc: 'Performance by L1 heat tracking loop', type: 'Box Plot' },
+                    { file: 'doe30_box_L2_rolling_window.svg', title: 'L2 Rolling Window', desc: 'Performance by L2 rolling window loop', type: 'Box Plot' },
+                    { file: 'doe30_box_L3_linear_decay.svg', title: 'L3 Linear Decay', desc: 'Performance by L3 linear decay loop', type: 'Box Plot' },
+                    { file: 'doe30_box_L4_pipelining_metrics.svg', title: 'L4 Pipelining Metrics', desc: 'Performance by L4 pipelining metrics loop', type: 'Box Plot' },
+                    { file: 'doe30_box_L5_window_inference.svg', title: 'L5 Window Inference', desc: 'Performance by L5 window inference loop', type: 'Box Plot' },
+                    { file: 'doe30_box_L6_decay_inference.svg', title: 'L6 Decay Inference', desc: 'Performance by L6 decay inference loop', type: 'Box Plot' },
+                    { file: 'doe30_box_L7_adaptive_heartrate.svg', title: 'L7 Adaptive Heartrate', desc: 'Performance by L7 adaptive heartrate loop', type: 'Box Plot' },
+                    { file: 'doe30_facet_L1_heat_tracking.svg', title: 'L1 Distribution', desc: 'Density distribution by L1 state', type: 'Faceted Density' },
+                    { file: 'doe30_facet_L2_rolling_window.svg', title: 'L2 Distribution', desc: 'Density distribution by L2 state', type: 'Faceted Density' },
+                    { file: 'doe30_facet_L3_linear_decay.svg', title: 'L3 Distribution', desc: 'Density distribution by L3 state', type: 'Faceted Density' },
+                    { file: 'doe30_facet_L4_pipelining_metrics.svg', title: 'L4 Distribution', desc: 'Density distribution by L4 state', type: 'Faceted Density' },
+                    { file: 'doe30_facet_L5_window_inference.svg', title: 'L5 Distribution', desc: 'Density distribution by L5 state', type: 'Faceted Density' },
+                    { file: 'doe30_facet_L6_decay_inference.svg', title: 'L6 Distribution', desc: 'Density distribution by L6 state', type: 'Faceted Density' },
+                    { file: 'doe30_facet_L7_adaptive_heartrate.svg', title: 'L7 Distribution', desc: 'Density distribution by L7 state', type: 'Faceted Density' },
+                    { file: 'doe30_interaction_01_L1_heat_tracking_x_L2_rolling_window.svg', title: 'Interaction: L1 × L2', desc: 'L1 heat tracking × L2 rolling window', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_02_L1_heat_tracking_x_L3_linear_decay.svg', title: 'Interaction: L1 × L3', desc: 'L1 heat tracking × L3 linear decay', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_03_L1_heat_tracking_x_L4_pipelining_metrics.svg', title: 'Interaction: L1 × L4', desc: 'L1 heat tracking × L4 pipelining metrics', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_04_L1_heat_tracking_x_L5_window_inference.svg', title: 'Interaction: L1 × L5', desc: 'L1 heat tracking × L5 window inference', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_05_L1_heat_tracking_x_L6_decay_inference.svg', title: 'Interaction: L1 × L6', desc: 'L1 heat tracking × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_06_L1_heat_tracking_x_L7_adaptive_heartrate.svg', title: 'Interaction: L1 × L7', desc: 'L1 heat tracking × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_07_L2_rolling_window_x_L3_linear_decay.svg', title: 'Interaction: L2 × L3', desc: 'L2 rolling window × L3 linear decay', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_08_L2_rolling_window_x_L4_pipelining_metrics.svg', title: 'Interaction: L2 × L4', desc: 'L2 rolling window × L4 pipelining metrics', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_09_L2_rolling_window_x_L5_window_inference.svg', title: 'Interaction: L2 × L5', desc: 'L2 rolling window × L5 window inference', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_10_L2_rolling_window_x_L6_decay_inference.svg', title: 'Interaction: L2 × L6', desc: 'L2 rolling window × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_11_L2_rolling_window_x_L7_adaptive_heartrate.svg', title: 'Interaction: L2 × L7', desc: 'L2 rolling window × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_12_L3_linear_decay_x_L4_pipelining_metrics.svg', title: 'Interaction: L3 × L4', desc: 'L3 linear decay × L4 pipelining metrics', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_13_L3_linear_decay_x_L5_window_inference.svg', title: 'Interaction: L3 × L5', desc: 'L3 linear decay × L5 window inference', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_14_L3_linear_decay_x_L6_decay_inference.svg', title: 'Interaction: L3 × L6', desc: 'L3 linear decay × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_15_L3_linear_decay_x_L7_adaptive_heartrate.svg', title: 'Interaction: L3 × L7', desc: 'L3 linear decay × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_16_L4_pipelining_metrics_x_L5_window_inference.svg', title: 'Interaction: L4 × L5', desc: 'L4 pipelining metrics × L5 window inference', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_17_L4_pipelining_metrics_x_L6_decay_inference.svg', title: 'Interaction: L4 × L6', desc: 'L4 pipelining metrics × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_18_L4_pipelining_metrics_x_L7_adaptive_heartrate.svg', title: 'Interaction: L4 × L7', desc: 'L4 pipelining metrics × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_19_L5_window_inference_x_L6_decay_inference.svg', title: 'Interaction: L5 × L6', desc: 'L5 window inference × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_20_L5_window_inference_x_L7_adaptive_heartrate.svg', title: 'Interaction: L5 × L7', desc: 'L5 window inference × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe30_interaction_21_L6_decay_inference_x_L7_adaptive_heartrate.svg', title: 'Interaction: L6 × L7', desc: 'L6 decay inference × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe30_corr_metrics.svg', title: 'Correlation Matrix', desc: 'Metric correlation heatmap', type: 'Heatmap' },
+                    { file: 'doe30_effect_heatmap.svg', title: 'Main Effects Heatmap', desc: 'Main effects across all loops', type: 'Bar Chart' }
+                ]
+            },
+            window_scaling: {
+                title: 'Window Scaling Experiment (James Law Validation)',
+                info: '355 experimental runs across 12 window sizes (512-65536 bytes) from window_scaling/results_run_one/',
+                figures: [
+                    { file: 'window_K_distribution_by_size.svg', title: 'K Distribution by Window Size', desc: 'James Law K statistic distribution (violin + box plots) across window sizes', type: 'Violin + Box Plot' },
+                    { file: 'window_K_vs_window_size.svg', title: 'K Statistic vs Window Size', desc: 'Mean K with error bands testing K ≈ 1.0 across window sizes', type: 'Line Plot' },
+                    { file: 'window_stability_cv.svg', title: 'Stability by Window Size', desc: 'CV of tick intervals showing performance stability across window sizes', type: 'Line Plot' },
+                    { file: 'window_K_deviation.svg', title: 'James Law Deviation', desc: '|K - 1.0| measuring fit to James Law across window sizes', type: 'Line Plot' },
+                    { file: 'window_frequency_vs_size.svg', title: 'Fundamental Frequency vs Window Size', desc: 'Testing invariance of ω₀ across window sizes', type: 'Line Plot' }
+                ]
+            },
+            l8_validation: {
+                title: 'L8 Validation Experiment (Jacquard Mode Selector)',
+                info: '1,813 experimental runs (8 strategies × 5 workloads) from l8_validation_20251208_102205/',
+                figures: [
+                    { file: 'l8_validation_performance_by_strategy.svg', title: 'Performance by Strategy', desc: 'Box plots showing runtime by strategy and workload', type: 'Faceted Box Plot' },
+                    { file: 'l8_validation_interaction_plot.svg', title: 'Strategy × Workload Interaction', desc: 'ANOVA interaction plot showing strategy performance across workloads', type: 'Interaction Plot' },
+                    { file: 'l8_validation_stability_cv.svg', title: 'Stability by Strategy', desc: 'Coefficient of variation by strategy and workload', type: 'Faceted Bar Chart' },
+                    { file: 'l8_validation_strategy_ranking.svg', title: 'Strategy Ranking per Workload', desc: 'Performance rank (1=best) per strategy and workload', type: 'Faceted Bar Chart' },
+                    { file: 'l8_validation_performance_distribution.svg', title: 'Performance Distribution', desc: 'Density plot of runtime across all strategies', type: 'Density Plot' },
+                    { file: 'l8_validation_pareto_frontier.svg', title: 'Pareto Frontier (Speed vs Stability)', desc: 'Speed vs stability trade-off with Pareto-optimal strategies', type: 'Scatter Plot' },
+                    { file: 'l8_validation_l8_margin.svg', title: 'L8 Performance Margin', desc: 'L8_ADAPTIVE margin vs best static config per workload', type: 'Bar Chart' },
+                    { file: 'l8_validation_heatmap.svg', title: 'Performance Heatmap', desc: 'Mean ns/word heatmap for strategy × workload', type: 'Heatmap' }
+                ]
+            },
+            doe300: {
+                title: 'DoE 300 Reps Experiment',
+                info: '38,400 experimental runs (2^7 factorial × 300 replicates) from doe_results_20251123_093204.csv',
+                figures: [
+                    { file: 'doe300_dist_ns_per_word.svg', title: 'Performance Distribution', desc: 'Histogram of ns/word performance metric', type: 'Histogram' },
+                    { file: 'doe300_box_L1_heat_tracking.svg', title: 'L1 Heat Tracking', desc: 'Performance by L1 heat tracking loop', type: 'Box Plot' },
+                    { file: 'doe300_box_L2_rolling_window.svg', title: 'L2 Rolling Window', desc: 'Performance by L2 rolling window loop', type: 'Box Plot' },
+                    { file: 'doe300_box_L3_linear_decay.svg', title: 'L3 Linear Decay', desc: 'Performance by L3 linear decay loop', type: 'Box Plot' },
+                    { file: 'doe300_box_L4_pipelining_metrics.svg', title: 'L4 Pipelining Metrics', desc: 'Performance by L4 pipelining metrics loop', type: 'Box Plot' },
+                    { file: 'doe300_box_L5_window_inference.svg', title: 'L5 Window Inference', desc: 'Performance by L5 window inference loop', type: 'Box Plot' },
+                    { file: 'doe300_box_L6_decay_inference.svg', title: 'L6 Decay Inference', desc: 'Performance by L6 decay inference loop', type: 'Box Plot' },
+                    { file: 'doe300_box_L7_adaptive_heartrate.svg', title: 'L7 Adaptive Heartrate', desc: 'Performance by L7 adaptive heartrate loop', type: 'Box Plot' },
+                    { file: 'doe300_facet_L1_heat_tracking.svg', title: 'L1 Distribution', desc: 'Density distribution by L1 state', type: 'Faceted Density' },
+                    { file: 'doe300_facet_L2_rolling_window.svg', title: 'L2 Distribution', desc: 'Density distribution by L2 state', type: 'Faceted Density' },
+                    { file: 'doe300_facet_L3_linear_decay.svg', title: 'L3 Distribution', desc: 'Density distribution by L3 state', type: 'Faceted Density' },
+                    { file: 'doe300_facet_L4_pipelining_metrics.svg', title: 'L4 Distribution', desc: 'Density distribution by L4 state', type: 'Faceted Density' },
+                    { file: 'doe300_facet_L5_window_inference.svg', title: 'L5 Distribution', desc: 'Density distribution by L5 state', type: 'Faceted Density' },
+                    { file: 'doe300_facet_L6_decay_inference.svg', title: 'L6 Distribution', desc: 'Density distribution by L6 state', type: 'Faceted Density' },
+                    { file: 'doe300_facet_L7_adaptive_heartrate.svg', title: 'L7 Distribution', desc: 'Density distribution by L7 state', type: 'Faceted Density' },
+                    { file: 'doe300_interaction_01_L1_heat_tracking_x_L2_rolling_window.svg', title: 'Interaction: L1 × L2', desc: 'L1 heat tracking × L2 rolling window', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_02_L1_heat_tracking_x_L3_linear_decay.svg', title: 'Interaction: L1 × L3', desc: 'L1 heat tracking × L3 linear decay', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_03_L1_heat_tracking_x_L4_pipelining_metrics.svg', title: 'Interaction: L1 × L4', desc: 'L1 heat tracking × L4 pipelining metrics', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_04_L1_heat_tracking_x_L5_window_inference.svg', title: 'Interaction: L1 × L5', desc: 'L1 heat tracking × L5 window inference', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_05_L1_heat_tracking_x_L6_decay_inference.svg', title: 'Interaction: L1 × L6', desc: 'L1 heat tracking × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_06_L1_heat_tracking_x_L7_adaptive_heartrate.svg', title: 'Interaction: L1 × L7', desc: 'L1 heat tracking × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_07_L2_rolling_window_x_L3_linear_decay.svg', title: 'Interaction: L2 × L3', desc: 'L2 rolling window × L3 linear decay', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_08_L2_rolling_window_x_L4_pipelining_metrics.svg', title: 'Interaction: L2 × L4', desc: 'L2 rolling window × L4 pipelining metrics', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_09_L2_rolling_window_x_L5_window_inference.svg', title: 'Interaction: L2 × L5', desc: 'L2 rolling window × L5 window inference', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_10_L2_rolling_window_x_L6_decay_inference.svg', title: 'Interaction: L2 × L6', desc: 'L2 rolling window × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_11_L2_rolling_window_x_L7_adaptive_heartrate.svg', title: 'Interaction: L2 × L7', desc: 'L2 rolling window × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_12_L3_linear_decay_x_L4_pipelining_metrics.svg', title: 'Interaction: L3 × L4', desc: 'L3 linear decay × L4 pipelining metrics', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_13_L3_linear_decay_x_L5_window_inference.svg', title: 'Interaction: L3 × L5', desc: 'L3 linear decay × L5 window inference', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_14_L3_linear_decay_x_L6_decay_inference.svg', title: 'Interaction: L3 × L6', desc: 'L3 linear decay × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_15_L3_linear_decay_x_L7_adaptive_heartrate.svg', title: 'Interaction: L3 × L7', desc: 'L3 linear decay × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_16_L4_pipelining_metrics_x_L5_window_inference.svg', title: 'Interaction: L4 × L5', desc: 'L4 pipelining metrics × L5 window inference', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_17_L4_pipelining_metrics_x_L6_decay_inference.svg', title: 'Interaction: L4 × L6', desc: 'L4 pipelining metrics × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_18_L4_pipelining_metrics_x_L7_adaptive_heartrate.svg', title: 'Interaction: L4 × L7', desc: 'L4 pipelining metrics × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_19_L5_window_inference_x_L6_decay_inference.svg', title: 'Interaction: L5 × L6', desc: 'L5 window inference × L6 decay inference', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_20_L5_window_inference_x_L7_adaptive_heartrate.svg', title: 'Interaction: L5 × L7', desc: 'L5 window inference × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe300_interaction_21_L6_decay_inference_x_L7_adaptive_heartrate.svg', title: 'Interaction: L6 × L7', desc: 'L6 decay inference × L7 adaptive heartrate', type: 'Interaction Plot' },
+                    { file: 'doe300_corr_metrics.svg', title: 'Correlation Matrix', desc: 'Metric correlation heatmap', type: 'Heatmap' },
+                    { file: 'doe300_effect_heatmap.svg', title: 'Main Effects Heatmap', desc: 'Main effects across all loops', type: 'Bar Chart' },
+                    { file: 'doe_comparison_30v300.svg', title: '30 vs 300 Reps Comparison', desc: 'Effect size comparison between 30 and 300 replicates', type: 'Bar Chart' }
+                ]
+            }
+        };
+
+        // State
+        let currentFilter = 'all';
+        let searchTerm = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderGallery();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Search
+            document.getElementById('search').addEventListener('input', (e) => {
+                searchTerm = e.target.value.toLowerCase();
+                renderGallery();
+            });
+
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentFilter = e.target.dataset.filter;
+                    renderGallery();
+                });
+            });
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = '';
+
+            let totalDisplayed = 0;
+
+            Object.keys(figures).forEach(categoryKey => {
+                if (currentFilter !== 'all' && currentFilter !== categoryKey) return;
+
+                const category = figures[categoryKey];
+                const filteredFigures = category.figures.filter(fig => {
+                    if (!searchTerm) return true;
+                    return fig.file.toLowerCase().includes(searchTerm) ||
+                           fig.title.toLowerCase().includes(searchTerm) ||
+                           fig.desc.toLowerCase().includes(searchTerm);
+                });
+
+                if (filteredFigures.length === 0) return;
+
+                totalDisplayed += filteredFigures.length;
+
+                // Category section
+                const section = document.createElement('div');
+                section.className = 'category-section';
+                section.innerHTML = `
+                    <h2>${category.title}</h2>
+                    <p class="category-info">${category.info}</p>
+                    <div class="gallery"></div>
+                `;
+
+                const gallery = section.querySelector('.gallery');
+
+                filteredFigures.forEach(fig => {
+                    const card = document.createElement('div');
+                    card.className = 'figure-card';
+                    card.innerHTML = `
+                        <div class="figure-image" onclick="window.open('${fig.file}', '_blank')">
+                            <object data="${fig.file}" type="image/svg+xml"></object>
+                        </div>
+                        <div class="figure-info">
+                            <h3>${fig.title}</h3>
+                            <p>${fig.desc}</p>
+                            <div class="figure-meta">
+                                <span class="category-badge">${categoryKey.toUpperCase()}</span>
+                                <span>📊 ${fig.type}</span>
+                            </div>
+                            <a href="${fig.file}" class="download-link" download>Download SVG</a>
+                        </div>
+                    `;
+                    gallery.appendChild(card);
+                });
+
+                container.appendChild(section);
+            });
+
+            if (totalDisplayed === 0) {
+                container.innerHTML = '<div class="no-results">No figures found matching your search.</div>';
+            }
+
+            // Update count
+            document.getElementById('total-count').textContent = totalDisplayed;
+        }
+    </script>
+</body>
+</html>
