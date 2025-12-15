@@ -259,7 +259,7 @@ dot -V
 
 ## License
 
-CC0 / Public Domain
+See ../LICENSE
 
 This ontology is released into the public domain to maximize reproducibility
 and enable citation in academic work.

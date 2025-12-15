@@ -524,4 +524,4 @@ This ontology provides the formal conceptual framework for the StarForth project
 It aims to eliminate ambiguity and enable precise academic discourse while
 acknowledging the metaphorical nature of certain conceptual mappings.
 
-**License**: CC0 / Public Domain
+**License**: See ./LICENSE

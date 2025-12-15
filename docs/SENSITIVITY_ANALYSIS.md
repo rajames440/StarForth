@@ -483,4 +483,4 @@ print(f"Distance from optimal: {np.linalg.norm(res.x - defaults)}")
 
 ---
 
-**License**: CC0 / Public Domain
+**License**: See ./LICENSE

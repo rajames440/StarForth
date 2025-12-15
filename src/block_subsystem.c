@@ -59,7 +59,7 @@
        - LBN 0..991  -> RAM PBN 32..1023 (volatile, NOT persisted)
        - LBN 992..   -> DISK PBN 1056..  (persistent)
 
-   License: CC0-1.0 / Public Domain. No warranty.
+   License: See LICENSE file. No warranty.
 */
 
 #include "../include/blkio.h"              /* ensure struct blkio_dev is visible */

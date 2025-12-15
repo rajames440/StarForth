@@ -365,7 +365,7 @@ Interpretation:  95% credible interval [1.75×, 1.81×] is reliable
 
 ### Code Availability
 - **Repository:** https://github.com/YOUR_REPO/StarForth (public)
-- **License:** CC0 / Public Domain (unrestricted)
+- **License:** See ../LICENSE (unrestricted)
 - **Language:** ANSI C99 (portable)
 - **Dependencies:** None (self-contained)
 

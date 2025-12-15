@@ -45,7 +45,7 @@
  *
  * Selects and initializes the appropriate platform backend based on build configuration.
  *
- * License: CC0-1.0 / Public Domain
+ * License: See LICENSE file
  */
 
 #include "../../include/platform_time.h"

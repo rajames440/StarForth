@@ -62,7 +62,7 @@
      - Call blkcfg_init_from_options().
      - Use g_blkcfg elsewhere to make decisions (later you'll attach drivers).
 
-   License: CC0-1.0 / Public Domain. No warranty.
+   License: See LICENSE file. No warranty.
 
 */
 #ifndef STARFORTH_BLKCFG_H

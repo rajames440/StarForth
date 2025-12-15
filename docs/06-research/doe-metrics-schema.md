@@ -305,4 +305,4 @@ Each new metric will be:
 
 **Generated for:** StarshipOS / StarForth Physics-Driven VM
 **Contact:** Robert A. James (Captain Bob)
-**License:** CC0 / Public Domain
+**License:** See ../LICENSE

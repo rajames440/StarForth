@@ -49,7 +49,7 @@
    - Public types / errors / thin inline wrapper
    - Backends provide a vtable implementing: open, close, read, write, flush, info
 
-   License: CC0-1.0 / Public Domain. No warranty.
+   License: See LICENSE file. No warranty.
 ----------------------------------------------------------------------------- */
 
 #include <stdint.h>

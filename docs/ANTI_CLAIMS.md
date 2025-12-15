@@ -186,7 +186,6 @@ This document **explicitly states what StarForth does NOT claim** to prevent:
 ### ❌ NOT CLAIMED: "The entire system is formally verified"
 
 **We DO claim**:
-- Key algorithms have formal specifications (Isabelle/HOL stubs exist)
 - Deterministic behavior is empirically validated (0% CV)
 - Convergence theorems are stated (not fully proven)
 
@@ -462,4 +461,4 @@ This document is versioned alongside code. If our claims evolve:
 
 **Conclusion**: By explicitly stating what we do NOT claim, we establish clear intellectual boundaries and prevent misinterpretation. This is **defensive honesty**.
 
-**License**: CC0 / Public Domain
+**License**: See ./LICENSE
