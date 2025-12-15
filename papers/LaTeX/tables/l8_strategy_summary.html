@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L8 Validation: Overall Strategy Performance (all workloads combined)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e40af;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #1e40af;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        tr:hover {
+            background: #f9fafb;
+        }
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            color: #64748b;
+            font-size: 0.9em;
+        }
+        .label {
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85em;
+            margin-top: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>L8 Validation: Overall Strategy Performance (all workloads combined)</h1>
+        <div class="label">LaTeX Label: tab:l8_strategy_summary</div>
+
+        <table class="table table-striped table-hover" style="">
+ <thead>
+  <tr>
+   <th style="text-align:right;"> Rank </th>
+   <th style="text-align:left;"> Strategy </th>
+   <th style="text-align:right;"> Mean Runtime (ms) </th>
+   <th style="text-align:right;"> CV % </th>
+   <th style="text-align:right;"> N </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> C7_FULL_INF </td>
+   <td style="text-align:right;"> 53.70530 </td>
+   <td style="text-align:right;"> 6.918571 </td>
+   <td style="text-align:right;"> 220 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> C9_DIVERSE_DECAY </td>
+   <td style="text-align:right;"> 53.87439 </td>
+   <td style="text-align:right;"> 1.671432 </td>
+   <td style="text-align:right;"> 223 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> ALL_ON_EXCEPT_L1L4 </td>
+   <td style="text-align:right;"> 54.01014 </td>
+   <td style="text-align:right;"> 3.046278 </td>
+   <td style="text-align:right;"> 236 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> C12_DIVERSE_TEMPORAL </td>
+   <td style="text-align:right;"> 54.24308 </td>
+   <td style="text-align:right;"> 4.295747 </td>
+   <td style="text-align:right;"> 229 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> C0_BASELINE </td>
+   <td style="text-align:right;"> NaN </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 227 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:left;"> C11_DIVERSE_INF </td>
+   <td style="text-align:right;"> NaN </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 222 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 7 </td>
+   <td style="text-align:left;"> C4_TEMPORAL </td>
+   <td style="text-align:right;"> NaN </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 231 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 8 </td>
+   <td style="text-align:left;"> L8_ADAPTIVE </td>
+   <td style="text-align:right;"> NaN </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 225 </td>
+  </tr>
+</tbody>
+</table>
+        <div class="footer">
+            <p>Generated from real experimental data | StarForth Project | December 2025</p>
+            <p>LaTeX file: <code>l8_strategy_summary.tex</code> | Usage: <code>\input{tables/l8_strategy_summary.tex}</code></p>
+        </div>
+    </div>
+</body>
+</html>
+
