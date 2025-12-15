@@ -10,6 +10,7 @@ suppressPackageStartupMessages({
   library(tidyr)
   library(readr)
   library(xtable)
+  library(htmlTable)
 })
 
 # Paths
