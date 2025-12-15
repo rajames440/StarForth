@@ -1,0 +1,182 @@
+% =====================================================
+% steady-state.tex
+% Steady-state equilibrium formulas
+%
+% This file can be:
+% 1. Compiled standalone: pdflatex steady-state.tex
+% 2. Included in another document: \input{formulas/steady-state.tex}
+% =====================================================
+
+\ifdefined\formulasincluded
+\else
+  \documentclass[11pt]{article}
+  \usepackage{amsmath,amssymb,amsthm}
+  \usepackage{booktabs}
+  \usepackage[margin=1in]{geometry}
+  \begin{document}
+\fi
+
+\subsection*{Steady-State Equilibrium Formulas}
+
+\subsubsection*{Memristive Heat Dynamics}
+
+\textbf{General time-dependent heat accumulation:}
+
+\begin{equation}
+H_e(t) = \int_0^t \text{invocation\_rate}(e, \tau) \times \exp\left(-\int_\tau^t \text{decay\_rate}(s) \, ds\right) d\tau
+\label{eq:heat_integral}
+\end{equation}
+
+\textbf{Steady-state equilibrium:}
+
+When invocation rate is constant, heat reaches equilibrium:
+
+\begin{equation}
+H_e^{\text{steady}} = \frac{\text{invocation\_rate}(e)}{\text{decay\_rate}}
+\label{eq:heat_steady}
+\end{equation}
+
+Frequently-used elements reach higher steady-state heat values.
+
+\subsubsection*{State-Dependent Conductance}
+
+Lookup latency exhibits inverse relationship with execution heat:
+
+\begin{equation}
+\text{Latency}(e) = \text{Latency}_{\text{baseline}} \times \frac{1}{1 + \alpha \times H_e}
+\label{eq:latency}
+\end{equation}
+
+where $\alpha$ is sensitivity parameter (1/heat-units).
+
+\textbf{Memristive conductance:}
+
+\begin{equation}
+G(e) = \frac{1}{\text{Latency}(e)} \propto (1 + \alpha H_e)
+\label{eq:conductance}
+\end{equation}
+
+Analogous to $G = 1/M$ in electronic memristors where $M$ is memristance.
+
+\subsubsection*{Standing Wave Solutions}
+
+In steady-state (time-averaged), standing wave solutions have form:
+
+\begin{equation}
+K(W,t) = K_{\text{baseline}}(W) \times \left[1 + A(W) \sin(kW) \cos(\omega t)\right]
+\label{eq:standing_wave_time}
+\end{equation}
+
+where:
+\begin{itemize}
+\item $k = 2\pi/\lambda$ is wave number
+\item $\omega = 2\pi f$ is angular frequency
+\item $\lambda = 256$ bytes is wavelength
+\item $f = v/\lambda \approx 0.6667$ cycles/window is frequency
+\end{itemize}
+
+\textbf{Time-averaged form (steady-state):}
+
+Averaging over time ($t \rightarrow \infty$) yields time-independent James Law:
+
+\begin{equation}
+\langle K(W) \rangle_t = \frac{\Lambda_{\text{eff}}}{W} \times \left[1 + A(W) \sin(2\pi f_0 \log_2(W) + \varphi)\right]
+\label{eq:time_averaged}
+\end{equation}
+
+\subsubsection*{Wave Propagation Speed}
+
+In steady-state ($\partial P/\partial t = 0$), wave equation reduces to:
+
+\begin{equation}
+\nabla^2_W K = \kappa_0 \lambda_0 \frac{\partial^2 K}{\partial t^2}
+\label{eq:wave_equation}
+\end{equation}
+
+with wave propagation speed:
+
+\begin{equation}
+v = \frac{1}{\sqrt{\kappa_0 \lambda_0}} \approx 170.7 \, \text{bytes/window}
+\label{eq:wave_speed}
+\end{equation}
+
+\subsubsection*{Baseline Inverse Law}
+
+In the absence of wave dynamics ($A = 0$), system self-regulates to intrinsic scale:
+
+\begin{equation}
+K_{\text{baseline}} = \frac{\Lambda_{\text{eff}}}{W}
+\label{eq:inverse_law}
+\end{equation}
+
+This inverse relationship reflects fundamental scaling behavior.
+
+\subsubsection*{Pipelining Transition Matrix}
+
+Steady-state transition probabilities:
+
+\begin{equation}
+T_{ij}^{\text{steady}} = \frac{\text{observed\_transitions}(i \to j)}{\sum_k \text{observed\_transitions}(i \to k)}
+\label{eq:transition_steady}
+\end{equation}
+
+Functions as memristive crossbar array with:
+\begin{itemize}
+\item Cell values $T_{ij}$: memristive synaptic weights
+\item Resistance: $1/T_{ij}$ (difficulty of transition $i \to j$)
+\item Conductance: $T_{ij}$ (transition probability)
+\end{itemize}
+
+\subsubsection*{Entropy in Steady State}
+
+For deterministic workloads, entropy of K distribution:
+
+\begin{equation}
+S_K = -\sum_i p_i \log p_i = 0 \quad \text{(perfect determinism)}
+\label{eq:entropy_steady}
+\end{equation}
+
+Experimentally achieved: $S = 0.0$ across all runs, validating reproducibility.
+
+\subsubsection*{Heat Distribution Entropy}
+
+Shannon entropy of heat distribution:
+
+\begin{equation}
+S = -\sum_e \frac{H_e}{H_{\text{total}}} \log\left(\frac{H_e}{H_{\text{total}}}\right)
+\label{eq:heat_entropy}
+\end{equation}
+
+where $H_{\text{total}} = \sum_e H_e$ is total system heat.
+
+\subsubsection*{Steady-State Performance}
+
+Performance metric (ns/word) in steady state:
+
+\begin{equation}
+P^{\text{steady}}(W) = P_{\text{min}} \times \left[1 + \beta \times K_{\text{wave}}(W)\right]
+\label{eq:performance_steady}
+\end{equation}
+
+where $\beta$ is performance sensitivity to wave modulation.
+
+\subsubsection*{Computational Temperature}
+
+Temperature defined via mode transition frequency:
+
+\begin{equation}
+T_{\text{comp}} = \frac{f_{\text{transitions}}}{f_{\text{baseline}}}
+\label{eq:temperature}
+\end{equation}
+
+Relates to heat variance via computational Boltzmann constant:
+
+\begin{equation}
+k_B = \frac{\sigma^2_H}{T_{\text{comp}}}
+\label{eq:boltzmann}
+\end{equation}
+
+\ifdefined\formulasincluded
+\else
+  \end{document}
+\fi

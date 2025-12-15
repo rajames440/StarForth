@@ -1,0 +1,41 @@
+% Test document to verify formula files can be included
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage[margin=1in]{geometry}
+
+% Define flag to indicate formulas are being included
+\newcommand{\formulasincluded}{}
+
+\title{StarForth Formula Reference}
+\author{StarForth Project}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+% Include all formula files
+\section{Mathematical Notation}
+\input{notation.tex}
+\clearpage
+
+\section{James Law of Computational Dynamics}
+\input{james-law.tex}
+\clearpage
+
+\section{Steady-State Equilibrium}
+\input{steady-state.tex}
+\clearpage
+
+\section{Window Scaling and Resonance}
+\input{window-scaling.tex}
+\clearpage
+
+\section{System Invariants and Conservation Laws}
+\input{invariants.tex}
+
+\end{document}

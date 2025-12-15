@@ -94,7 +94,7 @@ asciidoctor appendix_glossary.adoc
 ```bash
 cd docs/
 
-# PNG format (for papers)
+# PNG format (for entities)
 dot -Tpng ontology_diagrams.dot -o ontology_full.png
 
 # SVG format (for web/scaling)

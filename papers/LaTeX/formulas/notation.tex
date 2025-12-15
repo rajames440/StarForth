@@ -1,0 +1,115 @@
+% =====================================================
+% notation.tex
+% Mathematical notation and symbol definitions
+%
+% This file can be:
+% 1. Compiled standalone: pdflatex notation.tex
+% 2. Included in another document: \input{formulas/notation.tex}
+% =====================================================
+
+\ifdefined\formulasincluded
+\else
+  \documentclass[11pt]{article}
+  \usepackage{amsmath,amssymb,amsthm}
+  \usepackage{booktabs}
+  \usepackage[margin=1in]{geometry}
+  \begin{document}
+\fi
+
+\subsection*{Mathematical Notation}
+
+\subsubsection*{Primary Variables}
+
+\begin{description}
+\item[$K$] Performance statistic (dimensionless ratio $\Lambda_{\text{eff}} / W_{\text{actual}}$)
+\item[$W$] Configured rolling window size (bytes)
+\item[$W_{\text{actual}}$] Actual effective window size achieved by system (bytes)
+\item[$\Lambda_{\text{eff}}$] Intrinsic characteristic wavelength (256 bytes)
+\item[$H_e$] Execution heat of element $e$ (heat units)
+\item[$H_{\text{total}}$] Sum of all execution heat values
+\item[$P$] Performance metric (ns/word or cycles/instruction)
+\item[$S$] Entropy of heat distribution (Shannon entropy, dimensionless)
+\item[$\sigma^2$] Variance of timing measurements
+\item[$t$] Time variable (seconds or heartbeat ticks)
+\end{description}
+
+\subsubsection*{Fundamental Constants}
+
+\begin{description}
+\item[$\lambda_0$] Intrinsic wavelength = 256 bytes (fundamental length scale)
+\item[$f_0$] Natural frequency = $2/3$ cycles/window (standing wave frequency)
+\item[$\varphi$] Golden ratio = $1.618\ldots$ (performance penalty ratio)
+\item[$\kappa_0$] Window capacity constant (analogous to permeability $\mu_0$)
+\item[$k_B$] Computational Boltzmann constant (heat-units/temperature)
+\item[$\hbar_{\text{comp}}$] Computational "Planck constant" $\approx 0.05$
+\end{description}
+
+\subsubsection*{Derived Parameters}
+
+\begin{description}
+\item[$A(W)$] Amplitude envelope of standing wave modulation
+\item[$A_{\max}$] Maximum amplitude $\approx 0.3$ (dimensionless)
+\item[$W_{\text{decay}}$] Amplitude decay length scale $\approx 50000$ bytes
+\item[$\phi$] Phase offset (radians)
+\item[$\alpha$] Latency sensitivity parameter (1/heat-units)
+\item[$n$] Integer quantization number: $W = n \times 256$ bytes
+\end{description}
+
+\subsubsection*{Runtime State Vector}
+
+\[
+\mathbf{\Psi}(W,t) = \begin{pmatrix}
+K(W,t) \\
+H_{\text{total}}(W,t) \\
+P(W,t) \\
+S(W,t) \\
+\sigma^2(W,t)
+\end{pmatrix}
+\]
+
+\subsubsection*{Operators}
+
+\begin{description}
+\item[$\nabla_W$] Configuration-space gradient (derivative with respect to window size)
+\item[$\partial/\partial t$] Partial time derivative
+\item[$\nabla_W \times$] Configuration-space curl
+\item[$\nabla_W \cdot$] Configuration-space divergence
+\item[$\nabla^2_W$] Configuration-space Laplacian
+\item[$\langle \cdot \rangle_t$] Time average
+\end{description}
+
+\subsubsection*{Quantum-Analog Notation}
+
+\begin{description}
+\item[$|\psi\rangle$] State vector (Dirac notation)
+\item[$|\text{locked}\rangle$] Locked attractor eigenstate ($K \approx \Lambda_{\text{eff}}/W$)
+\item[$|\text{escaped}\rangle$] Escaped attractor eigenstate ($K \rightarrow 1.0$)
+\item[$|\alpha|^2, |\beta|^2$] Occupation probabilities
+\item[$\Delta E_{\text{eff}}$] Effective energy barrier (K-statistic units)
+\item[$P_{\text{tunnel}}$] Tunneling probability
+\end{description}
+
+\subsubsection*{Validation Metrics}
+
+\begin{description}
+\item[CV] Coefficient of variation: $\text{CV} = \sigma / \mu$
+\item[MAD] Mean absolute deviation
+\item[$R^2$] Coefficient of determination (goodness of fit)
+\item[$\chi^2$] Chi-squared statistic
+\end{description}
+
+\subsubsection*{Subscript/Superscript Conventions}
+
+\begin{itemize}
+\item Subscript $_{\text{eff}}$ indicates effective or measured quantity
+\item Subscript $_{\text{baseline}}$ indicates baseline/unmodulated value
+\item Subscript $_{\text{wave}}$ indicates wave-induced correction
+\item Subscript $_{\text{comp}}$ indicates computational analog of physical constant
+\item Subscript $_0$ indicates fundamental/natural scale
+\item Subscript $_{i,j}$ indicates matrix indices (rows, columns)
+\end{itemize}
+
+\ifdefined\formulasincluded
+\else
+  \end{document}
+\fi
