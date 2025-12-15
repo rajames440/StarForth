@@ -203,4 +203,4 @@ Key documentation files:
 
 ## License
 
-CC0 / Public Domain
+See ./LICENSE

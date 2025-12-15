@@ -313,4 +313,4 @@ See also:
 
 ---
 
-**License**: CC0 / Public Domain
+**License**: See ../LICENSE

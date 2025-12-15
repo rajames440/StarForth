@@ -323,7 +323,7 @@ make fastest
 
 **Project Lead**: Robert A. James (Captain Bob)
 **Email**: rajames440@gmail.com
-**License**: CC0 / Public Domain (code)
+**License**: See ./LICENSE
 **Patent**: Provisional patent pending (USPTO, Dec 2025)
 
 ---
@@ -354,4 +354,4 @@ make fastest
 
 **Bottom Line**: Adaptation and determinism are no longer mutually exclusive. We proved it.
 
-**License**: CC0 / Public Domain
+**License**: See ./LICENSE

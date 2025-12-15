@@ -516,4 +516,4 @@ By documenting where StarForth fails, we:
 
 ---
 
-**License**: CC0 / Public Domain
+**License**: See ./LICENSE

@@ -404,4 +404,4 @@ C2 (Convergence)  →  C4 (Reproducibility)
 
 **Bottom line**: If you can falsify any of these claims, we want to know. Science advances through falsification.
 
-**License**: CC0 / Public Domain
+**License**: See ./LICENSE

@@ -45,7 +45,7 @@
  *
  * Implements platform time abstraction using L4Re RTC server and KIP clock.
  *
- * License: CC0-1.0 / Public Domain
+ * License: See LICENSE file
  */
 
 #include "../../../include/platform_time.h"

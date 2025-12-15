@@ -45,7 +45,7 @@
   vm_inner_interp_asm.h - Optimized Inner Interpreter using Direct Threading
   Compatible with: Linux, L4Re microkernel, bare metal x86_64
 
-  This work is released into the public domain under CC0 v1.0 Universal license.
+  This work is released under license terms in LICENSE file.
   No warranty. Use at your own risk.
 */
 

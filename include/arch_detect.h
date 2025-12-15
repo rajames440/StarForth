@@ -46,7 +46,7 @@
  * @details Automatically selects x86_64 or ARM64 optimizations and provides
  *          a unified interface for architecture-specific optimizations.
  *
- * This work is released into the public domain under CC0 v1.0 Universal license.
+ * This work is released under license terms in LICENSE file.
  * No warranty. Use at your own risk.
  */
 

@@ -49,7 +49,7 @@
  * Provides portable timing interface for both POSIX and L4Re/StarshipOS builds.
  * Uses vtable pattern similar to blkio subsystem.
  *
- * License: CC0-1.0 / Public Domain
+ * License: See LICENSE file
  */
 
 #include <stdint.h>

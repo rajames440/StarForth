@@ -45,7 +45,7 @@
  *
  * Implements platform time abstraction using POSIX clock_gettime().
  *
- * License: CC0-1.0 / Public Domain
+ * License: See LICENSE file
  */
 
 #define _POSIX_C_SOURCE 199309L

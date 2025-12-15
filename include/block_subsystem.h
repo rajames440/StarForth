@@ -55,7 +55,7 @@
      - blkio backends operate on 1 KiB units.
      - One 4 KiB “devblock” == 4 consecutive 1 KiB blkio blocks.
 
-   License: CC0-1.0 / Public Domain. No warranty.
+   License: See LICENSE file. No warranty.
 */
 #ifndef STARFORTH_BLOCK_SUBSYSTEM_H
 #define STARFORTH_BLOCK_SUBSYSTEM_H

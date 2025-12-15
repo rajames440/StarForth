@@ -247,7 +247,7 @@ static void test_my_feature(void) {
 
 ## License
 
-By contributing to StarForth, you agree that your contributions will be licensed under CC0 / Public Domain.
+By contributing to StarForth, you agree that your contributions will be licensed under the same terms. See ./LICENSE for details.
 
 ---
 

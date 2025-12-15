@@ -535,4 +535,4 @@ docker run starforth
 
 **Bottom Line**: If you're confident in your skepticism, replicate our experiment and prove us wrong. We'll thank you for it.
 
-**License**: CC0 / Public Domain
+**License**: See ./LICENSE

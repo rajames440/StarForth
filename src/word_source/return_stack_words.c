@@ -46,7 +46,7 @@
  * 
  * StarForth - FORTH-79 Standard and ANSI C99 ONLY
  * Last modified - 2025-09-10
- * Public domain / CC0 — No warranty.
+ * See LICENSE file — No warranty.
  *
  * FORTH-79 compliance:
  * - Provide only >R, R>, R@ for return stack transfer.
