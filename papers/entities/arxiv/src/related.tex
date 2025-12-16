@@ -1,0 +1,25 @@
+% Section 2: Related Work
+% Short, surgical - show awareness without picking fights
+
+\section{Related Work}
+
+\subsection{Adaptive Runtime Systems}
+
+Self-tuning runtime environments have been explored across multiple domains. The Jikes RVM \cite{alpern2000jalapeno} demonstrated adaptive compilation with dynamic method selection. The HotSpot JVM employs tiered compilation and speculative optimization based on runtime profiling \cite{paleczny2001hotspot}. These systems optimize for common-case performance through feedback-driven specialization, though their convergence properties and steady-state characteristics are not typically characterized quantitatively.
+
+PyPy's tracing JIT \cite{bolz2009tracing} uses execution traces to guide optimization, exhibiting adaptive behavior through guard-based speculation. SPUR \cite{bebenita2010spur} extended this model with staged compilation. Both demonstrate that adaptive mechanisms can improve performance, though behavioral stability under sustained workloads remains an open research question.
+
+\subsection{Control-Theoretic Approaches}
+
+Control theory has been applied to runtime resource management in systems such as AutoPilot \cite{diao2005using} and PCCP \cite{lu2008feedback}. These approaches model runtime behavior using feedback control loops with explicit stability analysis. Our work differs in observing emergent stability without explicit control-theoretic design, focusing on measurement rather than controller synthesis.
+
+\subsection{Virtual Machine Instrumentation}
+
+High-resolution VM instrumentation has enabled detailed performance analysis. Valgrind \cite{nethercote2007valgrind} provides fine-grained execution tracing. Pin \cite{luk2005pin} enables dynamic binary instrumentation. DynamoRIO \cite{bruening2004efficient} supports runtime code manipulation. These tools focus on observation and profiling; our instrumentation additionally feeds back into execution behavior.
+
+\subsection{Operating System and Runtime Co-design}
+
+Exokernel \cite{engler1995exokernel} explored application-level resource management. Singularity \cite{hunt2007singularity} demonstrated language-runtime-OS integration. L4Re/Fiasco.OC \cite{warg2009l4re} provides microkernel-based isolation with fine-grained resource control. These projects demonstrate that runtime-OS boundaries are negotiable; our work examines adaptive behavior within a single runtime layer.
+
+Our work complements these prior efforts by documenting measurable steady-state properties in a minimal adaptive system. We focus on empirical characterization rather than performance optimization, stability guarantees, or architectural innovation.
+\newpage

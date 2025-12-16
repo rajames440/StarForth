@@ -1,0 +1,87 @@
+% Section 7: Discussion
+% Interpretation, but disciplined - intellectual honesty shines here
+
+\section{Discussion}
+
+\subsection{What These Observations Suggest}
+
+The central finding of this work is that adaptive runtime behavior can converge to measurable steady states despite continuous feedback-driven adjustments. Several observations merit interpretation:
+
+\textbf{Steady-state convergence.} The fact that 99.97\% of runs completed successfully and achieved CV < 2\% suggests that feedback loops do not inherently destabilize execution. In principle, positive feedback could lead to runaway instability; in practice, the system self-regulates. This may reflect implicit negative feedback: as heat accumulates, lookup latency decreases, reducing further heat accumulation via improved cache locality.
+
+\textbf{K-statistic reproducibility.} The observation that $K$ exhibits sub-1\% variance for most configurations indicates an underlying stable attractor. This is non-obvious: $K$ is computed from heat distribution entropy and window metrics, both of which are dynamically updated. Yet the system reliably converges to the same $K$ value. This suggests the existence of fixed points in the feedback dynamics.
+
+\textbf{James Law fit quality.} The empirical law (Eq. \ref{eq:james_law}) achieves $R^2 = 0.994$ across 128 configurations and 38,000+ runs. This is surprising: a four-parameter model (plus phase offset) captures behavior across seven binary toggles ($2^7 = 128$ combinations). This suggests the parameter space collapses onto a low-dimensional manifold governed by $\Lambda_{\text{eff}}$ and $f_0$.
+
+\textbf{Dual-attractor behavior.} The bimodal distribution at resonance points (47\% locked, 53\% escaped) resembles phase transitions in statistical mechanics. Whether initial conditions determine attractor selection, or whether selection is stochastic due to unmeasured noise, remains unclear. Hypothesis: cache state at initialization may serve as a hidden variable determining attractor basin.
+
+\textbf{Zero-variance anti-resonance.} The observation that $W = 4096$ bytes yields exactly zero variance (300/300 runs) is remarkable. This window size coincides with:
+\begin{itemize}
+\item Page boundary (4 KB operating system pages)
+\item Cache line quantization (64 cache lines $\times$ 64 bytes = 4 KB)
+\item Binary power-of-two ($2^{12}$ bytes)
+\end{itemize}
+
+This triple alignment suggests hardware-software co-resonance: when VM window aligns with cache and page structure, execution becomes rigidly deterministic. This is consistent with a hardware-aligned effect rather than purely software behavior.
+
+\subsection{Why Minimalism Matters}
+
+This study deliberately uses a minimal VM (FORTH-79, stack-based, no JIT, no garbage collection) for several reasons:
+
+\textbf{Reduced confounding factors.} Complex runtimes (e.g., JVMs, Python interpreters) have dozens of interacting optimization layers. Isolating adaptive effects from background JIT compilation, GC pauses, or speculative deoptimization is difficult. A minimal VM has fewer moving parts, making causal attribution clearer.
+
+\textbf{Architectural transparency.} Stack machines have simple control flow (no register allocation, no instruction reordering). This makes execution traces easier to analyze and instrumentation easier to implement without perturbing behavior.
+
+\textbf{Generality.} If emergent stability occurs in a minimal system, it is more likely to be fundamental rather than artifact of sophisticated engineering. The observed phenomena (steady states, empirical invariants, attractor dynamics) may generalize to more complex systems.
+
+\textbf{Counterpoint.} Minimalism also limits applicability. Real-world runtimes have richer state spaces, non-deterministic workloads, and external inputs (I/O, timers, interrupts). Whether our findings extend to such systems is an open question.
+
+\subsection{Why Emergent Stability Is Interesting}
+
+The conventional wisdom is that adaptive systems trade predictability for performance. Our results suggest this tradeoff may not be fundamental:
+
+\textbf{Stability without control theory.} The VM was not designed using control-theoretic methods. No Lyapunov functions, no PID controllers, no explicit stability analysis. Yet stable regimes emerge. This suggests stability may arise from system structure rather than careful controller design.
+
+\textbf{Observability without omniscience.} The system achieves measurable steady states using only local information (per-word heat, rolling window, transition counts). No global optimizer, no centralized controller. This hints at distributed convergence mechanisms similar to those in biological or physical systems.
+
+\textbf{Determinism without rigidity.} Despite dynamic adaptation, behavior remains reproducible. This challenges the assumption that adaptive systems are inherently unpredictable. The key may be deterministic initial conditions: given fixed starting state, feedback loops follow deterministic trajectories.
+
+\subsection{Known Limitations}
+
+\textbf{Single architecture.} All experiments ran on x86-64 (Intel N150). Cache hierarchies differ across architectures (ARM, RISC-V, POWER). Whether $\Lambda_{\text{eff}} = 256$ bytes holds universally is unknown. Preliminary tests on ARM64 (Raspberry Pi 4) suggest $\Lambda_{\text{eff}} = 256 \pm 12$ bytes, but sample size is small (N=30).
+
+\textbf{Deterministic workloads only.} Real-world programs have I/O, user interaction, network events. Whether steady states persist under non-deterministic workloads is untested.
+
+\textbf{Short execution times.} Workloads complete in < 1 second. Long-running processes (hours, days) may exhibit thermal drift, DVFS transitions, or memory pressure effects not observed here.
+
+\textbf{No energy measurement.} Power consumption, temperature, DVFS state were not instrumented. Whether steady states correlate with stable power draw is unknown.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Mechanism of resonance:} Why does modulation frequency $f_0 = 2/3$ cycles/window emerge? Is it related to cache set associativity or TLB structure?
+
+\item \textbf{Attractor selection:} What determines whether a run enters the locked or escaped attractor at resonance? Can we control attractor selection via initialization?
+
+\item \textbf{Generalization to non-FORTH VMs:} Do similar phenomena occur in register-based VMs (e.g., Lua, Python)? Does the stack discipline matter?
+
+\item \textbf{Interaction with OS scheduler:} We isolated the process on a single core. What happens under contention with other processes?
+
+\item \textbf{Energy-performance-stability tradeoffs:} If we include power measurement, do steady states correspond to energy minima?
+\end{enumerate}
+
+\subsection{Hypotheses for Future Testing}
+
+\begin{enumerate}
+\item \textbf{H1:} $\Lambda_{\text{eff}}$ is a hardware constant (cache line multiple) and will vary with architecture (128 bytes on ARM? 512 bytes on POWER?).
+
+\item \textbf{H2:} Attractor selection is determined by cache state at initialization. Preloading cache with specific patterns will bias attractor choice.
+
+\item \textbf{H3:} James Law generalizes to other adaptive runtimes with analogous feedback mechanisms (JIT warmup, GC tuning, thread pool sizing).
+
+\item \textbf{H4:} Zero-variance anti-resonance points correspond to integer ratios of $\Lambda_{\text{eff}}$ : cache line size : page size.
+
+\item \textbf{H5:} Steady-state K correlates with energy efficiency (lower $K$ $\rightarrow$ lower power per operation).
+\end{enumerate}
+
+These hypotheses are testable via additional experiments and cross-platform validation.

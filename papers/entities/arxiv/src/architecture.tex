@@ -1,0 +1,66 @@
+% Section 3: System Architecture
+% What you actually built - keep readable, diagrams go here
+
+\section{System Architecture}
+
+\subsection{Virtual Machine Overview}
+
+The experimental platform is a FORTH-79 compliant virtual machine implementing a minimal stack-based execution model. The VM provides:
+
+\begin{itemize}
+\item Two primary stacks: data stack (operands) and return stack (control flow)
+\item Dictionary-based word lookup with linear search by default
+\item Threaded code interpreter executing words sequentially
+\item 5 MB virtual address space with byte-addressable memory
+\item Block-based persistent storage subsystem (1 KB blocks)
+\end{itemize}
+
+\textbf{Memory model.} The VM maintains strict separation between VM addresses (byte offsets) and host addresses (C pointers). All word code operates on VM offsets, with canonical accessor functions mediating memory operations. This design enables deterministic address arithmetic independent of host pointer size.
+
+\textbf{Execution model.} Each word in the dictionary consists of a name, flags, and either native code or a compiled sequence of word references. The interpreter fetches the next word, looks it up in the dictionary, and executes it. Execution proceeds until an explicit halt (BYE) or error condition.
+
+\textbf{Determinism boundary.} The base VM is deterministic: identical bytecode and identical workloads produce identical execution traces. Adaptive mechanisms (Section 3.3) introduce feedback-driven behavior that remains deterministic for fixed initial conditions but varies with configuration.
+
+\subsection{Instrumentation and Feedback}
+
+The VM is instrumented to capture execution metadata without altering semantic behavior. Instrumentation operates at three granularities:
+
+\textbf{Per-word execution tracking.} Each dictionary entry maintains an \texttt{execution\_heat} accumulator incremented on invocation. Heat values decay over time according to configurable policies (Section 3.3), implementing a computational analog of thermal dynamics.
+
+\textbf{Rolling history window.} A circular buffer (default 4096 entries) records the sequence of executed word IDs. This "Rolling Window of Truth" captures short-term execution patterns and provides statistical context for adaptive decisions. The window supports lock-free snapshots via double-buffering, enabling concurrent reads by analysis threads.
+
+\textbf{Word transition metrics.} A $16 \times 16$ matrix tracks pairwise word-to-word transition frequencies. Entries represent observed counts of word $i$ being followed by word $j$. This data structure functions analogously to a memristive crossbar pattern, with transition probabilities serving as adaptive weights.
+
+\textbf{Heartbeat coordination.} A background thread (when enabled) runs at configurable intervals (10-1000 ms) to:
+\begin{enumerate}
+\item Apply heat decay updates
+\item Evaluate adaptive tuning heuristics
+\item Update window size and decay parameters
+\item Capture snapshot metrics for external analysis
+\end{enumerate}
+
+Instrumentation overhead is minimal (< 2\% runtime impact measured via DoE with all loops disabled vs. uninstrumented baseline).
+
+\subsection{Adaptive Mechanisms}
+
+Seven feedback loops (L1–L7) provide tunable adaptation. Each loop can be independently enabled or disabled, yielding $2^7 = 128$ distinct configurations. An eighth mechanism (L8) implements meta-level adaptive selection among strategies.
+
+\textbf{L1: Execution Heat Tracking.} Increments per-word heat counters on each invocation. Provides foundational signal for all downstream mechanisms.
+
+\textbf{L2: Rolling Window of Truth.} Maintains circular buffer of execution history. Window size is adaptive: starts large (4096 entries) and may shrink if pattern diversity saturates.
+
+\textbf{L3: Linear Heat Decay.} Applies uniform decay to all heat values periodically. Decay rate is configurable; typical values are 0.1–1.0 heat units per heartbeat tick. Prevents unbounded heat accumulation.
+
+\textbf{L4: Pipelining Metrics.} Records word-to-word transition frequencies. Enables speculative prefetching and locality prediction (not evaluated in this paper; infrastructure present for future work).
+
+\textbf{L5: Window Width Inference.} Applies Levene's test to detect variance heterogeneity in execution timing. If variance is stable, window may shrink to reduce memory footprint. If variance increases, window expands to capture more history.
+
+\textbf{L6: Decay Slope Inference.} Fits exponential regression to heat trajectory over recent heartbeat ticks. If heat is growing, decay rate increases to stabilize. If heat is declining, decay rate decreases to preserve signal.
+
+\textbf{L7: Adaptive Heartrate.} Adjusts heartbeat interval based on system load and execution phase. During steady execution, heartbeat slows (saves power). During transients (detected via heat volatility), heartbeat accelerates (improves responsiveness).
+
+\textbf{L8: Adaptive Strategy Selector.} Meta-mechanism that switches among predefined loop combinations based on workload classification. Not a feedback loop itself, but a controller selecting which loops to activate.
+
+\textbf{Hot-words cache.} When L1 is enabled, frequently-executed words (top 16 by heat) are cached separately for fast lookup. Cache uses frequency-based eviction: if a word's heat drops below the cache minimum, it is evicted. This implements a physics-driven caching policy without explicit LRU bookkeeping.
+
+All adaptive mechanisms respect the determinism boundary: given fixed loop configuration and fixed initial state, behavior is reproducible. Variance arises only from configuration changes or non-deterministic workloads (none used in this study).

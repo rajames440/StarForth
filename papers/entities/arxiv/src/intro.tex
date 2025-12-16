@@ -1,0 +1,26 @@
+% Section 1: Introduction
+% Why this src exists - no history lesson, no philosophy
+
+\section{Introduction}
+
+Adaptive runtime systems typically face a tradeoff between dynamic optimization and behavioral predictability. Systems that adjust execution strategy based on runtime feedback often exhibit complex transient behavior, making performance analysis difficult and reproducibility questionable. While such systems may eventually settle into stable operating regimes, the conditions under which stability emerges and the properties of such regimes remain poorly characterized.
+
+The central question motivating this work is whether adaptive behavior can converge to measurable steady states despite continuous feedback-driven adjustments. If stable regimes exist, can they be characterized by empirical invariants? And if so, what does this imply for the design and analysis of adaptive systems?
+
+We approach these questions through controlled experimentation on a minimal virtual machine (VM) instrumented with seven configurable feedback mechanisms. These mechanisms---including execution heat tracking, rolling history windows, linear decay, and transition prediction---operate concurrently and influence lookup latency, caching behavior, and runtime state. The system serves as a test platform for observing emergence of stable behavior under controlled workload conditions.
+
+Through 360 experimental runs across 128 runtime configurations, we observe deterministic convergence to reproducible execution states. A dimensionless performance statistic $K$, derived from the ratio of intrinsic system scale to effective window utilization, exhibits coefficient of variation below 1\% across replicate runs. The statistic follows predictable patterns as window size varies, with resonance-like peaks and anti-resonance troughs occurring at specific parameter values.
+
+\textbf{Scope and limitations.} This paper presents empirical observations and descriptive models. We do not claim first-principles derivation, universality across all platforms, or explanatory theory for the observed phenomena. The results document what was measured under controlled conditions on a specific hardware platform with deterministic workloads. Generalization to production systems, diverse architectures, and non-deterministic workloads requires further validation.
+
+\textbf{Contributions.} This paper makes the following empirical contributions:
+
+\begin{enumerate}
+\item Documentation of measurable steady-state convergence in an adaptive VM with concurrent feedback mechanisms
+\item Identification of empirical invariants ($K$-statistic, characteristic length scale $\lambda_0 = 256$ bytes, modulation frequency $f_0 = 2/3$ cycles/window) that remain consistent across workloads and configurations
+\item Characterization of attractor-like behavior, including dual-mode states and deterministic transitions
+\item Experimental methodology for measuring runtime stability in adaptive systems
+\end{enumerate}
+
+This paper documents the architecture, methodology, and empirical observations of such behavior.
+\newpage

@@ -42,9 +42,9 @@
 #
 
 #
-# Convert AsciiDoc files to LaTeX
+# Convert AsciiDoc files to src
 #
-# This script finds all .adoc files in the project and converts them to LaTeX
+# This script finds all .adoc files in the project and converts them to src
 # Output is organized in ./docs/latex/ maintaining the directory structure
 #
 # Usage: ./scripts/asciidoc-to-latex.sh
@@ -93,14 +93,14 @@ check_prerequisites() {
     print_success "asciidoctor is available"
 }
 
-# Convert a single AsciiDoc file to LaTeX
+# Convert a single AsciiDoc file to src
 convert_file() {
     local adoc_file=$1
     local output_file=$2
 
     mkdir -p "$(dirname "$output_file")"
 
-    # Use asciidoctor with LaTeX backend
+    # Use asciidoctor with src backend
     asciidoctor -b latex -o "$output_file" "$adoc_file" 2>/dev/null || {
         print_error "Failed to convert: $adoc_file"
         return 1

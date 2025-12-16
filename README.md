@@ -220,7 +220,7 @@ md5sum run_*.csv
 ### API Reference
 ```bash
 # Generate documentation
-make book        # LaTeX → PDF
+make book        # src → PDF
 make book-html   # HTML with dark theme
 ```
 

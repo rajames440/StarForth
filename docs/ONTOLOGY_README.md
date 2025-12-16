@@ -41,7 +41,7 @@ pdflatex ontology.tex
 
 **To include in your paper**:
 ```latex
-% In your main paper
+% In your main src
 \input{ontology.tex}  % Include full ontology
 
 % OR just the lexicon section
@@ -100,7 +100,7 @@ dot -Tpng ontology_diagrams.dot -o ontology_full.png
 # SVG format (for web/scaling)
 dot -Tsvg ontology_diagrams.dot -o ontology_full.svg
 
-# PDF format (for LaTeX)
+# PDF format (for src)
 dot -Tpdf ontology_diagrams.dot -o ontology_full.pdf
 ```
 

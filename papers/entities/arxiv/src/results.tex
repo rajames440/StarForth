@@ -1,0 +1,104 @@
+% Section 6: Experimental Results
+% Just the facts - charts go here, let them speak
+
+\section{Experimental Results}
+
+\subsection{Runtime Stability}
+
+\textbf{Completion rate.} Of 38,400 runs in DoE-300, 38,388 completed successfully (99.97\% completion rate). Twelve runs failed due to timeout (> 10 seconds execution, triggered watchdog). All failures occurred in configuration \texttt{1111111} (all loops enabled) with arithmetic stress workload, suggesting potential feedback instability under extreme conditions.
+
+\textbf{Deterministic behavior.} For deterministic workloads (all tested workloads), coefficient of variation in K-statistic ranged from 0.0\% (perfect reproducibility, 4 configurations) to 6.92\% (highest variance, 1 configuration). Median CV across all configurations: 1.67\%.
+
+Figure \ref{fig:cv_distribution} shows the distribution of CV values across configurations. The majority cluster below 2\%, with a long tail extending to 7\%. Configurations with CV > 5\% invariably have L5 and L6 enabled (adaptive inference loops), suggesting inference mechanisms introduce timing variability despite deterministic workloads.
+
+\textbf{Crash analysis.} No segmentation faults, stack overflows, or assertion failures occurred during any run. The VM remained stable under all tested configurations. Timeout failures are attributed to feedback-driven performance degradation, not correctness errors.
+
+\subsection{Emergent Steady-State Regimes}
+
+\textbf{Convergence behavior.} Figure \ref{fig:k_vs_window} plots mean K-statistic vs. configured window size for DoE-300 data. Key observations:
+
+\begin{enumerate}
+\item \textbf{Baseline inverse trend:} As $W$ increases, $K$ decreases approximately as $1/W$, consistent with Eq. \ref{eq:james_law} baseline term.
+
+\item \textbf{Resonance peaks:} Local maxima occur at $W \in \{1024, 4096, 6144, 16384\}$ bytes. These align with predicted resonance from James Law (Eq. \ref{eq:james_law}) within 5\% error.
+
+\item \textbf{Anti-resonance troughs:} Local minima at $W \in \{512, 2048, 8192\}$ bytes. Anti-resonance at 4096 bytes exhibits zero variance (SD = 0.0 across all 300 replicates).
+
+\item \textbf{Damping at large $W$:} Modulation amplitude decreases exponentially for $W > 50000$ bytes, asymptotically approaching pure inverse relationship.
+\end{enumerate}
+
+\textbf{Attractor-like characteristics.} At strong resonance points ($W = 6144$ bytes), K distribution becomes bimodal (Figure \ref{fig:k_histogram_6144}). Two distinct peaks appear at $K \approx 0.042$ (locked attractor) and $K \approx 0.99$ (escaped attractor), with 47\% and 53\% of runs respectively. This suggests metastable dual-attractor dynamics.
+
+At anti-resonance ($W = 4096$ bytes), distribution is unimodal with zero variance. All 300 runs converge to $K = 0.0625$ exactly (within floating-point precision). This coincides with page boundary alignment (4 KB) and cache line quantization (64 $\times$ 64 bytes = 4 KB).
+
+\textbf{Transient dynamics.} Figure \ref{fig:k_trajectory} shows K evolution over execution time for representative runs. Most configurations exhibit:
+\begin{itemize}
+\item Initial transient (first 1000 word executions): K unstable, CV > 10\%
+\item Convergence phase (1000–5000 executions): K settles toward steady state
+\item Steady-state regime (> 5000 executions): K variance stabilizes, CV < 2\%
+\end{itemize}
+
+Configurations with L7 (adaptive heartrate) enabled show slower convergence (10000+ executions to stabilize) but achieve lower final CV (< 1\%).
+
+\subsection{Invariance Across Workloads}
+
+\textbf{Cross-workload consistency.} Table \ref{tab:k_by_workload} compares K-statistic across five workload classes for fixed configuration (\texttt{0000000}, all loops disabled).
+
+\begin{table}[h]
+\centering
+\caption{K-statistic across workload classes (config \texttt{0000000}, $W = 4096$ bytes)}
+\label{tab:k_by_workload}
+\begin{tabular}{lrrr}
+\hline
+Workload & Mean $K$ & SD $K$ & CV \% \\
+\hline
+Arithmetic stress & 0.0625 & 0.0000 & 0.0 \\
+Stack manipulation & 0.0625 & 0.0000 & 0.0 \\
+Control flow & 0.0625 & 0.0001 & 0.2 \\
+Dictionary lookup & 0.0624 & 0.0003 & 0.5 \\
+Factorial & 0.0626 & 0.0002 & 0.3 \\
+\hline
+\end{tabular}
+\end{table}
+
+K remains consistent (within 0.5\%) across workloads, suggesting it reflects system properties rather than workload-specific behavior.
+
+\textbf{Where invariance breaks.} When L5 and L6 (adaptive inference) are both enabled, K varies by up to 15\% across workloads (Table \ref{tab:k_variance_l5l6}). This is expected: inference mechanisms explicitly adapt to workload characteristics, breaking workload-invariance by design.
+
+\textbf{Patterns observed.}
+\begin{enumerate}
+\item $\Lambda_{\text{eff}} = 256$ bytes holds across all workloads tested ($R^2 > 0.98$ for inverse baseline fits)
+\item Natural frequency $f_0 = 0.667 \pm 0.02$ cycles/window consistent across workloads
+\item Phase offset $\varphi$ varies with workload (range: 0–0.3 radians)
+\item Amplitude parameters ($A_{\max}$, $W_{\text{decay}}$) workload-invariant
+\end{enumerate}
+
+\textbf{Goodness of fit.} James Law (Eq. \ref{eq:james_law}) achieves:
+\begin{itemize}
+\item $R^2 = 0.994$ (DoE-300, all configurations pooled)
+\item Mean absolute deviation MAD = 0.08 (K-statistic units)
+\item 92\% of residuals within $\pm 0.1$ K-units
+\end{itemize}
+
+Figure \ref{fig:james_law_fit} shows observed vs. predicted K values. Residual plot (Figure \ref{fig:residuals}) shows no systematic bias, supporting adequacy of the functional form.
+
+\subsection{Configuration Effects (DoE Analysis)}
+
+Table \ref{tab:doe300_main_effects} summarizes main effects of individual loop toggles on mean runtime.
+
+\input{../../../LaTeX/tables/doe300_main_effects.tex}
+
+\textbf{Significant effects ($p < 0.01$):}
+\begin{itemize}
+\item L1 (Heat Tracking): -2.3\% runtime (beneficial)
+\item L3 (Decay): +1.8\% runtime (cost of decay computation)
+\item L7 (Adaptive Heartrate): +4.7\% runtime (heartbeat thread overhead)
+\end{itemize}
+
+L2, L4, L5, L6 show no statistically significant main effects on mean runtime at $\alpha = 0.01$ level.
+
+Table \ref{tab:doe300_top_configs} lists top 10 configurations by mean runtime.
+
+\input{../../../LaTeX/tables/doe300_top_configs.tex}
+
+\textbf{Observation:} Optimal configuration varies by workload. No single configuration dominates across all metrics (runtime, variance, energy—energy not measured in this study).

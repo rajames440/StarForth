@@ -1,0 +1,108 @@
+% Section 4: Formal Definitions and Metrics
+% This is where you earn credibility - protect against pedantic attacks
+
+\section{Formal Definitions and Metrics}
+
+\textbf{Terminology note.} This paper uses physics-inspired terminology (``memristive,'' ``resonance,'' ``frequency'') descriptively to characterize observed patterns, not to claim physical equivalence or derivation from first principles. These terms serve as convenient analogs for empirical phenomena in adaptive software systems. We make no claim that the observed behaviors reflect universal physical laws.
+
+\subsection{Steady-State Definition}
+
+We define steady-state operationally through observable criteria rather than theoretical equilibrium conditions.
+
+\textbf{Definition 1 (Steady State).} A VM execution is in steady state if the following conditions hold over a measurement window of duration $T$:
+
+\begin{enumerate}
+\item \textbf{Execution completion:} The workload completes without error or timeout
+\item \textbf{Temporal stability:} Total execution time $t$ has coefficient of variation $\text{CV} = \sigma_t / \mu_t < 0.05$ across replicate runs (< 5\% relative variance)
+\item \textbf{Metric reproducibility:} Performance statistic $K$ (defined below) varies by less than 1\% across replicates with identical configuration
+\item \textbf{Heat convergence:} Sum of all execution heat values $H_{\text{total}}$ stabilizes such that $|\Delta H_{\text{total}}| / H_{\text{total}} < 0.01$ over the final 10\% of execution
+\end{enumerate}
+
+This definition avoids requiring mathematical equilibrium ($dH/dt = 0$) which is never achieved in discrete systems. Instead, it captures "stable enough to measure" regimes.
+
+\textbf{Time window assumptions.} All measurements occur after a warm-up period of at least 1000 word executions to allow feedback loops to stabilize. Measurements span the full workload execution (typically 10$^5$–10$^6$ word executions for our test suite).
+
+\subsection{The K-Statistic}
+
+We introduce a dimensionless performance statistic $K$ that characterizes window utilization efficiency.
+
+\textbf{Definition 2 (K-statistic).} Let $W_{\text{config}}$ be the configured rolling window size (bytes) and $W_{\text{actual}}$ be the effective window size utilized by the system. The K-statistic is:
+
+\begin{equation}
+K = \frac{\Lambda_{\text{eff}}}{W_{\text{actual}}}
+\label{eq:k_def}
+\end{equation}
+
+where $\Lambda_{\text{eff}}$ is an empirically-determined characteristic length scale (units: bytes).
+
+\textbf{Operational measurement.} $W_{\text{actual}}$ is not directly observable. We infer it from the relationship:
+
+\begin{equation}
+W_{\text{actual}} = \Lambda_{\text{eff}} / K
+\label{eq:w_actual}
+\end{equation}
+
+where $K$ is computed from runtime metrics (execution time, heat distribution entropy, transition matrix rank). Details in Appendix A.
+
+\textbf{Empirical observation.} Across 360 experimental runs, we observe:
+
+\begin{itemize}
+\item $\Lambda_{\text{eff}} = 256 \pm 8$ bytes (3\% uncertainty)
+\item $K$ exhibits coefficient of variation CV $< 1\%$ for fixed configuration
+\item $K$ varies systematically with $W_{\text{config}}$, following a modulated inverse relationship (Section 6)
+\end{itemize}
+
+\textbf{Invariance claim (carefully stated).} Under fixed workload and fixed loop configuration, $K$ is reproducible to within measurement precision. $K$ is not universal across configurations but is a stable observable for each configuration.
+
+We make no claim that $K$ represents a fundamental constant. It is an empirical statistic useful for characterizing steady-state behavior.
+
+\subsection{James Law (Descriptive Form)}
+
+Empirical data suggest $K$ follows a modulated inverse relationship with window size:
+
+\begin{equation}
+K(W) = \frac{\Lambda_{\text{eff}}}{W} \times \left[1 + A(W) \sin(2\pi f_0 \log_2(W) + \varphi)\right]
+\label{eq:james_law}
+\end{equation}
+
+where:
+\begin{itemize}
+\item $\Lambda_{\text{eff}} = 256$ bytes (intrinsic scale)
+\item $W$ is configured window size (bytes)
+\item $f_0 = 2/3$ cycles/window (observed frequency)
+\item $A(W) = A_{\max} \exp(-W / W_{\text{decay}})$ (damping envelope)
+\item $A_{\max} \approx 0.3$, $W_{\text{decay}} \approx 50000$ bytes
+\item $\varphi$ is phase offset (configuration-dependent)
+\end{itemize}
+
+This functional form fits experimental data with $R^2 > 0.99$ (Section 6). We refer to this empirical relationship as the \emph{James Law} for convenient reference, with no implication of universality.
+
+\textbf{Physical interpretation (speculative).} The inverse baseline $\Lambda_{\text{eff}} / W$ may reflect fundamental scaling; the sinusoidal modulation may arise from cache line interference or page boundary effects. However, the mechanism remains unproven. The law is presented as a descriptive model, not an explanatory theory.
+
+\subsection{Measurement Constraints}
+
+\textbf{Temporal resolution.} Timing measurements use 64-bit nanosecond counters with Q48.16 fixed-point arithmetic (16 fractional bits). This provides $\sim$15 picosecond theoretical resolution, though practical resolution is limited by timer granularity ($\sim$1 nanosecond on x86-64 with \texttt{CLOCK\_MONOTONIC}).
+
+\textbf{Heat quantization.} Heat values are 64-bit unsigned integers, incremented by 1 per invocation. For typical workloads (10$^5$ invocations), this provides 16 decimal digits of precision—far exceeding measurement noise.
+
+\textbf{Noise sources.} Identified sources of measurement variance include:
+\begin{enumerate}
+\item OS scheduler preemption (mitigated via CPU pinning and isolation)
+\item Cache state variability (mitigated via cold-start initialization between runs)
+\item Branch predictor state (not mitigated; assumed negligible for deterministic workloads)
+\item Background system activity (mitigated via dedicated test machine)
+\end{enumerate}
+
+Despite mitigation, residual noise is observed. Coefficient of variation across replicates ranges from 0.1\% (best case, anti-resonance) to 6.9\% (worst case, resonance with high loop activity).
+
+\textbf{What is not measured.} The following are explicitly not measured in this study:
+\begin{itemize}
+\item Power consumption (no hardware instrumentation)
+\item Memory bandwidth utilization (no PMU access)
+\item Instruction-level microarchitecture events (no perf integration)
+\item Long-term drift (> 1 hour execution; workloads complete in seconds)
+\end{itemize}
+
+\textbf{Threats from unmeasured variables.} It is possible that unmeasured hardware effects (e.g., thermal throttling, DVFS transitions) contribute to observed behavior. We assume such effects are negligible for our short-duration workloads (< 1 second runtime) but cannot rule them out.
+
+See Section 9 (Threats to Validity) for comprehensive discussion of measurement limitations.

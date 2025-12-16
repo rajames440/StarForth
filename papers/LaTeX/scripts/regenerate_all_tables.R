@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 ################################################################################
 # REGENERATE ALL LATEX TABLES FROM EXPERIMENTAL DATA
-# Generates publication-ready LaTeX tables from all experiments
+# Generates publication-ready src tables from all experiments
 ################################################################################
 
 .libPaths('~/R/library')
@@ -68,14 +68,17 @@ main_effects_30 <- main_effects_30 %>%
   ) %>%
   arrange(Effect)
 
-tex <- xtable(main_effects_30[, c("Loop", "OFF_mean", "ON_mean", "Effect", "Effect_pct", "Direction")],
+# Rename columns for src-safe headers
+main_effects_30_latex <- main_effects_30[, c("Loop", "OFF_mean", "ON_mean", "Effect", "Effect_pct", "Direction")]
+names(main_effects_30_latex) <- c("Loop", "OFF mean", "ON mean", "Effect", "Effect \\%", "Direction")
+
+tex <- xtable(main_effects_30_latex,
               caption = "DoE 30 Reps: Main Effects of Feedback Loops on Performance (ns/word)",
               label = "tab:doe30_main_effects",
               digits = c(0, 0, 2, 2, 2, 2, 0))
 
 sink(file.path(TABLE_DIR, "doe30_main_effects.tex"))
-print(tex, include.rownames = FALSE, caption.placement = "top",
-      sanitize.text.function = function(x) x)
+print(tex, include.rownames = FALSE, caption.placement = "top")
 sink()
 table_count <- table_count + 1
 
@@ -102,14 +105,17 @@ config_summary_30 <- doe30 %>%
                    ",L6=", L6_decay_inference, ",L7=", L7_adaptive_heartrate)
   )
 
-tex <- xtable(config_summary_30[, c("rank", "config", "mean_ns_per_word", "cv", "n")],
+# Rename columns for src-safe headers
+config_summary_30_latex <- config_summary_30[, c("rank", "config", "mean_ns_per_word", "cv", "n")]
+names(config_summary_30_latex) <- c("Rank", "Config", "Mean ns/word", "CV \\%", "n")
+
+tex <- xtable(config_summary_30_latex,
               caption = "DoE 30 Reps: Top 10 Configurations Ranked by Performance",
               label = "tab:doe30_top_configs",
               digits = c(0, 0, 0, 2, 2, 0))
 
 sink(file.path(TABLE_DIR, "doe30_top_configs.tex"))
-print(tex, include.rownames = FALSE, caption.placement = "top",
-      sanitize.text.function = function(x) x)
+print(tex, include.rownames = FALSE, caption.placement = "top")
 sink()
 table_count <- table_count + 1
 
@@ -158,14 +164,17 @@ main_effects_300 <- main_effects_300 %>%
   ) %>%
   arrange(Effect)
 
-tex <- xtable(main_effects_300[, c("Loop", "OFF_mean", "ON_mean", "Effect", "Effect_pct", "Direction")],
+# Rename columns for src-safe headers
+main_effects_300_latex <- main_effects_300[, c("Loop", "OFF_mean", "ON_mean", "Effect", "Effect_pct", "Direction")]
+names(main_effects_300_latex) <- c("Loop", "OFF mean", "ON mean", "Effect", "Effect \\%", "Direction")
+
+tex <- xtable(main_effects_300_latex,
               caption = "DoE 300 Reps: Main Effects of Feedback Loops on Performance (ns/word)",
               label = "tab:doe300_main_effects",
               digits = c(0, 0, 2, 2, 2, 2, 0))
 
 sink(file.path(TABLE_DIR, "doe300_main_effects.tex"))
-print(tex, include.rownames = FALSE, caption.placement = "top",
-      sanitize.text.function = function(x) x)
+print(tex, include.rownames = FALSE, caption.placement = "top")
 sink()
 table_count <- table_count + 1
 
@@ -192,14 +201,17 @@ config_summary_300 <- doe300 %>%
                    ",L6=", L6_decay_inference, ",L7=", L7_adaptive_heartrate)
   )
 
-tex <- xtable(config_summary_300[, c("rank", "config", "mean_ns_per_word", "cv", "n")],
+# Rename columns for src-safe headers
+config_summary_300_latex <- config_summary_300[, c("rank", "config", "mean_ns_per_word", "cv", "n")]
+names(config_summary_300_latex) <- c("Rank", "Config", "Mean ns/word", "CV \\%", "n")
+
+tex <- xtable(config_summary_300_latex,
               caption = "DoE 300 Reps: Top 10 Configurations Ranked by Performance",
               label = "tab:doe300_top_configs",
               digits = c(0, 0, 0, 2, 2, 0))
 
 sink(file.path(TABLE_DIR, "doe300_top_configs.tex"))
-print(tex, include.rownames = FALSE, caption.placement = "top",
-      sanitize.text.function = function(x) x)
+print(tex, include.rownames = FALSE, caption.placement = "top")
 sink()
 table_count <- table_count + 1
 
@@ -261,14 +273,17 @@ window_summary <- window_df %>%
   ) %>%
   arrange(window_size)
 
-tex <- xtable(window_summary,
+# Rename columns for src-safe headers
+window_summary_latex <- window_summary
+names(window_summary_latex) <- c("Window Size", "n runs", "Mean K", "SD K", "K Deviation", "Mean CV", "Mean Freq")
+
+tex <- xtable(window_summary_latex,
               caption = "Window Scaling: Summary Statistics by Window Size",
               label = "tab:window_scaling_summary",
               digits = c(0, 0, 0, 3, 3, 3, 2, 1))
 
 sink(file.path(TABLE_DIR, "window_scaling_summary.tex"))
-print(tex, include.rownames = FALSE, caption.placement = "top",
-      sanitize.text.function = function(x) x)
+print(tex, include.rownames = FALSE, caption.placement = "top")
 sink()
 table_count <- table_count + 1
 
@@ -302,14 +317,17 @@ strategy_summary <- l8 %>%
   arrange(mean_runtime) %>%
   mutate(rank = row_number())
 
-tex <- xtable(strategy_summary[, c("rank", "strategy", "mean_runtime", "cv", "n")],
+# Rename columns for src-safe headers
+strategy_summary_latex <- strategy_summary[, c("rank", "strategy", "mean_runtime", "cv", "n")]
+names(strategy_summary_latex) <- c("Rank", "Strategy", "Mean Runtime (ms)", "CV \\%", "n")
+
+tex <- xtable(strategy_summary_latex,
               caption = "L8 Validation: Overall Strategy Performance (all workloads combined)",
               label = "tab:l8_strategy_summary",
               digits = c(0, 0, 0, 2, 2, 0))
 
 sink(file.path(TABLE_DIR, "l8_strategy_summary.tex"))
-print(tex, include.rownames = FALSE, caption.placement = "top",
-      sanitize.text.function = function(x) x)
+print(tex, include.rownames = FALSE, caption.placement = "top")
 sink()
 table_count <- table_count + 1
 
@@ -336,14 +354,18 @@ best_wide <- best_per_workload %>%
     names_glue = "{.value}_{rank}"
   )
 
-tex <- xtable(best_wide,
+# Rename columns for src-safe headers
+best_wide_latex <- best_wide
+names(best_wide_latex) <- gsub("_", " ", names(best_wide_latex))
+names(best_wide_latex)[1] <- "Workload Type"
+
+tex <- xtable(best_wide_latex,
               caption = "L8 Validation: Top 3 Strategies per Workload Type",
               label = "tab:l8_best_per_workload",
               digits = 2)
 
 sink(file.path(TABLE_DIR, "l8_best_per_workload.tex"))
-print(tex, include.rownames = FALSE, caption.placement = "top",
-      sanitize.text.function = function(x) x)
+print(tex, include.rownames = FALSE, caption.placement = "top")
 sink()
 table_count <- table_count + 1
 
@@ -365,16 +387,17 @@ l8_margin <- l8 %>%
   select(workload_type, mean_runtime, best_runtime, margin_pct) %>%
   ungroup()
 
-tex <- xtable(l8_margin,
+# Rename columns for src-safe headers
+l8_margin_latex <- l8_margin
+names(l8_margin_latex) <- c("Workload Type", "Mean Runtime (ms)", "Best Runtime (ms)", "Margin \\%")
+
+tex <- xtable(l8_margin_latex,
               caption = "L8 Validation: L8\\_ADAPTIVE Performance Margin vs Best Static Config",
               label = "tab:l8_adaptive_margin",
               digits = c(0, 0, 2, 2, 2))
 
 sink(file.path(TABLE_DIR, "l8_adaptive_margin.tex"))
-print(tex, include.rownames = FALSE, caption.placement = "top",
-      sanitize.text.function = function(x) {
-        gsub("L8_ADAPTIVE", "L8\\\\_ADAPTIVE", x, fixed = TRUE)
-      })
+print(tex, include.rownames = FALSE, caption.placement = "top")
 sink()
 table_count <- table_count + 1
 
@@ -410,8 +433,7 @@ tex <- xtable(overall_summary,
               digits = c(0, 0, 2))
 
 sink(file.path(TABLE_DIR, "l8_attractor_summary.tex"))
-print(tex, include.rownames = FALSE, caption.placement = "top",
-      sanitize.text.function = function(x) x)
+print(tex, include.rownames = FALSE, caption.placement = "top")
 sink()
 table_count <- table_count + 1
 

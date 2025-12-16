@@ -178,7 +178,7 @@ All SVG charts have been regenerated from real StarForth experimental data using
 **Dependencies:** R packages (dplyr, tidyr, ggplot2, readr, reshape2, svglite)
 
 ```bash
-cd /home/rajames/CLionProjects/StarForth/papers/LaTeX/scripts
+cd /home/rajames/CLionProjects/StarForth/papers/src/scripts
 Rscript regenerate_all_svgs.R
 ```
 
@@ -191,7 +191,7 @@ Output: 88 SVG files in `papers/LaTeX/figures/` (plus 11 existing = 99 total)
 **Dependencies:** R packages (dplyr, tidyr, ggplot2, readr, scales)
 
 ```bash
-cd /home/rajames/CLionProjects/StarForth/papers/LaTeX/scripts
+cd /home/rajames/CLionProjects/StarForth/papers/src/scripts
 Rscript regenerate_window_scaling_svgs.R
 ```
 
@@ -204,7 +204,7 @@ Output: 5 SVG files in `papers/LaTeX/figures/` (window scaling charts)
 **Dependencies:** R packages (dplyr, tidyr, ggplot2, readr, scales)
 
 ```bash
-cd /home/rajames/CLionProjects/StarForth/papers/LaTeX/scripts
+cd /home/rajames/CLionProjects/StarForth/papers/src/scripts
 Rscript regenerate_l8_validation_svgs.R
 ```
 

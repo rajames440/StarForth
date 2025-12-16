@@ -1,28 +1,18 @@
 % latex table generated in R 4.4.3 by xtable 1.8-4 package
-% Mon Dec 15 15:07:51 2025
+% Tue Dec 16 10:10:58 2025
 \begin{table}[ht]
 \centering
 \caption{L8 Validation: Top 3 Strategies per Workload Type} 
 \label{tab:l8_best_per_workload}
-\begin{tabular}{lrlr}
+\begin{tabular}{llllrrr}
   \hline
-Workload & Rank & Strategy & Runtime (ms) \\ 
+Workload Type & strategy 1 & strategy 2 & strategy 3 & mean runtime 1 & mean runtime 2 & mean runtime 3 \\ 
   \hline
-DIVERSE &   1 & C11_DIVERSE_INF & 52.89 \\ 
-  DIVERSE &   2 & C4_TEMPORAL & 53.16 \\ 
-  DIVERSE &   3 & C0_BASELINE & 53.77 \\ 
-  STABLE &   1 & L8_ADAPTIVE & 52.60 \\ 
-  STABLE &   2 & C0_BASELINE & 52.89 \\ 
-  STABLE &   3 & C9_DIVERSE_DECAY & 53.83 \\ 
-  TEMPORAL &   1 & L8_ADAPTIVE & 51.75 \\ 
-  TEMPORAL &   2 & ALL_ON_EXCEPT_L1L4 & 53.84 \\ 
-  TEMPORAL &   3 & C9_DIVERSE_DECAY & 53.85 \\ 
-  TRANSITION &   1 & C4_TEMPORAL & 52.94 \\ 
-  TRANSITION &   2 & C11_DIVERSE_INF & 53.73 \\ 
-  TRANSITION &   3 & C9_DIVERSE_DECAY & 53.75 \\ 
-  VOLATILE &   1 & C7_FULL_INF & 52.60 \\ 
-  VOLATILE &   2 & ALL_ON_EXCEPT_L1L4 & 53.77 \\ 
-  VOLATILE &   3 & L8_ADAPTIVE & 53.80 \\ 
+DIVERSE & C11\_DIVERSE\_INF & C4\_TEMPORAL & C0\_BASELINE & 52.89 & 53.16 & 53.77 \\ 
+  STABLE & L8\_ADAPTIVE & C0\_BASELINE & C9\_DIVERSE\_DECAY & 52.60 & 52.89 & 53.83 \\ 
+  TEMPORAL & L8\_ADAPTIVE & ALL\_ON\_EXCEPT\_L1L4 & C9\_DIVERSE\_DECAY & 51.75 & 53.84 & 53.85 \\ 
+  TRANSITION & C4\_TEMPORAL & C11\_DIVERSE\_INF & C9\_DIVERSE\_DECAY & 52.94 & 53.73 & 53.75 \\ 
+  VOLATILE & C7\_FULL\_INF & ALL\_ON\_EXCEPT\_L1L4 & L8\_ADAPTIVE & 52.60 & 53.77 & 53.80 \\ 
    \hline
 \end{tabular}
 \end{table}

@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 ################################################################################
-# REGENERATE ALL TABLES - DUAL FORMAT (LaTeX + HTML)
-# Generates both LaTeX and standalone HTML versions
+# REGENERATE ALL TABLES - DUAL FORMAT (src + HTML)
+# Generates both src and standalone HTML versions
 ################################################################################
 
 .libPaths('~/R/library')
@@ -27,7 +27,7 @@ table_metadata <- list()
 
 # Helper function to save both formats
 save_table_dual <- function(df, name, caption, label, digits = 2) {
-  # Save LaTeX version
+  # Save src version
   tex <- xtable(df,
                 caption = caption,
                 label = label,

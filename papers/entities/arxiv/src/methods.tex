@@ -1,0 +1,109 @@
+% Section 5: Experimental Methodology
+% Reproducibility lives here - that sentence matters
+
+\section{Experimental Methodology}
+
+\subsection{Hardware Environment}
+
+All experiments were conducted on a Beelink MINI S (AZW MINI S) compact workstation with the following specification:
+
+\begin{itemize}
+\item \textbf{Processor:} Intel N150 (4 cores)
+\item \textbf{Memory:} 15.4 GiB RAM
+\item \textbf{Graphics:} Intel Graphics (integrated)
+\item \textbf{OS:} Ubuntu 24.10 (kernel 6.14.0-36-generic, 64-bit)
+\item \textbf{Desktop:} KDE Plasma 6.3.4 on Wayland
+\item \textbf{Frameworks:} KDE Frameworks 6.12.0, Qt 6.8.3
+\end{itemize}
+
+\textbf{Isolation measures.} To minimize measurement noise:
+\begin{enumerate}
+\item CPU frequency scaling disabled (governor set to \texttt{performance})
+\item Process affinity set to dedicated core
+\item All non-essential system services stopped
+\item Network disabled during experiments
+\item Disk I/O completed before measurement (all test files cached)
+\end{enumerate}
+
+\subsection{Software Configuration}
+
+\textbf{VM implementation.} StarForth v0.9.1, compiled with:
+\begin{itemize}
+\item GCC 11.4.0
+\item Optimization flags: \texttt{-O3 -march=native -flto}
+\item Strict ANSI C99 compliance (\texttt{-std=c99 -pedantic})
+\item All assertions disabled (\texttt{-DNDEBUG})
+\end{itemize}
+
+\textbf{Build targets.} Three build profiles were evaluated:
+\begin{enumerate}
+\item \textbf{standard:} Baseline optimizations, portable
+\item \textbf{fast:} Architecture-specific optimizations, direct threading
+\item \textbf{fastest:} Maximum optimizations (ASM, LTO, profile-guided)
+\end{enumerate}
+
+Primary results use the \textbf{fastest} target unless noted otherwise.
+
+\textbf{Loop configurations.} Seven binary feedback loop toggles (L1–L7) yield $2^7 = 128$ configurations. Each configuration is encoded as a 7-bit string (e.g., \texttt{0000000} = all loops disabled, \texttt{1111111} = all loops enabled).
+
+\subsection{Workload Classes}
+
+Test workloads consist of deterministic FORTH programs exercising core VM functionality:
+
+\begin{enumerate}
+\item \textbf{Arithmetic stress:} Nested loops performing integer operations (addition, multiplication, modulo). Representative of compute-heavy tasks.
+\item \textbf{Stack manipulation:} Sequences of \texttt{DUP}, \texttt{DROP}, \texttt{SWAP}, \texttt{ROT} operations. Tests stack handling efficiency.
+\item \textbf{Control flow:} Nested \texttt{IF-THEN-ELSE} and \texttt{DO-LOOP} constructs. Evaluates branch prediction impact.
+\item \textbf{Dictionary lookup:} Repeated word invocations with varying dictionary sizes. Tests lookup latency and cache effects.
+\item \textbf{Factorial computation:} Recursive and iterative factorial implementations. Combined control flow and arithmetic.
+\end{enumerate}
+
+All workloads are deterministic: no randomness, no I/O, no user interaction. Execution order is fixed for each run.
+
+\subsection{Replication Strategy}
+
+\textbf{Design of Experiments (DoE).} Two experimental designs were conducted:
+
+\begin{itemize}
+\item \textbf{DoE-30:} 30 replicates per configuration, 128 configurations, 3840 total runs
+\item \textbf{DoE-300:} 300 replicates per configuration, 128 configurations, 38400 total runs
+\end{itemize}
+
+DoE-30 provides initial screening; DoE-300 provides statistical power for variance analysis.
+
+\textbf{Run sequencing.} Configurations were tested in pseudorandom order (fixed seed) to avoid systematic bias from time-of-day effects or hardware state drift. Within each configuration, replicates were executed sequentially with inter-run delays of 100 ms to allow thermal stabilization.
+
+\textbf{Measurement protocol.} Each run captures:
+\begin{enumerate}
+\item Total execution time (wall-clock, nanosecond resolution)
+\item Per-word execution heat distribution (64-bit counters)
+\item Final K-statistic (computed from heat entropy and window metrics)
+\item Metadata: timestamp, configuration ID, compiler flags, git commit hash
+\end{enumerate}
+
+\textbf{Reset conditions.} \emph{Each run starts from a clean VM state.} Specifically:
+\begin{itemize}
+\item VM memory zeroed
+\item Dictionary rebuilt from source
+\item All heat accumulators reset to zero
+\item Rolling window cleared
+\item Transition matrix zeroed
+\item Cache state cold (no prefetching)
+\end{itemize}
+
+This ensures independence between runs: prior execution history does not contaminate subsequent measurements.
+
+\subsection{Statistical Analysis}
+
+\textbf{Descriptive statistics.} For each configuration, we compute:
+\begin{itemize}
+\item Mean runtime $\mu_t$, standard deviation $\sigma_t$, coefficient of variation CV
+\item Mean K-statistic $\mu_K$, standard deviation $\sigma_K$
+\item Percentiles: min, Q1, median, Q3, max
+\end{itemize}
+
+\textbf{Hypothesis testing.} Levene's test for variance homogeneity ($\alpha = 0.05$). ANOVA for main effects of loop configurations ($\alpha = 0.01$). Bonferroni correction applied for multiple comparisons.
+
+\textbf{Goodness of fit.} James Law parameters ($\Lambda_{\text{eff}}$, $f_0$, $A_{\max}$, $W_{\text{decay}}$) estimated via nonlinear least squares. Model quality assessed via $R^2$, mean absolute deviation (MAD), and residual analysis.
+
+\textbf{Reproducibility.} All analysis scripts (R 4.3.1), raw data (CSV format), and VM source code are archived in the supplementary materials repository. SHA-256 checksums provided for data integrity verification.

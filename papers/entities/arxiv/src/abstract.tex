@@ -1,0 +1,14 @@
+% Abstract for arXiv Paper #1
+% Clinical, factual, ~150-200 words
+\begin{abstract}
+
+We document empirical observations of steady-state behavior in a minimal virtual machine equipped with adaptive runtime mechanisms. The system implements seven configurable feedback loops that modify execution behavior based on runtime metrics including instruction heat, transition probabilities, and window-based history capture.
+
+Using controlled workloads and high-resolution instrumentation, we measured runtime stability across 360 experimental runs spanning 128 distinct runtime configurations. Measurements include execution time, performance variance, and a dimensionless performance statistic $K$ derived from effective window utilization.
+
+Results demonstrate deterministic convergence to stable execution regimes under fixed workload conditions. The statistic $K$ exhibits measurable invariance (coefficient of variation $<1\%$) across replicate runs and predictable modulation with window size. System behavior shows attractor-like characteristics, with configurations settling into reproducible states despite dynamic adaptation mechanisms.
+
+These observations suggest that adaptive runtime systems can achieve measurable stability without sacrificing dynamic behavior. The existence of empirical invariants in a minimal implementation indicates that such properties may be potentially non-accidental patterns worthy of further investigation across diverse platforms.
+
+\end{abstract}
+\newpage

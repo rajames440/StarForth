@@ -1,0 +1,97 @@
+% Section 9: Threats to Validity
+% Disarm critics preemptively - short, honest, devastatingly effective
+
+\section{Threats to Validity}
+
+We identify four categories of threats and assess their impact on our findings.
+
+\subsection{Measurement Bias}
+
+\textbf{Timer precision.} Nanosecond-resolution timers have practical granularity $\sim$1 ns on our hardware. For workloads completing in 50 ms, this provides 8 orders of magnitude dynamic range—adequate for our purposes. However, sub-nanosecond timing effects (if present) are unobservable.
+
+\textbf{Heat quantization.} Heat is measured in integer units. For low-frequency words (executed < 100 times), quantization may introduce artifacts. We mitigate this by focusing analysis on high-frequency words (> 1000 executions) where quantization error is < 0.1\%.
+
+\textbf{Instrumentation overhead.} Adding heat counters, window updates, and transition tracking introduces overhead. We measured this via DoE with all loops disabled vs. uninstrumented baseline: median overhead 1.8\%, worst case 3.2\%. This is small but non-zero. Whether uninstrumented execution exhibits identical steady states is unknown.
+
+\textbf{Observer effect.} By measuring execution behavior, we may alter it (e.g., cache pollution from instrumentation code). We assume this effect is consistent across runs, preserving reproducibility even if absolute values shift. This assumption is untested.
+
+\subsection{Implementation Artifacts}
+
+\textbf{Compiler optimizations.} GCC 11.4.0 with \texttt{-O3 -flto -march=native} may introduce architecture-specific transformations (loop unrolling, vectorization, branch prediction hints). Whether observed phenomena reflect source-level design or compiler artifacts is ambiguous. Testing with alternate compilers (Clang, ICC) or lower optimization levels could disambiguate.
+
+\textbf{Floating-point vs. fixed-point.} Some calculations use Q48.16 fixed-point arithmetic (deterministic, exact) rather than IEEE 754 floating-point (non-deterministic due to rounding). This choice may artificially enhance reproducibility. Real-world systems using floating-point may exhibit higher variance.
+
+\textbf{Minimalism as artifact.} FORTH-79 has no garbage collector, no JIT, no concurrency. Observed stability may be consequence of simplicity rather than fundamental property of adaptive systems. Complex runtimes may exhibit different behavior.
+
+\textbf{Hard-coded parameters.} Several constants are hard-coded (e.g., cache size 16 entries, transition matrix $16 \times 16$). Whether these specific values are critical for observed behavior is untested. Sensitivity analysis (varying parameters systematically) could clarify.
+
+\subsection{Hardware Dependence}
+
+\textbf{Single microarchitecture.} All experiments ran on Intel N150 (low-power x86-64). Cache hierarchies differ across vendors and generations:
+\begin{itemize}
+\item Intel (mesh interconnect vs. ring bus)
+\item ARM (different associativity, line sizes)
+\item RISC-V (variable cache configurations)
+\end{itemize}
+
+Preliminary tests on ARM Cortex-A72 (Raspberry Pi 4) suggest $\Lambda_{\text{eff}} = 256 \pm 12$ bytes persists, but sample size is small (N=30). Comprehensive cross-platform validation is needed.
+
+\textbf{Cache alignment effects.} $\Lambda_{\text{eff}} = 256$ bytes = $4 \times 64$ bytes (cache line size). This is likely not coincidence. On hardware with different cache line sizes (e.g., 128 bytes on some POWER processors), $\Lambda_{\text{eff}}$ may scale proportionally. This hypothesis is untested.
+
+\textbf{Page size dependence.} Zero-variance anti-resonance at 4096 bytes coincides with 4 KB operating system pages. On systems with different page sizes (e.g., 16 KB on some ARM configurations, 2 MB huge pages), anti-resonance points may shift. This is testable but not yet tested.
+
+\textbf{Thermal and power management.} We disabled turbo boost and frequency scaling, fixing CPU at 3.4 GHz. Modern processors dynamically adjust frequency, voltage, and core parking. Whether steady states persist under DVFS is unknown. Hypothesis: thermal throttling may introduce new attractor basins at reduced frequencies.
+
+\subsection{External Validity}
+
+\textbf{Deterministic workloads only.} Real-world applications have I/O, user interaction, network latency. Whether steady states emerge under non-deterministic workloads is untested. Hypothesis: steady states may exist within execution phases (e.g., request processing loop) even if overall application is non-deterministic.
+
+\textbf{Short execution duration.} Workloads complete in < 1 second. Long-running processes (hours, days) may experience:
+\begin{itemize}
+\item Memory pressure (heap fragmentation, swap)
+\item Thermal drift (CPU temperature changes → frequency scaling)
+\item OS scheduler interference (other processes, context switches)
+\item Hardware state changes (cache contents, TLB, branch predictors)
+\end{itemize}
+
+Whether steady states persist over long timescales is unknown.
+
+\textbf{Single-threaded execution.} All workloads are single-threaded. Concurrent execution introduces race conditions, lock contention, and cache coherency traffic. Whether steady states exist in multi-threaded adaptive runtimes is an open question. Hypothesis: per-thread steady states may exist even if global state is unstable.
+
+\textbf{Academic vs. production code.} Our test workloads are synthetic benchmarks (factorial, arithmetic stress). Real-world applications have irregular control flow, pointer chasing, system calls, and external dependencies. Whether steady states characterize production workloads is speculative.
+
+\subsection{Statistical Validity}
+
+\textbf{Multiple comparisons.} We tested 128 configurations across 5 workload classes, yielding 640 configuration-workload pairs. With $\alpha = 0.01$ significance level, we expect $\sim$6 false positives by chance. We applied Bonferroni correction, but this reduces power. Some null results may be false negatives.
+
+\textbf{Goodness-of-fit bias.} James Law parameters were fit to the same data used for validation. This introduces optimistic bias in $R^2$. Out-of-sample validation (e.g., predicting $K$ for untested window sizes) would provide stronger evidence. We did not perform such validation.
+
+\textbf{Publication bias.} We report results from configurations that converged successfully. The 12 timeout failures (0.03\%) were excluded from analysis. This introduces selection bias: reported behavior reflects stable regimes only, not failure modes.
+
+\subsection{Construct Validity}
+
+\textbf{K-statistic interpretation.} We define $K = \Lambda_{\text{eff}} / W_{\text{actual}}$ and claim it measures "window utilization efficiency." This is a construct: $K$ is computed from multiple indirect measurements (heat entropy, timing variance). Whether $K$ truly reflects window utilization or merely correlates with some other latent variable is unclear.
+
+\textbf{Steady-state definition.} Our operational definition (CV < 5\%, heat convergence) is arbitrary. Other thresholds (CV < 1\%, CV < 10\%) would yield different classification. Sensitivity analysis to threshold choice was not performed.
+
+\textbf{Missing confounds.} We did not measure or control:
+\begin{itemize}
+\item Ambient temperature
+\item Relative humidity (affects electrostatic discharge risk)
+\item Cosmic ray bit flips (negligible but non-zero)
+\item NTP clock synchronization (may perturb timing measurements)
+\end{itemize}
+
+These are assumed negligible but not verified.
+
+\subsection{Mitigation Summary}
+
+Despite these threats, we believe our core findings are robust:
+\begin{enumerate}
+\item Reproducibility is strong (CV < 2\% for most configurations)
+\item James Law fit is good ($R^2 > 0.99$) and parsimonious (4 parameters)
+\item Steady states are consistent across multiple workloads
+\item Phenomenon is not unique to a single configuration (128 tested)
+\end{enumerate}
+
+However, generalization beyond our experimental context (x86-64, GCC, deterministic workloads, short duration) requires additional validation.

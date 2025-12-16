@@ -90,7 +90,7 @@ Tables can be customized by editing the generated `.tex` files or by modifying t
 ### How to Regenerate
 
 ```bash
-cd /home/rajames/CLionProjects/StarForth/papers/LaTeX/scripts
+cd /home/rajames/CLionProjects/StarForth/papers/src/scripts
 Rscript regenerate_all_tables.R
 ```
 

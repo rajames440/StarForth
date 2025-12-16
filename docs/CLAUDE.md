@@ -214,7 +214,7 @@ The `WORD-ENTROPY` Forth word prints execution heat statistics to stdout. This o
 Comprehensive documentation is available in multiple formats:
 
 ```bash
-make book         # LaTeX → PDF (gold standard)
+make book         # src → PDF (gold standard)
 make book-html    # HTML single-page + multi-page with dark.css
 ```
 

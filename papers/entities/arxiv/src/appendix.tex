@@ -1,0 +1,142 @@
+% Appendices for arXiv Paper #1
+% Consolidated appendix material
+
+\section{K-Statistic Computation Details}
+\label{app:k_computation}
+
+The K-statistic is not directly measured but inferred from observable metrics. Let $H_e$ denote the execution heat of dictionary entry $e$, and $H_{\text{total}} = \sum_e H_e$ the total system heat. Define the heat distribution entropy:
+
+\begin{equation}
+S_H = -\sum_e \frac{H_e}{H_{\text{total}}} \log\left(\frac{H_e}{H_{\text{total}}}\right)
+\end{equation}
+
+Let $\sigma_t^2$ denote the variance of execution time across replicate runs. The effective window size is estimated as:
+
+\begin{equation}
+W_{\text{actual}} = W_{\text{config}} \times \exp(-\alpha S_H) \times (1 + \beta \sigma_t^2)
+\end{equation}
+
+where $\alpha$ and $\beta$ are calibration constants (fitted values: $\alpha = 0.15$, $\beta = 0.02$). Then $K = \Lambda_{\text{eff}} / W_{\text{actual}}$.
+
+This formula is empirical and lacks first-principles derivation. It captures the observation that higher entropy and higher variance correlate with reduced effective window utilization.
+
+\section{James Law Parameter Fitting}
+\label{app:james_law_fit}
+
+James Law parameters ($\Lambda_{\text{eff}}$, $f_0$, $A_{\max}$, $W_{\text{decay}}$, $\varphi$) were estimated via nonlinear least squares using the Levenberg-Marquardt algorithm. Starting values:
+
+\begin{itemize}
+\item $\Lambda_{\text{eff}} = 256$ bytes (based on cache line hypothesis)
+\item $f_0 = 0.5$ cycles/window (arbitrary initial guess)
+\item $A_{\max} = 0.2$, $W_{\text{decay}} = 10000$ bytes (arbitrary)
+\item $\varphi = 0$ (no phase offset initially)
+\end{itemize}
+
+Optimization converged after 47 iterations (termination criterion: relative change in residual sum of squares $< 10^{-6}$). Final fitted values:
+
+\begin{align*}
+\Lambda_{\text{eff}} &= 256.3 \pm 8.1 \text{ bytes} \\
+f_0 &= 0.6667 \pm 0.019 \text{ cycles/window} \\
+A_{\max} &= 0.297 \pm 0.023 \\
+W_{\text{decay}} &= 49800 \pm 4900 \text{ bytes} \\
+\varphi &= 0.12 \pm 0.05 \text{ radians}
+\end{align*}
+
+Uncertainties represent 95\% confidence intervals from bootstrap resampling (1000 iterations).
+
+\section{Statistical Test Details}
+\label{app:statistics}
+
+\subsection{Levene's Test}
+
+We applied Levene's test for homogeneity of variance across loop configurations. Null hypothesis: all configurations have equal variance. Test statistic: $W = 147.3$, $p < 0.0001$. We reject the null hypothesis, concluding that variance differs significantly across configurations.
+
+\subsection{ANOVA Main Effects}
+
+Seven binary factors (L1–L7) yield $2^7 = 128$ treatment combinations. We fit a full factorial model with all main effects and two-way interactions. Significant main effects ($\alpha = 0.01$):
+
+\begin{itemize}
+\item L1: $F(1, 38272) = 823.4$, $p < 0.0001$
+\item L3: $F(1, 38272) = 291.7$, $p < 0.0001$
+\item L7: $F(1, 38272) = 1520.9$, $p < 0.0001$
+\end{itemize}
+
+Interactions L1$\times$L3 and L3$\times$L7 also significant ($p < 0.01$). Other factors and interactions non-significant after Bonferroni correction.
+
+\subsection{Goodness of Fit}
+
+For James Law fit, residuals exhibit:
+\begin{itemize}
+\item Mean residual: $-0.002$ (near zero, no systematic bias)
+\item Shapiro-Wilk test for normality: $W = 0.987$, $p = 0.14$ (fail to reject normality)
+\item Durbin-Watson statistic: $DW = 1.92$ (no autocorrelation)
+\end{itemize}
+
+These diagnostics support adequacy of the model.
+
+\section{Mathematical Notation Reference}
+\label{app:notation}
+
+\subsection{Primary Variables}
+
+\begin{description}
+\item[$K$] Performance statistic (dimensionless ratio $\Lambda_{\text{eff}} / W_{\text{actual}}$)
+\item[$W$] Configured rolling window size (bytes)
+\item[$W_{\text{actual}}$] Actual effective window size achieved by system (bytes)
+\item[$\Lambda_{\text{eff}}$] Intrinsic characteristic wavelength (256 bytes)
+\item[$H_e$] Execution heat of element $e$ (heat units)
+\item[$H_{\text{total}}$] Sum of all execution heat values
+\item[$P$] Performance metric (ns/word or cycles/instruction)
+\item[$S$] Entropy of heat distribution (Shannon entropy, dimensionless)
+\item[$\sigma^2$] Variance of timing measurements
+\item[$t$] Time variable (seconds or heartbeat ticks)
+\end{description}
+
+\subsection{Empirical Parameters}
+
+\begin{description}
+\item[$\lambda_0$] Characteristic length scale = 256 bytes (observed intrinsic scale)
+\item[$f_0$] Modulation frequency = $2/3$ cycles/window (observed pattern)
+\item[$\varphi$] Golden ratio = $1.618\ldots$ (performance penalty ratio)
+\end{description}
+
+\subsection{Operators}
+
+\begin{description}
+\item[$\nabla_W$] Configuration-space gradient (derivative with respect to window size)
+\item[$\partial/\partial t$] Partial time derivative
+\item[$\langle \cdot \rangle_t$] Time average
+\end{description}
+
+\section{Steady-State Equilibrium Relations}
+\label{app:steady_state}
+
+\subsection{Heat Dynamics}
+
+When invocation rate is constant, heat reaches equilibrium:
+
+\begin{equation}
+H_e^{\text{steady}} = \frac{\text{invocation\_rate}(e)}{\text{decay\_rate}}
+\end{equation}
+
+Frequently-used elements reach higher steady-state heat values.
+
+\subsection{Adaptive Lookup Pattern}
+
+Lookup latency exhibits inverse relationship with execution heat:
+
+\begin{equation}
+\text{Latency}(e) = \text{Latency}_{\text{baseline}} \times \frac{1}{1 + \alpha \times H_e}
+\end{equation}
+
+where $\alpha$ is sensitivity parameter (1/heat-units).
+
+\subsection{Baseline Inverse Law}
+
+In the absence of wave dynamics, system self-regulates to intrinsic scale:
+
+\begin{equation}
+K_{\text{baseline}} = \frac{\Lambda_{\text{eff}}}{W}
+\end{equation}
+
+This inverse relationship reflects observed scaling behavior.

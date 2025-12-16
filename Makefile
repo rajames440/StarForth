@@ -682,7 +682,7 @@ api-docs:
 	@./scripts/generate-doxygen-appendix.sh
 	@echo "✅ API documentation generated: docs/src/appendix/"
 
-# Convert all AsciiDoc to LaTeX
+# Convert all AsciiDoc to src
 docs-latex:
 	@echo "📄 Converting AsciiDoc to LaTeX..."
 	@if [ ! -f scripts/asciidoc-to-latex.sh ]; then \

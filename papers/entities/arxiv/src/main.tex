@@ -1,0 +1,61 @@
+% =====================================================
+% Steady-State Convergence in a Self-Adaptive VM
+% arXiv Submission - Paper #1
+% =====================================================
+
+\documentclass[11pt]{article}
+
+% Essential packages only (arXiv-safe)
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+
+% Title and author
+\title{Steady-State Convergence in a Self-Adaptive Virtual Machine: An Empirical Study}
+
+\author{
+  Robert A. James \\
+  StarForth Project \\
+  \texttt{rajames440@gmail.com}
+  \texttt{https://github.com/rajames440}
+}
+
+\date{\today}
+
+% Custom macros (minimal, inline)
+\newcommand{\ssm}{\textbf{Steady State Machine}}
+
+\begin{document}
+
+\maketitle
+
+% Abstract
+\input{abstract}
+
+% Main content
+\input{intro}
+\input{related}
+\input{architecture}
+\input{formalism}
+\input{methods}
+\input{results}
+\input{discussion}
+\input{implications}
+\input{threats}
+\input{conclusion}
+
+% Acknowledgments
+\section*{Acknowledgments}
+The author thanks the open-source community for feedback on early versions of the StarForth VM. This work was conducted independently without external funding.
+
+% References
+\bibliographystyle{plain}
+\bibliography{references}
+
+% Appendices
+\appendix
+\input{appendix}
+
+\end{document}
