@@ -1,0 +1,11 @@
+session StarKernel = "HOL" +
+  description
+    "Formal verification of StarKernel VM-first architecture"
+  options [timeout = 600]
+  theories
+    VMCore
+    Capabilities
+    ACL
+    Scheduler
+  document_files
+    "root.tex"
