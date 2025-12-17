@@ -10,6 +10,13 @@ This document provides **kernel-specific implementation details** for the HAL pl
 
 ## StarKernel Architecture
 
+**Critical Architectural Principle:**
+> StarForth VM instances are the sole schedulable entities in StarKernel.
+>
+> There are no processes, threads, or traditional OS abstractions.
+>
+> StarKernel is the arbiter (scheduler + hardware owner), not the executor.
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  UEFI Firmware                                              │
@@ -24,12 +31,12 @@ This document provides **kernel-specific implementation details** for the HAL pl
 │  • Collects BootInfo (memory map, ACPI tables, framebuffer) │
 │  • Sets up initial page tables                              │
 │  • Exits UEFI boot services                                 │
-│  • Jumps to StarKernel proper                               │
+│  • Jumps to kernel_main()                                   │
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ↓
 ┌─────────────────────────────────────────────────────────────┐
-│  StarKernel HAL (stage 1)                                   │
+│  StarKernel HAL Initialization (stage 1)                    │
 │  • CPU initialization (GDT, IDT, interrupts)                │
 │  • Memory subsystem (PMM, VMM, heap)                        │
 │  • Time subsystem (TSC, HPET, APIC timer)                   │
@@ -38,13 +45,47 @@ This document provides **kernel-specific implementation details** for the HAL pl
                       │
                       ↓
 ┌─────────────────────────────────────────────────────────────┐
-│  StarForth VM                                               │
-│  • vm_create()                                              │
-│  • Initialize physics subsystems                            │
-│  • Start REPL                                               │
-│  • Print "ok" prompt                                        │
+│  VM Arbiter Initialization (stage 2)                        │
+│  • Initialize VM scheduler state                            │
+│  • Set up quantum timer (APIC periodic interrupt)           │
+│  • Prepare VM ID allocator                                  │
+│  • Define capability system                                 │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Primordial VM Instantiation (stage 3)                      │
+│  • Allocate VM[0] control block                             │
+│  • Grant VM[0] root capabilities (CAP_SPAWN, CAP_MMIO, etc.)│
+│  • Map VM[0] memory envelope (16MB initial)                 │
+│  • Hydrate dictionary (core words + kernel words)           │
+│  • Initialize VM[0] physics state (heat, window, metrics)   │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ↓
+┌─────────────────────────────────────────────────────────────┐
+│  VM Arbiter Loop (stage 4)                                  │
+│  • Select next runnable VM                                  │
+│  • Perform VM transition (context switch)                   │
+│  • VM executes until quantum expires / yields / blocks      │
+│  • Save VM state, repeat                                    │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ↓
+┌─────────────────────────────────────────────────────────────┐
+│  VM[0] Execution (the "ok" prompt)                          │
+│  • VM[0] prints "ok"                                        │
+│  • VM[0] may spawn service VMs (console, disk, network)     │
+│  • VM[0] becomes the supervisor (analogous to init)         │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+**Key Differences from Traditional OS:**
+- No "user space" vs "kernel space" - only VM instances with capabilities
+- No fork/exec - VMs spawn other VMs via `SPAWN-VM` kernel word
+- No syscalls - kernel words invoked directly from Forth
+- No shared memory by default - message passing via `SEND`/`RECV`
+- No PIDs - VM IDs identify execution contexts
 
 ---
 
@@ -65,7 +106,7 @@ src/platform/kernel/
 │
 ├── mm/
 │   ├── pmm.c                 # Physical Memory Manager
-│   ├── vmm.c                 # Virtual Memory Manager
+│   ├── vmm.c                 # Virtual Memory Manager (page tables)
 │   ├── kmalloc.c             # Kernel heap allocator
 │   └── paging.S              # Page table manipulation ASM
 │
@@ -82,6 +123,13 @@ src/platform/kernel/
 │   ├── acpi.c                # ACPI table parsing
 │   └── pci.c                 # PCI enumeration (future)
 │
+├── vm_arbiter/
+│   ├── vm_instance.c         # VM control block management
+│   ├── scheduler.c           # VM scheduling policy
+│   ├── capabilities.c        # Capability system implementation
+│   ├── message_queue.c       # Inter-VM message passing
+│   └── kernel_words.c        # Kernel word implementations (SPAWN-VM, SEND, etc.)
+│
 ├── hal_time.c                # HAL time implementation
 ├── hal_interrupt.c           # HAL interrupt implementation
 ├── hal_memory.c              # HAL memory implementation
@@ -91,6 +139,8 @@ src/platform/kernel/
 │
 └── kernel_main.c             # StarKernel entry point (after UEFI)
 ```
+
+**Note:** HAL layer serves StarKernel (hardware abstraction). VM instances interact with hardware only through kernel words, which internally use HAL functions.
 
 ---
 
@@ -188,9 +238,11 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 **Responsibilities:**
 - Parse BootInfo
 - Initialize CPU (GDT, IDT)
-- Initialize memory subsystem
-- Initialize HAL
-- Call `main()` to start VM
+- Initialize memory subsystem (PMM, VMM, heap)
+- Initialize HAL subsystems
+- Initialize VM arbiter
+- Instantiate primordial VM (VM[0])
+- Enter VM arbiter loop
 
 **Implementation:**
 
@@ -203,6 +255,15 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 #include "mm/vmm.h"
 #include "drivers/uart.h"
 #include "drivers/framebuffer.h"
+#include "vm_arbiter/vm_instance.h"
+#include "vm_arbiter/scheduler.h"
+#include "vm_arbiter/capabilities.h"
+#include "hal/hal_time.h"
+#include "hal/hal_interrupt.h"
+#include "hal/hal_memory.h"
+#include "hal/hal_console.h"
+#include "hal/hal_cpu.h"
+#include "hal/hal_panic.h"
 
 /* Global BootInfo (available to all kernel code) */
 BootInfo *g_boot_info = NULL;
@@ -217,12 +278,13 @@ void kernel_main(BootInfo *boot_info) {
     /* 2. Initialize CPU structures */
     gdt_init();
     idt_init();
+    uart_puts("CPU initialized\r\n");
 
     /* 3. Initialize physical memory manager */
     pmm_init(boot_info);
     uart_puts("PMM initialized\r\n");
 
-    /* 4. Initialize virtual memory manager */
+    /* 4. Initialize virtual memory manager (page tables) */
     vmm_init();
     uart_puts("VMM initialized\r\n");
 
@@ -233,24 +295,52 @@ void kernel_main(BootInfo *boot_info) {
     /* 6. Initialize framebuffer */
     fb_init(boot_info);
 
-    /* 7. Initialize HAL */
+    /* 7. Initialize HAL subsystems */
     hal_time_init();
     hal_interrupt_init();
     hal_mem_init();
     hal_console_init();
     hal_cpu_init();
-
     uart_puts("HAL initialized\r\n");
 
-    /* 8. Call standard main() to start VM */
-    extern int main(int argc, char **argv);
-    char *argv[] = {"starforth", NULL};
-    main(1, argv);
+    /* 8. Initialize VM arbiter */
+    vm_arbiter_init();
+    uart_puts("VM arbiter initialized\r\n");
+
+    /* 9. Instantiate primordial VM (VM[0]) */
+    VMInstance *vm0 = vm_create_primordial();
+    if (!vm0) {
+        hal_panic("Failed to create primordial VM");
+    }
+
+    /* Grant VM[0] root capabilities */
+    capability_grant(vm0, CAP_SPAWN);   /* Can spawn other VMs */
+    capability_grant(vm0, CAP_MMIO);    /* Can access MMIO */
+    capability_grant(vm0, CAP_IRQ);     /* Can register IRQ handlers */
+    capability_grant(vm0, CAP_KILL);    /* Can kill other VMs */
+    capability_grant(vm0, CAP_TIME_ADMIN); /* Can adjust system time */
+
+    /* Hydrate VM[0] dictionary (core words + kernel words) */
+    vm_hydrate_dictionary(vm0);
+    uart_puts("VM[0] instantiated\r\n");
+
+    /* 10. Enqueue VM[0] as runnable */
+    vm_scheduler_enqueue(vm0);
+
+    /* 11. Enter VM arbiter loop (never returns) */
+    uart_puts("Entering VM arbiter loop...\r\n");
+    vm_arbiter_loop();
 
     /* Never returns, but halt if it does */
-    hal_panic("main() returned unexpectedly");
+    hal_panic("VM arbiter loop exited unexpectedly");
 }
 ```
+
+**Key Differences from Traditional Kernel:**
+- No `main()` call to start "user space"
+- No `init` process spawned
+- VM arbiter loop replaces traditional scheduler
+- VM[0] is explicitly granted capabilities (no implicit root privileges)
 
 ---
 
@@ -706,51 +796,92 @@ void hal_panic(const char *msg) {
 
 ### Milestone 1: Boot + Serial Output
 - UEFI loader runs
-- Kernel prints "StarKernel booting..." to serial
+- StarKernel prints "StarKernel booting..." to serial
 - System doesn't triple-fault
 
 ### Milestone 2: Memory Works
 - PMM tracks physical pages
-- VMM maps kernel
+- VMM (page tables) maps kernel regions
 - kmalloc/kfree work
 
 ### Milestone 3: HAL Initialized
 - All `hal_*_init()` functions complete
 - HAL functions callable (even if not fully functional)
+- Quantum timer configured (APIC periodic interrupt)
 
-### Milestone 4: VM Starts
-- `vm_create()` succeeds
-- Dictionary allocated
-- No crashes in VM init
+### Milestone 4: VM Arbiter Initialized
+- VM scheduler state initialized
+- VM ID allocator ready
+- Capability system defined
+- Message queue infrastructure ready
 
-### Milestone 5: REPL Runs
-- REPL prints "`ok`" prompt
+### Milestone 5: Primordial VM Instantiation
+- VM[0] control block allocated
+- VM[0] granted root capabilities
+- VM[0] memory envelope mapped (16MB)
+- Dictionary hydrated (core words + kernel words)
+- Physics state initialized for VM[0]
+
+### Milestone 6: VM[0] Executes
+- VM arbiter enters scheduling loop
+- VM[0] selected and transitioned to
+- VM[0] prints "`ok`" prompt
 - Can type characters (echoed to serial)
 - Can execute simple words (`1 2 + .` → `3`)
 
-### Milestone 6: Physics Subsystems Work
-- Execution heat tracking operational
-- Heartbeat timer fires
+### Milestone 7: Physics Subsystems Work
+- Execution heat tracking operational in VM[0]
+- Heartbeat timer fires (quantum preemption)
 - Rolling window captures execution history
+- Pipelining metrics collected
 
-### Milestone 7: Full Test Suite
-- All 936+ tests pass on kernel
+### Milestone 8: Multi-VM Support
+- VM[0] can spawn VM[1] via `SPAWN-VM` kernel word
+- VM transitions (context switches) work correctly
+- Message passing between VMs (`SEND`/`RECV`)
+- Capability enforcement verified
+
+### Milestone 9: Full Test Suite
+- All 936+ tests pass on kernel (VM[0] execution)
 - DoE mode works
 - 0% algorithmic variance on bare metal
 
 ---
 
-## Future Work (StarshipOS)
+## Future Work (StarshipOS Evolution)
 
-After achieving `ok` prompt on StarKernel:
+After achieving multi-VM execution on StarKernel:
 
-1. **Storage:** AHCI/NVMe drivers, FAT32 filesystem
-2. **Networking:** VirtIO-net driver, TCP/IP stack
-3. **Process model:** Forth tasks, scheduling, IPC
-4. **Device model:** Unified block/net/char subsystem
-5. **Security:** Capabilities, ACL, Forth-based access control
+1. **Service VMs (Drivers as VM Instances)**
+   - Console service VM (keyboard/screen mediation)
+   - Block device service VM (AHCI/NVMe driver)
+   - Network service VM (VirtIO-net driver)
 
-**The HAL remains the foundation throughout.**
+2. **Storage Subsystem**
+   - Filesystem service VM (FAT32, later: native Forth-based FS)
+   - Block cache VM (persistent storage abstraction)
+
+3. **Networking**
+   - TCP/IP stack as service VM
+   - DNS resolver VM
+   - HTTP server VM (Forth-based web services)
+
+4. **VM Lifecycle Management**
+   - VM supervision trees (Erlang OTP-style)
+   - VM migration (pause, serialize, resume on different core/machine)
+   - VM checkpointing (save/restore VM state)
+
+5. **Security Refinement**
+   - Fine-grained capability attenuation
+   - VM isolation verification (formal methods)
+   - Audit logging of capability usage
+
+6. **Distributed StarKernel (Future Research)**
+   - VM instances across multiple physical machines
+   - Transparent message passing over network
+   - Distributed supervision trees
+
+**The HAL remains the foundation. VM instances remain the sole execution model throughout.**
 
 ---
 
