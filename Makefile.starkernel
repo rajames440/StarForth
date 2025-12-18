@@ -1,0 +1,335 @@
+# Makefile.starkernel - Build system for StarKernel
+# Multi-architecture UEFI kernel build system
+
+# Architecture detection
+UNAME_M := $(shell uname -m)
+ifeq ($(UNAME_M),x86_64)
+    ARCH ?= amd64
+else ifeq ($(UNAME_M),aarch64)
+    ARCH ?= aarch64
+else ifeq ($(UNAME_M),arm64)
+    ARCH ?= aarch64
+else ifeq ($(UNAME_M),riscv64)
+    ARCH ?= riscv64
+else
+    ARCH ?= amd64
+endif
+
+# Target type
+TARGET ?= kernel
+
+# Build output directory
+BUILD_DIR := build/$(ARCH)/$(TARGET)
+OBJ_DIR := $(BUILD_DIR)/obj
+KERNEL_EFI := $(BUILD_DIR)/starkernel.efi
+
+# Source directories
+KERNEL_SRC := src/starkernel
+KERNEL_INC := include/starkernel
+
+# Toolchain configuration per architecture
+ifeq ($(ARCH),amd64)
+    # Try x86_64-elf-gcc first, fall back to native gcc
+    ifneq ($(shell which x86_64-elf-gcc 2>/dev/null),)
+        CC := x86_64-elf-gcc
+        LD := x86_64-elf-ld
+        OBJCOPY := x86_64-elf-objcopy
+    else
+        CC := gcc
+        LD := ld
+        OBJCOPY := objcopy
+    endif
+    ARCH_CFLAGS := -m64 -march=x86-64 -mno-red-zone
+    LINKER_SCRIPT := linker/starkernel-amd64.ld
+    EFI_TARGET := efi-app-x86_64
+else ifeq ($(ARCH),aarch64)
+    # Try aarch64-linux-gnu-gcc first, fall back to aarch64-none-elf-gcc
+    ifneq ($(shell which aarch64-linux-gnu-gcc 2>/dev/null),)
+        CC := aarch64-linux-gnu-gcc
+        LD := aarch64-linux-gnu-ld
+        OBJCOPY := aarch64-linux-gnu-objcopy
+    else ifneq ($(shell which aarch64-none-elf-gcc 2>/dev/null),)
+        CC := aarch64-none-elf-gcc
+        LD := aarch64-none-elf-ld
+        OBJCOPY := aarch64-none-elf-objcopy
+    else
+        $(error No ARM64 toolchain found. Install aarch64-linux-gnu-gcc or aarch64-none-elf-gcc)
+    endif
+    ARCH_CFLAGS := -march=armv8-a -mcpu=cortex-a72
+    LINKER_SCRIPT := linker/starkernel-aarch64.ld
+    EFI_TARGET := efi-app-aarch64
+else ifeq ($(ARCH),riscv64)
+    # Try riscv64-unknown-elf-gcc first, fall back to riscv64-linux-gnu-gcc
+    ifneq ($(shell which riscv64-unknown-elf-gcc 2>/dev/null),)
+        CC := riscv64-unknown-elf-gcc
+        LD := riscv64-unknown-elf-ld
+        OBJCOPY := riscv64-unknown-elf-objcopy
+    else ifneq ($(shell which riscv64-linux-gnu-gcc 2>/dev/null),)
+        CC := riscv64-linux-gnu-gcc
+        LD := riscv64-linux-gnu-ld
+        OBJCOPY := riscv64-linux-gnu-objcopy
+    else
+        $(error No RISC-V toolchain found. Install riscv64-unknown-elf-gcc or riscv64-linux-gnu-gcc)
+    endif
+    ARCH_CFLAGS := -march=rv64gc -mabi=lp64d
+    LINKER_SCRIPT := linker/starkernel-riscv64.ld
+    EFI_TARGET := efi-app-riscv64
+else
+    $(error Unsupported architecture: $(ARCH))
+endif
+
+# Compiler flags
+CFLAGS := -std=c99 -Wall -Werror -Wextra \
+          -ffreestanding -nostdlib -fno-builtin \
+          -fPIC -fno-stack-protector -fshort-wchar \
+          $(ARCH_CFLAGS) \
+          -I$(KERNEL_INC) -Iinclude
+
+# Linker flags (emit relocations so objcopy can create .reloc for UEFI)
+LDFLAGS := -T $(LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -shared -Bsymbolic -znocombreloc -e efi_main
+
+# Source files (will expand as we add code)
+KERNEL_SRCS := $(wildcard $(KERNEL_SRC)/*.c) \
+               $(wildcard $(KERNEL_SRC)/boot/*.c) \
+               $(wildcard $(KERNEL_SRC)/hal/*.c) \
+               $(wildcard $(KERNEL_SRC)/memory/*.c) \
+               $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
+               $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c)
+
+KERNEL_ASM := $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.S)
+
+KERNEL_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(OBJ_DIR)/%.o,$(KERNEL_SRCS)) \
+               $(patsubst $(KERNEL_SRC)/%.S,$(OBJ_DIR)/%.o,$(KERNEL_ASM))
+
+# Default target
+.PHONY: all
+all: $(KERNEL_EFI)
+	@echo "Built StarKernel for $(ARCH): $(KERNEL_EFI)"
+
+# Create build directories
+$(BUILD_DIR) $(OBJ_DIR):
+	@mkdir -p $(OBJ_DIR)/boot $(OBJ_DIR)/hal $(OBJ_DIR)/memory $(OBJ_DIR)/vm_arbiter $(OBJ_DIR)/arch/$(ARCH)
+
+# Compile C sources
+$(OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(OBJ_DIR)
+	@mkdir -p $(dir $@)
+	@echo "CC $<"
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile assembly sources
+$(OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(OBJ_DIR)
+	@mkdir -p $(dir $@)
+	@echo "AS $<"
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+# Link kernel ELF
+$(BUILD_DIR)/starkernel.elf: $(KERNEL_OBJS) $(LINKER_SCRIPT) | $(BUILD_DIR)
+	@echo "LD $@"
+	@$(LD) $(LDFLAGS) $(KERNEL_OBJS) -o $@
+
+# Convert ELF to PE32+ UEFI executable
+$(KERNEL_EFI): $(BUILD_DIR)/starkernel.elf
+	@echo "OBJCOPY $@"
+	@$(OBJCOPY) \
+		-j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
+		-j .rel.* -j .rela -j .rela.* -j .reloc -j .rodata -j .bss \
+		--target=$(EFI_TARGET) \
+		$< $@
+	@echo "StarKernel built successfully: $@"
+
+# Build ISO image (amd64 only)
+.PHONY: iso
+iso: $(KERNEL_EFI)
+ifeq ($(ARCH),amd64)
+	@echo "Creating ISO image..."
+	@./tools/make-iso.sh $(KERNEL_EFI) $(BUILD_DIR)/starkernel.iso
+else
+	@echo "Error: ISO generation only supported for amd64"
+	@exit 1
+endif
+
+# Build Raspberry Pi 4B image (aarch64 only)
+.PHONY: rpi4-image
+rpi4-image: $(KERNEL_EFI)
+ifeq ($(ARCH),aarch64)
+	@echo "Creating Raspberry Pi 4B image..."
+	@./tools/make-rpi4-image.sh $(KERNEL_EFI) $(BUILD_DIR)/starkernel-rpi4.img
+else
+	@echo "Error: RasPi image generation only supported for aarch64"
+	@exit 1
+endif
+
+# Launch QEMU (architecture-specific)
+.PHONY: qemu
+qemu: $(KERNEL_EFI)
+ifeq ($(ARCH),amd64)
+	@echo "Preparing FAT ESP directory for QEMU..."
+	@rm -rf $(BUILD_DIR)/esp
+	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
+	@cp $(KERNEL_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
+	@echo "map -r" > $(BUILD_DIR)/esp/startup.nsh
+	@echo "fs0:" >> $(BUILD_DIR)/esp/startup.nsh
+	@echo "ls" >> $(BUILD_DIR)/esp/startup.nsh
+	@echo "ls EFI" >> $(BUILD_DIR)/esp/startup.nsh
+	@echo "ls EFI\\BOOT" >> $(BUILD_DIR)/esp/startup.nsh
+	@echo "\\EFI\\BOOT\\BOOTX64.EFI" >> $(BUILD_DIR)/esp/startup.nsh
+	@echo ".\\EFI\\BOOT\\BOOTX64.EFI" >> $(BUILD_DIR)/esp/startup.nsh
+	@echo "Launching QEMU for amd64..."
+	@# Find OVMF firmware files
+	@if [ -f /usr/share/OVMF/OVMF_CODE.fd ]; then \
+		OVMF_CODE=/usr/share/OVMF/OVMF_CODE.fd; \
+	elif [ -f /usr/share/qemu/OVMF.fd ]; then \
+		OVMF_CODE=/usr/share/qemu/OVMF.fd; \
+	elif [ -f /usr/share/ovmf/OVMF.fd ]; then \
+		OVMF_CODE=/usr/share/ovmf/OVMF.fd; \
+	else \
+		echo "Error: OVMF firmware not found. Install with: sudo apt install ovmf"; \
+		exit 1; \
+	fi; \
+	TMPDIR=$(BUILD_DIR) qemu-system-x86_64 \
+		-bios $$OVMF_CODE \
+		-drive format=raw,file=fat:rw:$(BUILD_DIR)/esp \
+		-serial mon:stdio \
+		-m 256M \
+		-nographic
+else ifeq ($(ARCH),aarch64)
+	@echo "Preparing FAT ESP directory for QEMU (aarch64)..."
+	@rm -rf $(BUILD_DIR)/esp
+	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
+	@cp $(KERNEL_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTAA64.EFI
+	@printf "FS0:\\EFI\\BOOT\\BOOTAA64.EFI\r\n" > $(BUILD_DIR)/esp/startup.nsh
+	@echo "Launching QEMU for aarch64 (virt + UEFI)..."
+	@if [ -f /usr/share/AAVMF/AAVMF_CODE.fd ]; then \
+		AAVMF_CODE=/usr/share/AAVMF/AAVMF_CODE.fd; \
+	elif [ -f /usr/share/qemu-efi-aarch64/QEMU_EFI.fd ]; then \
+		AAVMF_CODE=/usr/share/qemu-efi-aarch64/QEMU_EFI.fd; \
+	elif [ -f /usr/share/qemu/edk2-aarch64-code.fd ]; then \
+		AAVMF_CODE=/usr/share/qemu/edk2-aarch64-code.fd; \
+	else \
+		echo "Error: aarch64 UEFI firmware not found (AAVMF/edk2). Install qemu-efi-aarch64."; \
+		exit 1; \
+	fi; \
+	TMPDIR=$(BUILD_DIR) qemu-system-aarch64 \
+		-machine virt \
+		-cpu cortex-a57 \
+		-bios $$AAVMF_CODE \
+		-drive format=raw,file=fat:rw:$(BUILD_DIR)/esp \
+		-serial mon:stdio \
+		-nographic \
+		-m 2048 \
+		-d guest_errors
+else ifeq ($(ARCH),riscv64)
+	@echo "Preparing FAT ESP directory for QEMU (riscv64)..."
+	@rm -rf $(BUILD_DIR)/esp
+	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
+	@cp $(KERNEL_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTRISCV64.EFI
+	@printf "FS0:\\EFI\\BOOT\\BOOTRISCV64.EFI\r\n" > $(BUILD_DIR)/esp/startup.nsh
+	@echo "Launching QEMU for riscv64 (virt + UEFI)..."
+	@if [ -f /usr/share/qemu-efi-riscv64/QEMU_EFI.fd ]; then \
+		EDK2_RISCV=/usr/share/qemu-efi-riscv64/QEMU_EFI.fd; \
+	elif [ -f /usr/share/qemu/edk2-riscv64-code.fd ]; then \
+		EDK2_RISCV=/usr/share/qemu/edk2-riscv64-code.fd; \
+	else \
+		echo "Error: riscv64 UEFI firmware not found. Install qemu-efi-riscv64."; \
+		exit 1; \
+	fi; \
+	TMPDIR=$(BUILD_DIR) qemu-system-riscv64 \
+		-machine virt \
+		-bios $$EDK2_RISCV \
+		-drive format=raw,file=fat:rw:$(BUILD_DIR)/esp \
+		-serial mon:stdio \
+		-nographic \
+		-m 256M \
+		-d guest_errors
+endif
+
+# Launch QEMU with GDB
+.PHONY: qemu-gdb
+qemu-gdb: $(KERNEL_EFI)
+ifeq ($(ARCH),amd64)
+	@echo "Launching QEMU with GDB server on port 1234..."
+	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
+	@cp $(KERNEL_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
+	@qemu-system-x86_64 \
+		-bios /usr/share/OVMF/OVMF_CODE.fd \
+		-drive format=raw,file=fat:rw:$(BUILD_DIR)/esp \
+		-serial stdio \
+		-m 256M \
+		-s -S
+	@echo "Waiting for GDB connection on port 1234..."
+	@echo "In another terminal, run: gdb $(BUILD_DIR)/starkernel.elf -ex 'target remote :1234'"
+else ifeq ($(ARCH),riscv64)
+	@echo "Launching QEMU with GDB server for RISC-V on port 1234..."
+	@qemu-system-riscv64 \
+		-M virt \
+		-kernel $(KERNEL_EFI) \
+		-serial stdio \
+		-m 128M \
+		-s -S
+else
+	@echo "GDB support for $(ARCH) not yet implemented"
+	@exit 1
+endif
+
+# Convenience targets
+.PHONY: kernel
+kernel: all
+
+.PHONY: kernel-all
+kernel-all:
+	@$(MAKE) -f Makefile.starkernel ARCH=amd64 TARGET=kernel
+	@$(MAKE) -f Makefile.starkernel ARCH=aarch64 TARGET=kernel
+	@$(MAKE) -f Makefile.starkernel ARCH=riscv64 TARGET=kernel
+
+# Clean
+.PHONY: clean-kernel
+clean-kernel:
+	@echo "Cleaning StarKernel build artifacts..."
+	@rm -rf build/*/kernel
+	@echo "StarKernel build artifacts cleaned"
+
+.PHONY: info
+info:
+	@echo "StarKernel Build Configuration"
+	@echo "=============================="
+	@echo "Architecture:    $(ARCH)"
+	@echo "Target:          $(TARGET)"
+	@echo "Compiler:        $(CC)"
+	@echo "Linker:          $(LD)"
+	@echo "Build dir:       $(BUILD_DIR)"
+	@echo "Linker script:   $(LINKER_SCRIPT)"
+	@echo "Output:          $(KERNEL_EFI)"
+
+.PHONY: help
+help:
+	@echo "StarKernel Build System"
+	@echo "======================="
+	@echo ""
+	@echo "Usage: make -f Makefile.starkernel [ARCH=<arch>] [TARGET=<target>] <target>"
+	@echo ""
+	@echo "Architectures:"
+	@echo "  ARCH=amd64     - x86_64 (default)"
+	@echo "  ARCH=aarch64   - ARM64 (Raspberry Pi 4B)"
+	@echo "  ARCH=riscv64   - RISC-V 64-bit"
+	@echo ""
+	@echo "Build targets:"
+	@echo "  all            - Build kernel EFI binary (default)"
+	@echo "  kernel         - Same as 'all'"
+	@echo "  kernel-all     - Build for all architectures"
+	@echo "  iso            - Create bootable ISO (amd64 only)"
+	@echo "  rpi4-image     - Create RasPi 4B SD card image (aarch64 only)"
+	@echo "  clean-kernel   - Clean build artifacts"
+	@echo ""
+	@echo "QEMU targets:"
+	@echo "  qemu           - Launch QEMU for current architecture"
+	@echo "  qemu-gdb       - Launch QEMU with GDB server"
+	@echo ""
+	@echo "Info targets:"
+	@echo "  info           - Show build configuration"
+	@echo "  help           - Show this help message"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make -f Makefile.starkernel ARCH=amd64"
+	@echo "  make -f Makefile.starkernel ARCH=amd64 iso"
+	@echo "  make -f Makefile.starkernel ARCH=amd64 qemu"
+	@echo "  make -f Makefile.starkernel ARCH=aarch64 rpi4-image"

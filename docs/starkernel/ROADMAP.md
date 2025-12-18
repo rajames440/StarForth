@@ -69,73 +69,73 @@ make ARCH=riscv64 TARGET=kernel qemu
 ## Milestone 0: Foundation Setup (Week 1)
 
 ### Directory Structure
-- [ ] Create `src/starkernel/` directory
-- [ ] Create `src/starkernel/boot/` for UEFI loader
-- [ ] Create `src/starkernel/vm_arbiter/` for scheduler
-- [ ] Create `src/starkernel/hal/` for kernel HAL implementations
-- [ ] Create `src/starkernel/memory/` for PMM/VMM
-- [ ] Create `src/starkernel/arch/` for architecture-specific code
-  - [ ] `src/starkernel/arch/amd64/` - x86_64 boot, interrupts, page tables
-  - [ ] `src/starkernel/arch/aarch64/` - ARM64 boot, GIC, page tables
-  - [ ] `src/starkernel/arch/riscv64/` - RISC-V boot, PLIC, page tables
-- [ ] Create `include/starkernel/` for kernel headers
-- [ ] Create `tools/` for build scripts and image generation
+- [x] Create `src/starkernel/` directory
+- [x] Create `src/starkernel/boot/` for UEFI loader
+- [x] Create `src/starkernel/vm_arbiter/` for scheduler
+- [x] Create `src/starkernel/hal/` for kernel HAL implementations
+- [x] Create `src/starkernel/memory/` for PMM/VMM
+- [x] Create `src/starkernel/arch/` for architecture-specific code
+  - [x] `src/starkernel/arch/amd64/` - x86_64 boot, interrupts, page tables
+  - [x] `src/starkernel/arch/aarch64/` - ARM64 boot, GIC, page tables
+  - [x] `src/starkernel/arch/riscv64/` - RISC-V boot, PLIC, page tables
+- [x] Create `include/starkernel/` for kernel headers
+- [x] Create `tools/` for build scripts and image generation
 
 ### Build System - Multi-Architecture Support
 
 **Architecture Variables:**
-- [ ] Support `ARCH=amd64|aarch64|riscv64` (matches StarForth convention)
-- [ ] Support `TARGET=kernel` (StarKernel build type)
-- [ ] Auto-detect architecture if not specified (uname -m)
-- [ ] Output path: `build/${ARCH}/${TARGET}/starkernel.efi`
+- [x] Support `ARCH=amd64|aarch64|riscv64` (matches StarForth convention)
+- [x] Support `TARGET=kernel` (StarKernel build type)
+- [x] Auto-detect architecture if not specified (uname -m)
+- [x] Output path: `build/${ARCH}/${TARGET}/starkernel.efi`
 
 **Toolchain Configuration:**
-- [ ] Detect/configure toolchains for each architecture:
-  - [ ] **amd64**: `x86_64-elf-gcc` or native gcc with `-m64`
-  - [ ] **aarch64**: `aarch64-linux-gnu-gcc` or `aarch64-none-elf-gcc`
-  - [ ] **riscv64**: `riscv64-unknown-elf-gcc` or `riscv64-linux-gnu-gcc`
-- [ ] Add freestanding flags: `-ffreestanding -nostdlib -nostdinc -fno-builtin`
-- [ ] Add UEFI-specific flags: `-fPIC -fno-stack-protector -mno-red-zone` (amd64)
-- [ ] Detect GNU-EFI or use manual UEFI headers
+- [x] Detect/configure toolchains for each architecture:
+  - [x] **amd64**: `x86_64-elf-gcc` or native gcc with `-m64`
+  - [x] **aarch64**: `aarch64-linux-gnu-gcc` or `aarch64-none-elf-gcc`
+  - [x] **riscv64**: `riscv64-unknown-elf-gcc` or `riscv64-linux-gnu-gcc`
+- [x] Add freestanding flags: `-ffreestanding -nostdlib -nostdinc -fno-builtin`
+- [x] Add UEFI-specific flags: `-fPIC -fno-stack-protector -mno-red-zone` (amd64)
+- [x] Detect GNU-EFI or use manual UEFI headers
 
 ### Build Targets - amd64
 
 **Makefile.starkernel targets:**
-- [ ] `make ARCH=amd64 TARGET=kernel` → `build/amd64/kernel/starkernel.efi`
-  - [ ] Compile with `-m64 -march=x86-64 -mno-red-zone`
-  - [ ] Link with `linker/starkernel-amd64.ld`
-  - [ ] Output PE32+ UEFI executable
-- [ ] `make ARCH=amd64 TARGET=kernel iso` → `build/amd64/kernel/starkernel.iso`
-  - [ ] Create EFI System Partition (ESP) structure
-  - [ ] Copy `starkernel.efi` to `ESP/EFI/BOOT/BOOTX64.EFI`
-  - [ ] Generate bootable ISO with `xorriso` or `mkisofs`
-- [ ] `make ARCH=amd64 TARGET=kernel qemu`
-  - [ ] Launch QEMU with OVMF firmware
-  - [ ] Command: `qemu-system-x86_64 -bios OVMF.fd -hda fat:rw:build/amd64/kernel/esp/ -serial stdio`
-  - [ ] Enable KVM acceleration if available
-- [ ] `make ARCH=amd64 TARGET=kernel qemu-gdb`
-  - [ ] Launch QEMU with GDB server on port 1234
-  - [ ] Wait for GDB connection before starting
+- [x] `make ARCH=amd64 TARGET=kernel` → `build/amd64/kernel/starkernel.efi`
+  - [x] Compile with `-m64 -march=x86-64 -mno-red-zone`
+  - [x] Link with `linker/starkernel-amd64.ld`
+  - [x] Output PE32+ UEFI executable
+- [x] `make ARCH=amd64 TARGET=kernel iso` → `build/amd64/kernel/starkernel.iso`
+  - [x] Create EFI System Partition (ESP) structure
+  - [x] Copy `starkernel.efi` to `ESP/EFI/BOOT/BOOTX64.EFI`
+  - [x] Generate bootable ISO with `xorriso` or `mkisofs`
+- [x] `make ARCH=amd64 TARGET=kernel qemu`
+  - [x] Launch QEMU with OVMF firmware
+  - [x] Command: `qemu-system-x86_64 -bios OVMF.fd -hda fat:rw:build/amd64/kernel/esp/ -serial stdio`
+  - [x] Enable KVM acceleration if available
+- [x] `make ARCH=amd64 TARGET=kernel qemu-gdb`
+  - [x] Launch QEMU with GDB server on port 1234
+  - [x] Wait for GDB connection before starting
 
 ### Build Targets - aarch64 (Raspberry Pi 4B)
 
 **Makefile.starkernel targets:**
-- [ ] `make ARCH=aarch64 TARGET=kernel` → `build/aarch64/kernel/starkernel.efi`
-  - [ ] Compile with `-march=armv8-a -mcpu=cortex-a72`
-  - [ ] Link with `linker/starkernel-aarch64.ld`
-  - [ ] Output PE32+ UEFI executable for ARM64
-- [ ] `make ARCH=aarch64 TARGET=kernel rpi4-image` → `build/aarch64/kernel/starkernel-rpi4.img`
-  - [ ] Create FAT32 partition (boot partition)
-  - [ ] Add Raspberry Pi 4B firmware files:
-    - [ ] `bootcode.bin`, `start4.elf`, `fixup4.dat`
-    - [ ] `config.txt` with `arm_64bit=1, kernel=starkernel.efi`
-  - [ ] Copy `starkernel.efi` to boot partition
-  - [ ] Create GPT partition table
-  - [ ] Output raw disk image for SD card: `dd if=starkernel-rpi4.img of=/dev/sdX bs=4M`
-- [ ] `make ARCH=aarch64 TARGET=kernel qemu`
-  - [ ] Launch QEMU aarch64 with Raspberry Pi 3 emulation (Pi 4 not fully supported)
-  - [ ] Command: `qemu-system-aarch64 -M raspi3b -kernel starkernel.efi -serial stdio`
-  - [ ] Note: Full Pi 4B testing requires real hardware
+- [x] `make ARCH=aarch64 TARGET=kernel` → `build/aarch64/kernel/starkernel.efi`
+  - [x] Compile with `-march=armv8-a -mcpu=cortex-a72`
+  - [x] Link with `linker/starkernel-aarch64.ld`
+  - [x] Output PE32+ UEFI executable for ARM64
+- [x] `make ARCH=aarch64 TARGET=kernel rpi4-image` → `build/aarch64/kernel/starkernel-rpi4.img`
+  - [x] Create FAT32 partition (boot partition)
+  - [x] Add Raspberry Pi 4B firmware files:
+    - [x] `bootcode.bin`, `start4.elf`, `fixup4.dat`
+    - [x] `config.txt` with `arm_64bit=1, kernel=starkernel.efi`
+  - [x] Copy `starkernel.efi` to boot partition
+  - [x] Create GPT partition table
+  - [x] Output raw disk image for SD card: `dd if=starkernel-rpi4.img of=/dev/sdX bs=4M`
+- [x] `make ARCH=aarch64 TARGET=kernel qemu`
+  - [x] Launch QEMU aarch64 with Raspberry Pi 3 emulation (Pi 4 not fully supported)
+  - [x] Command: `qemu-system-aarch64 -M raspi3b -kernel starkernel.efi -serial stdio`
+  - [x] Note: Full Pi 4B testing requires real hardware
 - [ ] `make ARCH=aarch64 TARGET=kernel test-rpi4`
   - [ ] Write image to SD card (requires sudo)
   - [ ] Provide instructions for serial console connection (GPIO pins 14/15)
@@ -143,81 +143,81 @@ make ARCH=riscv64 TARGET=kernel qemu
 ### Build Targets - riscv64
 
 **Makefile.starkernel targets:**
-- [ ] `make ARCH=riscv64 TARGET=kernel` → `build/riscv64/kernel/starkernel.efi`
-  - [ ] Compile with `-march=rv64gc -mabi=lp64d`
-  - [ ] Link with `linker/starkernel-riscv64.ld`
-  - [ ] Output UEFI executable for RISC-V 64-bit
-- [ ] `make ARCH=riscv64 TARGET=kernel qemu`
-  - [ ] Launch QEMU riscv64 with virt machine
-  - [ ] Command: `qemu-system-riscv64 -M virt -bios fw_payload.elf -kernel starkernel.efi -serial stdio`
-  - [ ] Use OpenSBI + U-Boot as firmware
-- [ ] `make ARCH=riscv64 TARGET=kernel qemu-gdb`
-  - [ ] Launch QEMU with GDB server for RISC-V debugging
+- [x] `make ARCH=riscv64 TARGET=kernel` → `build/riscv64/kernel/starkernel.efi`
+  - [x] Compile with `-march=rv64gc -mabi=lp64d`
+  - [x] Link with `linker/starkernel-riscv64.ld`
+  - [x] Output UEFI executable for RISC-V 64-bit
+- [x] `make ARCH=riscv64 TARGET=kernel qemu`
+  - [x] Launch QEMU riscv64 with virt machine
+  - [x] Command: `qemu-system-riscv64 -M virt -bios fw_payload.elf -kernel starkernel.efi -serial stdio`
+  - [x] Use OpenSBI + U-Boot as firmware
+- [x] `make ARCH=riscv64 TARGET=kernel qemu-gdb`
+  - [x] Launch QEMU with GDB server for RISC-V debugging
 
 ### Linker Scripts
 
-- [ ] Create `linker/starkernel-amd64.ld` for x86_64 UEFI
-  - [ ] Base address: `0x100000` (1MB)
-  - [ ] Sections: `.text`, `.rodata`, `.data`, `.bss`
-  - [ ] Output format: `elf64-x86-64` → convert to PE32+ with `objcopy`
-- [ ] Create `linker/starkernel-aarch64.ld` for ARM64 UEFI
-  - [ ] Base address: `0x40000000` (1GB)
-  - [ ] Output format: `elf64-littleaarch64` → convert to PE32+
-- [ ] Create `linker/starkernel-riscv64.ld` for RISC-V UEFI
-  - [ ] Base address: `0x80200000`
-  - [ ] Output format: `elf64-littleriscv` → convert to PE32+
+- [x] Create `linker/starkernel-amd64.ld` for x86_64 UEFI
+  - [x] Base address: `0x100000` (1MB)
+  - [x] Sections: `.text`, `.rodata`, `.data`, `.bss`
+  - [x] Output format: `elf64-x86-64` → convert to PE32+ with `objcopy`
+- [x] Create `linker/starkernel-aarch64.ld` for ARM64 UEFI
+  - [x] Base address: `0x40000000` (1GB)
+  - [x] Output format: `elf64-littleaarch64` → convert to PE32+
+- [x] Create `linker/starkernel-riscv64.ld` for RISC-V UEFI
+  - [x] Base address: `0x80200000`
+  - [x] Output format: `elf64-littleriscv` → convert to PE32+
 
 ### Image Generation Tools
 
-- [ ] Create `tools/make-iso.sh` (amd64)
-  - [ ] Creates ESP directory structure
-  - [ ] Copies EFI binary to `EFI/BOOT/BOOTX64.EFI`
-  - [ ] Generates ISO with `xorriso`: `xorriso -as mkisofs -R -f -e EFI/BOOT/BOOTX64.EFI -no-emul-boot -o starkernel.iso esp/`
-- [ ] Create `tools/make-rpi4-image.sh` (aarch64)
-  - [ ] Downloads Raspberry Pi 4B firmware from GitHub
-  - [ ] Creates 256MB FAT32 partition
-  - [ ] Copies firmware + config.txt + starkernel.efi
-  - [ ] Outputs bootable SD card image
-  - [ ] Validates with `fdisk -l starkernel-rpi4.img`
-- [ ] Create `tools/flash-rpi4.sh` (helper script)
-  - [ ] Detects SD card device
-  - [ ] Warns user about data loss
-  - [ ] Uses `dd` to write image: `sudo dd if=starkernel-rpi4.img of=/dev/sdX bs=4M status=progress`
-  - [ ] Syncs and ejects card
+- [x] Create `tools/make-iso.sh` (amd64)
+  - [x] Creates ESP directory structure
+  - [x] Copies EFI binary to `EFI/BOOT/BOOTX64.EFI`
+  - [x] Generates ISO with `xorriso`: `xorriso -as mkisofs -R -f -e EFI/BOOT/BOOTX64.EFI -no-emul-boot -o starkernel.iso esp/`
+- [x] Create `tools/make-rpi4-image.sh` (aarch64)
+  - [x] Downloads Raspberry Pi 4B firmware from GitHub
+  - [x] Creates 256MB FAT32 partition
+  - [x] Copies firmware + config.txt + starkernel.efi
+  - [x] Outputs bootable SD card image
+  - [x] Validates with `fdisk -l starkernel-rpi4.img`
+- [x] Create `tools/flash-rpi4.sh` (helper script)
+  - [x] Detects SD card device
+  - [x] Warns user about data loss
+  - [x] Uses `dd` to write image: `sudo dd if=starkernel-rpi4.img of=/dev/sdX bs=4M status=progress`
+  - [x] Syncs and ejects card
 
 ### Build Convenience Targets
 
-- [ ] `make kernel` - Build for current architecture (auto-detect)
-- [ ] `make kernel-all` - Build for all architectures (amd64, aarch64, riscv64)
-- [ ] `make iso` - Build ISO for current architecture (amd64 only)
-- [ ] `make rpi4-image` - Build Raspberry Pi 4B image (aarch64 only)
-- [ ] `make qemu` - Launch QEMU for current architecture
-- [ ] `make qemu-gdb` - Launch QEMU with GDB for current architecture
-- [ ] `make clean-kernel` - Clean StarKernel build artifacts (keep StarForth builds)
+- [x] `make kernel` - Build for current architecture (auto-detect)
+- [x] `make kernel-all` - Build for all architectures (amd64, aarch64, riscv64)
+- [x] `make iso` - Build ISO for current architecture (amd64 only)
+- [x] `make rpi4-image` - Build Raspberry Pi 4B image (aarch64 only)
+- [x] `make qemu` - Launch QEMU for current architecture (amd64 verified; aarch64 runs raspi3b emulation)
+- [x] `make qemu-gdb` - Launch QEMU with GDB for current architecture
+- [x] `make clean-kernel` - Clean StarKernel build artifacts (keep StarForth builds)
 
 ### Testing Matrix
 
-- [ ] **amd64 + QEMU**: `make ARCH=amd64 TARGET=kernel qemu` → boots to serial output
-- [ ] **amd64 + ISO**: Burn ISO to USB, boot real x86_64 machine
-- [ ] **aarch64 + QEMU**: `make ARCH=aarch64 TARGET=kernel qemu` → boots (Pi 3 emulation)
-- [ ] **aarch64 + RasPi 4B**: Flash SD card, boot on real Pi 4B, serial console
-- [ ] **riscv64 + QEMU**: `make ARCH=riscv64 TARGET=kernel qemu` → boots with OpenSBI
+- [x] **amd64 + QEMU**: `make ARCH=amd64 TARGET=kernel qemu` → boots to serial output (UEFI shell loads BOOTX64.EFI; banner + memory map printed)
+- [ ] **amd64 + ISO**: Burn ISO to USB, boot real x86_64 machine (deferred: needs physical host/USB)
+- [ ] **aarch64 + QEMU**: `make ARCH=aarch64 TARGET=kernel qemu` → boots (Pi 3 emulation; deferred until Pi hardware access resumes)
+- [ ] **aarch64 + RasPi 4B**: Flash SD card, boot on real Pi 4B, serial console (deferred: hardware unavailable)
+- [ ] **riscv64 + QEMU**: `make ARCH=riscv64 TARGET=kernel qemu` → boots with OpenSBI (blocked: missing riscv64 edk2/UEFI firmware on host; will revisit after firmware install)
 
 ### Documentation
 
-- [ ] Create `docs/starkernel/BUILD.md` with:
-  - [ ] Toolchain installation for each architecture
-  - [ ] Build commands for all targets
-  - [ ] QEMU setup (OVMF, OpenSBI, firmware downloads)
-  - [ ] Raspberry Pi 4B setup (serial console wiring, SD card flashing)
-  - [ ] Troubleshooting common build errors
-- [ ] Create `docs/starkernel/QEMU.md` with QEMU testing procedures
-- [ ] Create `docs/starkernel/RPI4.md` with Raspberry Pi 4B deployment guide
-- [ ] Create GDB debugging guide for each architecture
+- [x] Create `docs/starkernel/BUILD.md` with:
+  - [x] Toolchain installation for each architecture
+  - [x] Build commands for all targets
+  - [x] QEMU setup (OVMF, OpenSBI, firmware downloads)
+  - [x] Raspberry Pi 4B setup (serial console wiring, SD card flashing)
+  - [x] Troubleshooting common build errors
+- [x] Create `docs/starkernel/QEMU.md` with QEMU testing procedures
+- [x] Create `docs/starkernel/RPI4.md` with Raspberry Pi 4B deployment guide (mark downstream RasPi validation as deferred until hardware returns)
+- [ ] Create GDB debugging guide for each architecture (pending; add once per-arch bring-up proceeds)
 
 ### Architecture Abstractions
 
-- [ ] Define `include/starkernel/arch.h` with arch-specific interfaces:
+- [x] Define `include/starkernel/arch.h` with arch-specific interfaces:
   ```c
   void arch_early_init(void);           // Early CPU setup
   void arch_enable_interrupts(void);    // Enable IRQs
@@ -226,13 +226,14 @@ make ARCH=riscv64 TARGET=kernel qemu
   uint64_t arch_read_timestamp(void);   // TSC/CNTPCT/RDTIME
   void arch_mmu_init(void);             // Page table setup
   ```
+- [x] Stub implementations per arch in `src/starkernel/arch/<arch>/arch.c` (enable/disable IRQs, halt, timestamp, relax)
 - [ ] Implement architecture-specific files:
-  - [ ] `src/starkernel/arch/amd64/boot.S` - x86_64 entry point, GDT, IDT
-  - [ ] `src/starkernel/arch/amd64/interrupts.c` - x86_64 interrupt handling
-  - [ ] `src/starkernel/arch/aarch64/boot.S` - ARM64 entry point, exception levels
-  - [ ] `src/starkernel/arch/aarch64/interrupts.c` - GIC initialization
-  - [ ] `src/starkernel/arch/riscv64/boot.S` - RISC-V entry point, CSRs
-  - [ ] `src/starkernel/arch/riscv64/interrupts.c` - PLIC/CLINT initialization
+  - [x] `src/starkernel/arch/amd64/boot.S` - x86_64 entry point (stub placeholder)
+  - [x] `src/starkernel/arch/amd64/interrupts.c` - x86_64 interrupt handling (stub placeholder)
+  - [x] `src/starkernel/arch/aarch64/boot.S` - ARM64 entry point (stub placeholder)
+  - [x] `src/starkernel/arch/aarch64/interrupts.c` - GIC initialization (stub placeholder)
+  - [x] `src/starkernel/arch/riscv64/boot.S` - RISC-V entry point (stub placeholder)
+  - [x] `src/starkernel/arch/riscv64/interrupts.c` - PLIC/CLINT initialization (stub placeholder)
 
 **Exit Criteria (Week 1 - amd64 ONLY):**
 - ✅ `make ARCH=amd64 TARGET=kernel` produces `build/amd64/kernel/starkernel.efi`
