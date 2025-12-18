@@ -288,7 +288,7 @@ vm_create()           /* VM starts in kernel mode */
 repl()                /* Forth as kernel shell */
 ```
 
-See `hal/starkernel-integration.md` for kernel boot details.
+See `../starkernel/hal/starkernel-integration.md` for kernel boot details.
 
 ---
 
@@ -429,7 +429,7 @@ window->width
 
 ## Platform Abstraction
 
-See [`hal/overview.md`](hal/overview.md) for comprehensive HAL documentation.
+See [`../starkernel/hal/overview.md`](../starkernel/hal/overview.md) for comprehensive HAL documentation.
 
 **Key Principle:** VM code never knows which platform it's on.
 
@@ -563,7 +563,7 @@ make PROFILE=1  # -pg, gprof profiling
 ## Further Reading
 
 ### Architecture Details
-- **[hal/](hal/)** - Hardware Abstraction Layer
+- **[../starkernel/hal/](../starkernel/hal/)** - Hardware Abstraction Layer
 - **[heartbeat-system/](heartbeat-system/)** - Centralized timing coordinator
 - **[physics-engine/](physics-engine/)** - Physics subsystem details
 - **[pipelining/](pipelining/)** - Speculative execution

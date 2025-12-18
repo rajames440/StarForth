@@ -27,8 +27,9 @@ This directory contains all documentation for the StarForth project, organized b
 
 ## Current Active Work
 
-- **HAL Migration**: Hardware Abstraction Layer enabling StarKernel - See `03-architecture/hal/migration-plan.md`
-- **StarKernel Development**: Path to UEFI-bootable kernel - See `03-architecture/hal/starkernel-integration.md`
+- **HAL Migration**: Hardware Abstraction Layer enabling StarKernel - See `starkernel/hal/migration-plan.md`
+- **StarKernel Development**: Path to UEFI-bootable kernel - See `starkernel/hal/starkernel-integration.md`
+- **StarKernel Formal Verification**: Isabelle/HOL proofs - See `starkernel/` directory
 - **Physics Engine**: Physics-driven adaptive runtime - See `03-architecture/physics-engine/`
 - **Experiments**: Design of Experiments validation - See `02-experiments/`
 

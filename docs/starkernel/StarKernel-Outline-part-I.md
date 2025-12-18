@@ -401,7 +401,7 @@ grep -r "process" docs/
 Replace with appropriate StarKernel terminology.
 
 ### 2. **Update Boot Documentation**
-Revise `docs/03-architecture/hal/starkernel-integration.md`:
+Revise `docs/starkernel/hal/starkernel-integration.md`:
 - Remove references to "init system"
 - Replace with "primordial VM instantiation"
 - Clarify VM arbiter vs traditional scheduler
