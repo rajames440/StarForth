@@ -1,0 +1,55 @@
+StarKernel UEFI Loader
+Collecting boot information...
+
+   _____ _             _  __                    _ 
+  / ____| |           | |/ /                   | |
+ | (___ | |_ __ _ _ __| ' / ___ _ __ _ __   ___| |
+  \___ \| __/ _` | '__|  < / _ \ '__| '_ \ / _ \ |
+  ____) | || (_| | |  | . \  __/ |  | | | |  __/ |
+ |_____/ \__\__,_|_|  |_|\_\___|_|  |_| |_|\___|_|
+
+StarKernel v0.1.0 - FORTH Microkernel
+Architecture: amd64
+Build: Dec 18 2025 13:10:30
+
+UEFI BootServices: EXITED
+
+=== StarKernel Boot Information ===
+Memory map entries: 118
+Total memory: 1023 MB
+Usable memory: 973 MB
+===================================
+
+PMM initialized.
+PMM statistics:
+  Total pages: 250610
+  Free pages : 249081
+  Used pages : 1529
+  Total MB   : 978
+  Free  MB   : 972
+  Used  MB   : 5
+
+PMM smoke test: allocating 10 pages...
+  Pages allocated successfully:
+    0x100000
+    0x101000
+    0x102000
+    0x103000
+    0x104000
+    0x105000
+    0x106000
+    0x107000
+    0x108000
+    0x109000
+  Freeing pages...
+  Re-allocated page: 0x100000
+  Re-allocation reused a freed page (expected).
+  Allocated 4 contiguous pages:
+    Start: 0x100000
+    End  : 0x103fff
+PMM smoke test complete.
+
+Kernel initialization complete.
+Boot successful!
+
+Kernel halted. (QEMU: Press Ctrl+A, then X to exit)

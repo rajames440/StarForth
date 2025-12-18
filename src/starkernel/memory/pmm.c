@@ -13,11 +13,14 @@
 #define PMM_MAX_BITMAP_BYTES (2u * 1024u * 1024u) /* Tracks up to ~64 GiB */
 #define PMM_BITMAP_BITS      (PMM_MAX_BITMAP_BYTES * 8ull)
 
+/* Do not hand out pages below this floor (1 MiB) */
+static const uint64_t pmm_alloc_floor_page = 0x100000u / PMM_PAGE_SIZE;
+
 static uint8_t pmm_bitmap[PMM_MAX_BITMAP_BYTES];
-static uint64_t pmm_tracked_pages = 0;
 static uint64_t pmm_total_pages = 0;
 static uint64_t pmm_free_pages = 0;
 static int pmm_initialized = 0;
+static uint64_t pmm_tracked_pages = 0;
 
 extern char __kernel_start[];
 extern char __kernel_end[];
@@ -76,7 +79,7 @@ static uint64_t find_contiguous_free(uint64_t pages_needed) {
     uint64_t run_start = 0;
     uint64_t run_length = 0;
 
-    for (uint64_t page = 0; page < pmm_tracked_pages; ++page) {
+    for (uint64_t page = pmm_alloc_floor_page; page < pmm_tracked_pages; ++page) {
         if (!bitmap_test(page)) {
             if (run_length == 0) {
                 run_start = page;
@@ -95,13 +98,23 @@ static uint64_t find_contiguous_free(uint64_t pages_needed) {
 }
 
 static int is_usable_memory(uint32_t type) {
-    return type == EfiConventionalMemory ||
-           type == EfiBootServicesCode ||
-           type == EfiBootServicesData;
+    return type == EfiConventionalMemory;
 }
 
-int pmm_init(BootInfo *boot_info) {
-    if (!boot_info || !boot_info->memory_map || boot_info->memory_map_descriptor_size == 0) {
+static int is_ram_type(uint32_t type) {
+    return is_usable_memory(type) ||
+           type == EfiRuntimeServicesCode ||
+           type == EfiRuntimeServicesData ||
+           type == EfiACPIReclaimMemory ||
+           type == EfiACPIMemoryNVS;
+}
+
+int pmm_init(BootInfo *boot_info)
+{
+    if (!boot_info ||
+        !boot_info->memory_map ||
+        boot_info->memory_map_descriptor_size == 0)
+    {
         return -1;
     }
 
@@ -110,63 +123,128 @@ int pmm_init(BootInfo *boot_info) {
     UINTN desc_size = boot_info->memory_map_descriptor_size;
     UINTN entry_count = map_size / desc_size;
 
-    uint64_t max_phys_end = 0;
+    uint64_t max_ram_end = 0;
 
-    /* Determine total tracked pages (bounded by bitmap capacity) */
+    /* ------------------------------------------------------------
+     * Pass 1: determine highest physical address of RAM-like regions
+     * ------------------------------------------------------------ */
     for (UINTN i = 0; i < entry_count; ++i) {
-        EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((uint8_t *)map + i * desc_size);
-        uint64_t region_end = desc->PhysicalStart + desc->NumberOfPages * (uint64_t)PMM_PAGE_SIZE;
+        EFI_MEMORY_DESCRIPTOR *desc =
+            (EFI_MEMORY_DESCRIPTOR *)((uint8_t *)map + i * desc_size);
 
-        if (region_end > max_phys_end) {
-            max_phys_end = region_end;
-        }
+        if (!is_ram_type(desc->Type))
+            continue;
+
+        uint64_t region_end =
+            desc->PhysicalStart +
+            desc->NumberOfPages * (uint64_t)PMM_PAGE_SIZE;
+
+        if (region_end > max_ram_end)
+            max_ram_end = region_end;
     }
 
-    pmm_tracked_pages = pmm_bytes_to_pages(max_phys_end);
-    if (pmm_tracked_pages > PMM_BITMAP_BITS) {
-        pmm_tracked_pages = PMM_BITMAP_BITS;
-    }
-
-    if (pmm_tracked_pages == 0) {
+    if (max_ram_end == 0)
         return -1;
-    }
 
-    /* Start with all pages marked as used */
-    uint64_t bitmap_bytes = (pmm_tracked_pages + 7u) / 8u;
+    pmm_tracked_pages = pmm_bytes_to_pages(max_ram_end);
+    if (pmm_tracked_pages > PMM_BITMAP_BITS)
+        pmm_tracked_pages = PMM_BITMAP_BITS;
+
+    if (pmm_tracked_pages == 0)
+        return -1;
+
+    uint64_t bitmap_bytes = (pmm_tracked_pages + 7) / 8;
     pmm_memset(pmm_bitmap, 0xFF, (size_t)bitmap_bytes);
 
-    pmm_total_pages = pmm_tracked_pages;
-    pmm_free_pages = 0;
+    pmm_total_pages = 0;
+    pmm_free_pages  = 0;
 
-    /* Mark usable regions as free */
+    /* ------------------------------------------------------------
+     * Pass 2: count RAM pages (tracked universe)
+     * ------------------------------------------------------------ */
     for (UINTN i = 0; i < entry_count; ++i) {
-        EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((uint8_t *)map + i * desc_size);
-        if (!is_usable_memory(desc->Type)) {
+        EFI_MEMORY_DESCRIPTOR *desc =
+            (EFI_MEMORY_DESCRIPTOR *)((uint8_t *)map + i * desc_size);
+
+        if (!is_ram_type(desc->Type))
             continue;
-        }
 
         uint64_t start_page = desc->PhysicalStart / PMM_PAGE_SIZE;
-        uint64_t pages = desc->NumberOfPages;
+        uint64_t end_page   = start_page + desc->NumberOfPages;
 
-        if (start_page >= pmm_tracked_pages) {
+        if (start_page >= pmm_tracked_pages)
             continue;
-        }
 
-        if (start_page + pages > pmm_tracked_pages) {
-            pages = pmm_tracked_pages - start_page;
-        }
+        if (end_page > pmm_tracked_pages)
+            end_page = pmm_tracked_pages;
 
-        bitmap_mark_range(start_page, pages, 0);
+        if (end_page > start_page)
+            pmm_total_pages += (end_page - start_page);
     }
 
-    /* Reserve the kernel image so allocations do not overlap our own code/data */
-    uint64_t kernel_start = (uint64_t)__kernel_start;
-    uint64_t kernel_end = (uint64_t)__kernel_end;
-    uint64_t kernel_pages = pmm_bytes_to_pages(kernel_end - kernel_start);
-    bitmap_mark_range(kernel_start / PMM_PAGE_SIZE, kernel_pages, 1);
+    /* ------------------------------------------------------------
+     * Pass 3: free usable memory (respect allocation floor)
+     * ------------------------------------------------------------ */
+    for (UINTN i = 0; i < entry_count; ++i) {
+        EFI_MEMORY_DESCRIPTOR *desc =
+            (EFI_MEMORY_DESCRIPTOR *)((uint8_t *)map + i * desc_size);
 
-    /* Keep the zero page unavailable to catch null dereferences early */
+        if (!is_usable_memory(desc->Type))
+            continue;
+
+        uint64_t start_page = desc->PhysicalStart / PMM_PAGE_SIZE;
+        uint64_t end_page   = start_page + desc->NumberOfPages;
+
+        if (start_page >= pmm_tracked_pages)
+            continue;
+
+        if (end_page > pmm_tracked_pages)
+            end_page = pmm_tracked_pages;
+
+        if (end_page <= pmm_alloc_floor_page)
+            continue;
+
+        if (start_page < pmm_alloc_floor_page)
+            start_page = pmm_alloc_floor_page;
+
+        if (end_page > start_page) {
+            uint64_t pages = end_page - start_page;
+            bitmap_mark_range(start_page, pages, 0);
+            pmm_free_pages += pages;
+        }
+    }
+
+    /* ------------------------------------------------------------
+     * Reserve low memory (defensive)
+     * ------------------------------------------------------------ */
+    if (pmm_alloc_floor_page > 0) {
+        bitmap_mark_range(0, pmm_alloc_floor_page, 1);
+    }
+
+    /* ------------------------------------------------------------
+     * Reserve kernel image (page-aligned, physical)
+     * ------------------------------------------------------------ */
+    uint64_t kstart = (uint64_t)__kernel_start;
+    uint64_t kend   = (uint64_t)__kernel_end;
+
+    uint64_t kstart_page = kstart / PMM_PAGE_SIZE;
+    uint64_t kend_page =
+        (kend + PMM_PAGE_SIZE - 1) / PMM_PAGE_SIZE;
+
+    if (kend_page > kstart_page) {
+        uint64_t kpages = kend_page - kstart_page;
+        bitmap_mark_range(kstart_page, kpages, 1);
+        if (pmm_free_pages >= kpages)
+            pmm_free_pages -= kpages;
+    }
+
+    /* ------------------------------------------------------------
+     * Keep page 0 reserved (NULL guard)
+     * ------------------------------------------------------------ */
     bitmap_mark_range(0, 1, 1);
+
+    if (pmm_free_pages > pmm_total_pages)
+        pmm_free_pages = pmm_total_pages;
 
     pmm_initialized = 1;
     return 0;

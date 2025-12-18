@@ -294,7 +294,7 @@ make ARCH=riscv64 TARGET=kernel qemu
 - [x] Allocate 10 pages, verify uniqueness
 - [x] Free pages, verify they can be reallocated
 - [x] Print PMM stats to serial console
-- [x] Smoke test exercised at boot (serial output)
+- [x] Smoke test exercised at boot (serial output logged: docs/starkernel/PMM-smoke-2025-12-18.log)
 
 **Exit Criteria:** PMM allocates/frees physical pages correctly, no overlaps
 

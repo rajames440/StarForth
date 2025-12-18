@@ -8,6 +8,18 @@
 #include "arch.h"
 #include "pmm.h"
 
+static int is_ram_type(uint32_t type) {
+    return type == EfiConventionalMemory ||
+           type == EfiLoaderCode ||
+           type == EfiLoaderData ||
+           type == EfiBootServicesCode ||
+           type == EfiBootServicesData ||
+           type == EfiRuntimeServicesCode ||
+           type == EfiRuntimeServicesData ||
+           type == EfiACPIReclaimMemory ||
+           type == EfiACPIMemoryNVS;
+}
+
 /**
  * Convert integer to string (simple implementation)
  */
@@ -75,7 +87,9 @@ static void print_boot_info(BootInfo *boot_info) {
                                       i * boot_info->memory_map_descriptor_size);
 
         UINTN size = desc->NumberOfPages * 4096;
-        total_memory += size;
+        if (is_ram_type(desc->Type)) {
+            total_memory += size;
+        }
 
         if (desc->Type == EfiConventionalMemory) {
             usable_memory += size;
