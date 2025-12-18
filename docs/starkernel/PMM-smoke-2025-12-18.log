@@ -1,5 +1,6 @@
 StarKernel UEFI Loader
 Collecting boot information...
+IDT installed.
 
    _____ _             _  __                    _ 
   / ____| |           | |/ /                   | |
@@ -10,7 +11,7 @@ Collecting boot information...
 
 StarKernel v0.1.0 - FORTH Microkernel
 Architecture: amd64
-Build: Dec 18 2025 13:37:43
+Build: Dec 18 2025 14:28:03
 
 UEFI BootServices: EXITED
 
@@ -22,8 +23,8 @@ Usable memory: 973 MB
 
 PMM initialized.
 PMM statistics:
-  Total pages: 250609
-  Free pages : 249080
+  Total pages: 250605
+  Free pages : 249076
   Used pages : 1529
   Total MB   : 978
   Free  MB   : 972

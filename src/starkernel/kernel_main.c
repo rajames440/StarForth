@@ -8,6 +8,7 @@
 #include "arch.h"
 #include "pmm.h"
 #include "vmm.h"
+#include "apic.h"
 
 static int is_ram_type(uint32_t type) {
     return type == EfiConventionalMemory ||
@@ -36,9 +37,9 @@ static void itoa_simple(uint64_t value, char *buf, int base) {
     }
 
     while (value > 0) {
-        int digit = value % base;
-        temp[i++] = (digit < 10) ? ('0' + digit) : ('a' + digit - 10);
-        value /= base;
+        int digit = (int)(value % (uint64_t)base);
+        temp[i++] = (digit < 10) ? (char)('0' + digit) : (char)('a' + digit - 10);
+        value /= (uint64_t)base;
     }
 
     /* Reverse the string */
@@ -87,7 +88,7 @@ static void print_boot_info(BootInfo *boot_info) {
             (EFI_MEMORY_DESCRIPTOR *)((uint8_t *)boot_info->memory_map +
                                       i * boot_info->memory_map_descriptor_size);
 
-        UINTN size = desc->NumberOfPages * 4096;
+        UINTN size = desc->NumberOfPages * 4096u;
         if (is_ram_type(desc->Type)) {
             total_memory += size;
         }
@@ -102,12 +103,12 @@ static void print_boot_info(BootInfo *boot_info) {
     console_println(buf);
 
     console_puts("Total memory: ");
-    itoa_simple(total_memory / (1024 * 1024), buf, 10);
+    itoa_simple((uint64_t)(total_memory / (1024u * 1024u)), buf, 10);
     console_puts(buf);
     console_println(" MB");
 
     console_puts("Usable memory: ");
-    itoa_simple(usable_memory / (1024 * 1024), buf, 10);
+    itoa_simple((uint64_t)(usable_memory / (1024u * 1024u)), buf, 10);
     console_puts(buf);
     console_println(" MB");
 
@@ -121,9 +122,9 @@ static void print_pmm_stats(void) {
     print_uint("  Total pages: ", stats.total_pages);
     print_uint("  Free pages : ", stats.free_pages);
     print_uint("  Used pages : ", stats.used_pages);
-    print_uint("  Total MB   : ", stats.total_bytes / (1024 * 1024));
-    print_uint("  Free  MB   : ", stats.free_bytes / (1024 * 1024));
-    print_uint("  Used  MB   : ", stats.used_bytes / (1024 * 1024));
+    print_uint("  Total MB   : ", stats.total_bytes / (1024u * 1024u));
+    print_uint("  Free  MB   : ", stats.free_bytes / (1024u * 1024u));
+    print_uint("  Used  MB   : ", stats.used_bytes / (1024u * 1024u));
     console_println("");
 }
 
@@ -191,7 +192,7 @@ static void pmm_smoke_test(void) {
     if (contiguous != 0) {
         console_println("  Allocated 4 contiguous pages:");
         print_hex64("    Start: ", contiguous);
-        print_hex64("    End  : ", contiguous + (4 * PMM_PAGE_SIZE) - 1);
+        print_hex64("    End  : ", contiguous + (4u * PMM_PAGE_SIZE) - 1u);
         pmm_free_contiguous(contiguous, 4);
     } else {
         console_println("  Contiguous allocation of 4 pages failed.");
@@ -203,6 +204,7 @@ static void pmm_smoke_test(void) {
 static void vmm_self_test(void) {
     /* Map a single PMM page at a high alias and verify round-trip */
     const uint64_t test_vaddr = 0xFFFF800000000000ull;
+
     uint64_t paddr = pmm_alloc_page();
     if (paddr == 0) {
         console_println("VMM self-test: failed to allocate page.");
@@ -224,7 +226,7 @@ static void vmm_self_test(void) {
     }
 
     /* Write via alias to ensure it is accessible */
-    volatile uint64_t *ptr = (uint64_t *)(uintptr_t)test_vaddr;
+    volatile uint64_t *ptr = (volatile uint64_t *)(uintptr_t)test_vaddr;
     *ptr = 0xdeadbeefULL;
 
     if (vmm_unmap_page(test_vaddr) != 0) {
@@ -233,6 +235,76 @@ static void vmm_self_test(void) {
 
     pmm_free_page(paddr);
     console_println("VMM self-test complete.\n");
+}
+
+/* ---------------- Self-tests (gated) ---------------- */
+
+#ifndef DIV0_SELF_TEST
+#define DIV0_SELF_TEST 0
+#endif
+
+#ifndef PF_SELF_TEST_READ
+#define PF_SELF_TEST_READ 0
+#endif
+
+#ifndef PF_SELF_TEST_WRITE
+#define PF_SELF_TEST_WRITE 0
+#endif
+
+/* Compiler barrier to discourage “helpful” optimization across fault tests */
+static inline void compiler_barrier(void) {
+    __asm__ volatile ("" ::: "memory");
+}
+
+__attribute__((noinline))
+static void divide_by_zero_self_test(void) {
+#if DIV0_SELF_TEST
+    console_println("Triggering divide-by-zero self-test (#DE)...");
+    volatile uint64_t a = 1;
+    volatile uint64_t b = 0;
+    compiler_barrier();
+    (void)(a / b);
+    compiler_barrier();
+    console_println("Divide-by-zero self-test did NOT trigger as expected.");
+#endif
+}
+
+__attribute__((noinline))
+static void page_fault_self_test_read(void) {
+#if PF_SELF_TEST_READ
+    /*
+     * After vmm_init() you identity-map low memory (per your note: first 16 MiB).
+     * So a high-ish canonical address is very likely unmapped and should #PF.
+     */
+    const uint64_t bad = 0x0000000080000000ull; /* 2 GiB */
+    console_puts("Triggering page-fault READ self-test (#PF) at ");
+    print_hex64("", bad);
+    console_println("");
+
+    volatile uint64_t *ptr = (volatile uint64_t *)(uintptr_t)bad;
+    compiler_barrier();
+    (void)(*ptr);
+    compiler_barrier();
+
+    console_println("Page-fault READ self-test did NOT trigger as expected.");
+#endif
+}
+
+__attribute__((noinline))
+static void page_fault_self_test_write(void) {
+#if PF_SELF_TEST_WRITE
+    const uint64_t bad = 0x0000000080000000ull; /* 2 GiB */
+    console_puts("Triggering page-fault WRITE self-test (#PF) at ");
+    print_hex64("", bad);
+    console_println("");
+
+    volatile uint64_t *ptr = (volatile uint64_t *)(uintptr_t)bad;
+    compiler_barrier();
+    *ptr = 0x1122334455667788ull;
+    compiler_barrier();
+
+    console_println("Page-fault WRITE self-test did NOT trigger as expected.");
+#endif
 }
 
 /**
@@ -245,6 +317,11 @@ void kernel_main(BootInfo *boot_info) {
 
     /* Initialize serial console */
     console_init();
+
+    /* Install IDT / exception handling AFTER console is live */
+#if defined(ARCH_AMD64) || defined(ARCH_X86_64)
+    arch_interrupts_init();
+#endif
 
     /* Print boot banner */
     console_println("\n");
@@ -288,9 +365,17 @@ void kernel_main(BootInfo *boot_info) {
     /* Initialize virtual memory (identity-map first 16 MiB and switch CR3) */
     if (vmm_init(boot_info) != 0) {
         console_println("VMM initialization failed.");
-    }
-    else {
+    } else {
         vmm_self_test();
+        /* Fault injectors (gated) */
+        page_fault_self_test_read();
+        page_fault_self_test_write();
+        divide_by_zero_self_test();
+    }
+
+    /* Initialize Local APIC (MADT discovery if available) */
+    if (apic_init(boot_info) != 0) {
+        console_println("APIC initialization failed.");
     }
 
     /* Success message */

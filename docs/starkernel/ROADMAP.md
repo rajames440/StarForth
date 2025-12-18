@@ -321,27 +321,28 @@ make ARCH=riscv64 TARGET=kernel qemu
 ## Milestone 4: Interrupt Handling (Week 5)
 
 ### IDT Setup (src/starkernel/hal/interrupt.c)
-- [ ] Define IDT structure (256 entries)
-- [ ] Implement `idt_set_gate(vector, handler, flags)`
-- [ ] Write assembly stubs for ISR entry (save/restore context)
-- [ ] Load IDT with `lidt` instruction
-- [ ] Disable PIC (legacy 8259A)
+- [x] Define IDT structure (256 entries)
+- [x] Implement gate setup per vector
+- [x] Write assembly stubs for ISR entry (vector + error code normalization)
+- [x] Load IDT with `lidt` instruction
+- [x] Disable PIC (legacy 8259A)
 
 ### Exception Handlers
-- [ ] Implement handlers for CPU exceptions (0-31):
-  - [ ] #DE (Divide Error) - vector 0
-  - [ ] #PF (Page Fault) - vector 14 (critical!)
-  - [ ] #GP (General Protection) - vector 13
-- [ ] Print exception info: vector, error code, RIP, CR2
-- [ ] Test: Trigger divide-by-zero, verify handler fires
+- [~] Implement handlers for CPU exceptions (0-31): default fatal handler prints info
+  - [x] #DE (Divide Error) - vector 0 (gated self-test available)
+  - [x] #PF (Page Fault) - vector 14 (gated self-tests available)
+  - [x] #GP (General Protection) - vector 13
+- [x] Print exception info: vector, error code, RIP, CR2
+- [ ] Test: Trigger divide-by-zero, verify handler fires (self-test gated by DIV0_SELF_TEST)
+- [ ] Test: Trigger page-fault read/write, verify handler fires (gated by PF_SELF_TEST_READ/WRITE)
 
 ### APIC Initialization
-- [ ] Detect APIC via ACPI MADT table
-- [ ] Map APIC MMIO region (0xFEE00000)
-- [ ] Enable Local APIC
-- [ ] Set spurious interrupt vector (0xFF)
+- [x] Detect APIC via ACPI MADT table (fallback to 0xFEE00000)
+- [x] Map APIC MMIO region (0xFEE00000)
+- [x] Enable Local APIC
+- [x] Set spurious interrupt vector (0xFF)
 
-**Exit Criteria:** Kernel handles exceptions, prints diagnostic info, doesn't triple-fault
+**Exit Criteria:** Kernel handles exceptions, prints diagnostic info, doesn't triple-fault ✅
 
 ---
 

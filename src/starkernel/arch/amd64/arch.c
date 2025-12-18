@@ -6,7 +6,7 @@
 
 void arch_early_init(void)
 {
-    /* Placeholder for GDT/IDT setup once implemented */
+    arch_interrupts_init();
 }
 
 void arch_enable_interrupts(void)
