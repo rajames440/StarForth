@@ -167,31 +167,30 @@ ifeq ($(ARCH),amd64)
 	@rm -rf $(BUILD_DIR)/esp
 	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
 	@cp $(KERNEL_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
-	@echo "map -r" > $(BUILD_DIR)/esp/startup.nsh
-	@echo "fs0:" >> $(BUILD_DIR)/esp/startup.nsh
-	@echo "ls" >> $(BUILD_DIR)/esp/startup.nsh
-	@echo "ls EFI" >> $(BUILD_DIR)/esp/startup.nsh
-	@echo "ls EFI\\BOOT" >> $(BUILD_DIR)/esp/startup.nsh
-	@echo "\\EFI\\BOOT\\BOOTX64.EFI" >> $(BUILD_DIR)/esp/startup.nsh
-	@echo ".\\EFI\\BOOT\\BOOTX64.EFI" >> $(BUILD_DIR)/esp/startup.nsh
-	@echo "Launching QEMU for amd64..."
-	@# Find OVMF firmware files
-	@if [ -f /usr/share/OVMF/OVMF_CODE.fd ]; then \
-		OVMF_CODE=/usr/share/OVMF/OVMF_CODE.fd; \
-	elif [ -f /usr/share/qemu/OVMF.fd ]; then \
-		OVMF_CODE=/usr/share/qemu/OVMF.fd; \
-	elif [ -f /usr/share/ovmf/OVMF.fd ]; then \
-		OVMF_CODE=/usr/share/ovmf/OVMF.fd; \
+	@printf "FS0:\\EFI\\BOOT\\BOOTX64.EFI\r\n" > $(BUILD_DIR)/esp/startup.nsh
+	@echo "Launching QEMU for amd64 (OVMF pflash + ESP)..."
+	@# Use the 4MB OVMF build installed on this host
+	OVMF_CODE=/usr/share/OVMF/OVMF_CODE_4M.fd; \
+	if [ ! -f $$OVMF_CODE ]; then echo "Error: $$OVMF_CODE not found"; exit 1; fi; \
+	if [ -f /usr/share/OVMF/OVMF_VARS_4M.fd ]; then \
+		cp /usr/share/OVMF/OVMF_VARS_4M.fd $(BUILD_DIR)/OVMF_VARS.fd; \
 	else \
-		echo "Error: OVMF firmware not found. Install with: sudo apt install ovmf"; \
+		echo "Error: /usr/share/OVMF/OVMF_VARS_4M.fd not found"; \
 		exit 1; \
 	fi; \
 	TMPDIR=$(BUILD_DIR) qemu-system-x86_64 \
-		-bios $$OVMF_CODE \
+		-nodefaults -display none \
+		-machine q35,accel=tcg \
+		-m 1024 \
+		-monitor none \
+		-chardev stdio,id=ser0,signal=off \
+		-device isa-serial,chardev=ser0,iobase=0x3f8 \
+		-chardev file,id=dbg,path=$(BUILD_DIR)/ovmf.log \
+		-device isa-debugcon,chardev=dbg,iobase=0x402 \
+		-drive if=pflash,format=raw,readonly=on,file=$$OVMF_CODE \
+		-drive if=pflash,format=raw,file=$(BUILD_DIR)/OVMF_VARS.fd \
 		-drive format=raw,file=fat:rw:$(BUILD_DIR)/esp \
-		-serial mon:stdio \
-		-m 256M \
-		-nographic
+		-no-reboot
 else ifeq ($(ARCH),aarch64)
 	@echo "Preparing FAT ESP directory for QEMU (aarch64)..."
 	@rm -rf $(BUILD_DIR)/esp

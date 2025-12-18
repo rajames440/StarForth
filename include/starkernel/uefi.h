@@ -23,9 +23,15 @@ typedef int64_t INT64;
 typedef uint8_t BOOLEAN;
 typedef void VOID;
 typedef uint16_t CHAR16;
+typedef UINTN EFI_TPL;
 
 #define TRUE  ((BOOLEAN)1)
 #define FALSE ((BOOLEAN)0)
+
+#define TPL_APPLICATION 4
+#define TPL_CALLBACK    8
+#define TPL_NOTIFY      16
+#define TPL_HIGH_LEVEL  31
 
 /* Calling convention */
 #if defined(__x86_64__) || defined(__i386__)
@@ -161,12 +167,20 @@ typedef EFI_STATUS (EFIAPI *EFI_FREE_POOL)(
     void *Buffer
 );
 
+typedef EFI_TPL (EFIAPI *EFI_RAISE_TPL)(
+    EFI_TPL NewTpl
+);
+
+typedef void (EFIAPI *EFI_RESTORE_TPL)(
+    EFI_TPL OldTpl
+);
+
 typedef struct _EFI_BOOT_SERVICES {
     EFI_TABLE_HEADER Hdr;
 
     /* Task Priority Services */
-    void *RaiseTPL;
-    void *RestoreTPL;
+    EFI_RAISE_TPL RaiseTPL;
+    EFI_RESTORE_TPL RestoreTPL;
 
     /* Memory Services */
     void *AllocatePages;
@@ -248,6 +262,25 @@ typedef struct _EFI_SYSTEM_TABLE {
     void *ConfigurationTable;
 } EFI_SYSTEM_TABLE;
 
+/* Configuration Table */
+typedef struct {
+    EFI_GUID VendorGuid;
+    void *VendorTable;
+} EFI_CONFIGURATION_TABLE;
+
+/* ACPI GUIDs */
+static const EFI_GUID EFI_ACPI_20_TABLE_GUID = {0x8868e871,0xe4f1,0x11d3,{0xbc,0x22,0x00,0x80,0xc7,0x3c,0x88,0x81}};
+static const EFI_GUID EFI_ACPI_TABLE_GUID    = {0xeb9d2d30,0x2d88,0x11d3,{0x9a,0x16,0x00,0x90,0x27,0x3f,0xc1,0x4d}};
+
+/* Framebuffer info (GOP) */
+typedef struct {
+    void   *base;
+    UINTN   size;
+    UINT32  width;
+    UINT32  height;
+    UINT32  pixels_per_scanline;
+} FramebufferInfo;
+
 /* Boot Info Structure (passed to kernel) */
 typedef struct {
     EFI_MEMORY_DESCRIPTOR *memory_map;
@@ -255,7 +288,8 @@ typedef struct {
     UINTN memory_map_descriptor_size;
     EFI_RUNTIME_SERVICES *runtime_services;
     void *acpi_table;
-    void *framebuffer;
+    FramebufferInfo framebuffer;
+    UINT8 uefi_boot_services_exited;
 } BootInfo;
 
 #endif /* STARKERNEL_UEFI_H */

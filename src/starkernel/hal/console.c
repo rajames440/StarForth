@@ -6,6 +6,9 @@
 #include "console.h"
 #include "arch.h"
 
+#if defined(__x86_64__) || defined(__i386__)
+#define SERIAL_SUPPORTED 1
+
 /* UART 16550 I/O ports (COM1) */
 #define SERIAL_PORT_BASE 0x3F8
 
@@ -20,9 +23,6 @@
 #define SERIAL_LSR_DATA_READY    (1 << 0)
 #define SERIAL_LSR_THR_EMPTY     (1 << 5)
 
-/* Architecture-specific I/O port operations */
-#if defined(__x86_64__) || defined(__i386__)
-
 static inline void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
 }
@@ -34,7 +34,9 @@ static inline uint8_t inb(uint16_t port) {
 }
 
 #else
-/* Stub for non-x86 architectures */
+#define SERIAL_SUPPORTED 0
+
+/* Stubs for non-x86 architectures */
 static inline void outb(uint16_t port, uint8_t val) {
     (void)port;
     (void)val;
@@ -51,6 +53,7 @@ static inline uint8_t inb(uint16_t port) {
  * Sets up COM1 at 115200 baud, 8N1
  */
 void console_init(void) {
+#if SERIAL_SUPPORTED
     /* Disable interrupts */
     outb(SERIAL_INT_ENABLE_PORT, 0x00);
 
@@ -82,19 +85,25 @@ void console_init(void) {
 
     /* Set in normal operation mode */
     outb(SERIAL_MODEM_CTRL_PORT, 0x0F);
+#else
+    (void)SERIAL_SUPPORTED;
+#endif
 }
 
+#if SERIAL_SUPPORTED
 /**
  * Check if transmit buffer is empty
  */
 static int serial_transmit_empty(void) {
     return inb(SERIAL_LINE_STATUS_PORT) & SERIAL_LSR_THR_EMPTY;
 }
+#endif
 
 /**
  * Write a single character to serial console
  */
 void console_putc(char c) {
+#if SERIAL_SUPPORTED
     /* Wait for transmit buffer to be empty */
     while (!serial_transmit_empty()) {
         arch_relax();
@@ -110,6 +119,10 @@ void console_putc(char c) {
         }
         outb(SERIAL_DATA_PORT, '\r');
     }
+#else
+    (void)c;
+    return;
+#endif
 }
 
 /**
@@ -135,7 +148,11 @@ void console_println(const char *s) {
  * Check if data is available to read
  */
 int console_poll(void) {
+#if SERIAL_SUPPORTED
     return inb(SERIAL_LINE_STATUS_PORT) & SERIAL_LSR_DATA_READY;
+#else
+    return 0;
+#endif
 }
 
 /**
@@ -143,8 +160,12 @@ int console_poll(void) {
  * Returns -1 if no character available
  */
 int console_getc(void) {
+#if SERIAL_SUPPORTED
     if (!console_poll()) {
         return -1;
     }
     return inb(SERIAL_DATA_PORT);
+#else
+    return -1;
+#endif
 }

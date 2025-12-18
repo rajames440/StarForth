@@ -197,9 +197,9 @@ make ARCH=riscv64 TARGET=kernel qemu
 
 ### Testing Matrix
 
-- [x] **amd64 + QEMU**: `make ARCH=amd64 TARGET=kernel qemu` → boots to serial output (UEFI shell loads BOOTX64.EFI; banner + memory map printed)
+- [x] **amd64 + QEMU**: `make ARCH=amd64 TARGET=kernel qemu` → boots to serial output (OVMF pflash + ESP; ExitBootServices succeeds; “UEFI BootServices: EXITED” logged)
 - [ ] **amd64 + ISO**: Burn ISO to USB, boot real x86_64 machine (deferred: needs physical host/USB)
-- [ ] **aarch64 + QEMU**: `make ARCH=aarch64 TARGET=kernel qemu` → boots (Pi 3 emulation; deferred until Pi hardware access resumes)
+- [x] **aarch64 + QEMU**: `make ARCH=aarch64 TARGET=kernel qemu` → boots (virt + UEFI edk2; loader runs, logs UEFI services state, jumps to kernel; console output stubbed)
 - [ ] **aarch64 + RasPi 4B**: Flash SD card, boot on real Pi 4B, serial console (deferred: hardware unavailable)
 - [ ] **riscv64 + QEMU**: `make ARCH=riscv64 TARGET=kernel qemu` → boots with OpenSBI (blocked: missing riscv64 edk2/UEFI firmware on host; will revisit after firmware install)
 
@@ -242,6 +242,7 @@ make ARCH=riscv64 TARGET=kernel qemu
 - ✅ Build convention `build/${ARCH}/${TARGET}/` established
 - ✅ Documentation complete for amd64 toolchain and QEMU testing
 - ✅ Serial console connectivity validated (QEMU + real hardware if available)
+- ❗ Explicit Non-Goal: No kernel semantics, no ExitBootServices(), no VM execution in Milestone 0.
 
 **Week 2-3 (aarch64 + riscv64 ports):**
 - ✅ `make ARCH=aarch64 TARGET=kernel rpi4-image` produces `build/aarch64/kernel/starkernel-rpi4.img`
@@ -254,26 +255,26 @@ make ARCH=riscv64 TARGET=kernel qemu
 ## Milestone 1: Minimal Boot (Week 2)
 
 ### UEFI Loader (src/starkernel/boot/uefi_loader.c)
-- [ ] Implement `efi_main()` entry point
-- [ ] Collect `BootInfo` structure:
-  - [ ] Memory map from UEFI
-  - [ ] ACPI tables pointer
-  - [ ] Framebuffer info (graphics output protocol)
-  - [ ] Runtime services table
-- [ ] Call `ExitBootServices()` to take control
-- [ ] Jump to `kernel_main()` with BootInfo
+- [x] Implement `efi_main()` entry point
+- [x] Collect `BootInfo` structure:
+  - [x] Memory map from UEFI
+  - [x] ACPI tables pointer (via config table)
+  - [ ] Framebuffer info (graphics output protocol) — placeholder zeroed for now
+  - [x] Runtime services table
+- [~] Call `ExitBootServices()` to take control (amd64 retries and logs EXITED/ENABLED; non-amd64 currently skips until platform init stabilizes)
+- [x] Jump to `kernel_main()` with BootInfo
 
 ### Serial Console (src/starkernel/hal/console.c)
-- [ ] Implement `hal_console_init()` for UART 16550
-- [ ] Write `hal_console_putc()` using port I/O (0x3F8)
-- [ ] Write `hal_console_puts()` for strings
-- [ ] Test: Print "StarKernel booting..." to serial
+- [x] Implement `hal_console_init()` for UART 16550 (x86); non-x86 stubs avoid blocking
+- [x] Write `hal_console_putc()` using port I/O (0x3F8)
+- [x] Write `hal_console_puts()` for strings
+- [x] Test: Print loader/kernel banners on amd64/aarch64 (aarch64 limited to loader text; kernel output stub)
 
 ### Kernel Entry (src/starkernel/kernel_main.c)
-- [ ] Implement `kernel_main(BootInfo *boot_info)`
-- [ ] Print boot banner to serial console
-- [ ] Print memory map summary
-- [ ] Infinite loop with `hlt` instruction
+- [x] Implement `kernel_main(BootInfo *boot_info)`
+- [x] Print boot banner to serial console
+- [x] Print memory map summary
+- [x] Infinite loop with `hlt` instruction
 
 **Exit Criteria:** QEMU boots, prints "StarKernel booting..." to serial, halts cleanly
 

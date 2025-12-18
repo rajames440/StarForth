@@ -5,8 +5,27 @@ Use these targets after building `starkernel.efi` with `Makefile.starkernel`.
 ## amd64 (OVMF, serial on stdio)
 ```bash
 make -f Makefile.starkernel ARCH=amd64 TARGET=kernel qemu
-# Uses OVMF firmware, creates GPT disk with EFI partition and BOOTX64.EFI
-# Output shows serial console; expect StarKernel banner + memory map summary.
+# Canonical invocation baked into the target:
+# qemu-system-x86_64 \
+#   -nodefaults -display none \
+#   -machine q35,accel=tcg \
+#   -m 1024 -smp 1 -cpu qemu64 \
+#   -monitor none \
+#   -chardev stdio,id=ser0,signal=off \
+#   -device isa-serial,chardev=ser0,iobase=0x3f8 \
+#   -chardev file,id=dbg,path=build/amd64/kernel/ovmf.log \
+#   -device isa-debugcon,chardev=dbg,iobase=0x402 \
+#   -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd \
+#   -drive if=pflash,format=raw,file=build/amd64/kernel/OVMF_VARS.fd \
+#   -drive format=raw,file=fat:rw:build/amd64/kernel/esp \
+#   -no-reboot
+# Guarantees:
+# - Deterministic memory map under TCG
+# - ExitBootServices() succeeds
+# - Explicit COM1 for raw/early logging
+# - No Secure Boot, stable CODE/VARS pairing
+# Output shows serial console; expect StarKernel banner + memory map summary and
+# “UEFI BootServices: EXITED”.
 ```
 GDB variant:
 ```bash

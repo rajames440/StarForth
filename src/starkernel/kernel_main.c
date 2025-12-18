@@ -104,6 +104,13 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Build: " __DATE__ " " __TIME__);
     console_println("");
 
+    console_puts("UEFI BootServices: ");
+    if (boot_info && boot_info->uefi_boot_services_exited) {
+        console_println("EXITED");
+    } else {
+        console_println("ENABLED");
+    }
+
     /* Print boot information */
     if (boot_info) {
         print_boot_info(boot_info);
