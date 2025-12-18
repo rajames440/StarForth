@@ -10,6 +10,8 @@ SECTIONS
     /* Base address for RISC-V UEFI applications */
     . = 0x80200000;
 
+    __kernel_start = .;
+
     .text : {
         *(.text.entry)
         *(.text .text.*)
@@ -29,6 +31,8 @@ SECTIONS
         *(COMMON)
         __bss_end = .;
     }
+
+    __kernel_end = .;
 
     /DISCARD/ : {
         *(.comment)

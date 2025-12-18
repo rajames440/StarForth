@@ -283,17 +283,18 @@ make ARCH=riscv64 TARGET=kernel qemu
 ## Milestone 2: Physical Memory Manager (Week 3)
 
 ### PMM Bitmap Allocator (src/starkernel/memory/pmm.c)
-- [ ] Parse UEFI memory map
-- [ ] Build free page bitmap (1 bit per 4KB page)
-- [ ] Implement `pmm_alloc_page()` - returns physical address
-- [ ] Implement `pmm_free_page(paddr)`
-- [ ] Implement `pmm_alloc_contiguous(num_pages)`
-- [ ] Track total/free/used memory stats
+- [x] Parse UEFI memory map
+- [x] Build free page bitmap (1 bit per 4KB page)
+- [x] Implement `pmm_alloc_page()` - returns physical address
+- [x] Implement `pmm_free_page(paddr)`
+- [x] Implement `pmm_alloc_contiguous(num_pages)`
+- [x] Track total/free/used memory stats
 
 ### Testing
-- [ ] Allocate 10 pages, verify uniqueness
-- [ ] Free pages, verify they can be reallocated
-- [ ] Print PMM stats to serial console
+- [x] Allocate 10 pages, verify uniqueness
+- [x] Free pages, verify they can be reallocated
+- [x] Print PMM stats to serial console
+- [x] Smoke test exercised at boot (serial output)
 
 **Exit Criteria:** PMM allocates/frees physical pages correctly, no overlaps
 

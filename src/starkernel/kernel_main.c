@@ -6,6 +6,7 @@
 #include "uefi.h"
 #include "console.h"
 #include "arch.h"
+#include "pmm.h"
 
 /**
  * Convert integer to string (simple implementation)
@@ -32,6 +33,25 @@ static void itoa_simple(uint64_t value, char *buf, int base) {
         buf[j] = temp[i - j - 1];
     }
     buf[j] = '\0';
+}
+
+static void print_uint(const char *label, uint64_t value) {
+    char buf[64];
+    if (label) {
+        console_puts(label);
+    }
+    itoa_simple(value, buf, 10);
+    console_println(buf);
+}
+
+static void print_hex64(const char *label, uint64_t value) {
+    char buf[64];
+    if (label) {
+        console_puts(label);
+    }
+    console_puts("0x");
+    itoa_simple(value, buf, 16);
+    console_println(buf);
 }
 
 /**
@@ -79,6 +99,92 @@ static void print_boot_info(BootInfo *boot_info) {
     console_println("===================================\n");
 }
 
+static void print_pmm_stats(void) {
+    pmm_stats_t stats = pmm_get_stats();
+
+    console_println("PMM statistics:");
+    print_uint("  Total pages: ", stats.total_pages);
+    print_uint("  Free pages : ", stats.free_pages);
+    print_uint("  Used pages : ", stats.used_pages);
+    print_uint("  Total MB   : ", stats.total_bytes / (1024 * 1024));
+    print_uint("  Free  MB   : ", stats.free_bytes / (1024 * 1024));
+    print_uint("  Used  MB   : ", stats.used_bytes / (1024 * 1024));
+    console_println("");
+}
+
+static void pmm_smoke_test(void) {
+    uint64_t pages[10] = {0};
+    int unique = 1;
+
+    console_println("PMM smoke test: allocating 10 pages...");
+
+    for (int i = 0; i < 10; ++i) {
+        pages[i] = pmm_alloc_page();
+        if (pages[i] == 0) {
+            console_println("  Allocation failed.");
+            return;
+        }
+
+        for (int j = 0; j < i; ++j) {
+            if (pages[i] == pages[j]) {
+                unique = 0;
+            }
+        }
+    }
+
+    if (!unique) {
+        console_println("  Duplicate page detected!");
+        return;
+    }
+
+    console_println("  Pages allocated successfully:");
+    for (int i = 0; i < 10; ++i) {
+        print_hex64("    ", pages[i]);
+    }
+
+    console_println("  Freeing pages...");
+    for (int i = 0; i < 10; ++i) {
+        pmm_free_page(pages[i]);
+    }
+
+    uint64_t reused = pmm_alloc_page();
+    if (reused == 0) {
+        console_println("  Re-allocation failed.");
+        return;
+    }
+
+    int matched_previous = 0;
+    for (int i = 0; i < 10; ++i) {
+        if (reused == pages[i]) {
+            matched_previous = 1;
+            break;
+        }
+    }
+
+    console_puts("  Re-allocated page: ");
+    print_hex64("", reused);
+
+    if (matched_previous) {
+        console_println("  Re-allocation reused a freed page (expected).");
+    } else {
+        console_println("  Re-allocation succeeded but did not reuse a prior page.");
+    }
+
+    pmm_free_page(reused);
+
+    uint64_t contiguous = pmm_alloc_contiguous(4);
+    if (contiguous != 0) {
+        console_println("  Allocated 4 contiguous pages:");
+        print_hex64("    Start: ", contiguous);
+        print_hex64("    End  : ", contiguous + (4 * PMM_PAGE_SIZE) - 1);
+        pmm_free_contiguous(contiguous, 4);
+    } else {
+        console_println("  Contiguous allocation of 4 pages failed.");
+    }
+
+    console_println("PMM smoke test complete.\n");
+}
+
 /**
  * Kernel main entry point
  * Called from UEFI loader after boot services have been exited
@@ -114,6 +220,19 @@ void kernel_main(BootInfo *boot_info) {
     /* Print boot information */
     if (boot_info) {
         print_boot_info(boot_info);
+    }
+
+    /* Initialize physical memory manager */
+    if (boot_info) {
+        if (pmm_init(boot_info) == 0) {
+            console_println("PMM initialized.");
+            print_pmm_stats();
+            pmm_smoke_test();
+        } else {
+            console_println("PMM initialization failed.");
+        }
+    } else {
+        console_println("No BootInfo provided; skipping PMM initialization.");
     }
 
     /* Success message */

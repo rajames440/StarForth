@@ -10,6 +10,8 @@ SECTIONS
     /* Base address for UEFI applications (1MB) */
     . = 0x100000;
 
+    __kernel_start = .;
+
     .text : {
         *(.text.entry)
         *(.text .text.*)
@@ -33,6 +35,8 @@ SECTIONS
         *(COMMON)
         __bss_end = .;
     }
+
+    __kernel_end = .;
 
     /DISCARD/ : {
         *(.comment)
