@@ -10,7 +10,7 @@ Collecting boot information...
 
 StarKernel v0.1.0 - FORTH Microkernel
 Architecture: amd64
-Build: Dec 18 2025 13:10:30
+Build: Dec 18 2025 13:37:43
 
 UEFI BootServices: EXITED
 
@@ -22,8 +22,8 @@ Usable memory: 973 MB
 
 PMM initialized.
 PMM statistics:
-  Total pages: 250610
-  Free pages : 249081
+  Total pages: 250609
+  Free pages : 249080
   Used pages : 1529
   Total MB   : 978
   Free  MB   : 972
@@ -48,6 +48,10 @@ PMM smoke test: allocating 10 pages...
     Start: 0x100000
     End  : 0x103fff
 PMM smoke test complete.
+
+VMM initialized (mapped RAM, CR3 switched)
+VMM self-test: mapped OK at 0xffff800000000000
+VMM self-test complete.
 
 Kernel initialization complete.
 Boot successful!

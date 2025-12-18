@@ -7,6 +7,7 @@
 #include "console.h"
 #include "arch.h"
 #include "pmm.h"
+#include "vmm.h"
 
 static int is_ram_type(uint32_t type) {
     return type == EfiConventionalMemory ||
@@ -199,6 +200,41 @@ static void pmm_smoke_test(void) {
     console_println("PMM smoke test complete.\n");
 }
 
+static void vmm_self_test(void) {
+    /* Map a single PMM page at a high alias and verify round-trip */
+    const uint64_t test_vaddr = 0xFFFF800000000000ull;
+    uint64_t paddr = pmm_alloc_page();
+    if (paddr == 0) {
+        console_println("VMM self-test: failed to allocate page.");
+        return;
+    }
+
+    if (vmm_map_page(test_vaddr, paddr, VMM_FLAG_WRITABLE) != 0) {
+        console_println("VMM self-test: map failed.");
+        pmm_free_page(paddr);
+        return;
+    }
+
+    uint64_t resolved = vmm_get_paddr(test_vaddr);
+    if (resolved != paddr) {
+        console_println("VMM self-test: translation mismatch.");
+    } else {
+        console_puts("VMM self-test: mapped OK at ");
+        print_hex64("", test_vaddr);
+    }
+
+    /* Write via alias to ensure it is accessible */
+    volatile uint64_t *ptr = (uint64_t *)(uintptr_t)test_vaddr;
+    *ptr = 0xdeadbeefULL;
+
+    if (vmm_unmap_page(test_vaddr) != 0) {
+        console_println("VMM self-test: unmap failed.");
+    }
+
+    pmm_free_page(paddr);
+    console_println("VMM self-test complete.\n");
+}
+
 /**
  * Kernel main entry point
  * Called from UEFI loader after boot services have been exited
@@ -247,6 +283,14 @@ void kernel_main(BootInfo *boot_info) {
         }
     } else {
         console_println("No BootInfo provided; skipping PMM initialization.");
+    }
+
+    /* Initialize virtual memory (identity-map first 16 MiB and switch CR3) */
+    if (vmm_init(boot_info) != 0) {
+        console_println("VMM initialization failed.");
+    }
+    else {
+        vmm_self_test();
     }
 
     /* Success message */

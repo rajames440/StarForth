@@ -109,6 +109,16 @@ static int is_ram_type(uint32_t type) {
            type == EfiACPIMemoryNVS;
 }
 
+static void recompute_free_pages(void) {
+    uint64_t free_count = 0;
+    for (uint64_t page = 0; page < pmm_tracked_pages; ++page) {
+        if (!bitmap_test(page)) {
+            free_count++;
+        }
+    }
+    pmm_free_pages = free_count;
+}
+
 int pmm_init(BootInfo *boot_info)
 {
     if (!boot_info ||
@@ -210,7 +220,6 @@ int pmm_init(BootInfo *boot_info)
         if (end_page > start_page) {
             uint64_t pages = end_page - start_page;
             bitmap_mark_range(start_page, pages, 0);
-            pmm_free_pages += pages;
         }
     }
 
@@ -234,8 +243,6 @@ int pmm_init(BootInfo *boot_info)
     if (kend_page > kstart_page) {
         uint64_t kpages = kend_page - kstart_page;
         bitmap_mark_range(kstart_page, kpages, 1);
-        if (pmm_free_pages >= kpages)
-            pmm_free_pages -= kpages;
     }
 
     /* ------------------------------------------------------------
@@ -243,8 +250,17 @@ int pmm_init(BootInfo *boot_info)
      * ------------------------------------------------------------ */
     bitmap_mark_range(0, 1, 1);
 
-    if (pmm_free_pages > pmm_total_pages)
-        pmm_free_pages = pmm_total_pages;
+    /* ------------------------------------------------------------
+     * Reserve the UEFI memory map buffer itself (BootInfo memory_map)
+     * ------------------------------------------------------------ */
+    if (boot_info->memory_map && boot_info->memory_map_size > 0) {
+        uint64_t mm_phys = (uint64_t)(uintptr_t)boot_info->memory_map;
+        uint64_t mm_pages = pmm_bytes_to_pages(boot_info->memory_map_size);
+        uint64_t mm_start_page = mm_phys / PMM_PAGE_SIZE;
+        bitmap_mark_range(mm_start_page, mm_pages, 1);
+    }
+
+    recompute_free_pages();
 
     pmm_initialized = 1;
     return 0;

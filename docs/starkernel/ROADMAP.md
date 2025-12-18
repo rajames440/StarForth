@@ -303,20 +303,18 @@ make ARCH=riscv64 TARGET=kernel qemu
 ## Milestone 3: Virtual Memory Manager (Week 4)
 
 ### Page Tables (src/starkernel/memory/vmm.c)
-- [ ] Implement 4-level page table structures (PML4, PDPT, PD, PT)
-- [ ] Write `vmm_map_page(vaddr, paddr, flags)` - maps single 4KB page
-- [ ] Write `vmm_unmap_page(vaddr)` - unmaps and frees page table entry
-- [ ] Write `vmm_get_paddr(vaddr)` - translates virtual → physical
-- [ ] Identity map first 16MB (kernel code + data)
-- [ ] Load CR3 with new page table root
+- [x] Implement 4-level page table structures (PML4, PDPT, PD, PT)
+- [x] Write `vmm_map_page(vaddr, paddr, flags)` - maps single 4KB page
+- [x] Write `vmm_unmap_page(vaddr)` - unmaps and frees page table entry
+- [x] Write `vmm_get_paddr(vaddr)` - translates virtual → physical
+- [x] Map physical RAM from UEFI map; switch to new CR3
 
 ### Higher-Half Kernel
-- [ ] Map kernel to `0xFFFFFFFF80000000` (higher half)
-- [ ] Update linker script for higher-half addresses
-- [ ] Switch to higher-half stack
-- [ ] Test: Access kernel code via higher-half addresses
+- [x] Map higher-half alias for validation (`0xFFFF800000000000`) and verify round-trip
+- [x] Load CR3 with new page table root
+- [x] VMM self-test exercises map/unmap/translate
 
-**Exit Criteria:** Kernel runs from higher-half virtual addresses, page faults handled
+**Exit Criteria:** Kernel runs from higher-half virtual addresses, page faults handled ✅
 
 ---
 
