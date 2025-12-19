@@ -122,7 +122,7 @@ StarForth uses a Hardware Abstraction Layer (HAL) to enable portability across m
 2. **StarKernel** (in progress) - UEFI-bootable kernel with Forth as native control plane
 3. **StarshipOS** (future) - Full OS with storage, networking, process model
 
-See `docs/03-architecture/hal/` for comprehensive HAL documentation.
+See `docs/starkernel/hal/` for comprehensive HAL documentation.
 
 ### Adaptive Runtime System
 
@@ -221,7 +221,8 @@ make book-html    # HTML single-page + multi-page with dark.css
 Key documentation files:
 - `README.md` - Project overview and quick start
 - `docs/01-getting-started/` - Getting started guides and developer setup
-- `docs/03-architecture/hal/` - Hardware Abstraction Layer documentation
+- `docs/starkernel/hal/` - Hardware Abstraction Layer documentation
+- `docs/starkernel/` - StarKernel architecture and formal verification
 - `docs/03-architecture/` - System architecture and subsystems
 - `docs/FEEDBACK_LOOPS.md` - Physics feedback loop details
 - `docs/HEARTBEAT_INSTRUMENTATION_PLAN.md` - Future instrumentation work

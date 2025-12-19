@@ -52,10 +52,9 @@
 **03-architecture/**
 - ❌ No README.md
 - ✅ Well-organized by subsystem
-- ✅ **NEW:** HAL documentation is excellent (has its own README)
-- Subsections: adaptive-systems/, hal/, heartbeat-system/, physics-engine/, pipelining/
+- ✅ **MOVED:** HAL documentation moved to `docs/starkernel/hal/` (kernel-specific)
+- Subsections: adaptive-systems/, heartbeat-system/, physics-engine/, pipelining/
 - **Issue:** No "big picture" document tying subsystems together
-- **Issue:** HAL is the only subsection with a README
 
 **04-quality/**
 - ❌ No README.md
@@ -155,7 +154,7 @@ This directory contains system architecture documentation for StarForth's core s
 
 ## Subsystems
 
-- **[hal/](hal/)** - Hardware Abstraction Layer (StarForth → StarKernel → StarshipOS)
+- **[../starkernel/hal/](../starkernel/hal/)** - Hardware Abstraction Layer (moved to StarKernel docs)
 - **[heartbeat-system/](heartbeat-system/)** - Centralized time-based tuning
 - **[physics-engine/](physics-engine/)** - Physics-driven adaptive runtime
 - **[pipelining/](pipelining/)** - Speculative execution via word transition prediction
@@ -179,7 +178,7 @@ See `ONTOLOGY.md` for the complete system ontology and taxonomy.
 - **Phase 3:** StarKernel (PLANNED)
 - **Phase 4:** StarshipOS (PLANNED)
 
-See `hal/starkernel-integration.md` for the path to StarKernel.
+See `../starkernel/hal/starkernel-integration.md` for the path to StarKernel.
 ```
 
 #### `docs/04-quality/README.md`
@@ -293,13 +292,13 @@ These logs are archival and may contain outdated information. Always consult cur
 
 **Status:** ✅ Excellent work
 
-The new HAL documentation is comprehensive and well-structured:
-- `hal/README.md` - Navigation hub
-- `hal/overview.md` - Architecture and rationale
-- `hal/interfaces.md` - API contracts
-- `hal/platform-implementations.md` - Implementation guide
-- `hal/migration-plan.md` - Refactoring strategy
-- `hal/starkernel-integration.md` - Kernel-specific details
+The HAL documentation has been moved to `docs/starkernel/hal/` and is comprehensive:
+- `starkernel/hal/README.md` - Navigation hub
+- `starkernel/hal/overview.md` - Architecture and rationale
+- `starkernel/hal/interfaces.md` - API contracts
+- `starkernel/hal/platform-implementations.md` - Implementation guide
+- `starkernel/hal/migration-plan.md` - Refactoring strategy
+- `starkernel/hal/starkernel-integration.md` - Kernel-specific details
 
 **Integration recommendations:**
 
@@ -312,15 +311,15 @@ The new HAL documentation is comprehensive and well-structured:
    - **L4Re** - Microkernel platform
    - **StarKernel** - Freestanding kernel (UEFI boot)
 
-   See `docs/03-architecture/hal/` for HAL documentation.
+   See `docs/starkernel/hal/` for HAL documentation.
    ```
 
 2. **Update `docs/README.md`** to highlight HAL as recent work:
    ```markdown
    ## Current Active Work
 
-   - **HAL Migration**: See `03-architecture/hal/migration-plan.md`
-   - **StarKernel Development**: See `03-architecture/hal/starkernel-integration.md`
+   - **HAL Migration**: See `starkernel/hal/migration-plan.md`
+   - **StarKernel Development**: See `starkernel/hal/starkernel-integration.md`
    - **James Law Window Scaling Experiment**: See `02-experiments/james-law/`
    ```
 
@@ -338,7 +337,7 @@ The new HAL documentation is comprehensive and well-structured:
 
 **Current state:** Inconsistent
 
-**Example of good metadata** (from `hal/starkernel-integration.md`):
+**Example of good metadata** (from `starkernel/hal/starkernel-integration.md`):
 ```markdown
 # StarKernel HAL Integration Guide
 
@@ -498,10 +497,10 @@ The `archive/` directory preserves historical context without cluttering active 
    - Customize for each directory's content
    - **Effort:** 2-3 hours
 
-2. **Update `docs/CLAUDE.md`**
+2. **Update `docs/CLAUDE.md`** ✅ DONE
    - Add HAL section
    - Mention StarKernel vision
-   - Reference `03-architecture/hal/`
+   - Reference `starkernel/hal/`
    - **Effort:** 30 minutes
 
 3. **Update `docs/README.md`**
@@ -567,7 +566,7 @@ The `archive/` directory preserves historical context without cluttering active 
 - Clear connection to StarKernel/StarshipOS vision
 
 ✅ **Recommendations for rest of docs:**
-- Use `hal/README.md` as template for other subsection READMEs
+- Use `starkernel/hal/README.md` as template for other subsection READMEs
 - Adopt HAL's documentation style (clear headers, code examples, success criteria)
 - Follow HAL's pattern of separating overview/interfaces/implementation
 

@@ -4,7 +4,7 @@ This directory contains system architecture documentation for StarForth's core s
 
 ## Subsystems
 
-- **[hal/](hal/)** - Hardware Abstraction Layer (enables StarForth → StarKernel → StarshipOS)
+- **[../starkernel/hal/](../starkernel/hal/)** - Hardware Abstraction Layer (moved to StarKernel docs)
 - **[heartbeat-system/](heartbeat-system/)** - Centralized time-based tuning coordinator
 - **[physics-engine/](physics-engine/)** - Physics-driven adaptive runtime
 - **[pipelining/](pipelining/)** - Speculative execution via word transition prediction
@@ -63,7 +63,7 @@ StarForth's architecture consists of three layers:
 - Process model (Forth tasks)
 - Self-hosting development environment
 
-See `hal/starkernel-integration.md` for the detailed path to StarKernel.
+See `../starkernel/hal/starkernel-integration.md` for the detailed path to StarKernel.
 
 ## Key Documents
 
@@ -73,6 +73,6 @@ See `hal/starkernel-integration.md` for the detailed path to StarKernel.
 
 ## For Developers
 
-- **Adding a new subsystem:** Follow the pattern in `hal/` (include README, overview, implementation guide)
+- **Adding a new subsystem:** Follow the pattern in `../starkernel/hal/` (include README, overview, implementation guide)
 - **Understanding interactions:** See physics-engine/ for how subsystems coordinate via heartbeat
-- **Platform porting:** See `hal/platform-implementations.md`
+- **Platform porting:** See `../starkernel/hal/platform-implementations.md`
