@@ -357,6 +357,8 @@ This milestone must fail hard on variance, not proceed with bad calibration.
 - `ABSOLUTE`: stable, invariant, frequency-known monotonic time suitable for internal determinism and drift bounds; does not imply wall-clock correctness or UTC alignment.
 - `RELATIVE`: monotonic progression with potential scale error and cross-CPU skew; unsuitable for frequency-sensitive or comparative measurements.
 
+In RELATIVE trust mode, determinism validation is skipped and the kernel proceeds without making timing claims. Any DoE results collected in RELATIVE mode are diagnostic-only and must not be used to support determinism assertions.
+
 ### TSC (Time Stamp Counter)
 - [x] Calibrate TSC frequency via **both** HPET and PIT independently (convergence windows)
 - [x] Cross-check calibration results:
@@ -410,16 +412,16 @@ This milestone must fail hard on variance, not proceed with bad calibration.
 ## Milestone 6: Heap Allocator (Week 7)
 
 ### Kernel Heap (src/starkernel/memory/kmalloc.c)
-- [ ] Reserve virtual address range for heap (e.g., 16MB)
-- [ ] Implement simple bump allocator or slab allocator
-- [ ] Write `kmalloc(size)` - allocates kernel memory
-- [ ] Write `kfree(ptr)` - frees kernel memory
-- [ ] Track heap usage stats
+- [x] Reserve virtual address range for heap (16MB contiguous from PMM)
+- [x] Implement simple bump allocator or slab allocator
+- [x] Write `kmalloc(size)` - allocates kernel memory
+- [x] Write `kfree(ptr)` - frees kernel memory
+- [x] Track heap usage stats
 
 ### HAL Memory Implementation
-- [ ] Implement `hal_mem_alloc(size)` → calls `kmalloc()`
-- [ ] Implement `hal_mem_free(ptr)` → calls `kfree()`
-- [ ] Implement `hal_mem_alloc_aligned(size, align)`
+- [x] Implement `hal_mem_alloc(size)` → calls `kmalloc()`
+- [x] Implement `hal_mem_free(ptr)` → calls `kfree()`
+- [x] Implement `hal_mem_alloc_aligned(size, align)`
 
 **Exit Criteria:** Kernel can allocate/free dynamic memory, VM can use HAL memory functions
 
@@ -677,6 +679,8 @@ Focus on proof coverage and structural soundness, not completion.
 
 **⚠️ CRITICAL:** This milestone validates the core claim: 0% algorithmic variance.
 If determinism fails on any architecture, the kernel is not shippable.
+
+**DoE Trust Gating:** DoE runs collected while timer_trust < ABSOLUTE must be flagged as untrusted and excluded from determinism and variance calculations. Such runs may be used for qualitative diagnostics only (functional correctness, ordering, qualitative behavior), but must not contribute to determinism claims. In RELATIVE trust mode, determinism validation is skipped and the kernel proceeds without making timing claims. Any DoE results collected in RELATIVE mode are diagnostic-only and must not be used to support determinism assertions.
 
 ### Per-Architecture DoE Validation
 - [ ] Port DoE test suite to run on bare metal (amd64, aarch64, riscv64)

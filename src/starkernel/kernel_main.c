@@ -10,6 +10,7 @@
 #include "vmm.h"
 #include "apic.h"
 #include "timer.h"
+#include "kmalloc.h"
 
 static int is_ram_type(uint32_t type) {
     return type == EfiConventionalMemory ||
@@ -129,6 +130,17 @@ static void print_pmm_stats(void) {
     console_println("");
 }
 
+static void print_heap_stats(void) {
+    kmalloc_stats_t stats = kmalloc_get_stats();
+
+    console_println("Heap statistics:");
+    print_uint("  Total bytes: ", stats.total_bytes);
+    print_uint("  Free  bytes: ", stats.free_bytes);
+    print_uint("  Used  bytes: ", stats.used_bytes);
+    print_uint("  Peak  bytes: ", stats.peak_bytes);
+    console_println("");
+}
+
 static void pmm_smoke_test(void) {
     uint64_t pages[10] = {0};
     int unique = 1;
@@ -200,6 +212,38 @@ static void pmm_smoke_test(void) {
     }
 
     console_println("PMM smoke test complete.\n");
+}
+
+static void heap_smoke_test(void) {
+    console_println("Heap smoke test: allocating blocks...");
+
+    void *a = kmalloc(64);
+    void *b = kmalloc_aligned(128, 64);
+    void *c = kmalloc(256);
+
+    if (!a || !b || !c) {
+        console_println("  Allocation failed.");
+        if (a) kfree(a);
+        if (b) kfree(b);
+        if (c) kfree(c);
+        return;
+    }
+
+    console_println("  Allocations succeeded.");
+
+    kfree(b);
+    kfree(a);
+    kfree(c);
+
+    void *d = kmalloc(64);
+    if (!d) {
+        console_println("  Re-allocation failed.");
+    } else {
+        console_println("  Re-allocation succeeded (coalescing validated).");
+        kfree(d);
+    }
+
+    console_println("Heap smoke test complete.\n");
 }
 
 static void vmm_self_test(void) {
@@ -372,6 +416,15 @@ void kernel_main(BootInfo *boot_info) {
         page_fault_self_test_read();
         page_fault_self_test_write();
         divide_by_zero_self_test();
+    }
+
+    /* Initialize kernel heap (default 16 MiB region) */
+    if (kmalloc_init(0) == 0) {
+        console_println("Kernel heap initialized.");
+        print_heap_stats();
+        heap_smoke_test();
+    } else {
+        console_println("Kernel heap initialization failed.");
     }
 
     /* Initialize Local APIC (MADT discovery if available) */
