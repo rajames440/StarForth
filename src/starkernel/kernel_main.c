@@ -9,6 +9,7 @@
 #include "pmm.h"
 #include "vmm.h"
 #include "apic.h"
+#include "timer.h"
 
 static int is_ram_type(uint32_t type) {
     return type == EfiConventionalMemory ||
@@ -374,9 +375,23 @@ void kernel_main(BootInfo *boot_info) {
     }
 
     /* Initialize Local APIC (MADT discovery if available) */
+    console_println("APIC: init...");
     if (apic_init(boot_info) != 0) {
         console_println("APIC initialization failed.");
     }
+    console_println("APIC: init done");
+
+    /* Calibrate timers (HPET + PIT cross-check) */
+    console_println("Timer: init...");
+    if (timer_init(boot_info) != 0) {
+        console_println("Timer initialization failed.");
+        while (1) {
+            arch_halt();
+        }
+    }
+    console_println("Timer: init done");
+    /* One immediate drift probe */
+    timer_check_drift_now();
 
     /* Success message */
     console_println("Kernel initialization complete.");

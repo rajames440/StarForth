@@ -351,14 +351,20 @@ make ARCH=riscv64 TARGET=kernel qemu
 **⚠️ CRITICAL:** Timer calibration errors silently poison DoE data and determinism claims.
 This milestone must fail hard on variance, not proceed with bad calibration.
 
+**Contract:** The kernel will always run with the best time source available, but will only make determinism claims when the hardware contract is provably satisfied.
+
+**Trust Modes:**
+- `ABSOLUTE`: stable, invariant, frequency-known monotonic time suitable for internal determinism and drift bounds; does not imply wall-clock correctness or UTC alignment.
+- `RELATIVE`: monotonic progression with potential scale error and cross-CPU skew; unsuitable for frequency-sensitive or comparative measurements.
+
 ### TSC (Time Stamp Counter)
-- [ ] Calibrate TSC frequency via **both** HPET and PIT independently
-- [ ] Cross-check calibration results:
-  - [ ] If HPET and PIT disagree by >0.1%, **halt and print error**
-  - [ ] Log both calibration values to serial console
-  - [ ] Require manual verification before proceeding
-- [ ] Store TSC frequency in global variable
-- [ ] Implement `hal_time_now_ns()` using `rdtsc()`
+- [x] Calibrate TSC frequency via **both** HPET and PIT independently (convergence windows)
+- [x] Cross-check calibration results:
+  - [x] If HPET and PIT disagree by >0.1%, **halt and print error**
+  - [x] Log both calibration values to serial console
+  - [x] Require convergence before proceeding
+- [x] Store TSC frequency in global variable
+- [x] Implement `hal_time_now_ns()` using `rdtsc()`
 - [ ] **Validation test:** Sleep 1 second, verify TSC advanced by ~1e9 ns (±0.01%)
 
 ### APIC Timer

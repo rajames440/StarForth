@@ -26,6 +26,8 @@
 #define ADDR_MASK 0x000FFFFFFFFFF000ull
 
 static uint64_t vmm_root_pml4_phys = 0;
+static const uint64_t lapic_phys_base = 0xFEE00000ull;
+static const uint64_t hpet_phys_base  = 0xFED00000ull;
 
 static int is_ram_type(uint32_t type) {
     return type == EfiConventionalMemory ||
@@ -126,7 +128,19 @@ int vmm_map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
 
     uint16_t idx = pt_index(vaddr);
     if (pt[idx] & PTE_PRESENT) {
-        return -1; /* already mapped */
+        uint64_t existing_pa = pt[idx] & ADDR_MASK;
+        uint64_t new_pte = make_pte(paddr, flags | VMM_FLAG_PRESENT);
+        /* Idempotent mapping: same PA + compatible flags => success */
+        if (existing_pa == (paddr & ADDR_MASK)) {
+            /* Require WRITABLE compatibility (no silent downgrade/upgrade) */
+            int was_writable = (pt[idx] & PTE_WRITABLE) != 0;
+            int want_writable = (new_pte & PTE_WRITABLE) != 0;
+            if (was_writable == want_writable) {
+                return 0;
+            }
+        }
+        console_println("VMM map conflict");
+        return -1;
     }
 
     pt[idx] = make_pte(paddr, flags | VMM_FLAG_PRESENT);
@@ -227,6 +241,16 @@ int vmm_init(BootInfo *boot_info) {
             console_println("VMM init failed: mapping RAM region");
             return -1;
         }
+    }
+
+    /* Map LAPIC and HPET identity */
+    if (vmm_map_range(lapic_phys_base, lapic_phys_base, VMM_PAGE_SIZE, VMM_FLAG_WRITABLE) != 0) {
+        console_println("VMM init failed: map LAPIC MMIO");
+        return -1;
+    }
+    if (vmm_map_range(hpet_phys_base, hpet_phys_base, VMM_PAGE_SIZE, VMM_FLAG_WRITABLE) != 0) {
+        console_println("VMM init failed: map HPET MMIO");
+        return -1;
     }
 
     load_cr3(vmm_root_pml4_phys);
