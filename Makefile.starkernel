@@ -1,5 +1,5 @@
 # Makefile.starkernel - Build system for StarKernel
-# Multi-architecture UEFI kernel build system
+# Multi-architecture UEFI kernel build system with loader+kernel split
 
 # Architecture detection
 UNAME_M := $(shell uname -m)
@@ -21,7 +21,12 @@ TARGET ?= kernel
 # Build output directory
 BUILD_DIR := build/$(ARCH)/$(TARGET)
 OBJ_DIR := $(BUILD_DIR)/obj
-KERNEL_EFI := $(BUILD_DIR)/starkernel.efi
+LOADER_OBJ_DIR := $(OBJ_DIR)/loader
+KERNEL_OBJ_DIR := $(OBJ_DIR)/kernel
+
+# Output files
+LOADER_EFI := $(BUILD_DIR)/starkernel_loader.efi
+KERNEL_ELF := $(BUILD_DIR)/starkernel_kernel.elf
 
 # Source directories
 KERNEL_SRC := src/starkernel
@@ -40,7 +45,8 @@ ifeq ($(ARCH),amd64)
         OBJCOPY := objcopy
     endif
     ARCH_CFLAGS := -m64 -march=x86-64 -mno-red-zone
-    LINKER_SCRIPT := linker/starkernel-amd64.ld
+    LOADER_LINKER_SCRIPT := linker/starkernel-loader-amd64.ld
+    KERNEL_LINKER_SCRIPT := linker/starkernel-kernel-amd64.ld
     EFI_TARGET := efi-app-x86_64
 else ifeq ($(ARCH),aarch64)
     # Try aarch64-linux-gnu-gcc first, fall back to aarch64-none-elf-gcc
@@ -56,7 +62,8 @@ else ifeq ($(ARCH),aarch64)
         $(error No ARM64 toolchain found. Install aarch64-linux-gnu-gcc or aarch64-none-elf-gcc)
     endif
     ARCH_CFLAGS := -march=armv8-a -mcpu=cortex-a72
-    LINKER_SCRIPT := linker/starkernel-aarch64.ld
+    LOADER_LINKER_SCRIPT := linker/starkernel-loader-aarch64.ld
+    KERNEL_LINKER_SCRIPT := linker/starkernel-kernel-aarch64.ld
     EFI_TARGET := efi-app-aarch64
 else ifeq ($(ARCH),riscv64)
     # Try riscv64-unknown-elf-gcc first, fall back to riscv64-linux-gnu-gcc
@@ -72,77 +79,112 @@ else ifeq ($(ARCH),riscv64)
         $(error No RISC-V toolchain found. Install riscv64-unknown-elf-gcc or riscv64-linux-gnu-gcc)
     endif
     ARCH_CFLAGS := -march=rv64gc -mabi=lp64d
-    LINKER_SCRIPT := linker/starkernel-riscv64.ld
+    LOADER_LINKER_SCRIPT := linker/starkernel-loader-riscv64.ld
+    KERNEL_LINKER_SCRIPT := linker/starkernel-kernel-riscv64.ld
     EFI_TARGET := efi-app-riscv64
 else
     $(error Unsupported architecture: $(ARCH))
 endif
 
-# Compiler flags
-CFLAGS := -std=c99 -Wall -Werror -Wextra \
-          -ffreestanding -nostdlib -fno-builtin \
-          -fPIC -fno-stack-protector -fshort-wchar \
-          $(ARCH_CFLAGS) \
-          -I$(KERNEL_INC) -Iinclude
+# Common compiler flags
+COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
+                 -ffreestanding -nostdlib -fno-builtin \
+                 -fPIC -fno-stack-protector -fshort-wchar \
+                 $(ARCH_CFLAGS) \
+                 -I$(KERNEL_INC) -Iinclude
 
-# Linker flags (emit relocations so objcopy can create .reloc for UEFI)
-LDFLAGS := -T $(LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -shared -Bsymbolic -znocombreloc -e efi_main
+# Loader-specific flags
+LOADER_CFLAGS := $(COMMON_CFLAGS)
 
-# Source files (will expand as we add code)
-KERNEL_SRCS := $(wildcard $(KERNEL_SRC)/*.c) \
-               $(wildcard $(KERNEL_SRC)/boot/*.c) \
+# Kernel-specific flags (with __STARKERNEL__ fence)
+KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__
+
+# Linker flags
+LOADER_LDFLAGS := -T $(LOADER_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -shared -Bsymbolic -znocombreloc -e efi_main
+KERNEL_LDFLAGS := -T $(KERNEL_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -e kernel_main
+
+# Loader source files (minimal set)
+LOADER_SRCS := $(KERNEL_SRC)/boot/uefi_loader.c \
+               $(KERNEL_SRC)/boot/elf_loader.c
+
+# Arch-specific files for loader (only what's needed)
+LOADER_ARCH_SRCS := $(KERNEL_SRC)/arch/$(ARCH)/arch.c
+
+LOADER_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_SRCS)) \
+               $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_ARCH_SRCS))
+
+# Kernel source files (everything except loader)
+KERNEL_SRCS := $(KERNEL_SRC)/kernel_main.c \
                $(wildcard $(KERNEL_SRC)/hal/*.c) \
                $(wildcard $(KERNEL_SRC)/memory/*.c) \
                $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
                $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c)
 
+# Filter out arch.c from kernel since it's in loader
+KERNEL_SRCS := $(filter-out $(KERNEL_SRC)/arch/$(ARCH)/arch.c, $(KERNEL_SRCS))
+
 KERNEL_ASM := $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.S)
 
-KERNEL_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(OBJ_DIR)/%.o,$(KERNEL_SRCS)) \
-               $(patsubst $(KERNEL_SRC)/%.S,$(OBJ_DIR)/%.o,$(KERNEL_ASM))
+KERNEL_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(KERNEL_OBJ_DIR)/%.o,$(KERNEL_SRCS)) \
+               $(patsubst $(KERNEL_SRC)/%.S,$(KERNEL_OBJ_DIR)/%.o,$(KERNEL_ASM))
 
-# Default target
+# Default target: build both loader and kernel
 .PHONY: all
-all: $(KERNEL_EFI)
-	@echo "Built StarKernel for $(ARCH): $(KERNEL_EFI)"
+all: $(LOADER_EFI) $(KERNEL_ELF)
+	@echo "StarKernel built successfully for $(ARCH)"
+	@echo "  Loader: $(LOADER_EFI)"
+	@echo "  Kernel: $(KERNEL_ELF)"
 
 # Create build directories
-$(BUILD_DIR) $(OBJ_DIR):
-	@mkdir -p $(OBJ_DIR)/boot $(OBJ_DIR)/hal $(OBJ_DIR)/memory $(OBJ_DIR)/vm_arbiter $(OBJ_DIR)/arch/$(ARCH)
+$(BUILD_DIR) $(LOADER_OBJ_DIR) $(KERNEL_OBJ_DIR):
+	@mkdir -p $(LOADER_OBJ_DIR)/boot $(LOADER_OBJ_DIR)/arch/$(ARCH)
+	@mkdir -p $(KERNEL_OBJ_DIR)/boot $(KERNEL_OBJ_DIR)/hal $(KERNEL_OBJ_DIR)/memory $(KERNEL_OBJ_DIR)/vm_arbiter $(KERNEL_OBJ_DIR)/arch/$(ARCH)
 
-# Compile C sources
-$(OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(OBJ_DIR)
+# Compile loader C sources
+$(LOADER_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(LOADER_OBJ_DIR)
 	@mkdir -p $(dir $@)
-	@echo "CC $<"
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@echo "CC (loader) $<"
+	@$(CC) $(LOADER_CFLAGS) -c $< -o $@
 
-# Compile assembly sources
-$(OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(OBJ_DIR)
+# Compile kernel C sources
+$(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(KERNEL_OBJ_DIR)
 	@mkdir -p $(dir $@)
-	@echo "AS $<"
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@echo "CC (kernel) $<"
+	@$(CC) $(KERNEL_CFLAGS) -c $< -o $@
 
-# Link kernel ELF
-$(BUILD_DIR)/starkernel.elf: $(KERNEL_OBJS) $(LINKER_SCRIPT) | $(BUILD_DIR)
-	@echo "LD $@"
-	@$(LD) $(LDFLAGS) $(KERNEL_OBJS) -o $@
+# Compile kernel assembly sources
+$(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(KERNEL_OBJ_DIR)
+	@mkdir -p $(dir $@)
+	@echo "AS (kernel) $<"
+	@$(CC) $(KERNEL_CFLAGS) -c $< -o $@
 
-# Convert ELF to PE32+ UEFI executable
-$(KERNEL_EFI): $(BUILD_DIR)/starkernel.elf
-	@echo "OBJCOPY $@"
+# Link loader ELF
+$(BUILD_DIR)/starkernel_loader.elf: $(LOADER_OBJS) $(LOADER_LINKER_SCRIPT) | $(BUILD_DIR)
+	@echo "LD (loader) $@"
+	@$(LD) $(LOADER_LDFLAGS) $(LOADER_OBJS) -o $@
+
+# Convert loader ELF to PE32+ UEFI executable
+$(LOADER_EFI): $(BUILD_DIR)/starkernel_loader.elf
+	@echo "OBJCOPY (loader) $@"
 	@$(OBJCOPY) \
 		-j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
 		-j .rel.* -j .rela -j .rela.* -j .reloc -j .rodata -j .bss \
 		--target=$(EFI_TARGET) \
 		$< $@
-	@echo "StarKernel built successfully: $@"
+	@echo "Loader built: $@"
+
+# Link kernel ELF
+$(KERNEL_ELF): $(KERNEL_OBJS) $(KERNEL_LINKER_SCRIPT) | $(BUILD_DIR)
+	@echo "LD (kernel) $@"
+	@$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJS) -o $@
+	@echo "Kernel built: $@"
 
 # Build ISO image (amd64 only)
 .PHONY: iso
-iso: $(KERNEL_EFI)
+iso: $(LOADER_EFI) $(KERNEL_ELF)
 ifeq ($(ARCH),amd64)
 	@echo "Creating ISO image..."
-	@./tools/make-iso.sh $(KERNEL_EFI) $(BUILD_DIR)/starkernel.iso
+	@./tools/make-iso.sh $(LOADER_EFI) $(KERNEL_ELF) $(BUILD_DIR)/starkernel.iso
 else
 	@echo "Error: ISO generation only supported for amd64"
 	@exit 1
@@ -150,10 +192,10 @@ endif
 
 # Build Raspberry Pi 4B image (aarch64 only)
 .PHONY: rpi4-image
-rpi4-image: $(KERNEL_EFI)
+rpi4-image: $(LOADER_EFI) $(KERNEL_ELF)
 ifeq ($(ARCH),aarch64)
 	@echo "Creating Raspberry Pi 4B image..."
-	@./tools/make-rpi4-image.sh $(KERNEL_EFI) $(BUILD_DIR)/starkernel-rpi4.img
+	@./tools/make-rpi4-image.sh $(LOADER_EFI) $(KERNEL_ELF) $(BUILD_DIR)/starkernel-rpi4.img
 else
 	@echo "Error: RasPi image generation only supported for aarch64"
 	@exit 1
@@ -161,12 +203,13 @@ endif
 
 # Launch QEMU (architecture-specific)
 .PHONY: qemu
-qemu: $(KERNEL_EFI)
+qemu: $(LOADER_EFI) $(KERNEL_ELF)
 ifeq ($(ARCH),amd64)
 	@echo "Preparing FAT ESP directory for QEMU..."
 	@rm -rf $(BUILD_DIR)/esp
 	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
-	@cp $(KERNEL_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
+	@cp $(LOADER_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
+	@cp $(KERNEL_ELF) $(BUILD_DIR)/esp/kernel.elf
 	@printf "FS0:\\EFI\\BOOT\\BOOTX64.EFI\r\n" > $(BUILD_DIR)/esp/startup.nsh
 	@echo "Launching QEMU for amd64 (OVMF pflash + ESP)..."
 	@# Use the 4MB OVMF build installed on this host
@@ -195,7 +238,8 @@ else ifeq ($(ARCH),aarch64)
 	@echo "Preparing FAT ESP directory for QEMU (aarch64)..."
 	@rm -rf $(BUILD_DIR)/esp
 	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
-	@cp $(KERNEL_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTAA64.EFI
+	@cp $(LOADER_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTAA64.EFI
+	@cp $(KERNEL_ELF) $(BUILD_DIR)/esp/kernel.elf
 	@printf "FS0:\\EFI\\BOOT\\BOOTAA64.EFI\r\n" > $(BUILD_DIR)/esp/startup.nsh
 	@echo "Launching QEMU for aarch64 (virt + UEFI)..."
 	@if [ -f /usr/share/AAVMF/AAVMF_CODE.fd ]; then \
@@ -221,7 +265,8 @@ else ifeq ($(ARCH),riscv64)
 	@echo "Preparing FAT ESP directory for QEMU (riscv64)..."
 	@rm -rf $(BUILD_DIR)/esp
 	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
-	@cp $(KERNEL_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTRISCV64.EFI
+	@cp $(LOADER_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTRISCV64.EFI
+	@cp $(KERNEL_ELF) $(BUILD_DIR)/esp/kernel.elf
 	@printf "FS0:\\EFI\\BOOT\\BOOTRISCV64.EFI\r\n" > $(BUILD_DIR)/esp/startup.nsh
 	@echo "Launching QEMU for riscv64 (virt + UEFI)..."
 	@if [ -f /usr/share/qemu-efi-riscv64/QEMU_EFI.fd ]; then \
@@ -244,11 +289,12 @@ endif
 
 # Launch QEMU with GDB
 .PHONY: qemu-gdb
-qemu-gdb: $(KERNEL_EFI)
+qemu-gdb: $(LOADER_EFI) $(KERNEL_ELF)
 ifeq ($(ARCH),amd64)
 	@echo "Launching QEMU with GDB server on port 1234..."
 	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
-	@cp $(KERNEL_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
+	@cp $(LOADER_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
+	@cp $(KERNEL_ELF) $(BUILD_DIR)/esp/kernel.elf
 	@qemu-system-x86_64 \
 		-bios /usr/share/OVMF/OVMF_CODE.fd \
 		-drive format=raw,file=fat:rw:$(BUILD_DIR)/esp \
@@ -256,12 +302,12 @@ ifeq ($(ARCH),amd64)
 		-m 256M \
 		-s -S
 	@echo "Waiting for GDB connection on port 1234..."
-	@echo "In another terminal, run: gdb $(BUILD_DIR)/starkernel.elf -ex 'target remote :1234'"
+	@echo "In another terminal, run: gdb $(KERNEL_ELF) -ex 'target remote :1234'"
 else ifeq ($(ARCH),riscv64)
 	@echo "Launching QEMU with GDB server for RISC-V on port 1234..."
 	@qemu-system-riscv64 \
 		-M virt \
-		-kernel $(KERNEL_EFI) \
+		-kernel $(LOADER_EFI) \
 		-serial stdio \
 		-m 128M \
 		-s -S
@@ -291,13 +337,15 @@ clean-kernel:
 info:
 	@echo "StarKernel Build Configuration"
 	@echo "=============================="
-	@echo "Architecture:    $(ARCH)"
-	@echo "Target:          $(TARGET)"
-	@echo "Compiler:        $(CC)"
-	@echo "Linker:          $(LD)"
-	@echo "Build dir:       $(BUILD_DIR)"
-	@echo "Linker script:   $(LINKER_SCRIPT)"
-	@echo "Output:          $(KERNEL_EFI)"
+	@echo "Architecture:     $(ARCH)"
+	@echo "Target:           $(TARGET)"
+	@echo "Compiler:         $(CC)"
+	@echo "Linker:           $(LD)"
+	@echo "Build dir:        $(BUILD_DIR)"
+	@echo "Loader linker:    $(LOADER_LINKER_SCRIPT)"
+	@echo "Kernel linker:    $(KERNEL_LINKER_SCRIPT)"
+	@echo "Loader output:    $(LOADER_EFI)"
+	@echo "Kernel output:    $(KERNEL_ELF)"
 
 .PHONY: help
 help:
@@ -312,7 +360,7 @@ help:
 	@echo "  ARCH=riscv64   - RISC-V 64-bit"
 	@echo ""
 	@echo "Build targets:"
-	@echo "  all            - Build kernel EFI binary (default)"
+	@echo "  all            - Build loader + kernel (default)"
 	@echo "  kernel         - Same as 'all'"
 	@echo "  kernel-all     - Build for all architectures"
 	@echo "  iso            - Create bootable ISO (amd64 only)"

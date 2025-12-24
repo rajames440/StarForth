@@ -3,6 +3,10 @@
  * Called after UEFI boot services have been exited
  */
 
+#ifndef __STARKERNEL__
+#error "__STARKERNEL__ must be defined for kernel build"
+#endif
+
 #include "uefi.h"
 #include "console.h"
 #include "arch.h"

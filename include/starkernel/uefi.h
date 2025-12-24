@@ -53,6 +53,7 @@ typedef UINTN EFI_STATUS;
 #define EFI_WRITE_PROTECTED       (8 | (1UL << 63))
 #define EFI_OUT_OF_RESOURCES      (9 | (1UL << 63))
 #define EFI_NOT_FOUND             (14 | (1UL << 63))
+#define EFI_ABORTED               (21 | (1UL << 63))
 
 /* EFI Handle */
 typedef void* EFI_HANDLE;
@@ -291,5 +292,107 @@ typedef struct {
     FramebufferInfo framebuffer;
     UINT8 uefi_boot_services_exited;
 } BootInfo;
+
+/* File System Protocols (needed for loader) */
+static const EFI_GUID EFI_LOADED_IMAGE_PROTOCOL_GUID =
+    {0x5B1B31A1,0x9562,0x11d2, {0x8E,0x3F,0x00,0xA0,0xC9,0x69,0x72,0x3B}};
+
+static const EFI_GUID EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID =
+    {0x0964e5b22,0x6459,0x11d2, {0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b}};
+
+static const EFI_GUID EFI_FILE_INFO_GUID =
+    {0x09576e92,0x6d3f,0x11d2, {0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b}};
+
+#define EFI_FILE_MODE_READ 0x0000000000000001ULL
+
+struct _EFI_FILE_PROTOCOL;
+struct _EFI_SIMPLE_FILE_SYSTEM_PROTOCOL;
+
+typedef EFI_STATUS (EFIAPI *EFI_FILE_OPEN)(
+    struct _EFI_FILE_PROTOCOL *This,
+    struct _EFI_FILE_PROTOCOL **NewHandle,
+    CHAR16 *FileName,
+    UINT64 OpenMode,
+    UINT64 Attributes
+);
+
+typedef EFI_STATUS (EFIAPI *EFI_FILE_CLOSE)(
+    struct _EFI_FILE_PROTOCOL *This
+);
+
+typedef EFI_STATUS (EFIAPI *EFI_FILE_READ)(
+    struct _EFI_FILE_PROTOCOL *This,
+    UINTN *BufferSize,
+    VOID *Buffer
+);
+
+typedef EFI_STATUS (EFIAPI *EFI_FILE_GET_INFO)(
+    struct _EFI_FILE_PROTOCOL *This,
+    EFI_GUID *InformationType,
+    UINTN *BufferSize,
+    VOID *Buffer
+);
+
+typedef struct _EFI_FILE_PROTOCOL {
+    UINT64 Revision;
+    EFI_FILE_OPEN Open;
+    EFI_FILE_CLOSE Close;
+    VOID *Delete;
+    EFI_FILE_READ Read;
+    VOID *Write;
+    VOID *GetPosition;
+    VOID *SetPosition;
+    EFI_FILE_GET_INFO GetInfo;
+    VOID *SetInfo;
+    VOID *Flush;
+} EFI_FILE_PROTOCOL;
+
+typedef EFI_STATUS (EFIAPI *EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_OPEN_VOLUME)(
+    struct _EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This,
+    EFI_FILE_PROTOCOL **Root
+);
+
+typedef struct _EFI_SIMPLE_FILE_SYSTEM_PROTOCOL {
+    UINT64 Revision;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_OPEN_VOLUME OpenVolume;
+} EFI_SIMPLE_FILE_SYSTEM_PROTOCOL;
+
+typedef struct {
+    UINT16 Year;
+    UINT8 Month;
+    UINT8 Day;
+    UINT8 Hour;
+    UINT8 Minute;
+    UINT8 Second;
+    UINT8 Pad1;
+    UINT32 Nanosecond;
+    INT16 TimeZone;
+    UINT8 Daylight;
+    UINT8 Pad2;
+} EFI_TIME;
+
+typedef struct {
+    UINT64 Size;
+    UINT64 FileSize;
+    UINT64 PhysicalSize;
+    EFI_TIME CreateTime;
+    EFI_TIME LastAccessTime;
+    EFI_TIME ModificationTime;
+    UINT64 Attribute;
+    CHAR16 FileName[256];
+} EFI_FILE_INFO;
+
+typedef struct {
+    EFI_HANDLE DeviceHandle;
+    VOID *FilePath;
+    VOID *Reserved;
+    UINT32 LoadOptionsSize;
+    VOID *LoadOptions;
+    VOID *ImageBase;
+    UINT64 ImageSize;
+    EFI_MEMORY_TYPE ImageCodeType;
+    EFI_MEMORY_TYPE ImageDataType;
+    VOID *Unload;
+} EFI_LOADED_IMAGE_PROTOCOL;
 
 #endif /* STARKERNEL_UEFI_H */
