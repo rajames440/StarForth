@@ -466,15 +466,27 @@ void kernel_main(BootInfo *boot_info) {
     /* One immediate drift probe */
     timer_check_drift_now();
 
+    /* Initialize APIC timer for heartbeat (100 Hz = 10ms period) */
+    console_println("Heartbeat: init...");
+    uint64_t tsc_hz = timer_tsc_hz();
+    if (apic_timer_init(tsc_hz, 100) != 0) {
+        console_println("APIC Timer initialization failed.");
+    }
+    console_println("Heartbeat: init done");
+
     /* Success message */
     console_println("Kernel initialization complete.");
     console_println("Boot successful!");
     console_println("");
 
-    /* Infinite loop - kernel is running */
-    console_println("Kernel halted. (QEMU: Press Ctrl+A, then X to exit)");
+    /* Start heartbeat and enable interrupts */
+    console_println("Starting heartbeat...");
+    apic_timer_start();
+    arch_enable_interrupts();
+    console_println("Heartbeat running. (QEMU: Press Ctrl+A, then X to exit)");
 
+    /* Idle loop - HLT with interrupts enabled allows timer to fire */
     while (1) {
-        arch_halt();
+        arch_halt();  /* HLT waits for interrupt, then continues */
     }
 }

@@ -316,6 +316,10 @@ typedef struct
     uint64_t bucket_mode_transitions;       /* Count of L8 mode transitions in bucket */
     uint32_t bucket_collapse_flag;          /* Flag indicating bucket collapse event */
     uint32_t bucket_tick_count;             /* Number of ticks in current bucket */
+
+    /* === M5 Time Trust Fields === */
+    uint64_t m5_time_trust;                 /* TIME-TRUST in Q48.16 format */
+    uint64_t m5_variance;                   /* Timing variance in Q48.16 format */
 } HeartbeatState;
 
 /* ===== Pipelining Global Metrics (Loop #4 & #5 Feedback) ================

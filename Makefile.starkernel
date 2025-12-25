@@ -115,7 +115,8 @@ LOADER_SRCS := $(KERNEL_SRC)/boot/uefi_loader.c \
                $(KERNEL_SRC)/boot/reloc_stub.c \
                $(KERNEL_SRC)/kernel_main.c \
                $(wildcard $(KERNEL_SRC)/hal/*.c) \
-               $(wildcard $(KERNEL_SRC)/memory/*.c)
+               $(wildcard $(KERNEL_SRC)/memory/*.c) \
+               $(wildcard $(KERNEL_SRC)/math/*.c)
 
 LOADER_ASM := $(KERNEL_SRC)/arch/$(ARCH)/boot.S \
               $(KERNEL_SRC)/arch/$(ARCH)/isr.S
@@ -143,6 +144,7 @@ LOADER_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_SRCS)
 KERNEL_SRCS := $(KERNEL_SRC)/kernel_main.c \
                $(wildcard $(KERNEL_SRC)/hal/*.c) \
                $(wildcard $(KERNEL_SRC)/memory/*.c) \
+               $(wildcard $(KERNEL_SRC)/math/*.c) \
                $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
                $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c)
 

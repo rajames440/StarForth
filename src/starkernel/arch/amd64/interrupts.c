@@ -1,13 +1,17 @@
 /**
- * interrupts.c (amd64) - Interrupt setup and basic exception handling
+ * interrupts.c (amd64) - Interrupt setup and exception/IRQ handling
  */
 
 #include <stdint.h>
 #include "arch.h"
 #include "console.h"
+#include "apic.h"
 
 #define IDT_ENTRIES 256
 #define INTERRUPT_GATE 0x8E
+
+/* Heartbeat tick counter (simple stub for now, will be replaced by heartbeat.c) */
+static volatile uint64_t heartbeat_tick_count = 0;
 
 static inline void outb(uint16_t port, uint8_t val)
 {
@@ -127,6 +131,23 @@ void isr_common_handler(uint64_t vector,
                         uint64_t rflags,
                         uint64_t cr2)
 {
+    /* Handle APIC timer interrupt (heartbeat) */
+    if (vector == APIC_TIMER_VECTOR) {
+        heartbeat_tick_count++;
+
+        /* Print every 100 ticks (1 second at 100Hz) for visibility */
+        if ((heartbeat_tick_count % 100) == 0) {
+            console_puts("Heartbeat: ");
+            print_dec_u64(heartbeat_tick_count);
+            console_println(" ticks");
+        }
+
+        /* Acknowledge interrupt and return (don't halt!) */
+        apic_eoi();
+        return;
+    }
+
+    /* All other vectors are exceptions - print diagnostic and halt */
     console_println("\n=== INTERRUPT/EXCEPTION ===");
 
     console_puts("Vector : ");
