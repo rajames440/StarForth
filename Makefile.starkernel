@@ -103,15 +103,37 @@ KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__
 LOADER_LDFLAGS := -T $(LOADER_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -shared -Bsymbolic -znocombreloc -e efi_main
 KERNEL_LDFLAGS := -T $(KERNEL_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -e kernel_main
 
-# Loader source files (minimal set)
+# Monolithic build includes kernel in loader (no separate ELF loading)
+MONOLITHIC ?= 1
+
+ifeq ($(MONOLITHIC),1)
+# Monolithic: loader + kernel compiled together
+LOADER_CFLAGS += -DMONOLITHIC_BUILD -D__STARKERNEL__
+
 LOADER_SRCS := $(KERNEL_SRC)/boot/uefi_loader.c \
-               $(KERNEL_SRC)/boot/elf_loader.c
+               $(KERNEL_SRC)/boot/elf_loader.c \
+               $(KERNEL_SRC)/boot/reloc_stub.c \
+               $(KERNEL_SRC)/kernel_main.c \
+               $(wildcard $(KERNEL_SRC)/hal/*.c) \
+               $(wildcard $(KERNEL_SRC)/memory/*.c)
 
-# Loader assembly files (reloc section for PE32+)
-LOADER_ASM := $(KERNEL_SRC)/boot/reloc.S
+LOADER_ASM := $(KERNEL_SRC)/arch/$(ARCH)/boot.S \
+              $(KERNEL_SRC)/arch/$(ARCH)/isr.S
 
-# Arch-specific files for loader (only what's needed)
+LOADER_ARCH_SRCS := $(KERNEL_SRC)/arch/$(ARCH)/arch.c \
+                    $(KERNEL_SRC)/arch/$(ARCH)/interrupts.c \
+                    $(KERNEL_SRC)/arch/$(ARCH)/apic.c \
+                    $(KERNEL_SRC)/arch/$(ARCH)/timer.c
+else
+# Split build: loader loads kernel.elf from disk
+LOADER_SRCS := $(KERNEL_SRC)/boot/uefi_loader.c \
+               $(KERNEL_SRC)/boot/elf_loader.c \
+               $(KERNEL_SRC)/boot/reloc_stub.c
+
+LOADER_ASM :=
+
 LOADER_ARCH_SRCS := $(KERNEL_SRC)/arch/$(ARCH)/arch.c
+endif
 
 LOADER_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_SRCS)) \
                $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_ARCH_SRCS)) \

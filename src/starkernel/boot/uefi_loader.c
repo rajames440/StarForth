@@ -10,6 +10,11 @@
 #include "elf_loader.h"
 #include "elf64.h"
 
+/* For monolithic build: kernel_main is linked directly */
+#ifdef MONOLITHIC_BUILD
+extern void kernel_main(BootInfo *boot_info);
+#endif
+
 #if defined(ARCH_AMD64)
 #define COM1_BASE 0x3F8
 static inline void raw_outb(uint16_t port, uint8_t val)
@@ -61,15 +66,7 @@ static void raw_serial_puts(const char *s)
 #define RAW_LOG(str) ((void)0)
 #endif
 
-/* Kernel entry point signature */
-typedef void (*KernelEntry)(BootInfo *boot_info);
-
 static BootInfo g_boot_info = {0};
-
-/* Kernel ELF buffer - dynamically allocated via UEFI Boot Services */
-#define KERNEL_MAX_SIZE (8 * 1024 * 1024)
-static uint8_t *kernel_elf_buffer = NULL;
-static uint64_t kernel_elf_size = 0;
 
 static int guid_equals(const EFI_GUID* a, const EFI_GUID* b)
 {
@@ -85,6 +82,15 @@ static int guid_equals(const EFI_GUID* a, const EFI_GUID* b)
            a->Data4[6] == b->Data4[6] &&
            a->Data4[7] == b->Data4[7];
 }
+
+#ifndef MONOLITHIC_BUILD
+/* Kernel entry point signature */
+typedef void (*KernelEntry)(BootInfo *boot_info);
+
+/* Kernel ELF buffer - dynamically allocated via UEFI Boot Services */
+#define KERNEL_MAX_SIZE (8 * 1024 * 1024)
+static uint8_t *kernel_elf_buffer = NULL;
+static uint64_t kernel_elf_size = 0;
 
 /* Load kernel.elf from ESP using Simple File System Protocol */
 static EFI_STATUS load_kernel_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES *BS)
@@ -182,6 +188,7 @@ static EFI_STATUS load_kernel_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES
 
     return EFI_SUCCESS;
 }
+#endif /* !MONOLITHIC_BUILD */
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
@@ -208,6 +215,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     RAW_LOG("RAW SERIAL UP\n");
 #endif
 
+#ifndef MONOLITHIC_BUILD
     /* Load kernel.elf from ESP BEFORE ExitBootServices */
     status = load_kernel_from_esp(ImageHandle, BS);
     if (status != EFI_SUCCESS) {
@@ -216,6 +224,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         while (1) arch_halt();
         return status;
     }
+#else
+    RAW_LOG("Monolithic build - kernel linked directly\n");
+#endif
 
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Collecting boot information...\r\n");
 
@@ -305,6 +316,13 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     g_boot_info.uefi_boot_services_exited = exited_boot_services ? 1u : 0u;
 
+#ifdef MONOLITHIC_BUILD
+    /*
+     * Monolithic build: kernel is linked directly, call kernel_main
+     */
+    RAW_LOG("Calling kernel_main (monolithic)...\n");
+    kernel_main(&g_boot_info);
+#else
     /*
      * Phase C: Post-ExitBootServices - Parse and load kernel
      * BootServices are GONE, can only use runtime services
@@ -322,6 +340,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     /* Jump to kernel entry point */
     KernelEntry kernel_entry = (KernelEntry)entry_point;
     kernel_entry(&g_boot_info);
+#endif
 
     /* Should never reach here */
     RAW_LOG("FATAL: Kernel returned\n");

@@ -530,13 +530,13 @@ Heap smoke test complete.
 - [x] Disable PIC (legacy 8259A)
 
 ### Exception Handlers
-- [~] Implement handlers for CPU exceptions (0-31): default fatal handler prints info
+- [x] Implement handlers for CPU exceptions (0-31): default fatal handler prints info
   - [x] #DE (Divide Error) - vector 0 (gated self-test available)
   - [x] #PF (Page Fault) - vector 14 (gated self-tests available)
   - [x] #GP (General Protection) - vector 13
 - [x] Print exception info: vector, error code, RIP, CR2
-- [ ] Test: Trigger divide-by-zero, verify handler fires (self-test gated by DIV0_SELF_TEST)
-- [ ] Test: Trigger page-fault read/write, verify handler fires (gated by PF_SELF_TEST_READ/WRITE)
+- [x] Test: Trigger divide-by-zero, verify handler fires (DIV0_SELF_TEST=1, verified 2025-12-25)
+- [x] Test: Trigger page-fault read/write, verify handler fires (PF_SELF_TEST_READ/WRITE=1, verified 2025-12-25)
 
 ### APIC Initialization
 - [x] Detect APIC via ACPI MADT table (fallback to 0xFEE00000)
@@ -548,35 +548,184 @@ Heap smoke test complete.
 
 ---
 
-### STATUS: Milestone 4 (Verified 2025-12-24)
+### STATUS: Milestone 4 (Verified 2025-12-25)
 
 **Result:** ✅ **COMPLETE**
 
 **What Works:**
-- ✅ IDT setup (`arch/amd64/interrupts.c`) - 256 entries
+- ✅ GDT setup (`arch/amd64/arch.c`) - 3 entries (null, code64, data)
+- ✅ IDT setup (`arch/amd64/interrupts.c`) - 256 entries with runtime relocation
 - ✅ Exception handlers implemented (#DE, #PF, #GP)
 - ✅ `isr_common_handler()` with diagnostic output
 - ✅ APIC initialized (SIVR=0xFF)
 - ✅ No triple-faults during boot
+- ✅ All three exception self-tests pass
 
-**Boot Output:**
+**Full QEMU Console Output (Normal Boot):**
 ```
+StarKernel UEFI Loader
+Loading kernel from ESP...
+RAW SERIAL UP
+Monolithic build - kernel linked directly
+Collecting boot information...
+EBS...
+EBS OK
+Calling kernel_main (monolithic)...
 IDT installed.
+
+
+   _____ _             _  __                    _
+  / ____| |           | |/ /                   | |
+ | (___ | |_ __ _ _ __| ' / ___ _ __ _ __   ___| |
+  \___ \| __/ _` | '__|  < / _ \ '__| '_ \ / _ \ |
+  ____) | || (_| | |  | . \  __/ |  | | | |  __/ |
+ |_____/ \__\__,_|_|  |_|\_\___|_|  |_| |_|\___|_|
+
+StarKernel v0.1.0 - FORTH Microkernel
+Architecture: amd64
+Build: Dec 25 2025 09:42:32
+
+UEFI BootServices: EXITED
+
+=== StarKernel Boot Information ===
+Memory map entries: 108
+Total memory: 127 MB
+Usable memory: 79 MB
+===================================
+
+PMM initialized.
+PMM statistics:
+  Total pages: 21669
+  Free pages : 20140
+  Used pages : 1529
+  Total MB   : 84
+  Free  MB   : 78
+  Used  MB   : 5
+
+PMM smoke test: allocating 10 pages...
+  Pages allocated successfully:
+    0x100000
+    0x101000
+    0x102000
+    0x103000
+    0x104000
+    0x105000
+    0x106000
+    0x107000
+    0x108000
+    0x109000
+  Freeing pages...
+  Re-allocated page: 0x100000
+  Re-allocation reused a freed page (expected).
+  Allocated 4 contiguous pages:
+    Start: 0x100000
+    End  : 0x103fff
+PMM smoke test complete.
+
+VMM initialized (mapped RAM, CR3 switched)
+VMM self-test: mapped OK at 0xffff800000000000
+VMM self-test complete.
+
+Kernel heap initialized.
+Heap statistics:
+  Total bytes: 16777176
+  Free  bytes: 16777176
+  Used  bytes: 0
+  Peak  bytes: 0
+
+Heap smoke test: allocating blocks...
+  Allocations succeeded.
+  Re-allocation succeeded (coalescing validated).
+Heap smoke test complete.
 
 APIC: init...
 APIC enabled (SIVR=0xFF).
 APIC: init done
+Timer: init...
+Timer: init start
+Timer: VM mode detected (hypervisor present).
+Timer: HPET calibration disabled (VM-exit MMIO would poison timing).
+Timer: WARNING: invariant TSC not present under hypervisor.
+Timer:          continuing in RELATIVE mode (no determinism guarantees).
+Timer: RDTSCP not present; using RDTSC (less serialized).
+Timer: CPUID frequency unavailable; trying PM Timer...
+Timer: WARNING: could not derive TSC frequency; PM Timer will be used for RELATIVE ns.
+Timer: trust=1 (0=NONE,1=REL,2=ABS), TSC=0 Hz
+Timer: init done
+Kernel initialization complete.
+Boot successful!
+
+Kernel halted. (QEMU: Press Ctrl+A, then X to exit)
 ```
 
-**Exception Handlers:**
-- Gated self-tests available via compile flags:
-  - `DIV0_SELF_TEST` - Divide-by-zero (#DE)
-  - `PF_SELF_TEST_READ` - Page fault read test
-  - `PF_SELF_TEST_WRITE` - Page fault write test
-- Exception info printed: vector, error code, RIP, CR2
+**Exception Handler Self-Tests (Verified 2025-12-25):**
+
+To run exception self-tests, rebuild with flags enabled:
+```bash
+make -f Makefile.starkernel MONOLITHIC=1 ARCH=amd64 TARGET=kernel \
+     DIV0_SELF_TEST=1 PF_SELF_TEST_READ=1 PF_SELF_TEST_WRITE=1 kernel
+```
+
+*Divide-by-zero (#DE) test output:*
+```
+Triggering divide-by-zero self-test (#DE)...
+
+=== INTERRUPT/EXCEPTION ===
+Vector : 0 (0x0000000000000000)
+Error  : 0x0000000000000000
+RIP    : 0x0000000005ec9661
+CR2    : 0x0000000000000000
+Fault: Divide Error (#DE)
+Halting.
+```
+
+*Page Fault Read (#PF) test output:*
+```
+Triggering page-fault READ self-test (#PF) at 0x80000000
+
+=== INTERRUPT/EXCEPTION ===
+Vector : 14 (0x000000000000000e)
+Error  : 0x0000000000000000
+RIP    : 0x0000000005ec9697
+CR2    : 0x0000000080000000
+Fault: Page Fault (#PF)
+PF EC  : NP R SUP
+Halting.
+```
+
+*Page Fault Write (#PF) test output:*
+```
+Triggering page-fault WRITE self-test (#PF) at 0x80000000
+
+=== INTERRUPT/EXCEPTION ===
+Vector : 14 (0x000000000000000e)
+Error  : 0x0000000000000002
+RIP    : 0x0000000005ec96ac
+CR2    : 0x0000000080000000
+Fault: Page Fault (#PF)
+PF EC  : NP W SUP
+Halting.
+```
+
+**Gated self-tests via compile flags:**
+- `DIV0_SELF_TEST=1` - Divide-by-zero (#DE) ✅
+- `PF_SELF_TEST_READ=1` - Page fault read test ✅
+- `PF_SELF_TEST_WRITE=1` - Page fault write test ✅
+
+**Technical Notes:**
+- GDT installed in `arch_early_init()` to ensure selector 0x08 is valid 64-bit code segment
+- ISR stubs require runtime relocation offset calculation (UEFI PE doesn't relocate `.data` pointers)
+- Relocation delta computed by comparing `isr_stub_table[0]` (link-time) with `&isr_stub0` (runtime)
+- Error code correctly decoded: NP=non-present, R/W=read/write, SUP=supervisor mode
+
+**Files Modified for M4 Completion:**
+- `src/starkernel/arch/amd64/arch.c` - Added GDT setup with CS=0x08, DS=0x10
+- `src/starkernel/arch/amd64/interrupts.c` - Added ISR relocation offset calculation
+- `src/starkernel/arch/amd64/isr.S` - Moved `isr_stub_table` from `.rodata` to `.data`
+- `src/starkernel/kernel_main.c` - Fixed DIV0 test with inline assembly
 
 **Architecture Coverage:**
-- **amd64:** ✅ Full implementation
+- **amd64:** ✅ Full implementation (all exception tests pass)
 - **aarch64:** ⚠️ Stub (needs GIC setup)
 - **riscv64:** ⚠️ Stub (needs PLIC/CLINT)
 

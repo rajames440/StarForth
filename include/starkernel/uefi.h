@@ -197,6 +197,21 @@ typedef EFI_STATUS (EFIAPI *EFI_HANDLE_PROTOCOL)(
     void **Interface
 );
 
+/* Search types for LocateHandle */
+typedef enum {
+    AllHandles,
+    ByRegisterNotify,
+    ByProtocol
+} EFI_LOCATE_SEARCH_TYPE;
+
+typedef EFI_STATUS (EFIAPI *EFI_LOCATE_HANDLE)(
+    EFI_LOCATE_SEARCH_TYPE SearchType,
+    EFI_GUID *Protocol,
+    void *SearchKey,
+    UINTN *BufferSize,
+    EFI_HANDLE *Buffer
+);
+
 typedef EFI_TPL (EFIAPI *EFI_RAISE_TPL)(
     EFI_TPL NewTpl
 );
@@ -234,7 +249,7 @@ typedef struct _EFI_BOOT_SERVICES {
     EFI_HANDLE_PROTOCOL HandleProtocol;
     void *Reserved;
     void *RegisterProtocolNotify;
-    void *LocateHandle;
+    EFI_LOCATE_HANDLE LocateHandle;
     void *LocateDevicePath;
     void *InstallConfigurationTable;
 

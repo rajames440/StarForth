@@ -288,6 +288,7 @@ static void vmm_self_test(void) {
 
 /* ---------------- Self-tests (gated) ---------------- */
 
+/* Self-test flags: set to 1 to trigger fault for testing, 0 for normal operation */
 #ifndef DIV0_SELF_TEST
 #define DIV0_SELF_TEST 0
 #endif
@@ -309,11 +310,26 @@ __attribute__((noinline))
 static void divide_by_zero_self_test(void) {
 #if DIV0_SELF_TEST
     console_println("Triggering divide-by-zero self-test (#DE)...");
-    volatile uint64_t a = 1;
-    volatile uint64_t b = 0;
-    compiler_barrier();
-    (void)(a / b);
-    compiler_barrier();
+
+    /*
+     * We must use inline asm to force the CPU to execute a DIV instruction.
+     * The compiler may optimize away a C division whose result is unused,
+     * even with volatile operands.
+     */
+    uint64_t dividend = 1;
+    uint64_t divisor  = 0;
+    uint64_t quotient;
+
+    __asm__ volatile (
+        "xor %%rdx, %%rdx\n\t"   /* clear high bits of dividend (RDX:RAX) */
+        "div %2"                  /* RAX = RAX / operand, RDX = remainder */
+        : "=a"(quotient)
+        : "a"(dividend), "r"(divisor)
+        : "rdx"
+    );
+
+    /* Suppress unused-variable warning; this line should never be reached */
+    (void)quotient;
     console_println("Divide-by-zero self-test did NOT trigger as expected.");
 #endif
 }

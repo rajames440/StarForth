@@ -165,10 +165,29 @@ void isr_common_handler(uint64_t vector,
     }
 }
 
+/*
+ * Compute the runtime load offset.
+ * The linker places isr_stub0 at a known link-time address. At runtime,
+ * we compare that to the actual address to determine the relocation delta.
+ * This is necessary because UEFI PE loading doesn't apply relocations to
+ * addresses stored in the .data section (isr_stub_table).
+ */
+extern void isr_stub0(void);  /* Defined in isr.S */
+
 void arch_interrupts_init(void)
 {
+    /*
+     * Calculate relocation offset: difference between runtime address
+     * and link-time address stored in isr_stub_table[0].
+     */
+    uint64_t link_time_addr = (uint64_t)isr_stub_table[0];
+    uint64_t runtime_addr = (uint64_t)&isr_stub0;
+    int64_t reloc_offset = (int64_t)(runtime_addr - link_time_addr);
+
     for (int i = 0; i < IDT_ENTRIES; ++i) {
-        set_idt_entry(i, isr_stub_table[i]);
+        /* Apply relocation offset to get correct runtime address */
+        void *isr_addr = (void *)((uint64_t)isr_stub_table[i] + (uint64_t)reloc_offset);
+        set_idt_entry(i, isr_addr);
     }
 
     struct idtr idtr_desc;

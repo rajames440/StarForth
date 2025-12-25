@@ -79,7 +79,8 @@ isr_stub_default:
     push 0
     jmp isr_common_entry
 
-    .section .rodata
+    /* Use .data instead of .rodata so UEFI applies relocations */
+    .section .data
     .align 8
     .global isr_stub_table
 isr_stub_table:

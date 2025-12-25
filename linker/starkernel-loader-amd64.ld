@@ -7,8 +7,8 @@ ENTRY(efi_main)
 
 SECTIONS
 {
-    /* Base address for UEFI applications (1MB) */
-    . = 0x100000;
+    /* Base address for UEFI applications - low address like GRUB */
+    . = 0x1000;
 
     __loader_start = .;
 
