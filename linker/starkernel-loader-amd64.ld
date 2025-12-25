@@ -37,6 +37,11 @@ SECTIONS
         *(.dynamic)
     }
 
+    /* PE32+ relocation section - required for UEFI to relocate the image */
+    .reloc : ALIGN(4K) {
+        KEEP(*(.reloc))
+    }
+
     .bss : ALIGN(4K) {
         __bss_start = .;
         *(.bss .bss.*)

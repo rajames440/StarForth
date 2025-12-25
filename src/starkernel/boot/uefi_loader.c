@@ -66,8 +66,9 @@ typedef void (*KernelEntry)(BootInfo *boot_info);
 
 static BootInfo g_boot_info = {0};
 
-/* Buffer to hold loaded kernel ELF (8 MB should be enough) */
-static uint8_t kernel_elf_buffer[8 * 1024 * 1024] __attribute__((aligned(4096)));
+/* Kernel ELF buffer - dynamically allocated via UEFI Boot Services */
+#define KERNEL_MAX_SIZE (8 * 1024 * 1024)
+static uint8_t *kernel_elf_buffer = NULL;
 static uint64_t kernel_elf_size = 0;
 
 static int guid_equals(const EFI_GUID* a, const EFI_GUID* b)
@@ -96,8 +97,19 @@ static EFI_STATUS load_kernel_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES
 
     RAW_LOG("Loading kernel.elf from ESP...\n");
 
+    /* Allocate buffer for kernel ELF using UEFI Boot Services */
+    UINTN pages_needed = (KERNEL_MAX_SIZE + 4095) / 4096;
+    EFI_PHYSICAL_ADDRESS buffer_addr = 0;
+    status = BS->AllocatePages(AllocateAnyPages, EfiLoaderData, pages_needed, &buffer_addr);
+    if (status != EFI_SUCCESS) {
+        RAW_LOG("Failed to allocate kernel buffer\n");
+        return status;
+    }
+    kernel_elf_buffer = (uint8_t *)(uintptr_t)buffer_addr;
+    RAW_LOG("Kernel buffer allocated\n");
+
     /* Get loaded image protocol */
-    status = BS->HandleProtocol(ImageHandle, &EFI_LOADED_IMAGE_PROTOCOL_GUID,
+    status = BS->HandleProtocol(ImageHandle, (EFI_GUID *)&EFI_LOADED_IMAGE_PROTOCOL_GUID,
                                 (void **)&loaded_image);
     if (status != EFI_SUCCESS) {
         RAW_LOG("Failed to get LoadedImageProtocol\n");
@@ -106,7 +118,7 @@ static EFI_STATUS load_kernel_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES
 
     /* Get file system protocol from device handle */
     status = BS->HandleProtocol(loaded_image->DeviceHandle,
-                                &EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID,
+                                (EFI_GUID *)&EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID,
                                 (void **)&fs);
     if (status != EFI_SUCCESS) {
         RAW_LOG("Failed to get FileSystemProtocol\n");
@@ -132,7 +144,7 @@ static EFI_STATUS load_kernel_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES
     /* Get file size */
     EFI_FILE_INFO file_info_buffer[128]; /* Should be enough for file info */
     UINTN file_info_size = sizeof(file_info_buffer);
-    status = kernel_file->GetInfo(kernel_file, &EFI_FILE_INFO_GUID,
+    status = kernel_file->GetInfo(kernel_file, (EFI_GUID *)&EFI_FILE_INFO_GUID,
                                   &file_info_size, file_info_buffer);
     if (status != EFI_SUCCESS) {
         RAW_LOG("Failed to get file info\n");
@@ -145,7 +157,7 @@ static EFI_STATUS load_kernel_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES
     kernel_elf_size = file_info->FileSize;
 
     /* Check if kernel fits in buffer */
-    if (kernel_elf_size > sizeof(kernel_elf_buffer)) {
+    if (kernel_elf_size > KERNEL_MAX_SIZE) {
         RAW_LOG("Kernel too large for buffer\n");
         kernel_file->Close(kernel_file);
         root->Close(root);

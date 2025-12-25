@@ -75,6 +75,28 @@ static uint64_t vm_ns_base  = 0;
 
 /* ------------ tiny utils (serial-friendly) ------------ */
 
+/**
+ * muldiv64 - compute (a * b) / c without overflow using x86_64 mul/div
+ *
+ * Uses 64x64->128 multiplication followed by 128/64->64 division.
+ * This is pure inline assembly, no libgcc required.
+ */
+static inline uint64_t muldiv64(uint64_t a, uint64_t b, uint64_t c)
+{
+    uint64_t lo, hi, result;
+    /* mul: RDX:RAX = RAX * operand */
+    __asm__ volatile (
+        "mulq %3\n\t"       /* RDX:RAX = a * b */
+        "divq %4\n\t"       /* RAX = RDX:RAX / c, RDX = remainder */
+        : "=a"(result), "=d"(hi), "=r"(lo)
+        : "r"(b), "r"(c), "0"(a)
+        : "cc"
+    );
+    (void)hi;
+    (void)lo;
+    return result;
+}
+
 static void print_dec(uint64_t val)
 {
     char buf[32];
@@ -218,11 +240,11 @@ static uint64_t calibrate_tsc_with_pmtimer(void)
             uint64_t end_tsc = rdtsc();
             uint64_t elapsed_ticks = delta;
 
-            uint64_t elapsed_ns = (uint64_t)(((__int128)elapsed_ticks * 1000000000ull) / PMTIMER_FREQ_HZ);
+            uint64_t elapsed_ns = muldiv64(elapsed_ticks, 1000000000ull, PMTIMER_FREQ_HZ);
             if (elapsed_ns == 0) return 0;
 
             uint64_t delta_tsc = end_tsc - start_tsc;
-            return (uint64_t)(((__int128)delta_tsc * 1000000000ull) / elapsed_ns);
+            return muldiv64(delta_tsc, 1000000000ull, elapsed_ns);
         }
 
         if (++iters > timeout_iter) {
@@ -295,17 +317,21 @@ static void update_stats(const uint64_t *samples, uint32_t count, uint64_t *mean
         return;
     }
 
-    __int128 sum = 0;
+    /* For small sample counts (<=16) of Hz values (~3GHz), 64-bit sum is safe */
+    uint64_t sum = 0;
     for (uint32_t i = 0; i < count; ++i) sum += samples[i];
-    uint64_t m = (uint64_t)(sum / count);
+    uint64_t m = sum / count;
 
-    __int128 var_acc = 0;
+    /* Variance: sum of (sample - mean)^2 / count
+     * Each (sample - mean) is at most ~1MHz for converged data.
+     * (1e6)^2 * 16 = 16e12, fits in 64 bits. */
+    uint64_t var_acc = 0;
     for (uint32_t i = 0; i < count; ++i) {
-        __int128 d = (__int128)samples[i] - m;
-        var_acc += d * d;
+        int64_t d = (int64_t)samples[i] - (int64_t)m;
+        var_acc += (uint64_t)(d * d);
     }
 
-    uint64_t variance = (uint64_t)(var_acc / count);
+    uint64_t variance = var_acc / count;
     *mean = m;
 
     if (variance == 0) {
@@ -313,6 +339,7 @@ static void update_stats(const uint64_t *samples, uint32_t count, uint64_t *mean
         return;
     }
 
+    /* Integer square root via Newton-Raphson */
     uint64_t x = variance;
     uint64_t r = x;
     for (int i = 0; i < 10; ++i) {
@@ -333,11 +360,11 @@ static uint64_t calibrate_window_hpet(uint64_t target_ticks)
     uint64_t end_tsc = rdtsc();
     uint64_t elapsed_ticks = hpet_read(HPET_MAIN_COUNTER) - start_cnt;
 
-    uint64_t elapsed_ns = (uint64_t)(((__int128)elapsed_ticks * 1000000000ull) / hpet_freq_hz);
+    uint64_t elapsed_ns = muldiv64(elapsed_ticks, 1000000000ull, hpet_freq_hz);
     if (elapsed_ns == 0) return 0;
 
     uint64_t delta_tsc = end_tsc - start_tsc;
-    return (uint64_t)(((__int128)delta_tsc * 1000000000ull) / elapsed_ns);
+    return muldiv64(delta_tsc, 1000000000ull, elapsed_ns);
 }
 
 static uint64_t calibrate_window_pit(uint32_t target_ticks)
@@ -353,10 +380,10 @@ static uint64_t calibrate_window_pit(uint32_t target_ticks)
         uint16_t delta = (uint16_t)((start_cnt - cur) & 0xFFFF);
         if (delta >= (uint16_t)target_ticks) {
             uint64_t end_tsc = rdtsc();
-            uint64_t elapsed_ns = (uint64_t)(((__int128)delta * 1000000000ull) / PIT_FREQ_HZ);
+            uint64_t elapsed_ns = muldiv64((uint64_t)delta, 1000000000ull, PIT_FREQ_HZ);
             if (elapsed_ns == 0) return 0;
             uint64_t delta_tsc = end_tsc - start_tsc;
-            return (uint64_t)(((__int128)delta_tsc * 1000000000ull) / elapsed_ns);
+            return muldiv64(delta_tsc, 1000000000ull, elapsed_ns);
         }
     }
     return 0;
@@ -412,7 +439,7 @@ static int converge_tsc_bare_metal(uint64_t *locked_hz, uint64_t *pit_mean_out)
 
         uint64_t mean_h = 0, std_h = 0;
         update_stats(hpet_samples, hpet_count, &mean_h, &std_h);
-        uint64_t cv_h_ppm = (mean_h == 0) ? UINT64_MAX : (uint64_t)((__int128)std_h * 1000000ull / mean_h);
+        uint64_t cv_h_ppm = (mean_h == 0) ? UINT64_MAX : muldiv64(std_h, 1000000ull, mean_h);
 
         if (!pit_available) {
             if (cv_h_ppm < CV_EPSILON_PPM) stable_streak++;
@@ -454,11 +481,11 @@ static int converge_tsc_bare_metal(uint64_t *locked_hz, uint64_t *pit_mean_out)
         uint64_t mean_p = 0, std_p = 0;
         update_stats(pit_samples, pit_count, &mean_p, &std_p);
 
-        uint64_t cv_p_ppm = (mean_p == 0) ? UINT64_MAX : (uint64_t)((__int128)std_p * 1000000ull / mean_p);
+        uint64_t cv_p_ppm = (mean_p == 0) ? UINT64_MAX : muldiv64(std_p, 1000000ull, mean_p);
 
         uint64_t min_hz = (mean_h < mean_p) ? mean_h : mean_p;
         uint64_t max_hz = (mean_h > mean_p) ? mean_h : mean_p;
-        uint64_t diff_ppm = (min_hz == 0) ? UINT64_MAX : (uint64_t)((__int128)(max_hz - min_hz) * 1000000ull / min_hz);
+        uint64_t diff_ppm = (min_hz == 0) ? UINT64_MAX : muldiv64(max_hz - min_hz, 1000000ull, min_hz);
 
         if (cv_h_ppm < CV_EPSILON_PPM && cv_p_ppm < CV_EPSILON_PPM && diff_ppm < CV_EPSILON_PPM) stable_streak++;
         else stable_streak = 0;
@@ -506,8 +533,8 @@ static uint64_t derive_tsc_hz_from_cpuid(void)
     /* CPUID.15H: TSC/Crystal ratio */
     cpuid(0x15u, 0, &a, &b, &c, &d);
     if (a != 0 && b != 0 && c != 0) {
-        __int128 num = (__int128)c * (__int128)b;
-        uint64_t hz = (uint64_t)(num / a);
+        /* hz = (c * b) / a using muldiv64 to avoid overflow */
+        uint64_t hz = muldiv64((uint64_t)c, (uint64_t)b, (uint64_t)a);
         if (hz > 0) return hz;
     }
 
@@ -651,7 +678,7 @@ static uint64_t timer_now_ns_vm_relative(void)
     uint32_t cur = pmtimer_read() & (uint32_t)PMTIMER_MASK;
     uint64_t ticks = pmtimer_delta(vm_pm_start, cur);
 
-    uint64_t ns = (uint64_t)(((__int128)ticks * 1000000000ull) / PMTIMER_FREQ_HZ);
+    uint64_t ns = muldiv64(ticks, 1000000000ull, PMTIMER_FREQ_HZ);
     return vm_ns_base + ns;
 }
 
@@ -676,7 +703,7 @@ uint64_t timer_now_ns(void)
         t = rdtsc();
     }
 
-    return (uint64_t)(((__int128)t * 1000000000ull) / tsc_hz_locked);
+    return muldiv64(t, 1000000000ull, tsc_hz_locked);
 }
 
 static int timer_drift_check_bare_metal(void)
@@ -688,7 +715,7 @@ static int timer_drift_check_bare_metal(void)
     uint64_t max_hz = (current > tsc_hz_locked) ? current : tsc_hz_locked;
 
     uint64_t diff_ppm = (min_hz == 0) ? UINT64_MAX
-        : (uint64_t)((__int128)(max_hz - min_hz) * 1000000ull / min_hz);
+        : muldiv64(max_hz - min_hz, 1000000ull, min_hz);
 
     if (diff_ppm > DRIFT_EPSILON_PPM) {
         timer_fatal("Timer drift exceeded runtime bound.");

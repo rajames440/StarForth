@@ -58,6 +58,17 @@ typedef UINTN EFI_STATUS;
 /* EFI Handle */
 typedef void* EFI_HANDLE;
 
+/* EFI Physical Address */
+typedef UINT64 EFI_PHYSICAL_ADDRESS;
+
+/* Allocation types for AllocatePages */
+typedef enum {
+    AllocateAnyPages,
+    AllocateMaxAddress,
+    AllocateAddress,
+    MaxAllocateType
+} EFI_ALLOCATE_TYPE;
+
 /* EFI GUID */
 typedef struct {
     UINT32 Data1;
@@ -168,6 +179,24 @@ typedef EFI_STATUS (EFIAPI *EFI_FREE_POOL)(
     void *Buffer
 );
 
+typedef EFI_STATUS (EFIAPI *EFI_ALLOCATE_PAGES)(
+    EFI_ALLOCATE_TYPE Type,
+    EFI_MEMORY_TYPE MemoryType,
+    UINTN Pages,
+    EFI_PHYSICAL_ADDRESS *Memory
+);
+
+typedef EFI_STATUS (EFIAPI *EFI_FREE_PAGES)(
+    EFI_PHYSICAL_ADDRESS Memory,
+    UINTN Pages
+);
+
+typedef EFI_STATUS (EFIAPI *EFI_HANDLE_PROTOCOL)(
+    EFI_HANDLE Handle,
+    EFI_GUID *Protocol,
+    void **Interface
+);
+
 typedef EFI_TPL (EFIAPI *EFI_RAISE_TPL)(
     EFI_TPL NewTpl
 );
@@ -184,8 +213,8 @@ typedef struct _EFI_BOOT_SERVICES {
     EFI_RESTORE_TPL RestoreTPL;
 
     /* Memory Services */
-    void *AllocatePages;
-    void *FreePages;
+    EFI_ALLOCATE_PAGES AllocatePages;
+    EFI_FREE_PAGES FreePages;
     EFI_GET_MEMORY_MAP GetMemoryMap;
     EFI_ALLOCATE_POOL AllocatePool;
     EFI_FREE_POOL FreePool;
@@ -202,7 +231,7 @@ typedef struct _EFI_BOOT_SERVICES {
     void *InstallProtocolInterface;
     void *ReinstallProtocolInterface;
     void *UninstallProtocolInterface;
-    void *HandleProtocol;
+    EFI_HANDLE_PROTOCOL HandleProtocol;
     void *Reserved;
     void *RegisterProtocolNotify;
     void *LocateHandle;

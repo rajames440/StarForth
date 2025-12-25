@@ -164,6 +164,7 @@ static int elf_apply_relocations(const uint8_t *elf_data, Elf64_Addr load_base)
 int elf_load_kernel(const uint8_t *elf_data, uint64_t elf_size,
                     Elf64_Addr *entry_out)
 {
+    (void)elf_size; /* Reserved for future bounds checking */
     const Elf64_Ehdr *ehdr = (const Elf64_Ehdr *)elf_data;
 
     /* Validate ELF header */

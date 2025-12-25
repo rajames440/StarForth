@@ -862,6 +862,125 @@ NO further work without approval.
 - [x] Implement `hal_mem_alloc_aligned(size, align)`
 
 **Exit Criteria:** Kernel can allocate/free dynamic memory, VM can use HAL memory functions
+## Milestone 7: VM Integration + INIT Capsules (Week 8)
+
+### Architectural Contract (Frozen)
+1. **Mama Forth governs VM birth.**
+  - VM creation is initiated by the primordial VM ("mama").
+  - Kernel provides primitives; policy lives in mama.
+
+2. **INIT is a capsule artifact.**
+  - INIT content is delivered as a *byte blob* plus metadata.
+  - Delivery method is abstract: today = local repo; later = UDP via service VM.
+  - Kernel does NOT “download”. It only ingests a provided capsule via a driver/HAL call.
+
+3. **Transport is pluggable, semantics are not.**
+  - Local repo is a mock transport that must behave like future UDP transport:
+    - chunking-friendly (even if not used yet)
+    - explicit capsule ids
+    - signature/hashes (can be stubbed for now ONLY if explicitly marked)
+
+4. **Heartbeat/timebase is global.**
+  - No per-VM time. VM observes TIME-TICKS/TIME-RELATIVE/TIME-TRUST only.
+
+### Definitions
+
+**INIT Capsule**
+- A capsule is identified by a deterministic string id:
+  - e.g. `init/core/mama@1`, `init/user/fred@1`
+- Stored locally for now in:
+  - `ESP:/STARKERNEL/INIT/` (FAT)
+  - or `build/.../esp/STARKERNEL/INIT/` in QEMU setup
+- The capsule format is initially a raw blob with a tiny header:
+
+#### Capsule Header (v0)
+All fields are little-endian.
+
+- magic[8]      = "SKINIT00"
+- version u32   = 1
+- payload_len u32
+- payload_sha256[32]  (optional in v0, but RESERVED bytes must exist)
+- flags u32     (bit0 = HEADLESS_OK, bit1 = REPL_OK, etc.)
+- reserved[64]  (future signing metadata)
+
+Followed by:
+- payload[payload_len]
+
+**NOTE:** signature enforcement may be deferred in Week 8, but the file format MUST reserve the fields.
+
+### Kernel Interfaces (C level)
+
+Implement in kernel (no stubs):
+
+- `int sk_capsule_load_from_repo(const char *capsule_id, void **out_buf, u64 *out_len);`
+  - For now this reads from local repo (ESP/disk).
+  - Must return deterministic errors and print clear logs.
+
+- `int sk_vm_birth(const void *init_blob, u64 init_len, struct VMInstance **out_vm);`
+  - Creates VM control block and memory space.
+  - Injects init blob into VM in a defined location.
+  - Prepares VM IP to init entrypoint (or sets a flag "init pending").
+
+- `int sk_vm_eval_boot(struct VMInstance *vm);`
+  - Executes the init entry path in the VM context until it yields/returns.
+
+### VM Words (Forth level) – Mama Governance
+
+Add kernel words (minimal) that mama can call:
+
+- `VM-BIRTH ( capsule_id_addr capsule_id_len -- vmid ior )`
+  - Loads capsule by id via capsule loader
+  - Verifies header/payload shape (at minimum)
+  - Creates VM, injects INIT, starts init eval
+  - Returns vmid, ior=0 success
+
+- `VM-INJECT-INIT ( vmid capsule_id_addr capsule_id_len -- ior )`
+  - Requires capability later; for now allowed only for mama
+  - Injects init payload; does not auto-run unless explicitly asked
+
+- `VM-RUN ( vmid -- ior )`
+  - Marks VM runnable (scheduler later)
+  - For Week 8 single-VM: can be a no-op or immediate run
+
+### Week 8 Exit Criteria (Explicit)
+1. Kernel boots to mama Forth prompt on serial.
+2. Mama can execute:
+  - `VM-BIRTH` with a capsule id pointing at local repo file.
+3. The new VM runs its INIT and prints a deterministic banner (serial).
+4. No git actions are performed by any LLM during this milestone.
+
+### Local Repo Mock Layout (REQUIRED)
+- `STARKERNEL/INIT/`
+  - `core_mama.skinit`
+  - `user_fred.skinit`
+  - `test_hello.skinit`
+
+Capsule id mapping rule (v0):
+- id "init/test/hello@1" maps to file `test_hello.skinit`
+- mapping may be hardcoded in Week 8; must be documented in ROADMAP.md
+
+---
+
+### LLM Instructions (MANDATORY)
+
+**All LLMs**
+- DO NOT run any git commands.
+- DO NOT commit, push, branch, or reset.
+- All changes must be local edits only.
+- After completing Milestone 7 tasks, capture QEMU output and paste it into ROADMAP.md in a code block.
+- Captain Bob must review ROADMAP.md output before any work continues.
+
+**Claude**
+- Work in small atomic edits (one file at a time).
+- Before modifying build scripts or boot flow, write a short change plan in ROADMAP.md.
+- Do not change timer/heartbeat code unless explicitly instructed.
+
+**Codex**
+- Only implement the capsule loader and the kernel word wiring.
+- Do not refactor unrelated subsystems.
+- Do not modify the interrupt/timer subsystems.
+- Produce compile-ready code with full file outputs (no fragments).
+
 
 ---
 
