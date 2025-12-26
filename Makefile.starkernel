@@ -23,6 +23,7 @@ BUILD_DIR := build/$(ARCH)/$(TARGET)
 OBJ_DIR := $(BUILD_DIR)/obj
 LOADER_OBJ_DIR := $(OBJ_DIR)/loader
 KERNEL_OBJ_DIR := $(OBJ_DIR)/kernel
+STARFORTH_CONFIG_HEADER := include/starforth_config.h
 
 # Output files
 LOADER_EFI := $(BUILD_DIR)/starkernel_loader.efi
@@ -91,7 +92,7 @@ COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
                  -ffreestanding -nostdlib -fno-builtin \
                  -fPIC -fno-stack-protector -fshort-wchar \
                  $(ARCH_CFLAGS) \
-                 -I$(KERNEL_INC) -Iinclude
+                 -I$(KERNEL_INC) -Iinclude -include $(STARFORTH_CONFIG_HEADER)
 VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare
 
 # Loader-specific flags
@@ -106,12 +107,25 @@ KERNEL_CFLAGS += -DSTARFORTH_ENABLE_VM=1
 LOADER_CFLAGS += -DSTARFORTH_ENABLE_VM=1
 KERNEL_CFLAGS += -DSTARFORTH_MINIMAL=1
 LOADER_CFLAGS += -DSTARFORTH_MINIMAL=1
-# Align VM feature flags with hosted defaults
-VM_FEATURE_FLAGS := -DENABLE_PIPELINING=0 -DENABLE_HOTWORDS_CACHE=0 -DHEARTBEAT_THREAD_ENABLED=0 \
-                    -DADAPTIVE_SHRINK_RATE=50 -DADAPTIVE_MIN_WINDOW_SIZE=256 -DADAPTIVE_CHECK_FREQUENCY=512 \
-                    -DADAPTIVE_GROWTH_THRESHOLD=5 -DTRANSITION_WINDOW_SIZE=8
-KERNEL_CFLAGS += $(VM_FEATURE_FLAGS)
-LOADER_CFLAGS += $(VM_FEATURE_FLAGS)
+VM_FEATURE_OVERRIDES :=
+VM_FEATURE_FLAG_VARS := STRICT_PTR ENABLE_HOTWORDS_CACHE ENABLE_PIPELINING ROLLING_WINDOW_SIZE \
+                        TRANSITION_WINDOW_SIZE ADAPTIVE_SHRINK_RATE ADAPTIVE_MIN_WINDOW_SIZE \
+                        ADAPTIVE_CHECK_FREQUENCY ADAPTIVE_GROWTH_THRESHOLD INITIAL_DECAY_SLOPE_Q48 \
+                        DECAY_MIN_INTERVAL DECAY_RATE_PER_US_Q16 HEARTBEAT_THREAD_ENABLED \
+                        HEARTBEAT_TICK_NS HEARTBEAT_INFERENCE_FREQUENCY HEARTBEAT_CHECK_FREQUENCY \
+                        HEARTBEAT_WINDOW_TUNING_FREQUENCY HEARTBEAT_SLOPE_VALIDATION_FREQUENCY
+
+define add_kernel_vm_flag_if_set
+ifneq ($$(origin $1),undefined)
+VM_FEATURE_OVERRIDES += -D$1=$$($1)
+endif
+endef
+
+$(foreach flag,$(VM_FEATURE_FLAG_VARS),$(eval $(call add_kernel_vm_flag_if_set,$(flag))))
+VM_FEATURE_OVERRIDES += -DHEARTBEAT_THREAD_ENABLED=0
+
+KERNEL_CFLAGS += $(VM_FEATURE_OVERRIDES)
+LOADER_CFLAGS += $(VM_FEATURE_OVERRIDES)
 endif
 
 # Self-test flags (M4 exception tests, M5 timer validation)
@@ -197,10 +211,9 @@ VM_ALL_SRCS := $(wildcard src/*.c) $(wildcard src/word_source/*.c)
 VM_EXCLUDE := src/main.c src/cli.c src/repl.c src/test_runner/% src/platform/% src/blkio_factory.c src/blkio_file.c src/blkio_ram.c src/log.c src/doe_metrics.c
 VM_CORE_SRCS := $(filter-out $(VM_EXCLUDE),$(VM_ALL_SRCS))
 
-LOADER_EXTRA_SRCS := $(KERNEL_SRC)/vm_host.c \
-                     $(KERNEL_SRC)/vm_kernel.c \
+LOADER_EXTRA_SRCS := $(KERNEL_SRC)/vm_kernel.c \
                      $(KERNEL_SRC)/parity.c \
-                     $(KERNEL_SRC)/vm/bootstrap.c \
+                     $(KERNEL_SRC)/vm/bootstrap/sk_vm_bootstrap.c \
                      $(KERNEL_SRC)/vm/shim.c
 
 KERNEL_EXTRA_SRCS := $(LOADER_EXTRA_SRCS)

@@ -311,9 +311,7 @@ void vm_init_with_host(VM* vm, const VMHostServices *host)
     /* Clear all fields; avoid fortify overflow warnings from memset */
     *vm = (VM){0};
     vm->host = host ? host : vm_default_host_services();
-#ifdef __STARKERNEL__
-    sk_host_init();
-#else
+#ifndef __STARKERNEL__
     if (vm->host == &hosted_services && PARITY_MODE) {
         hosted_fake_ns = 0;
     }

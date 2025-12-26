@@ -71,10 +71,6 @@
  * Default: enabled (can be disabled for baseline comparison)
  */
 
-#ifndef ENABLE_HOTWORDS_CACHE
-#define ENABLE_HOTWORDS_CACHE 1
-#endif
-
 /* ============================================================================
  * Hot Words Cache Configuration
  * ============================================================================

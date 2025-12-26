@@ -44,6 +44,9 @@
 #include "../../include/vm.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+#ifdef __STARKERNEL__
+#include "starkernel/hal/hal.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,6 +59,20 @@ static int system_running = 1;
 
 /** @brief Flag controlling FORTH-79 standard compliance mode */
 static int forth_79_standard = 1;
+
+#ifdef __STARKERNEL__
+static void system_word_ticks(VM *vm) {
+    vm_push(vm, (cell_t)sk_hal_time_ns());
+}
+
+static void system_word_hb(VM *vm) {
+    vm_push(vm, (cell_t)sk_hal_heartbeat_ticks());
+}
+
+static void system_word_yield(VM *vm) {
+    (void)vm;
+}
+#endif
 
 /* ─────────────────────────── Utilities/helpers ───────────────────────── */
 
@@ -455,6 +472,11 @@ void register_system_words(VM *vm) {
     register_word(vm, "PAGE", system_word_page);
     register_word(vm, "NOP", system_word_nop);
     register_word(vm, "79-STANDARD", system_word_79_standard);
+#ifdef __STARKERNEL__
+    register_word(vm, "TICKS", system_word_ticks);
+    register_word(vm, "HB", system_word_hb);
+    register_word(vm, "YIELD", system_word_yield);
+#endif
 
     /* Control transfer */
     register_word(vm, "QUIT", system_word_quit);

@@ -16,8 +16,12 @@
 # ==============================================================================
 
 VERSION ?= 3.0.1
-STRICT_PTR ?= 1
 CC = gcc
+STARFORTH_CONFIG_HEADER := include/starforth_config.h
+
+define starforth_config_default
+$(strip $(shell grep -E "^#define[[:space:]]+STARFORTH_CONFIG_$(1)_DEFAULT[[:space:]]+" $(STARFORTH_CONFIG_HEADER) | head -n1 | awk '{print $$3}'))
+endef
 
 # Isabelle configuration
 # NOTE: Isabelle must be installed separately and available on PATH
@@ -76,26 +80,22 @@ else
 endif
 
 # Compiler flags
-# Feature switches (default: enabled)
+# Feature switches (defaults defined in include/starforth_config.h)
 # ENABLE_HOTWORDS_CACHE: Physics-driven hot-words cache (1.78× speedup on dictionary lookups)
-#   Default: 1 (enabled - experiments show cache is optimal)
-#   Set ENABLE_HOTWORDS_CACHE=0 to disable (for research comparison only)
-ENABLE_HOTWORDS_CACHE ?= 0
+#   Default: see STARFORTH_CONFIG_ENABLE_HOTWORDS_CACHE_DEFAULT
+#   Override: make ENABLE_HOTWORDS_CACHE=1 (or 0)
 
 # ENABLE_PIPELINING: Speculative execution via word transition prediction
-#   Default: 1 (enabled - experiments show pipelining is optimal)
-#   Set ENABLE_PIPELINING=0 to disable (for research comparison only)
+#   Default: see STARFORTH_CONFIG_ENABLE_PIPELINING_DEFAULT
+#   Override via ENABLE_PIPELINING=1/0 when invoking make
 #   NOTE: As of 2025-11-19, all future experiments use both cache and pipelining enabled
-ENABLE_PIPELINING ?= 0
 
 # Heartbeat configuration
 # HEARTBEAT_THREAD_ENABLED: 1 = run vm_tick() in background thread (OPTIMAL), 0 = inline (legacy)
-#   Default: 1 (experiments show threaded heartbeat is optimal for adaptive tuning)
+#   Default: see STARFORTH_CONFIG_HEARTBEAT_THREAD_ENABLED_DEFAULT
 #   NOTE: As of 2025-11-19, all future experiments use heartbeat enabled
-HEARTBEAT_THREAD_ENABLED ?= 1
 
-# HEARTBEAT_TICK_NS: Wake frequency for heartbeat thread (default 1ms)
-HEARTBEAT_TICK_NS ?= 10000
+# HEARTBEAT_TICK_NS: Wake frequency for heartbeat thread (default lives in include/starforth_config.h)
 
 ifeq ($(L4RE),1)
 HEARTBEAT_THREAD_ENABLED := 0
@@ -134,13 +134,11 @@ endif
 #   - System AUTOMATICALLY shrinks during execution if diminishing returns detected
 #   - Window starts conservative, self-tunes down if pattern diversity plateaus
 #   - Window becomes "warm" (representative) after N executions, then adapts
-ROLLING_WINDOW_SIZE ?= 4096
 
 # Knob #6: TRANSITION_WINDOW_SIZE (Pipelining context depth)
 #   - Default: 2 (2-word lookahead for next-word prediction)
 #   - Usage: make TRANSITION_WINDOW_SIZE=1 (or 4, 8 for deeper context)
 #   - Empirically tuned via binary chop: 1 vs 2 vs 4 vs 8
-TRANSITION_WINDOW_SIZE ?= 8
 
 # Knobs #8-11: Adaptive Window Shrinking Control
 # ============================================================================
@@ -151,25 +149,21 @@ TRANSITION_WINDOW_SIZE ?= 8
 #   - Default: 75 (shrink to 75% = discard 25% each cycle)
 #   - Range: 50-95 (lower = more aggressive, higher = more conservative)
 #   - Usage: make ADAPTIVE_SHRINK_RATE=50 (fast learning) or 90 (slow learning)
-ADAPTIVE_SHRINK_RATE ?= 50
 
 # Knob #9: ADAPTIVE_MIN_WINDOW_SIZE (floor to prevent over-shrinking)
 #   - Default: 256 (never shrink below 256 word IDs)
 #   - Range: 64-1024 (smaller = leaner, larger = safer)
 #   - Usage: make ADAPTIVE_MIN_WINDOW_SIZE=512 (conservative) or 128 (lean)
-ADAPTIVE_MIN_WINDOW_SIZE ?= 256
 
 # Knob #10: ADAPTIVE_CHECK_FREQUENCY (how often to measure diversity)
 #   - Default: 256 (check after every 256 executions)
 #   - Range: 32-1024 (more = faster response, less = less overhead)
 #   - Usage: make ADAPTIVE_CHECK_FREQUENCY=128 (responsive) or 512 (lazy)
-ADAPTIVE_CHECK_FREQUENCY ?= 512
 
 # Knob #11: ADAPTIVE_GROWTH_THRESHOLD (growth rate that signals saturation)
 #   - Default: 1 (shrink when growth < 1%)
 #   - Range: 0-10 (lower = eager shrinking, higher = cautious)
 #   - Usage: make ADAPTIVE_GROWTH_THRESHOLD=0 (aggressive) or 5 (conservative)
-ADAPTIVE_GROWTH_THRESHOLD ?= 5
 
 # Knob #11a: INITIAL_DECAY_SLOPE_Q48 (Starting decay slope for inference engine)
 #   - Default: 21845 (1/3 in Q48.16 format, = 0.333... starting slope)
@@ -177,22 +171,19 @@ ADAPTIVE_GROWTH_THRESHOLD ?= 5
 #   - Usage: make INITIAL_DECAY_SLOPE_Q48=13107 (0.2) or 32768 (0.5) or 43691 (0.67)
 #   - DoE: OPP #3 tests 0.2, 0.33, 0.5, 0.67 to find optimal starting point for convergence
 #   - Note: Inference engine adapts this value at runtime; this is just the cold-start value
-INITIAL_DECAY_SLOPE_Q48 ?= 21845
 
 # Knob #11b: DECAY_MIN_INTERVAL (Minimum time before decay applies)
 #   - Default: 1000 (nanoseconds, ~1 microsecond)
 #   - Range: 500-5000 (balance between decay sensitivity and overhead)
 #   - Usage: make DECAY_MIN_INTERVAL=500 (faster decay) or 2000 (slower decay)
 #   - DoE: May test in future opportunities for decay sensitivity tuning
-DECAY_MIN_INTERVAL ?= 500
 
 # Knob #11d: HEARTBEAT_INFERENCE_FREQUENCY (How often to run inference engine)
-#   - Default: 5000 (ticks between inference runs, ~5ms heartbeat window)
+#   - Default: 1000 (ticks between inference runs — see starforth_config.h)
 #   - Set VERY HIGH (999999) to effectively disable inference (static mode)
 #   - Set LOW (1000) for frequent inference (adaptive mode)
 #   - DoE: OPP #3 tests 999999 (static, no Loop #6) vs 5000 (adaptive, with Loop #6)
 #   - Measures: Inference engine cost vs benefit in optimized performance
-HEARTBEAT_INFERENCE_FREQUENCY ?= 1000
 
 # Knob #12: DECAY_RATE_PER_US_Q16 (Heat decay rate in Q16 fixed-point)
 #   - Default: 1 (1/65536 heat units decayed per microsecond)
@@ -200,29 +191,37 @@ HEARTBEAT_INFERENCE_FREQUENCY ?= 1000
 #   - Half-life: ~6.5 seconds at default (100-heat word → 50-heat in 6.5s)
 #   - Usage: make DECAY_RATE_PER_US_Q16=2 (faster decay) or 0 (no decay for baseline)
 #   - DoE: Vary this to measure impact of heat decay on performance
-DECAY_RATE_PER_US_Q16 ?= 1
 
 # Build the CFLAGS with tuning knobs
 # L8 FINAL INTEGRATION: All experimental loop flags removed.
 # L1-L7 are now always-on internal physics layers.
 # L8 Jacquard mode selector is the sole policy engine.
 BASE_CFLAGS = -std=c99 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include \
-              -DSTRICT_PTR=$(STRICT_PTR) \
-              -DENABLE_HOTWORDS_CACHE=$(ENABLE_HOTWORDS_CACHE) \
-              -DENABLE_PIPELINING=$(ENABLE_PIPELINING) \
-              -DROLLING_WINDOW_SIZE=$(ROLLING_WINDOW_SIZE) \
-              -DTRANSITION_WINDOW_SIZE=$(TRANSITION_WINDOW_SIZE) \
-              -DADAPTIVE_SHRINK_RATE=$(ADAPTIVE_SHRINK_RATE) \
-              -DADAPTIVE_MIN_WINDOW_SIZE=$(ADAPTIVE_MIN_WINDOW_SIZE) \
-              -DADAPTIVE_CHECK_FREQUENCY=$(ADAPTIVE_CHECK_FREQUENCY) \
-              -DADAPTIVE_GROWTH_THRESHOLD=$(ADAPTIVE_GROWTH_THRESHOLD) \
-              -DINITIAL_DECAY_SLOPE_Q48=$(INITIAL_DECAY_SLOPE_Q48) \
-              -DDECAY_RATE_PER_US_Q16=$(DECAY_RATE_PER_US_Q16) \
-              -DHEARTBEAT_THREAD_ENABLED=$(HEARTBEAT_THREAD_ENABLED) \
-              -DHEARTBEAT_TICK_NS=$(HEARTBEAT_TICK_NS) \
-              -DHEARTBEAT_INFERENCE_FREQUENCY=$(HEARTBEAT_INFERENCE_FREQUENCY)
+              -include $(STARFORTH_CONFIG_HEADER)
 
-ifeq ($(HEARTBEAT_THREAD_ENABLED),1)
+VM_FEATURE_FLAG_VARS := STRICT_PTR ENABLE_HOTWORDS_CACHE ENABLE_PIPELINING ROLLING_WINDOW_SIZE \
+                        TRANSITION_WINDOW_SIZE ADAPTIVE_SHRINK_RATE ADAPTIVE_MIN_WINDOW_SIZE \
+                        ADAPTIVE_CHECK_FREQUENCY ADAPTIVE_GROWTH_THRESHOLD INITIAL_DECAY_SLOPE_Q48 \
+                        DECAY_MIN_INTERVAL DECAY_RATE_PER_US_Q16 HEARTBEAT_THREAD_ENABLED \
+                        HEARTBEAT_TICK_NS HEARTBEAT_INFERENCE_FREQUENCY HEARTBEAT_CHECK_FREQUENCY \
+                        HEARTBEAT_WINDOW_TUNING_FREQUENCY HEARTBEAT_SLOPE_VALIDATION_FREQUENCY
+
+define maybe_define_vm_flag
+ifneq ($$(origin $1),undefined)
+BASE_CFLAGS += -D$1=$$($1)
+endif
+endef
+
+$(foreach flag,$(VM_FEATURE_FLAG_VARS),$(eval $(call maybe_define_vm_flag,$(flag))))
+
+HEARTBEAT_THREAD_ENABLED_DEFAULT := $(call starforth_config_default,HEARTBEAT_THREAD_ENABLED)
+ifeq ($(origin HEARTBEAT_THREAD_ENABLED),undefined)
+HEARTBEAT_THREAD_ENABLED_EFFECTIVE := $(HEARTBEAT_THREAD_ENABLED_DEFAULT)
+else
+HEARTBEAT_THREAD_ENABLED_EFFECTIVE := $(HEARTBEAT_THREAD_ENABLED)
+endif
+
+ifeq ($(HEARTBEAT_THREAD_ENABLED_EFFECTIVE),1)
 ifeq ($(L4RE),1)
 THREAD_FLAGS :=
 else

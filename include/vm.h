@@ -49,6 +49,7 @@
 #include <stdio.h>
 
 #include "platform_lock.h"
+#include "starforth_config.h"
 
 /* Forward declarations */
 struct VM;
@@ -82,10 +83,6 @@ typedef signed long cell_t;
  *   (once warm, adaptive shrinking logic can reduce size if beneficial)
  * - Knobs control adaptive shrinking behavior (rate, bounds, thresholds)
  */
-
-#ifndef ROLLING_WINDOW_SIZE
-#define ROLLING_WINDOW_SIZE 4096
-#endif
 
 typedef struct
 {
@@ -184,43 +181,14 @@ static inline cell_t CELL(vaddr_t a) { return (cell_t)(int64_t)a; }
 #define PHYSICS_STATE_HIDDEN    0x04
 #define PHYSICS_STATE_COMPILED  0x08
 
-/* Phase 2: Decay mechanism configuration (tunable via Makefile) */
-#ifndef DECAY_RATE_PER_US_Q16
-#define DECAY_RATE_PER_US_Q16 1ULL      /* Q48.16: 1/65536 heat/μs = ~15 heat/sec, half-life ~6-7 seconds for 100-heat word (adaptive baseline) */
-#endif
-
-#ifndef DECAY_MIN_INTERVAL
-#define DECAY_MIN_INTERVAL 1000ULL      /* Min elapsed time before decay applies (1 μs) */
-#endif
+/* Phase 2: Decay mechanism configuration (tunable via starforth_config.h) */
 
 #ifndef HEAT_CACHE_DEMOTION_THRESHOLD
 #define HEAT_CACHE_DEMOTION_THRESHOLD 10  /* Demotion from hotwords cache threshold */
 #endif
 
 /* Heartbeat tuning frequencies (in ticks) */
-#ifndef HEARTBEAT_CHECK_FREQUENCY
-#define HEARTBEAT_CHECK_FREQUENCY 256  /* Call vm_tick() every 256 word executions */
-#endif
-
-#ifndef HEARTBEAT_INFERENCE_FREQUENCY
-#define HEARTBEAT_INFERENCE_FREQUENCY 5000  /* Run unified inference engine every 5000 ticks */
-#endif
-
-#ifndef HEARTBEAT_WINDOW_TUNING_FREQUENCY
-#define HEARTBEAT_WINDOW_TUNING_FREQUENCY 1000  /* Tune window every 1000 ticks */
-#endif
-
-#ifndef HEARTBEAT_SLOPE_VALIDATION_FREQUENCY
-#define HEARTBEAT_SLOPE_VALIDATION_FREQUENCY 5000  /* Validate decay every 5000 ticks */
-#endif
-
-#ifndef HEARTBEAT_THREAD_ENABLED
-#define HEARTBEAT_THREAD_ENABLED 0
-#endif
-
-#ifndef HEARTBEAT_TICK_NS
-#define HEARTBEAT_TICK_NS 1000000ULL  /* 1 millisecond */
-#endif
+/* Defaults live in starforth_config.h */
 
 
 typedef struct

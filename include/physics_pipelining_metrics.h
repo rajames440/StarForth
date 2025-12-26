@@ -62,15 +62,12 @@
 #define PHYSICS_PIPELINING_METRICS_H
 
 #include <stdint.h>
+#include "starforth_config.h"
 
 /* ============================================================================
  * Pipelining Feature Switch (disabled by default during Phase 1)
  * ============================================================================
  */
-#ifndef ENABLE_PIPELINING
-#define ENABLE_PIPELINING 0
-#endif
-
 /* ============================================================================
  * Tuning Knobs (adjustable at compile-time, future: runtime)
  * ============================================================================

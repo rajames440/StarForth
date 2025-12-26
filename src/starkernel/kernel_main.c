@@ -16,7 +16,7 @@
 #include "timer.h"
 #include "kmalloc.h"
 #ifdef STARFORTH_ENABLE_VM
-#include "vm/vm_bootstrap.h"
+#include "starkernel/vm/bootstrap/sk_vm_bootstrap.h"
 #include "parity.h"
 #endif
 
@@ -545,15 +545,6 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Boot successful!");
     console_println("");
 
-    /* Start heartbeat and enable interrupts */
-    console_println("Starting heartbeat...");
-    apic_timer_start();
-    arch_enable_interrupts();
-    console_println("Heartbeat running. (QEMU: Press Ctrl+A, then X to exit)");
-
-    /* M5 Timer Validation (gated by M5_TIMER_VALIDATION=1) */
-    m5_timer_validation_test();
-
 #ifdef STARFORTH_ENABLE_VM
     console_println("VM: bootstrap parity...");
     ParityPacket parity_pkt;
@@ -564,6 +555,15 @@ void kernel_main(BootInfo *boot_info) {
         console_println("VM: parity bootstrap complete");
     }
 #endif
+
+    /* Start heartbeat and enable interrupts */
+    console_println("Starting heartbeat...");
+    apic_timer_start();
+    arch_enable_interrupts();
+    console_println("Heartbeat running. (QEMU: Press Ctrl+A, then X to exit)");
+
+    /* M5 Timer Validation (gated by M5_TIMER_VALIDATION=1) */
+    m5_timer_validation_test();
 
     /* Idle loop - HLT with interrupts enabled allows timer to fire */
     while (1) {
