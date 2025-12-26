@@ -15,6 +15,10 @@
 #include "apic.h"
 #include "timer.h"
 #include "kmalloc.h"
+#ifdef STARFORTH_ENABLE_VM
+#include "vm/vm_bootstrap.h"
+#include "parity.h"
+#endif
 
 static int is_ram_type(uint32_t type) {
     return type == EfiConventionalMemory ||
@@ -549,6 +553,17 @@ void kernel_main(BootInfo *boot_info) {
 
     /* M5 Timer Validation (gated by M5_TIMER_VALIDATION=1) */
     m5_timer_validation_test();
+
+#ifdef STARFORTH_ENABLE_VM
+    console_println("VM: bootstrap parity...");
+    ParityPacket parity_pkt;
+    int vm_rc = sk_vm_bootstrap_parity(&parity_pkt);
+    if (vm_rc != 0) {
+        console_println("VM: parity bootstrap failed");
+    } else {
+        console_println("VM: parity bootstrap complete");
+    }
+#endif
 
     /* Idle loop - HLT with interrupts enabled allows timer to fire */
     while (1) {

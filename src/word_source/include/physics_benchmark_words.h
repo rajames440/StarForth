@@ -49,7 +49,7 @@
 #ifndef PHYSICS_BENCHMARK_WORDS_H
 #define PHYSICS_BENCHMARK_WORDS_H
 
-#include "../../include/vm.h"
+#include "../../../include/vm.h"
 
 /**
  * Register all physics benchmark words with the VM

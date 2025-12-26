@@ -92,12 +92,27 @@ COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
                  -fPIC -fno-stack-protector -fshort-wchar \
                  $(ARCH_CFLAGS) \
                  -I$(KERNEL_INC) -Iinclude
+VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare
 
 # Loader-specific flags
 LOADER_CFLAGS := $(COMMON_CFLAGS)
 
 # Kernel-specific flags (with __STARKERNEL__ fence)
 KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__
+
+# Optional: enable VM integration (M7)
+ifdef STARFORTH_ENABLE_VM
+KERNEL_CFLAGS += -DSTARFORTH_ENABLE_VM=1
+LOADER_CFLAGS += -DSTARFORTH_ENABLE_VM=1
+KERNEL_CFLAGS += -DSTARFORTH_MINIMAL=1
+LOADER_CFLAGS += -DSTARFORTH_MINIMAL=1
+# Align VM feature flags with hosted defaults
+VM_FEATURE_FLAGS := -DENABLE_PIPELINING=0 -DENABLE_HOTWORDS_CACHE=0 -DHEARTBEAT_THREAD_ENABLED=0 \
+                    -DADAPTIVE_SHRINK_RATE=50 -DADAPTIVE_MIN_WINDOW_SIZE=256 -DADAPTIVE_CHECK_FREQUENCY=512 \
+                    -DADAPTIVE_GROWTH_THRESHOLD=5 -DTRANSITION_WINDOW_SIZE=8
+KERNEL_CFLAGS += $(VM_FEATURE_FLAGS)
+LOADER_CFLAGS += $(VM_FEATURE_FLAGS)
+endif
 
 # Self-test flags (M4 exception tests, M5 timer validation)
 ifdef DIV0_SELF_TEST
@@ -137,13 +152,13 @@ ifdef M5_TIMER_VALIDATION
 LOADER_CFLAGS += -DM5_TIMER_VALIDATION=$(M5_TIMER_VALIDATION)
 endif
 
-LOADER_SRCS := $(KERNEL_SRC)/boot/uefi_loader.c \
-               $(KERNEL_SRC)/boot/elf_loader.c \
-               $(KERNEL_SRC)/boot/reloc_stub.c \
-               $(KERNEL_SRC)/kernel_main.c \
-               $(wildcard $(KERNEL_SRC)/hal/*.c) \
-               $(wildcard $(KERNEL_SRC)/memory/*.c) \
-               $(wildcard $(KERNEL_SRC)/math/*.c)
+LOADER_SRCS_BASE := $(KERNEL_SRC)/boot/uefi_loader.c \
+                    $(KERNEL_SRC)/boot/elf_loader.c \
+                    $(KERNEL_SRC)/boot/reloc_stub.c \
+                    $(KERNEL_SRC)/kernel_main.c \
+                    $(wildcard $(KERNEL_SRC)/hal/*.c) \
+                    $(wildcard $(KERNEL_SRC)/memory/*.c) \
+                    $(wildcard $(KERNEL_SRC)/math/*.c)
 
 LOADER_ASM := $(KERNEL_SRC)/arch/$(ARCH)/boot.S \
               $(KERNEL_SRC)/arch/$(ARCH)/isr.S
@@ -154,33 +169,57 @@ LOADER_ARCH_SRCS := $(KERNEL_SRC)/arch/$(ARCH)/arch.c \
                     $(KERNEL_SRC)/arch/$(ARCH)/timer.c
 else
 # Split build: loader loads kernel.elf from disk
-LOADER_SRCS := $(KERNEL_SRC)/boot/uefi_loader.c \
-               $(KERNEL_SRC)/boot/elf_loader.c \
-               $(KERNEL_SRC)/boot/reloc_stub.c
+LOADER_SRCS_BASE := $(KERNEL_SRC)/boot/uefi_loader.c \
+                    $(KERNEL_SRC)/boot/elf_loader.c \
+                    $(KERNEL_SRC)/boot/reloc_stub.c
 
 LOADER_ASM :=
 
 LOADER_ARCH_SRCS := $(KERNEL_SRC)/arch/$(ARCH)/arch.c
 endif
 
-LOADER_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_SRCS)) \
-               $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_ARCH_SRCS)) \
-               $(patsubst $(KERNEL_SRC)/%.S,$(LOADER_OBJ_DIR)/%.o,$(LOADER_ASM))
-
 # Kernel source files (everything except loader boot files)
-KERNEL_SRCS := $(KERNEL_SRC)/kernel_main.c \
-               $(wildcard $(KERNEL_SRC)/hal/*.c) \
-               $(wildcard $(KERNEL_SRC)/memory/*.c) \
-               $(wildcard $(KERNEL_SRC)/math/*.c) \
-               $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
-               $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c)
+KERNEL_SRCS_BASE := $(KERNEL_SRC)/kernel_main.c \
+                    $(wildcard $(KERNEL_SRC)/hal/*.c) \
+                    $(wildcard $(KERNEL_SRC)/memory/*.c) \
+                    $(wildcard $(KERNEL_SRC)/math/*.c) \
+                    $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
+                    $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c)
 
 # Note: arch.c is compiled for BOTH loader and kernel (they're separate binaries)
 
 KERNEL_ASM := $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.S)
 
+# VM integration sources (gated)
+ifdef STARFORTH_ENABLE_VM
+# Hosted VM core sources, excluding CLI/REPL/tests/platform/blkio/log
+VM_ALL_SRCS := $(wildcard src/*.c) $(wildcard src/word_source/*.c)
+VM_EXCLUDE := src/main.c src/cli.c src/repl.c src/test_runner/% src/platform/% src/blkio_factory.c src/blkio_file.c src/blkio_ram.c src/log.c src/doe_metrics.c
+VM_CORE_SRCS := $(filter-out $(VM_EXCLUDE),$(VM_ALL_SRCS))
+
+LOADER_EXTRA_SRCS := $(KERNEL_SRC)/vm_host.c \
+                     $(KERNEL_SRC)/vm_kernel.c \
+                     $(KERNEL_SRC)/parity.c \
+                     $(KERNEL_SRC)/vm/bootstrap.c \
+                     $(KERNEL_SRC)/vm/shim.c
+
+KERNEL_EXTRA_SRCS := $(LOADER_EXTRA_SRCS)
+
+LOADER_VM_OBJS := $(patsubst src/%.c,$(LOADER_OBJ_DIR)/vmcore/%.o,$(VM_CORE_SRCS))
+KERNEL_VM_OBJS := $(patsubst src/%.c,$(KERNEL_OBJ_DIR)/vmcore/%.o,$(VM_CORE_SRCS))
+endif
+
+LOADER_SRCS := $(LOADER_SRCS_BASE) $(LOADER_EXTRA_SRCS)
+KERNEL_SRCS := $(KERNEL_SRCS_BASE) $(KERNEL_EXTRA_SRCS)
+
+LOADER_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_SRCS)) \
+               $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_ARCH_SRCS)) \
+               $(patsubst $(KERNEL_SRC)/%.S,$(LOADER_OBJ_DIR)/%.o,$(LOADER_ASM)) \
+               $(LOADER_VM_OBJS)
+
 KERNEL_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(KERNEL_OBJ_DIR)/%.o,$(KERNEL_SRCS)) \
-               $(patsubst $(KERNEL_SRC)/%.S,$(KERNEL_OBJ_DIR)/%.o,$(KERNEL_ASM))
+               $(patsubst $(KERNEL_SRC)/%.S,$(KERNEL_OBJ_DIR)/%.o,$(KERNEL_ASM)) \
+               $(KERNEL_VM_OBJS)
 
 # Default target: build both loader and kernel
 .PHONY: all
@@ -191,14 +230,20 @@ all: $(LOADER_EFI) $(KERNEL_ELF)
 
 # Create build directories
 $(BUILD_DIR) $(LOADER_OBJ_DIR) $(KERNEL_OBJ_DIR):
-	@mkdir -p $(LOADER_OBJ_DIR)/boot $(LOADER_OBJ_DIR)/arch/$(ARCH)
-	@mkdir -p $(KERNEL_OBJ_DIR)/boot $(KERNEL_OBJ_DIR)/hal $(KERNEL_OBJ_DIR)/memory $(KERNEL_OBJ_DIR)/vm_arbiter $(KERNEL_OBJ_DIR)/arch/$(ARCH)
+	@mkdir -p $(LOADER_OBJ_DIR)/boot $(LOADER_OBJ_DIR)/arch/$(ARCH) $(LOADER_OBJ_DIR)/vm
+	@mkdir -p $(KERNEL_OBJ_DIR)/boot $(KERNEL_OBJ_DIR)/hal $(KERNEL_OBJ_DIR)/memory $(KERNEL_OBJ_DIR)/vm_arbiter $(KERNEL_OBJ_DIR)/arch/$(ARCH) $(KERNEL_OBJ_DIR)/vm
 
 # Compile loader C sources
 $(LOADER_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(LOADER_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "CC (loader) $<"
 	@$(CC) $(LOADER_CFLAGS) -c $< -o $@
+
+# Compile loader VM core sources (hosted VM code)
+$(LOADER_OBJ_DIR)/vmcore/%.o: src/%.c | $(LOADER_OBJ_DIR)
+	@mkdir -p $(dir $@)
+	@echo "CC (loader) $<"
+	@$(CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(LOADER_CFLAGS)) -c $< -o $@
 
 # Compile loader assembly sources
 $(LOADER_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(LOADER_OBJ_DIR)
@@ -211,6 +256,12 @@ $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(KERNEL_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "CC (kernel) $<"
 	@$(CC) $(KERNEL_CFLAGS) -c $< -o $@
+
+# Compile kernel VM core sources (hosted VM code)
+$(KERNEL_OBJ_DIR)/vmcore/%.o: src/%.c | $(KERNEL_OBJ_DIR)
+	@mkdir -p $(dir $@)
+	@echo "CC (kernel) $<"
+	@$(CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(KERNEL_CFLAGS)) -c $< -o $@
 
 # Compile kernel assembly sources
 $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(KERNEL_OBJ_DIR)

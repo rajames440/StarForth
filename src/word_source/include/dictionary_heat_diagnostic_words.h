@@ -49,7 +49,7 @@
 #ifndef DICTIONARY_HEAT_DIAGNOSTIC_WORDS_H
 #define DICTIONARY_HEAT_DIAGNOSTIC_WORDS_H
 
-#include "../../include/vm.h"
+#include "../../../include/vm.h"
 
 /**
  * Register all dictionary heat diagnostic words with the VM
@@ -57,4 +57,3 @@
 void register_dictionary_heat_diagnostic_words(VM *vm);
 
 #endif /* DICTIONARY_HEAT_DIAGNOSTIC_WORDS_H */
-
