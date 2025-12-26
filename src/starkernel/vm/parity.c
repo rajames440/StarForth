@@ -9,8 +9,8 @@
  * - Rule 3: Dictionary traversal in creation order
  */
 
-#include "../../include/starkernel/parity.h"
-#include "../../include/vm.h"
+#include "starkernel/vm/parity.h"
+#include "vm.h"
 
 #ifdef __STARKERNEL__
 #include "console.h"

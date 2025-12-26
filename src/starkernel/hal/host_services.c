@@ -12,6 +12,7 @@
 #include "console.h"
 #include "timer.h"
 #include "arch.h"
+#include "starkernel/vm/arena.h"
 
 /**
  * Parity mode: deterministic fake time
@@ -31,6 +32,17 @@ static void* kernel_alloc(size_t size, size_t align) {
     if (size == 0) {
         return (void*)0;
     }
+
+    /* VM arena requests get routed through the PMM-backed allocator */
+    if (size == sk_vm_arena_size()) {
+        if (!sk_vm_arena_is_initialized()) {
+            if (sk_vm_arena_alloc() == 0) {
+                return NULL;
+            }
+        }
+        return sk_vm_arena_ptr();
+    }
+
     if (align <= sizeof(void*)) {
         return kmalloc(size);
     }
@@ -38,9 +50,14 @@ static void* kernel_alloc(size_t size, size_t align) {
 }
 
 static void kernel_free(void *ptr) {
-    if (ptr) {
-        kfree(ptr);
+    if (!ptr) {
+        return;
     }
+    /* VM arena lifetime is managed separately; ignore free requests */
+    if (ptr == sk_vm_arena_ptr()) {
+        return;
+    }
+    kfree(ptr);
 }
 
 /* ============================================================================

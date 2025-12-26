@@ -8,7 +8,7 @@
 #ifdef __STARKERNEL__
 
 #include "vm.h"
-#include "starkernel/parity.h"
+#include "starkernel/vm/parity.h"
 #include "starkernel/vm/bootstrap/sk_vm_bootstrap.h"
 #include "starkernel/hal/hal.h"
 #include "console.h"

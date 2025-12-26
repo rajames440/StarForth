@@ -8,10 +8,10 @@
 
 #ifdef __STARKERNEL__
 
-#include "../../../include/platform_time.h"
-#include "../../../include/platform_lock.h"
-#include "../../../include/log.h"
-#include "../../../include/starkernel/vm_host.h"
+#include "platform_time.h"
+#include "platform_lock.h"
+#include "log.h"
+#include "starkernel/vm_host.h"
 #include "console.h"
 #include "kmalloc.h"
 #include <string.h>

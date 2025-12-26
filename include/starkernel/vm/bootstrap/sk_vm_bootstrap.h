@@ -11,7 +11,7 @@
 
 #ifdef __STARKERNEL__
 
-#include "../../parity.h"
+#include "starkernel/vm/parity.h"
 
 /**
  * sk_vm_bootstrap_parity - Initialize VM and emit parity packet.

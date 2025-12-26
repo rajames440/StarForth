@@ -55,12 +55,7 @@
 #include "../include/ssm_jacquard.h"
 #include "../include/starkernel/vm_host.h"
 
-#ifdef __STARKERNEL__
-/* Forward declarations for kernel arena */
-extern uint64_t sk_vm_arena_alloc(void);
-extern uint8_t* sk_vm_arena_ptr(void);
-extern int sk_vm_arena_is_initialized(void);
-#else
+#ifndef __STARKERNEL__
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
@@ -334,20 +329,7 @@ void vm_init_with_host(VM* vm, const VMHostServices *host)
         return;
     }
 
-#ifdef __STARKERNEL__
-    /* Kernel: use PMM-backed arena (must be pre-allocated) */
-    if (!sk_vm_arena_is_initialized()) {
-        if (sk_vm_arena_alloc() == 0) {
-            log_message(LOG_ERROR, "vm_init: arena allocation failed");
-            vm->error = 1;
-            return;
-        }
-    }
-    vm->memory = sk_vm_arena_ptr();
-#else
-    /* Hosted: use host allocator */
     vm->memory = (uint8_t*)vm_host_alloc(vm, VM_MEMORY_SIZE, sizeof(void*));
-#endif
     if (!vm->memory)
     {
         log_message(LOG_ERROR, "vm_init: out of host memory");
@@ -566,12 +548,7 @@ void vm_cleanup(VM* vm)
 
     if (vm->memory)
     {
-#ifdef __STARKERNEL__
-        /* Kernel: arena is PMM-backed, freed separately via sk_vm_arena_free() */
-        /* Don't free here - the arena may be reused */
-#else
         vm_host_free(vm, vm->memory);
-#endif
         vm->memory = NULL;
     }
     vm->here = 0;

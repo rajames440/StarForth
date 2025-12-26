@@ -211,10 +211,10 @@ VM_ALL_SRCS := $(wildcard src/*.c) $(wildcard src/word_source/*.c)
 VM_EXCLUDE := src/main.c src/cli.c src/repl.c src/test_runner/% src/platform/% src/blkio_factory.c src/blkio_file.c src/blkio_ram.c src/log.c src/doe_metrics.c
 VM_CORE_SRCS := $(filter-out $(VM_EXCLUDE),$(VM_ALL_SRCS))
 
-LOADER_EXTRA_SRCS := $(KERNEL_SRC)/vm_kernel.c \
-                     $(KERNEL_SRC)/parity.c \
+LOADER_EXTRA_SRCS := $(KERNEL_SRC)/vm/arena.c \
+                     $(KERNEL_SRC)/vm/parity.c \
                      $(KERNEL_SRC)/vm/bootstrap/sk_vm_bootstrap.c \
-                     $(KERNEL_SRC)/vm/shim.c
+                     $(KERNEL_SRC)/vm/host/shim.c
 
 KERNEL_EXTRA_SRCS := $(LOADER_EXTRA_SRCS)
 

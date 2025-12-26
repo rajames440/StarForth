@@ -17,7 +17,7 @@
 #include "kmalloc.h"
 #ifdef STARFORTH_ENABLE_VM
 #include "starkernel/vm/bootstrap/sk_vm_bootstrap.h"
-#include "parity.h"
+#include "starkernel/vm/parity.h"
 #endif
 
 static int is_ram_type(uint32_t type) {

@@ -1,5 +1,5 @@
 /**
- * vm_kernel.c - StarKernel VM initialization
+ * arena.c - StarKernel VM arena initialization
  *
  * Provides kernel-specific VM initialization with PMM-backed arena.
  * This replaces the hosted vm_init() for kernel builds.
@@ -9,10 +9,12 @@
 
 #ifdef __STARKERNEL__
 
-#include "../../include/starkernel/vm_host.h"
+#include "starkernel/vm/arena.h"
+#include "starkernel/vm_host.h"
 #include "pmm.h"
 #include "vmm.h"
 #include "console.h"
+#include <stdint.h>
 
 /* Forward declaration - we'll need the VM struct */
 /* For now, define minimal interface; full integration comes later */
