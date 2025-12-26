@@ -15,6 +15,7 @@
 #define STARKERNEL_PARITY_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 /**
  * Bootstrap result codes

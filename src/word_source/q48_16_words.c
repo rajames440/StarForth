@@ -47,6 +47,19 @@
 
 #include "../include/q48_16.h"
 
+#ifdef __STARKERNEL__
+#define q48_mul vm_q48_mul_local
+#define q48_div vm_q48_div_local
+#define q48_log_approx vm_q48_log_approx_local
+#define q48_exp_approx vm_q48_exp_approx_local
+#define q48_sqrt_approx vm_q48_sqrt_approx_local
+q48_16_t vm_q48_mul_local(q48_16_t a, q48_16_t b);
+q48_16_t vm_q48_div_local(q48_16_t a, q48_16_t b);
+q48_16_t vm_q48_log_approx_local(q48_16_t q);
+q48_16_t vm_q48_exp_approx_local(q48_16_t q);
+q48_16_t vm_q48_sqrt_approx_local(q48_16_t q);
+#endif
+
 /* ============================================================================
  * Core Arithmetic: Multiply
  * ============================================================================

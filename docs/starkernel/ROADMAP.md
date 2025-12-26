@@ -1134,6 +1134,13 @@ Heartbeat: 300 ticks  TIME-TRUST=0.99826
 **Exit Criteria:** Kernel can allocate/free dynamic memory, VM can use HAL memory functions
 ## Milestone 7: VM Integration + INIT Capsules (Week 8)
 
+### M7 Bootstrap Parity (Gated)
+- Build with `STARFORTH_ENABLE_VM=1` to run the kernel VM bootstrap + parity emit.
+- Boot log (serial) will print the parity summary, e.g.:
+  - `PARITY:M7.1a word_count=... here=0x... latest_id=... hash=0x...`
+  - `PARITY:OK` (or `PARITY:FAIL code=N`)
+- Default is disabled to keep kernel images small/stable; enable only when validating parity.
+
 ### Architectural Contract (Frozen)
 1. **Mama Forth governs VM birth.**
   - VM creation is initiated by the primordial VM ("mama").

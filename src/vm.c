@@ -168,7 +168,7 @@ static void* vm_host_alloc(VM *vm, size_t size, size_t align)
     return host->alloc(size, align);
 }
 
-static void* vm_host_calloc(VM *vm, size_t n, size_t size)
+static __attribute__((unused)) void* vm_host_calloc(VM *vm, size_t n, size_t size)
 {
     size_t total = n * size;
     void *p = vm_host_alloc(vm, total, sizeof(void*));

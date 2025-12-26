@@ -57,6 +57,16 @@
 #include <time.h>
 #endif
 
+#ifdef __STARKERNEL__
+struct timespec { long tv_sec; long tv_nsec; };
+static int nanosleep(const struct timespec *req, struct timespec *rem)
+{
+    (void)req;
+    (void)rem;
+    return 0;
+}
+#endif
+
 /* ============================================================================
  * PRNG State - Linear Congruential Generator (Numerical Recipes constants)
  * ============================================================================ */
