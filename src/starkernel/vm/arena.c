@@ -10,7 +10,7 @@
 #ifdef __STARKERNEL__
 
 #include "starkernel/vm/arena.h"
-#include "starkernel/vm_host.h"
+#include "vm_host.h"
 #include "pmm.h"
 #include "vmm.h"
 #include "console.h"

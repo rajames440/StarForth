@@ -1,7 +1,7 @@
 #ifdef __STARKERNEL__
 
 #include "starkernel/hal/hal.h"
-#include "starkernel/vm_host.h"
+#include "vm_host.h"
 #include "starkernel/timer.h"
 #include "starkernel/console.h"
 #include "starkernel/arch.h"

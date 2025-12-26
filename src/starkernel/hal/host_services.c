@@ -7,7 +7,7 @@
 
 #ifdef __STARKERNEL__
 
-#include "starkernel/vm_host.h"
+#include "vm_host.h"
 #include "kmalloc.h"
 #include "console.h"
 #include "timer.h"

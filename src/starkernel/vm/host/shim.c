@@ -11,7 +11,7 @@
 #include "platform_time.h"
 #include "platform_lock.h"
 #include "log.h"
-#include "starkernel/vm_host.h"
+#include "vm_host.h"
 #include "console.h"
 #include "kmalloc.h"
 #include <string.h>

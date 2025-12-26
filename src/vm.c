@@ -53,7 +53,7 @@
 #include "../include/rolling_window_of_truth.h"
 #include "../include/dictionary_heat_optimization.h"
 #include "../include/ssm_jacquard.h"
-#include "../include/starkernel/vm_host.h"
+#include "../include/vm_host.h"
 
 #ifndef __STARKERNEL__
 #include <stdlib.h>
