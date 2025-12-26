@@ -56,6 +56,8 @@ struct HotwordsCache_s; /* Physics hot-words cache (avoids circular include) */
 typedef struct HotwordsCache_s HotwordsCache;
 struct WordTransitionMetrics; /* Pipelining metrics (avoids circular include) */
 typedef struct WordTransitionMetrics WordTransitionMetrics;
+struct VMHostServices; /* Host allocator/time hooks (defined in vm_host.h) */
+typedef struct VMHostServices VMHostServices;
 struct InferenceOutputs; /* Adaptive tuning inference engine outputs (avoids circular include) */
 typedef struct InferenceOutputs InferenceOutputs;
 struct HeartbeatWorker; /* Background heartbeat dispatcher */
@@ -382,6 +384,7 @@ typedef struct VM
     /** @name Dictionary Management 
      * @{
      */
+    const VMHostServices* host; /**< Host allocator/time services */
     uint8_t* memory; /**< Unified VM memory buffer */
     size_t here; /**< Next free memory location (byte offset) */
     DictEntry* latest; /**< Most recent word */
@@ -505,6 +508,13 @@ typedef struct VM
  * @param vm Pointer to VM structure to initialize
  */
 void vm_init(VM* vm);
+
+/**
+ * @brief Initialize VM with explicit host services
+ * @param vm   Pointer to VM structure to initialize
+ * @param host Host services (allocator/time). If NULL, uses build default.
+ */
+void vm_init_with_host(VM* vm, const VMHostServices *host);
 
 /**
  * @brief Interpret a string of Forth code

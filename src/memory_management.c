@@ -61,8 +61,8 @@ void *vm_allot(VM *vm, size_t bytes) {
                 bytes, vm->here, DICTIONARY_MEMORY_SIZE);
 
     if (vm->here + bytes >= DICTIONARY_MEMORY_SIZE) {
-        log_message(LOG_ERROR, "Dictionary space full (here=%zu, bytes=%zu, dict_limit=%d)",
-                    vm->here, bytes, DICTIONARY_MEMORY_SIZE);
+        log_message(LOG_ERROR, "Dictionary space full (here=%zu, bytes=%zu, dict_limit=%d, memory=%p)",
+                    vm->here, bytes, DICTIONARY_MEMORY_SIZE, (void*)vm->memory);
         vm->error = 1;
         return NULL;
     }

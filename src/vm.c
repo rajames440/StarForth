@@ -53,12 +53,22 @@
 #include "../include/rolling_window_of_truth.h"
 #include "../include/dictionary_heat_optimization.h"
 #include "../include/ssm_jacquard.h"
+#include "../include/starkernel/vm_host.h"
 
+#ifdef __STARKERNEL__
+/* Forward declarations for kernel arena */
+extern uint64_t sk_vm_arena_alloc(void);
+extern uint8_t* sk_vm_arena_ptr(void);
+extern int sk_vm_arena_is_initialized(void);
+#else
 #include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
 #include <errno.h>
 #include <time.h>
+#include <stdio.h>
+#endif
+
+#include <string.h>
+#include <stdint.h>
 
 #if HEARTBEAT_THREAD_ENABLED && !defined(L4RE_TARGET)
 #include <pthread.h>
@@ -68,6 +78,122 @@
 #endif
 
 #define HEARTBEAT_DECAY_BATCH 64u
+
+#ifndef PARITY_MODE
+#define PARITY_MODE 0
+#endif
+
+/* ====================== Host services helpers ======================= */
+
+#ifndef __STARKERNEL__
+static uint64_t hosted_fake_ns = 0;
+
+static void* hosted_alloc(size_t size, size_t align)
+{
+    (void)align;
+    return malloc(size);
+}
+
+static void hosted_free(void *ptr)
+{
+    free(ptr);
+}
+
+static uint64_t hosted_time_ns(void)
+{
+#if PARITY_MODE
+    hosted_fake_ns += 1000; /* Deterministic 1us increments */
+    return hosted_fake_ns;
+#else
+    return sf_monotonic_ns();
+#endif
+}
+
+static int hosted_mutex_init(void *mutex) { return sf_mutex_init((sf_mutex_t *)mutex); }
+static int hosted_mutex_lock(void *mutex) { sf_mutex_lock((sf_mutex_t *)mutex); return 0; }
+static int hosted_mutex_unlock(void *mutex) { sf_mutex_unlock((sf_mutex_t *)mutex); return 0; }
+static void hosted_mutex_destroy(void *mutex) { sf_mutex_destroy((sf_mutex_t *)mutex); }
+
+static int hosted_puts(const char *str)
+{
+    if (!str) return -1;
+    if (fputs(str, stdout) < 0) return -1;
+    return (int)strlen(str);
+}
+
+static int hosted_putc(int c)
+{
+    return (fputc(c, stdout) == EOF) ? -1 : 1;
+}
+
+static const VMHostServices hosted_services = {
+    .alloc = hosted_alloc,
+    .free = hosted_free,
+    .monotonic_ns = hosted_time_ns,
+    .mutex_init = hosted_mutex_init,
+    .mutex_lock = hosted_mutex_lock,
+    .mutex_unlock = hosted_mutex_unlock,
+    .mutex_destroy = hosted_mutex_destroy,
+    .puts = hosted_puts,
+    .putc = hosted_putc,
+    .parity_mode = PARITY_MODE,
+    .verbose = 0
+};
+#endif /* !__STARKERNEL__ */
+
+static const VMHostServices* vm_default_host_services(void)
+{
+#ifdef __STARKERNEL__
+    return sk_host_services();
+#else
+    return &hosted_services;
+#endif
+}
+
+static inline const VMHostServices* vm_host(const VM *vm)
+{
+    const VMHostServices *host = vm ? vm->host : NULL;
+    return host ? host : vm_default_host_services();
+}
+
+static void* vm_host_alloc(VM *vm, size_t size, size_t align)
+{
+    const VMHostServices *host = vm_host(vm);
+    if (!host || !host->alloc || size == 0) {
+        return NULL;
+    }
+    if (align == 0) {
+        align = sizeof(void*);
+    }
+    return host->alloc(size, align);
+}
+
+static void* vm_host_calloc(VM *vm, size_t n, size_t size)
+{
+    size_t total = n * size;
+    void *p = vm_host_alloc(vm, total, sizeof(void*));
+    if (p) {
+        memset(p, 0, total);
+    }
+    return p;
+}
+
+static void vm_host_free(VM *vm, void *ptr)
+{
+    const VMHostServices *host = vm_host(vm);
+    if (ptr && host && host->free) {
+        host->free(ptr);
+    }
+}
+
+static uint64_t vm_monotonic_ns(VM *vm)
+{
+    const VMHostServices *host = vm_host(vm);
+    if (host && host->monotonic_ns) {
+        return host->monotonic_ns();
+    }
+    return 0;
+}
 
 /** @name Forward Declarations
  * @{
@@ -150,7 +276,7 @@ static void heartbeat_publish_snapshot(VM *vm)
     HeartbeatSnapshot *snapshot = &vm->heartbeat.snapshots[next];
 
     snapshot->published_tick = vm->heartbeat.tick_count;
-    snapshot->published_ns = sf_monotonic_ns();
+    snapshot->published_ns = vm_monotonic_ns(vm);
     snapshot->window_width = vm->rolling_window.effective_window_size;
     snapshot->decay_slope_q48 = vm->decay_slope_q48;
     snapshot->hot_word_count = vm->hot_word_count_at_check;
@@ -176,8 +302,22 @@ static void heartbeat_publish_snapshot(VM *vm)
  */
 void vm_init(VM* vm)
 {
+    vm_init_with_host(vm, NULL);
+}
+
+void vm_init_with_host(VM* vm, const VMHostServices *host)
+{
     if (!vm) return;
-    memset(vm, 0, sizeof(*vm));
+    /* Clear all fields; avoid fortify overflow warnings from memset */
+    *vm = (VM){0};
+    vm->host = host ? host : vm_default_host_services();
+#ifdef __STARKERNEL__
+    sk_host_init();
+#else
+    if (vm->host == &hosted_services && PARITY_MODE) {
+        hosted_fake_ns = 0;
+    }
+#endif
     vm->next_word_id = 0;
     vm->recycled_word_id_count = 0;
 
@@ -196,7 +336,20 @@ void vm_init(VM* vm)
         return;
     }
 
-    vm->memory = (uint8_t*)malloc(VM_MEMORY_SIZE);
+#ifdef __STARKERNEL__
+    /* Kernel: use PMM-backed arena (must be pre-allocated) */
+    if (!sk_vm_arena_is_initialized()) {
+        if (sk_vm_arena_alloc() == 0) {
+            log_message(LOG_ERROR, "vm_init: arena allocation failed");
+            vm->error = 1;
+            return;
+        }
+    }
+    vm->memory = sk_vm_arena_ptr();
+#else
+    /* Hosted: use host allocator */
+    vm->memory = (uint8_t*)vm_host_alloc(vm, VM_MEMORY_SIZE, sizeof(void*));
+#endif
     if (!vm->memory)
     {
         log_message(LOG_ERROR, "vm_init: out of host memory");
@@ -209,6 +362,8 @@ void vm_init(VM* vm)
     vm->here = 0;
     vm->exit_colon = 0;
     vm->abort_requested = 0;
+
+    log_message(LOG_DEBUG, "vm_init: memory=%p here=%zu", (void*)vm->memory, vm->here);
 
     vm_align(vm);
 
@@ -275,7 +430,7 @@ void vm_init(VM* vm)
     vm->dict_fence_here = vm->here;
 
     /* Initialize hot-words cache (physics frequency-driven acceleration) */
-    vm->hotwords_cache = (HotwordsCache*)malloc(sizeof(HotwordsCache));
+    vm->hotwords_cache = (HotwordsCache*)vm_host_alloc(vm, sizeof(HotwordsCache), sizeof(void*));
     if (!vm->hotwords_cache)
     {
         log_message(LOG_ERROR, "vm_init: hotwords cache malloc failed");
@@ -313,14 +468,14 @@ void vm_init(VM* vm)
     heartbeat_publish_snapshot(vm);
 
 #if HEARTBEAT_HAS_THREADS
-    vm->heartbeat.worker = calloc(1, sizeof(HeartbeatWorker));
+    vm->heartbeat.worker = vm_host_calloc(vm, 1, sizeof(HeartbeatWorker));
     if (vm->heartbeat.worker)
     {
         vm->heartbeat.worker->tick_ns = HEARTBEAT_TICK_NS;
         if (pthread_create(&vm->heartbeat.worker->thread, NULL, heartbeat_thread_main, vm) != 0)
         {
             log_message(LOG_WARN, "heartbeat: pthread_create failed (%d), falling back to inline mode", errno);
-            free(vm->heartbeat.worker);
+            vm_host_free(vm, vm->heartbeat.worker);
             vm->heartbeat.worker = NULL;
         }
     }
@@ -344,7 +499,7 @@ void vm_init(VM* vm)
     dict_update_heat_percentiles(vm);  /* Calculate initial percentiles */
 
     /* SSM L8: Jacquard Mode Selector initialization */
-    vm->ssm_l8_state = malloc(sizeof(ssm_l8_state_t));
+    vm->ssm_l8_state = vm_host_alloc(vm, sizeof(ssm_l8_state_t), sizeof(void*));
     if (!vm->ssm_l8_state)
     {
         log_message(LOG_ERROR, "vm_init: SSM L8 state malloc failed");
@@ -353,7 +508,7 @@ void vm_init(VM* vm)
     }
     ssm_l8_init((ssm_l8_state_t*)vm->ssm_l8_state, SSM_MODE_C0);
 
-    vm->ssm_config = malloc(sizeof(ssm_config_t));
+    vm->ssm_config = vm_host_alloc(vm, sizeof(ssm_config_t), sizeof(void*));
     if (!vm->ssm_config)
     {
         log_message(LOG_ERROR, "vm_init: SSM config malloc failed");
@@ -383,7 +538,7 @@ void vm_cleanup(VM* vm)
     {
         vm->heartbeat.worker->stop_requested = 1;
         pthread_join(vm->heartbeat.worker->thread, NULL);
-        free(vm->heartbeat.worker);
+        vm_host_free(vm, vm->heartbeat.worker);
         vm->heartbeat.worker = NULL;
     }
 #endif
@@ -392,7 +547,7 @@ void vm_cleanup(VM* vm)
     if (vm->hotwords_cache)
     {
         hotwords_cache_cleanup(vm->hotwords_cache);
-        free(vm->hotwords_cache);
+        vm_host_free(vm, vm->hotwords_cache);
         vm->hotwords_cache = NULL;
     }
 
@@ -402,18 +557,23 @@ void vm_cleanup(VM* vm)
     /* Clean up SSM L8 state */
     if (vm->ssm_l8_state)
     {
-        free(vm->ssm_l8_state);
+        vm_host_free(vm, vm->ssm_l8_state);
         vm->ssm_l8_state = NULL;
     }
     if (vm->ssm_config)
     {
-        free(vm->ssm_config);
+        vm_host_free(vm, vm->ssm_config);
         vm->ssm_config = NULL;
     }
 
     if (vm->memory)
     {
-        free(vm->memory);
+#ifdef __STARKERNEL__
+        /* Kernel: arena is PMM-backed, freed separately via sk_vm_arena_free() */
+        /* Don't free here - the arena may be reused */
+#else
+        vm_host_free(vm, vm->memory);
+#endif
         vm->memory = NULL;
     }
     vm->here = 0;
@@ -775,7 +935,7 @@ static void vm_heartbeat_run_cycle(VM *vm)
 
     /* L8 FINAL INTEGRATION: Core heartbeat operations */
     vm_tick(vm);
-    vm_tick_apply_background_decay(vm, sf_monotonic_ns());
+    vm_tick_apply_background_decay(vm, vm_monotonic_ns(vm));
     rolling_window_service(&vm->rolling_window);
     dict_adaptive_optimization_pass(vm);  /* Adaptive dictionary optimization */
 
@@ -861,7 +1021,7 @@ void vm_tick_inference_engine(VM* vm)
     sf_mutex_lock(&vm->tuning_lock);
     if (!vm->last_inference_outputs)
     {
-        vm->last_inference_outputs = malloc(sizeof(InferenceOutputs));
+        vm->last_inference_outputs = vm_host_alloc(vm, sizeof(InferenceOutputs), sizeof(void*));
         if (!vm->last_inference_outputs)
         {
             sf_mutex_unlock(&vm->tuning_lock);
@@ -1320,7 +1480,7 @@ void execute_colon_word(VM* vm)
         if (w)
         {
             /* Phase 2: Apply linear decay before accumulating new heat */
-            uint64_t now_ns = sf_monotonic_ns();
+            uint64_t now_ns = vm_monotonic_ns(vm);
             uint64_t elapsed_ns = now_ns - w->physics.last_active_ns;
             physics_metadata_apply_linear_decay(w, elapsed_ns, vm);
             w->physics.last_active_ns = now_ns;
@@ -1393,7 +1553,7 @@ void execute_colon_word(VM* vm)
         {
             profiler_word_enter(w);
             w->func(vm);
-            physics_metadata_touch(w, w->execution_heat, sf_monotonic_ns());
+            physics_metadata_touch(w, w->execution_heat, vm_monotonic_ns(vm));
             profiler_word_exit(w);
             vm->heartbeat.words_executed++;  /* DoE counter */
         }
@@ -1463,7 +1623,7 @@ void vm_interpret_word(VM* vm, const char* word_str, size_t len)
     if (entry)
     {
         /* Bump usage counters - Thread safety: lock dict for heat modifications */
-        uint64_t lookup_ns = sf_monotonic_ns();
+        uint64_t lookup_ns = vm_monotonic_ns(vm);
 
         sf_mutex_lock(&vm->dict_lock);
         /* Phase 2: Apply linear decay before accumulating heat */
@@ -1508,7 +1668,7 @@ void vm_interpret_word(VM* vm, const char* word_str, size_t len)
         {
             profiler_word_enter(entry);
             entry->func(vm);
-            physics_metadata_touch(entry, entry->execution_heat, sf_monotonic_ns());
+            physics_metadata_touch(entry, entry->execution_heat, vm_monotonic_ns(vm));
             profiler_word_exit(entry);
             vm->heartbeat.words_executed++;  /* DoE counter */
         }
