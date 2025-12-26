@@ -99,6 +99,20 @@ LOADER_CFLAGS := $(COMMON_CFLAGS)
 # Kernel-specific flags (with __STARKERNEL__ fence)
 KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__
 
+# Self-test flags (M4 exception tests, M5 timer validation)
+ifdef DIV0_SELF_TEST
+KERNEL_CFLAGS += -DDIV0_SELF_TEST=$(DIV0_SELF_TEST)
+endif
+ifdef PF_SELF_TEST_READ
+KERNEL_CFLAGS += -DPF_SELF_TEST_READ=$(PF_SELF_TEST_READ)
+endif
+ifdef PF_SELF_TEST_WRITE
+KERNEL_CFLAGS += -DPF_SELF_TEST_WRITE=$(PF_SELF_TEST_WRITE)
+endif
+ifdef M5_TIMER_VALIDATION
+KERNEL_CFLAGS += -DM5_TIMER_VALIDATION=$(M5_TIMER_VALIDATION)
+endif
+
 # Linker flags
 LOADER_LDFLAGS := -T $(LOADER_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -shared -Bsymbolic -znocombreloc -e efi_main
 KERNEL_LDFLAGS := -T $(KERNEL_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -e kernel_main
@@ -109,6 +123,19 @@ MONOLITHIC ?= 1
 ifeq ($(MONOLITHIC),1)
 # Monolithic: loader + kernel compiled together
 LOADER_CFLAGS += -DMONOLITHIC_BUILD -D__STARKERNEL__
+# Pass self-test flags to loader (which includes kernel_main.c)
+ifdef DIV0_SELF_TEST
+LOADER_CFLAGS += -DDIV0_SELF_TEST=$(DIV0_SELF_TEST)
+endif
+ifdef PF_SELF_TEST_READ
+LOADER_CFLAGS += -DPF_SELF_TEST_READ=$(PF_SELF_TEST_READ)
+endif
+ifdef PF_SELF_TEST_WRITE
+LOADER_CFLAGS += -DPF_SELF_TEST_WRITE=$(PF_SELF_TEST_WRITE)
+endif
+ifdef M5_TIMER_VALIDATION
+LOADER_CFLAGS += -DM5_TIMER_VALIDATION=$(M5_TIMER_VALIDATION)
+endif
 
 LOADER_SRCS := $(KERNEL_SRC)/boot/uefi_loader.c \
                $(KERNEL_SRC)/boot/elf_loader.c \

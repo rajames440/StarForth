@@ -301,7 +301,16 @@ static void vmm_self_test(void) {
 #define PF_SELF_TEST_WRITE 0
 #endif
 
-/* Compiler barrier to discourage “helpful” optimization across fault tests */
+/* M5 Timer Validation: set to 1 to run 100-tick variance test, 0 to skip */
+#ifndef M5_TIMER_VALIDATION
+#define M5_TIMER_VALIDATION 0
+#endif
+
+/* Variance threshold: 0.01% = 0.0001 in Q48.16 = 0x0000000000000006 (approx) */
+/* More practically: trust should be > 0.99 (Q48.16 = 0xFD70) */
+#define M5_MIN_TRUST_Q48  ((q48_16_t)0xFD70)  /* ~0.99 */
+
+/* Compiler barrier to discourage "helpful" optimization across fault tests */
 static inline void compiler_barrier(void) {
     __asm__ volatile ("" ::: "memory");
 }
@@ -369,6 +378,56 @@ static void page_fault_self_test_write(void) {
     compiler_barrier();
 
     console_println("Page-fault WRITE self-test did NOT trigger as expected.");
+#endif
+}
+
+/**
+ * M5 Timer Validation Test
+ * Waits for 100 heartbeat ticks, then checks TIME-TRUST.
+ * HALTs if variance exceeds threshold (trust < 0.99).
+ */
+__attribute__((noinline))
+static void m5_timer_validation_test(void) {
+#if M5_TIMER_VALIDATION
+    console_println("M5 Timer Validation: running 100-tick test...");
+
+    /* Wait for first tick to establish baseline */
+    uint64_t start_ticks = heartbeat_ticks();
+    while (heartbeat_ticks() == start_ticks) {
+        arch_halt();
+    }
+
+    /* Now wait for 100 more ticks */
+    uint64_t target = heartbeat_ticks() + 100;
+    while (heartbeat_ticks() < target) {
+        arch_halt();
+    }
+
+    /* Check TIME-TRUST */
+    q48_16_t trust = heartbeat_trust();
+    uint64_t ticks = heartbeat_ticks();
+
+    console_puts("M5 Timer Validation: ticks=");
+    print_uint("", ticks);
+    console_puts(" trust=");
+    print_hex64("", trust);
+    console_println("");
+
+    /* Q48.16: 1.0 = 0x10000, 0.99 ≈ 0xFD70 */
+    if (trust < M5_MIN_TRUST_Q48) {
+        console_println("M5 Timer Validation: FAILED - variance too high!");
+        console_puts("  Required trust >= 0x");
+        print_hex64("", M5_MIN_TRUST_Q48);
+        console_puts(", got 0x");
+        print_hex64("", trust);
+        console_println("");
+        console_println("Timer subsystem unreliable. Halting.");
+        while (1) {
+            arch_halt();
+        }
+    }
+
+    console_println("M5 Timer Validation: PASSED");
 #endif
 }
 
@@ -487,6 +546,9 @@ void kernel_main(BootInfo *boot_info) {
     apic_timer_start();
     arch_enable_interrupts();
     console_println("Heartbeat running. (QEMU: Press Ctrl+A, then X to exit)");
+
+    /* M5 Timer Validation (gated by M5_TIMER_VALIDATION=1) */
+    m5_timer_validation_test();
 
     /* Idle loop - HLT with interrupts enabled allows timer to fire */
     while (1) {
