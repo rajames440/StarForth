@@ -736,3 +736,156 @@ const timer_calibration_record_t *timer_calibration_record(void)
 {
     return &calib_record;
 }
+
+/* ============================================================================
+ * M5 Heartbeat Subsystem
+ * ============================================================================
+ *
+ * Implements TIME-TICKS and TIME-TRUST:
+ *   - TIME-TICKS: Monotonic heartbeat count
+ *   - TIME-TRUST: Continuous Q48.16 confidence derived from timing variance
+ *
+ * On each tick:
+ *   1. Sample TSC
+ *   2. Compute delta from last tick
+ *   3. Record deviation in rolling window
+ *   4. Compute variance from window
+ *   5. Derive TIME-TRUST from variance
+ */
+
+static TimeTrustState g_heartbeat;
+
+/**
+ * Push a delta into the rolling window.
+ */
+static void window_push(TimeWindow *w, int64_t delta)
+{
+    w->deltas[w->pos] = delta;
+    w->pos = (w->pos + 1) % TIME_WINDOW_SIZE;
+    if (w->count < TIME_WINDOW_SIZE) {
+        w->count++;
+    }
+}
+
+/**
+ * Compute variance of window deltas.
+ * Returns as Q48.16 relative variance (normalized by expected_delta^2).
+ */
+static q48_16_t window_variance_q48(const TimeWindow *w, uint64_t expected_delta)
+{
+    if (w->count < 2 || expected_delta == 0) {
+        return 0;
+    }
+
+    /* Compute mean */
+    int64_t sum = 0;
+    for (uint32_t i = 0; i < w->count; i++) {
+        sum += w->deltas[i];
+    }
+    int64_t mean = sum / (int64_t)w->count;
+
+    /* Compute variance = sum((delta - mean)^2) / count */
+    uint64_t sum_sq = 0;
+    for (uint32_t i = 0; i < w->count; i++) {
+        int64_t diff = w->deltas[i] - mean;
+        /* Clamp to prevent overflow */
+        if (diff > 0x7FFFFFFF) diff = 0x7FFFFFFF;
+        if (diff < -0x7FFFFFFF) diff = -0x7FFFFFFF;
+        sum_sq += (uint64_t)(diff * diff);
+    }
+    uint64_t var_tsc = sum_sq / w->count;
+
+    /* Normalize by expected_delta^2 to get relative variance */
+    uint64_t exp_sq = expected_delta;
+    if (exp_sq > 0xFFFFFFFF) {
+        var_tsc >>= 16;
+        exp_sq >>= 8;
+    }
+    exp_sq = exp_sq * exp_sq;
+    if (exp_sq == 0) return 0;
+
+    /* Clamp to avoid overflow when shifting */
+    if (var_tsc > 0x0000FFFFFFFFFFFFULL) {
+        var_tsc = 0x0000FFFFFFFFFFFFULL;
+    }
+
+    return (var_tsc << 16) / exp_sq;
+}
+
+/**
+ * Derive TIME-TRUST from relative variance.
+ * Formula: trust = 1.0 / (1.0 + variance)
+ */
+static q48_16_t variance_to_trust(q48_16_t variance)
+{
+    q48_16_t denom = q48_add(Q48_ONE, variance);
+    if (denom == 0) {
+        return Q48_ONE;
+    }
+    return q48_div(Q48_ONE, denom);
+}
+
+void heartbeat_init(uint64_t tsc_hz, uint64_t tick_hz)
+{
+    g_heartbeat.ticks = 0;
+    g_heartbeat.last_tsc = 0;
+    g_heartbeat.total_samples = 0;
+    g_heartbeat.variance = 0;
+    g_heartbeat.trust = Q48_ONE;
+
+    g_heartbeat.window.pos = 0;
+    g_heartbeat.window.count = 0;
+    for (int i = 0; i < TIME_WINDOW_SIZE; i++) {
+        g_heartbeat.window.deltas[i] = 0;
+    }
+
+    if (tick_hz > 0 && tsc_hz > 0) {
+        g_heartbeat.expected_delta = tsc_hz / tick_hz;
+    } else {
+        g_heartbeat.expected_delta = 10000000;  /* 10ms at 1GHz */
+    }
+}
+
+void heartbeat_tick(void)
+{
+    uint64_t now = rdtsc();
+    TimeTrustState *s = &g_heartbeat;
+
+    s->ticks++;
+    s->total_samples++;
+
+    /* First tick: just record TSC */
+    if (s->total_samples == 1) {
+        s->last_tsc = now;
+        return;
+    }
+
+    /* Compute delta from last tick */
+    uint64_t actual_delta = now - s->last_tsc;
+    s->last_tsc = now;
+
+    /* Compute deviation from expected (signed) */
+    int64_t deviation = (int64_t)actual_delta - (int64_t)s->expected_delta;
+
+    /* Add to rolling window */
+    window_push(&s->window, deviation);
+
+    /* Recompute variance and trust */
+    s->variance = window_variance_q48(&s->window, s->expected_delta);
+    s->trust = variance_to_trust(s->variance);
+}
+
+uint64_t heartbeat_ticks(void)
+{
+    return g_heartbeat.ticks;
+}
+
+time_trust_t heartbeat_trust(void)
+{
+    return g_heartbeat.trust;
+}
+
+const TimeTrustState *heartbeat_state(void)
+{
+    return &g_heartbeat;
+}

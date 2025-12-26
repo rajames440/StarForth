@@ -6,12 +6,46 @@
 #include "arch.h"
 #include "console.h"
 #include "apic.h"
+#include "timer.h"
+#include "q48_16.h"
 
 #define IDT_ENTRIES 256
 #define INTERRUPT_GATE 0x8E
 
-/* Heartbeat tick counter (simple stub for now, will be replaced by heartbeat.c) */
-static volatile uint64_t heartbeat_tick_count = 0;
+/* Print Q48.16 as decimal (e.g., "0.99609" for 0xFE00) */
+static void print_q48_16(q48_16_t q)
+{
+    /* Integer part */
+    uint64_t integer_part = q >> 16;
+    uint16_t frac_bits = (uint16_t)(q & 0xFFFF);
+
+    /* Print integer part */
+    char buf[32];
+    int i = 0;
+    uint64_t temp = integer_part;
+    if (temp == 0) {
+        buf[i++] = '0';
+    } else {
+        while (temp > 0 && i < (int)sizeof(buf)) {
+            buf[i++] = (char)('0' + (temp % 10));
+            temp /= 10;
+        }
+    }
+    while (i-- > 0) {
+        console_putc(buf[i]);
+    }
+
+    console_putc('.');
+
+    /* Fractional part: frac_bits / 65536 * 100000 to get 5 decimal digits */
+    uint64_t frac = ((uint64_t)frac_bits * 100000ULL) / 65536ULL;
+    char frac_buf[6] = {'0', '0', '0', '0', '0', '\0'};
+    for (int j = 4; j >= 0; j--) {
+        frac_buf[j] = (char)('0' + (frac % 10));
+        frac /= 10;
+    }
+    console_puts(frac_buf);
+}
 
 static inline void outb(uint16_t port, uint8_t val)
 {
@@ -133,13 +167,16 @@ void isr_common_handler(uint64_t vector,
 {
     /* Handle APIC timer interrupt (heartbeat) */
     if (vector == APIC_TIMER_VECTOR) {
-        heartbeat_tick_count++;
+        heartbeat_tick();
 
         /* Print every 100 ticks (1 second at 100Hz) for visibility */
-        if ((heartbeat_tick_count % 100) == 0) {
+        uint64_t ticks = heartbeat_ticks();
+        if ((ticks % 100) == 0) {
             console_puts("Heartbeat: ");
-            print_dec_u64(heartbeat_tick_count);
-            console_println(" ticks");
+            print_dec_u64(ticks);
+            console_puts(" ticks  TIME-TRUST=");
+            print_q48_16(heartbeat_trust());
+            console_println("");
         }
 
         /* Acknowledge interrupt and return (don't halt!) */

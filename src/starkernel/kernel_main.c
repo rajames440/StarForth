@@ -474,6 +474,9 @@ void kernel_main(BootInfo *boot_info) {
     }
     console_println("Heartbeat: init done");
 
+    /* Initialize M5 heartbeat subsystem */
+    heartbeat_init(tsc_hz, 100);  /* 100 Hz tick rate */
+
     /* Success message */
     console_println("Kernel initialization complete.");
     console_println("Boot successful!");
