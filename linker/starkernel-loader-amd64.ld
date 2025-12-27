@@ -13,8 +13,10 @@ SECTIONS
     __loader_start = .;
 
     .text : {
+        __text_start = .;
         *(.text.entry)
         *(.text .text.*)
+        __text_end = .;
     }
 
     .rodata : ALIGN(4K) {

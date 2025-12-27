@@ -5,13 +5,111 @@
 #include "starkernel/timer.h"
 #include "starkernel/console.h"
 #include "starkernel/arch.h"
+#include "starkernel/vmm.h"
+
+extern char __text_start[];
+extern char __text_end[];
+
+typedef struct {
+    uint64_t start;
+    uint64_t end;
+    const char *name;
+} hal_exec_region_t;
+
+#define HAL_MAX_EXEC_REGIONS 8
+static hal_exec_region_t hal_exec_regions[HAL_MAX_EXEC_REGIONS];
+static size_t hal_exec_region_count = 0;
+static bool hal_exec_range_frozen = false;
+static void hal_print_hex64(uint64_t value);
 
 static inline const VMHostServices *sk_hal_services(void) {
     return sk_host_services();
 }
 
+static void hal_exec_register(uint64_t start, uint64_t end, const char *name) {
+    if (start >= end || hal_exec_region_count >= HAL_MAX_EXEC_REGIONS) {
+        return;
+    }
+    for (size_t i = 0; i < hal_exec_region_count; ++i) {
+        if (hal_exec_regions[i].start == start && hal_exec_regions[i].end == end) {
+            return;
+        }
+    }
+    hal_exec_regions[hal_exec_region_count].start = start;
+    hal_exec_regions[hal_exec_region_count].end = end;
+    hal_exec_regions[hal_exec_region_count].name = name;
+    hal_exec_region_count++;
+}
+
+static const hal_exec_region_t *hal_exec_region_for(uint64_t addr) {
+    for (size_t i = 0; i < hal_exec_region_count; ++i) {
+        const hal_exec_region_t *region = &hal_exec_regions[i];
+        if (addr >= region->start && addr < region->end) {
+            return region;
+        }
+    }
+    return NULL;
+}
+
+void sk_hal_whitelist_exec_region(uint64_t start, uint64_t end, const char *name) {
+    hal_exec_register(start, end, name);
+}
+
+static bool hal_exec_addr_allowed(uint64_t addr) {
+    return hal_exec_region_for(addr) != NULL;
+}
+
+void sk_hal_freeze_exec_range(void) {
+    if (!hal_exec_range_frozen) {
+        hal_exec_range_frozen = true;
+        console_puts("[HAL][exec] regions frozen:");
+        console_println("");
+        if (hal_exec_region_count == 0) {
+            console_println("    (none registered)");
+        }
+        for (size_t i = 0; i < hal_exec_region_count; ++i) {
+            const hal_exec_region_t *region = &hal_exec_regions[i];
+            console_puts("    ");
+            console_puts(region->name ? region->name : "region");
+            console_puts(": [");
+            hal_print_hex64(region->start);
+            console_puts(", ");
+            hal_print_hex64(region->end);
+            console_println(")");
+        }
+    }
+}
+
+static void hal_print_hex64(uint64_t value) {
+    char buf[19];
+    buf[0] = '0';
+    buf[1] = 'x';
+    buf[18] = '\0';
+    for (int i = 0; i < 16; ++i) {
+        uint8_t nibble = (uint8_t)((value >> ((15 - i) * 4)) & 0xF);
+        buf[i + 2] = (nibble < 10) ? (char)('0' + nibble) : (char)('a' + nibble - 10);
+    }
+    console_puts(buf);
+}
+
+static void hal_log_xt_failure(const char *reason, uint64_t addr) {
+    console_puts("[HAL][XT] ");
+    console_puts(reason);
+    console_puts(" ptr=");
+    hal_print_hex64(addr);
+    console_println("");
+}
+
+static inline int addr_is_canonical(uint64_t addr) {
+    uint64_t upper = addr >> 48;
+    return (upper == 0x0000ULL) || (upper == 0xFFFFULL);
+}
+
 void sk_hal_init(void) {
     sk_host_init();
+    sk_hal_whitelist_exec_region((uint64_t)(uintptr_t)__text_start,
+                                 (uint64_t)(uintptr_t)__text_end,
+                                 "kernel.text");
 }
 
 void *sk_hal_alloc(size_t size, size_t align) {
@@ -91,8 +189,48 @@ void sk_hal_panic(const char *message) {
 }
 
 bool sk_hal_is_executable_ptr(const void *ptr) {
-    (void)ptr;
-    /* TODO(M7 Step 6): consult VMM mappings */
+    uint64_t addr = (uint64_t)(uintptr_t)ptr;
+
+    if (addr == 0) {
+        hal_log_xt_failure("reject: NULL pointer", addr);
+        return false;
+    }
+
+    if (!addr_is_canonical(addr)) {
+        hal_log_xt_failure("reject: non-canonical address", addr);
+        return false;
+    }
+
+    vmm_page_info_t info;
+    if (!vmm_query_page(addr, &info) || !info.present) {
+        console_puts("[HAL][XT] reject: unmapped pointer=");
+        hal_print_hex64(addr);
+        console_println("");
+        return false;
+    }
+
+    if (!info.executable) {
+        hal_log_xt_failure("reject: NX mapping", addr);
+        return false;
+    }
+
+    if (!hal_exec_addr_allowed(addr)) {
+        console_puts("[HAL][XT] reject: pointer ");
+        hal_print_hex64(addr);
+        console_puts(" outside allowed executable ranges");
+        console_println("");
+        for (size_t i = 0; i < hal_exec_region_count; ++i) {
+            console_puts("    allowed ");
+            console_puts(hal_exec_regions[i].name ? hal_exec_regions[i].name : "region");
+            console_puts(": [");
+            hal_print_hex64(hal_exec_regions[i].start);
+            console_puts(", ");
+            hal_print_hex64(hal_exec_regions[i].end);
+            console_println(")");
+        }
+        return false;
+    }
+
     return true;
 }
 

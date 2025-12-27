@@ -45,6 +45,7 @@
  *  Optimized: incremental FC index + capacity reuse + newest-first search
  */
 #include "../include/vm.h"
+#include "../include/vm_host.h"
 #include "../include/io.h"
 #include "../include/log.h"
 #include "../include/physics_metadata.h"
@@ -70,6 +71,82 @@ size_t sf_fc_count[SF_FC_BUCKETS];
 size_t sf_fc_cap[SF_FC_BUCKETS];
 
 static DictEntry *sf_cached_latest = NULL; /* last head we indexed */
+
+static void vm_xt_fatal(VM *vm, const char *reason) {
+    const VMHostServices *host = vm ? vm->host : NULL;
+    if (host && host->panic) {
+        host->panic(reason);
+    }
+}
+
+#ifdef __STARKERNEL__
+static void vm_dictionary_verify_xt_chain(VM *vm) {
+    if (!vm || !vm->host || !vm->host->is_executable_ptr) {
+        return;
+    }
+    for (DictEntry *entry = vm->latest; entry; entry = entry->link) {
+        if (!entry->func) {
+            log_message(LOG_ERROR,
+                        "VM XT corruption: '%.*s' missing func pointer",
+                        (int)(entry->name_len),
+                        entry->name);
+            vm_xt_fatal(vm, "VM XT missing func pointer");
+        } else if (!vm->host->is_executable_ptr((const void *)entry->func)) {
+            log_message(LOG_ERROR,
+                        "VM XT corruption: '%.*s' func=%p",
+                        (int)(entry->name_len),
+                        entry->name,
+                        (void *)entry->func);
+            vm_xt_fatal(vm, "VM XT executable violation");
+        }
+    }
+}
+#endif
+
+static int vm_xt_is_valid(VM *vm, const char *name, size_t len,
+                          DictEntry *entry, size_t entry_bytes) {
+    if (!vm || !entry) {
+        return 0;
+    }
+
+    const VMHostServices *host = vm->host;
+    if (host && host->owns_xt_entry) {
+        if (!host->owns_xt_entry(entry, entry_bytes)) {
+            log_message(LOG_ERROR,
+                        "vm_create_word: XT for '%.*s' outside kernel dictionary heap (xt=%p size=%zu)",
+                        (int)len,
+                        name,
+                        (void *)entry,
+                        entry_bytes);
+            vm_xt_fatal(vm, "VM XT ownership violation");
+            return 0;
+        }
+    }
+
+    if (!entry->func) {
+        log_message(LOG_ERROR,
+                    "vm_create_word: NULL func pointer for '%.*s'",
+                    (int)len,
+                    name);
+        vm_xt_fatal(vm, "VM XT missing func pointer");
+        return 0;
+    }
+
+    if (host && host->is_executable_ptr) {
+        if (!host->is_executable_ptr((const void *)entry->func)) {
+            log_message(LOG_ERROR,
+                        "vm_create_word: HAL rejected func for '%.*s' (xt=%p func=%p)",
+                        (int)len,
+                        name,
+                        (void *)entry,
+                        (const void *)entry->func);
+            vm_xt_fatal(vm, "VM XT executable violation");
+            return 0;
+        }
+    }
+
+    return 1;
+}
 
 static uint32_t vm_dictionary_acquire_word_id(VM *vm) {
     if (!vm) {
@@ -314,7 +391,7 @@ DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
  * @return DictEntry* Pointer to new dictionary entry or NULL on failure
  */
 DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func) {
-    if (!vm || !name || len == 0 || len > WORD_NAME_MAX) {
+    if (!vm || !name || len == 0 || len > WORD_NAME_MAX || !func) {
         if (vm) {
             vm->error = 1;
             log_message(LOG_ERROR, "vm_create_word: invalid parameters (vm=%p, name=%p, len=%zu, max=%d)",
@@ -322,6 +399,9 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
         }
         return NULL;
     }
+#ifdef __STARKERNEL__
+    vm_dictionary_verify_xt_chain(vm);
+#endif
 
     DictEntry *entry = NULL;
     int lock_held = 0;
@@ -370,6 +450,12 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
         memset(((uint8_t *) entry) + base + name_bytes, 0, df_off - (base + name_bytes));
     }
     *(cell_t *) (((uint8_t *) entry) + df_off) = 0;
+
+    if (!vm_xt_is_valid(vm, name, len, entry, total)) {
+        vm->error = 1;
+        entry = NULL;
+        goto create_cleanup;
+    }
 
     vm->latest = entry;
     vm_dictionary_track_entry(vm, entry);

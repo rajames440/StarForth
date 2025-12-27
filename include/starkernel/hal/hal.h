@@ -26,6 +26,8 @@ int                     sk_hal_console_putc(int c);
 void                    sk_hal_panic(const char *message) __attribute__((noreturn));
 bool                    sk_hal_is_executable_ptr(const void *ptr);
 const struct VMHostServices *sk_hal_host_services(void);
+void                    sk_hal_whitelist_exec_region(uint64_t start, uint64_t end, const char *name);
+void                    sk_hal_freeze_exec_range(void);
 
 #endif /* __STARKERNEL__ */
 

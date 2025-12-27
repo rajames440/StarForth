@@ -17,10 +17,17 @@
 
 #include "uefi.h"
 
+typedef struct {
+    int present;
+    int writable;
+    int executable;
+} vmm_page_info_t;
+
 int vmm_init(BootInfo *boot_info);
 int vmm_map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags);
 int vmm_unmap_page(uint64_t vaddr);
 uint64_t vmm_get_paddr(uint64_t vaddr);
 int vmm_map_range(uint64_t vaddr, uint64_t paddr, uint64_t size, uint64_t flags);
+int vmm_query_page(uint64_t vaddr, vmm_page_info_t *info);
 
 #endif /* STARKERNEL_VMM_H */

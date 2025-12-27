@@ -111,6 +111,28 @@ static inline void load_cr3(uint64_t pml4_phys) {
 #endif
 }
 
+static uint64_t *resolve_pt(uint64_t vaddr, uint16_t *idx_out) {
+    if (vmm_root_pml4_phys == 0) {
+        return NULL;
+    }
+
+    uint64_t *pml4 = paddr_to_virt(vmm_root_pml4_phys);
+    uint64_t *pdpt = get_table(pml4, pml4_index(vaddr));
+    if (!pdpt) return NULL;
+
+    uint64_t *pd = get_table(pdpt, pdpt_index(vaddr));
+    if (!pd) return NULL;
+
+    uint64_t *pt = get_table(pd, pd_index(vaddr));
+    if (!pt) return NULL;
+
+    if (idx_out) {
+        *idx_out = pt_index(vaddr);
+    }
+
+    return pt;
+}
+
 int vmm_map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     if (vmm_root_pml4_phys == 0) {
         return -1;
@@ -204,6 +226,33 @@ int vmm_map_range(uint64_t vaddr, uint64_t paddr, uint64_t size, uint64_t flags)
         }
     }
     return 0;
+}
+
+int vmm_query_page(uint64_t vaddr, vmm_page_info_t *info) {
+    if (info) {
+        info->present = 0;
+        info->writable = 0;
+        info->executable = 0;
+    }
+
+    uint16_t idx = 0;
+    uint64_t *pt = resolve_pt(vaddr, &idx);
+    if (!pt) {
+        return 0;
+    }
+
+    uint64_t entry = pt[idx];
+    if (!(entry & PTE_PRESENT)) {
+        return 0;
+    }
+
+    if (info) {
+        info->present = 1;
+        info->writable = (entry & PTE_WRITABLE) ? 1 : 0;
+        info->executable = (entry & PTE_NX) ? 0 : 1;
+    }
+
+    return 1;
 }
 
 int vmm_init(BootInfo *boot_info) {

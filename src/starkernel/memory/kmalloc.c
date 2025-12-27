@@ -34,6 +34,19 @@ static heap_block_t *heap_head = NULL;
 static kmalloc_stats_t heap_stats = {0};
 static int heap_initialized = 0;
 
+uintptr_t kmalloc_heap_base_addr(void)
+{
+    return (uintptr_t)heap_base;
+}
+
+uintptr_t kmalloc_heap_end_addr(void)
+{
+    if (!heap_base) {
+        return 0;
+    }
+    return (uintptr_t)(heap_base + heap_size);
+}
+
 static size_t align_up_size(size_t value, size_t align)
 {
     if (align == 0) {

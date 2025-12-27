@@ -21,5 +21,7 @@ void *kmalloc(size_t size);
 void *kmalloc_aligned(size_t size, size_t align);
 void kfree(void *ptr);
 kmalloc_stats_t kmalloc_get_stats(void);
+uintptr_t kmalloc_heap_base_addr(void);
+uintptr_t kmalloc_heap_end_addr(void);
 
 #endif /* STARKERNEL_KMALLOC_H */

@@ -72,8 +72,11 @@ isr_common_entry:
     mov r8,  [rsp + 152]   /* rflags */
     mov r9,  cr2           /* cr2 */
 
-    /* Align stack and call handler */
+    /* Pass stack frame pointer (after pushes) as 7th argument */
+    mov rax, rsp
+    push rax
     call isr_common_handler
+    add rsp, 8
 
     /* Restore general-purpose registers */
     pop r15

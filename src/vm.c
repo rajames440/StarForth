@@ -121,6 +121,30 @@ static int hosted_putc(int c)
     return (fputc(c, stdout) == EOF) ? -1 : 1;
 }
 
+static void hosted_panic(const char *message)
+{
+    if (message) {
+        fprintf(stderr, "[StarForth panic] %s\n", message);
+    } else {
+        fprintf(stderr, "[StarForth panic] unknown\n");
+    }
+    fflush(stderr);
+    abort();
+}
+
+static bool hosted_xt_is_executable(const void *ptr)
+{
+    (void)ptr;
+    return true;
+}
+
+static bool hosted_xt_entry_owned(const void *ptr, size_t bytes)
+{
+    (void)ptr;
+    (void)bytes;
+    return true;
+}
+
 static const VMHostServices hosted_services = {
     .alloc = hosted_alloc,
     .free = hosted_free,
@@ -131,6 +155,9 @@ static const VMHostServices hosted_services = {
     .mutex_destroy = hosted_mutex_destroy,
     .puts = hosted_puts,
     .putc = hosted_putc,
+    .is_executable_ptr = hosted_xt_is_executable,
+    .owns_xt_entry = hosted_xt_entry_owned,
+    .panic = hosted_panic,
     .parity_mode = PARITY_MODE,
     .verbose = 0
 };
@@ -1706,7 +1733,6 @@ void vm_interpret(VM* vm, const char* input)
 
     vm->input_length = n;
     vm->input_pos = 0;
-
     char word[64];
     size_t wlen;
     while (!vm->error && (wlen = (size_t)vm_parse_word(vm, word, sizeof(word))) > 0)

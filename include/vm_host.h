@@ -13,6 +13,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
+
+struct DictEntry;
 
 /**
  * Host allocator function signature
@@ -48,6 +51,22 @@ typedef int (*sk_puts_fn)(const char *str);
 typedef int (*sk_putc_fn)(int c);
 
 /**
+ * Host execution-token validation
+ * Returns 1 if pointer is executable, 0 otherwise
+ */
+typedef bool (*sk_xt_validate_fn)(const void *ptr);
+
+/**
+ * Host dictionary entry ownership check
+ */
+typedef bool (*sk_xt_entry_owns_fn)(const void *entry, size_t bytes);
+
+/**
+ * Host fatal handler (panic)
+ */
+typedef void (*sk_panic_fn)(const char *message);
+
+/**
  * VMHostServices - pluggable host operations
  *
  * Hosted builds point these at libc functions.
@@ -70,6 +89,11 @@ typedef struct VMHostServices {
     /* Console output */
     sk_puts_fn          puts;
     sk_putc_fn          putc;
+
+    /* XT validation */
+    sk_xt_validate_fn   is_executable_ptr;
+    sk_xt_entry_owns_fn owns_xt_entry;
+    sk_panic_fn         panic;
 
     /* Flags */
     int                 parity_mode;    /* 1 = deterministic time */

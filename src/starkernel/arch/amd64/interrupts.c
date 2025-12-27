@@ -81,7 +81,8 @@ extern void isr_common_handler(uint64_t vector,
                               uint64_t rip,
                               uint64_t cs,
                               uint64_t rflags,
-                              uint64_t cr2);
+                              uint64_t cr2,
+                              uint64_t stack_frame_ptr);
 
 static struct idt_entry idt[IDT_ENTRIES];
 
@@ -163,7 +164,8 @@ void isr_common_handler(uint64_t vector,
                         uint64_t rip,
                         uint64_t cs,
                         uint64_t rflags,
-                        uint64_t cr2)
+                        uint64_t cr2,
+                        uint64_t stack_frame_ptr)
 {
     /* Handle APIC timer interrupt (heartbeat) */
     if (vector == APIC_TIMER_VECTOR) {
@@ -200,6 +202,15 @@ void isr_common_handler(uint64_t vector,
 
     console_puts("RIP    : 0x"); print_hex64(rip); console_println("");
     console_puts("CR2    : 0x"); print_hex64(cr2); console_println("");
+
+    uint64_t fault_rsp = stack_frame_ptr + 160u;
+    console_puts("RSP    : 0x"); print_hex64(fault_rsp); console_println("");
+    console_puts("RBP    : 0x");
+    print_hex64(*((uint64_t *)(uintptr_t)(stack_frame_ptr + 64u)));
+    console_println("");
+    console_puts("RET    : 0x");
+    print_hex64(*((uint64_t *)(uintptr_t)fault_rsp));
+    console_println("");
 
     switch (vector) {
         case 0:

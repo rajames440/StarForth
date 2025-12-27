@@ -63,12 +63,14 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
         console_println("VM: minimal script failed");
         sk_parity_collect(&vm, pkt);
         sk_parity_print(pkt);
+        sk_hal_freeze_exec_range();
         return -1;
     }
 
     /* Collect and print parity */
     sk_parity_collect(&vm, pkt);
     sk_parity_print(pkt);
+    sk_hal_freeze_exec_range();
 
     return (pkt->bootstrap_result == SK_BOOTSTRAP_OK) ? 0 : -1;
 }

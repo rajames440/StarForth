@@ -8,11 +8,13 @@
 #ifdef __STARKERNEL__
 
 #include "vm_host.h"
+#include "starkernel/hal/hal.h"
 #include "kmalloc.h"
 #include "console.h"
 #include "timer.h"
 #include "arch.h"
 #include "starkernel/vm/arena.h"
+#include <stdbool.h>
 
 /**
  * Parity mode: deterministic fake time
@@ -22,7 +24,10 @@
 #define PARITY_MODE 0
 #endif
 
+static VMHostServices kernel_services;
 static uint64_t parity_fake_ns = 0;
+static bool host_services_initialized = false;
+static bool host_services_logged = false;
 
 /* ============================================================================
  * Memory Allocation
@@ -128,33 +133,100 @@ static int kernel_putc(int c) {
     return c;
 }
 
-/* ============================================================================
- * Host Services Instance
- * ============================================================================ */
+static bool kernel_xt_entry_owned(const void *ptr, size_t bytes) {
+    uintptr_t base = kmalloc_heap_base_addr();
+    uintptr_t end = kmalloc_heap_end_addr();
+    if (!ptr || base == 0 || end == 0 || bytes == 0) {
+        return false;
+    }
+    uintptr_t addr = (uintptr_t)ptr;
+    uintptr_t entry_end = addr + bytes;
+    if (entry_end < addr) {
+        return false;
+    }
+    return addr >= base && entry_end <= end;
+}
 
-static VMHostServices kernel_services = {
-    .alloc          = kernel_alloc,
-    .free           = kernel_free,
-    .monotonic_ns   = kernel_monotonic_ns,
-    .mutex_init     = kernel_mutex_init,
-    .mutex_lock     = kernel_mutex_lock,
-    .mutex_unlock   = kernel_mutex_unlock,
-    .mutex_destroy  = kernel_mutex_destroy,
-    .puts           = kernel_puts,
-    .putc           = kernel_putc,
-    .parity_mode    = PARITY_MODE,
-    .verbose        = 0
-};
+static void host_services_print_hex(const void *ptr) {
+    if (!ptr) {
+        console_puts("NULL");
+        return;
+    }
+    char buf[19];
+    buf[0] = '0';
+    buf[1] = 'x';
+    buf[18] = '\0';
+    uint64_t value = (uint64_t)(uintptr_t)ptr;
+    for (int i = 0; i < 16; ++i) {
+        uint8_t nibble = (value >> ((15 - i) * 4)) & 0xF;
+        buf[i + 2] = (nibble < 10) ? ('0' + nibble) : ('a' + nibble - 10);
+    }
+    console_puts(buf);
+}
+
+static void host_services_log_ptr(const char *label, const void *ptr) {
+    console_puts("    ");
+    console_puts(label);
+    console_puts(" = ");
+    host_services_print_hex(ptr);
+    console_println("");
+}
+
+
+static void host_services_dump_table(void) {
+    if (host_services_logged) {
+        return;
+    }
+
+    console_println("[HAL][host] VMHostServices table:");
+    host_services_log_ptr("alloc", kernel_services.alloc);
+    host_services_log_ptr("free", kernel_services.free);
+    host_services_log_ptr("monotonic_ns", kernel_services.monotonic_ns);
+    host_services_log_ptr("mutex_init", kernel_services.mutex_init);
+    host_services_log_ptr("mutex_lock", kernel_services.mutex_lock);
+    host_services_log_ptr("mutex_unlock", kernel_services.mutex_unlock);
+    host_services_log_ptr("mutex_destroy", kernel_services.mutex_destroy);
+    host_services_log_ptr("puts", kernel_services.puts);
+    host_services_log_ptr("putc", kernel_services.putc);
+    host_services_log_ptr("is_executable_ptr", kernel_services.is_executable_ptr);
+    host_services_log_ptr("owns_xt_entry", kernel_services.owns_xt_entry);
+    host_services_log_ptr("panic", kernel_services.panic);
+    host_services_logged = true;
+}
 
 const VMHostServices* sk_host_services(void) {
+    if (!host_services_initialized) {
+        sk_host_init();
+    }
     return &kernel_services;
 }
 
 void sk_host_init(void) {
+    if (host_services_initialized) {
+        host_services_dump_table();
+        return;
+    }
+
     /* Reset parity time if needed */
     parity_fake_ns = 0;
 
-    /* Could initialize other host state here */
+    kernel_services.alloc = kernel_alloc;
+    kernel_services.free = kernel_free;
+    kernel_services.monotonic_ns = kernel_monotonic_ns;
+    kernel_services.mutex_init = kernel_mutex_init;
+    kernel_services.mutex_lock = kernel_mutex_lock;
+    kernel_services.mutex_unlock = kernel_mutex_unlock;
+    kernel_services.mutex_destroy = kernel_mutex_destroy;
+    kernel_services.puts = kernel_puts;
+    kernel_services.putc = kernel_putc;
+    kernel_services.is_executable_ptr = sk_hal_is_executable_ptr;
+    kernel_services.owns_xt_entry = kernel_xt_entry_owned;
+    kernel_services.panic = sk_hal_panic;
+    kernel_services.parity_mode = PARITY_MODE;
+    kernel_services.verbose = 0;
+
+    host_services_initialized = true;
+    host_services_dump_table();
 }
 
 #endif /* __STARKERNEL__ */
