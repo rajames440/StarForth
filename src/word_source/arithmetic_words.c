@@ -44,6 +44,12 @@
 #include "include/arithmetic_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
+#ifdef __STARKERNEL__
+#include "starkernel/vm/arena.h"
+#define ARITH_CHECK_ARENA(tag) sk_vm_arena_assert_guards(tag)
+#else
+#define ARITH_CHECK_ARENA(tag) ((void)0)
+#endif
 
 /* FORTH-79 Arithmetic Words:
  * +         ( n1 n2 -- n3 )             Add n1 and n2
@@ -409,6 +415,7 @@ static void arithmetic_word_max(VM *vm) {
  */
 void register_arithmetic_words(VM *vm) {
     log_message(LOG_INFO, "Registering FORTH-79 arithmetic words...");
+    ARITH_CHECK_ARENA("register_arithmetic_words:start");
 
     /* Basic arithmetic */
     register_word(vm, "+", arithmetic_word_plus);
@@ -435,4 +442,5 @@ void register_arithmetic_words(VM *vm) {
     register_word(vm, "NEGATE", arithmetic_word_negate);
     register_word(vm, "MIN", arithmetic_word_min);
     register_word(vm, "MAX", arithmetic_word_max);
+    ARITH_CHECK_ARENA("register_arithmetic_words:end");
 }

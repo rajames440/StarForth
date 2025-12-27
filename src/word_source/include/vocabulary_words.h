@@ -78,5 +78,8 @@
  * @param vm Pointer to the virtual machine instance
  */
 void register_vocabulary_words(VM * vm);
+void vocabulary_create_vocabulary_direct(VM *vm, const char *name);
+void vocabulary_word_forth(VM *vm);
+void vocabulary_word_definitions(VM *vm);
 
 #endif /* VOCABULARY_WORDS_H */

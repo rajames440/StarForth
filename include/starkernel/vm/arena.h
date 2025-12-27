@@ -18,6 +18,7 @@ void     sk_vm_arena_free(void);
 uint8_t *sk_vm_arena_ptr(void);
 size_t   sk_vm_arena_size(void);
 int      sk_vm_arena_is_initialized(void);
+void     sk_vm_arena_assert_guards(const char *tag);
 
 #endif /* __STARKERNEL__ */
 

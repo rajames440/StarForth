@@ -6,6 +6,7 @@
 #include "starkernel/console.h"
 #include "starkernel/arch.h"
 #include "starkernel/vmm.h"
+#include "dictionary_management.h"
 
 extern char __text_start[];
 extern char __text_end[];
@@ -183,6 +184,10 @@ void sk_hal_panic(const char *message) {
         console_puts("unknown");
     }
     console_puts("\nSystem halted.\n");
+#ifdef __STARKERNEL__
+    extern void vm_dictionary_log_last_word(struct VM *vm, const char *tag);
+    vm_dictionary_log_last_word(NULL, "hal_panic");
+#endif
     while (1) {
         arch_halt();
     }

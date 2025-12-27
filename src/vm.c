@@ -54,6 +54,10 @@
 #include "../include/dictionary_heat_optimization.h"
 #include "../include/ssm_jacquard.h"
 #include "../include/vm_host.h"
+#ifdef __STARKERNEL__
+#include "starkernel/vm/arena.h"
+#endif
+#include "word_source/include/vocabulary_words.h"
 
 #ifndef __STARKERNEL__
 #include <stdlib.h>
@@ -162,6 +166,53 @@ static const VMHostServices hosted_services = {
     .verbose = 0
 };
 #endif /* !__STARKERNEL__ */
+
+static inline const VMHostServices* vm_host(const VM *vm);
+
+static void vm_assert_interpreter_enabled(VM *vm, const char *caller)
+{
+    if (vm && vm->interpreter_enabled) {
+        return;
+    }
+    if (vm) {
+        vm->error = 1;
+    }
+    log_message(LOG_ERROR, "[vm] interpreter disabled (caller=%s)", caller ? caller : "unknown");
+    const VMHostServices *host = vm_host(vm);
+    if (host && host->panic) {
+        host->panic("interpreter invoked before bootstrap completion");
+    }
+}
+
+void vm_enable_interpreter(VM *vm)
+{
+    if (vm) {
+        vm->interpreter_enabled = 1;
+    }
+}
+
+void vm_bootstrap_root_vocabulary(VM *vm, const char *name)
+{
+    if (!vm || !name) {
+        return;
+    }
+#ifdef __STARKERNEL__
+    sk_vm_arena_assert_guards("vm_bootstrap_root_vocabulary:entry");
+#endif
+    vocabulary_create_vocabulary_direct(vm, name);
+    size_t len = strlen(name);
+    DictEntry *entry = vm_find_word(vm, name, len);
+    if (!entry || !entry->func) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "bootstrap: missing vocabulary '%s'", name);
+        return;
+    }
+    entry->func(vm);
+    vocabulary_word_definitions(vm);
+#ifdef __STARKERNEL__
+    sk_vm_arena_assert_guards("vm_bootstrap_root_vocabulary:exit");
+#endif
+}
 
 static const VMHostServices* vm_default_host_services(void)
 {
@@ -338,6 +389,7 @@ void vm_init_with_host(VM* vm, const VMHostServices *host)
         hosted_fake_ns = 0;
     }
 #endif
+    vm->interpreter_enabled = 0;
     vm->next_word_id = 0;
     vm->recycled_word_id_count = 0;
 
@@ -431,6 +483,7 @@ void vm_init_with_host(VM* vm, const VMHostServices *host)
 
     /* Register Forth-79 wordset */
     register_forth79_words(vm);
+    vm_enable_interpreter(vm);
 
     /* Set FORGET fence to post-boot */
     vm->dict_fence_latest = vm->latest;
@@ -1197,6 +1250,7 @@ void vm_tick_inference_engine(VM* vm)
 int vm_parse_word(VM* vm, char* word, size_t max_len)
 {
     if (!vm || !word || max_len == 0) return 0;
+    vm_assert_interpreter_enabled(vm, "vm_parse_word");
 
     /* Skip whitespace */
     while (vm->input_pos < vm->input_length)
@@ -1233,6 +1287,7 @@ int vm_parse_word(VM* vm, char* word, size_t max_len)
 int vm_parse_number(VM* vm, const char* s, cell_t* out)
 {
     if (!s || !*s || !out) return 0;
+    vm_assert_interpreter_enabled(vm, "vm_parse_number");
 
     unsigned base = vm_get_base(vm);
     int neg = 0;
@@ -1452,6 +1507,7 @@ void vm_exit_compile_mode(VM* vm)
 void execute_colon_word(VM* vm)
 {
     if (!vm || !vm->current_executing_entry) return;
+    vm_assert_interpreter_enabled(vm, "execute_colon_word");
 
     /* Fetch threaded body address from the DictEntry's data field (DF) */
     DictEntry* entry = vm->current_executing_entry;
@@ -1611,6 +1667,7 @@ void execute_colon_word(VM* vm)
 void vm_interpret_word(VM* vm, const char* word_str, size_t len)
 {
     if (!vm || !word_str) return;
+    vm_assert_interpreter_enabled(vm, "vm_interpret_word");
 
     log_message(LOG_DEBUG, "INTERPRET: '%.*s' (mode=%s)",
                 (int)len, word_str,
@@ -1719,6 +1776,7 @@ void vm_interpret_word(VM* vm, const char* word_str, size_t len)
 void vm_interpret(VM* vm, const char* input)
 {
     if (!vm || !input) return;
+    vm_assert_interpreter_enabled(vm, "vm_interpret");
 
     /* Load into input buffer (cap + NUL) */
     size_t n = 0, cap = INPUT_BUFFER_SIZE ? INPUT_BUFFER_SIZE - 1 : 0;
@@ -1855,3 +1913,8 @@ void vm_make_immediate(VM* vm)
     log_message(LOG_DEBUG, "IMMEDIATE: '%.*s'",
                 (int)vm->latest->name_len, vm->latest->name);
 }
+#ifdef __STARKERNEL__
+#define vm_check_arena(tag) sk_vm_arena_assert_guards(tag)
+#else
+#define vm_check_arena(tag) ((void)0)
+#endif

@@ -69,6 +69,13 @@
 #include "word_source/include/physics_freeze_words.h"
 #include "word_source/include/dictionary_heat_diagnostic_words.h"
 #include "word_source/include/time_words.h"
+#ifdef __STARKERNEL__
+#include "starkernel/vm/arena.h"
+#define REGISTER_CHECK_ARENA(vm, tag) sk_vm_arena_assert_guards(tag)
+static uint32_t register_word_counter = 0;
+#else
+#define REGISTER_CHECK_ARENA(vm, tag) ((void)0)
+#endif
 
 /**
  * @brief Registers a single FORTH word in the virtual machine
@@ -80,6 +87,12 @@ void register_word(VM *vm, const char *name, word_func_t func) {
     DictEntry *entry = vm_create_word(vm, name, strlen(name), func);
     if (entry) {
         log_message(LOG_DEBUG, "Registered word: %s", name);
+#ifdef __STARKERNEL__
+        register_word_counter++;
+        if ((register_word_counter & 0xF) == 0) {
+            REGISTER_CHECK_ARENA(vm, name);
+        }
+#endif
     } else {
         log_message(LOG_ERROR, "Failed to register word: %s", name);
     }
@@ -99,6 +112,9 @@ void register_forth79_words(VM *vm) {
     register_stack_words(vm); /* Module 1: Stack Operations - FOUNDATION */
     register_return_stack_words(vm); /* Module 2: Return Stack Operations */
     register_memory_words(vm); /* Module 3: Memory Operations */
+#ifdef __STARKERNEL__
+    REGISTER_CHECK_ARENA(vm, "pre-register_arithmetic_words");
+#endif
     register_arithmetic_words(vm); /* Module 4: Arithmetic Operations */
     register_logical_words(vm); /* Module 5: Logical & Comparison */
     register_mixed_arithmetic_words(vm); /* Module 6: Mixed Arithmetic - needs arithmetic + stack */
@@ -122,4 +138,7 @@ void register_forth79_words(VM *vm) {
     register_time_words(vm); /* Module 24: M5 Time & Heartbeat Words */
 
     log_message(LOG_INFO, "FORTH-79 Standard word set registration complete");
+#ifdef __STARKERNEL__
+    REGISTER_CHECK_ARENA(vm, "post-register_forth79_words");
+#endif
 }

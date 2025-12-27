@@ -48,6 +48,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static size_t vocab_safe_len(const char *text, size_t max_len)
+{
+    size_t len = 0;
+    if (!text) return 0;
+    while (len < max_len && text[len] != '\0') {
+        len++;
+    }
+    return len;
+}
+
 
 /* ---- first-character index for vocab chains (lazy rebuild) ---- */
 #define SF_FC_BUCKETS 256
@@ -271,6 +281,57 @@ void vocabulary_word_vocabulary(VM *vm) {
 
     vocab_sync_vm_vars(vm);
     log_message(LOG_DEBUG, "VOCABULARY: created '%s'", name);
+}
+
+void vocabulary_create_vocabulary_direct(VM *vm, const char *name)
+{
+    if (!vm || !name) {
+        return;
+    }
+    char local[64];
+    size_t len = vocab_safe_len(name, sizeof local - 1);
+    if (len == 0) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "VOCABULARY: missing name");
+        return;
+    }
+    memcpy(local, name, len);
+    local[len] = '\0';
+
+    size_t nlen = len;
+    for (DictEntry *e = vm->latest; e; e = e->link) {
+        if (e->name_len == (int)nlen && memcmp(e->name, local, nlen) == 0) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "VOCABULARY: duplicate '%s'", local);
+            return;
+        }
+        if (e->link == vm->latest) break;
+    }
+
+    DictEntry *entry = vm_create_word(vm, local, (int)nlen, vocabulary_select_runtime);
+    if (!entry) {
+        vm->error = 1;
+        return;
+    }
+
+#ifdef WORD_SMUDGED
+    entry->flags &= ~WORD_SMUDGED;
+#endif
+#ifdef WORD_HIDDEN
+    entry->flags &= ~WORD_HIDDEN;
+#endif
+
+    void *body = vm_allot(vm, sizeof(cell_t));
+    if (!body) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "VOCABULARY: out of dictionary space");
+        return;
+    }
+    vaddr_t body_addr = (vaddr_t)((uint8_t *) body - vm->memory);
+    vm_store_cell(vm, body_addr, 0);
+
+    vocab_sync_vm_vars(vm);
+    log_message(LOG_DEBUG, "VOCABULARY: created '%s'", local);
 }
 
 /* DEFINITIONS ( -- )  CURRENT := CONTEXT */

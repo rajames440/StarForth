@@ -374,6 +374,7 @@ typedef struct VM
     /* Compiler state */
     vm_mode_t mode;
     DictEntry* compiling_word; /* Word being compiled */
+    int interpreter_enabled;
 
     /* Compilation support */
     char current_word_name[WORD_NAME_MAX + 1];
@@ -490,6 +491,7 @@ void vm_init_with_host(VM* vm, const VMHostServices *host);
  * @param input String containing Forth code to interpret
  */
 void vm_interpret(VM* vm, const char* input);
+void vm_enable_interpreter(VM* vm);
 
 /**
  * @brief Start the VM's read-eval-print loop
@@ -515,6 +517,7 @@ DictEntry* vm_find_word(VM* vm, const char* name, size_t len);
 DictEntry* vm_create_word(VM* vm, const char* name, size_t len, word_func_t func);
 
 void vm_make_immediate(VM* vm);
+void vm_bootstrap_root_vocabulary(VM *vm, const char *name);
 
 void vm_hide_word(VM* vm);
 

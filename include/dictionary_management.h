@@ -85,4 +85,13 @@ word_func_t dictionary_lookup(VM *vm, const char *name);
  */
 void dictionary_clear(VM * vm);
 
+typedef struct vm_last_word_record {
+    const DictEntry *entry;
+    const void *func;
+    char name[WORD_NAME_MAX + 1];
+} vm_last_word_record_t;
+
+const vm_last_word_record_t *vm_dictionary_last_word_record(void);
+void vm_dictionary_log_last_word(struct VM *vm, const char *tag);
+
 #endif

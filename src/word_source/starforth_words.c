@@ -44,6 +44,10 @@
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include "../../include/vm.h"
+#ifdef __STARKERNEL__
+#include "starkernel/vm/arena.h"
+#endif
+#include "include/vocabulary_words.h"
 #include "../../include/version.h"
 #include "../../include/physics_metadata.h"
 #include "../../include/platform_time.h"
@@ -65,45 +69,9 @@ static int nanosleep(const struct timespec *req, struct timespec *rem)
     (void)rem;
     return 0;
 }
-#endif
-
-#if defined(PARITY_MODE) && (PARITY_MODE == 1)
-#ifndef SK_PARITY_BOOT_WORKAROUND
-#warning "SK_PARITY_BOOT_WORKAROUND missing in parity build"
-#endif
-#endif
-
-#ifdef SK_PARITY_BOOT_WORKAROUND
-/* Temporary parity detour: bypass interpreter until VOCABULARY bug is fixed. */
-static size_t starforth_bounded_strlen(const char *text, size_t max_len) {
-    size_t len = 0;
-    while (len < max_len && text[len] != '\0') {
-        len++;
-    }
-    return len;
-}
-
-static void starforth_stage_input(VM *vm, const char *text) {
-    if (!vm || !text) {
-        return;
-    }
-    size_t cap = (INPUT_BUFFER_SIZE > 0) ? (size_t)INPUT_BUFFER_SIZE - 1u : 0u;
-    size_t len = starforth_bounded_strlen(text, cap);
-    memcpy(vm->input_buffer, text, len);
-    vm->input_buffer[len] = '\0';
-    vm->input_length = len;
-    vm->input_pos = 0;
-}
-
-static void starforth_call_word(VM *vm, const char *name) {
-    DictEntry *entry = vm_find_word(vm, name, strlen(name));
-    if (!entry || !entry->func) {
-        log_message(LOG_ERROR, "STARFORTH parity detour missing word '%s'", name);
-        vm->error = 1;
-        return;
-    }
-    entry->func(vm);
-}
+#define STARFORTH_CHECK_ARENA(tag) sk_vm_arena_assert_guards(tag)
+#else
+#define STARFORTH_CHECK_ARENA(tag) ((void)0)
 #endif
 
 /* ============================================================================
@@ -855,6 +823,7 @@ void starforth_word_version(VM* vm)
  */
 void register_starforth_words(VM* vm)
 {
+    STARFORTH_CHECK_ARENA("register_starforth_words:entry");
     // register_word(vm, "ENTROPY@", starforth_word_execution_heat_fetch);
     // register_word(vm, "ENTROPY!", starforth_word_execution_heat_store);
     register_word(vm, "WORD-ENTROPY", starforth_word_word_execution_heat);
@@ -867,18 +836,8 @@ void register_starforth_words(VM* vm)
     register_word(vm, "RANDOM", starforth_word_random);
     register_word(vm, "WAIT", starforth_word_wait);
 
-    /* Create the STARFORTH vocabulary */
-#ifdef SK_PARITY_BOOT_WORKAROUND
-    starforth_stage_input(vm, "STARFORTH");
-    starforth_call_word(vm, "VOCABULARY");
-    vm->input_length = 0;
-    vm->input_pos = 0;
-    starforth_call_word(vm, "STARFORTH");
-    starforth_call_word(vm, "DEFINITIONS");
-#else
-    vm_interpret(vm, "VOCABULARY STARFORTH");
-    vm_interpret(vm, "STARFORTH DEFINITIONS");
-#endif
+    vm_bootstrap_root_vocabulary(vm, "STARFORTH");
+    STARFORTH_CHECK_ARENA("register_starforth_words:post-root");
 
     /* Re-register the words in the STARFORTH vocabulary context */
     register_word(vm, "ENTROPY@", starforth_word_execution_heat_fetch);
@@ -893,11 +852,7 @@ void register_starforth_words(VM* vm)
     register_word(vm, "RANDOM", starforth_word_random);
     register_word(vm, "WAIT", starforth_word_wait);
 
-    /* Return to FORTH vocabulary */
-#ifdef SK_PARITY_BOOT_WORKAROUND
-    starforth_call_word(vm, "FORTH");
-    starforth_call_word(vm, "DEFINITIONS");
-#else
-    vm_interpret(vm, "FORTH DEFINITIONS");
-#endif
+    vocabulary_word_forth(vm);
+    vocabulary_word_definitions(vm);
+    STARFORTH_CHECK_ARENA("register_starforth_words:exit");
 }

@@ -44,6 +44,7 @@
  *  StarForth dictionary_management.c  —  FORTH-79 + ANSI C99
  *  Optimized: incremental FC index + capacity reuse + newest-first search
  */
+#include "../include/dictionary_management.h"
 #include "../include/vm.h"
 #include "../include/vm_host.h"
 #include "../include/io.h"
@@ -71,6 +72,11 @@ size_t sf_fc_count[SF_FC_BUCKETS];
 size_t sf_fc_cap[SF_FC_BUCKETS];
 
 static DictEntry *sf_cached_latest = NULL; /* last head we indexed */
+
+static vm_last_word_record_t vm_last_registered_word;
+static VM *vm_last_registered_vm = NULL;
+static size_t vm_last_here = 0;
+static DictEntry *vm_last_latest = NULL;
 
 static void vm_xt_fatal(VM *vm, const char *reason) {
     const VMHostServices *host = vm ? vm->host : NULL;
@@ -209,6 +215,32 @@ DictEntry *vm_dictionary_lookup_by_word_id(VM *vm, uint32_t word_id) {
     }
 
     return vm->word_id_map[word_id];
+}
+
+const vm_last_word_record_t *vm_dictionary_last_word_record(void) {
+    return &vm_last_registered_word;
+}
+
+void vm_dictionary_log_last_word(VM *vm, const char *tag) {
+#ifdef __STARKERNEL__
+    const vm_last_word_record_t *info = vm_dictionary_last_word_record();
+    if (!info) return;
+    VM *ctx = vm ? vm : vm_last_registered_vm;
+    size_t here = ctx ? ctx->here : vm_last_here;
+    DictEntry *latest = ctx ? ctx->latest : vm_last_latest;
+    log_message(LOG_ERROR,
+                "[dict][%s] last='%s' entry=%p func=%p here=0x%zx latest=%p latest='%s'",
+                tag ? tag : "stage",
+                info->name[0] ? info->name : "(none)",
+                (const void *)info->entry,
+                info->func,
+                here,
+                (void *)latest,
+                latest ? latest->name : "(null)");
+#else
+    (void)vm;
+    (void)tag;
+#endif
 }
 
 /* --- helpers ------------------------------------------------------------- */
@@ -456,6 +488,15 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
         entry = NULL;
         goto create_cleanup;
     }
+
+    size_t copy = (len < WORD_NAME_MAX) ? len : WORD_NAME_MAX;
+    memcpy(vm_last_registered_word.name, name, copy);
+    vm_last_registered_word.name[copy] = '\0';
+    vm_last_registered_word.entry = entry;
+    vm_last_registered_word.func = entry->func;
+    vm_last_registered_vm = vm;
+    vm_last_here = vm->here;
+    vm_last_latest = vm->latest;
 
     vm->latest = entry;
     vm_dictionary_track_entry(vm, entry);

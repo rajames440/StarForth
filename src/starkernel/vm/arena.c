@@ -14,24 +14,48 @@
 #include "pmm.h"
 #include "vmm.h"
 #include "console.h"
+#include "starkernel/hal/hal.h"
+#include "dictionary_management.h"
+#include <stddef.h>
 #include <stdint.h>
 
 /* Forward declaration - we'll need the VM struct */
 /* For now, define minimal interface; full integration comes later */
 
-/* VM arena virtual address (in higher-half kernel space) */
-#define SK_VM_ARENA_VADDR   0xFFFF900000000000ULL
+#define SK_VM_ARENA_VADDR        0xFFFF900000000000ULL
+#define SK_VM_GUARD_SIZE         PMM_PAGE_SIZE
+#define SK_VM_GUARD_PATTERN_HEAD 0x5ac0ffeed0c0ffeeULL
+#define SK_VM_GUARD_PATTERN_TAIL 0x0bad0badf00df00dULL
 
 /* VM memory size from hosted VM (5 MB) */
 #define SK_VM_MEMORY_SIZE   (5ULL * 1024ULL * 1024ULL)
-
-/* Number of pages for VM arena */
-#define SK_VM_ARENA_PAGES   ((SK_VM_MEMORY_SIZE + PMM_PAGE_SIZE - 1) / PMM_PAGE_SIZE)
+#define SK_VM_TOTAL_SIZE    (SK_VM_MEMORY_SIZE + (2ULL * SK_VM_GUARD_SIZE))
+#define SK_VM_ARENA_PAGES   ((SK_VM_TOTAL_SIZE + PMM_PAGE_SIZE - 1) / PMM_PAGE_SIZE)
 
 /* Arena state */
 static uint64_t vm_arena_paddr = 0;
-static uint64_t vm_arena_vaddr = 0;
+static uint64_t vm_arena_guard_vaddr = 0;
+static uint64_t vm_arena_client_vaddr = 0;
 static int vm_arena_initialized = 0;
+
+static void guard_fill(uint64_t base)
+{
+    uint64_t *ptr = (uint64_t *)(uintptr_t)base;
+    ptr[0] = SK_VM_GUARD_PATTERN_HEAD;
+    ptr[(SK_VM_GUARD_SIZE / sizeof(uint64_t)) - 1] = SK_VM_GUARD_PATTERN_TAIL;
+}
+
+static int guard_check(uint64_t base)
+{
+    const uint64_t *ptr = (const uint64_t *)(uintptr_t)base;
+    if (ptr[0] != SK_VM_GUARD_PATTERN_HEAD) {
+        return 0;
+    }
+    if (ptr[(SK_VM_GUARD_SIZE / sizeof(uint64_t)) - 1] != SK_VM_GUARD_PATTERN_TAIL) {
+        return 0;
+    }
+    return 1;
+}
 
 /**
  * sk_vm_arena_alloc - Allocate PMM-backed VM arena
@@ -41,8 +65,7 @@ static int vm_arena_initialized = 0;
  */
 uint64_t sk_vm_arena_alloc(void) {
     if (vm_arena_initialized) {
-        /* Already allocated */
-        return vm_arena_vaddr;
+        return vm_arena_client_vaddr;
     }
 
     /* Allocate contiguous physical pages */
@@ -52,11 +75,11 @@ uint64_t sk_vm_arena_alloc(void) {
         return 0;
     }
 
-    /* Map into virtual address space: RW, NX (no execute) */
-    vm_arena_vaddr = SK_VM_ARENA_VADDR;
+    vm_arena_guard_vaddr = SK_VM_ARENA_VADDR - SK_VM_GUARD_SIZE;
+    vm_arena_client_vaddr = vm_arena_guard_vaddr + SK_VM_GUARD_SIZE;
     uint64_t flags = VMM_FLAG_WRITABLE | VMM_FLAG_NX;
 
-    if (vmm_map_range(vm_arena_vaddr, vm_arena_paddr,
+    if (vmm_map_range(vm_arena_guard_vaddr, vm_arena_paddr,
                       SK_VM_ARENA_PAGES * PMM_PAGE_SIZE, flags) != 0) {
         console_println("sk_vm_arena_alloc: VMM mapping failed");
         pmm_free_contiguous(vm_arena_paddr, SK_VM_ARENA_PAGES);
@@ -65,10 +88,13 @@ uint64_t sk_vm_arena_alloc(void) {
     }
 
     /* Zero the arena */
-    uint8_t *arena = (uint8_t *)(uintptr_t)vm_arena_vaddr;
+    uint8_t *arena = (uint8_t *)(uintptr_t)vm_arena_client_vaddr;
     for (size_t i = 0; i < SK_VM_MEMORY_SIZE; i++) {
         arena[i] = 0;
     }
+
+    guard_fill(vm_arena_guard_vaddr);
+    guard_fill(vm_arena_guard_vaddr + SK_VM_GUARD_SIZE + SK_VM_MEMORY_SIZE);
 
     vm_arena_initialized = 1;
 
@@ -76,7 +102,7 @@ uint64_t sk_vm_arena_alloc(void) {
     /* Print address (simple hex) */
     {
         char buf[20];
-        uint64_t v = vm_arena_vaddr;
+        uint64_t v = vm_arena_client_vaddr;
         int i = 18;
         buf[19] = '\0';
         buf[18] = '\n';
@@ -113,7 +139,7 @@ uint64_t sk_vm_arena_alloc(void) {
     }
     console_println(" MB)");
 
-    return vm_arena_vaddr;
+    return vm_arena_client_vaddr;
 }
 
 /**
@@ -127,15 +153,16 @@ void sk_vm_arena_free(void) {
     }
 
     /* Unmap each page */
-    for (uint64_t i = 0; i < SK_VM_ARENA_PAGES; i++) {
-        vmm_unmap_page(vm_arena_vaddr + i * PMM_PAGE_SIZE);
+    for (uint64_t offset = 0; offset < SK_VM_TOTAL_SIZE; offset += PMM_PAGE_SIZE) {
+        vmm_unmap_page(vm_arena_guard_vaddr + offset);
     }
 
     /* Free physical memory */
     pmm_free_contiguous(vm_arena_paddr, SK_VM_ARENA_PAGES);
 
     vm_arena_paddr = 0;
-    vm_arena_vaddr = 0;
+    vm_arena_guard_vaddr = 0;
+    vm_arena_client_vaddr = 0;
     vm_arena_initialized = 0;
 }
 
@@ -148,7 +175,7 @@ uint8_t* sk_vm_arena_ptr(void) {
     if (!vm_arena_initialized) {
         return (uint8_t*)0;
     }
-    return (uint8_t *)(uintptr_t)vm_arena_vaddr;
+    return (uint8_t *)(uintptr_t)vm_arena_client_vaddr;
 }
 
 /**
@@ -163,6 +190,19 @@ size_t sk_vm_arena_size(void) {
  */
 int sk_vm_arena_is_initialized(void) {
     return vm_arena_initialized;
+}
+
+void sk_vm_arena_assert_guards(const char *tag) {
+    if (!vm_arena_initialized) {
+        return;
+    }
+    if (!guard_check(vm_arena_guard_vaddr) ||
+        !guard_check(vm_arena_guard_vaddr + SK_VM_GUARD_SIZE + SK_VM_MEMORY_SIZE)) {
+        console_puts("[VM][arena] guard corruption at ");
+        console_println(tag ? tag : "unknown");
+        vm_dictionary_log_last_word(NULL, tag);
+        sk_hal_panic("VM arena guard corrupted");
+    }
 }
 
 #endif /* __STARKERNEL__ */
