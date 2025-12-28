@@ -110,43 +110,95 @@ static int elf_apply_relocations(const uint8_t *elf_data, Elf64_Addr load_base)
     const Elf64_Ehdr *ehdr = (const Elf64_Ehdr *)elf_data;
     const Elf64_Shdr *shdr = (const Elf64_Shdr *)(elf_data + ehdr->e_shoff);
 
-    /* Iterate through section headers looking for RELA sections */
     for (uint16_t i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_RELA) {
-            const Elf64_Rela *rela = (const Elf64_Rela *)(elf_data + shdr[i].sh_offset);
-            uint64_t num_rela = shdr[i].sh_size / sizeof(Elf64_Rela);
+        const Elf64_Shdr *rela_sh = &shdr[i];
+        if (rela_sh->sh_type != SHT_RELA) {
+            continue;
+        }
+        if (rela_sh->sh_link >= ehdr->e_shnum) {
+            return 0;
+        }
 
-            for (uint64_t j = 0; j < num_rela; j++) {
-                uint64_t *target = (uint64_t *)(load_base + rela[j].r_offset);
-                uint32_t type = ELF64_R_TYPE(rela[j].r_info);
+        const Elf64_Shdr *symtab_sh = &shdr[rela_sh->sh_link];
+        if (symtab_sh->sh_entsize == 0) {
+            return 0;
+        }
 
-                /* Apply architecture-specific relocations */
-#if defined(ARCH_AMD64)
-                if (type == R_X86_64_RELATIVE) {
-                    *target = load_base + rela[j].r_addend;
-                } else if (type == R_X86_64_64) {
-                    *target = load_base + rela[j].r_addend;
-                } else if (type != R_X86_64_NONE) {
-                    return 0; /* Unsupported relocation type */
-                }
-#elif defined(ARCH_AARCH64)
-                if (type == R_AARCH64_RELATIVE) {
-                    *target = load_base + rela[j].r_addend;
-                } else if (type == R_AARCH64_ABS64) {
-                    *target = load_base + rela[j].r_addend;
-                } else if (type != R_AARCH64_NONE) {
-                    return 0;
-                }
-#elif defined(ARCH_RISCV64)
-                if (type == R_RISCV_RELATIVE) {
-                    *target = load_base + rela[j].r_addend;
-                } else if (type == R_RISCV_64) {
-                    *target = load_base + rela[j].r_addend;
-                } else if (type != R_RISCV_NONE) {
-                    return 0;
-                }
-#endif
+        const Elf64_Rela *rela = (const Elf64_Rela *)(elf_data + rela_sh->sh_offset);
+        uint64_t num_rela = rela_sh->sh_size / sizeof(Elf64_Rela);
+        const Elf64_Sym *symtab = (const Elf64_Sym *)(elf_data + symtab_sh->sh_offset);
+        uint64_t sym_count = symtab_sh->sh_size / symtab_sh->sh_entsize;
+
+        for (uint64_t j = 0; j < num_rela; j++) {
+            uint32_t type = ELF64_R_TYPE(rela[j].r_info);
+            uint32_t sym_index = ELF64_R_SYM(rela[j].r_info);
+            uint64_t reloc_addr = load_base + rela[j].r_offset;
+            uint64_t sym_value = 0;
+            if (sym_index < sym_count) {
+                sym_value = symtab[sym_index].st_value;
+            } else if (sym_index != 0) {
+                return 0;
             }
+
+#if defined(ARCH_AMD64)
+            switch (type) {
+            case R_X86_64_NONE:
+                break;
+            case R_X86_64_RELATIVE: {
+                uint64_t *target = (uint64_t *)reloc_addr;
+                *target = load_base + rela[j].r_addend;
+                break;
+            }
+            case R_X86_64_64: {
+                uint64_t *target = (uint64_t *)reloc_addr;
+                *target = load_base + sym_value + rela[j].r_addend;
+                break;
+            }
+            case R_X86_64_32:
+            case R_X86_64_32S: {
+                uint32_t *target32 = (uint32_t *)reloc_addr;
+                uint64_t value = load_base + sym_value + rela[j].r_addend;
+                *target32 = (uint32_t)value;
+                break;
+            }
+            default:
+                return 0;
+            }
+#elif defined(ARCH_AARCH64)
+            switch (type) {
+            case R_AARCH64_NONE:
+                break;
+            case R_AARCH64_RELATIVE: {
+                uint64_t *target = (uint64_t *)reloc_addr;
+                *target = load_base + rela[j].r_addend;
+                break;
+            }
+            case R_AARCH64_ABS64: {
+                uint64_t *target = (uint64_t *)reloc_addr;
+                *target = load_base + sym_value + rela[j].r_addend;
+                break;
+            }
+            default:
+                return 0;
+            }
+#elif defined(ARCH_RISCV64)
+            switch (type) {
+            case R_RISCV_NONE:
+                break;
+            case R_RISCV_RELATIVE: {
+                uint64_t *target = (uint64_t *)reloc_addr;
+                *target = load_base + rela[j].r_addend;
+                break;
+            }
+            case R_RISCV_64: {
+                uint64_t *target = (uint64_t *)reloc_addr;
+                *target = load_base + sym_value + rela[j].r_addend;
+                break;
+            }
+            default:
+                return 0;
+            }
+#endif
         }
     }
 

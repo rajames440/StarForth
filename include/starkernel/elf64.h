@@ -87,6 +87,8 @@
 #define R_X86_64_64       1
 #define R_X86_64_PC32     2
 #define R_X86_64_RELATIVE 8
+#define R_X86_64_32       10
+#define R_X86_64_32S      11
 
 /* Relocation types (aarch64) */
 #define R_AARCH64_NONE     0
@@ -157,6 +159,15 @@ typedef struct {
     Elf64_Xword  r_info;   /* Relocation type and symbol index */
     Elf64_Sxword r_addend; /* Addend */
 } Elf64_Rela;
+
+typedef struct {
+    Elf64_Word  st_name;
+    unsigned char st_info;
+    unsigned char st_other;
+    Elf64_Half  st_shndx;
+    Elf64_Addr  st_value;
+    Elf64_Xword st_size;
+} Elf64_Sym;
 
 /* ELF64 relocation without addend */
 typedef struct {
