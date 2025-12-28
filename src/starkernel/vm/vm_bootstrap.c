@@ -14,10 +14,26 @@
 #include "vm_internal.h"
 #ifdef __STARKERNEL__
 #include "starkernel/vm/arena.h"
+#include "starkernel/console.h"
 #endif
 
 #include <string.h>
 #include <errno.h>
+
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+static void vm_bootstrap_print_hex(uint64_t value)
+{
+    char buf[19];
+    buf[0] = '0';
+    buf[1] = 'x';
+    buf[18] = '\0';
+    for (int i = 0; i < 16; ++i) {
+        uint8_t nibble = (uint8_t)((value >> ((15 - i) * 4)) & 0xF);
+        buf[i + 2] = (nibble < 10) ? (char)('0' + nibble) : (char)('a' + nibble - 10);
+    }
+    console_puts(buf);
+}
+#endif
 
 static void vm_bootstrap_scr(VM *vm)
 {
@@ -39,17 +55,47 @@ void vm_bootstrap_root_vocabulary(VM *vm, const char *name)
     if (!vm || !name) {
         return;
     }
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    console_println("[VM_BOOTSTRAP] root vocabulary entry");
+#endif
 #ifdef __STARKERNEL__
     sk_vm_arena_assert_guards("vm_bootstrap_root_vocabulary:entry");
 #endif
     vocabulary_create_vocabulary_direct(vm, name);
     size_t len = strlen(name);
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    console_println("[VM_BOOTSTRAP] before vm_find_word");
+#endif
     DictEntry *entry = vm_find_word(vm, name, len);
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    console_println("[VM_BOOTSTRAP] after vm_find_word");
+#endif
     if (!entry || !entry->func) {
         vm->error = 1;
         log_message(LOG_ERROR, "bootstrap: missing vocabulary '%s'", name);
         return;
     }
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    console_puts("[VOC] ");
+    console_puts(name);
+    console_puts(" entry=");
+    vm_bootstrap_print_hex((uint64_t)(uintptr_t)entry);
+    console_puts(" xt=");
+    vm_bootstrap_print_hex((uint64_t)(uintptr_t)entry->func);
+    console_println("");
+    const VMHostServices *host = vm_host(vm);
+    if (host && host->is_executable_ptr &&
+        !host->is_executable_ptr((const void *)entry->func)) {
+        console_puts("[VOC] invalid XT for ");
+        console_puts(name);
+        console_puts(" func=");
+        vm_bootstrap_print_hex((uint64_t)(uintptr_t)entry->func);
+        console_println("");
+        if (host->panic) {
+            host->panic("bootstrap vocabulary XT invalid");
+        }
+    }
+#endif
     entry->func(vm);
     vocabulary_word_definitions(vm);
 #ifdef __STARKERNEL__
@@ -150,7 +196,14 @@ void vm_init_with_host(VM* vm, const VMHostServices *host)
 
     /* Register Forth-79 wordset */
     register_forth79_words(vm);
-    vm_enable_interpreter(vm);
+    
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    console_println("[VM_BOOTSTRAP] register_forth79_words complete");
+#endif
+#endif
+    
+    /* Interpreter may be enabled only after parity check passes (in sk_vm_bootstrap.c) */
 
     /* Set FORGET fence to post-boot */
     vm->dict_fence_latest = vm->latest;

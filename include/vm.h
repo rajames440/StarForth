@@ -65,7 +65,13 @@ struct HeartbeatWorker; /* Background heartbeat dispatcher */
 typedef struct HeartbeatWorker HeartbeatWorker;
 
 /* Bare metal type definitions */
+#if defined(__amd64__) || defined(__x86_64__) || defined(__aarch64__)
+typedef int64_t cell_t;
+typedef uint64_t ucell_t;
+#else
 typedef signed long cell_t;
+typedef unsigned long ucell_t;
+#endif
 
 /* ============================================================================
  * Rolling Window of Truth (Embedded to avoid circular includes)
@@ -312,15 +318,15 @@ typedef struct DictEntry
 {
     struct DictEntry* link; /* Previous word (linked list) */
     word_func_t func; /* Function pointer for execution */
-    uint8_t flags; /* Word flags */
+    cell_t flags; /* Word flags - increased to cell_t for alignment and absolute flags if needed */
     uint8_t name_len; /* Length of name */
-    cell_t execution_heat; /* Execution frequency counter - drives optimization decisions */
-    uint8_t acl_default; /* Access control list default permissions - stub */
-    uint32_t word_id; /* Stable dictionary identifier for transition tracking */
-    DictPhysics physics; /* Physics properties for elementary particle model */
-    WordTransitionMetrics* transition_metrics; /* Word-to-word transition tracking for pipelining */
-    char name[]; /* Variable-length name + optional code */
-} DictEntry;
+    cell_t execution_heat; /* Execution frequency counter */
+    uint8_t acl_default; /* Access control list default permissions */
+    uint32_t word_id; /* Stable dictionary identifier */
+    DictPhysics physics; /* Physics properties */
+    WordTransitionMetrics* transition_metrics; /* Absolute pointer to metrics */
+    char name[]; /* Variable-length name */
+} __attribute__((aligned(8))) DictEntry;
 
 /* VM modes */
 typedef enum
@@ -354,7 +360,7 @@ typedef struct VM
      */
     const VMHostServices* host; /**< Host allocator/time services */
     uint8_t* memory; /**< Unified VM memory buffer */
-    size_t here; /**< Next free memory location (byte offset) */
+    uintptr_t here; /**< Next free memory location (byte offset or absolute pointer if M7) */
     DictEntry* latest; /**< Most recent word */
     DictEntry* word_id_map[DICTIONARY_SIZE]; /**< Stable ID → entry map for speculation */
     uint32_t recycled_word_ids[DICTIONARY_SIZE]; /**< Reusable ID stack for FORGET */

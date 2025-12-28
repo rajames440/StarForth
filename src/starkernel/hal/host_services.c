@@ -33,25 +33,54 @@ static bool host_services_logged = false;
  * Memory Allocation
  * ============================================================================ */
 
+static void print_hex64(uint64_t v) {
+    char buf[19];
+    buf[0] = '0'; buf[1] = 'x'; buf[18] = '\0';
+    for (int i = 0; i < 16; ++i) {
+        uint8_t nibble = (uint8_t)((v >> ((15 - i) * 4)) & 0xF);
+        buf[i + 2] = (nibble < 10) ? (char)('0' + nibble) : (char)('a' + nibble - 10);
+    }
+    console_puts(buf);
+}
+
 static void* kernel_alloc(size_t size, size_t align) {
     if (size == 0) {
         return (void*)0;
     }
 
     /* VM arena requests get routed through the PMM-backed allocator */
-    if (size == sk_vm_arena_size()) {
+    size_t arena_size = sk_vm_arena_size();
+    console_puts("[kernel_alloc] size=");
+    print_hex64((uint64_t)size);
+    console_puts(" arena_size=");
+    print_hex64((uint64_t)arena_size);
+    console_puts(" match=");
+    console_puts((size == arena_size) ? "YES" : "NO");
+    console_println("");
+    
+    if (size == arena_size) {
         if (!sk_vm_arena_is_initialized()) {
             if (sk_vm_arena_alloc() == 0) {
                 return NULL;
             }
         }
-        return sk_vm_arena_ptr();
+        void *ptr = sk_vm_arena_ptr();
+        console_puts("[kernel_alloc] returning arena ptr=");
+        print_hex64((uint64_t)(uintptr_t)ptr);
+        console_println("");
+        return ptr;
     }
 
+    void *ptr;
     if (align <= sizeof(void*)) {
-        return kmalloc(size);
+        ptr = kmalloc(size);
+    } else {
+        ptr = kmalloc_aligned(size, align);
     }
-    return kmalloc_aligned(size, align);
+    console_puts("[kernel_alloc] returning kmalloc ptr=");
+    print_hex64((uint64_t)(uintptr_t)ptr);
+    console_println("");
+    return ptr;
 }
 
 static void kernel_free(void *ptr) {
@@ -134,17 +163,36 @@ static int kernel_putc(int c) {
 }
 
 static bool kernel_xt_entry_owned(const void *ptr, size_t bytes) {
-    uintptr_t base = kmalloc_heap_base_addr();
-    uintptr_t end = kmalloc_heap_end_addr();
-    if (!ptr || base == 0 || end == 0 || bytes == 0) {
+    if (!ptr || bytes == 0) {
         return false;
     }
     uintptr_t addr = (uintptr_t)ptr;
     uintptr_t entry_end = addr + bytes;
     if (entry_end < addr) {
-        return false;
+        return false;  /* Overflow check */
     }
-    return addr >= base && entry_end <= end;
+    
+    /* Check if in VM arena (dictionary entries are allocated here) */
+    if (sk_vm_arena_is_initialized()) {
+        uint8_t *arena_ptr = sk_vm_arena_ptr();
+        size_t arena_size = sk_vm_arena_size();
+        uintptr_t arena_base = (uintptr_t)arena_ptr;
+        uintptr_t arena_end = arena_base + arena_size;
+        if (addr >= arena_base && entry_end <= arena_end) {
+            return true;
+        }
+    }
+    
+    /* Check if in kmalloc heap (for other allocations) */
+    uintptr_t heap_base = kmalloc_heap_base_addr();
+    uintptr_t heap_end = kmalloc_heap_end_addr();
+    if (heap_base != 0 && heap_end != 0) {
+        if (addr >= heap_base && entry_end <= heap_end) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 static void host_services_print_hex(const void *ptr) {

@@ -59,6 +59,12 @@
 #include <stdint.h>
 /* LIKELY/UNLIKELY macros are defined in vm.h */
 
+#ifdef __STARKERNEL__
+#include "starkernel/vm/vm_internal.h"
+#include "starkernel/console.h"
+#include "starkernel/hal/hal.h"
+#endif
+
 #ifndef SF_FC_BUCKETS
 #define SF_FC_BUCKETS 256
 #endif
@@ -70,6 +76,32 @@
 DictEntry **sf_fc_list[SF_FC_BUCKETS];
 size_t sf_fc_count[SF_FC_BUCKETS];
 size_t sf_fc_cap[SF_FC_BUCKETS];
+
+/* Forward declaration for debug printing */
+static void sf_debug_print_hex(uint64_t value);
+
+#ifdef __STARKERNEL__
+static void sf_debug_dump_types(void) {
+    console_println("[VM_TYPES] dumping sizes and offsets:");
+    console_puts("sizeof(cell_t)="); sf_debug_print_hex(sizeof(cell_t));
+    console_puts(" sizeof(void*)="); sf_debug_print_hex(sizeof(void*));
+    console_puts(" sizeof(size_t)="); sf_debug_print_hex(sizeof(size_t));
+    console_puts(" sizeof(DictEntry)="); sf_debug_print_hex(sizeof(DictEntry));
+    console_puts(" sizeof(DictEntry*)="); sf_debug_print_hex(sizeof(DictEntry*));
+    console_puts(" offsetof(link)="); sf_debug_print_hex(offsetof(DictEntry, link));
+    console_puts(" offsetof(func)="); sf_debug_print_hex(offsetof(DictEntry, func));
+    console_puts(" offsetof(flags)="); sf_debug_print_hex(offsetof(DictEntry, flags));
+    console_puts(" offsetof(name_len)="); sf_debug_print_hex(offsetof(DictEntry, name_len));
+    console_puts(" offsetof(execution_heat)="); sf_debug_print_hex(offsetof(DictEntry, execution_heat));
+    console_puts(" offsetof(word_id)="); sf_debug_print_hex(offsetof(DictEntry, word_id));
+    console_puts(" offsetof(name)="); sf_debug_print_hex(offsetof(DictEntry, name));
+    
+    console_puts(" offsetof(VM, memory)="); sf_debug_print_hex(offsetof(VM, memory));
+    console_puts(" offsetof(VM, here)="); sf_debug_print_hex(offsetof(VM, here));
+    console_puts(" offsetof(VM, latest)="); sf_debug_print_hex(offsetof(VM, latest));
+    console_println("");
+}
+#endif
 
 static DictEntry *sf_cached_latest = NULL; /* last head we indexed */
 
@@ -310,13 +342,58 @@ static void sf_rebuild_fc_index(VM *vm) {
 /* Fast path: if exactly one new word was pushed, append it without rebuilding. */
 static void sf_try_fast_append(VM *vm) {
     if (!vm || vm->latest == sf_cached_latest) return;
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    console_puts("[FAST_APPEND] vm=");
+    sf_debug_print_hex((uintptr_t)vm);
+    console_puts(" newest=");
+    sf_debug_print_hex((uintptr_t)vm->latest);
+    console_puts(" cached=");
+    sf_debug_print_hex((uintptr_t)sf_cached_latest);
+    console_println("");
+#endif
+#endif
     DictEntry *newest = vm->latest;
     /* single push if the new head links to the previously cached head */
     if (newest && newest->link == sf_cached_latest) {
         unsigned fc = (unsigned char) newest->name[0];
         size_t n = sf_fc_count[fc];
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+        console_puts("[FAST_APPEND] fc=");
+        sf_debug_print_hex(fc);
+        console_puts(" n=");
+        sf_debug_print_hex(n);
+        console_println("");
+#endif
+#endif
         if (sf_fc_reserve(fc, n + 1)) {
             /* Keep oldest→…→newest ordering: append at the end. */
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+            console_puts("[BUCKET_STORE] bucket=");
+            sf_debug_print_hex(fc);
+            console_puts(" index=");
+            sf_debug_print_hex(n);
+            console_puts(" dest=");
+            sf_debug_print_hex((uintptr_t)&sf_fc_list[fc][n]);
+            console_puts(" value=");
+            sf_debug_print_hex((uintptr_t)newest);
+            console_println("");
+#endif
+#endif
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    {
+        uintptr_t val = (uintptr_t)newest;
+        if (val != 0 && vm_last_registered_vm && (val < (uintptr_t)vm_last_registered_vm->memory || val >= (uintptr_t)vm_last_registered_vm->memory + VM_MEMORY_SIZE)) {
+             console_puts("[BUCKET_STORE] PANIC: newest outside arena: ");
+             sf_debug_print_hex(val);
+             console_println("");
+        }
+    }
+#endif
+#endif
             sf_fc_list[fc][n] = newest;
             sf_fc_count[fc] = n + 1;
             sf_cached_latest = newest;
@@ -341,28 +418,129 @@ static void sf_try_fast_append(VM *vm) {
  * @param len Length of the name string
  * @return DictEntry* Pointer to found dictionary entry or NULL if not found
  */
+#ifdef __STARKERNEL__
+#include "starkernel/console.h"
+#include "starkernel/hal/hal.h"
+/* Forward declaration for canonical check */
+static inline int sf_is_canonical(uint64_t addr) {
+    int64_t saddr = (int64_t)addr;
+    return (saddr >> 47) == 0 || (saddr >> 47) == -1;
+}
+#endif
+
+/* Helper for debug printing in kernel mode */
+static void sf_debug_print_hex(uint64_t value) __attribute__((unused));
+static void sf_debug_print_hex(uint64_t value) {
+#ifdef __STARKERNEL__
+    char buf[19];
+    buf[0] = '0'; buf[1] = 'x'; buf[18] = '\0';
+    for (int i = 0; i < 16; ++i) {
+        uint8_t nibble = (uint8_t)((value >> ((15 - i) * 4)) & 0xF);
+        buf[i + 2] = (nibble < 10) ? (char)('0' + nibble) : (char)('a' + nibble - 10);
+    }
+    console_puts(buf);
+#else
+    (void)value;
+#endif
+}
+
 DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
+#ifdef __STARKERNEL__
+    static int types_dumped = 0;
+    if (!types_dumped) { sf_debug_dump_types(); types_dumped = 1; }
+    console_puts("[FIND] ENTRY name=");
+    console_puts(name);
+    console_println("");
+#endif
     if (UNLIKELY(!vm || !name || len == 0)) return NULL;
+
+#if defined(__STARKERNEL__) && defined(SK_PARITY_DEBUG) && SK_PARITY_DEBUG
+    console_puts("[FIND] name=");
+    console_puts(name);
+    console_puts(" len=");
+    sf_debug_print_hex(len);
+    console_println("");
+#endif
 
     /* DoE counter: dictionary lookups */
     vm->heartbeat.dictionary_lookups++;
 
     /* Thread safety: Acquire dict_lock for read access to dictionary */
+#ifdef __STARKERNEL__
+    console_println("[FIND] BEFORE LOCK");
+#endif
     sf_mutex_lock(&vm->dict_lock);
+#ifdef __STARKERNEL__
+    console_println("[FIND] AFTER LOCK");
+#endif
 
     /* Keep the index in sync with dictionary head, cheaply if possible. */
+#ifdef __STARKERNEL__
+    console_println("[FIND] BEFORE FAST APPEND");
+#endif
     if (UNLIKELY(sf_cached_latest != vm->latest)) sf_try_fast_append(vm);
+#ifdef __STARKERNEL__
+    console_println("[FIND] AFTER FAST APPEND");
+#endif
 
     const unsigned char first = (unsigned char) name[0];
+#ifdef __STARKERNEL__
+    console_println("[FIND] BEFORE BUCKET ACCESS");
+#endif
     DictEntry **bucket = sf_fc_list[first];
     size_t n = sf_fc_count[first];
+#ifdef __STARKERNEL__
+    console_println("[FIND] AFTER BUCKET ACCESS");
+    if (n > 0 && bucket) {
+        DictEntry *e0 = bucket[n-1];
+        uintptr_t base = (uintptr_t)vm->memory;
+        uintptr_t end = base + VM_MEMORY_SIZE;
+        console_puts("[FIND] bucket_ptr=");
+        sf_debug_print_hex((uintptr_t)bucket);
+        console_puts(" entry0=");
+        sf_debug_print_hex((uintptr_t)e0);
+        console_puts(" base=");
+        sf_debug_print_hex(base);
+        if (e0) {
+            console_puts(" link=");
+            sf_debug_print_hex((uintptr_t)e0->link);
+            console_puts(" func=");
+            sf_debug_print_hex((uintptr_t)e0->func);
+        }
+        console_println("");
+        
+        /* Canonical & Arena checks for bucket and entry */
+        if (!sf_is_canonical((uintptr_t)bucket)) { console_println("PANIC: bucket non-canonical"); sk_hal_panic("bucket non-canonical"); }
+        if (e0 && !sf_is_canonical((uintptr_t)e0)) { console_println("PANIC: entry non-canonical"); sk_hal_panic("entry non-canonical"); }
+        
+        /* DictEntry pointers should live in the arena */
+        if (e0 && ((uintptr_t)e0 < base || (uintptr_t)e0 >= end)) {
+            console_println("PANIC: entry outside arena");
+            sk_hal_panic("entry outside arena");
+        }
+    }
+#endif
     if (UNLIKELY(!bucket || n == 0)) {
         sf_mutex_unlock(&vm->dict_lock);
         return NULL;
     }
 
+#if defined(__STARKERNEL__) && defined(SK_PARITY_DEBUG) && SK_PARITY_DEBUG
+    console_puts("[FIND] bucket=");
+    sf_debug_print_hex((uint64_t)(uintptr_t)bucket);
+    console_puts(" count=");
+    sf_debug_print_hex(n);
+    console_println("");
+#endif
+
     /* Use hot-words cache for physics-driven frequency-based acceleration */
+#ifdef __STARKERNEL__
+    console_println("[FIND] BEFORE HOTWORDS");
+#endif
     DictEntry *found = hotwords_cache_lookup(vm->hotwords_cache, bucket, n, name, len);
+#ifdef __STARKERNEL__
+    console_println("[FIND] AFTER HOTWORDS");
+#endif
     if (found) {
         sf_mutex_unlock(&vm->dict_lock);
         return found;
@@ -384,6 +562,18 @@ DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
     for (size_t i = n; i-- > 0;) {
         DictEntry *e = bucket[i];
 
+#if defined(__STARKERNEL__) && defined(SK_PARITY_DEBUG) && SK_PARITY_DEBUG
+        if (i % 10 == 0 || i == n - 1) {
+            console_puts("[FIND] idx=");
+            sf_debug_print_hex(i);
+            console_puts(" entry=");
+            sf_debug_print_hex((uint64_t)(uintptr_t)e);
+            console_println("");
+        }
+#endif
+
+        if (UNLIKELY(!e)) continue;
+
         /* Length check first - most discriminating and cheapest */
         if ((size_t) e->name_len != len) continue;
 
@@ -395,6 +585,17 @@ DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
 #endif
 
         const char *en = e->name;
+
+#if defined(__STARKERNEL__) && defined(SK_PARITY_DEBUG) && SK_PARITY_DEBUG
+        /* Sanity check name pointer before dereference */
+        uint64_t name_addr = (uint64_t)(uintptr_t)en;
+        if (name_addr < 0x1000 || (name_addr >= 0xa0000 && name_addr < 0x100000)) {
+             console_puts("[FIND] SUSPICIOUS name ptr=");
+             sf_debug_print_hex(name_addr);
+             console_println("");
+        }
+#endif
+
         /* Last char check only for multi-char names - avoids many memcmp calls */
         if (len > 1 && (unsigned char) en[len - 1] != last) continue;
 
@@ -422,7 +623,20 @@ DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
  * @param func Function pointer for the word's behavior
  * @return DictEntry* Pointer to new dictionary entry or NULL on failure
  */
+#ifdef __STARKERNEL__
+#include "starkernel/hal/hal.h"
+#include "starkernel/console.h"
+#include "starkernel/vm/arena.h"
+#endif
+
 DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func) {
+#ifdef __STARKERNEL__
+    static int types_dumped = 0;
+    if (!types_dumped) {
+        sf_debug_dump_types();
+        types_dumped = 1;
+    }
+#endif
     if (!vm || !name || len == 0 || len > WORD_NAME_MAX || !func) {
         if (vm) {
             vm->error = 1;
@@ -446,7 +660,13 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     size_t df_off = (base + name_bytes + (align - 1)) & ~(align - 1);
     size_t total = df_off + sizeof(cell_t);
 
+#ifdef __STARKERNEL__
+    /* In StarKernel, dictionary headers MUST be in the arena. 
+       We use vm_allot to allocate from the arena instead of malloc. */
+    entry = (DictEntry *) vm_allot(vm, total);
+#else
     entry = (DictEntry *) malloc(total);
+#endif
     if (!entry) {
         vm->error = 1;
         log_message(LOG_ERROR, "vm_create_word: malloc failed for '%.*s' (%zu bytes)",
@@ -455,7 +675,46 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
         goto create_cleanup;
     }
 
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    {
+        uintptr_t base_m = (uintptr_t)vm->memory;
+        uintptr_t end_m = base_m + VM_MEMORY_SIZE;
+        if ((uintptr_t)entry < base_m || (uintptr_t)entry >= end_m) {
+            console_puts("PANIC: vm_create_word: entry outside arena: ");
+            sf_debug_print_hex((uintptr_t)entry);
+            console_puts(" arena=");
+            sf_debug_print_hex(base_m);
+            console_println("");
+            sk_hal_panic("entry outside arena");
+        }
+    }
+#endif
+#endif
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    {
+        uintptr_t val = (uintptr_t)vm->latest;
+        if (val != 0 && (val < (uintptr_t)vm->memory || val >= (uintptr_t)vm->memory + VM_MEMORY_SIZE)) {
+             console_puts("[STORE_LINK] PANIC: vm->latest outside arena: ");
+             sf_debug_print_hex(val);
+             console_println("");
+        }
+    }
+#endif
+#endif
     entry->link = vm->latest;
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    console_puts("[STORE_LINK] entry=");
+    sf_debug_print_hex((uintptr_t)entry);
+    console_puts(" link_addr=");
+    sf_debug_print_hex((uintptr_t)&entry->link);
+    console_puts(" value=");
+    sf_debug_print_hex((uintptr_t)vm->latest);
+    console_println("");
+#endif
+#endif
     entry->func = func;
     entry->flags = 0;
     entry->name_len = (uint8_t) len;
@@ -498,7 +757,39 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     vm_last_here = vm->here;
     vm_last_latest = vm->latest;
 
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    {
+        uintptr_t val = (uintptr_t)entry;
+        if (val != 0 && (val < (uintptr_t)vm->memory || val >= (uintptr_t)vm->memory + VM_MEMORY_SIZE)) {
+             console_puts("[UPDATE_LATEST] PANIC: entry outside arena: ");
+             sf_debug_print_hex(val);
+             console_println("");
+        }
+    }
+#endif
+#endif
     vm->latest = entry;
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    console_puts("[UPDATE_LATEST] vm=");
+    sf_debug_print_hex((uintptr_t)vm);
+    console_puts(" latest_addr=");
+    sf_debug_print_hex((uintptr_t)&vm->latest);
+    console_puts(" value=");
+    sf_debug_print_hex((uintptr_t)entry);
+    console_println("");
+    
+    uintptr_t base_m = (uintptr_t)vm->memory;
+    uintptr_t end_m = base_m + VM_MEMORY_SIZE;
+    if ((uintptr_t)vm->latest < base_m || (uintptr_t)vm->latest >= end_m) {
+        console_puts("PANIC: vm->latest outside arena after update: value=");
+        sf_debug_print_hex((uintptr_t)vm->latest);
+        console_println("");
+        sk_hal_panic("vm->latest outside arena");
+    }
+#endif
+#endif
     vm_dictionary_track_entry(vm, entry);
 
     log_message(LOG_DEBUG, "vm_create_word: '%.*s' len=%zu total=%zu @%p",

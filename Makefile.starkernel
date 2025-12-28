@@ -95,15 +95,15 @@ COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
                  -ffreestanding -nostdlib -fno-builtin \
                  -fPIC -fno-stack-protector -fshort-wchar \
                  $(ARCH_CFLAGS) \
-                 -I$(KERNEL_INC) -Iinclude -include $(STARFORTH_CONFIG_HEADER) \
+                 -I$(KERNEL_INC) -Iinclude -Isrc -include $(STARFORTH_CONFIG_HEADER) \
                  -DPARITY_MODE=$(PARITY_MODE)
 VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare
 
 # Loader-specific flags
-LOADER_CFLAGS := $(COMMON_CFLAGS)
+LOADER_CFLAGS := $(COMMON_CFLAGS) -I$(KERNEL_SRC)/vm
 
 # Kernel-specific flags (with __STARKERNEL__ fence)
-KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__
+KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm
 
 # Optional: enable VM integration (M7)
 ifdef STARFORTH_ENABLE_VM
@@ -117,7 +117,8 @@ VM_FEATURE_FLAG_VARS := STRICT_PTR ENABLE_HOTWORDS_CACHE ENABLE_PIPELINING ROLLI
                         ADAPTIVE_CHECK_FREQUENCY ADAPTIVE_GROWTH_THRESHOLD INITIAL_DECAY_SLOPE_Q48 \
                         DECAY_MIN_INTERVAL DECAY_RATE_PER_US_Q16 HEARTBEAT_THREAD_ENABLED \
                         HEARTBEAT_TICK_NS HEARTBEAT_INFERENCE_FREQUENCY HEARTBEAT_CHECK_FREQUENCY \
-                        HEARTBEAT_WINDOW_TUNING_FREQUENCY HEARTBEAT_SLOPE_VALIDATION_FREQUENCY
+                        HEARTBEAT_WINDOW_TUNING_FREQUENCY HEARTBEAT_SLOPE_VALIDATION_FREQUENCY \
+                        SK_PARITY_DEBUG
 
 define add_kernel_vm_flag_if_set
 ifneq ($$(origin $1),undefined)
@@ -210,15 +211,20 @@ KERNEL_ASM := $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.S)
 
 # VM integration sources (gated)
 ifdef STARFORTH_ENABLE_VM
-# Hosted VM core sources, excluding CLI/REPL/tests/platform/blkio/log
+# Hosted VM core sources, excluding CLI/REPL/tests/platform/blkio/log/split-files
 VM_ALL_SRCS := $(wildcard src/*.c) $(wildcard src/word_source/*.c)
-VM_EXCLUDE := src/main.c src/cli.c src/repl.c src/test_runner/% src/platform/% src/blkio_factory.c src/blkio_file.c src/blkio_ram.c src/log.c src/doe_metrics.c
+VM_EXCLUDE := src/main.c src/cli.c src/repl.c src/test_runner/% src/platform/% src/blkio_factory.c src/blkio_file.c src/blkio_ram.c src/log.c src/doe_metrics.c \
+              src/vm_core.c src/vm_bootstrap.c src/vm_runtime.c
+
 VM_CORE_SRCS := $(filter-out $(VM_EXCLUDE),$(VM_ALL_SRCS))
 
 LOADER_EXTRA_SRCS := $(KERNEL_SRC)/vm/arena.c \
                      $(KERNEL_SRC)/vm/parity.c \
                      $(KERNEL_SRC)/vm/bootstrap/sk_vm_bootstrap.c \
-                     $(KERNEL_SRC)/vm/host/shim.c
+                     $(KERNEL_SRC)/vm/host/shim.c \
+                     $(KERNEL_SRC)/vm/vm_core.c \
+                     $(KERNEL_SRC)/vm/vm_bootstrap.c \
+                     $(KERNEL_SRC)/vm/vm_runtime.c
 
 KERNEL_EXTRA_SRCS := $(LOADER_EXTRA_SRCS)
 
@@ -278,7 +284,7 @@ $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(KERNEL_OBJ_DIR)
 $(KERNEL_OBJ_DIR)/vmcore/%.o: src/%.c | $(KERNEL_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "CC (kernel) $<"
-	@$(CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(KERNEL_CFLAGS)) -c $< -o $@
+	@$(CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(KERNEL_CFLAGS)) -Isrc/starkernel/vm -c $< -o $@
 
 # Compile kernel assembly sources
 $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(KERNEL_OBJ_DIR)

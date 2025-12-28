@@ -8,6 +8,10 @@
 #define PARITY_MODE 0
 #endif
 
+#ifndef SK_PARITY_DEBUG
+#define SK_PARITY_DEBUG 1
+#endif
+
 #if HEARTBEAT_THREAD_ENABLED && !defined(L4RE_TARGET)
 #include <pthread.h>
 #define HEARTBEAT_HAS_THREADS 1

@@ -53,7 +53,8 @@
  */
 void dictionary_word_here(VM *vm) {
     vm_align(vm);
-    vm_push(vm, vm->here);
+    /* Return absolute pointer to HERE in arena */
+    vm_push(vm, (cell_t)(uintptr_t)(vm->memory + vm->here));
 }
 
 /**
@@ -199,7 +200,10 @@ void dictionary_word_sp_store(VM *vm) {
  * @details Returns VM address near most recent compiled definition (end of dictionary)
  */
 void dictionary_word_latest(VM *vm) {
-    vm_push(vm, vm->here);
+    /* M7 Rule: LATEST must return absolute pointer if we are in M7 absolute mode,
+       but usually Forth LATEST returns the address of the latest entry header.
+       Here vm->latest IS the absolute pointer to the latest header. */
+    vm_push(vm, (cell_t)(uintptr_t)vm->latest);
 }
 
 /* Registration */

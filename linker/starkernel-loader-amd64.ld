@@ -20,11 +20,15 @@ SECTIONS
     }
 
     .rodata : ALIGN(4K) {
+        __rodata_start = .;
         *(.rodata .rodata.*)
+        __rodata_end = .;
     }
 
     .data : ALIGN(4K) {
+        __data_start = .;
         *(.data .data.*)
+        __data_end = .;
     }
 
     .rela.dyn : ALIGN(4K) {

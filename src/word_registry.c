@@ -70,7 +70,10 @@
 #include "word_source/include/dictionary_heat_diagnostic_words.h"
 #include "word_source/include/time_words.h"
 #ifdef __STARKERNEL__
+#include "starkernel/console.h"
+#include "starkernel/hal/hal.h"
 #include "starkernel/vm/arena.h"
+#include "starkernel/vm/vm_internal.h"
 #define REGISTER_CHECK_ARENA(vm, tag) sk_vm_arena_assert_guards(tag)
 static uint32_t register_word_counter = 0;
 #else
@@ -84,10 +87,32 @@ static uint32_t register_word_counter = 0;
  * @param func Function pointer to the word's implementation
  */
 void register_word(VM *vm, const char *name, word_func_t func) {
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    /* Log address of the function we are registering */
+    if ((uintptr_t)func < 0x1000000) {
+        console_puts("[REG] SUSPICIOUS func ptr for ");
+        console_puts(name);
+        console_puts(": ");
+        char buf[19];
+        uint64_t v = (uint64_t)(uintptr_t)func;
+        buf[0] = '0'; buf[1] = 'x'; buf[18] = '\0';
+        for (int i = 0; i < 16; ++i) {
+            uint8_t nibble = (uint8_t)((v >> ((15 - i) * 4)) & 0xF);
+            buf[i + 2] = (nibble < 10) ? (char)('0' + nibble) : (char)('a' + nibble - 10);
+        }
+        console_println(buf);
+    }
+#endif
+#endif
     DictEntry *entry = vm_create_word(vm, name, strlen(name), func);
     if (entry) {
         log_message(LOG_DEBUG, "Registered word: %s", name);
 #ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+        console_puts("[REG] ");
+        console_println(name);
+#endif
         register_word_counter++;
         if ((register_word_counter & 0xF) == 0) {
             REGISTER_CHECK_ARENA(vm, name);
@@ -137,6 +162,11 @@ void register_forth79_words(VM *vm) {
     register_dictionary_heat_diagnostic_words(vm); /* Module 23: Dictionary Heat Optimization */
     register_time_words(vm); /* Module 24: M5 Time & Heartbeat Words */
 
+#ifdef __STARKERNEL__
+#if SK_PARITY_DEBUG
+    console_println("[REG] register_forth79_words complete");
+#endif
+#endif
     log_message(LOG_INFO, "FORTH-79 Standard word set registration complete");
 #ifdef __STARKERNEL__
     REGISTER_CHECK_ARENA(vm, "post-register_forth79_words");

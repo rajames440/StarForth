@@ -51,6 +51,26 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifdef __STARKERNEL__
+#include "starkernel/console.h"
+#include "starkernel/hal/hal.h"
+/* Forward declaration for canonical check */
+static inline int sf_is_canonical(uint64_t addr) {
+    int64_t saddr = (int64_t)addr;
+    return (saddr >> 47) == 0 || (saddr >> 47) == -1;
+}
+/* Forward declaration for debug hex print if not already present or just use a local one */
+static void sf_debug_print_hex(uint64_t value) {
+    char buf[19];
+    buf[0] = '0'; buf[1] = 'x'; buf[18] = '\0';
+    for (int i = 0; i < 16; ++i) {
+        uint8_t nibble = (uint8_t)((value >> ((15 - i) * 4)) & 0xF);
+        buf[i + 2] = (nibble < 10) ? (char)('0' + nibble) : (char)('a' + nibble - 10);
+    }
+    console_puts(buf);
+}
+#endif
+
 #include "physics_hotwords_cache.h"
 #include "platform_time.h"
 #include "math_portable.h"
@@ -120,12 +140,38 @@ DictEntry *hotwords_cache_lookup(HotwordsCache *cache,
                                   size_t bucket_count,
                                   const char *name,
                                   size_t len) {
+#ifdef __STARKERNEL__
+    console_println("[HOTWORDS] BEFORE MONOTONIC");
+    if (!sf_time_backend || !sf_time_backend->get_monotonic_ns) {
+        console_println("PANIC: sf_time_backend NULL or missing mono func");
+        sk_hal_panic("sf_time_backend NULL or missing mono func");
+    }
+    if (!sf_is_canonical((uintptr_t)sf_time_backend->get_monotonic_ns)) {
+        console_println("PANIC: mono_func non-canonical");
+        sk_hal_panic("mono_func non-canonical");
+    }
+#endif
     uint64_t start_ns = sf_monotonic_ns();
+#ifdef __STARKERNEL__
+    console_println("[HOTWORDS] AFTER MONOTONIC");
+#endif
 
     // Disabled? Go straight to bucket
     if (!cache || !cache->enabled) {
+#ifdef __STARKERNEL__
+        console_println("[HOTWORDS] cache disabled or null");
+#endif
         for (size_t i = bucket_count; i-- > 0;) {
             DictEntry *e = bucket[i];
+#ifdef __STARKERNEL__
+            if (i % 10 == 0 || i == bucket_count - 1) {
+                console_puts("[HOTWORDS] bucket[");
+                sf_debug_print_hex(i);
+                console_puts("]=");
+                sf_debug_print_hex((uintptr_t)e);
+                console_println("");
+            }
+#endif
             if ((size_t)e->name_len != len) continue;
             if (len > 1 && (unsigned char)e->name[len - 1] != (unsigned char)name[len - 1]) continue;
             if (memcmp(e->name, name, len) == 0) return e;

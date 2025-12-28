@@ -107,6 +107,10 @@ void sf_mutex_unlock(sf_mutex_t *mutex) {
 /* -----------------------------------------------------------------------------
  * Time backend using host services (deterministic in PARITY_MODE)
  * ---------------------------------------------------------------------------*/
+#include "starkernel/hal/hal.h"
+#undef SK_TIME_NS
+#define SK_TIME_NS() sk_hal_time_ns()
+
 static uint64_t shim_monotonic_ns(void) {
     return SK_TIME_NS();
 }
@@ -140,6 +144,11 @@ static const sf_time_backend_t shim_backend = {
 };
 
 const sf_time_backend_t *sf_time_backend = &shim_backend;
+
+/* Initialize time backend explicitly to avoid relocation issues with static const */
+void sf_time_init(void) {
+    sf_time_backend = &shim_backend;
+}
 
 /* -----------------------------------------------------------------------------
  * Minimal string/memory functions
@@ -265,6 +274,48 @@ static int kvsnprintf(char *buf, size_t n, const char *fmt, va_list args) {
     while (*p && used + 1 < n) {
         if (*p == '%' && *(p + 1)) {
             p++;
+            /* Handle %.*s (precision string) */
+            if (*p == '.' && *(p + 1) == '*' && *(p + 2) == 's') {
+                int precision = va_arg(args, int);
+                const char *s = va_arg(args, const char*);
+                if (!s) s = "(null)";
+                int count = 0;
+                while (*s && count < precision && used + 1 < n) {
+                    buf[used++] = *s++;
+                    count++;
+                }
+                p += 3; /* skip ".*s" */
+                continue;
+            }
+            /* Handle %zu (size_t) */
+            if (*p == 'z' && *(p + 1) == 'u') {
+                size_t v = va_arg(args, size_t);
+                char tmp[32]; int i = 0;
+                do { tmp[i++] = (char)('0' + (v % 10)); v /= 10; } while (v && i < (int)sizeof(tmp));
+                while (i-- && used + 1 < n) buf[used++] = tmp[i];
+                p += 2; /* skip "zu" */
+                continue;
+            }
+            /* Handle %ld (long) */
+            if (*p == 'l' && *(p + 1) == 'd') {
+                long v = va_arg(args, long);
+                char tmp[32]; int neg = 0, i = 0;
+                if (v < 0) { neg = 1; v = -v; }
+                do { tmp[i++] = (char)('0' + (v % 10)); v /= 10; } while (v && i < (int)sizeof(tmp));
+                if (neg && i < (int)sizeof(tmp)) tmp[i++] = '-';
+                while (i-- && used + 1 < n) buf[used++] = tmp[i];
+                p += 2; /* skip "ld" */
+                continue;
+            }
+            /* Handle %lu (unsigned long) */
+            if (*p == 'l' && *(p + 1) == 'u') {
+                unsigned long v = va_arg(args, unsigned long);
+                char tmp[32]; int i = 0;
+                do { tmp[i++] = (char)('0' + (v % 10)); v /= 10; } while (v && i < (int)sizeof(tmp));
+                while (i-- && used + 1 < n) buf[used++] = tmp[i];
+                p += 2; /* skip "lu" */
+                continue;
+            }
             if (*p == 's') {
                 const char *s = va_arg(args, const char*);
                 if (!s) s = "(null)";
