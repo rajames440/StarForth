@@ -21,7 +21,11 @@
 ## 4. Observability Axiom ##
 
 >### Without execution and observation, no error state can exist. Observability is continuous: 0.00 < Observability < 1.00 Truth exists only within partial observability. Claims at either boundary are illegal.
->#### Observable behavior includes any effect detectable by a virtual machine, external instrumentation, or persistent state across executions.
+>- #### Observable behavior includes any effect detectable by a virtual machine, external instrumentation, or persistent state across executions.
+>- #### Any claim of Truth SHALL be supported by either formal proof or empirical evidence.
+>- #### Empirical claims SHALL expose auditable uncertainty.
+>- #### Claims unsupported by proof or data SHALL be classified as Lie.
+
 ## 5. Truth Model ##
 
 >### All observable behavior exists in exactly one semantic state: ###
