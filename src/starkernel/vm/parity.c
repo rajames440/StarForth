@@ -124,16 +124,9 @@ static void sk_parity_debug_check_ptr(struct VM *vm,
 #if SK_PARITY_DEBUG
 #define SK_PARITY_CANONICAL_MASK 0xffff800000000000ULL
 #define SK_PARITY_DIRECTMAP_BASE 0xffff800000000000ULL
-#ifdef __STARKERNEL__
-extern char __text_start[];
-extern char __text_end[];
-extern char __rodata_start[];
-extern char __rodata_end[];
-extern char __data_start[];
-extern char __data_end[];
-extern char __bss_start[];
-extern char __bss_end[];
-#endif
+/* Note: For __STARKERNEL__ builds, we use sk_hal_text_start/end() from hal.h
+ * to avoid GOT indirection issues with -fPIC. The rodata/data/bss section
+ * checks are skipped since XT pointers should only be in text section. */
 
 static void sk_parity_debug_log_msg(const char *msg)
 {
@@ -163,26 +156,14 @@ static enum sk_parity_ptr_region sk_parity_classify_region(struct VM *vm, const 
         }
     }
 #ifdef __STARKERNEL__
-    uintptr_t text_start = (uintptr_t)__text_start;
-    uintptr_t text_end = (uintptr_t)__text_end;
+    /* Use HAL getters to avoid GOT indirection issues with -fPIC */
+    uintptr_t text_start = (uintptr_t)sk_hal_text_start();
+    uintptr_t text_end = (uintptr_t)sk_hal_text_end();
     if (addr >= text_start && addr < text_end) {
         return SK_PTR_REGION_TEXT;
     }
-    uintptr_t ro_start = (uintptr_t)__rodata_start;
-    uintptr_t ro_end = (uintptr_t)__rodata_end;
-    if (addr >= ro_start && addr < ro_end) {
-        return SK_PTR_REGION_RODATA;
-    }
-    uintptr_t data_start = (uintptr_t)__data_start;
-    uintptr_t data_end = (uintptr_t)__data_end;
-    if (addr >= data_start && addr < data_end) {
-        return SK_PTR_REGION_DATA;
-    }
-    uintptr_t bss_start = (uintptr_t)__bss_start;
-    uintptr_t bss_end = (uintptr_t)__bss_end;
-    if (addr >= bss_start && addr < bss_end) {
-        return SK_PTR_REGION_BSS;
-    }
+    /* Note: rodata/data/bss section checks skipped for kernel builds.
+     * Function pointers (XTs) should only be in the text section anyway. */
     if (addr >= SK_PARITY_DIRECTMAP_BASE) {
         return SK_PTR_REGION_DIRECTMAP;
     }

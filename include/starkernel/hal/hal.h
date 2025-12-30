@@ -71,6 +71,10 @@ const struct VMHostServices *sk_hal_host_services(void);
 void                    sk_hal_whitelist_exec_region(uint64_t start, uint64_t end, const char *name);
 void                    sk_hal_freeze_exec_range(void);
 
+/* Section address getters - use inline asm to avoid GOT indirection issues with -fPIC */
+uint64_t                sk_hal_text_start(void);
+uint64_t                sk_hal_text_end(void);
+
 #endif /* __STARKERNEL__ */
 
 #endif /* STARKERNEL_HAL_HAL_H */

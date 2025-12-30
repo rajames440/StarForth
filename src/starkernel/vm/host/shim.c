@@ -192,6 +192,30 @@ void sf_time_init(void) {
     sf_time_backend = &shim_backend;
 }
 
+/* Direct wrappers for sf_time functions - avoids GOT indirection issues with -fPIC.
+ * The inline functions in platform_time.h generate GOT-relative accesses for
+ * sf_time_backend, which causes extra dereferences in PE files without a GOT.
+ * These wrappers call the local shim functions directly. */
+sf_time_ns_t sf_monotonic_ns(void) {
+    return shim_monotonic_ns();
+}
+
+sf_time_ns_t sf_realtime_ns(void) {
+    return shim_realtime_ns();
+}
+
+int sf_set_realtime_ns(sf_time_ns_t ns) {
+    return shim_set_realtime_ns(ns);
+}
+
+int sf_format_timestamp(sf_time_ns_t ns, char *buf, int format_24h) {
+    return shim_format_timestamp(ns, buf, format_24h);
+}
+
+int sf_has_rtc(void) {
+    return shim_has_rtc();
+}
+
 /* -----------------------------------------------------------------------------
  * Minimal string/memory functions
  * ---------------------------------------------------------------------------*/

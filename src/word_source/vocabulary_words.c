@@ -176,7 +176,7 @@ static inline void vocab_sync_vm_vars(VM *vm) {
          console_puts("PANIC: context pointer truncated: ");
          vocabulary_debug_print_hex(cv);
          console_println("");
-         hal_panic();
+         sk_hal_panic("context pointer truncated");
     }
     
     /* Canonical check */
@@ -184,7 +184,7 @@ static inline void vocab_sync_vm_vars(VM *vm) {
          console_puts("PANIC: context pointer non-canonical: ");
          vocabulary_debug_print_hex(cv);
          console_println("");
-         hal_panic();
+         sk_hal_panic("context pointer non-canonical");
     }
 
     /* Arena check */
@@ -194,7 +194,7 @@ static inline void vocab_sync_vm_vars(VM *vm) {
          console_puts("PANIC: context pointer outside arena: ");
          vocabulary_debug_print_hex(cv);
          console_println("");
-         hal_panic();
+         sk_hal_panic("context pointer outside arena");
     }
 #endif
     vm_store_cell(vm, context_var_addr, (cell_t)(uintptr_t)context_vocab);

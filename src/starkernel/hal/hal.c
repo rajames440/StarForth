@@ -53,6 +53,67 @@
 extern char __text_start[];
 extern char __text_end[];
 
+/* Force PC-relative address load for linker-defined symbols.
+ * With -fPIC, the compiler generates GOT-relative loads for extern symbols,
+ * which loads CONTENTS instead of ADDRESS. These wrappers use inline asm
+ * to ensure we get the actual addresses.
+ *
+ * Architecture-specific implementations:
+ * - x86_64: LEA with RIP-relative addressing
+ * - AArch64: ADRP + ADD for page-relative addressing
+ * - RISC-V64: LA pseudo-instruction (AUIPC + ADDI)
+ */
+#if defined(__x86_64__) || defined(_M_X64)
+static inline uint64_t get_text_start_addr(void) {
+    uint64_t addr;
+    __asm__ volatile("leaq __text_start(%%rip), %0" : "=r"(addr));
+    return addr;
+}
+
+static inline uint64_t get_text_end_addr(void) {
+    uint64_t addr;
+    __asm__ volatile("leaq __text_end(%%rip), %0" : "=r"(addr));
+    return addr;
+}
+
+#elif defined(__aarch64__) || defined(_M_ARM64)
+static inline uint64_t get_text_start_addr(void) {
+    uint64_t addr;
+    __asm__ volatile(
+        "adrp %0, __text_start\n\t"
+        "add %0, %0, :lo12:__text_start"
+        : "=r"(addr)
+    );
+    return addr;
+}
+
+static inline uint64_t get_text_end_addr(void) {
+    uint64_t addr;
+    __asm__ volatile(
+        "adrp %0, __text_end\n\t"
+        "add %0, %0, :lo12:__text_end"
+        : "=r"(addr)
+    );
+    return addr;
+}
+
+#elif defined(__riscv) && (__riscv_xlen == 64)
+static inline uint64_t get_text_start_addr(void) {
+    uint64_t addr;
+    __asm__ volatile("la %0, __text_start" : "=r"(addr));
+    return addr;
+}
+
+static inline uint64_t get_text_end_addr(void) {
+    uint64_t addr;
+    __asm__ volatile("la %0, __text_end" : "=r"(addr));
+    return addr;
+}
+
+#else
+#error "Unsupported architecture for get_text_*_addr()"
+#endif
+
 typedef struct {
     uint64_t start;
     uint64_t end;
@@ -150,9 +211,15 @@ static inline int addr_is_canonical(uint64_t addr) {
 
 void sk_hal_init(void) {
     sk_host_init();
-    sk_hal_whitelist_exec_region((uint64_t)(uintptr_t)__text_start,
-                                 (uint64_t)(uintptr_t)__text_end,
-                                 "kernel.text");
+    /* Use inline asm wrappers to avoid -fPIC GOT references */
+    uint64_t text_start_addr = get_text_start_addr();
+    uint64_t text_end_addr = get_text_end_addr();
+    console_puts("[HAL][init] __text_start=");
+    hal_print_hex64(text_start_addr);
+    console_puts(" __text_end=");
+    hal_print_hex64(text_end_addr);
+    console_println("");
+    sk_hal_whitelist_exec_region(text_start_addr, text_end_addr, "kernel.text");
 }
 
 void *sk_hal_alloc(size_t size, size_t align) {
@@ -283,6 +350,15 @@ bool sk_hal_is_executable_ptr(const void *ptr) {
 
 const VMHostServices *sk_hal_host_services(void) {
     return sk_hal_services();
+}
+
+/* Section address getters - use the inline asm wrappers to avoid GOT indirection */
+uint64_t sk_hal_text_start(void) {
+    return get_text_start_addr();
+}
+
+uint64_t sk_hal_text_end(void) {
+    return get_text_end_addr();
 }
 
 #endif /* __STARKERNEL__ */

@@ -87,18 +87,15 @@ static int sk_bootstrap_xt_is_canonical(uint64_t addr) {
 
 static const char *sk_bootstrap_region_name(uint64_t addr) {
     if (addr == 0) return "null";
-    if (addr >= (uint64_t)(uintptr_t)__text_start && addr < (uint64_t)(uintptr_t)__text_end) {
+    /* Use HAL getters to avoid GOT indirection issues with -fPIC */
+    uint64_t text_start = sk_hal_text_start();
+    uint64_t text_end = sk_hal_text_end();
+    if (addr >= text_start && addr < text_end) {
         return "text";
     }
-    if (addr >= (uint64_t)(uintptr_t)__rodata_start && addr < (uint64_t)(uintptr_t)__rodata_end) {
-        return "rodata";
-    }
-    if (addr >= (uint64_t)(uintptr_t)__data_start && addr < (uint64_t)(uintptr_t)__data_end) {
-        return "data";
-    }
-    if (addr >= (uint64_t)(uintptr_t)__bss_start && addr < (uint64_t)(uintptr_t)__bss_end) {
-        return "bss";
-    }
+    /* For rodata/data/bss, we rely on the HAL whitelist check instead,
+     * since those symbols also have the same GOT issue. XTs should be
+     * in text section anyway. */
     if (addr >= 0xffff800000000000ULL) {
         return "directmap";
     }
@@ -143,9 +140,7 @@ static int sk_vm_run_minimal_script(VM *vm) {
 #if SK_PARITY_DEBUG
     console_puts("[VM_BOOTSTRAP] root vocabulary entry: 'FORTH'");
     console_println("");
-#endif
     DictEntry *forth_vocab = vm_find_word(vm, "FORTH", 5);
-#if SK_PARITY_DEBUG
     if (forth_vocab) {
         sk_bootstrap_debug_log_xt("FORTH", forth_vocab);
     } else {

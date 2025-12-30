@@ -141,19 +141,11 @@ DictEntry *hotwords_cache_lookup(HotwordsCache *cache,
                                   const char *name,
                                   size_t len) {
 #ifdef __STARKERNEL__
-    console_println("[HOTWORDS] BEFORE MONOTONIC");
-    if (!sf_time_backend || !sf_time_backend->get_monotonic_ns) {
-        console_println("PANIC: sf_time_backend NULL or missing mono func");
-        sk_hal_panic("sf_time_backend NULL or missing mono func");
-    }
-    if (!sf_is_canonical((uintptr_t)sf_time_backend->get_monotonic_ns)) {
-        console_println("PANIC: mono_func non-canonical");
-        sk_hal_panic("mono_func non-canonical");
-    }
+    console_println("[HOTWORDS] entry");
 #endif
     uint64_t start_ns = sf_monotonic_ns();
 #ifdef __STARKERNEL__
-    console_println("[HOTWORDS] AFTER MONOTONIC");
+    console_println("[HOTWORDS] after monotonic_ns");
 #endif
 
     // Disabled? Go straight to bucket

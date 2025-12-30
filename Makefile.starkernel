@@ -91,9 +91,13 @@ else
 endif
 
 # Common compiler flags
+# Use -fPIC with -fvisibility=hidden: This makes all symbols local by default,
+# preventing GOT references for internal function pointers. Without hidden
+# visibility, -fPIC generates GOT loads for external symbols which read
+# function code bytes instead of addresses (PE has no GOT).
 COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
                  -ffreestanding -nostdlib -fno-builtin \
-                 -fPIC -fno-stack-protector -fshort-wchar \
+                 -fPIC -fvisibility=hidden -fno-stack-protector -fshort-wchar \
                  $(ARCH_CFLAGS) \
                  -I$(KERNEL_INC) -Iinclude -Isrc -include $(STARFORTH_CONFIG_HEADER) \
                  -DPARITY_MODE=$(PARITY_MODE)
@@ -148,6 +152,11 @@ KERNEL_CFLAGS += -DM5_TIMER_VALIDATION=$(M5_TIMER_VALIDATION)
 endif
 
 # Linker flags
+# PE direct linking with proper base relocations (--enable-reloc-section generates .reloc)
+# --image-base 0 allows UEFI to freely relocate; section alignment is 4K
+LOADER_LINKER_SCRIPT_PE := linker/starkernel-loader-amd64-pe.ld
+LOADER_LDFLAGS_PE := -T $(LOADER_LINKER_SCRIPT_PE) -m i386pep -nostdlib --enable-reloc-section --image-base 0 --subsystem 10 -e efi_main
+# ELF linking (used as intermediate or for kernel)
 LOADER_LDFLAGS := -T $(LOADER_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -shared -Bsymbolic -znocombreloc -e efi_main
 KERNEL_LDFLAGS := -T $(KERNEL_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -e kernel_main
 
@@ -292,19 +301,17 @@ $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(KERNEL_OBJ_DIR)
 	@echo "AS (kernel) $<"
 	@$(CC) $(KERNEL_CFLAGS) -c $< -o $@
 
-# Link loader ELF
-$(BUILD_DIR)/starkernel_loader.elf: $(LOADER_OBJS) $(LOADER_LINKER_SCRIPT) | $(BUILD_DIR)
-	@echo "LD (loader) $@"
-	@$(LD) $(LOADER_LDFLAGS) $(LOADER_OBJS) -o $@
-
-# Convert loader ELF to PE32+ UEFI executable
-$(LOADER_EFI): $(BUILD_DIR)/starkernel_loader.elf
-	@echo "OBJCOPY (loader) $@"
-	@$(OBJCOPY) \
-		-j .text -j .rodata -j .data -j .bss -j .reloc \
-		--target=$(EFI_TARGET) \
-		$< $@
+# Link loader directly to PE32+ with proper base relocations
+# --enable-reloc-section generates the .reloc entries needed for UEFI to relocate the image
+$(LOADER_EFI): $(LOADER_OBJS) | $(BUILD_DIR)
+	@echo "LD (loader PE) $@"
+	@$(LD) $(LOADER_LDFLAGS_PE) $(LOADER_OBJS) -o $@
 	@echo "Loader built: $@"
+
+# Keep ELF target for debugging (optional)
+$(BUILD_DIR)/starkernel_loader.elf: $(LOADER_OBJS) $(LOADER_LINKER_SCRIPT) | $(BUILD_DIR)
+	@echo "LD (loader ELF) $@"
+	@$(LD) $(LOADER_LDFLAGS) $(LOADER_OBJS) -o $@
 
 # Link kernel ELF
 $(KERNEL_ELF): $(KERNEL_OBJS) $(KERNEL_LINKER_SCRIPT) | $(BUILD_DIR)

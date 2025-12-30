@@ -213,7 +213,7 @@ static bool kernel_xt_entry_owned(const void *ptr, size_t bytes) {
     if (entry_end < addr) {
         return false;  /* Overflow check */
     }
-    
+
     /* Check if in VM arena (dictionary entries are allocated here) */
     if (sk_vm_arena_is_initialized()) {
         uint8_t *arena_ptr = sk_vm_arena_ptr();
@@ -224,7 +224,7 @@ static bool kernel_xt_entry_owned(const void *ptr, size_t bytes) {
             return true;
         }
     }
-    
+
     /* Check if in kmalloc heap (for other allocations) */
     uintptr_t heap_base = kmalloc_heap_base_addr();
     uintptr_t heap_end = kmalloc_heap_end_addr();
@@ -233,8 +233,20 @@ static bool kernel_xt_entry_owned(const void *ptr, size_t bytes) {
             return true;
         }
     }
-    
+
     return false;
+}
+
+/* Static wrappers for HAL functions - avoids GOT references in PE.
+ * With -fPIC, cross-TU function pointer assignments use GOT-relative loads,
+ * but PE files don't have a working GOT. These wrappers provide local
+ * addresses that use RIP-relative LEA instead of GOT loads. */
+static bool kernel_is_executable_ptr(const void *ptr) {
+    return sk_hal_is_executable_ptr(ptr);
+}
+
+static void kernel_panic(const char *message) {
+    sk_hal_panic(message);
 }
 
 static void host_services_print_hex(const void *ptr) {
@@ -309,9 +321,9 @@ void sk_host_init(void) {
     kernel_services.mutex_destroy = kernel_mutex_destroy;
     kernel_services.puts = kernel_puts;
     kernel_services.putc = kernel_putc;
-    kernel_services.is_executable_ptr = sk_hal_is_executable_ptr;
+    kernel_services.is_executable_ptr = kernel_is_executable_ptr;
     kernel_services.owns_xt_entry = kernel_xt_entry_owned;
-    kernel_services.panic = sk_hal_panic;
+    kernel_services.panic = kernel_panic;
     kernel_services.parity_mode = PARITY_MODE;
     kernel_services.verbose = 0;
 

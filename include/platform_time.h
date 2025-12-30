@@ -110,8 +110,11 @@ extern const sf_time_backend_t *sf_time_backend;
 extern const sf_time_backend_t sf_time_backend_posix; /* POSIX implementation */
 extern const sf_time_backend_t sf_time_backend_l4re; /* L4Re/StarshipOS implementation */
 
-/* Convenience wrappers (inline for zero overhead) */
+/* Convenience wrappers (inline for zero overhead)
+ * For kernel builds (__STARKERNEL__), these are provided by shim.c as
+ * non-inline functions to avoid GOT indirection issues with -fPIC. */
 
+#ifndef __STARKERNEL__
 static inline sf_time_ns_t sf_monotonic_ns(void) {
     return sf_time_backend->get_monotonic_ns();
 }
@@ -131,6 +134,14 @@ static inline int sf_format_timestamp(sf_time_ns_t ns, char *buf, int format_24h
 static inline int sf_has_rtc(void) {
     return sf_time_backend->has_rtc();
 }
+#else
+/* Kernel: declarations only - implementations in shim.c */
+sf_time_ns_t sf_monotonic_ns(void);
+sf_time_ns_t sf_realtime_ns(void);
+int sf_set_realtime_ns(sf_time_ns_t ns);
+int sf_format_timestamp(sf_time_ns_t ns, char *buf, int format_24h);
+int sf_has_rtc(void);
+#endif
 
 /* Time conversion helpers */
 
