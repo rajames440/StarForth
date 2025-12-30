@@ -1,0 +1,199 @@
+	cp /usr/share/OVMF/OVMF_VARS_4M.fd build/amd64/kernel/OVMF_VARS.fd; \
+	echo "Error: /usr/share/OVMF/OVMF_VARS_4M.fd not found"; \
+	exit 1; \
+TMPDIR=build/amd64/kernel qemu-system-x86_64 \
+	-nodefaults -display none \
+	-machine q35,accel=tcg \
+	-m 1024 \
+	-monitor none \
+	-chardev stdio,id=ser0,signal=off \
+	-device isa-serial,chardev=ser0,iobase=0x3f8 \
+	-chardev file,id=dbg,path=build/amd64/kernel/ovmf.log \
+	-device isa-debugcon,chardev=dbg,iobase=0x402 \
+	-drive if=pflash,format=raw,readonly=on,file=$OVMF_CODE \
+	-drive if=pflash,format=raw,file=build/amd64/kernel/OVMF_VARS.fd \
+	-drive format=raw,file=fat:rw:build/amd64/kernel/esp \
+	-no-reboot
+[=3h[=3hBdsDxe: loading Boot0001 "UEFI QEMU HARDDISK QM00001 " from PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)
+BdsDxe: starting Boot0001 "UEFI QEMU HARDDISK QM00001 " from PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)
+[=3hStarKernel UEFI Loader
+Loading kernel from ESP...
+RAW SERIAL UP
+Monolithic build - kernel linked directly
+Collecting boot information...
+EBS...
+EBS OK
+Calling kernel_main (monolithic)...
+IDT installed.
+
+
+   _____ _             _  __                    _ 
+  / ____| |           | |/ /                   | |
+ | (___ | |_ __ _ _ __| ' / ___ _ __ _ __   ___| |
+  \___ \| __/ _` | '__|  < / _ \ '__| '_ \ / _ \ |
+  ____) | || (_| | |  | . \  __/ |  | | | |  __/ |
+ |_____/ \__\__,_|_|  |_|\_\___|_|  |_| |_|\___|_|
+
+StarKernel v0.1.0 - FORTH Microkernel
+Architecture: amd64
+Build: Dec 29 2025 21:10:07
+
+UEFI BootServices: EXITED
+
+=== StarKernel Boot Information ===
+Memory map entries: 117
+Total memory: 1023 MB
+Usable memory: 974 MB
+===================================
+
+PMM initialized.
+PMM statistics:
+  Total pages: 250779
+  Free pages : 249250
+  Used pages : 1529
+  Total MB   : 979
+  Free  MB   : 973
+  Used  MB   : 5
+
+PMM smoke test: allocating 10 pages...
+  Pages allocated successfully:
+    0x100000
+    0x101000
+    0x102000
+    0x103000
+    0x104000
+    0x105000
+    0x106000
+    0x107000
+    0x108000
+    0x109000
+  Freeing pages...
+  Re-allocated page: 0x100000
+  Re-allocation reused a freed page (expected).
+  Allocated 4 contiguous pages:
+    Start: 0x100000
+    End  : 0x103fff
+PMM smoke test complete.
+
+VMM initialized (mapped RAM, CR3 switched)
+VMM self-test: mapped OK at 0xffff800000000000
+VMM self-test complete.
+
+Kernel heap initialized.
+Heap statistics:
+  Total bytes: 16777176
+  Free  bytes: 16777176
+  Used  bytes: 0
+  Peak  bytes: 0
+
+Heap smoke test: allocating blocks...
+  Allocations succeeded.
+  Re-allocation succeeded (coalescing validated).
+Heap smoke test complete.
+
+APIC: init...
+APIC enabled (SIVR=0xFF).
+APIC: init done
+Timer: init...
+Timer: init start
+Timer: VM mode detected (hypervisor present).
+Timer: HPET calibration disabled (VM-exit MMIO would poison timing).
+Timer: WARNING: invariant TSC not present under hypervisor.
+Timer:          continuing in RELATIVE mode (no determinism guarantees).
+Timer: RDTSCP not present; using RDTSC (less serialized).
+Timer: CPUID frequency unavailable; trying PM Timer...
+Timer: WARNING: could not derive TSC frequency; PM Timer will be used for RELATIVE ns.
+Timer: trust=1 (0=NONE,1=REL,2=ABS), TSC=0 Hz
+Timer: init done
+Heartbeat: init...
+APIC Timer: calibrating...
+APIC Timer: apic_hz=1253315700, tick_hz=100, initial_count=12533157
+APIC Timer: configured (masked, ready to start)
+Heartbeat: init done
+Kernel initialization complete.
+Boot successful!
+
+VM: bootstrap parity...
+[HAL][host] VMHostServices table:
+    alloc = 0x000000003dd687c2
+    free = 0x000000003dd68926
+    monotonic_ns = 0x000000003dd6895c
+    mutex_init = 0x000000003dd689c9
+    mutex_lock = 0x000000003dd689e0
+    mutex_unlock = 0x000000003dd689f7
+    mutex_destroy = 0x000000003dd68a0e
+    puts = 0x000000003dd68a21
+    putc = 0x000000003dd68a71
+    is_executable_ptr = 0x000000003dd68b78
+    owns_xt_entry = 0x000000003dd68a92
+    panic = 0x000000003dd68b96
+[HAL][init] __text_start=0x000000003dd66000 __text_end=0x000000003dd9a7bd
+[kernel_alloc] size=0x0000000000500000 arena_size=0x0000000000500000 match=YES
+VM arena allocated: 0xffff900000000000
+ (5 MB)
+[kernel_alloc] returning arena ptr=0xffff900000000000
+Registering FORTH-79 Standard word set...
+[VM_TYPES] dumping sizes and offsets:
+sizeof(cell_t)=0x0000000000000008 sizeof(void*)=0x0000000000000008 sizeof(size_t)=0x0000000000000008 sizeof(DictEntry)=0x0000000000000060 sizeof(DictEntry*)=0x0000000000000008 offsetof(link)=0x0000000000000000 offsetof(func)=0x0000000000000008 offsetof(flags)=0x0000000000000010 offsetof(name_len)=0x0000000000000018 offsetof(execution_heat)=0x0000000000000020 offsetof(word_id)=0x000000000000002c offsetof(name)=0x0000000000000060 offsetof(VM, memory)=0x0000000000004018 offsetof(VM, here)=0x0000000000004020 offsetof(VM, latest)=0x0000000000004028
+Registering FORTH-79 arithmetic words...
+[VM_TYPES] dumping sizes and offsets:
+sizeof(cell_t)=0x0000000000000008 sizeof(void*)=0x0000000000000008 sizeof(size_t)=0x0000000000000008 sizeof(DictEntry)=0x0000000000000060 sizeof(DictEntry*)=0x0000000000000008 offsetof(link)=0x0000000000000000 offsetof(func)=0x0000000000000008 offsetof(flags)=0x0000000000000010 offsetof(name_len)=0x0000000000000018 offsetof(execution_heat)=0x0000000000000020 offsetof(word_id)=0x000000000000002c offsetof(name)=0x0000000000000060 offsetof(VM, memory)=0x0000000000004018 offsetof(VM, here)=0x0000000000004020 offsetof(VM, latest)=0x0000000000004028
+[FIND] ENTRY name=STARFORTH
+[FIND] BEFORE LOCK
+[FIND] AFTER LOCK
+[FIND] BEFORE FAST APPEND
+[FIND] AFTER FAST APPEND
+[FIND] BEFORE BUCKET ACCESS
+[FIND] AFTER BUCKET ACCESS
+[FIND] bucket_ptr=0x0000000001792a40 entry0=0xffff900000007220 base=0xffff900000000000 link=0xffff9000000071b0 func=0x000000003dd99d21
+[FIND] BEFORE HOTWORDS
+[HOTWORDS] entry
+[HOTWORDS] after monotonic_ns
+[HOTWORDS] cache disabled or null
+[HOTWORDS] bucket[0x0000000000000017]=0xffff900000007220
+[FIND] AFTER HOTWORDS
+FORTH-79 Standard word set registration complete
+[kernel_alloc] size=0x0000000000000198 arena_size=0x0000000000500000 match=NO
+[kernel_alloc] returning kmalloc ptr=0x0000000001795db0
+[kernel_alloc] size=0x000000000000000c arena_size=0x0000000000500000 match=NO
+[kernel_alloc] returning kmalloc ptr=0x00000000017a2050
+[kernel_alloc] size=0x0000000000000010 arena_size=0x0000000000500000 match=NO
+[kernel_alloc] returning kmalloc ptr=0x00000000017a20a0
+[FIND] ENTRY name=+
+[FIND] BEFORE LOCK
+[FIND] AFTER LOCK
+[FIND] BEFORE FAST APPEND
+[FIND] AFTER FAST APPEND
+[FIND] BEFORE BUCKET ACCESS
+[FIND] AFTER BUCKET ACCESS
+[FIND] bucket_ptr=0x0000000001791740 entry0=0xffff9000000069b8 base=0xffff900000000000 link=0xffff900000006948 func=0x000000003dd856c9
+[FIND] BEFORE HOTWORDS
+[HOTWORDS] entry
+[HOTWORDS] after monotonic_ns
+[HOTWORDS] cache disabled or null
+[HOTWORDS] bucket[0x0000000000000002]=0xffff9000000069b8
+[FIND] AFTER HOTWORDS
+[FIND] ENTRY name=.
+[FIND] BEFORE LOCK
+[FIND] AFTER LOCK
+[FIND] BEFORE FAST APPEND
+[FIND] AFTER FAST APPEND
+[FIND] BEFORE BUCKET ACCESS
+[FIND] AFTER BUCKET ACCESS
+[FIND] bucket_ptr=0x00000000017918c0 entry0=0xffff9000000029a8 base=0xffff900000000000 link=0xffff900000002938 func=0x000000003dd8c35d
+[FIND] BEFORE HOTWORDS
+[HOTWORDS] entry
+[HOTWORDS] after monotonic_ns
+[HOTWORDS] cache disabled or null
+[HOTWORDS] bucket[0x0000000000000002]=0xffff9000000029a8
+[HOTWORDS] bucket[0x0000000000000000]=0xffff900000002708
+[FIND] AFTER HOTWORDS
+3 PARITY:M7.1a word_count=303 here=0x0000000000008708 latest_id=302 hash=0xd16aafb72b2827c0
+PARITY:OK
+[HAL][exec] regions frozen:
+    kernel.text: [0x000000003dd66000, 0x000000003dd9a7bd)
+VM: parity bootstrap complete
+Starting heartbeat...
+APIC Timer: started
+Heartbeat running. (QEMU: Press Ctrl+A, then X to exit)
+
