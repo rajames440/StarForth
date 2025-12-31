@@ -109,8 +109,9 @@ LOADER_CFLAGS := $(COMMON_CFLAGS) -I$(KERNEL_SRC)/vm
 # Kernel-specific flags (with __STARKERNEL__ fence)
 KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm
 
-# Optional: enable VM integration (M7)
-ifdef STARFORTH_ENABLE_VM
+# VM integration (M7) - enabled by default
+STARFORTH_ENABLE_VM ?= 1
+ifeq ($(STARFORTH_ENABLE_VM),1)
 KERNEL_CFLAGS += -DSTARFORTH_ENABLE_VM=1
 LOADER_CFLAGS += -DSTARFORTH_ENABLE_VM=1
 KERNEL_CFLAGS += -DSTARFORTH_MINIMAL=1
@@ -330,6 +331,22 @@ else
 	@exit 1
 endif
 
+# Disk image output path
+DISK_IMG := out/starkernel.img
+DISK_IMG_SIZE_MB ?= 64
+ESP_SIZE_MB ?= 32
+
+# Build GPT disk image with FAT32 ESP (no loop devices, no sudo)
+.PHONY: disk-image
+disk-image: $(LOADER_EFI) $(KERNEL_ELF)
+	@echo "Creating GPT disk image with FAT32 ESP..."
+	@./scripts/make-disk-image.sh --execute \
+		--output $(DISK_IMG) \
+		--bootloader $(LOADER_EFI) \
+		--kernel $(KERNEL_ELF) \
+		--size $(DISK_IMG_SIZE_MB) \
+		--esp-size $(ESP_SIZE_MB)
+
 # Build Raspberry Pi 4B image (aarch64 only)
 .PHONY: rpi4-image
 rpi4-image: $(LOADER_EFI) $(KERNEL_ELF)
@@ -341,9 +358,87 @@ else
 	@exit 1
 endif
 
-# Launch QEMU (architecture-specific)
+# Launch QEMU with FAT virtual filesystem (development workflow)
+# Uses QEMU's fat:rw: feature which presents a directory as a FAT filesystem.
+# OVMF can boot this directly without shell intervention.
+#
+# This is the canonical QEMU method for fast dev iteration:
+#   - No loop devices, no root, no disk image rebuild
+#   - OVMF loads \EFI\BOOT\BOOTX64.EFI directly
+#   - Loader finds \kernel.elf on same filesystem
+#
+# For real hardware validation, use 'make disk-image' then dd to USB.
 .PHONY: qemu
 qemu: $(LOADER_EFI) $(KERNEL_ELF)
+ifeq ($(ARCH),amd64)
+	@echo "=== QEMU ESP Staging ==="
+	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
+	@cp $(LOADER_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
+	@cp $(KERNEL_ELF) $(BUILD_DIR)/esp/kernel.elf
+	@echo "  $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI"
+	@echo "  $(BUILD_DIR)/esp/kernel.elf"
+	@echo ""
+	@echo "=== Launching QEMU (fat: virtual filesystem) ==="
+	@if [ -f /usr/share/OVMF/OVMF_VARS_4M.fd ]; then \
+		cp /usr/share/OVMF/OVMF_VARS_4M.fd $(BUILD_DIR)/OVMF_VARS.fd; \
+	else \
+		echo "Error: /usr/share/OVMF/OVMF_VARS_4M.fd not found"; \
+		exit 1; \
+	fi
+	@OVMF_CODE=/usr/share/OVMF/OVMF_CODE_4M.fd; \
+	if [ ! -f $$OVMF_CODE ]; then echo "Error: $$OVMF_CODE not found"; exit 1; fi; \
+	TMPDIR=$(BUILD_DIR) qemu-system-x86_64 \
+		-machine q35,accel=tcg \
+		-m 1024 \
+		-drive if=pflash,format=raw,readonly=on,file=$$OVMF_CODE \
+		-drive if=pflash,format=raw,file=$(BUILD_DIR)/OVMF_VARS.fd \
+		-drive format=raw,file=fat:rw:$(BUILD_DIR)/esp \
+		-serial stdio \
+		-display none \
+		-no-reboot
+else
+	@echo "Error: qemu boot only supported for amd64 currently"
+	@exit 1
+endif
+
+# Launch QEMU from GPT disk image (closer to real hardware)
+# Uses the disk image created by 'make disk-image'.
+# OVMF falls to shell, startup.nsh runs after 5-second countdown.
+# Use this when you care about disk/partition semantics.
+.PHONY: qemu-disk
+qemu-disk: disk-image
+ifeq ($(ARCH),amd64)
+	@echo "=== Launching QEMU from disk image ==="
+	@echo "  Image: $(DISK_IMG)"
+	@echo "  Boot: OVMF -> shell -> startup.nsh (5s countdown)"
+	@echo ""
+	@if [ -f /usr/share/OVMF/OVMF_VARS_4M.fd ]; then \
+		cp /usr/share/OVMF/OVMF_VARS_4M.fd out/OVMF_VARS.fd; \
+	else \
+		echo "Error: /usr/share/OVMF/OVMF_VARS_4M.fd not found"; \
+		exit 1; \
+	fi
+	@OVMF_CODE=/usr/share/OVMF/OVMF_CODE_4M.fd; \
+	if [ ! -f $$OVMF_CODE ]; then echo "Error: $$OVMF_CODE not found"; exit 1; fi; \
+	TMPDIR=out qemu-system-x86_64 \
+		-machine q35,accel=tcg \
+		-m 1024 \
+		-drive if=pflash,format=raw,readonly=on,file=$$OVMF_CODE \
+		-drive if=pflash,format=raw,file=out/OVMF_VARS.fd \
+		-device qemu-xhci,id=xhci \
+		-drive if=none,id=usbdisk,format=raw,file=$(DISK_IMG) \
+		-device usb-storage,bus=xhci.0,drive=usbdisk \
+		-serial stdio \
+		-display none \
+		-no-reboot
+else
+	@echo "Error: qemu-disk only supported for amd64 currently"
+	@exit 1
+endif
+
+# Launch QEMU with ESP directory (quick iteration, no disk image rebuild)
+.PHONY: qemu-esp
+qemu-esp: $(LOADER_EFI) $(KERNEL_ELF)
 ifeq ($(ARCH),amd64)
 	@echo "Preparing FAT ESP directory for QEMU..."
 	@rm -rf $(BUILD_DIR)/esp
@@ -351,7 +446,7 @@ ifeq ($(ARCH),amd64)
 	@cp $(LOADER_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
 	@cp $(KERNEL_ELF) $(BUILD_DIR)/esp/kernel.elf
 	@printf "FS0:\\EFI\\BOOT\\BOOTX64.EFI\r\n" > $(BUILD_DIR)/esp/startup.nsh
-	@echo "Launching QEMU for amd64 (OVMF pflash + ESP)..."
+	@echo "Launching QEMU for amd64 (OVMF pflash + ESP directory)..."
 	@# Use the 4MB OVMF build installed on this host
 	OVMF_CODE=/usr/share/OVMF/OVMF_CODE_4M.fd; \
 	if [ ! -f $$OVMF_CODE ]; then echo "Error: $$OVMF_CODE not found"; exit 1; fi; \
@@ -503,12 +598,14 @@ help:
 	@echo "  all            - Build loader + kernel (default)"
 	@echo "  kernel         - Same as 'all'"
 	@echo "  kernel-all     - Build for all architectures"
+	@echo "  disk-image     - Create GPT disk image with FAT32 ESP (out/starkernel.img)"
 	@echo "  iso            - Create bootable ISO (amd64 only)"
 	@echo "  rpi4-image     - Create RasPi 4B SD card image (aarch64 only)"
 	@echo "  clean-kernel   - Clean build artifacts"
 	@echo ""
 	@echo "QEMU targets:"
-	@echo "  qemu           - Launch QEMU for current architecture"
+	@echo "  qemu           - Boot from disk image (proper GPT/ESP, matches hardware)"
+	@echo "  qemu-esp       - Quick boot from ESP directory (no disk image rebuild)"
 	@echo "  qemu-gdb       - Launch QEMU with GDB server"
 	@echo ""
 	@echo "Info targets:"
@@ -517,6 +614,10 @@ help:
 	@echo ""
 	@echo "Examples:"
 	@echo "  make -f Makefile.starkernel ARCH=amd64"
-	@echo "  make -f Makefile.starkernel ARCH=amd64 iso"
+	@echo "  make -f Makefile.starkernel ARCH=amd64 disk-image"
 	@echo "  make -f Makefile.starkernel ARCH=amd64 qemu"
+	@echo "  make -f Makefile.starkernel ARCH=amd64 qemu-esp  # Quick iteration"
 	@echo "  make -f Makefile.starkernel ARCH=aarch64 rpi4-image"
+	@echo ""
+	@echo "To write disk image to USB (DESTRUCTIVE!):"
+	@echo "  sudo dd if=out/starkernel.img of=/dev/sdX bs=4M conv=fsync status=progress"

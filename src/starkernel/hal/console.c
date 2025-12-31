@@ -146,6 +146,16 @@ static int serial_transmit_empty(void) {
  */
 void console_putc(char c) {
 #if SERIAL_SUPPORTED
+    /* Convert \n to \r\n for proper terminal display */
+    if (c == '\n') {
+        /* Wait for transmit buffer to be empty */
+        while (!serial_transmit_empty()) {
+            arch_relax();
+        }
+        /* Send CR first */
+        outb(SERIAL_DATA_PORT, '\r');
+    }
+
     /* Wait for transmit buffer to be empty */
     while (!serial_transmit_empty()) {
         arch_relax();
@@ -153,14 +163,6 @@ void console_putc(char c) {
 
     /* Send the character */
     outb(SERIAL_DATA_PORT, (uint8_t)c);
-
-    /* Convert \n to \r\n for proper terminal display */
-    if (c == '\n') {
-        while (!serial_transmit_empty()) {
-            arch_relax();
-        }
-        outb(SERIAL_DATA_PORT, '\r');
-    }
 #else
     (void)c;
     return;

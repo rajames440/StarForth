@@ -51,7 +51,7 @@
 #endif
 
 #ifndef SK_PARITY_DEBUG
-#define SK_PARITY_DEBUG 1
+#define SK_PARITY_DEBUG 0
 #endif
 
 #if HEARTBEAT_THREAD_ENABLED && !defined(L4RE_TARGET)
