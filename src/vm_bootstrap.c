@@ -61,8 +61,8 @@
 #include "../include/rolling_window_of_truth.h"
 #include "../include/dictionary_heat_optimization.h"
 #include "../include/ssm_jacquard.h"
+#include "../include/platform_alloc.h"
 
-#include <stdlib.h>
 #include <string.h>
 
 /* ====================== Bootstrap helpers ======================= */
@@ -123,10 +123,10 @@ void vm_init(VM* vm)
         return;
     }
 
-    vm->memory = (uint8_t*)malloc(VM_MEMORY_SIZE);
+    vm->memory = (uint8_t*)sf_malloc(VM_MEMORY_SIZE);
     if (!vm->memory)
     {
-        log_message(LOG_ERROR, "vm_init: out of host memory");
+        log_message(LOG_ERROR, "vm_init: out of memory");
         vm->error = 1;
         return;
     }
@@ -202,10 +202,10 @@ void vm_init(VM* vm)
     vm->dict_fence_here = vm->here;
 
     /* Initialize hot-words cache (physics frequency-driven acceleration) */
-    vm->hotwords_cache = (HotwordsCache*)malloc(sizeof(HotwordsCache));
+    vm->hotwords_cache = (HotwordsCache*)sf_malloc(sizeof(HotwordsCache));
     if (!vm->hotwords_cache)
     {
-        log_message(LOG_ERROR, "vm_init: hotwords cache malloc failed");
+        log_message(LOG_ERROR, "vm_init: hotwords cache alloc failed");
         vm->error = 1;
         return;
     }
@@ -214,7 +214,7 @@ void vm_init(VM* vm)
     /* Initialize rolling window of truth (deterministic execution history) */
     if (rolling_window_init(&vm->rolling_window) != 0)
     {
-        log_message(LOG_ERROR, "vm_init: rolling window malloc failed");
+        log_message(LOG_ERROR, "vm_init: rolling window alloc failed");
         vm->error = 1;
         return;
     }
@@ -256,19 +256,19 @@ void vm_init(VM* vm)
     dict_update_heat_percentiles(vm);  /* Calculate initial percentiles */
 
     /* SSM L8: Jacquard Mode Selector initialization */
-    vm->ssm_l8_state = malloc(sizeof(ssm_l8_state_t));
+    vm->ssm_l8_state = sf_malloc(sizeof(ssm_l8_state_t));
     if (!vm->ssm_l8_state)
     {
-        log_message(LOG_ERROR, "vm_init: SSM L8 state malloc failed");
+        log_message(LOG_ERROR, "vm_init: SSM L8 state alloc failed");
         vm->error = 1;
         return;
     }
     ssm_l8_init((ssm_l8_state_t*)vm->ssm_l8_state, SSM_MODE_C0);
 
-    vm->ssm_config = malloc(sizeof(ssm_config_t));
+    vm->ssm_config = sf_malloc(sizeof(ssm_config_t));
     if (!vm->ssm_config)
     {
-        log_message(LOG_ERROR, "vm_init: SSM config malloc failed");
+        log_message(LOG_ERROR, "vm_init: SSM config alloc failed");
         vm->error = 1;
         return;
     }
@@ -297,7 +297,7 @@ void vm_cleanup(VM* vm)
     if (vm->hotwords_cache)
     {
         hotwords_cache_cleanup(vm->hotwords_cache);
-        free(vm->hotwords_cache);
+        sf_free(vm->hotwords_cache);
         vm->hotwords_cache = NULL;
     }
 
@@ -307,18 +307,18 @@ void vm_cleanup(VM* vm)
     /* Clean up SSM L8 state */
     if (vm->ssm_l8_state)
     {
-        free(vm->ssm_l8_state);
+        sf_free(vm->ssm_l8_state);
         vm->ssm_l8_state = NULL;
     }
     if (vm->ssm_config)
     {
-        free(vm->ssm_config);
+        sf_free(vm->ssm_config);
         vm->ssm_config = NULL;
     }
 
     if (vm->memory)
     {
-        free(vm->memory);
+        sf_free(vm->memory);
         vm->memory = NULL;
     }
     vm->here = 0;

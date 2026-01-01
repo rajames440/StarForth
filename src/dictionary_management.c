@@ -51,9 +51,9 @@
 #include "../include/physics_hotwords_cache.h"
 #include "../include/physics_pipelining_metrics.h"
 #include "../include/dictionary_heat_optimization.h"
+#include "../include/platform_alloc.h"
 #include <string.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdint.h>
 /* LIKELY/UNLIKELY macros are defined in vm.h */
 
@@ -137,9 +137,9 @@ DictEntry *vm_dictionary_lookup_by_word_id(VM *vm, uint32_t word_id) {
 /* --- helpers ------------------------------------------------------------- */
 
 static inline void *sf_xrealloc(void *p, size_t nbytes) {
-    void *r = realloc(p, nbytes);
+    void *r = sf_realloc(p, nbytes);
     if (!r) {
-        free(p);
+        sf_free(p);
         return NULL;
     }
     return r;
@@ -147,7 +147,7 @@ static inline void *sf_xrealloc(void *p, size_t nbytes) {
 
 static void sf_fc_clear_all(void) {
     for (size_t i = 0; i < SF_FC_BUCKETS; ++i) {
-        free(sf_fc_list[i]);
+        sf_free(sf_fc_list[i]);
         sf_fc_list[i] = NULL;
         sf_fc_count[i] = 0;
         sf_fc_cap[i] = 0;
@@ -334,7 +334,7 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     size_t df_off = (base + name_bytes + (align - 1)) & ~(align - 1);
     size_t total = df_off + sizeof(cell_t);
 
-    entry = (DictEntry *) malloc(total);
+    entry = (DictEntry *) sf_malloc(total);
     if (!entry) {
         vm->error = 1;
         log_message(LOG_ERROR, "vm_create_word: malloc failed for '%.*s' (%zu bytes)",
@@ -356,7 +356,7 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     physics_metadata_apply_seed(entry);
 
     /* Initialize word transition metrics for pipelining (Phase 1) */
-    entry->transition_metrics = (WordTransitionMetrics *)malloc(sizeof(WordTransitionMetrics));
+    entry->transition_metrics = (WordTransitionMetrics *)sf_malloc(sizeof(WordTransitionMetrics));
     if (entry->transition_metrics) {
         transition_metrics_init(entry->transition_metrics);
     } else {

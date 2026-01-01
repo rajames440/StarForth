@@ -59,8 +59,8 @@
 #include "../include/physics_hotwords_cache.h"
 #include "../include/physics_pipelining_metrics.h"
 #include "../include/log.h"
+#include "../include/platform_alloc.h"
 
-#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -161,20 +161,20 @@ int rolling_window_init(RollingWindowOfTruth* window)
 {
     if (!window) return -1;
 
-    window->execution_history = (uint32_t*)calloc(ROLLING_WINDOW_SIZE, sizeof(uint32_t));
+    window->execution_history = (uint32_t*)sf_calloc(ROLLING_WINDOW_SIZE, sizeof(uint32_t));
     if (!window->execution_history)
     {
         return -1; /* Malloc failure */
     }
 
-    window->snapshot_buffers[0] = (uint32_t*)calloc(ROLLING_WINDOW_SIZE, sizeof(uint32_t));
-    window->snapshot_buffers[1] = (uint32_t*)calloc(ROLLING_WINDOW_SIZE, sizeof(uint32_t));
+    window->snapshot_buffers[0] = (uint32_t*)sf_calloc(ROLLING_WINDOW_SIZE, sizeof(uint32_t));
+    window->snapshot_buffers[1] = (uint32_t*)sf_calloc(ROLLING_WINDOW_SIZE, sizeof(uint32_t));
     if (!window->snapshot_buffers[0] || !window->snapshot_buffers[1])
     {
-        free(window->execution_history);
+        sf_free(window->execution_history);
         window->execution_history = NULL;
-        free(window->snapshot_buffers[0]);
-        free(window->snapshot_buffers[1]);
+        sf_free(window->snapshot_buffers[0]);
+        sf_free(window->snapshot_buffers[1]);
         window->snapshot_buffers[0] = window->snapshot_buffers[1] = NULL;
         return -1;
     }
@@ -288,7 +288,7 @@ uint32_t rolling_window_find_hottest_word(const RollingWindowOfTruth* window,
         return 0;
 
     /* Count frequency of each word */
-    uint32_t* freq = (uint32_t*)calloc(dict_size, sizeof(uint32_t));
+    uint32_t* freq = (uint32_t*)sf_calloc(dict_size, sizeof(uint32_t));
     if (!freq) return 0;
 
     for (uint32_t i = 0; i < ROLLING_WINDOW_SIZE; i++)
@@ -312,7 +312,7 @@ uint32_t rolling_window_find_hottest_word(const RollingWindowOfTruth* window,
         }
     }
 
-    free(freq);
+    sf_free(freq);
     return hottest_id;
 }
 
@@ -357,7 +357,7 @@ char* rolling_window_stats_string(const RollingWindowOfTruth* window)
 {
     if (!window) return NULL;
 
-    char* buf = (char*)malloc(1024);
+    char* buf = (char*)sf_malloc(1024);
     if (!buf) return NULL;
 
     rolling_window_publish_snapshot_if_needed((RollingWindowOfTruth*)window);
@@ -399,17 +399,17 @@ void rolling_window_cleanup(RollingWindowOfTruth* window)
 
     if (window->execution_history)
     {
-        free(window->execution_history);
+        sf_free(window->execution_history);
         window->execution_history = NULL;
     }
     if (window->snapshot_buffers[0])
     {
-        free(window->snapshot_buffers[0]);
+        sf_free(window->snapshot_buffers[0]);
         window->snapshot_buffers[0] = NULL;
     }
     if (window->snapshot_buffers[1])
     {
-        free(window->snapshot_buffers[1]);
+        sf_free(window->snapshot_buffers[1]);
         window->snapshot_buffers[1] = NULL;
     }
 }
@@ -438,7 +438,7 @@ void rolling_window_seed_hotwords_cache(const RollingWindowOfTruth* window,
     }
 
     /* Count frequency of each word in rolling window */
-    uint32_t *freq = (uint32_t *)calloc(DICTIONARY_SIZE, sizeof(uint32_t));
+    uint32_t *freq = (uint32_t *)sf_calloc(DICTIONARY_SIZE, sizeof(uint32_t));
     if (!freq) return;
 
     rolling_window_publish_snapshot_if_needed((RollingWindowOfTruth*)window);
@@ -446,7 +446,7 @@ void rolling_window_seed_hotwords_cache(const RollingWindowOfTruth* window,
     rolling_window_snapshot_view(window, &view);
     if (!view.history || !view.is_warm)
     {
-        free(freq);
+        sf_free(freq);
         return;
     }
 
@@ -495,7 +495,7 @@ void rolling_window_seed_hotwords_cache(const RollingWindowOfTruth* window,
     }
     sf_mutex_unlock(&vm->dict_lock);
 
-    free(freq);
+    sf_free(freq);
 
     log_message(LOG_INFO,
                 "Seeded hot-words cache with %u words from rolling window POST execution",
@@ -525,7 +525,7 @@ void rolling_window_seed_pipelining_context(const RollingWindowOfTruth* window,
     uint32_t seeded_transitions = 0;
 
     /* Allocate context window for replaying */
-    uint32_t *context = (uint32_t *)calloc(context_window_size, sizeof(uint32_t));
+    uint32_t *context = (uint32_t *)sf_calloc(context_window_size, sizeof(uint32_t));
     if (!context)
         return;
 
@@ -536,7 +536,7 @@ void rolling_window_seed_pipelining_context(const RollingWindowOfTruth* window,
     rolling_window_snapshot_view(window, &view);
     if (!view.history || !view.is_warm)
     {
-        free(context);
+        sf_free(context);
         return;
     }
 
@@ -583,7 +583,7 @@ void rolling_window_seed_pipelining_context(const RollingWindowOfTruth* window,
         }
     }
 
-    free(context);
+    sf_free(context);
 
     log_message(LOG_INFO,
                 "Seeded pipelining context windows: %u words, %u transitions from POST execution",
@@ -664,7 +664,7 @@ double rolling_window_pattern_capture_rate(const RollingWindowOfTruth* window,
                             ? view.total_executions
                             : (uint64_t)ROLLING_WINDOW_SIZE;
 
-    uint32_t* linear_history = (uint32_t *)malloc(history_size * sizeof(uint32_t));
+    uint32_t* linear_history = (uint32_t *)sf_malloc(history_size * sizeof(uint32_t));
     if (!linear_history)
         return 0.0;
 
@@ -673,7 +673,7 @@ double rolling_window_pattern_capture_rate(const RollingWindowOfTruth* window,
 
     if (actual_history < 2)
     {
-        free(linear_history);
+        sf_free(linear_history);
         return 0.0;
     }
 
@@ -704,7 +704,7 @@ double rolling_window_pattern_capture_rate(const RollingWindowOfTruth* window,
             patterns_seen++;
     }
 
-    free(linear_history);
+    sf_free(linear_history);
 
     /* Return percentage: how many transitions had sufficient context to be meaningful */
     if (total_transitions == 0)

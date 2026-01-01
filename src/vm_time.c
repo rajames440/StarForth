@@ -62,8 +62,8 @@
 #include "../include/rolling_window_of_truth.h"
 #include "../include/dictionary_heat_optimization.h"
 #include "../include/ssm_jacquard.h"
+#include "../include/platform_alloc.h"
 
-#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <time.h>
@@ -544,7 +544,7 @@ void vm_tick_inference_engine(VM* vm)
     sf_mutex_lock(&vm->tuning_lock);
     if (!vm->last_inference_outputs)
     {
-        vm->last_inference_outputs = malloc(sizeof(InferenceOutputs));
+        vm->last_inference_outputs = sf_malloc(sizeof(InferenceOutputs));
         if (!vm->last_inference_outputs)
         {
             sf_mutex_unlock(&vm->tuning_lock);
@@ -711,14 +711,14 @@ void vm_heartbeat_start_thread(VM *vm)
     if (!vm)
         return;
 
-    vm->heartbeat.worker = calloc(1, sizeof(HeartbeatWorker));
+    vm->heartbeat.worker = sf_calloc(1, sizeof(HeartbeatWorker));
     if (vm->heartbeat.worker)
     {
         vm->heartbeat.worker->tick_ns = HEARTBEAT_TICK_NS;
         if (pthread_create(&vm->heartbeat.worker->thread, NULL, heartbeat_thread_main, vm) != 0)
         {
             log_message(LOG_WARN, "heartbeat: pthread_create failed (%d), falling back to inline mode", errno);
-            free(vm->heartbeat.worker);
+            sf_free(vm->heartbeat.worker);
             vm->heartbeat.worker = NULL;
         }
     }
@@ -739,7 +739,7 @@ void vm_heartbeat_stop_thread(VM *vm)
 
     vm->heartbeat.worker->stop_requested = 1;
     pthread_join(vm->heartbeat.worker->thread, NULL);
-    free(vm->heartbeat.worker);
+    sf_free(vm->heartbeat.worker);
     vm->heartbeat.worker = NULL;
 #else
     (void)vm;

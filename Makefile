@@ -300,14 +300,17 @@ ifdef MINIMAL
 CFLAGS += -DSTARFORTH_MINIMAL=1 -nostdlib -ffreestanding
 LDFLAGS += -nostdlib
 PLATFORM_SRC = src/platform/starforth_minimal.c
+PLATFORM_ALLOC_SRC = src/platform/alloc_kernel.c
 else ifdef L4RE
 CFLAGS += -D__l4__=1
 PLATFORM_TIME_SRC = src/platform/l4re/time.c src/platform/platform_init.c
+PLATFORM_ALLOC_SRC = src/platform/alloc_kernel.c
 else
 PLATFORM_TIME_SRC = src/platform/linux/time.c src/platform/platform_init.c
+PLATFORM_ALLOC_SRC = src/platform/alloc_host.c
 endif
 
-PLATFORM_COMMON_SRC = src/platform/threading.c
+PLATFORM_COMMON_SRC = src/platform/threading.c $(PLATFORM_ALLOC_SRC)
 
 # Source and object files
 SRC = $(wildcard src/*.c src/word_source/*.c src/test_runner/*.c src/test_runner/modules/*.c) $(PLATFORM_SRC) $(PLATFORM_TIME_SRC) $(PLATFORM_COMMON_SRC)
