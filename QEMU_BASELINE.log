@@ -1,0 +1,1052 @@
+🧹 Cleaning build artifacts...
+removed 'build/amd64/fastest/main.o'
+removed 'build/amd64/fastest/profiler.o'
+removed 'build/amd64/fastest/block_subsystem.o'
+removed 'build/amd64/fastest/platform/threading.o'
+removed 'build/amd64/fastest/platform/linux/time.o'
+removed directory 'build/amd64/fastest/platform/linux'
+removed 'build/amd64/fastest/platform/platform_init.o'
+removed directory 'build/amd64/fastest/platform'
+removed 'build/amd64/fastest/physics_metadata.o'
+removed 'build/amd64/fastest/starforth'
+removed 'build/amd64/fastest/repl.o'
+removed 'build/amd64/fastest/heartbeat_export.o'
+removed 'build/amd64/fastest/blkio_factory.o'
+removed 'build/amd64/fastest/math_portable.o'
+removed 'build/amd64/fastest/dictionary_management.o'
+removed 'build/amd64/fastest/inference_engine.o'
+removed 'build/amd64/fastest/vm_debug.o'
+removed 'build/amd64/fastest/test_runner/test_runner.o'
+removed 'build/amd64/fastest/test_runner/modules/break_me_tests.o'
+removed 'build/amd64/fastest/test_runner/modules/stack_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/integration_tests.o'
+removed 'build/amd64/fastest/test_runner/modules/arithmetic_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/format_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/starforth_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/io_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/vocabulary_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/string_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/mixed_arithmetic_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/system_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/memory_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/defining_words_tests.o'
+removed 'build/amd64/fastest/test_runner/modules/dictionary_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/return_stack_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/double_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/stress_tests.o'
+removed 'build/amd64/fastest/test_runner/modules/block_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/logical_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/control_words_test.o'
+removed 'build/amd64/fastest/test_runner/modules/dictionary_manipulation_words_test.o'
+removed directory 'build/amd64/fastest/test_runner/modules'
+removed 'build/amd64/fastest/test_runner/test_common.o'
+removed directory 'build/amd64/fastest/test_runner'
+removed 'build/amd64/fastest/dictionary_heat_optimization.o'
+removed 'build/amd64/fastest/cli.o'
+removed 'build/amd64/fastest/io.o'
+removed 'build/amd64/fastest/memory_management.o'
+removed 'build/amd64/fastest/rolling_window_of_truth.o'
+removed 'build/amd64/fastest/log.o'
+removed 'build/amd64/fastest/blkio_ram.o'
+removed 'build/amd64/fastest/stack_management.o'
+removed 'build/amd64/fastest/word_registry.o'
+removed 'build/amd64/fastest/word_source/string_words.o'
+removed 'build/amd64/fastest/word_source/physics_benchmark_words.o'
+removed 'build/amd64/fastest/word_source/arithmetic_words.o'
+removed 'build/amd64/fastest/word_source/physics_pipelining_diagnostic_words.o'
+removed 'build/amd64/fastest/word_source/dictionary_manipulation_words.o'
+removed 'build/amd64/fastest/word_source/memory_words.o'
+removed 'build/amd64/fastest/word_source/double_words.o'
+removed 'build/amd64/fastest/word_source/block_words.o'
+removed 'build/amd64/fastest/word_source/q48_16_words.o'
+removed 'build/amd64/fastest/word_source/vocabulary_words.o'
+removed 'build/amd64/fastest/word_source/format_words.o'
+removed 'build/amd64/fastest/word_source/io_words.o'
+removed 'build/amd64/fastest/word_source/control_words.o'
+removed 'build/amd64/fastest/word_source/editor_words.o'
+removed 'build/amd64/fastest/word_source/physics_diagnostic_words.o'
+removed 'build/amd64/fastest/word_source/dictionary_heat_diagnostic_words.o'
+removed 'build/amd64/fastest/word_source/dictionary_words.o'
+removed 'build/amd64/fastest/word_source/defining_words.o'
+removed 'build/amd64/fastest/word_source/physics_freeze_words.o'
+removed 'build/amd64/fastest/word_source/stack_words.o'
+removed 'build/amd64/fastest/word_source/logical_words.o'
+removed 'build/amd64/fastest/word_source/starforth_words.o'
+removed 'build/amd64/fastest/word_source/return_stack_words.o'
+removed 'build/amd64/fastest/word_source/system_words.o'
+removed 'build/amd64/fastest/word_source/mixed_arithmetic_words.o'
+removed directory 'build/amd64/fastest/word_source'
+removed 'build/amd64/fastest/doe_metrics.o'
+removed 'build/amd64/fastest/blkio_file.o'
+removed 'build/amd64/fastest/vm_api.o'
+removed 'build/amd64/fastest/physics_hotwords_cache.o'
+removed 'build/amd64/fastest/ssm_jacquard.o'
+removed 'build/amd64/fastest/vm.o'
+removed 'build/amd64/fastest/physics_runtime.o'
+removed 'build/amd64/fastest/physics_pipelining_metrics.o'
+removed directory 'build/amd64/fastest'
+removed directory 'build/amd64'
+✓ Clean complete
+🏆 Building FASTEST configuration...
+   - Architecture: x86_64
+   - Assembly optimizations: ENABLED
+   - Direct threading: ENABLED
+   - Profile-guided optimization: Ready
+
+make[1]: Entering directory '/home/rajames/CLionProjects/StarForth'
+════════════════════════════════════════════════════════════
+   ⚡ Building the Fastest Forth in the West! ⚡
+════════════════════════════════════════════════════════════
+  Target Architecture: x86_64 (amd64)
+  Build Profile: Maximum performance build (ASM + LTO + direct threading) (fastest)
+
+Generating version header...
+  CC  src/blkio_factory.c
+  CC  src/blkio_file.c
+  CC  src/blkio_ram.c
+  CC  src/block_subsystem.c
+  CC  src/cli.c
+  CC  src/dictionary_heat_optimization.c
+  CC  src/dictionary_management.c
+  CC  src/doe_metrics.c
+  CC  src/heartbeat_export.c
+  CC  src/inference_engine.c
+  CC  src/io.c
+  CC  src/log.c
+  CC  src/main.c
+  CC  src/math_portable.c
+  CC  src/memory_management.c
+  CC  src/physics_hotwords_cache.c
+  CC  src/physics_metadata.c
+  CC  src/physics_pipelining_metrics.c
+  CC  src/physics_runtime.c
+  CC  src/profiler.c
+  CC  src/repl.c
+  CC  src/rolling_window_of_truth.c
+  CC  src/ssm_jacquard.c
+  CC  src/stack_management.c
+  CC  src/vm_api.c
+  CC  src/vm.c
+  CC  src/vm_debug.c
+  CC  src/word_registry.c
+  CC  src/word_source/arithmetic_words.c
+  CC  src/word_source/block_words.c
+  CC  src/word_source/control_words.c
+  CC  src/word_source/defining_words.c
+  CC  src/word_source/dictionary_heat_diagnostic_words.c
+  CC  src/word_source/dictionary_manipulation_words.c
+  CC  src/word_source/dictionary_words.c
+  CC  src/word_source/double_words.c
+  CC  src/word_source/editor_words.c
+  CC  src/word_source/format_words.c
+  CC  src/word_source/io_words.c
+  CC  src/word_source/logical_words.c
+  CC  src/word_source/memory_words.c
+  CC  src/word_source/mixed_arithmetic_words.c
+  CC  src/word_source/physics_benchmark_words.c
+  CC  src/word_source/physics_diagnostic_words.c
+  CC  src/word_source/physics_freeze_words.c
+  CC  src/word_source/physics_pipelining_diagnostic_words.c
+  CC  src/word_source/q48_16_words.c
+  CC  src/word_source/return_stack_words.c
+  CC  src/word_source/stack_words.c
+  CC  src/word_source/starforth_words.c
+  CC  src/word_source/string_words.c
+  CC  src/word_source/system_words.c
+  CC  src/word_source/vocabulary_words.c
+  CC  src/test_runner/test_common.c
+  CC  src/test_runner/test_runner.c
+  CC  src/test_runner/modules/arithmetic_words_test.c
+  CC  src/test_runner/modules/block_words_test.c
+  CC  src/test_runner/modules/break_me_tests.c
+  CC  src/test_runner/modules/control_words_test.c
+  CC  src/test_runner/modules/defining_words_tests.c
+  CC  src/test_runner/modules/dictionary_manipulation_words_test.c
+  CC  src/test_runner/modules/dictionary_words_test.c
+  CC  src/test_runner/modules/double_words_test.c
+  CC  src/test_runner/modules/format_words_test.c
+  CC  src/test_runner/modules/integration_tests.c
+  CC  src/test_runner/modules/io_words_test.c
+  CC  src/test_runner/modules/logical_words_test.c
+  CC  src/test_runner/modules/memory_words_test.c
+  CC  src/test_runner/modules/mixed_arithmetic_words_test.c
+  CC  src/test_runner/modules/return_stack_words_test.c
+  CC  src/test_runner/modules/stack_words_test.c
+  CC  src/test_runner/modules/starforth_words_test.c
+  CC  src/test_runner/modules/stress_tests.c
+  CC  src/test_runner/modules/string_words_test.c
+  CC  src/test_runner/modules/system_words_test.c
+  CC  src/test_runner/modules/vocabulary_words_test.c
+  CC  src/platform/linux/time.c
+  CC  src/platform/platform_init.c
+  CC  src/platform/threading.c
+🔗 Linking build/amd64/fastest/starforth...
+gcc -std=c99 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runner/include -DSTRICT_PTR=1 -DENABLE_HOTWORDS_CACHE=0 -DENABLE_PIPELINING=0 -DROLLING_WINDOW_SIZE=4096 -DTRANSITION_WINDOW_SIZE=8 -DADAPTIVE_SHRINK_RATE=50 -DADAPTIVE_MIN_WINDOW_SIZE=256 -DADAPTIVE_CHECK_FREQUENCY=512 -DADAPTIVE_GROWTH_THRESHOLD=5 -DINITIAL_DECAY_SLOPE_Q48=21845 -DDECAY_RATE_PER_US_Q16=1 -DHEARTBEAT_THREAD_ENABLED=1 -DHEARTBEAT_TICK_NS=10000 -DHEARTBEAT_INFERENCE_FREQUENCY=1000 -pthread -march=native -DARCH_X86_64=1 -O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -DNDEBUG -flto=auto -fuse-linker-plugin -funroll-loops -finline-functions -fomit-frame-pointer -fno-plt -fno-semantic-interposition  -o build/amd64/fastest/starforth build/amd64/fastest/blkio_factory.o build/amd64/fastest/blkio_file.o build/amd64/fastest/blkio_ram.o build/amd64/fastest/block_subsystem.o build/amd64/fastest/cli.o build/amd64/fastest/dictionary_heat_optimization.o build/amd64/fastest/dictionary_management.o build/amd64/fastest/doe_metrics.o build/amd64/fastest/heartbeat_export.o build/amd64/fastest/inference_engine.o build/amd64/fastest/io.o build/amd64/fastest/log.o build/amd64/fastest/main.o build/amd64/fastest/math_portable.o build/amd64/fastest/memory_management.o build/amd64/fastest/physics_hotwords_cache.o build/amd64/fastest/physics_metadata.o build/amd64/fastest/physics_pipelining_metrics.o build/amd64/fastest/physics_runtime.o build/amd64/fastest/profiler.o build/amd64/fastest/repl.o build/amd64/fastest/rolling_window_of_truth.o build/amd64/fastest/ssm_jacquard.o build/amd64/fastest/stack_management.o build/amd64/fastest/vm_api.o build/amd64/fastest/vm.o build/amd64/fastest/vm_debug.o build/amd64/fastest/word_registry.o build/amd64/fastest/word_source/arithmetic_words.o build/amd64/fastest/word_source/block_words.o build/amd64/fastest/word_source/control_words.o build/amd64/fastest/word_source/defining_words.o build/amd64/fastest/word_source/dictionary_heat_diagnostic_words.o build/amd64/fastest/word_source/dictionary_manipulation_words.o build/amd64/fastest/word_source/dictionary_words.o build/amd64/fastest/word_source/double_words.o build/amd64/fastest/word_source/editor_words.o build/amd64/fastest/word_source/format_words.o build/amd64/fastest/word_source/io_words.o build/amd64/fastest/word_source/logical_words.o build/amd64/fastest/word_source/memory_words.o build/amd64/fastest/word_source/mixed_arithmetic_words.o build/amd64/fastest/word_source/physics_benchmark_words.o build/amd64/fastest/word_source/physics_diagnostic_words.o build/amd64/fastest/word_source/physics_freeze_words.o build/amd64/fastest/word_source/physics_pipelining_diagnostic_words.o build/amd64/fastest/word_source/q48_16_words.o build/amd64/fastest/word_source/return_stack_words.o build/amd64/fastest/word_source/stack_words.o build/amd64/fastest/word_source/starforth_words.o build/amd64/fastest/word_source/string_words.o build/amd64/fastest/word_source/system_words.o build/amd64/fastest/word_source/vocabulary_words.o build/amd64/fastest/test_runner/test_common.o build/amd64/fastest/test_runner/test_runner.o build/amd64/fastest/test_runner/modules/arithmetic_words_test.o build/amd64/fastest/test_runner/modules/block_words_test.o build/amd64/fastest/test_runner/modules/break_me_tests.o build/amd64/fastest/test_runner/modules/control_words_test.o build/amd64/fastest/test_runner/modules/defining_words_tests.o build/amd64/fastest/test_runner/modules/dictionary_manipulation_words_test.o build/amd64/fastest/test_runner/modules/dictionary_words_test.o build/amd64/fastest/test_runner/modules/double_words_test.o build/amd64/fastest/test_runner/modules/format_words_test.o build/amd64/fastest/test_runner/modules/integration_tests.o build/amd64/fastest/test_runner/modules/io_words_test.o build/amd64/fastest/test_runner/modules/logical_words_test.o build/amd64/fastest/test_runner/modules/memory_words_test.o build/amd64/fastest/test_runner/modules/mixed_arithmetic_words_test.o build/amd64/fastest/test_runner/modules/return_stack_words_test.o build/amd64/fastest/test_runner/modules/stack_words_test.o build/amd64/fastest/test_runner/modules/starforth_words_test.o build/amd64/fastest/test_runner/modules/stress_tests.o build/amd64/fastest/test_runner/modules/string_words_test.o build/amd64/fastest/test_runner/modules/system_words_test.o build/amd64/fastest/test_runner/modules/vocabulary_words_test.o build/amd64/fastest/platform/linux/time.o build/amd64/fastest/platform/platform_init.o build/amd64/fastest/platform/threading.o -flto=auto -fuse-linker-plugin -s -Wl,--gc-sections -pthread 
+
+✓ Build complete: build/amd64/fastest/starforth
+  Architecture: x86_64
+  Profile: Maximum performance build (ASM + LTO + direct threading) (fastest)
+  Output directory: build/amd64/fastest
+  Optimizations: Enabled
+  Direct Threading: Enabled
+
+🎯 You've built the FASTEST FORTH IN THE WEST!
+
+Quick-draw benchmark:
+make[1]: Leaving directory '/home/rajames/CLionProjects/StarForth'
+
+=== POST RUN ===
+[32m[20:12:09] INFO: [0mblkio: backend=RAM fbs=1024 blocks=1024 size=1048576B ro=0
+[32m[20:12:09] INFO: [0mRegistering FORTH-79 Standard word set...
+[32m[20:12:09] INFO: [0mRegistering FORTH-79 arithmetic words...
+[32m[20:12:09] INFO: [0mFORTH-79 Standard word set registration complete
+[32m[20:12:09] INFO: [0mblk: hdr 'StarForth Volume' v2: total_devblocks(4k)=256, bam_devblocks=1, devblock_base=2, tracked=32768, total_blocks=762, free=730
+[32m[20:12:09] INFO: [0mRunning system initialization (INIT)...
+[32m[20:12:09] INFO: [0mDictionary fence set - init words protected from FORGET
+[32m[20:12:09] INFO: [0mRunning comprehensive test suite...
+[32m[20:12:09] INFO: [0mStarting comprehensive FORTH-79 modular test suite...
+[32m[20:12:09] INFO: [0m==============================================
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Stack Words ===
+[32m[20:12:09] INFO: [0mRunning Stack Words Tests (Module 1: Foundation)...
+5 5 
+0 0 
+-42 -42 
+2147483647 2147483647 
+-2147483648 -2147483648 
+[31m[20:12:09] ERROR: [0mDUP: Stack underflow
+5 
+42 
+10 
+1 
+1 
+7 
+0 
+1 
+0 
+0 
+0 
+5 
+2 
+3 
+[31m[20:12:09] ERROR: [0mDROP: Stack underflow
+5 7 
+42 42 
+0 99 
+-5 10 
+[31m[20:12:09] ERROR: [0mSWAP: Insufficient stack items (need 2)
+[31m[20:12:09] ERROR: [0mSWAP: Insufficient stack items (need 2)
+5 7 5 
+0 0 0 
+-1 42 -1 
+[31m[20:12:09] ERROR: [0mOVER: Insufficient stack items (need 2)
+[31m[20:12:09] ERROR: [0mOVER: Insufficient stack items (need 2)
+1 3 2 
+0 0 0 
+-1 1 0 
+[31m[20:12:09] ERROR: [0mROT: Insufficient stack items (need 3)
+[31m[20:12:09] ERROR: [0mROT: Insufficient stack items (need 3)
+[31m[20:12:09] ERROR: [0mROT: Insufficient stack items (need 3)
+0 
+1 
+[32m[20:12:09] INFO: [0m3 
+L8[JACQUARD]: Mode C0_MINIMAL → C7_FULL_INFERENCE (entropy=0.00, cv=0.50, temporal=1.00)
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Return Stack Words ===
+[32m[20:12:09] INFO: [0mRunning Return Stack Words Tests (Module 2)...
+42 42 
+0 0 
+-123 -123 
+1 1 2 2 
+[31m[20:12:09] ERROR: [0m>R: DSP underflow
+42 
+1 2 
+42 
+-1 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Memory Words ===
+[32m[20:12:09] INFO: [0mRunning Memory Words Tests (Module 3)...
+0 
+-999 
+222 
+2147483647 
+-2147483648 
+123 
+-1 
+65 
+0 
+255 
+97 
+0 
+42 
+-999 
+0 
+0 
+-1 
+8 
+16 
+0 
+0 
+-1 
+0 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Arithmetic Words ===
+[32m[20:12:09] INFO: [0mRunning Arithmetic Words Tests (Module 5)...
+12 
+42 
+-2 
+-8 
+2147483648 
+-2147483649 
+[31m[20:12:09] ERROR: [0m+: Stack underflow
+[31m[20:12:09] ERROR: [0m+: Stack underflow
+7 
+42 
+-5 
+8 
+0 
+-2147483649 
+2147483648 
+[31m[20:12:09] ERROR: [0m-: Stack underflow
+[31m[20:12:09] ERROR: [0m-: Stack underflow
+42 
+0 
+42 
+-42 
+42 
+65534 
+4294967296 
+[31m[20:12:09] ERROR: [0m*: Stack underflow
+[31m[20:12:09] ERROR: [0m*: Stack underflow
+5 
+42 
+-5 
+-5 
+5 
+2 
+[31m[20:12:09] ERROR: [0m/: Division by zero
+[31m[20:12:09] ERROR: [0m/: Stack underflow
+[31m[20:12:09] ERROR: [0m/: Stack underflow
+2 
+0 
+0 
+-2 
+2 
+3 
+[31m[20:12:09] ERROR: [0mMOD: Division by zero
+[31m[20:12:09] ERROR: [0mMOD: Stack underflow
+[31m[20:12:09] ERROR: [0mMOD: Stack underflow
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Logical Words ===
+[32m[20:12:09] INFO: [0mRunning Logical Words Tests (Module 8)...
+-1 
+0 
+0 
+0 
+17 
+[31m[20:12:09] ERROR: [0mAND: Stack underflow
+[31m[20:12:09] ERROR: [0mAND: Stack underflow
+-1 
+-1 
+-1 
+0 
+119 
+[31m[20:12:09] ERROR: [0mOR: Stack underflow
+[31m[20:12:09] ERROR: [0mOR: Stack underflow
+0 
+-1 
+-1 
+0 
+102 
+[31m[20:12:09] ERROR: [0mXOR: Stack underflow
+[31m[20:12:09] ERROR: [0mXOR: Stack underflow
+0 
+-1 
+-43 
+41 
+[31m[20:12:09] ERROR: [0mNOT: Stack underflow
+-1 
+0 
+-1 
+-1 
+0 
+[31m[20:12:09] ERROR: [0m=: Stack underflow
+[31m[20:12:09] ERROR: [0m=: Stack underflow
+-1 
+0 
+0 
+-1 
+[31m[20:12:09] ERROR: [0m<>: Stack underflow
+[31m[20:12:09] ERROR: [0m<>: Stack underflow
+-1 
+0 
+0 
+-1 
+-1 
+[31m[20:12:09] ERROR: [0m<: Stack underflow
+[31m[20:12:09] ERROR: [0m<: Stack underflow
+-1 
+0 
+0 
+-1 
+-1 
+[31m[20:12:09] ERROR: [0m>: Stack underflow
+[31m[20:12:09] ERROR: [0m>: Stack underflow
+-1 
+0 
+0 
+[31m[20:12:09] ERROR: [0m0=: Stack underflow
+-1 
+0 
+0 
+[31m[20:12:09] ERROR: [0m0<: Stack underflow
+-1 
+0 
+0 
+[31m[20:12:09] ERROR: [0m0>: Stack underflow
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Mixed Arithmetic Words ===
+[32m[20:12:09] INFO: [0mRunning Mixed Arithmetic Words Tests (Module 7)...
+10 
+20 
+0 
+210 
+10 
+-10 
+-10 
+[31m[20:12:09] ERROR: [0m*/: Division by zero
+[31m[20:12:09] ERROR: [0m*/: Stack underflow
+[31m[20:12:09] ERROR: [0m*/: Stack underflow
+10 1 
+20 0 
+0 0 
+210 0 
+11 1 
+-5 -1 
+[31m[20:12:09] ERROR: [0m*/MOD: Division by zero
+[31m[20:12:09] ERROR: [0m*/MOD: Stack underflow
+300 0 
+2147483648 0 
+-50 0 
+42 0 
+-300 0 
+0 56088 
+0 0 
+0 42 
+-1 4294911208 
+1 0 
+0 20000 
+10 0 
+12 34 
+2147913144729 6 
+42 0 
+-42949662 -96 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Double Words ===
+[32m[20:12:09] INFO: [0mRunning Double Number Words Tests (Module 6)...
+2 1 
+0 0 
+-2 -1 
+2 
+200 100 200 100 
+0 0 0 0 
+-200 -100 -200 -100 
+4 
+20 10 40 30 20 10 
+0 0 88 99 0 0 
+2 -1 4 -3 2 -1 
+6 
+20 10 40 30 
+0 0 88 99 
+42 42 42 42 
+-20 -10 40 30 
+4 
+20 10 60 50 40 30 
+0 0 2 2 1 1 
+-2 -1 -6 -5 4 3 
+6 
+600 400 
+99 42 
+-125 -50 
+0 2147483648 
+-599 -400 
+400 400 
+99 42 
+-201 -100 
+274 150 
+-1 -1 
+0 0 
+-201 -100 
+199 100 
+0 0 
+-1 -2147483647 
+200 100 
+199 100 
+0 0 
+0 -100 
+0 2147483648 
+200 100 
+99 42 
+-200 -100 
+-1 -100 
+400 300 
+99 42 
+-200 -100 
+0 100 
+-1 
+0 
+0 
+-1 
+-1 
+-1 
+0 
+0 
+-1 
+-1 
+-1 
+-1 
+0 
+0 
+0 
+0 
+-1 
+0 
+0 
+-1 
+-1 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Format Words ===
+[32m[20:12:09] INFO: [0mRunning Format Words Tests (Module 10)...
+42 
+255 
+42 
+467 
+14 
+255 
+42 
+42 
+42 
+66 
+255 
+42 
+255 
+255 
+42 
+42 
+42 
+42 
+774763251095801167872
+
+42
+5
+15
+05
+42
+0
+1234567890
+42
+42
+0
+42
+
+48 2 
+42.
+[31m[20:12:09] ERROR: [0mHOLD: byte out of range (257)
+[32m[20:12:09] INFO: [0m
+=== Testing Module: String Words ===
+[32m[20:12:09] INFO: [0mRunning String Words Tests (Module 11)...
+4 49 
+0 57 
+255 57 
+0 
+[31m[20:12:09] ERROR: [0mCOUNT: Data stack underflow
+ Test
+
+Test
+
+
+[31m[20:12:09] ERROR: [0mCMOVE: out-of-bounds (src=56 dst=5242368 n=1000)
+
+[31m[20:12:09] ERROR: [0mCMOVE>: out-of-bounds (src=56 dst=5242368 n=1000)
+0 
+-1 
+1 
+-1 
+0 
+-1 7 49 
+0 7 65 
+-1 4 81 
+0 0 88 
+
+
+
+    
+Test
+Test
+
+
+     
+
+[32m[20:12:09] INFO: [0m
+=== Testing Module: I/O Words ===
+[32m[20:12:09] INFO: [0mRunning I/O Words Tests (Module 9)...
+42 
+-42 
+0 
+2147483647 
+-2147483648 
+3 2 1 
+42 
+43 
+
+
+
+
+0 
+3 2 1 
+42  43 
+    0 
+A B
+                          42    43 
+A
+Z
+0
+ 
+
+
+A
+�
+HI
+Hell
+
+A
+1234
+[31m[20:12:09] ERROR: [0mTYPE: Data stack underflow
+[31m[20:12:09] ERROR: [0mTYPE: Data stack underflow
+0 5 
+0 57 
+255 57 
+0 
+[31m[20:12:09] ERROR: [0mCOUNT: Data stack underflow
+0 
+-1 
+-1 
+0 
+0 
+0 
+0 
+0 
+255 
+597 
+52 
+5 
+255 
+42  43 
+1 
+2 
+3 
+     42 
+1    10    100 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Block Words ===
+[32m[20:12:09] INFO: [0mRunning Block Words Tests (Module 16)...
+101590652829632 
+101590652829632 
+
+Block 1
+00:                                                                 
+01:                                                                 
+02:                                                                 
+03:                                                                 
+04:                                                                 
+05:                                                                 
+06:                                                                 
+07:                                                                 
+08:                                                                 
+09:                                                                 
+10:                                                                 
+11:                                                                 
+12:                                                                 
+13:                                                                 
+14:                                                                 
+15:                                                                 
+
+1 
+
+Block 1
+00:                                                                 
+01:                                                                 
+02:                                                                 
+03:                                                                 
+04:                                                                 
+05:                                                                 
+06:                                                                 
+07:                                                                 
+08:                                                                 
+09:                                                                 
+10:                                                                 
+11:                                                                 
+12:                                                                 
+13:                                                                 
+14:                                                                 
+15:                                                                 
+
+1 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Dictionary Words ===
+[32m[20:12:09] INFO: [0mRunning Dictionary Words Tests (Module 4)...
+-1 
+8 
+8 
+16 
+-1 
+16 
+0 
+0 
+104 
+42 
+42 
+-999 
+0 
+2147483647 
+-2147483648 
+20 20 
+0 
+0 
+0 
+0 
+0 
+0 0 
+67890 12345 
+0 0 
+-2000 -1000 
+-1 2147483647 
+-1 
+0 
+-1 
+42 
+-1 
+0 
+0 
+3 -1 
+-1 
+0 
+0 
+0 
+-1 
+43 42 
+0 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Dictionary Manipulation Words ===
+[32m[20:12:09] INFO: [0mRunning Dictionary Manipulation Words Tests (Module 14)...
+42 
+2 
+42 
+101590871545440 
+101590871704144 
+0 
+101590871594112 
+101590871617360 
+101590871617360 
+101590871705104 
+101590871705392 
+[31m[20:12:09] ERROR: [0m': word 'NONEXISTENT' not found
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Vocabulary Words ===
+[32m[20:12:09] INFO: [0mRunning Vocabulary Words Tests (Module 15)...
+101590871706912 
+11 
+[31m[20:12:09] ERROR: [0mVOCABULARY: duplicate 'TESTVOC'
+[31m[20:12:09] ERROR: [0mVOCABULARY: missing name
+42 
+101590871710560 
+101590871600224 
+101590871710560 
+101590871710432 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: System Words ===
+[32m[20:12:09] INFO: [0mRunning System Words Tests (Module 18)...
+[33m[20:12:09] WARN: [0mSome system tests marked as unimplemented due to system-level effects
+Search order: TEST-VOC8 (FIND)
+Current: TEST-VOC8
+Search order: TEST-VOC9 (FIND)
+Current: TEST-VOC9
+Search order: (FIND)
+Current: TEST-VOC9
+0 
+0 
+[32m[20:12:09] INFO: [0mL8[JACQUARD]: Mode C7_FULL_INFERENCE → C15_FULL_ADAPTIVE (entropy=1.00, cv=0.50, temporal=1.00)
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Defining Words ===
+[32m[20:12:09] INFO: [0mRunning Defining Words Tests (Module 13)...
+Error
+42 
+[31m[20:12:09] ERROR: [0mNested ':' inside a definition is not allowed
+42 
+42 
+0 
+-1 
+42 
+-99 
+42 
+42 
+[31m[20:12:09] ERROR: [0mDOES>: compile-only
+42 
+42 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: Control Words ===
+[32m[20:12:09] INFO: [0mRunning Control Words Tests (Module 12)...
+42 
+24 
+1 
+42 
+[31m[20:12:09] ERROR: [0mIF: compile-only
+42 
+24 
+1 
+42 
+[31m[20:12:09] ERROR: [0mIF: compile-only
+[31m[20:12:09] ERROR: [0mELSE: compile-only
+[31m[20:12:09] ERROR: [0mELSE: missing IF
+[31m[20:12:09] ERROR: [0mELSE: compile-only
+[31m[20:12:09] ERROR: [0mELSE: missing IF
+[31m[20:12:09] ERROR: [0mTHEN: compile-only
+[31m[20:12:09] ERROR: [0mCF: underflow
+[31m[20:12:09] ERROR: [0mTHEN: unmatched
+[31m[20:12:09] ERROR: [0mTHEN: compile-only
+[31m[20:12:09] ERROR: [0mCF: underflow
+[31m[20:12:09] ERROR: [0mTHEN: unmatched
+5 
+5 
+[31m[20:12:09] ERROR: [0mBEGIN: compile-only
+5 
+5 
+[31m[20:12:09] ERROR: [0mBEGIN: compile-only
+0 
+[31m[20:12:09] ERROR: [0mUNTIL: compile-only
+0 
+[31m[20:12:09] ERROR: [0mUNTIL: compile-only
+5 
+0 
+[31m[20:12:09] ERROR: [0mWHILE: compile-only
+5 
+0 
+[31m[20:12:09] ERROR: [0mWHILE: compile-only
+5 
+[31m[20:12:09] ERROR: [0mREPEAT: compile-only
+5 
+[31m[20:12:09] ERROR: [0mREPEAT: compile-only
+0 1 2 3 4 
+-5 -4 -3 -2 
+0 1 2 1 2 3 2 3 4 
+0 1 2 3 4 
+-5 -4 -3 -2 
+0 1 2 1 2 3 2 3 4 
+0 1 2 3 4 
+0 1 2 2 3 4 
+0 1 2 3 4 
+0 1 2 2 3 4 
+0 1 2 3 4 
+[31m[20:12:09] ERROR: [0mLOOP: compile-only
+0 1 2 3 4 
+[31m[20:12:09] ERROR: [0mLOOP: compile-only
+0 2 4 6 8 
+10 9 8 7 6 5 4 3 2 1 0 
+0 3 6 9 
+0 2 4 6 8 
+10 9 8 7 6 5 4 3 2 1 0 
+0 3 6 9 
+[32m[20:12:09] INFO: [0m
+=== Testing Module: StarForth Words ===
+[32m[20:12:09] INFO: [0mRunning StarForth Words Tests (Module 17: StarForth Extensions)...
+1 
+0 
+3 
+[31m[20:12:09] ERROR: [0mENTROPY@: null dictionary entry
+[31m[20:12:09] ERROR: [0mENTROPY@: data stack underflow
+42 
+20 
+0 
+[31m[20:12:09] ERROR: [0mENTROPY!: null dictionary entry
+[31m[20:12:09] ERROR: [0mENTROPY!: data stack underflow
+[31m[20:12:09] ERROR: [0mENTROPY!: data stack underflow
+Word Usage Statistics (Execution Heat Counts):
+=============================================
+WORD-ENTROPY: 1
+ENTROPY!: 6
+ENTROPY@: 3
+EXIT: 3
+J: 19
+I: 113
++LOOP: 1
+LOOP: 4
+DO: 1
+?DO: 3
+(+LOOP): 32
+(LOOP): 51
+(DO): 1
+(?DO): 5
+LIT: 44
+;: 1
+:: 1
+': 7
+CR: 3
+.: 92
+DUP: 3
+DROP: 4
+-------------------------------------
+Total executions: 398
+Total words: 295
+Average executions per word: 1
+Word Usage Statistics (Execution Heat Counts):
+=============================================
+WDENT: 2
+WORD-ENTROPY: 2
+ENTROPY!: 6
+ENTROPY@: 3
+EXIT: 2
+J: 19
+I: 113
++LOOP: 1
+LOOP: 4
+DO: 1
+?DO: 3
+(+LOOP): 32
+(LOOP): 51
+(DO): 1
+(?DO): 5
+LIT: 25
+;: 1
+:: 1
+': 7
+CR: 3
+.: 92
++: 3
+DUP: 3
+DROP: 5
+-------------------------------------
+Total executions: 385
+Total words: 296
+Average executions per word: 1
+Word Usage Statistics (Execution Heat Counts):
+=============================================
+WDENT: 2
+WORD-ENTROPY: 3
+ENTROPY!: 6
+ENTROPY@: 3
+EXIT: 2
+J: 19
+I: 113
++LOOP: 1
+LOOP: 4
+DO: 1
+?DO: 3
+(+LOOP): 32
+(LOOP): 51
+(DO): 1
+(?DO): 5
+LIT: 25
+;: 1
+:: 1
+': 7
+CR: 3
+.: 92
++: 3
+DEPTH: 1
+DUP: 3
+DROP: 5
+-------------------------------------
+Total executions: 387
+Total words: 296
+Average executions per word: 1
+0 
+[31m[20:12:09] ERROR: [0mTOP-WORDS: data stack underflow
+[33m[20:12:09] WARN: [0m(- comment not terminated
+[33m[20:12:09] WARN: [0m(- comment not terminated
+[33m[20:12:09] WARN: [0m(- comment not terminated
+[33m[20:12:09] WARN: [0m(- comment not terminated
+[32m[20:12:09] INFO: [0mINIT: Starting system initialization from init.4th
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 1 (1 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 2 (161 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 3 (51 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 4 (161 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 5 (153 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 6 (159 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 7 (62 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 8 (196 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 9 (56 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 10 (80 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 11 (97 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 12 (138 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 13 (101 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 14 (145 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 15 (214 bytes)
+[32m[20:12:09] INFO: [0mINIT: Copied block content to block 16 (35 bytes)
+[32m[20:12:09] INFO: [0mINIT: Loaded 16 blocks from init.4th
+[32m[20:12:09] INFO: [0mINIT: Executing initialization blocks...
+[32m[20:12:09] INFO: [0mL8[JACQUARD]: Mode C15_FULL_ADAPTIVE → C7_FULL_INFERENCE (entropy=0.06, cv=0.50, temporal=1.00)
+[32m[20:12:09] INFO: [0mINFERENCE[slope]: 0.333 → 0.005 (fit_quality=0.000000 Q48.16)
+Top 5 most frequently used words:
+==================================
+ 1. DROP: 6
+ 2. TOPTEST: 5
+ 3. EXIT: 5
+ 4. LIT: 5
+ 5. TOP-WORDS: 1
+Top 10 most frequently used words:
+==================================
+ 1. DROP: 6
+ 2. TOPTEST: 5
+ 3. EXIT: 5
+ 4. LIT: 5
+ 5. TOP-WORDS: 2
+ 6. ;: 1
+ 7. :: 1
+Top 5 most frequently used words:
+==================================
+ 1. TOP-WORDS: 1
+Top 1 most frequently used words:
+==================================
+ 1. TOP-WORDS: 2
+Top 100 most frequently used words:
+==================================
+ 1. TOP-WORDS: 3
+TOP-WORDS: invalid count 0
+TOP-WORDS: invalid count -5
+........[32m[20:12:11] INFO: [0mINIT: Switching to FORTH vocabulary
+[32m[20:12:11] INFO: [0mINIT: Zeroing 16 init blocks for userspace use
+[32m[20:12:11] INFO: [0mINIT: System initialization complete - blocks freed, FORTH context active
+[32m[20:12:11] INFO: [0mINIT: Starting system initialization from init.4th
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 1 (1 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 2 (161 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 3 (51 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 4 (161 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 5 (153 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 6 (159 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 7 (62 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 8 (196 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 9 (56 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 10 (80 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 11 (97 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 12 (138 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 13 (101 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 14 (145 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 15 (214 bytes)
+[32m[20:12:11] INFO: [0mINIT: Copied block content to block 16 (35 bytes)
+[32m[20:12:11] INFO: [0mINIT: Loaded 16 blocks from init.4th
+[32m[20:12:11] INFO: [0mINIT: Executing initialization blocks...
+........[32m[20:12:14] INFO: [0mINIT: Switching to FORTH vocabulary
+[32m[20:12:14] INFO: [0mINIT: Zeroing 16 init blocks for userspace use
+[32m[20:12:14] INFO: [0mINIT: System initialization complete - blocks freed, FORTH context active
+[32m[20:12:14] INFO: [0mFINAL TEST SUMMARY:
+[32m[20:12:14] INFO: [0m  Total tests: 782
+[32m[20:12:14] INFO: [0m  Passed: 731
+[32m[20:12:14] INFO: [0m  Failed: 0
+[32m[20:12:14] INFO: [0m  Skipped: 49
+[32m[20:12:14] INFO: [0m  Errors: 0
+[32m[20:12:14] INFO: [0mALL IMPLEMENTED TESTS PASSED!
+[32m[20:12:14] INFO: [0m==============================================
+[32m[20:12:14] INFO: [0mTest run complete.
+[32m[20:12:14] INFO: [0mStarting Forth REPL
+[36mok>[0m [92m[0mGoodbye!
+ ok
