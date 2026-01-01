@@ -784,10 +784,14 @@ static void vm_heartbeat_run_cycle(VM *vm)
 
     heartbeat_publish_snapshot(vm);
 
-    /* Phase 2: Real-time heartbeat metrics emission */
+    /* Phase 2: Real-time heartbeat metrics emission (DISABLED)
+     * Re-enable with --heartbeat-log=full or add a runtime flag.
+     */
+#if 0
     HeartbeatTickSnapshot tick_snapshot;
     heartbeat_capture_tick_snapshot(vm, &tick_snapshot);
     heartbeat_emit_tick_row(vm, &tick_snapshot);
+#endif
 }
 
 #if HEARTBEAT_THREAD_ENABLED

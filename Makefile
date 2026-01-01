@@ -593,6 +593,11 @@ ifdef ASM
 	@$(CC) $(CFLAGS) -S $(ASM_SYNTAX) $< -o $(patsubst %.o,%.s,$@)
 endif
 
+# Files that include version.h - rebuild when timestamp changes
+$(BUILD_DIR)/main.o: include/version.h
+$(BUILD_DIR)/cli.o: include/version.h
+$(BUILD_DIR)/word_source/starforth_words.o: include/version.h
+
 # ==============================================================================
 # TESTING & BENCHMARKING
 # ==============================================================================
