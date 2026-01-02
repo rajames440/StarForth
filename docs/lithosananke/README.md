@@ -119,13 +119,30 @@ Every VM has exactly one birth capsule — its identity and provenance.
 PARITY:BIRTH vm_id=42 capsule_id=0xA13F mode=p capsule_hash=0x... dict_hash=0x...
 ```
 
+### DOMAIN vs PERSONALITY
+
+**DOMAIN** is a construction concept that exists **only in Mama FORTH**. It's how Mama classifies, composes, and selects capsules. DOMAIN is never visible to baby VMs.
+
+**PERSONALITY** is the result of executing a production `(p)` INIT capsule. It's what the baby VM *is* — its vocabulary, invariants, capabilities. PERSONALITY is immutable and defines the VM's entire worldview.
+
+### Production (p) vs Experiment (e)
+
+- **(p) capsules** are truth-bearing — they can birth VMs
+- **(e) capsules** are Mama-only workloads — experiments that never touch babies
+
+A baby VM never sees, executes, or knows about (e) capsules.
+
 ### Content-Addressed Capsules
 
 Capsules are identified by content hash, not names. Names lie. Hashes don't.
 
 ### Mama FORTH
 
-The root VM that holds all truths, manages child VMs, and enforces the birth protocol.
+The root VM that holds all truths, manages child VMs, and enforces the birth protocol. Mama:
+- Maintains the capsule directory
+- Selects (p) capsules for birth
+- Executes (e) capsules for experimentation
+- Logs all births and runs for provenance
 
 ---
 
