@@ -43,7 +43,7 @@
 #ifndef VOCABULARY_WORDS_H
 #define VOCABULARY_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup vocabulary FORTH-79 Vocabulary System Words
@@ -78,5 +78,24 @@
  * @param vm Pointer to the virtual machine instance
  */
 void register_vocabulary_words(VM * vm);
+
+/**
+ * @brief Direct vocabulary creation (kernel bootstrap)
+ * @param vm Pointer to the virtual machine instance
+ * @param name Vocabulary name
+ */
+void vocabulary_create_vocabulary_direct(VM *vm, const char *name);
+
+/**
+ * @brief DEFINITIONS word implementation (kernel bootstrap)
+ * @param vm Pointer to the virtual machine instance
+ */
+void vocabulary_word_definitions(VM *vm);
+
+/**
+ * @brief FORTH word implementation - selects FORTH vocabulary
+ * @param vm Pointer to the virtual machine instance
+ */
+void vocabulary_word_forth(VM *vm);
 
 #endif /* VOCABULARY_WORDS_H */

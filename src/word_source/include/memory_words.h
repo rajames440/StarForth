@@ -43,7 +43,7 @@
 #ifndef MEMORY_WORDS_H
 #define MEMORY_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup memory_ops FORTH-79 Memory Operations

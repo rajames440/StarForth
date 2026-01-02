@@ -50,7 +50,7 @@
 #ifndef PHYSICS_PIPELINING_DIAGNOSTIC_WORDS_H
 #define PHYSICS_PIPELINING_DIAGNOSTIC_WORDS_H
 
-#include "../../include/vm.h"
+#include "vm.h"
 
 /**
  * Register all pipelining diagnostic words

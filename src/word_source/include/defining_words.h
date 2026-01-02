@@ -43,7 +43,7 @@
 #ifndef DEFINING_WORDS_H
 #define DEFINING_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup DefiningWords FORTH-79 Defining Words

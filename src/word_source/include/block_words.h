@@ -61,7 +61,7 @@
 #ifndef BLOCK_WORDS_H
 #define BLOCK_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /** @name Block System Configuration
  * @{

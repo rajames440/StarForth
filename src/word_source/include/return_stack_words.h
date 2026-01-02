@@ -43,7 +43,7 @@
 #ifndef RETURN_STACK_WORDS_H
 #define RETURN_STACK_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup ReturnStackOps FORTH-79 Return Stack Operations

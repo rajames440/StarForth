@@ -43,7 +43,7 @@
 #ifndef SYSTEM_WORDS_H
 #define SYSTEM_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup system_words FORTH-79 System & Environment Words

@@ -43,7 +43,7 @@
 #ifndef DICTIONARY_WORDS_H
 #define DICTIONARY_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup dictionary FORTH-79 Dictionary & Compilation Words

@@ -43,7 +43,7 @@
 #ifndef IO_WORDS_H  //!< Include guard
 #define IO_WORDS_H  //!< Include guard
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /* FORTH-79 I/O & Terminal Words:
  * EMIT      ( c -- )                    Output character c

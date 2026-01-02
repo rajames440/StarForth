@@ -43,7 +43,7 @@
 #ifndef CONTROL_WORDS_H
 #define CONTROL_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup control_words FORTH-79 Control Flow Words

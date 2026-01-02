@@ -43,7 +43,7 @@
 #ifndef EDITOR_WORDS_H
 #define EDITOR_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup editor_words FORTH-79 Line Editor Words

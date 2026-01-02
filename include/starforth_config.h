@@ -1,0 +1,154 @@
+/*
+  StarForth — Steady-State Virtual Machine Runtime
+
+  Copyright (c) 2023–2025 Robert A. James
+  All rights reserved.
+
+  This file is part of the StarForth project.
+
+  Licensed under the StarForth License, Version 1.0 (the "License");
+  you may not use this file except in compliance with the License.
+
+  You may obtain a copy of the License at:
+      https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+
+  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  express or implied, including but not limited to the warranties of
+  merchantability, fitness for a particular purpose, and noninfringement.
+
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ StarForth — Steady-State Virtual Machine Runtime
+  Copyright (c) 2023–2025 Robert A. James
+  All rights reserved.
+
+  This file is part of the StarForth project.
+
+  Licensed under the StarForth License, Version 1.0 (the "License");
+  you may not use this file except in compliance with the License.
+
+  You may obtain a copy of the License at:
+       https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
+
+  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  express or implied, including but not limited to the warranties of
+  merchantability, fitness for a particular purpose, and noninfringement.
+
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+ */
+
+/*
+ * StarForth VM Feature Configuration
+ *
+ * This header is the single source of truth for VM build-time defaults.
+ * Build systems may override any option via -D<FLAG>=<value>, but every
+ * translation unit sees these defaults even if no -D is provided.
+ *
+ * Hosted + kernel builds both force-include this header (see Makefiles),
+ * so new toggles belong here with a documented owner.
+ */
+
+#ifndef STARFORTH_CONFIG_H
+#define STARFORTH_CONFIG_H
+
+/* Base defaults (match 2025-12-26 hosted baseline) */
+#define STARFORTH_CONFIG_STRICT_PTR_DEFAULT 1
+#define STARFORTH_CONFIG_ENABLE_HOTWORDS_CACHE_DEFAULT 0
+#define STARFORTH_CONFIG_ENABLE_PIPELINING_DEFAULT 0
+#define STARFORTH_CONFIG_ROLLING_WINDOW_SIZE_DEFAULT 4096
+#define STARFORTH_CONFIG_TRANSITION_WINDOW_SIZE_DEFAULT 8
+#define STARFORTH_CONFIG_ADAPTIVE_SHRINK_RATE_DEFAULT 50
+#define STARFORTH_CONFIG_ADAPTIVE_MIN_WINDOW_SIZE_DEFAULT 256
+#define STARFORTH_CONFIG_ADAPTIVE_CHECK_FREQUENCY_DEFAULT 512
+#define STARFORTH_CONFIG_ADAPTIVE_GROWTH_THRESHOLD_DEFAULT 5
+#define STARFORTH_CONFIG_INITIAL_DECAY_SLOPE_Q48_DEFAULT 21845
+#define STARFORTH_CONFIG_DECAY_MIN_INTERVAL_DEFAULT 1000ULL
+#define STARFORTH_CONFIG_DECAY_RATE_PER_US_Q16_DEFAULT 1
+#define STARFORTH_CONFIG_HEARTBEAT_THREAD_ENABLED_DEFAULT 1
+#define STARFORTH_CONFIG_HEARTBEAT_TICK_NS_DEFAULT 10000ULL
+#define STARFORTH_CONFIG_HEARTBEAT_INFERENCE_FREQUENCY_DEFAULT 1000
+#define STARFORTH_CONFIG_HEARTBEAT_CHECK_FREQUENCY_DEFAULT 256
+#define STARFORTH_CONFIG_HEARTBEAT_WINDOW_TUNING_FREQUENCY_DEFAULT 1000
+#define STARFORTH_CONFIG_HEARTBEAT_SLOPE_VALIDATION_FREQUENCY_DEFAULT 5000
+
+/* Public macros (overridable via -D) */
+#ifndef STRICT_PTR
+#define STRICT_PTR STARFORTH_CONFIG_STRICT_PTR_DEFAULT
+#endif
+
+#ifndef VM_STRICT_PTR
+#define VM_STRICT_PTR STRICT_PTR
+#endif
+
+#ifndef ENABLE_HOTWORDS_CACHE
+#define ENABLE_HOTWORDS_CACHE STARFORTH_CONFIG_ENABLE_HOTWORDS_CACHE_DEFAULT
+#endif
+
+#ifndef ENABLE_PIPELINING
+#define ENABLE_PIPELINING STARFORTH_CONFIG_ENABLE_PIPELINING_DEFAULT
+#endif
+
+#ifndef ROLLING_WINDOW_SIZE
+#define ROLLING_WINDOW_SIZE STARFORTH_CONFIG_ROLLING_WINDOW_SIZE_DEFAULT
+#endif
+
+#ifndef TRANSITION_WINDOW_SIZE
+#define TRANSITION_WINDOW_SIZE STARFORTH_CONFIG_TRANSITION_WINDOW_SIZE_DEFAULT
+#endif
+
+#ifndef ADAPTIVE_SHRINK_RATE
+#define ADAPTIVE_SHRINK_RATE STARFORTH_CONFIG_ADAPTIVE_SHRINK_RATE_DEFAULT
+#endif
+
+#ifndef ADAPTIVE_MIN_WINDOW_SIZE
+#define ADAPTIVE_MIN_WINDOW_SIZE STARFORTH_CONFIG_ADAPTIVE_MIN_WINDOW_SIZE_DEFAULT
+#endif
+
+#ifndef ADAPTIVE_CHECK_FREQUENCY
+#define ADAPTIVE_CHECK_FREQUENCY STARFORTH_CONFIG_ADAPTIVE_CHECK_FREQUENCY_DEFAULT
+#endif
+
+#ifndef ADAPTIVE_GROWTH_THRESHOLD
+#define ADAPTIVE_GROWTH_THRESHOLD STARFORTH_CONFIG_ADAPTIVE_GROWTH_THRESHOLD_DEFAULT
+#endif
+
+#ifndef INITIAL_DECAY_SLOPE_Q48
+#define INITIAL_DECAY_SLOPE_Q48 STARFORTH_CONFIG_INITIAL_DECAY_SLOPE_Q48_DEFAULT
+#endif
+
+#ifndef DECAY_MIN_INTERVAL
+#define DECAY_MIN_INTERVAL STARFORTH_CONFIG_DECAY_MIN_INTERVAL_DEFAULT
+#endif
+
+#ifndef DECAY_RATE_PER_US_Q16
+#define DECAY_RATE_PER_US_Q16 STARFORTH_CONFIG_DECAY_RATE_PER_US_Q16_DEFAULT
+#endif
+
+#ifndef HEARTBEAT_THREAD_ENABLED
+#define HEARTBEAT_THREAD_ENABLED STARFORTH_CONFIG_HEARTBEAT_THREAD_ENABLED_DEFAULT
+#endif
+
+#ifndef HEARTBEAT_TICK_NS
+#define HEARTBEAT_TICK_NS STARFORTH_CONFIG_HEARTBEAT_TICK_NS_DEFAULT
+#endif
+
+#ifndef HEARTBEAT_INFERENCE_FREQUENCY
+#define HEARTBEAT_INFERENCE_FREQUENCY STARFORTH_CONFIG_HEARTBEAT_INFERENCE_FREQUENCY_DEFAULT
+#endif
+
+#ifndef HEARTBEAT_CHECK_FREQUENCY
+#define HEARTBEAT_CHECK_FREQUENCY STARFORTH_CONFIG_HEARTBEAT_CHECK_FREQUENCY_DEFAULT
+#endif
+
+#ifndef HEARTBEAT_WINDOW_TUNING_FREQUENCY
+#define HEARTBEAT_WINDOW_TUNING_FREQUENCY STARFORTH_CONFIG_HEARTBEAT_WINDOW_TUNING_FREQUENCY_DEFAULT
+#endif
+
+#ifndef HEARTBEAT_SLOPE_VALIDATION_FREQUENCY
+#define HEARTBEAT_SLOPE_VALIDATION_FREQUENCY STARFORTH_CONFIG_HEARTBEAT_SLOPE_VALIDATION_FREQUENCY_DEFAULT
+#endif
+
+#endif /* STARFORTH_CONFIG_H */
