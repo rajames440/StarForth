@@ -521,15 +521,6 @@ int main(int argc, char* argv[])
         fail_fast = 1;
     }
 
-    /* Run system initialization */
-    log_message(LOG_INFO, "Running system initialization (INIT)...");
-    if (vm.error)
-    {
-        log_message(LOG_ERROR, "System initialization failed - cannot continue");
-        cleanup_and_exit();
-        return 1;
-    }
-
     /* Protect foundational words from FORGET */
     vm.dict_fence_latest = vm.latest;
     vm.dict_fence_here = vm.here;
@@ -545,6 +536,17 @@ int main(int argc, char* argv[])
         log_message(LOG_INFO, "Running comprehensive test suite...");
         run_all_tests(&vm);
         log_message(LOG_INFO, "Test run complete.");
+
+        /* Run system initialization AFTER POST completes */
+        log_message(LOG_INFO, "Running system initialization (INIT)...");
+        vm_interpret(&vm, "INIT");
+        if (vm.error)
+        {
+            log_message(LOG_ERROR, "System initialization failed - cannot continue");
+            cleanup_and_exit();
+            return 1;
+        }
+        log_message(LOG_INFO, "System initialization complete.");
 
         vm_repl(&vm, config.script_mode);
     }

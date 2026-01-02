@@ -190,7 +190,7 @@ void vm_tick_window_tuner(VM* vm)
     /* Apply if different */
     if (suggested_size != window->effective_window_size)
     {
-        log_message(LOG_INFO,
+        log_message(LOG_DEBUG,
                    "HEARTBEAT[window]: %u → %u (accuracy %.2f%%, %lu/%lu prefetch hits)",
                    window->effective_window_size,
                    suggested_size,
@@ -262,7 +262,7 @@ void vm_tick_slope_validator(VM* vm)
         {
             /* Stale words accumulating: decay is insufficient */
             new_slope_direction = 1;
-            log_message(LOG_INFO,
+            log_message(LOG_DEBUG,
                        "HEARTBEAT[slope]: stale_delta=%ld, decay TOO SLOW, increase slope",
                        (long)stale_delta);
         }
@@ -273,27 +273,27 @@ void vm_tick_slope_validator(VM* vm)
             if (avg_heat < 5.0)
             {
                 new_slope_direction = -1;
-                log_message(LOG_INFO,
+                log_message(LOG_DEBUG,
                            "HEARTBEAT[slope]: stale_delta=%ld, avg_heat=%.1f, decay TOO FAST, decrease slope",
                            (long)stale_delta, avg_heat);
             }
             else
             {
-                log_message(LOG_INFO,
+                log_message(LOG_DEBUG,
                            "HEARTBEAT[slope]: stale_delta=%ld, decay working, hold slope",
                            (long)stale_delta);
             }
         }
         else
         {
-            log_message(LOG_INFO,
+            log_message(LOG_DEBUG,
                        "HEARTBEAT[slope]: stale_delta=%ld (stable), hold slope",
                        (long)stale_delta);
         }
     }
     else
     {
-        log_message(LOG_INFO,
+        log_message(LOG_DEBUG,
                    "HEARTBEAT[slope]: baseline measurement - hot_words=%lu, stale_ratio=%.2f%%, avg_heat=%.1f",
                    hot_word_count,
                    stale_ratio * 100.0,
@@ -326,7 +326,7 @@ void vm_tick_slope_validator(VM* vm)
         /* Log the adjustment as human-readable double */
         double old_slope_dbl = (double)old_slope / 65536.0;
         double new_slope_dbl = (double)vm->decay_slope_q48 / 65536.0;
-        log_message(LOG_INFO,
+        log_message(LOG_DEBUG,
                    "HEARTBEAT[slope]: ADJUSTED slope from %.3f to %.3f (direction=%d)",
                    old_slope_dbl,
                    new_slope_dbl,
@@ -437,7 +437,7 @@ static void vm_heartbeat_update_l8(VM *vm)
         ssm_config_t *config = (ssm_config_t*)vm->ssm_config;
         ssm_apply_mode(l8, config);
 
-        log_message(LOG_INFO,
+        log_message(LOG_DEBUG,
                    "L8[JACQUARD]: Mode %s → %s (entropy=%.2f, cv=%.2f, temporal=%.2f)",
                    ssm_l8_mode_name(old_mode),
                    ssm_l8_mode_name(l8->current_mode),
@@ -603,7 +603,7 @@ void vm_tick_inference_engine(VM* vm)
         if (vm->last_inference_outputs->adaptive_window_width > 0 &&
             vm->last_inference_outputs->adaptive_window_width != vm->rolling_window.effective_window_size)
         {
-            log_message(LOG_INFO,
+            log_message(LOG_DEBUG,
                        "INFERENCE[window]: %u → %u (variance=%.6f Q48.16)",
                        vm->rolling_window.effective_window_size,
                        vm->last_inference_outputs->adaptive_window_width,
@@ -619,7 +619,7 @@ void vm_tick_inference_engine(VM* vm)
             double old_slope_dbl = (double)vm->decay_slope_q48 / 65536.0;
             double new_slope_dbl = (double)vm->last_inference_outputs->adaptive_decay_slope / 65536.0;
 
-            log_message(LOG_INFO,
+            log_message(LOG_DEBUG,
                        "INFERENCE[slope]: %.3f → %.3f (fit_quality=%.6f Q48.16)",
                        old_slope_dbl,
                        new_slope_dbl,
