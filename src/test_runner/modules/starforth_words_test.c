@@ -196,18 +196,8 @@ static WordTestSuite starforth_word_suites[] = {
         4
     },
 
-    {
-        "INIT", {
-            /* Basic functionality - INIT is called at startup */
-            {"already_run", "INIT", "Should be idempotent", TEST_NORMAL, 0, 1},
-
-            /* Stack preservation */
-            {"no_stack_effect", "DEPTH INIT DEPTH = . CR", "Should not affect stack", TEST_NORMAL, 0, 1},
-
-            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
-        },
-        2
-    },
+    /* INIT intentionally not tested here - it's a startup operation that loads
+     * and executes init.4th. Running it during POST would cause double-initialization. */
 
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
