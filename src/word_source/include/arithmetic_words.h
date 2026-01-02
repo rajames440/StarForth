@@ -43,7 +43,7 @@
 #ifndef ARITHMETIC_WORDS_H
 #define ARITHMETIC_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /* FORTH-79 Arithmetic Words:
  * +         ( n1 n2 -- n3 )              Add n1 and n2

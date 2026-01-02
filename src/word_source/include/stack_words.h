@@ -43,7 +43,7 @@
 #ifndef STACK_WORDS_H
 #define STACK_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup stack_ops FORTH-79 Stack Operations

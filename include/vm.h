@@ -49,6 +49,7 @@
 #include <stdio.h>
 
 #include "platform_lock.h"
+#include "starforth_config.h"
 
 /* Forward declarations */
 struct VM;
@@ -56,13 +57,21 @@ struct HotwordsCache_s; /* Physics hot-words cache (avoids circular include) */
 typedef struct HotwordsCache_s HotwordsCache;
 struct WordTransitionMetrics; /* Pipelining metrics (avoids circular include) */
 typedef struct WordTransitionMetrics WordTransitionMetrics;
+struct VMHostServices; /* Host allocator/time hooks (defined in vm_host.h) */
+typedef struct VMHostServices VMHostServices;
 struct InferenceOutputs; /* Adaptive tuning inference engine outputs (avoids circular include) */
 typedef struct InferenceOutputs InferenceOutputs;
 struct HeartbeatWorker; /* Background heartbeat dispatcher */
 typedef struct HeartbeatWorker HeartbeatWorker;
 
 /* Bare metal type definitions */
+#if defined(__amd64__) || defined(__x86_64__) || defined(__aarch64__)
+typedef int64_t cell_t;
+typedef uint64_t ucell_t;
+#else
 typedef signed long cell_t;
+typedef unsigned long ucell_t;
+#endif
 
 /* ============================================================================
  * Rolling Window of Truth (Embedded to avoid circular includes)
@@ -80,10 +89,6 @@ typedef signed long cell_t;
  *   (once warm, adaptive shrinking logic can reduce size if beneficial)
  * - Knobs control adaptive shrinking behavior (rate, bounds, thresholds)
  */
-
-#ifndef ROLLING_WINDOW_SIZE
-#define ROLLING_WINDOW_SIZE 4096
-#endif
 
 typedef struct
 {
@@ -182,43 +187,14 @@ static inline cell_t CELL(vaddr_t a) { return (cell_t)(int64_t)a; }
 #define PHYSICS_STATE_HIDDEN    0x04
 #define PHYSICS_STATE_COMPILED  0x08
 
-/* Phase 2: Decay mechanism configuration (tunable via Makefile) */
-#ifndef DECAY_RATE_PER_US_Q16
-#define DECAY_RATE_PER_US_Q16 1ULL      /* Q48.16: 1/65536 heat/μs = ~15 heat/sec, half-life ~6-7 seconds for 100-heat word (adaptive baseline) */
-#endif
-
-#ifndef DECAY_MIN_INTERVAL
-#define DECAY_MIN_INTERVAL 1000ULL      /* Min elapsed time before decay applies (1 μs) */
-#endif
+/* Phase 2: Decay mechanism configuration (tunable via starforth_config.h) */
 
 #ifndef HEAT_CACHE_DEMOTION_THRESHOLD
 #define HEAT_CACHE_DEMOTION_THRESHOLD 10  /* Demotion from hotwords cache threshold */
 #endif
 
 /* Heartbeat tuning frequencies (in ticks) */
-#ifndef HEARTBEAT_CHECK_FREQUENCY
-#define HEARTBEAT_CHECK_FREQUENCY 256  /* Call vm_tick() every 256 word executions */
-#endif
-
-#ifndef HEARTBEAT_INFERENCE_FREQUENCY
-#define HEARTBEAT_INFERENCE_FREQUENCY 5000  /* Run unified inference engine every 5000 ticks */
-#endif
-
-#ifndef HEARTBEAT_WINDOW_TUNING_FREQUENCY
-#define HEARTBEAT_WINDOW_TUNING_FREQUENCY 1000  /* Tune window every 1000 ticks */
-#endif
-
-#ifndef HEARTBEAT_SLOPE_VALIDATION_FREQUENCY
-#define HEARTBEAT_SLOPE_VALIDATION_FREQUENCY 5000  /* Validate decay every 5000 ticks */
-#endif
-
-#ifndef HEARTBEAT_THREAD_ENABLED
-#define HEARTBEAT_THREAD_ENABLED 0
-#endif
-
-#ifndef HEARTBEAT_TICK_NS
-#define HEARTBEAT_TICK_NS 1000000ULL  /* 1 millisecond */
-#endif
+/* Defaults live in starforth_config.h */
 
 
 typedef struct
@@ -316,6 +292,10 @@ typedef struct
     uint64_t bucket_mode_transitions;       /* Count of L8 mode transitions in bucket */
     uint32_t bucket_collapse_flag;          /* Flag indicating bucket collapse event */
     uint32_t bucket_tick_count;             /* Number of ticks in current bucket */
+
+    /* === M5 Time Trust Fields === */
+    uint64_t m5_time_trust;                 /* TIME-TRUST in Q48.16 format */
+    uint64_t m5_variance;                   /* Timing variance in Q48.16 format */
 } HeartbeatState;
 
 /* ===== Pipelining Global Metrics (Loop #4 & #5 Feedback) ================
@@ -338,15 +318,15 @@ typedef struct DictEntry
 {
     struct DictEntry* link; /* Previous word (linked list) */
     word_func_t func; /* Function pointer for execution */
-    uint8_t flags; /* Word flags */
+    cell_t flags; /* Word flags - increased to cell_t for alignment and absolute flags if needed */
     uint8_t name_len; /* Length of name */
-    cell_t execution_heat; /* Execution frequency counter - drives optimization decisions */
-    uint8_t acl_default; /* Access control list default permissions - stub */
-    uint32_t word_id; /* Stable dictionary identifier for transition tracking */
-    DictPhysics physics; /* Physics properties for elementary particle model */
-    WordTransitionMetrics* transition_metrics; /* Word-to-word transition tracking for pipelining */
-    char name[]; /* Variable-length name + optional code */
-} DictEntry;
+    cell_t execution_heat; /* Execution frequency counter */
+    uint8_t acl_default; /* Access control list default permissions */
+    uint32_t word_id; /* Stable dictionary identifier */
+    DictPhysics physics; /* Physics properties */
+    WordTransitionMetrics* transition_metrics; /* Absolute pointer to metrics */
+    char name[]; /* Variable-length name */
+} __attribute__((aligned(8))) DictEntry;
 
 /* VM modes */
 typedef enum
@@ -378,8 +358,9 @@ typedef struct VM
     /** @name Dictionary Management 
      * @{
      */
+    const VMHostServices* host; /**< Host allocator/time services */
     uint8_t* memory; /**< Unified VM memory buffer */
-    size_t here; /**< Next free memory location (byte offset) */
+    uintptr_t here; /**< Next free memory location (byte offset or absolute pointer if M7) */
     DictEntry* latest; /**< Most recent word */
     DictEntry* word_id_map[DICTIONARY_SIZE]; /**< Stable ID → entry map for speculation */
     uint32_t recycled_word_ids[DICTIONARY_SIZE]; /**< Reusable ID stack for FORGET */
@@ -399,6 +380,7 @@ typedef struct VM
     /* Compiler state */
     vm_mode_t mode;
     DictEntry* compiling_word; /* Word being compiled */
+    int interpreter_enabled;
 
     /* Compilation support */
     char current_word_name[WORD_NAME_MAX + 1];
@@ -503,11 +485,19 @@ typedef struct VM
 void vm_init(VM* vm);
 
 /**
+ * @brief Initialize VM with explicit host services
+ * @param vm   Pointer to VM structure to initialize
+ * @param host Host services (allocator/time). If NULL, uses build default.
+ */
+void vm_init_with_host(VM* vm, const VMHostServices *host);
+
+/**
  * @brief Interpret a string of Forth code
  * @param vm VM instance to use
  * @param input String containing Forth code to interpret
  */
 void vm_interpret(VM* vm, const char* input);
+void vm_enable_interpreter(VM* vm);
 
 /**
  * @brief Start the VM's read-eval-print loop
@@ -533,6 +523,7 @@ DictEntry* vm_find_word(VM* vm, const char* name, size_t len);
 DictEntry* vm_create_word(VM* vm, const char* name, size_t len, word_func_t func);
 
 void vm_make_immediate(VM* vm);
+void vm_bootstrap_root_vocabulary(VM *vm, const char *name);
 
 void vm_hide_word(VM* vm);
 
