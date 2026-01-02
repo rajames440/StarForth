@@ -194,6 +194,26 @@ APIC Timer: started
 
 **Status:** Design Complete (see [M7.1.md](M7.1.md))
 
+**Core Concepts:**
+
+| Concept | Description |
+|---------|-------------|
+| **DOMAIN** | Mama-only construction space — never visible to babies |
+| **PERSONALITY** | Baby-only identity — result of executing (p) INIT |
+| **(p) Production** | Truth-bearing capsules that birth VMs |
+| **(e) Experiment** | Mama-only workloads for DoE |
+
+**Birth Protocol:**
+1. Mama selects one production `(p)` capsule by content hash
+2. Mama validates eligibility (ACTIVE, PRODUCTION, not REVOKED)
+3. Mama allocates new VM
+4. INIT blocks copied to execution window (RAM blocks 0–2047)
+5. INIT blocks executed sequentially
+6. Execution window cleared
+7. VM begins life with PERSONALITY imprinted
+8. Mama logs `PARITY:BIRTH vm_id=N capsule_id=X mode=p ...`
+9. Mama increments `capsule.birth_count`
+
 **Deliverables:**
 - [ ] `CapsuleDesc` struct (64 bytes, cache-aligned)
 - [ ] `CapsuleDirHeader` struct
@@ -206,8 +226,9 @@ APIC Timer: started
 **Key Design Decisions:**
 - Content-addressed: `capsule_id == content_hash`
 - (p) Production vs (e) Experiment modes
-- One truth per VM
-- Mama holds all truths
+- One truth per VM — no shared/implicit base INITs
+- Mama holds all truths — (e) capsules never touch babies
+- Twins/variants are just VMs with same/similar capsules
 
 ---
 
