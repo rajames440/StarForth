@@ -46,8 +46,14 @@
 #include "../../include/log.h"
 #include "test_runner.h"
 
+#ifdef __STARKERNEL__
+#include "starkernel/hal/hal.h"
+#define test_fatal_exit() sk_hal_panic("test failure - fail fast")
+#else
 #include <stdio.h>
 #include <stdlib.h>
+#define test_fatal_exit() exit(1)
+#endif
 
 /** 
  * @brief Global flag to control test execution behavior
@@ -69,7 +75,7 @@ static void dump_and_die(VM* vm, const char* reason, const char* file, int line)
     log_message(LOG_ERROR, "[TEST-RUNNER] abort @ %s:%d (%s)",
                 file, line, reason ? reason : "no-reason");
     vm_debug_dump_state(vm, reason ? reason : "test-failure");
-    exit(1);
+    test_fatal_exit();
 }
 
 /* Convenience macro so call sites get file:line automatically */
