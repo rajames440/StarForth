@@ -57,6 +57,7 @@
 #include "starkernel/console.h"
 #include "vm_internal.h"
 #include "platform_time.h"
+#include "test_runner/include/test_runner.h"
 
 #if SK_PARITY_DEBUG
 extern char __text_start[];
@@ -133,47 +134,6 @@ static void sk_bootstrap_debug_log_xt(const char *label, const DictEntry *entry)
 
 #if STARFORTH_ENABLE_VM
 
-static int sk_vm_run_minimal_script(VM *vm) {
-    if (!vm) {
-        return -1;
-    }
-#if SK_PARITY_DEBUG
-    console_puts("[VM_BOOTSTRAP] root vocabulary entry: 'FORTH'");
-    console_println("");
-    DictEntry *forth_vocab = vm_find_word(vm, "FORTH", 5);
-    if (forth_vocab) {
-        sk_bootstrap_debug_log_xt("FORTH", forth_vocab);
-    } else {
-        console_println("[VM_BOOTSTRAP] FORTH vocabulary NOT FOUND");
-    }
-#endif
-    vm_push(vm, 1);
-    vm_push(vm, 2);
-    DictEntry *plus = vm_find_word(vm, "+", 1);
-#if SK_PARITY_DEBUG
-    if (plus) {
-        sk_bootstrap_debug_log_xt("+", plus);
-    }
-#endif
-    if (!plus || !plus->func) {
-        return -1;
-    }
-    plus->func(vm);
-    if (vm->error || vm->dsp < 0 || vm->data_stack[vm->dsp] != 3) {
-        return -1;
-    }
-    DictEntry *dot = vm_find_word(vm, ".", 1);
-#if SK_PARITY_DEBUG
-    if (dot) {
-        sk_bootstrap_debug_log_xt(".", dot);
-    }
-#endif
-    if (dot && dot->func) {
-        dot->func(vm);
-    }
-    return vm->error ? -1 : 0;
-}
-
 int sk_vm_bootstrap_parity(ParityPacket *out) {
     static VM vm;            /* Static to avoid large stack frame */
     ParityPacket local_pkt;
@@ -195,23 +155,29 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
     }
 #if SK_PARITY_DEBUG
     log_set_level(LOG_DEBUG);
+#else
+    /* Enable LOG_TEST level to see test output and count statistics */
+    log_set_level(LOG_TEST);
 #endif
 
-    if (sk_vm_run_minimal_script(&vm) != 0) {
-        console_println("VM: minimal script failed");
-        sk_parity_collect(&vm, pkt);
-        sk_parity_print(pkt);
-        sk_hal_freeze_exec_range();
-        return -1;
-    }
+    /* Enable interpreter - required for POST to execute vm_interpret() calls */
+    vm_enable_interpreter(&vm);
 
-    /* Collect and print parity */
+    /* Run full POST (Power-On Self Test) */
+    console_println("POST: Running comprehensive test suite...");
+    run_all_tests(&vm);
+
+    /* Collect and print parity (includes test results) */
     sk_parity_collect(&vm, pkt);
     sk_parity_print(pkt);
+
+    /* Verify POST success: parity OK, no test failures, no test errors */
     if (pkt->bootstrap_result == SK_BOOTSTRAP_OK &&
         pkt->tests_failed == 0 &&
         pkt->tests_errors == 0) {
-        vm_enable_interpreter(&vm);
+        console_println("POST: PASSED");
+    } else {
+        console_println("POST: FAILED");
     }
     sk_hal_freeze_exec_range();
 

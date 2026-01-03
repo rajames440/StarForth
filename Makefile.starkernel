@@ -101,7 +101,7 @@ COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
                  $(ARCH_CFLAGS) \
                  -I$(KERNEL_INC) -Iinclude -Isrc -include $(STARFORTH_CONFIG_HEADER) \
                  -DPARITY_MODE=$(PARITY_MODE)
-VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare
+VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Isrc/test_runner/include -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare
 
 # Loader-specific flags
 LOADER_CFLAGS := $(COMMON_CFLAGS) -I$(KERNEL_SRC)/vm
@@ -221,11 +221,14 @@ KERNEL_ASM := $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.S)
 
 # VM integration sources (gated)
 ifeq ($(STARFORTH_ENABLE_VM),1)
-# Hosted VM core sources, excluding CLI/REPL/tests/platform/blkio/log/split-files
-VM_ALL_SRCS := $(wildcard src/*.c) $(wildcard src/word_source/*.c)
-VM_EXCLUDE := src/main.c src/cli.c src/repl.c src/test_runner/% src/platform/% src/blkio_factory.c src/blkio_file.c src/blkio_ram.c src/log.c src/doe_metrics.c \
+# Hosted VM core sources, excluding CLI/REPL/platform/blkio/log/split-files
+# Test runner IS included for kernel POST (except break_me_tests which uses libc time)
+VM_ALL_SRCS := $(wildcard src/*.c) $(wildcard src/word_source/*.c) \
+               $(wildcard src/test_runner/*.c) $(wildcard src/test_runner/modules/*.c)
+VM_EXCLUDE := src/main.c src/cli.c src/repl.c src/platform/% src/blkio_factory.c src/blkio_file.c src/blkio_ram.c src/log.c src/doe_metrics.c \
               src/vm.c src/vm_core.c src/vm_bootstrap.c src/vm_runtime.c src/vm_time.c \
-              src/word_source/q48_16_words.c
+              src/word_source/q48_16_words.c \
+              src/test_runner/modules/break_me_tests.c
 
 VM_CORE_SRCS := $(filter-out $(VM_EXCLUDE),$(VM_ALL_SRCS))
 

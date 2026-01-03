@@ -106,13 +106,61 @@ LogLevel log_get_level(void) { return current_level; }
 
 static int kvsnprintf(char *buf, size_t n, const char *fmt, va_list args);
 
+/* Direct TSC read - always works, even when PM Timer calibration fails */
+static inline uint64_t shim_rdtsc(void) {
+    uint32_t lo, hi;
+    __asm__ volatile ("rdtsc" : "=a"(lo), "=d"(hi));
+    return ((uint64_t)hi << 32) | lo;
+}
+
+static uint64_t log_tsc_base = 0;  /* Captured on first log call */
+
+/* Helper to format uint64 to decimal string, returns pointer past last digit */
+static char *u64_to_dec(char *buf, uint64_t val) {
+    char tmp[21];
+    int i = 0;
+    if (val == 0) {
+        *buf++ = '0';
+        return buf;
+    }
+    while (val > 0) {
+        tmp[i++] = '0' + (val % 10);
+        val /= 10;
+    }
+    while (i > 0) {
+        *buf++ = tmp[--i];
+    }
+    return buf;
+}
+
 void log_message(LogLevel level, const char *fmt, ...) {
     if (level > current_level || !fmt) return;
+
+    /* Capture TSC base on first call for relative timing */
+    uint64_t now = shim_rdtsc();
+    if (log_tsc_base == 0) {
+        log_tsc_base = now;
+    }
+    uint64_t rel_tsc = now - log_tsc_base;
+
+    /* Build prefix: [KRELTSC: <delta_tsc>] - relative TSC ticks from first log */
+    char prefix[32];
+    char *p = prefix;
+    const char *tag = "[KRELTSC: ";
+    while (*tag) *p++ = *tag++;
+    p = u64_to_dec(p, rel_tsc);
+    *p++ = ']';
+    *p++ = ' ';
+    *p = '\0';
+
     char buf[256];
     va_list args;
     va_start(args, fmt);
     kvsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
+
+    /* Print prefix + message */
+    console_puts(prefix);
     console_println(buf);
 }
 
