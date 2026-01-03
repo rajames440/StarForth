@@ -96,6 +96,15 @@ void run_control_words_tests(VM * vm);
 void run_starforth_words_tests(VM * vm);
 
 /**
+ * @brief Run tests for Mama FORTH vocabulary (capsule system M7.1)
+ * @param vm Pointer to the VM instance
+ *
+ * In hosted builds, all tests are skipped (Mama words are kernel-only).
+ * In kernel builds, tests validate capsule enumeration and VM birth.
+ */
+void run_mama_forth_words_tests(VM * vm);
+
+/**
  * @brief Enable benchmark mode for performance testing
  * @param iterations Number of iterations for benchmark tests
  */
