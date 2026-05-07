@@ -57,23 +57,7 @@ definition anova_early_exit :: "inference_outputs_state \<Rightarrow> bool" wher
      io_window_variance_q48 io < ANOVA_VARIANCE_THRESHOLD"
 
 (* =========================================================================
-   Section 3: Explicit axiom — inference engine window output is valid
-
-   This replaces the former sorry.  It is an AXIOM, not a theorem, because:
-     (a) The Levene F-test mathematical proof requires statistical measure
-         theory beyond the scope of this theory.
-     (b) The clamping guarantee is a C implementation property, not a
-         consequence of the HOL definitions.
-
-   ⚠ AUDIT-REQUIRED (see module-level note above before accepting this axiom). *)
-axiomatization where
-  inference_window_clamped_valid:
-    "\<And> io.
-     \<not> io_early_exited io \<Longrightarrow>
-     inf_window_wf io"
-
-(* =========================================================================
-   Section 4: Window suggestion clamping (proved — C implementation guarantee)
+   Section 3: Window suggestion clamping (proved — C implementation guarantee)
 
    The clamping is independently proved: even if the axiom above were violated,
    the apply_window_inference function clamps its input.  Both layers protect
@@ -123,5 +107,12 @@ lemma apply_window_non_early_exit_in_range:
   assumes "window_invariant rw"
   shows "window_invariant (apply_window_inference io rw)"
   using assms apply_window_inference_preserves_invariant by simp
+
+(* NOTE: The statistical correctness of the Levene F-test (that the test
+   correctly identifies non-uniform execution diversity and selects an
+   appropriate window size) is a standard result cited from Levene (1960).
+   The system INVARIANT (window ∈ [ADAPTIVE_MIN, ROLLING_WINDOW_SIZE]) is
+   maintained by clamping in set_eff_window regardless of test accuracy.
+   No axiom is required here: clamping is the invariant's sole guardian.   *)
 
 end
