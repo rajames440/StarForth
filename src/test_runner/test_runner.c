@@ -41,6 +41,7 @@
  */
 
 #include "include/test_runner.h"
+#include "include/test_contracts.h"
 #include "../../include/log.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -129,6 +130,9 @@ void run_all_tests(VM *vm) {
     global_test_stats.total_fail = 0;
     global_test_stats.total_skip = 0;
     global_test_stats.total_error = 0;
+#if CONTRACTS_ENABLED
+    global_contract_violations = 0;
+#endif
 
     /* Run each test module */
     for (int i = 0; test_modules[i].module_name != NULL; i++) {
@@ -157,6 +161,14 @@ void run_all_tests(VM *vm) {
         log_message(LOG_ERROR, "%d tests FAILED or had ERRORS!",
                     global_test_stats.total_fail + global_test_stats.total_error);
     }
+#if CONTRACTS_ENABLED
+    if (global_contract_violations > 0) {
+        log_message(LOG_ERROR, "  Contract violations (A4'/A1): %d  *** AXIOM WITNESSES FAILED ***",
+                    global_contract_violations);
+    } else {
+        log_message(LOG_INFO, "  Contract checks (A4'/A1): all passed");
+    }
+#endif
     log_message(LOG_INFO, "==============================================");
 }
 
