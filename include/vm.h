@@ -226,6 +226,7 @@ typedef struct
     uint64_t published_tick;        /* Tick counter when snapshot committed */
     uint64_t published_ns;          /* Host monotonic timestamp of publish */
     uint32_t window_width;          /* Effective rolling window size */
+    uint32_t actual_window_size;    /* Actual ring buffer fill level: min(total_executions, ROLLING_WINDOW_SIZE) */
     uint64_t decay_slope_q48;       /* Active decay slope */
     uint64_t hot_word_count;        /* Words above heat threshold */
     uint64_t stale_word_count;      /* Words in cooling band */
@@ -251,6 +252,7 @@ typedef struct
     uint64_t hot_word_count;        /* Words above heat threshold */
     double avg_word_heat;           /* Mean execution heat (Q48.16 / 65536) */
     uint32_t window_width;          /* Current rolling window size */
+    uint32_t actual_window_size;    /* Actual ring buffer fill level: min(total_executions, ROLLING_WINDOW_SIZE) */
 
     uint32_t predicted_label_hits;  /* Successful context predictions */
     double estimated_jitter_ns;     /* Deviation from nominal tick */

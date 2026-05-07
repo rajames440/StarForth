@@ -235,6 +235,9 @@ DoeMetrics metrics_from_vm(VM *vm, uint64_t workload_duration_ns,
     metrics.window_diversity_percent = 0.0;
     metrics.window_final_size_bytes = 4096;
     metrics.rolling_window_width = (uint32_t)vm->rolling_window.effective_window_size;
+    metrics.actual_window_size = (uint32_t)(vm->rolling_window.total_executions < ROLLING_WINDOW_SIZE
+                                            ? vm->rolling_window.total_executions
+                                            : ROLLING_WINDOW_SIZE);
     metrics.total_executions = vm->rolling_window.total_executions;
     /* Protect access to last_inference_outputs against heartbeat thread race */
     sf_mutex_lock(&vm->tuning_lock);
@@ -355,7 +358,7 @@ void metrics_write_csv_header(FILE *out) {
         /* Pipelining (Loop #4) */
         "ctx_pred_total,ctx_correct,ctx_acc_pct,cache_promos,cache_demos,"
         /* Rolling window (Loop #2) */
-        "win_diversity_pct,win_final_bytes,win_width,win_total_exec,win_var_q48,"
+        "win_diversity_pct,win_final_bytes,win_width,actual_win_size,win_total_exec,win_var_q48,"
         /* Heat dynamics (Loop #1 & #3) */
         "decay_slope,total_heat,hot_words,stale_words,stale_ratio,avg_heat,"
         /* Heartbeat & timing (Loop #7) */
@@ -387,7 +390,7 @@ void metrics_write_csv_row(FILE *out, const DoeMetrics *metrics) {
         /* Pipelining (Loop #4) */
         "%lu,%lu,%.2f,%lu,%lu,"
         /* Rolling window (Loop #2) */
-        "%.2f,%u,%u,%lu,%lu,"
+        "%.2f,%u,%u,%u,%lu,%lu,"
         /* Heat dynamics (Loop #1 & #3) */
         "%.6f,%lu,%lu,%lu,%.6f,%.6f,"
         /* Heartbeat & timing (Loop #7) */
@@ -432,6 +435,7 @@ void metrics_write_csv_row(FILE *out, const DoeMetrics *metrics) {
         metrics->window_diversity_percent,
         metrics->window_final_size_bytes,
         metrics->rolling_window_width,
+        metrics->actual_window_size,
         metrics->total_executions,
         metrics->window_variance_q48,
         /* Heat dynamics (Loop #1 & #3) */

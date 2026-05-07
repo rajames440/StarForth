@@ -96,7 +96,8 @@ typedef struct {
     /* === Rolling Window Metrics (Loop #2) === */
     double window_diversity_percent;    /* Window pattern diversity (0-100) */
     uint32_t window_final_size_bytes;   /* Final rolling window size */
-    uint32_t rolling_window_width;      /* Width of rolling window */
+    uint32_t rolling_window_width;      /* Width of rolling window (effective/adaptive) */
+    uint32_t actual_window_size;        /* Ring buffer fill level: min(total_executions, ROLLING_WINDOW_SIZE) */
     uint64_t total_executions;          /* Words recorded in window */
     uint64_t window_variance_q48;       /* Pattern variance (Q48.16) */
 

@@ -121,6 +121,9 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
 
     /* Rolling window size */
     snapshot->window_width = vm->rolling_window.effective_window_size;
+    snapshot->actual_window_size = (uint32_t)(vm->rolling_window.total_executions < ROLLING_WINDOW_SIZE
+                                              ? vm->rolling_window.total_executions
+                                              : ROLLING_WINDOW_SIZE);
 
     /* Pipelining metrics */
     snapshot->predicted_label_hits = 0; /* TODO: Extract from pipelining metrics */
@@ -145,7 +148,7 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
  *
  * Format: tick_number,elapsed_ns,tick_interval_ns,cache_hits_delta,
  *         bucket_hits_delta,word_executions_delta,hot_word_count,
- *         avg_word_heat,window_width,predicted_label_hits,estimated_jitter_ns
+ *         avg_word_heat,window_width,actual_window_size,predicted_label_hits,estimated_jitter_ns
  *
  * @param vm Pointer to the VM instance (unused, for API consistency)
  * @param snapshot Pointer to the snapshot to emit
@@ -158,7 +161,7 @@ void heartbeat_emit_tick_row(VM* vm, HeartbeatTickSnapshot* snapshot)
         return;
 
     /* Emit CSV row to stderr - no header, just data */
-    fprintf(stderr, "%u,%lu,%lu,%u,%u,%u,%lu,%.6f,%u,%u,%.2f\n",
+    fprintf(stderr, "%u,%lu,%lu,%u,%u,%u,%lu,%.6f,%u,%u,%u,%.2f\n",
             snapshot->tick_number,
             snapshot->elapsed_ns,
             snapshot->tick_interval_ns,
@@ -168,6 +171,7 @@ void heartbeat_emit_tick_row(VM* vm, HeartbeatTickSnapshot* snapshot)
             snapshot->hot_word_count,
             snapshot->avg_word_heat,
             snapshot->window_width,
+            snapshot->actual_window_size,
             snapshot->predicted_label_hits,
             snapshot->estimated_jitter_ns);
 
