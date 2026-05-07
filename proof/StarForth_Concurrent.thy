@@ -5,24 +5,18 @@ begin
 (* =========================================================================
    StarForth_Concurrent — Non-Interference and Mutex Safety
 
-   SORRY-FREE.  Every result here is fully proved.
+   SORRY-FREE.  Every result here is fully proved from 2 axioms:
+     A1  heartbeat_exec_neutral      (StarForth_Transition)
+     A4' word_physics_transparent    (StarForth_Transition)
 
-   Axiom inventory (inherited from StarForth_Transition):
-     A1 ×8  heartbeat_step field axioms  (C audit: src/vm_time.c)
-     A4'×1  word_physics_transparent     (audit: every word body in Level 1)
-
-   Results proved here:
-     ✓ foldl_word_table_eq               — key induction over word sequences
-     ✓ heartbeat_noninterference         — one word after k heartbeat steps
-     ✓ heartbeat_noninterference_rs      — same for return_stack
-     ✓ heartbeat_trace_noninterference   — whole sequence after k steps
-     ✓ mutex_exclusive / concurrent_locks_safe  — lock algebra
+   The exec_equiv quotient (≃) from StarForth_Transition is the common thread:
+   A1 says heartbeat_step is the identity in vm_state/≃.
+   A4' says word execution is a congruence law for ≃.
+   Together they make arbitrary word sequences independent of heartbeat timing.
    ======================================================================== *)
 
 (* =========================================================================
    Section 1: Single-word non-interference (proved from exec_after_n_heartbeats_eq)
-
-   exec_after_n_heartbeats_eq is proved in StarForth_Transition using A1+A4'.
    ======================================================================== *)
 
 theorem heartbeat_noninterference:
@@ -38,39 +32,32 @@ theorem heartbeat_noninterference_rs:
   by (simp add: exec_after_n_heartbeats_eq)
 
 (* =========================================================================
-   Section 2: Trace-level non-interference (proved by induction over word list)
+   Section 2: Trace-level non-interference (proved by induction over ≃)
 
-   Key lemma: foldl_word_table_eq shows that two states agreeing on the four
-   exec-visible fields produce identical foldl traces.  Proof by list induction:
-   at each step, word_physics_transparent (A4') implies the next states are
-   entirely equal, making the remaining foldl trivially equal.
+   foldl_word_table_eq: if two initial states are exec-equivalent (≃), then
+   running any word sequence on each produces identical states.  The proof is
+   structural: at each step word_physics_transparent (A4') gives FULL state
+   equality of the successors (not just exec-field agreement), so the remaining
+   foldl is trivially identical — no propagation of equivalence is needed.
 
-   Consequence: heartbeat_trace_noninterference follows by instantiating with
-   s1 = heartbeat_step ^^ k $ vm, s2 = vm, using the A1 field-preservation
-   simp rules.
+   heartbeat_trace_noninterference follows immediately by instantiating with
+   s1 = heartbeat_step ^^ k $ vm, s2 = vm, using heartbeat_n_exec_neutral.
 
-   ○ CODE-MUST-MATCH: word_physics_transparent requires that every word
-   registered in word_table reads ONLY data_stack, return_stack, memory,
-   word_table from its vm_state argument — never physics fields.  Verify each
-   Level 1 word definition in StarForth_{Stack,Arithmetic,Logical,
-   Return_Stack,Memory}_Words.thy.                                            *)
+   ○ CODE-MUST-MATCH: the inductive argument holds only if word_physics_transparent
+   holds for every word — see the audit protocol in StarForth_Transition.thy.
+   ======================================================================== *)
 
 lemma foldl_word_table_eq:
-  assumes "data_stack   s1 = data_stack   s2"
-      and "return_stack s1 = return_stack s2"
-      and "memory       s1 = memory       s2"
-      and "word_table   s1 = word_table   s2"
+  assumes "s1 \<simeq> s2"
   shows "foldl (\<lambda>s n. word_table s n s) s1 ws
          = foldl (\<lambda>s n. word_table s n s) s2 ws"
 proof (induction ws arbitrary: s1 s2)
   case Nil thus ?case by simp
 next
   case (Cons w ws)
-  (* A4': if two states agree on exec-visible fields, executing any word w on
-     each produces IDENTICAL successor states (not merely field-by-field equal).
-     This collapses the induction: the inner foldls start from equal states. *)
+  (* A4' gives full state equality of the one-step successors *)
   have heq: "word_table s1 w s1 = word_table s2 w s2"
-    by (rule word_physics_transparent) (use Cons.prems in simp_all)
+    by (rule word_physics_transparent [OF Cons.prems])
   show ?case by (simp add: heq)
 qed
 
@@ -80,8 +67,7 @@ theorem heartbeat_trace_noninterference:
        (foldl (\<lambda>s n. word_table s n s) (heartbeat_step ^^ k $ vm) words)
      = data_stack
          (foldl (\<lambda>s n. word_table s n s) vm words)"
-  by (rule arg_cong [where f = data_stack],
-      rule foldl_word_table_eq) simp_all
+  using foldl_word_table_eq [OF heartbeat_n_exec_neutral] by simp
 
 (* =========================================================================
    Section 3: Mutex safety (proved from lock_state algebra)
@@ -106,25 +92,17 @@ lemma vm_step_preserves_lock_safety:
   by (simp add: concurrent_locks_safe_def)
 
 (* =========================================================================
-   Section 4: Word execution determinism on exec-visible fields (proved)
-
-   These are corollaries of word_physics_transparent (A4').
+   Section 4: Word execution determinism under ≃ (corollaries of A4')
    ======================================================================== *)
 
 lemma word_exec_deterministic:
-  assumes "data_stack   vm1 = data_stack   vm2"
-      and "return_stack vm1 = return_stack vm2"
-      and "memory       vm1 = memory       vm2"
-      and "word_table   vm1 = word_table   vm2"
-  shows "data_stack (word_table vm1 n vm1) = data_stack (word_table vm2 n vm2)"
-  using word_physics_transparent [of vm1 vm2 n] assms by simp
+  assumes "s1 \<simeq> s2"
+  shows "data_stack (word_table s1 n s1) = data_stack (word_table s2 n s2)"
+  using word_physics_transparent [OF assms] by simp
 
 lemma word_exec_rs_deterministic:
-  assumes "data_stack   vm1 = data_stack   vm2"
-      and "return_stack vm1 = return_stack vm2"
-      and "memory       vm1 = memory       vm2"
-      and "word_table   vm1 = word_table   vm2"
-  shows "return_stack (word_table vm1 n vm1) = return_stack (word_table vm2 n vm2)"
-  using word_physics_transparent [of vm1 vm2 n] assms by simp
+  assumes "s1 \<simeq> s2"
+  shows "return_stack (word_table s1 n s1) = return_stack (word_table s2 n s2)"
+  using word_physics_transparent [OF assms] by simp
 
 end

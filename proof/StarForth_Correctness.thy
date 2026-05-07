@@ -22,22 +22,25 @@ begin
      ✓ proved from definitions (fully mechanised)
      ○ proved from an explicit named axiom (audit-required, no sorry)
 
-   EXPLICIT AXIOM INVENTORY (9 axioms total — no sorry):
-     A1 ×8. heartbeat_step field axioms  (StarForth_Transition — C audit of
-              each field: src/vm_time.c vm_tick() must NOT write to
-              data_stack, return_stack, memory, dictionary, word_table,
-              vm_error, vm_halted, vm_mode)
-     A4'×1. word_physics_transparent     (StarForth_Transition — each word
-              body in Level 1 theories must read ONLY data_stack,
-              return_stack, memory, word_table — never physics fields)
+   EXPLICIT AXIOM INVENTORY (2 axioms total — no sorry):
 
-   Former axioms A2 (inference_window_clamped_valid) and A3
-   (inference_slope_positive) are REMOVED: both invariants are maintained by
-   clamping (clamp_window_suggestion / clamp_slope_suggestion) independently
-   of the statistical test output.  No axiom was ever needed.
+     A1 ×1. heartbeat_exec_neutral    (StarForth_Transition)
+              heartbeat_step vm ≃ vm
+              The heartbeat is the identity in vm_state/≃ (exec_equiv).
+              C audit: src/vm_time.c vm_tick() must NOT write to
+              data_stack, return_stack, memory, or word_table.
+              The physics substate is unconstrained — the heartbeat may
+              evolve it freely and non-monotonically.
+              The former 8 field axioms are now proved lemmas from A1.
 
-   heartbeat_trace_noninterference is now a PROVED theorem (StarForth_Concurrent,
-   foldl induction using A4').
+     A4'×1. word_physics_transparent  (StarForth_Transition)
+              s1 ≃ s2 ⟹ word_table s1 n s1 = word_table s2 n s2
+              Word execution is a congruence law for ≃.
+              Word audit: every Level 1 word body must read ONLY the four
+              fields in exec_equiv — never any physics field.
+
+   Physics invariants (A2/A3) remain removed — clamping suffices.
+   heartbeat_trace_noninterference is a proved theorem (foldl induction).
 
    TRANSITIVITY CHAIN:
      word semantics (✓ Level 1)
@@ -117,7 +120,7 @@ thm concurrent_locks_safe_trivial  \<comment> \<open>✓ trivial from lock_state
 
 (* The master theorem collects all correctness invariants into a single
    provable conjunction.  Every conjunct is either directly proved or follows
-   from an explicitly named axiom (A1–A4 listed in the header).             *)
+   from an explicitly named axiom (A1, A4' listed in the header).           *)
 theorem starforth_correctness_totality:
   fixes vm :: vm_state
   assumes wf: "wf_vm vm"
@@ -143,7 +146,7 @@ corollary word_result_heartbeat_independent:
      = data_stack (word_table vm n vm)"
   using heartbeat_noninterference by blast
 
-(* Corollary: trace-level non-interference (from axiom A4). *)
+(* Corollary: trace-level non-interference (proved theorem). *)
 corollary trace_result_heartbeat_independent:
   "\<And> words vm k.
      data_stack (foldl (\<lambda>s n. word_table s n s) (heartbeat_step ^^ k $ vm) words)
