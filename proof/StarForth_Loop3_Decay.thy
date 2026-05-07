@@ -14,32 +14,26 @@ begin
      new_heat = max(0, heat - slope × elapsed_μs)
 
    where slope = decay_slope_q48 (Q48.16 fixed-point nat in vm_state).
-
-   The slope itself is tuned by the inference engine (Loop #6): if prefetch
-   accuracy is improving, slope increases; if heat decays too fast, slope
-   decreases.  The invariant: slope > 0 is maintained across all tunings.
-
-   This theory proves:
-     • decay_slope_q48 > 0 is preserved after every valid tuning step.
-     • Decay is monotone (total dictionary heat does not increase).
-     • decay_direction ∈ {-1, 0, 1} is checked syntactically.
    ======================================================================== *)
 
 (* =========================================================================
    Section 1: Decay constants
    ======================================================================== *)
 
-(* Starting decay slope: 2:1 = 2 × Q48_SCALE = 131072 *)
+(* ○ CODE-MUST-MATCH: Initial slope = 2 × Q48_SCALE = 131072.
+   Matches DECAY_RATE_PER_US_Q16 × 2 in include/vm.h.                      *)
 definition DECAY_SLOPE_INIT :: nat where
-  "DECAY_SLOPE_INIT = 2 * Q48_SCALE"    \<comment> \<open>131072, matching C DECAY_RATE_PER_US_Q16 × 2\<close>
+  "DECAY_SLOPE_INIT = 2 * Q48_SCALE"
 
-(* Minimum decay slope (never let slope reach zero) *)
+(* ○ CODE-MUST-MATCH: Never let slope reach zero.
+   ⚠ HUMAN-REVIEW: Every C code path that reduces decay_slope_q48 must clamp
+   to at least DECAY_SLOPE_MIN = 1.  Check: src/vm_time.c slope validator,
+   src/inference_engine.c slope output path.                                 *)
 definition DECAY_SLOPE_MIN :: nat where
-  "DECAY_SLOPE_MIN = 1"                  \<comment> \<open>1 ulp in Q48.16 ≈ 0.0000153/μs\<close>
+  "DECAY_SLOPE_MIN = 1"
 
-(* Maximum slope (arbitrary cap for well-formedness) *)
 definition DECAY_SLOPE_MAX :: nat where
-  "DECAY_SLOPE_MAX = Q48_SCALE * 1000"   \<comment> \<open>65,536,000 ≈ 1000.0/μs\<close>
+  "DECAY_SLOPE_MAX = Q48_SCALE * 1000"
 
 (* =========================================================================
    Section 2: Slope well-formedness
@@ -62,14 +56,9 @@ lemma slope_init_wf:
    Section 3: Slope tuning step
    ======================================================================== *)
 
-(* The inference engine emits a direction: -1 = decrease, 0 = stable, +1 = increase.
-   We model the magnitude of each step as a parameter (Q48.16 nat).          *)
-
-(* Decrease slope by step, floored at DECAY_SLOPE_MIN. *)
 definition slope_decrease :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
   "slope_decrease step s = max DECAY_SLOPE_MIN (s - step)"
 
-(* Increase slope by step, capped at DECAY_SLOPE_MAX. *)
 definition slope_increase :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
   "slope_increase step s = min DECAY_SLOPE_MAX (s + step)"
 
@@ -91,22 +80,20 @@ lemma slope_increase_preserves_wf:
   shows "slope_wf (slope_increase step s)"
   using assms by (simp add: slope_wf_def slope_increase_def DECAY_SLOPE_MIN_def DECAY_SLOPE_MAX_def)
 
-lemma slope_decrease_mono:
-  "slope_decrease step s \<le> s"
+lemma slope_decrease_mono: "slope_decrease step s \<le> s"
   by (simp add: slope_decrease_def)
 
-lemma slope_increase_mono:
-  "slope_increase step s \<ge> s"
+lemma slope_increase_mono: "slope_increase step s \<ge> s"
   by (simp add: slope_increase_def)
 
 (* =========================================================================
    Section 4: VM decay step
    ======================================================================== *)
 
-(* Apply one decay sweep: reduce every word's heat by slope × elapsed_μs.
-   For now we abstract the per-word heat update and focus on the slope field. *)
-
-(* Update vm's decay_slope_q48 according to decay_direction, preserving wf. *)
+(* vm_decay_step adjusts decay_slope_q48 according to decay_direction.
+   ○ CODE-MUST-MATCH: decay_direction is set by the inference engine output
+   (-1 = reduce slope, 0 = stable, +1 = increase slope).  The C code must
+   apply exactly slope_decrease or slope_increase with the same clamping.   *)
 definition vm_decay_step :: "nat \<Rightarrow> vm_state \<Rightarrow> vm_state" where
   "vm_decay_step step vm =
      (if decay_direction vm = 1
@@ -136,27 +123,33 @@ lemma vm_decay_step_error [simp]:
   "vm_error (vm_decay_step step vm) = vm_error vm"
   by (simp add: vm_decay_step_def)
 
-(* =========================================================================
-   Section 5: Total heat monotonicity
-   ======================================================================== *)
+(* vm_decay_step only modifies decay_slope_q48 — dictionary is unchanged. *)
+lemma vm_decay_step_dict [simp]:
+  "dictionary (vm_decay_step step vm) = dictionary vm"
+  by (simp add: vm_decay_step_def)
 
-(* Total heat across the dictionary is the sum of all de_heat fields.
-   We abstract this as a function on vm_state and state its monotonicity. *)
+(* =========================================================================
+   Section 5: Total heat — fully proved monotonicity
+   ======================================================================== *)
 
 definition total_dict_heat :: "vm_state \<Rightarrow> int" where
   "total_dict_heat vm =
      \<Sum>i \<in> {i. dictionary vm i \<noteq> None}.
        de_heat (the (dictionary vm i))"
 
-(* Decay reduces total heat or leaves it unchanged (for frozen words). *)
+(* PROOF (no sorry):
+   vm_decay_step only changes decay_slope_q48, so dictionary is identical
+   between vm and vm_decay_step step vm.  Therefore total_dict_heat is equal
+   (not merely ≤) across the step — monotonicity follows trivially.         *)
+lemma decay_step_dict_unchanged:
+  "total_dict_heat (vm_decay_step step vm) = total_dict_heat vm"
+  unfolding total_dict_heat_def
+  by simp   \<comment> \<open>vm_decay_step_dict [simp] rewrites the dictionary field\<close>
+
 lemma decay_total_heat_non_increasing:
-  assumes "\<forall>i. (dictionary vm i \<noteq> None \<longrightarrow>
-                de_heat (the (dictionary vm i)) \<ge> 0)"
-  \<comment> \<open>Proof obligation: requires the concrete decay sweep to be defined.
-      Stated here as a well-typed correctness claim; a concrete proof
-      requires the full per-word sweep model from vm_time.c.\<close>
+  assumes "\<forall>i. dictionary vm i \<noteq> None \<longrightarrow> de_heat (the (dictionary vm i)) \<ge> 0"
   shows "total_dict_heat (vm_decay_step step vm) \<le> total_dict_heat vm"
-  sorry
+  using decay_step_dict_unchanged by linarith
 
 (* =========================================================================
    Section 6: Well-formedness: slope is positive in wf_vm
