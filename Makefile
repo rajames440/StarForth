@@ -88,6 +88,13 @@ ENABLE_HOTWORDS_CACHE ?= 0
 #   NOTE: As of 2025-11-19, all future experiments use both cache and pipelining enabled
 ENABLE_PIPELINING ?= 0
 
+# CONTRACTS_ENABLED: 1 = run A4'/A1 contract checks alongside physics-pure word tests
+#   Default: 0 (no overhead on normal make test)
+#   Enable with: make test CONTRACTS_ENABLED=1
+#   A4' check re-runs each passing test with perturbed physics and asserts identical exec result.
+#   A1 check can be invoked explicitly via assert_heartbeat_safe() in test suites.
+CONTRACTS_ENABLED ?= 0
+
 # Heartbeat configuration
 # HEARTBEAT_THREAD_ENABLED: 1 = run vm_tick() in background thread (OPTIMAL), 0 = inline (legacy)
 #   Default: 1 (experiments show threaded heartbeat is optimal for adaptive tuning)
@@ -220,7 +227,8 @@ BASE_CFLAGS = -std=c99 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runn
               -DDECAY_RATE_PER_US_Q16=$(DECAY_RATE_PER_US_Q16) \
               -DHEARTBEAT_THREAD_ENABLED=$(HEARTBEAT_THREAD_ENABLED) \
               -DHEARTBEAT_TICK_NS=$(HEARTBEAT_TICK_NS) \
-              -DHEARTBEAT_INFERENCE_FREQUENCY=$(HEARTBEAT_INFERENCE_FREQUENCY)
+              -DHEARTBEAT_INFERENCE_FREQUENCY=$(HEARTBEAT_INFERENCE_FREQUENCY) \
+              -DCONTRACTS_ENABLED=$(CONTRACTS_ENABLED)
 
 ifeq ($(HEARTBEAT_THREAD_ENABLED),1)
 ifeq ($(L4RE),1)

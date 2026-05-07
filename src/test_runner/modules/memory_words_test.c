@@ -165,9 +165,10 @@ static WordTestSuite memory_word_suites[] = {
 void run_memory_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Memory Words Tests (Module 3)...");
 
+    WordContract mod = {CONTRACT_PHYSICS_TRANSPARENT, 0};
     for (int i = 0; memory_word_suites[i].word_name != NULL; i++) {
         log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
-        run_test_suite(vm, &memory_word_suites[i]);
+        run_test_suite_m(vm, &memory_word_suites[i], mod);
     }
 
     print_module_summary("Memory Words", 0, 0, 0, 0);

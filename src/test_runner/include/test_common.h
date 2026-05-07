@@ -52,6 +52,7 @@
 
 #include "../include/vm.h"
 #include "../include/log.h"
+#include "test_contracts.h"
 
 /** @name Test Configuration
  * @{
@@ -82,6 +83,7 @@ typedef struct {
     TestType type; /**< Type of test case */
     int should_error; /**< Whether test should produce an error */
     int implemented; /**< Whether the functionality is implemented */
+    WordContract contract; /**< Per-test contract override; zero = inherit from suite/module */
 } TestCase;
 
 /** @brief Collection of test cases for a single Forth word */
@@ -89,6 +91,7 @@ typedef struct {
     const char *word_name; /**< Name of the Forth word being tested */
     TestCase tests[MAX_TESTS_PER_WORD]; /**< Array of test cases */
     int test_count; /**< Number of tests in the suite */
+    WordContract suite_contract; /**< Suite-level contract; zero = inherit from module */
 } WordTestSuite;
 
 /** @name Core Test Execution Functions
@@ -109,6 +112,21 @@ TestResult run_single_test(VM *vm, const char *word_name, const TestCase *test);
  * @param suite Test suite to execute
  */
 void run_test_suite(VM *vm, const WordTestSuite *suite);
+
+/**
+ * @brief Runs all tests in a suite with an inherited module-level contract.
+ *
+ * Contract resolution order (first non-NONE wins):
+ *   test->contract > suite->suite_contract > module_contract
+ *
+ * When CONTRACTS_ENABLED=1, each passing TEST_NORMAL test is re-run under
+ * physics perturbation to witness A4' (word_physics_transparent).
+ *
+ * @param vm              Pointer to the VM instance
+ * @param suite           Test suite to execute
+ * @param module_contract Default contract for tests that don't specify one
+ */
+void run_test_suite_m(VM *vm, const WordTestSuite *suite, WordContract module_contract);
 
 /**
  * @brief Prints test results_run_01_2025_12_08 summary for a module
