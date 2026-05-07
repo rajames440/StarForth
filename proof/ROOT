@@ -1,0 +1,21 @@
+session "StarForth" = HOL +
+  description "Formal proofs of StarForth FORTH-79 primitive correctness and physics-loop invariants"
+  theories [document = false]
+    StarForth_Base
+    StarForth_Q48_16
+    StarForth_Stack_Words
+    StarForth_Arithmetic_Words
+    StarForth_Logical_Words
+    StarForth_Return_Stack_Words
+    StarForth_Memory_Words
+    StarForth_Mutex
+    StarForth_Transition
+    StarForth_Loop1_Heat
+    StarForth_Loop2_Window
+    StarForth_Loop3_Decay
+    StarForth_Loop4_Pipeline
+    StarForth_Loop5_WinInf
+    StarForth_Loop6_DecayInf
+    StarForth_Loop7_Heartrate
+    StarForth_Concurrent
+    StarForth_Correctness
