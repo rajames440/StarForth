@@ -123,11 +123,6 @@ int check_physics_transparent(VM *vm, const char *word_name,
                                const char *input,
                                int should_error, int implemented,
                                int fuzz_rounds) {
-#if !CONTRACTS_ENABLED
-    (void)vm; (void)word_name; (void)input;
-    (void)should_error; (void)implemented; (void)fuzz_rounds;
-    return 1;
-#else
     /* Skip error-expected tests: exec-equiv may legitimately differ */
     if (!implemented || should_error) return 1;
 
@@ -181,7 +176,6 @@ int check_physics_transparent(VM *vm, const char *word_name,
     vm->rsp   = -1;
     vm->error = 0;
     return ok;
-#endif /* CONTRACTS_ENABLED */
 }
 
 /* ============================================================================
@@ -189,10 +183,6 @@ int check_physics_transparent(VM *vm, const char *word_name,
  * ============================================================================ */
 
 int assert_heartbeat_safe(VM *vm) {
-#if !CONTRACTS_ENABLED
-    (void)vm;
-    return 1;
-#else
     ExecResult before, after;
     capture_exec_result(vm, &before);
 
@@ -210,5 +200,4 @@ int assert_heartbeat_safe(VM *vm) {
         return 0;
     }
     return 1;
-#endif /* CONTRACTS_ENABLED */
 }
