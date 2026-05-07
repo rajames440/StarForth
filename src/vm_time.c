@@ -91,6 +91,9 @@ void vm_heartbeat_publish_snapshot(VM *vm)
     snapshot->published_tick = vm->heartbeat.tick_count;
     snapshot->published_ns = sf_monotonic_ns();
     snapshot->window_width = vm->rolling_window.effective_window_size;
+    snapshot->actual_window_size = (uint32_t)(vm->rolling_window.total_executions < ROLLING_WINDOW_SIZE
+                                              ? vm->rolling_window.total_executions
+                                              : ROLLING_WINDOW_SIZE);
     snapshot->decay_slope_q48 = vm->decay_slope_q48;
     snapshot->hot_word_count = vm->hot_word_count_at_check;
     snapshot->stale_word_count = vm->stale_word_count_at_check;
