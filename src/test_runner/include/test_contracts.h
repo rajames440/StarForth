@@ -21,8 +21,7 @@
  * Contracts attach at three levels; resolution order (first non-NONE wins):
  *   individual TestCase > WordTestSuite.suite_contract > module_contract arg
  *
- * Contract checking only runs when compiled with -DCONTRACTS_ENABLED=1.
- * When CONTRACTS_ENABLED=0 (default), all contract functions are no-ops.
+ * Contract checks run unconditionally as part of POST.
  * ============================================================================ */
 
 typedef uint32_t contract_flags_t;
