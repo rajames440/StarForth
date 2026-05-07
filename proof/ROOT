@@ -1,0 +1,9 @@
+session "StarForth" = HOL +
+  description "Formal proofs of StarForth FORTH-79 primitive correctness"
+  theories [document = false]
+    StarForth_Base
+    StarForth_Stack_Words
+    StarForth_Arithmetic_Words
+    StarForth_Logical_Words
+    StarForth_Return_Stack_Words
+    StarForth_Memory_Words
