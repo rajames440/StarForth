@@ -7,22 +7,16 @@ begin
 
    Mirrors: src/inference_engine.c (run_inference → io_adaptive_decay_slope)
 
-   DESIGN NOTE — Axiom vs. sorry:
-   OLS (ordinary least squares) regression on the heat trajectory produces a
-   slope value.  The mathematical fact that a best-fit line through a strictly
-   decreasing sequence has positive slope is a standard result in linear
-   algebra / statistics.  We axiomatize this as an EXPLICIT NAMED AXIOM
-   (inference_slope_positive) rather than a sorry.
+   SORRY-FREE DESIGN:
+   All invariants here are proved purely from clamping — no axiom required.
+   apply_slope_inference clamps any raw OLS slope to [DECAY_SLOPE_MIN,
+   DECAY_SLOPE_MAX] before writing to the VM, so slope_wf holds regardless
+   of the regression's numerical output.
 
-   ⚠ AUDIT OBLIGATION for inference_slope_positive:
-     1. Verify that src/inference_engine.c run_inference() computes the OLS
-        slope β = (n Σx_iy_i − Σx_i Σy_i) / (n Σx_i² − (Σx_i)²) correctly
-        for n ≥ 2 observations.
-     2. Verify that the result is clamped to [DECAY_SLOPE_MIN, DECAY_SLOPE_MAX]
-        before writing to io_adaptive_decay_slope.
-     3. The mathematical fact that β > 0 for a strictly decreasing y-sequence
-        follows from the OLS formula directly; cite any linear regression
-        textbook (e.g., Draper & Smith 1998, Ch. 1) as the external proof.
+   ○ CODE-MUST-MATCH: src/inference_engine.c run_inference() MUST clamp the
+   OLS result with max(DECAY_SLOPE_MIN, min(DECAY_SLOPE_MAX, raw)) before
+   writing io_adaptive_decay_slope, and MUST NOT write when io_early_exited.
+   Human audit of these two code paths satisfies the correctness obligation.
    ======================================================================== *)
 
 (* =========================================================================
@@ -54,19 +48,22 @@ lemma inf_slope_wf_pos:
   using assms by (simp add: inf_slope_wf_def slope_wf_def DECAY_SLOPE_MIN_def)
 
 (* =========================================================================
-   Section 3: Explicit axiom — OLS slope inference produces valid output
+   Section 3: Clamping makes the slope axiom redundant
 
-   This replaces the former sorry.  It is an AXIOM, not a theorem, because:
-     (a) OLS correctness (β > 0 for decreasing heat sequence) requires real
-         arithmetic measure theory beyond these HOL definitions.
-     (b) The clamping guarantee is a C implementation obligation.
+   The INVARIANT (slope ∈ [DECAY_SLOPE_MIN, DECAY_SLOPE_MAX]) is maintained
+   by clamp_slope_suggestion inside apply_slope_inference, regardless of what
+   the OLS regression returns.  No axiom is required: clamping is the
+   invariant's sole guardian.
 
-   ⚠ AUDIT-REQUIRED (see module-level note above before accepting this axiom). *)
-axiomatization where
-  inference_slope_positive:
-    "\<And> io.
-     \<not> io_early_exited io \<Longrightarrow>
-     inf_slope_wf io"
+   NOTE: The mathematical fact that OLS β > 0 for a strictly decreasing heat
+   sequence is a standard linear-algebra result; cite Draper & Smith (1998,
+   Ch. 1) as the external reference.  The system invariant does not depend on
+   this fact — clamping protects it unconditionally.
+
+   ○ CODE-MUST-MATCH: verify that src/inference_engine.c run_inference() calls
+     max(DECAY_SLOPE_MIN, min(DECAY_SLOPE_MAX, raw_slope)) before writing to
+     io_adaptive_decay_slope, and that no code path writes to
+     io_adaptive_decay_slope when io_early_exited is set.               *)
 
 (* =========================================================================
    Section 4: Applying inferred slope to the VM (fully proved)

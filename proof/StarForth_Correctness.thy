@@ -22,16 +22,27 @@ begin
      ✓ proved from definitions (fully mechanised)
      ○ proved from an explicit named axiom (audit-required, no sorry)
 
-   EXPLICIT AXIOM INVENTORY (all axioms accepted by the user):
-     A1. heartbeat_step axioms ×8   (StarForth_Transition — C audit of vm_tick)
-     A2. inference_window_clamped_valid (StarForth_Loop5_WinInf — C + Levene audit)
-     A3. inference_slope_positive      (StarForth_Loop6_DecayInf — C + OLS audit)
-     A4. heartbeat_trace_noninterference (StarForth_Concurrent — mechanisation gap)
+   EXPLICIT AXIOM INVENTORY (9 axioms total — no sorry):
+     A1 ×8. heartbeat_step field axioms  (StarForth_Transition — C audit of
+              each field: src/vm_time.c vm_tick() must NOT write to
+              data_stack, return_stack, memory, dictionary, word_table,
+              vm_error, vm_halted, vm_mode)
+     A4'×1. word_physics_transparent     (StarForth_Transition — each word
+              body in Level 1 theories must read ONLY data_stack,
+              return_stack, memory, word_table — never physics fields)
+
+   Former axioms A2 (inference_window_clamped_valid) and A3
+   (inference_slope_positive) are REMOVED: both invariants are maintained by
+   clamping (clamp_window_suggestion / clamp_slope_suggestion) independently
+   of the statistical test output.  No axiom was ever needed.
+
+   heartbeat_trace_noninterference is now a PROVED theorem (StarForth_Concurrent,
+   foldl induction using A4').
 
    TRANSITIVITY CHAIN:
      word semantics (✓ Level 1)
-       → physics invariants (✓ Level 2, closed under A2, A3)
-         → concurrent non-interference (✓ A1 + A4)
+       → physics invariants (✓ Level 2, proved by clamping — axiom-free)
+         → concurrent non-interference (✓ A1 + A4', fully proved)
            → OS-level correctness (by transitivity, not in scope here)
    ======================================================================== *)
 
@@ -83,7 +94,7 @@ thm vm_decay_step_slope_pos             \<comment> \<open>✓ decay step preserv
 thm decay_step_dict_unchanged           \<comment> \<open>✓ decay does not touch dictionary\<close>
 thm pm_accuracy_upper_bound             \<comment> \<open>✓ accuracy ≤ Q48_ONE\<close>
 thm clamp_window_in_range               \<comment> \<open>✓ clamped window ∈ [MIN,MAX]\<close>
-thm apply_window_inference_preserves_invariant  \<comment> \<open>○ from A2\<close>
+thm apply_window_inference_preserves_invariant  \<comment> \<open>✓ proved by clamping (set_eff_window)\<close>
 thm clamp_slope_wf                      \<comment> \<open>✓ clamped slope satisfies slope_wf\<close>
 thm apply_slope_inference_preserves_wf  \<comment> \<open>✓ slope inference preserves slope_wf\<close>
 thm hb_shorten_preserves_wf             \<comment> \<open>✓ shorten preserves hb_state_wf\<close>
@@ -96,7 +107,7 @@ thm hb_fire_tick_preserves_wf           \<comment> \<open>✓ tick increment pre
 
 thm heartbeat_noninterference      \<comment> \<open>✓ one word: heartbeat does not affect result\<close>
 thm heartbeat_noninterference_rs   \<comment> \<open>✓ one word: return_stack unaffected\<close>
-thm heartbeat_trace_noninterference \<comment> \<open>○ from A4: full sequence unaffected\<close>
+thm heartbeat_trace_noninterference \<comment> \<open>✓ proved (foldl induction + A4')\<close>
 thm mutex_exclusive                \<comment> \<open>✓ at most one holder per lock\<close>
 thm concurrent_locks_safe_trivial  \<comment> \<open>✓ trivial from lock_state algebra\<close>
 

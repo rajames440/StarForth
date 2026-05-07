@@ -1,4 +1,4 @@
-session "StarForth" = HOL +
+session "StarForth" = "HOL-Library" +
   description "Formal proofs of StarForth FORTH-79 primitive correctness and physics-loop invariants"
   theories [document = false]
     StarForth_Base
