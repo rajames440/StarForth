@@ -58,6 +58,8 @@
 #    include "vm_asm_opt.h"
 #  elif defined(ARCH_ARM64) || defined(__aarch64__) || defined(__arm64__)
 #    include "vm_asm_opt_arm64.h"
+#  elif defined(ARCH_RISCV64) || (defined(__riscv) && (__riscv_xlen == 64))
+#    include "vm_asm_opt_riscv64.h"
 #  endif
 #endif
 
@@ -73,7 +75,7 @@
 void vm_push(VM *vm, cell_t value) {
     PROFILE_INC_STACK_OP();
 
-#if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64))
+#if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64) || defined(ARCH_RISCV64))
     /* Use optimized assembly version for x86_64 or ARM64 */
     vm_push_asm(vm, value);
 #ifndef NDEBUG
@@ -105,7 +107,7 @@ void vm_push(VM *vm, cell_t value) {
 cell_t vm_pop(VM *vm) {
     PROFILE_INC_STACK_OP();
 
-#if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64))
+#if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64) || defined(ARCH_RISCV64))
     /* Use optimized assembly version for x86_64 */
     cell_t value = vm_pop_asm(vm);
 #ifndef NDEBUG
@@ -137,7 +139,7 @@ cell_t vm_pop(VM *vm) {
  * @note Uses assembly optimization if available for x86_64 or ARM64
  */
 void vm_rpush(VM *vm, cell_t value) {
-#if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64))
+#if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64) || defined(ARCH_RISCV64))
     /* Use optimized assembly version for x86_64 */
     vm_rpush_asm(vm, value);
 #else
@@ -160,7 +162,7 @@ void vm_rpush(VM *vm, cell_t value) {
  * @note Uses assembly optimization if available for x86_64 or ARM64
  */
 cell_t vm_rpop(VM *vm) {
-#if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64))
+#if defined(USE_ASM_OPT) && USE_ASM_OPT && (defined(ARCH_X86_64) || defined(ARCH_ARM64) || defined(ARCH_RISCV64))
     /* Use optimized assembly version for x86_64 */
     return vm_rpop_asm(vm);
 #else
