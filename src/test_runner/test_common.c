@@ -43,6 +43,7 @@
 #include "../../include/vm.h"
 #include "../../include/vm_debug.h"
 #include "include/test_common.h"
+#include "include/test_contracts.h"
 #include "../../include/log.h"
 #include "test_runner.h"
 
@@ -365,6 +366,94 @@ void run_test_suite(VM* vm, const WordTestSuite* suite)
     global_test_stats.total_pass += suite_pass;
     global_test_stats.total_fail += suite_fail;
     global_test_stats.total_skip += suite_skip;
+    global_test_stats.total_error += suite_error;
+
+    log_message(LOG_TEST, "  %s: %d passed, %d failed, %d skipped, %d errors",
+                suite->word_name, suite_pass, suite_fail, suite_skip, suite_error);
+}
+
+/* ============================================================================
+ * run_test_suite_m — contract-aware suite runner
+ * ============================================================================ */
+
+/**
+ * @brief Resolves the effective contract for a test case.
+ *
+ * First non-NONE source wins: per-test > per-suite > module.
+ */
+static WordContract resolve_contract(WordContract test_c,
+                                     WordContract suite_c,
+                                     WordContract module_c)
+{
+    if (test_c.flags)  return test_c;
+    if (suite_c.flags) return suite_c;
+    return module_c;
+}
+
+void run_test_suite_m(VM *vm, const WordTestSuite *suite, WordContract module_contract)
+{
+    log_message(LOG_TEST, "Testing word: %s", suite->word_name);
+    log_message(LOG_TEST, "------------------------");
+
+    DictEntry* saved_latest;
+    size_t saved_here;
+    save_dict_state(vm, &saved_latest, &saved_here);
+
+    int suite_pass = 0;
+    int suite_fail = 0;
+    int suite_skip = 0;
+    int suite_error = 0;
+
+    for (int j = 0; j < suite->test_count && suite->tests[j].name != NULL; j++)
+    {
+        const TestCase* test = &suite->tests[j];
+
+        if (!test->implemented)
+        {
+            suite_skip++;
+            continue;
+        }
+
+        TestResult result = run_single_test(vm, suite->word_name, test);
+
+        switch (result)
+        {
+        case TEST_PASS:
+            suite_pass++;
+            /* A4' contract check for passing non-error tests */
+            if (result == TEST_PASS && test->type != TEST_ERROR_CASE)
+            {
+                WordContract eff = resolve_contract(test->contract,
+                                                    suite->suite_contract,
+                                                    module_contract);
+                if (eff.flags & CONTRACT_PHYSICS_TRANSPARENT)
+                {
+                    int ok = check_physics_transparent(vm, suite->word_name,
+                                                       test->input,
+                                                       test->should_error,
+                                                       test->implemented,
+                                                       eff.fuzz_rounds);
+                    if (!ok)
+                    {
+                        /* Demote to fail: contract violation is a test failure */
+                        suite_pass--;
+                        suite_fail++;
+                    }
+                }
+            }
+            break;
+        case TEST_FAIL:  suite_fail++;  break;
+        case TEST_SKIP:  suite_skip++;  break;
+        case TEST_ERROR: suite_error++; break;
+        }
+    }
+
+    restore_dict_state(vm, saved_latest, saved_here);
+
+    global_test_stats.total_tests += suite->test_count;
+    global_test_stats.total_pass  += suite_pass;
+    global_test_stats.total_fail  += suite_fail;
+    global_test_stats.total_skip  += suite_skip;
     global_test_stats.total_error += suite_error;
 
     log_message(LOG_TEST, "  %s: %d passed, %d failed, %d skipped, %d errors",

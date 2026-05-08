@@ -363,6 +363,200 @@ static inline void vm_save_registers(VM *vm) {
         ::: "rax", "r13", "r14", "cc", "memory" \
     )
 
+/* OVER - copy second item to top of stack */
+#define PRIM_OVER() \
+    __asm__ __volatile__ ( \
+        "movq    -8(%%r14), %%rax\n\t"    /* Load NOS */ \
+        "addq    $8, %%r14\n\t"           /* DSP++ */ \
+        "movq    %%rax, (%%r14)\n\t"      /* Store NOS as new TOS */ \
+        ::: "rax", "r14", "memory" \
+    )
+
+/* ROT - rotate top three items ( a b c -- b c a ) */
+#define PRIM_ROT() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* c = TOS */ \
+        "movq    -8(%%r14), %%rcx\n\t"    /* b = NOS */ \
+        "movq    -16(%%r14), %%rdx\n\t"   /* a = third */ \
+        "movq    %%rdx, -8(%%r14)\n\t"    /* a -> NOS */ \
+        "movq    %%rax, -16(%%r14)\n\t"   /* c -> third */ \
+        "movq    %%rcx, (%%r14)\n\t"      /* b -> TOS */ \
+        ::: "rax", "rcx", "rdx", "memory" \
+    )
+
+/* / - signed divide second by top */
+#define PRIM_SLASH() \
+    __asm__ __volatile__ ( \
+        "movq    -8(%%r14), %%rax\n\t"    /* Load dividend (NOS) */ \
+        "cqo\n\t"                          /* Sign-extend rax to rdx:rax */ \
+        "idivq   (%%r14)\n\t"              /* Divide by TOS */ \
+        "movq    %%rax, -8(%%r14)\n\t"    /* Store quotient to NOS slot */ \
+        "subq    $8, %%r14\n\t"           /* DSP-- */ \
+        ::: "rax", "rdx", "r14", "cc", "memory" \
+    )
+
+/* MOD - signed modulo */
+#define PRIM_MOD() \
+    __asm__ __volatile__ ( \
+        "movq    -8(%%r14), %%rax\n\t"    /* Load dividend (NOS) */ \
+        "cqo\n\t"                          /* Sign-extend */ \
+        "idivq   (%%r14)\n\t"              /* rdx = remainder */ \
+        "movq    %%rdx, -8(%%r14)\n\t"    /* Store remainder to NOS slot */ \
+        "subq    $8, %%r14\n\t"           /* DSP-- */ \
+        ::: "rax", "rdx", "r14", "cc", "memory" \
+    )
+
+/* AND - bitwise and */
+#define PRIM_AND() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* Load TOS */ \
+        "andq    %%rax, -8(%%r14)\n\t"    /* NOS &= TOS */ \
+        "subq    $8, %%r14\n\t"           /* DSP-- */ \
+        ::: "rax", "r14", "cc", "memory" \
+    )
+
+/* OR - bitwise or */
+#define PRIM_OR() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* Load TOS */ \
+        "orq     %%rax, -8(%%r14)\n\t"    /* NOS |= TOS */ \
+        "subq    $8, %%r14\n\t"           /* DSP-- */ \
+        ::: "rax", "r14", "cc", "memory" \
+    )
+
+/* XOR - bitwise xor */
+#define PRIM_XOR() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* Load TOS */ \
+        "xorq    %%rax, -8(%%r14)\n\t"    /* NOS ^= TOS */ \
+        "subq    $8, %%r14\n\t"           /* DSP-- */ \
+        ::: "rax", "r14", "cc", "memory" \
+    )
+
+/* INVERT - bitwise complement */
+#define PRIM_INVERT() \
+    __asm__ __volatile__ ( \
+        "notq    (%%r14)\n\t"             /* TOS = ~TOS */ \
+        ::: "memory" \
+    )
+
+/* NEGATE - two's complement negation */
+#define PRIM_NEGATE() \
+    __asm__ __volatile__ ( \
+        "negq    (%%r14)\n\t"             /* TOS = -TOS */ \
+        ::: "cc", "memory" \
+    )
+
+/* C@ - fetch byte from memory */
+#define PRIM_C_FETCH() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* Load address from TOS */ \
+        "movq    (%%r12), %%rcx\n\t"      /* Load VM->memory */ \
+        "movzbq  (%%rcx, %%rax, 1), %%rax\n\t"  /* Load byte, zero-extend */ \
+        "movq    %%rax, (%%r14)\n\t"      /* Store byte value to TOS */ \
+        ::: "rax", "rcx", "memory" \
+    )
+
+/* C! - store byte to memory */
+#define PRIM_C_STORE() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* Load address from TOS */ \
+        "movq    -8(%%r14), %%rcx\n\t"    /* Load byte value from NOS */ \
+        "movq    (%%r12), %%rdx\n\t"      /* Load VM->memory */ \
+        "movb    %%cl, (%%rdx, %%rax, 1)\n\t"  /* Store byte */ \
+        "subq    $16, %%r14\n\t"          /* DSP -= 2 */ \
+        ::: "rax", "rcx", "rdx", "r14", "memory" \
+    )
+
+/* 2DUP - duplicate top two items ( a b -- a b a b ) */
+#define PRIM_2DUP() \
+    __asm__ __volatile__ ( \
+        "movq    -8(%%r14), %%rax\n\t"    /* Load NOS (a) */ \
+        "movq    (%%r14), %%rcx\n\t"      /* Load TOS (b) */ \
+        "movq    %%rax, 8(%%r14)\n\t"     /* Store a above TOS */ \
+        "movq    %%rcx, 16(%%r14)\n\t"    /* Store b above that */ \
+        "addq    $16, %%r14\n\t"          /* DSP += 2 */ \
+        ::: "rax", "rcx", "r14", "memory" \
+    )
+
+/* 2DROP - drop top two items */
+#define PRIM_2DROP() \
+    __asm__ __volatile__ ( \
+        "subq    $16, %%r14\n\t"          /* DSP -= 2 */ \
+        ::: "r14" \
+    )
+
+/* 0= - true (-1) if TOS is zero, false (0) otherwise */
+#define PRIM_ZERO_EQUALS() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* Load TOS */ \
+        "testq   %%rax, %%rax\n\t"        /* Test for zero */ \
+        "sete    %%al\n\t"                 /* AL = 1 if zero */ \
+        "movzbq  %%al, %%rax\n\t"         /* Zero-extend */ \
+        "negq    %%rax\n\t"               /* -1 if true, 0 if false */ \
+        "movq    %%rax, (%%r14)\n\t"      /* Store result */ \
+        ::: "rax", "cc", "memory" \
+    )
+
+/* 0< - true (-1) if TOS is negative, false (0) otherwise */
+#define PRIM_ZERO_LESS() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* Load TOS */ \
+        "sarq    $63, %%rax\n\t"          /* Arithmetic shift: -1 if negative, 0 otherwise */ \
+        "movq    %%rax, (%%r14)\n\t"      /* Store result */ \
+        ::: "rax", "cc", "memory" \
+    )
+
+/* = - true (-1) if top two items are equal, false (0) otherwise */
+#define PRIM_EQUALS() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* Load TOS (b) */ \
+        "cmpq    %%rax, -8(%%r14)\n\t"    /* Compare NOS (a) with TOS (b) */ \
+        "sete    %%al\n\t"                 /* AL = 1 if equal */ \
+        "movzbq  %%al, %%rax\n\t"         /* Zero-extend */ \
+        "negq    %%rax\n\t"               /* -1 if true, 0 if false */ \
+        "movq    %%rax, -8(%%r14)\n\t"    /* Store result to NOS slot */ \
+        "subq    $8, %%r14\n\t"           /* DSP-- */ \
+        ::: "rax", "r14", "cc", "memory" \
+    )
+
+/* < - true (-1) if NOS < TOS (signed), false (0) otherwise */
+#define PRIM_LESS() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rcx\n\t"      /* Load TOS (b) */ \
+        "movq    -8(%%r14), %%rax\n\t"    /* Load NOS (a) */ \
+        "cmpq    %%rcx, %%rax\n\t"        /* rax - rcx: signed compare a vs b */ \
+        "setl    %%al\n\t"                 /* AL = 1 if a < b */ \
+        "movzbq  %%al, %%rax\n\t"         /* Zero-extend */ \
+        "negq    %%rax\n\t"               /* -1 if true, 0 if false */ \
+        "movq    %%rax, -8(%%r14)\n\t"    /* Store result to NOS slot */ \
+        "subq    $8, %%r14\n\t"           /* DSP-- */ \
+        ::: "rax", "rcx", "r14", "cc", "memory" \
+    )
+
+/* > - true (-1) if NOS > TOS (signed), false (0) otherwise */
+#define PRIM_GREATER() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rcx\n\t"      /* Load TOS (b) */ \
+        "movq    -8(%%r14), %%rax\n\t"    /* Load NOS (a) */ \
+        "cmpq    %%rcx, %%rax\n\t"        /* rax - rcx: signed compare a vs b */ \
+        "setg    %%al\n\t"                 /* AL = 1 if a > b */ \
+        "movzbq  %%al, %%rax\n\t"         /* Zero-extend */ \
+        "negq    %%rax\n\t"               /* -1 if true, 0 if false */ \
+        "movq    %%rax, -8(%%r14)\n\t"    /* Store result to NOS slot */ \
+        "subq    $8, %%r14\n\t"           /* DSP-- */ \
+        ::: "rax", "rcx", "r14", "cc", "memory" \
+    )
+
+/* EXECUTE - execute word whose execution token is on stack */
+#define PRIM_EXECUTE() \
+    __asm__ __volatile__ ( \
+        "movq    (%%r14), %%rax\n\t"      /* Load xt from TOS */ \
+        "subq    $8, %%r14\n\t"           /* DSP-- */ \
+        "jmpq    *%%rax\n\t"              /* Jump to execution token */ \
+        ::: "rax", "r14", "memory" \
+    )
+
 #else /* !USE_DIRECT_THREADING */
 
 /* Fallback definitions when direct threading is disabled */
