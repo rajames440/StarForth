@@ -300,6 +300,35 @@ static inline int vm_add_check_overflow(cell_t a, cell_t b, cell_t *result) {
     return overflow;
 }
 
+/* Fast subtract with overflow detection */
+/**
+ * @brief Performs subtraction with hardware overflow detection
+ * @param a First operand (minuend)
+ * @param b Second operand (subtrahend)
+ * @param result Pointer to store result
+ * @return 1 if overflow occurred, 0 otherwise
+ */
+static inline int vm_sub_check_overflow(cell_t a, cell_t b, cell_t *result) {
+    cell_t res;
+    int overflow;
+
+    __asm__(
+        "movq    %[a], %%rax\n\t"
+        "subq    %[b], %%rax\n\t"
+        "movq    %%rax, %[res]\n\t"
+        "seto    %%al\n\t" /* Set AL to 1 if overflow occurred */
+        "movzbl  %%al, %[ovf]\n\t"
+        : [res]"=r"(res),
+        [ovf]"=r"(overflow)
+        : [a]"r"(a),
+        [b]"r"(b)
+        : "rax", "cc"
+    );
+
+    *result = res;
+    return overflow;
+}
+
 /* Fast multiply with double-width result for */ /* MOD operations */
 /**
  * @brief Performs double-width multiplication

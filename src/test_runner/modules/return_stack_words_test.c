@@ -94,9 +94,10 @@ static WordTestSuite return_stack_word_suites[] = {
 void run_return_stack_words_tests(VM *vm) {
     log_message(LOG_INFO, "Running Return Stack Words Tests (Module 2)...");
 
+    WordContract mod = {CONTRACT_PHYSICS_TRANSPARENT, 0};
     for (int i = 0; return_stack_word_suites[i].word_name != NULL; i++) {
         log_message(LOG_TEST, "▶ Testing module: %s", __FILE__);
-        run_test_suite(vm, &return_stack_word_suites[i]);
+        run_test_suite_m(vm, &return_stack_word_suites[i], mod);
     }
 
     print_module_summary("Return Stack Words", 0, 0, 0, 0);
