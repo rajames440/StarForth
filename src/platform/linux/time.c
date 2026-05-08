@@ -50,6 +50,7 @@
 
 #define _POSIX_C_SOURCE 199309L
 #include "../../../include/platform_time.h"
+#include <stdio.h>
 #include <time.h>
 #include <string.h>
 
@@ -81,18 +82,23 @@ static int posix_format_timestamp(sf_time_ns_t ns_since_epoch, char *buf, int fo
         return -1;
 
     time_t seconds = (time_t)(ns_since_epoch / 1000000000ULL);
+    unsigned int ms = (unsigned int)((ns_since_epoch % 1000000000ULL) / 1000000ULL);
     struct tm *tm_info = localtime(&seconds);
     if (!tm_info) {
-        strncpy(buf, "??:??:??", SF_TIME_STAMP_SIZE);
+        strncpy(buf, "??:??:??.???", SF_TIME_STAMP_SIZE - 1);
+        buf[SF_TIME_STAMP_SIZE - 1] = '\0';
         return -1;
     }
 
+    char hms[16];
     const char *format = format_24h ? "%H:%M:%S" : "%I:%M:%S %p";
-    if (strftime(buf, SF_TIME_STAMP_SIZE, format, tm_info) == 0) {
-        strncpy(buf, "??:??:??", SF_TIME_STAMP_SIZE);
+    if (strftime(hms, sizeof(hms), format, tm_info) == 0) {
+        strncpy(buf, "??:??:??.???", SF_TIME_STAMP_SIZE - 1);
+        buf[SF_TIME_STAMP_SIZE - 1] = '\0';
         return -1;
     }
 
+    snprintf(buf, SF_TIME_STAMP_SIZE, "%s.%03u", hms, ms);
     return 0;
 }
 
