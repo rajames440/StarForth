@@ -72,16 +72,24 @@
 
 /* Detect architecture at compile time */
 #if defined(__x86_64__) || defined(_M_X64) || defined(__amd64__)
-#define ARCH_X86_64 1
-#define ARCH_ARM64 0
+#define ARCH_X86_64  1
+#define ARCH_ARM64   0
+#define ARCH_RISCV64 0
 #define ARCH_NAME "x86_64"
 #elif defined(__aarch64__) || defined(_M_ARM64) || defined(__arm64__)
-#define ARCH_X86_64 0
-#define ARCH_ARM64 1
+#define ARCH_X86_64  0
+#define ARCH_ARM64   1
+#define ARCH_RISCV64 0
 #define ARCH_NAME "ARM64"
+#elif defined(__riscv) && (__riscv_xlen == 64)
+#define ARCH_X86_64  0
+#define ARCH_ARM64   0
+#define ARCH_RISCV64 1
+#define ARCH_NAME "RISC-V 64"
 #else
-#define ARCH_X86_64 0
-#define ARCH_ARM64 0
+#define ARCH_X86_64  0
+#define ARCH_ARM64   0
+#define ARCH_RISCV64 0
 #define ARCH_NAME "Unknown"
 #warning "Unknown architecture, assembly optimizations disabled"
 #endif
@@ -96,6 +104,11 @@
 #include "vm_asm_opt_arm64.h"
 #if USE_DIRECT_THREADING
 #include "vm_inner_interp_arm64.h"
+#endif
+#elif ARCH_RISCV64 && USE_ASM_OPT
+#include "vm_asm_opt_riscv64.h"
+#if USE_DIRECT_THREADING
+#include "vm_inner_interp_riscv64.h"
 #endif
 #endif
 
@@ -113,7 +126,7 @@
 
 /* ========== Stack Operations ========== */
 
-#if USE_ASM_OPT && (ARCH_X86_64 || ARCH_ARM64)
+#if USE_ASM_OPT && (ARCH_X86_64 || ARCH_ARM64 || ARCH_RISCV64)
 /* Use optimized assembly implementations */
 #define vm_push_opt(vm, val) vm_push_asm(vm, val)
 #define vm_pop_opt(vm) vm_pop_asm(vm)
@@ -129,7 +142,7 @@
 
 /* ========== Arithmetic Operations ========== */
 
-#if USE_ASM_OPT && (ARCH_X86_64 || ARCH_ARM64)
+#if USE_ASM_OPT && (ARCH_X86_64 || ARCH_ARM64 || ARCH_RISCV64)
 #define vm_add_overflow_opt(a, b, res) vm_add_check_overflow(a, b, res)
 #define vm_sub_overflow_opt(a, b, res) vm_sub_check_overflow(a, b, res)
 #define vm_mul_double_opt(a, b, hi, lo) vm_mul_double(a, b, hi, lo)
@@ -161,7 +174,7 @@ static inline void vm_divmod_opt(cell_t dividend, cell_t divisor, cell_t *quot, 
 
 /* ========== String Operations ========== */
 
-#if USE_ASM_OPT && (ARCH_X86_64 || ARCH_ARM64)
+#if USE_ASM_OPT && (ARCH_X86_64 || ARCH_ARM64 || ARCH_RISCV64)
 #define vm_strcmp_opt(s1, s2, len) vm_strcmp_asm(s1, s2, len)
 #define vm_memcpy_opt(dst, src, len) vm_memcpy_asm(dst, src, len)
 #define vm_memzero_opt(dst, len) vm_memzero_asm(dst, len)
@@ -183,7 +196,7 @@ static inline void vm_memzero_opt(void *dst, size_t len) {
 
 /* ========== Min/Max Operations ========== */
 
-#if USE_ASM_OPT && (ARCH_X86_64 || ARCH_ARM64)
+#if USE_ASM_OPT && (ARCH_X86_64 || ARCH_ARM64 || ARCH_RISCV64)
 #define vm_min_opt(a, b) vm_min_asm(a, b)
 #define vm_max_opt(a, b) vm_max_asm(a, b)
 #else
@@ -198,7 +211,7 @@ static inline cell_t vm_max_opt(cell_t a, cell_t b) {
 
 /* ========== Absolute Value ========== */
 
-#if USE_ASM_OPT && ARCH_ARM64
+#if USE_ASM_OPT && (ARCH_ARM64 || ARCH_RISCV64)
 #define vm_abs_opt(a) vm_abs_asm(a)
 #else
 static inline cell_t vm_abs_opt(cell_t a) {
@@ -208,7 +221,7 @@ static inline cell_t vm_abs_opt(cell_t a) {
 
 /* ========== Bit Operations ========== */
 
-#if USE_ASM_OPT && ARCH_ARM64
+#if USE_ASM_OPT && (ARCH_ARM64 || ARCH_RISCV64)
 #define vm_clz_opt(x) vm_clz(x)
 #define vm_ctz_opt(x) vm_ctz(x)
 #define vm_popcnt_opt(x) vm_popcnt(x)
@@ -290,7 +303,7 @@ static inline int vm_popcnt_opt(cell_t x) {
 
 /* ========== Cache Operations ========== */
 
-#if USE_ASM_OPT && ARCH_ARM64
+#if USE_ASM_OPT && (ARCH_ARM64 || ARCH_RISCV64)
 #define vm_prefetch_opt(addr) vm_prefetch(addr)
 #define vm_prefetch_stream_opt(addr) vm_prefetch_stream(addr)
 #elif USE_ASM_OPT && ARCH_X86_64
@@ -307,7 +320,45 @@ static inline void vm_prefetch_stream_opt(const void *addr) {
 
 /* ========== Inner Interpreter (Direct Threading) ========== */
 
-#if USE_DIRECT_THREADING && ARCH_X86_64
+#if USE_DIRECT_THREADING && ARCH_RISCV64
+#define NEXT_OPT() NEXT_RV64()
+#define vm_setup_registers_opt(vm) vm_setup_registers_rv64(vm)
+#define vm_save_registers_opt(vm) vm_save_registers_rv64(vm)
+
+#define PRIM_DUP_OPT()         PRIM_DUP_RV64()
+#define PRIM_DROP_OPT()        PRIM_DROP_RV64()
+#define PRIM_SWAP_OPT()        PRIM_SWAP_RV64()
+#define PRIM_OVER_OPT()        PRIM_OVER_RV64()
+#define PRIM_ROT_OPT()         PRIM_ROT_RV64()
+#define PRIM_PLUS_OPT()        PRIM_PLUS_RV64()
+#define PRIM_MINUS_OPT()       PRIM_MINUS_RV64()
+#define PRIM_STAR_OPT()        PRIM_STAR_RV64()
+#define PRIM_SLASH_OPT()       PRIM_SLASH_RV64()
+#define PRIM_MOD_OPT()         PRIM_MOD_RV64()
+#define PRIM_AND_OPT()         PRIM_AND_RV64()
+#define PRIM_OR_OPT()          PRIM_OR_RV64()
+#define PRIM_XOR_OPT()         PRIM_XOR_RV64()
+#define PRIM_INVERT_OPT()      PRIM_INVERT_RV64()
+#define PRIM_NEGATE_OPT()      PRIM_NEGATE_RV64()
+#define PRIM_FETCH_OPT()       PRIM_FETCH_RV64()
+#define PRIM_STORE_OPT()       PRIM_STORE_RV64()
+#define PRIM_C_FETCH_OPT()     PRIM_C_FETCH_RV64()
+#define PRIM_C_STORE_OPT()     PRIM_C_STORE_RV64()
+#define PRIM_TO_R_OPT()        PRIM_TO_R_RV64()
+#define PRIM_R_FROM_OPT()      PRIM_R_FROM_RV64()
+#define PRIM_R_FETCH_OPT()     PRIM_R_FETCH_RV64()
+#define PRIM_2DUP_OPT()        PRIM_2DUP_RV64()
+#define PRIM_2DROP_OPT()       PRIM_2DROP_RV64()
+#define PRIM_ZERO_EQUALS_OPT() PRIM_ZERO_EQUALS_RV64()
+#define PRIM_ZERO_LESS_OPT()   PRIM_ZERO_LESS_RV64()
+#define PRIM_EQUALS_OPT()      PRIM_EQUALS_RV64()
+#define PRIM_LESS_OPT()        PRIM_LESS_RV64()
+#define PRIM_GREATER_OPT()     PRIM_GREATER_RV64()
+#define PRIM_BRANCH_OPT()      PRIM_BRANCH_RV64()
+#define PRIM_ZBRANCH_OPT()     PRIM_ZBRANCH_RV64()
+#define PRIM_EXECUTE_OPT()     PRIM_EXECUTE_RV64()
+
+#elif USE_DIRECT_THREADING && ARCH_X86_64
 #define NEXT_OPT() NEXT_ASM()
 #define vm_setup_registers_opt(vm) vm_setup_registers(vm)
 #define vm_save_registers_opt(vm) vm_save_registers(vm)
