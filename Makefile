@@ -374,6 +374,9 @@ all: banner $(BINARY)
 	@echo "  Output directory: $(BUILD_DIR)"
 	@echo "  Optimizations: $(if $(findstring USE_ASM_OPT,$(CFLAGS)),Enabled,Disabled)"
 	@echo "  Direct Threading: $(if $(findstring USE_DIRECT_THREADING,$(CFLAGS)),Enabled,Disabled)"
+	@mkdir -p lfs/$(ARCH_DIR)
+	@cp $(BINARY) lfs/$(ARCH_DIR)/starforth
+	@echo "  LFS copy:  lfs/$(ARCH_DIR)/starforth"
 	$(TARGET_POST)
 endif
 
