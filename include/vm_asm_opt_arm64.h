@@ -126,8 +126,7 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
 
         /* Store value: vm->data_stack[dsp+1] = value */
         /* Calculate address: base + (dsp+1)*8 */
-        "ldr     x2, %[stack]\n\t" /* Load stack base */
-        "str     %[val], [x2, w1, sxtw #3]\n\t" /* Sign-extend w1, shift left 3, store */
+        "str     %[val], [%[stack], w1, sxtw #3]\n\t" /* base + index*8 */
 
         /* Set error=0 in success path */
         "mov     w3, #0\n\t"
@@ -143,8 +142,8 @@ static inline void vm_push_asm(VM *vm, cell_t value) {
         : [dsp]"+m"(vm->dsp),
         [err]"=m"(error)
         : [val]"r"(value),
-        [stack]"m"(vm->data_stack)
-        : "x0", "x1", "x2", "x3", "cc", "memory"
+        [stack]"r"(vm->data_stack)
+        : "x0", "x1", "x3", "cc", "memory"
     );
 
     if (__builtin_expect(error, 0)) {
@@ -172,8 +171,7 @@ static inline cell_t vm_pop_asm(VM *vm) {
         "b.lt    1f\n\t" /* Branch if less than */
 
         /* No underflow: load value */
-        "ldr     x2, %[stack]\n\t"
-        "ldr     %[val], [x2, w0, sxtw #3]\n\t" /* Load with scaled index */
+        "ldr     %[val], [%[stack], w0, sxtw #3]\n\t" /* base + index*8 */
 
         /* Decrement dsp */
         "sub     w1, w0, #1\n\t"
@@ -194,8 +192,8 @@ static inline cell_t vm_pop_asm(VM *vm) {
         : [dsp]"+m"(vm->dsp),
         [val]"=r"(value),
         [err]"=m"(error)
-        : [stack]"m"(vm->data_stack)
-        : "x0", "x1", "x2", "x3", "cc", "memory"
+        : [stack]"r"(vm->data_stack)
+        : "x0", "x1", "x3", "cc", "memory"
     );
 
     if (__builtin_expect(error, 0)) {
@@ -221,8 +219,7 @@ static inline void vm_rpush_asm(VM *vm, cell_t value) {
         "b.ge    1f\n\t"
         "add     w1, w0, #1\n\t"
         "str     w1, %[rsp]\n\t"
-        "ldr     x2, %[stack]\n\t"
-        "str     %[val], [x2, w1, sxtw #3]\n\t"
+        "str     %[val], [%[stack], w1, sxtw #3]\n\t"
         "mov     w3, #0\n\t"
         "str     w3, %[err]\n\t"
         "b       2f\n\t"
@@ -233,8 +230,8 @@ static inline void vm_rpush_asm(VM *vm, cell_t value) {
         : [rsp]"+m"(vm->rsp),
         [err]"=m"(error)
         : [val]"r"(value),
-        [stack]"m"(vm->return_stack)
-        : "x0", "x1", "x2", "x3", "cc", "memory"
+        [stack]"r"(vm->return_stack)
+        : "x0", "x1", "x3", "cc", "memory"
     );
 
     if (__builtin_expect(error, 0)) {
@@ -257,8 +254,7 @@ static inline cell_t vm_rpop_asm(VM *vm) {
         "ldr     w0, %[rsp]\n\t"
         "cmp     w0, #0\n\t"
         "b.lt    1f\n\t"
-        "ldr     x2, %[stack]\n\t"
-        "ldr     %[val], [x2, w0, sxtw #3]\n\t"
+        "ldr     %[val], [%[stack], w0, sxtw #3]\n\t"
         "sub     w1, w0, #1\n\t"
         "str     w1, %[rsp]\n\t"
         "mov     w3, #0\n\t"
@@ -272,8 +268,8 @@ static inline cell_t vm_rpop_asm(VM *vm) {
         : [rsp]"+m"(vm->rsp),
         [val]"=r"(value),
         [err]"=m"(error)
-        : [stack]"m"(vm->return_stack)
-        : "x0", "x1", "x2", "x3", "cc", "memory"
+        : [stack]"r"(vm->return_stack)
+        : "x0", "x1", "x3", "cc", "memory"
     );
 
     if (__builtin_expect(error, 0)) {
