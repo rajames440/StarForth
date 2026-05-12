@@ -57,6 +57,9 @@ extern "C" {
 /** Limits */
 #define CAPSULE_MAX_COUNT       256
 
+/** Maximum capsule name length (colon-separated path, null-terminated) */
+#define CAPSULE_NAME_MAX        512
+
 /*===========================================================================
  * Hash Algorithm Enum
  *===========================================================================*/
@@ -140,6 +143,20 @@ typedef struct __attribute__((aligned(64))) {
 } CapsuleDesc;               /* 0x40 = 64 bytes */
 
 /*===========================================================================
+ * CapsuleNameEntry - Capsule Name (parallel array to CapsuleDesc[])
+ *
+ * Indexed 1:1 with capsule_descriptors[].  Name is the full relative path
+ * from the capsule root with '/' replaced by ':', e.g.:
+ *   "core:init.4th"
+ *   "experiments:doe-l8:init-l8-diverse.4th"
+ *   "production:myvm.4th"
+ *===========================================================================*/
+
+typedef struct {
+    char name[CAPSULE_NAME_MAX];   /* null-terminated, colon-separated path */
+} CapsuleNameEntry;
+
+/*===========================================================================
  * CapsuleDirHeader - Directory Header
  *===========================================================================*/
 
@@ -149,6 +166,8 @@ typedef struct {
     uint64_t arena_size;     /* bytes */
     uint32_t desc_count;     /* current number of descriptors */
     uint32_t desc_capacity;  /* max (fixed at compile time for Phase A) */
+    uint32_t name_count;     /* == desc_count, kept separate for validation */
+    uint32_t reserved;       /* padding */
     uint64_t dir_hash;       /* hash of descriptor table (for parity) */
 } CapsuleDirHeader;
 
@@ -205,6 +224,22 @@ const CapsuleDesc *capsule_find_by_id(
     const CapsuleDirHeader *dir,
     const CapsuleDesc *descs,
     uint64_t id
+);
+
+/**
+ * capsule_find_by_name - Find capsule by colon-separated name
+ *
+ * @param dir   Directory header
+ * @param descs Descriptor array
+ * @param names Name entry array (parallel to descs)
+ * @param name  Colon-separated capsule name, e.g. "core:init.4th"
+ * @return Pointer to descriptor, or NULL if not found
+ */
+const CapsuleDesc *capsule_find_by_name(
+    const CapsuleDirHeader    *dir,
+    const CapsuleDesc         *descs,
+    const CapsuleNameEntry    *names,
+    const char                *name
 );
 
 /**
