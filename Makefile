@@ -352,7 +352,7 @@ CONFDIR = $(PREFIX)/etc/starforth
 .PHONY: minimal fake-l4re debug profile performance
 .PHONY: test smoke bench benchmark
 .PHONY: asm sbom
-.PHONY: docs api-docs docs-latex docs-isabelle isabelle-build isabelle-check info
+.PHONY: docs api-docs docs-latex docs-isabelle isabelle-build isabelle-check info math-companion math-companion-clean
 .PHONY: refinement-status refinement-init refinement-phase1 verify-defect refinement-annotate-check refinement-report
 .PHONY: install uninstall package deb rpm
 .PHONY: quality compile_commands clang_tidy cppcheck gcc_analyzer
@@ -692,6 +692,30 @@ api-docs:
 	fi
 	@./scripts/generate-doxygen-appendix.sh
 	@echo "✅ API documentation generated: docs/src/appendix/"
+
+# ----------------------------------------------------------------------------
+# Math companion to the SSRN paper.
+# Builds docs/SSRN_companion/Math_Companion_SSRN.pdf from the LaTeX source.
+# Requires: pdflatex (texlive-latex-base, texlive-latex-extra, texlive-science).
+# ----------------------------------------------------------------------------
+math-companion:
+	@echo "Building SSRN math companion (docs/SSRN_companion/Math_Companion_SSRN.pdf)..."
+	@if ! command -v pdflatex >/dev/null 2>&1; then \
+		echo "Error: pdflatex not found."; \
+		echo "  Install with: apt-get install texlive-latex-base texlive-latex-extra texlive-science"; \
+		exit 1; \
+	fi
+	@cd docs/SSRN_companion && \
+		pdflatex -interaction=nonstopmode -halt-on-error Math_Companion_SSRN.tex >/dev/null && \
+		pdflatex -interaction=nonstopmode -halt-on-error Math_Companion_SSRN.tex >/dev/null && \
+		pdflatex -interaction=nonstopmode -halt-on-error Math_Companion_SSRN.tex >/dev/null
+	@echo "Built: docs/SSRN_companion/Math_Companion_SSRN.pdf"
+	@cd docs/SSRN_companion && ls -lh Math_Companion_SSRN.pdf | awk '{print "  Size:", $$5, " Pages: see pdfinfo"}'
+
+math-companion-clean:
+	@rm -f docs/SSRN_companion/Math_Companion_SSRN.{aux,log,out,toc,lof,lot,nav,snm,vrb}
+	@rm -f docs/SSRN_companion/Math_Companion_SSRN.pdf
+	@echo "Cleaned math companion build artifacts."
 
 # Convert all AsciiDoc to LaTeX
 docs-latex:
