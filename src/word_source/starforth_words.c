@@ -317,7 +317,7 @@ void starforth_word_paren_dash(VM* vm)
 /**
  * @brief Initialize system from init.4th configuration file
  *
- * Reads ./conf/init.4th (or ROMFS in L4Re), parses Block headers,
+ * Reads ./capsules/init.4th (or ROMFS in L4Re), parses Block headers,
  * copies blocks sequentially starting at block 1, then executes them.
  * Stack effect: ( -- )
  * @param vm Pointer to the VM instance
@@ -338,7 +338,7 @@ void starforth_word_init(VM* vm)
     return;
 #else
     /* Linux/POSIX: read from filesystem */
-    const char* init_path = "./conf/init.4th";
+    const char* init_path = "./capsules/init.4th";
     FILE* fp = fopen(init_path, "r");
     if (!fp)
     {
