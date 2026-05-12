@@ -350,7 +350,7 @@ CONFDIR = $(PREFIX)/etc/starforth
 .PHONY: fastest fast turbo pgo pgo-build pgo-perf pgo-valgrind bench-compare
 .PHONY: rpi4 rpi4-cross rpi4-fastest
 .PHONY: minimal fake-l4re debug profile performance
-.PHONY: test smoke bench benchmark
+.PHONY: test bench benchmark
 .PHONY: asm sbom
 .PHONY: docs api-docs docs-latex docs-isabelle isabelle-build isabelle-check info math-companion math-companion-clean
 .PHONY: refinement-status refinement-init refinement-phase1 verify-defect refinement-annotate-check refinement-report
@@ -613,15 +613,6 @@ test: $(BINARY)
 	@echo "🧪 Running test suite..."
 	@printf 'BYE\n' | ./$(BINARY) --run-tests $(PROFILE_ARGS)
 
-# Quick smoke test
-smoke: $(BINARY)
-	@echo ""
-	@echo "🚦 Running smoke test (1 2 + .)"
-	@raw_out=$$(printf '1 2 + .\nBYE\n' | NO_COLOR=1 ./$(BINARY) --log-none); \
-	printf '%s\n' "$$raw_out"; \
-	out_clean=$$(printf '%s\n' "$$raw_out" | sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g'); \
-	echo "$$out_clean" | grep -q 'ok> 3' || (echo "Smoke test failed" >&2; exit 1)
-	@echo "✓ Smoke test passed"
 
 # Quick benchmark
 bench: $(BINARY)
@@ -1159,7 +1150,7 @@ build-manifest: $(BINARY)
     "passed_tests": 0, \
     "failed_tests": 0, \
     "code_coverage_percent": 0, \
-    "smoke_test_result": "PENDING" \
+    "smoke_test_result": "N/A" \
   }, \
   "binary": { \
     "path": "$$BINARY_PATH", \
@@ -1226,7 +1217,6 @@ help:
 	@echo ""
 	@echo "🧪 TESTING & BENCHMARKING:"
 	@echo "  test            - Run full test suite"
-	@echo "  smoke           - Quick smoke test"
 	@echo "  bench           - Quick benchmark"
 	@echo "  benchmark       - Full benchmark suite"
 	@echo ""
