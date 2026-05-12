@@ -995,9 +995,9 @@ install: $(BINARY)
 	@install -d $(BINDIR)
 	@install -m 755 $(BINARY) $(BINDIR)/starforth
 	@echo "   ✓ Binary installed: $(BINDIR)/starforth"
-	@if [ -f conf/init.4th ]; then \
+	@if [ -f capsules/init.4th ]; then \
 		install -d $(CONFDIR); \
-		install -m 644 conf/init.4th $(CONFDIR)/init.4th; \
+		install -m 644 capsules/init.4th $(CONFDIR)/init.4th; \
 		echo "   ✓ Config installed: $(CONFDIR)/init.4th"; \
 	fi
 	@if [ -f man/starforth.1 ]; then \
@@ -1053,7 +1053,7 @@ deb: $(BINARY)
 		--package package/deb/ \
 		--deb-compression xz \
 		$(BINARY)=/usr/bin/starforth \
-		conf/init.4th=/etc/starforth/init.4th \
+		capsules/init.4th=/etc/starforth/init.4th \
 		README.md=/usr/share/doc/starforth/README.md
 	@echo "✅ Debian package created: package/deb/starforth_$(VERSION)_*.deb"
 
@@ -1076,7 +1076,7 @@ rpm: $(BINARY)
 		--category "Development/Languages" \
 		--package package/rpm/ \
 		$(BINARY)=/usr/bin/starforth \
-		conf/init.4th=/etc/starforth/init.4th \
+		capsules/init.4th=/etc/starforth/init.4th \
 		README.md=/usr/share/doc/starforth/README.md
 	@echo "✅ RPM package created: package/rpm/starforth-$(VERSION)-*.rpm"
 
