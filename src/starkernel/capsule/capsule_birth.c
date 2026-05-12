@@ -21,8 +21,8 @@
  *   2. Assert CAPSULE_BIRTH_ELIGIBLE
  *   3. Validate content hash
  *   4. vm_alloc_hook() — fresh VM
- *   5. vm_exec_hook(payload) — IDENTITY (init capsule)
- *   6. vm_exec_hook("1 LOAD") — PERSONALITY (unit.4th from block 1, if present)
+ *   5. vm_exec_hook(payload) — IDENTITY (init capsule from Hera's store)
+ *   6. vm_exec_hook("1 LOAD") — PERSONALITY (baby's personal init.4th from block 1, if present)
  *   7. Log parity record
  */
 
@@ -101,19 +101,18 @@ uint32_t capsule_vm_registry_count(void) {
 }
 
 /*===========================================================================
- * Internal: unit.4th dispatch
+ * Internal: init.4th dispatch (PERSONALITY layer)
  *
  * After a baby VM runs its identity capsule, attempt to execute block 1.
- * Block 1 is the PERSONALITY layer (unit.4th by convention).  Failure is
- * silent — the block may not exist, which is normal.
+ * Block 1 is the PERSONALITY layer — the baby's personal init.4th.
+ * Failure is silent: the block may not exist, which is normal.
  *===========================================================================*/
 
-static void dispatch_unit_forth(void *vm_ctx) {
+static void dispatch_init_forth(void *vm_ctx) {
     /* "1 LOAD" — load and execute block 1.  If the block subsystem has no
-     * block 1 (empty image or unformatted), LOAD will set vm->error which
-     * the exec hook clears.  Either way we continue. */
+     * block 1, LOAD will set vm->error which the exec hook clears. */
     vm_exec_fn(vm_ctx, "1 LOAD", 6);
-    /* error state from a missing unit.4th is expected and intentional */
+    /* error from a missing personal init.4th is expected and intentional */
 }
 
 /*===========================================================================
@@ -223,8 +222,8 @@ CapsuleRunResult capsule_birth_baby(
         return CAPSULE_RUN_ERR_EXEC_FAIL;
     }
 
-    /* PERSONALITY: run unit.4th from block 1 if present (failure is silent) */
-    dispatch_unit_forth(new_vm);
+    /* PERSONALITY: run baby's personal init.4th from block 1 if present */
+    dispatch_init_forth(new_vm);
 
     uint64_t dict_hash = vm_dict_hash_fn(new_vm);
     entry->state           = VM_STATE_LIVE;
