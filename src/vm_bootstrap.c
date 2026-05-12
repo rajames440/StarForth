@@ -64,6 +64,11 @@
 #include "../include/platform_alloc.h"
 #include "word_source/include/vocabulary_words.h"
 
+#ifdef __STARKERNEL__
+#include "../include/starkernel/capsule_birth.h"
+#include "../include/starkernel/capsule_run.h"
+#endif
+
 #include <string.h>
 
 /* ====================== Bootstrap helpers ======================= */
@@ -304,6 +309,15 @@ void vm_init(VM* vm)
     ((ssm_config_t*)vm->ssm_config)->L3_linear_decay = 0;
     ((ssm_config_t*)vm->ssm_config)->L5_window_inference = 0;
     ((ssm_config_t*)vm->ssm_config)->L6_decay_inference = 0;
+
+#ifdef __STARKERNEL__
+    /* Capsule subsystem: register VM hooks, init registry and run log.
+     * capsule_birth_mama() is called separately after vm_init() returns,
+     * once the caller has access to the compiled-in capsule directory. */
+    capsule_vm_hooks_register();
+    capsule_vm_registry_init();
+    capsule_run_log_init();
+#endif
 }
 
 /**
