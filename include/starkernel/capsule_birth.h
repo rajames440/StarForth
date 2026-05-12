@@ -94,12 +94,12 @@ void capsule_birth_set_hooks(
 /**
  * capsule_birth_mama - Execute Mama's init capsule
  *
- * Finds the MAMA_INIT capsule, validates it, and executes it on Mama's VM.
- * This establishes Mama's PERSONALITY.
+ * Finds the MAMA_INIT capsule by flag, validates it, executes it on Mama's VM.
  *
  * @param mama_vm    Mama's VM context
  * @param dir        Capsule directory header
  * @param descs      Capsule descriptor array
+ * @param names      Capsule name entry array (parallel to descs)
  * @param arena      Capsule payload arena
  * @return CAPSULE_RUN_OK on success, error code otherwise
  */
@@ -107,6 +107,7 @@ CapsuleRunResult capsule_birth_mama(
     void *mama_vm,
     const CapsuleDirHeader *dir,
     const CapsuleDesc *descs,
+    const CapsuleNameEntry *names,
     const uint8_t *arena
 );
 
@@ -115,23 +116,26 @@ CapsuleRunResult capsule_birth_mama(
  *===========================================================================*/
 
 /**
- * capsule_birth_baby - Birth a new VM from a (p) capsule
+ * capsule_birth_baby - Birth a new VM from a named (p) capsule
  *
- * Allocates a new VM, finds the capsule by hash, validates it,
- * executes it to establish the baby's PERSONALITY.
+ * Finds the capsule by colon-separated name, validates it, allocates a new
+ * VM, executes the capsule payload as IDENTITY, then (if present) executes
+ * unit.4th from the baby's block space as PERSONALITY.
  *
- * @param capsule_id  Content hash of the (p) capsule
- * @param dir         Capsule directory header
- * @param descs       Capsule descriptor array
- * @param arena       Capsule payload arena
- * @param out_vm_id   Output: assigned VM ID
- * @param out_vm_ctx  Output: new VM context
+ * @param capsule_name  Colon-separated capsule name, e.g. "production:myvm.4th"
+ * @param dir           Capsule directory header
+ * @param descs         Capsule descriptor array
+ * @param names         Capsule name entry array (parallel to descs)
+ * @param arena         Capsule payload arena
+ * @param out_vm_id     Output: assigned VM ID
+ * @param out_vm_ctx    Output: new VM context
  * @return CAPSULE_RUN_OK on success, error code otherwise
  */
 CapsuleRunResult capsule_birth_baby(
-    uint64_t capsule_id,
+    const char *capsule_name,
     const CapsuleDirHeader *dir,
     const CapsuleDesc *descs,
+    const CapsuleNameEntry *names,
     const uint8_t *arena,
     uint32_t *out_vm_id,
     void **out_vm_ctx
@@ -142,27 +146,41 @@ CapsuleRunResult capsule_birth_baby(
  *===========================================================================*/
 
 /**
- * capsule_run_experiment - Execute an (e) capsule on Mama
+ * capsule_run_experiment - Execute a named (e) capsule on Mama
  *
- * Finds the experiment capsule by hash, validates it,
+ * Finds the experiment capsule by colon-separated name, validates it,
  * executes it on Mama's VM without creating a new VM.
  *
- * @param mama_vm     Mama's VM context
- * @param capsule_id  Content hash of the (e) capsule
- * @param dir         Capsule directory header
- * @param descs       Capsule descriptor array
- * @param arena       Capsule payload arena
- * @param out_run_id  Output: assigned run ID
+ * @param mama_vm      Mama's VM context
+ * @param capsule_name Colon-separated capsule name, e.g. "experiments:doe-l8:init-l8-stable.4th"
+ * @param dir          Capsule directory header
+ * @param descs        Capsule descriptor array
+ * @param names        Capsule name entry array (parallel to descs)
+ * @param arena        Capsule payload arena
+ * @param out_run_id   Output: assigned run ID
  * @return CAPSULE_RUN_OK on success, error code otherwise
  */
 CapsuleRunResult capsule_run_experiment(
     void *mama_vm,
-    uint64_t capsule_id,
+    const char *capsule_name,
     const CapsuleDirHeader *dir,
     const CapsuleDesc *descs,
+    const CapsuleNameEntry *names,
     const uint8_t *arena,
     uint64_t *out_run_id
 );
+
+/*===========================================================================
+ * VM Hook Registration
+ *===========================================================================*/
+
+/**
+ * capsule_vm_hooks_register - Wire concrete VM hooks into the capsule subsystem
+ *
+ * Registers capsule_exec_hook, capsule_dict_hash_hook, and capsule_vm_alloc_hook.
+ * Must be called after vm_init() on Mama's VM and before any birth operations.
+ */
+void capsule_vm_hooks_register(void);
 
 /*===========================================================================
  * VM Registry

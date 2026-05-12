@@ -8,23 +8,22 @@
 
   Licensed under the StarForth License, Version 1.0 (the "License");
   you may not use this file except in compliance with the License.
-
-  You may obtain a copy of the License at:
-      https://github.com/star.4th@proton.me/StarForth/LICENSE.txt
-
-  This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND,
-  express or implied, including but not limited to the warranties of
-  merchantability, fitness for a particular purpose, and noninfringement.
-
-  See the License for the specific language governing permissions and
-  limitations under the License.
 */
 
 /**
  * capsule_birth.c - VM Birth Protocol Implementation (M7.1)
  *
- * Implements the birth protocol for Mama init, baby VMs, and experiments.
+ * Mama init, baby birth, and experiment execution.
  * Freestanding - no libc dependency.
+ *
+ * Birth sequence for a baby VM:
+ *   1. Find capsule by name (capsule_find_by_name)
+ *   2. Assert CAPSULE_BIRTH_ELIGIBLE
+ *   3. Validate content hash
+ *   4. vm_alloc_hook() — fresh VM
+ *   5. vm_exec_hook(payload) — IDENTITY (init capsule)
+ *   6. vm_exec_hook("1 LOAD") — PERSONALITY (unit.4th from block 1, if present)
+ *   7. Log parity record
  */
 
 #include "starkernel/capsule_birth.h"
@@ -35,18 +34,18 @@
  * VM Execution Hooks
  *===========================================================================*/
 
-static CapsuleExecFn vm_exec_fn = 0;
+static CapsuleExecFn     vm_exec_fn      = 0;
 static CapsuleDictHashFn vm_dict_hash_fn = 0;
-static CapsuleVMAllocFn vm_alloc_fn = 0;
+static CapsuleVMAllocFn  vm_alloc_fn     = 0;
 
 void capsule_birth_set_hooks(
-    CapsuleExecFn exec_fn,
+    CapsuleExecFn     exec_fn,
     CapsuleDictHashFn dict_hash_fn,
-    CapsuleVMAllocFn vm_alloc_fn_arg)
+    CapsuleVMAllocFn  vm_alloc_fn_arg)
 {
-    vm_exec_fn = exec_fn;
+    vm_exec_fn      = exec_fn;
     vm_dict_hash_fn = dict_hash_fn;
-    vm_alloc_fn = vm_alloc_fn_arg;
+    vm_alloc_fn     = vm_alloc_fn_arg;
 }
 
 /*===========================================================================
@@ -56,49 +55,44 @@ void capsule_birth_set_hooks(
 #define MAX_VMS 64
 
 static VMRegistryEntry vm_registry[MAX_VMS];
-static uint32_t vm_registry_count = 0;
-static uint32_t next_vm_id = 1;  /* VM 0 is reserved for Mama */
+static uint32_t        vm_registry_count = 0;
+static uint32_t        next_vm_id = 1;   /* VM 0 is reserved for Mama */
 
 void capsule_vm_registry_init(void) {
     vm_registry_count = 0;
     next_vm_id = 1;
 
-    /* Zero the registry */
-    for (uint32_t i = 0; i < MAX_VMS; i++) {
-        vm_registry[i].vm_id = 0;
-        vm_registry[i].state = VM_STATE_EMBRYO;
-        vm_registry[i].birth_capsule_id = 0;
+    uint32_t i;
+    for (i = 0; i < MAX_VMS; i++) {
+        vm_registry[i].vm_id              = 0;
+        vm_registry[i].state              = VM_STATE_EMBRYO;
+        vm_registry[i].birth_capsule_id   = 0;
         vm_registry[i].birth_timestamp_ns = 0;
-        vm_registry[i].birth_dict_hash = 0;
-        vm_registry[i].flags = 0;
-        vm_registry[i].reserved = 0;
+        vm_registry[i].birth_dict_hash    = 0;
+        vm_registry[i].flags              = 0;
+        vm_registry[i].reserved           = 0;
     }
 
-    /* Register Mama as VM 0 */
-    vm_registry[0].vm_id = 0;
-    vm_registry[0].state = VM_STATE_LIVE;
-    vm_registry_count = 1;
+    /* Mama is always VM 0 */
+    vm_registry[0].vm_id  = 0;
+    vm_registry[0].state  = VM_STATE_LIVE;
+    vm_registry_count     = 1;
 }
 
 static VMRegistryEntry *vm_registry_alloc(void) {
-    if (vm_registry_count >= MAX_VMS) {
-        return (void *)0;
-    }
+    if (vm_registry_count >= MAX_VMS) return (void *)0;
     return &vm_registry[vm_registry_count++];
 }
 
 int capsule_vm_registry_get(uint32_t vm_id, VMRegistryEntry *out) {
-    if (!out) {
-        return -1;
-    }
-
-    for (uint32_t i = 0; i < vm_registry_count; i++) {
+    uint32_t i;
+    if (!out) return -1;
+    for (i = 0; i < vm_registry_count; i++) {
         if (vm_registry[i].vm_id == vm_id) {
             *out = vm_registry[i];
             return 0;
         }
     }
-
     return -1;
 }
 
@@ -107,64 +101,61 @@ uint32_t capsule_vm_registry_count(void) {
 }
 
 /*===========================================================================
+ * Internal: unit.4th dispatch
+ *
+ * After a baby VM runs its identity capsule, attempt to execute block 1.
+ * Block 1 is the PERSONALITY layer (unit.4th by convention).  Failure is
+ * silent — the block may not exist, which is normal.
+ *===========================================================================*/
+
+static void dispatch_unit_forth(void *vm_ctx) {
+    /* "1 LOAD" — load and execute block 1.  If the block subsystem has no
+     * block 1 (empty image or unformatted), LOAD will set vm->error which
+     * the exec hook clears.  Either way we continue. */
+    vm_exec_fn(vm_ctx, "1 LOAD", 6);
+    /* error state from a missing unit.4th is expected and intentional */
+}
+
+/*===========================================================================
  * Mama Init
  *===========================================================================*/
 
 CapsuleRunResult capsule_birth_mama(
-    void *mama_vm,
+    void                   *mama_vm,
     const CapsuleDirHeader *dir,
-    const CapsuleDesc *descs,
-    const uint8_t *arena)
+    const CapsuleDesc      *descs,
+    const CapsuleNameEntry *names,
+    const uint8_t          *arena)
 {
-    if (!mama_vm || !dir || !descs || !arena) {
+    if (!mama_vm || !dir || !descs || !names || !arena)
         return CAPSULE_RUN_ERR_INVALID;
-    }
-
-    if (!vm_exec_fn || !vm_dict_hash_fn) {
+    if (!vm_exec_fn || !vm_dict_hash_fn)
         return CAPSULE_RUN_ERR_INVALID;
-    }
 
-    /* Find Mama's init capsule */
     const CapsuleDesc *mama_cap = capsule_find_mama_init(dir, descs);
-    if (!mama_cap) {
-        return CAPSULE_RUN_ERR_INVALID;
-    }
+    if (!mama_cap) return CAPSULE_RUN_ERR_INVALID;
 
-    /* Validate capsule */
-    CapsuleValidateResult vr = capsule_validate(
-        mama_cap, arena, dir->arena_size, 1);
-    if (vr != CAPSULE_VALID) {
-        return CAPSULE_RUN_ERR_INVALID;
-    }
+    CapsuleValidateResult vr = capsule_validate(mama_cap, arena, dir->arena_size, 1);
+    if (vr != CAPSULE_VALID) return CAPSULE_RUN_ERR_INVALID;
 
-    /* Get pre-execution dictionary hash */
     uint64_t pre_dict_hash = vm_dict_hash_fn(mama_vm);
+    (void)pre_dict_hash;
 
-    /* Get payload */
     const uint8_t *payload = capsule_get_payload(mama_cap, arena);
-    if (!payload) {
-        return CAPSULE_RUN_ERR_INVALID;
-    }
+    if (!payload) return CAPSULE_RUN_ERR_INVALID;
 
-    /* Execute Mama's init */
     int exec_result = vm_exec_fn(mama_vm, (const char *)payload, mama_cap->length);
-    if (exec_result != 0) {
-        return CAPSULE_RUN_ERR_EXEC_FAIL;
-    }
+    if (exec_result != 0) return CAPSULE_RUN_ERR_EXEC_FAIL;
 
-    /* Get post-execution dictionary hash */
     uint64_t post_dict_hash = vm_dict_hash_fn(mama_vm);
 
-    /* Log parity record */
     capsule_parity_log_mama_init(
         mama_cap->capsule_id,
         mama_cap->content_hash,
-        post_dict_hash
-    );
+        post_dict_hash);
 
-    /* Update Mama's registry entry */
     vm_registry[0].birth_capsule_id = mama_cap->capsule_id;
-    vm_registry[0].birth_dict_hash = post_dict_hash;
+    vm_registry[0].birth_dict_hash  = post_dict_hash;
 
     return CAPSULE_RUN_OK;
 }
@@ -174,89 +165,74 @@ CapsuleRunResult capsule_birth_mama(
  *===========================================================================*/
 
 CapsuleRunResult capsule_birth_baby(
-    uint64_t capsule_id,
+    const char             *capsule_name,
     const CapsuleDirHeader *dir,
-    const CapsuleDesc *descs,
-    const uint8_t *arena,
-    uint32_t *out_vm_id,
-    void **out_vm_ctx)
+    const CapsuleDesc      *descs,
+    const CapsuleNameEntry *names,
+    const uint8_t          *arena,
+    uint32_t               *out_vm_id,
+    void                  **out_vm_ctx)
 {
-    if (!dir || !descs || !arena) {
+    if (!capsule_name || !dir || !descs || !names || !arena)
         return CAPSULE_RUN_ERR_INVALID;
-    }
-
-    if (!vm_exec_fn || !vm_dict_hash_fn || !vm_alloc_fn) {
+    if (!vm_exec_fn || !vm_dict_hash_fn || !vm_alloc_fn)
         return CAPSULE_RUN_ERR_INVALID;
-    }
 
-    /* Find the capsule */
-    const CapsuleDesc *cap = capsule_find_by_id(dir, descs, capsule_id);
-    if (!cap) {
-        return CAPSULE_RUN_ERR_INVALID;
-    }
+    /* Locate by name */
+    const CapsuleDesc *cap = capsule_find_by_name(dir, descs, names, capsule_name);
+    if (!cap) return CAPSULE_RUN_ERR_INVALID;
 
-    /* Check it's a production capsule */
-    if (!CAPSULE_BIRTH_ELIGIBLE(cap->flags)) {
-        return CAPSULE_RUN_ERR_NOT_ELIGIBLE;
-    }
+    if (!CAPSULE_BIRTH_ELIGIBLE(cap->flags)) return CAPSULE_RUN_ERR_NOT_ELIGIBLE;
 
-    /* Validate capsule */
-    CapsuleValidateResult vr = capsule_validate(
-        cap, arena, dir->arena_size, 1);
-    if (vr != CAPSULE_VALID) {
-        return CAPSULE_RUN_ERR_INVALID;
-    }
+    CapsuleValidateResult vr = capsule_validate(cap, arena, dir->arena_size, 1);
+    if (vr != CAPSULE_VALID) return CAPSULE_RUN_ERR_INVALID;
 
-    /* Allocate registry entry */
     VMRegistryEntry *entry = vm_registry_alloc();
-    if (!entry) {
-        return CAPSULE_RUN_ERR_INVALID;
-    }
+    if (!entry) return CAPSULE_RUN_ERR_INVALID;
 
     uint32_t vm_id = next_vm_id++;
-    entry->vm_id = vm_id;
-    entry->state = VM_STATE_EMBRYO;
-    entry->birth_capsule_id = capsule_id;
+    entry->vm_id            = vm_id;
+    entry->state            = VM_STATE_EMBRYO;
+    entry->birth_capsule_id = cap->capsule_id;
 
-    /* Allocate VM */
+    /* Allocate baby VM */
     void *new_vm = vm_alloc_fn();
     if (!new_vm) {
         entry->state = VM_STATE_STILLBORN;
-        capsule_parity_log_birth_failed(vm_id, capsule_id,
+        capsule_parity_log_birth_failed(vm_id, cap->capsule_id,
             CAPSULE_RUN_ERR_STILLBORN, 0);
         return CAPSULE_RUN_ERR_STILLBORN;
     }
 
-    /* Get payload */
     const uint8_t *payload = capsule_get_payload(cap, arena);
     if (!payload) {
         entry->state = VM_STATE_STILLBORN;
-        capsule_parity_log_birth_failed(vm_id, capsule_id,
+        capsule_parity_log_birth_failed(vm_id, cap->capsule_id,
             CAPSULE_RUN_ERR_INVALID, 0);
         return CAPSULE_RUN_ERR_INVALID;
     }
 
-    /* Execute init on new VM */
+    /* IDENTITY: run init capsule */
     int exec_result = vm_exec_fn(new_vm, (const char *)payload, cap->length);
     if (exec_result != 0) {
         uint64_t partial_hash = vm_dict_hash_fn(new_vm);
-        entry->state = VM_STATE_STILLBORN;
-        entry->birth_dict_hash = partial_hash;
-        capsule_parity_log_birth_failed(vm_id, capsule_id,
+        entry->state            = VM_STATE_STILLBORN;
+        entry->birth_dict_hash  = partial_hash;
+        capsule_parity_log_birth_failed(vm_id, cap->capsule_id,
             CAPSULE_RUN_ERR_EXEC_FAIL, partial_hash);
         return CAPSULE_RUN_ERR_EXEC_FAIL;
     }
 
-    /* Success - VM is born */
+    /* PERSONALITY: run unit.4th from block 1 if present (failure is silent) */
+    dispatch_unit_forth(new_vm);
+
     uint64_t dict_hash = vm_dict_hash_fn(new_vm);
-    entry->state = VM_STATE_LIVE;
+    entry->state           = VM_STATE_LIVE;
     entry->birth_dict_hash = dict_hash;
 
-    /* Log parity record */
-    capsule_parity_log_birth(vm_id, capsule_id, cap->content_hash, dict_hash);
+    capsule_parity_log_birth(vm_id, cap->capsule_id, cap->content_hash, dict_hash);
 
-    /* Return results */
-    if (out_vm_id) *out_vm_id = vm_id;
+    if (out_vm_id)  *out_vm_id  = vm_id;
     if (out_vm_ctx) *out_vm_ctx = new_vm;
 
     return CAPSULE_RUN_OK;
@@ -267,73 +243,51 @@ CapsuleRunResult capsule_birth_baby(
  *===========================================================================*/
 
 CapsuleRunResult capsule_run_experiment(
-    void *mama_vm,
-    uint64_t capsule_id,
+    void                   *mama_vm,
+    const char             *capsule_name,
     const CapsuleDirHeader *dir,
-    const CapsuleDesc *descs,
-    const uint8_t *arena,
-    uint64_t *out_run_id)
+    const CapsuleDesc      *descs,
+    const CapsuleNameEntry *names,
+    const uint8_t          *arena,
+    uint64_t               *out_run_id)
 {
-    if (!mama_vm || !dir || !descs || !arena) {
+    if (!mama_vm || !capsule_name || !dir || !descs || !names || !arena)
         return CAPSULE_RUN_ERR_INVALID;
-    }
-
-    if (!vm_exec_fn || !vm_dict_hash_fn) {
+    if (!vm_exec_fn || !vm_dict_hash_fn)
         return CAPSULE_RUN_ERR_INVALID;
-    }
 
-    /* Find the capsule */
-    const CapsuleDesc *cap = capsule_find_by_id(dir, descs, capsule_id);
-    if (!cap) {
-        return CAPSULE_RUN_ERR_INVALID;
-    }
+    const CapsuleDesc *cap = capsule_find_by_name(dir, descs, names, capsule_name);
+    if (!cap) return CAPSULE_RUN_ERR_INVALID;
 
-    /* Check it's an experiment capsule */
-    if (!CAPSULE_DOE_ELIGIBLE(cap->flags)) {
-        return CAPSULE_RUN_ERR_NOT_ELIGIBLE;
-    }
+    if (!CAPSULE_DOE_ELIGIBLE(cap->flags)) return CAPSULE_RUN_ERR_NOT_ELIGIBLE;
 
-    /* Validate capsule */
-    CapsuleValidateResult vr = capsule_validate(
-        cap, arena, dir->arena_size, 1);
-    if (vr != CAPSULE_VALID) {
-        return CAPSULE_RUN_ERR_INVALID;
-    }
+    CapsuleValidateResult vr = capsule_validate(cap, arena, dir->arena_size, 1);
+    if (vr != CAPSULE_VALID) return CAPSULE_RUN_ERR_INVALID;
 
-    /* Get pre-execution dictionary hash */
     uint64_t pre_dict_hash = vm_dict_hash_fn(mama_vm);
 
-    /* Get payload */
     const uint8_t *payload = capsule_get_payload(cap, arena);
-    if (!payload) {
-        return CAPSULE_RUN_ERR_INVALID;
-    }
+    if (!payload) return CAPSULE_RUN_ERR_INVALID;
 
-    /* Execute experiment on Mama */
     int exec_result = vm_exec_fn(mama_vm, (const char *)payload, cap->length);
-
-    /* Get post-execution dictionary hash */
     uint64_t post_dict_hash = vm_dict_hash_fn(mama_vm);
 
-    /* Log run record */
-    CapsuleRunRecord record = {
-        .run_id = 0,  /* Will be assigned by log */
-        .vm_id = 0,   /* Mama is VM 0 */
-        .reserved = 0,
-        .capsule_id = capsule_id,
-        .capsule_hash = cap->content_hash,
-        .pre_dict_hash = pre_dict_hash,
-        .post_dict_hash = post_dict_hash,
-        .started_ns = 0,  /* TODO: timestamps */
-        .ended_ns = 0,
-        .result_code = (exec_result == 0) ? CAPSULE_RUN_OK : CAPSULE_RUN_ERR_EXEC_FAIL,
-        .flags = cap->flags
-    };
+    CapsuleRunRecord record;
+    record.run_id         = 0;
+    record.vm_id          = 0;
+    record.reserved       = 0;
+    record.capsule_id     = cap->capsule_id;
+    record.capsule_hash   = cap->content_hash;
+    record.pre_dict_hash  = pre_dict_hash;
+    record.post_dict_hash = post_dict_hash;
+    record.started_ns     = 0;
+    record.ended_ns       = 0;
+    record.result_code    = (exec_result == 0) ? CAPSULE_RUN_OK : CAPSULE_RUN_ERR_EXEC_FAIL;
+    record.flags          = cap->flags;
 
     uint64_t run_id = capsule_run_log_record(&record);
 
-    /* Log parity record */
-    capsule_parity_log_run(0, run_id, capsule_id, pre_dict_hash, post_dict_hash);
+    capsule_parity_log_run(0, run_id, cap->capsule_id, pre_dict_hash, post_dict_hash);
 
     if (out_run_id) *out_run_id = run_id;
 
