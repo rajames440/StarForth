@@ -63,6 +63,13 @@
  */
 int sk_vm_bootstrap_parity(ParityPacket *out);
 
+/**
+ * sk_get_mama_vm - Return opaque pointer to Mama's VM context.
+ *
+ * Valid after sk_vm_bootstrap_parity() succeeds.
+ */
+void *sk_get_mama_vm(void);
+
 #endif /* __STARKERNEL__ */
 
 #endif /* STARKERNEL_VM_BOOTSTRAP_SK_VM_BOOTSTRAP_H */

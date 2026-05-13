@@ -134,8 +134,14 @@ static void sk_bootstrap_debug_log_xt(const char *label, const DictEntry *entry)
 
 #if STARFORTH_ENABLE_VM
 
+static VM sk_mama_vm;  /* Mama's VM — persists after bootstrap */
+
+void *sk_get_mama_vm(void) {
+    return (void *)&sk_mama_vm;
+}
+
 int sk_vm_bootstrap_parity(ParityPacket *out) {
-    static VM vm;            /* Static to avoid large stack frame */
+    VM *vm = &sk_mama_vm;
     ParityPacket local_pkt;
     ParityPacket *pkt = out ? out : &local_pkt;
 
@@ -146,10 +152,10 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
     sk_hal_init();
     sf_time_init();
 
-    vm_init_with_host(&vm, sk_hal_host_services());
-    if (vm.error) {
+    vm_init_with_host(vm, sk_hal_host_services());
+    if (vm->error) {
         console_println("VM: init failed");
-        sk_parity_collect(&vm, pkt);
+        sk_parity_collect(vm, pkt);
         sk_parity_print(pkt);
         return -1;
     }
@@ -161,14 +167,14 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
 #endif
 
     /* Enable interpreter - required for POST to execute vm_interpret() calls */
-    vm_enable_interpreter(&vm);
+    vm_enable_interpreter(vm);
 
     /* Run full POST (Power-On Self Test) */
     console_println("POST: Running comprehensive test suite...");
-    run_all_tests(&vm);
+    run_all_tests(vm);
 
     /* Collect and print parity (includes test results) */
-    sk_parity_collect(&vm, pkt);
+    sk_parity_collect(vm, pkt);
     sk_parity_print(pkt);
 
     /* Verify POST success: parity OK, no test failures, no test errors */
