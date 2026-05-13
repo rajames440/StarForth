@@ -101,7 +101,7 @@ COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
                  $(ARCH_CFLAGS) \
                  -I$(KERNEL_INC) -Iinclude -Isrc -include $(STARFORTH_CONFIG_HEADER) \
                  -DPARITY_MODE=$(PARITY_MODE)
-VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Isrc/test_runner/include -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare
+VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Isrc/test_runner/include -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare -Wno-error=missing-field-initializers
 
 # Loader-specific flags
 LOADER_CFLAGS := $(COMMON_CFLAGS) -I$(KERNEL_SRC)/vm
