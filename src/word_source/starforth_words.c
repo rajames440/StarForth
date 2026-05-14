@@ -760,7 +760,7 @@ void starforth_word_wait(VM* vm)
 
     log_message(LOG_DEBUG, "WAIT: sleeping for %ld ms", (long)ms);
 
-#ifdef __unix__
+#if defined(__unix__) && !defined(__STARKERNEL__)
     /* POSIX nanosleep for precise, interruptible sleep */
     struct timespec req, rem;
     req.tv_sec = (time_t)(ms / 1000);
