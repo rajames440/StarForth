@@ -87,7 +87,7 @@ static WordTestSuite block_word_suites[] = {
         "UPDATE", {
             {"basic", "1 BLOCK UPDATE", "Should mark block dirty", TEST_NORMAL, 0, 0},
             {"multiple", "1 BLOCK UPDATE UPDATE", "Should handle multiple updates", TEST_NORMAL, 0, 0},
-            {"no_block", "0 SCR ! UPDATE", "Should handle no current block", TEST_ERROR, 0, 0},
+            {"no_block", "0 SCR ! UPDATE", "Should handle no current block", TEST_ERROR_CASE, 0, 0},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         3
