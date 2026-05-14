@@ -36,6 +36,7 @@
 #include "starkernel/capsule_generated.h"
 #include "starkernel/capsule_loader.h"
 #include "starkernel/kmalloc.h"
+#include "starkernel/repl.h"
 #endif
 
 /* Helper: check if memory type is RAM */
@@ -240,34 +241,64 @@ void kernel_main(BootInfo *boot_info) {
     }
 
     /* M7.1: Execute init.4th via capsule loader.
-     * capsule_arena lives in .rodata which may not be mapped after VMM takeover.
-     * Copy it to heap so the interpreter can safely read payload bytes. */
-    console_println("Init: loading init.4th...");
+     * capsule_arena lives in .rodata; copy to heap so the interpreter
+     * can safely read payload bytes after VMM takeover. */
     void *mama_vm = sk_get_mama_vm();
-    CapsuleDirHeader live_dir = capsule_directory;
-    live_dir.arena_base = (uint64_t)(uintptr_t)capsule_arena;
 
-    uint8_t *arena_copy = (uint8_t *)kmalloc((size_t)live_dir.arena_size);
-    if (!arena_copy) {
-        console_println("Init: arena alloc FAILED");
+    /* Block subsystem: 1MB for dedicated RAM blocks (LBN 0-991) */
+    #define BLK_RAM_SIZE (1024u * 1024u)
+    uint8_t *blk_ram_buf = (uint8_t *)kmalloc(BLK_RAM_SIZE);
+    /* Kernel ramdrive: 1MB covering capsule blocks 2048-3071 */
+    #define KRD_BUF_SIZE (1024u * 1024u)
+    uint8_t *krd_buf     = (uint8_t *)kmalloc(KRD_BUF_SIZE);
+
+    if (!blk_ram_buf || !krd_buf) {
+        console_println("Init: blk alloc FAILED");
     } else {
-        const uint8_t *src = capsule_arena;
-        uint8_t *dst = arena_copy;
-        size_t n = (size_t)live_dir.arena_size;
-        while (n--) *dst++ = *src++;
-        live_dir.arena_base = (uint64_t)(uintptr_t)arena_copy;
+        /* Pre-zero the ramdrive buffer (no memset in freestanding context) */
+        size_t krd_i;
+        for (krd_i = 0; krd_i < KRD_BUF_SIZE; krd_i++) krd_buf[krd_i] = 0;
+        capsule_blk_init(mama_vm, blk_ram_buf, BLK_RAM_SIZE, krd_buf);
+    }
 
-        CapsuleRunResult cr = capsule_exec_init(
-            mama_vm,
-            "init.4th",
-            &live_dir,
-            capsule_descriptors,
-            capsule_names,
-            arena_copy);
-        if (cr == CAPSULE_RUN_OK) {
-            console_println("Init: init.4th OK");
+    /* Copy capsule directory header to heap (has pointer field needing update) */
+    CapsuleDirHeader *live_dir = (CapsuleDirHeader *)kmalloc(sizeof(CapsuleDirHeader));
+    if (!live_dir) {
+        console_println("Init: dir alloc FAILED");
+    } else {
+        const CapsuleDirHeader *src_dir = &capsule_directory;
+        live_dir->magic         = src_dir->magic;
+        live_dir->arena_base    = src_dir->arena_base;
+        live_dir->arena_size    = src_dir->arena_size;
+        live_dir->desc_count    = src_dir->desc_count;
+        live_dir->desc_capacity = src_dir->desc_capacity;
+        live_dir->name_count    = src_dir->name_count;
+        live_dir->reserved      = src_dir->reserved;
+        live_dir->dir_hash      = src_dir->dir_hash;
+
+        uint8_t *arena_copy = (uint8_t *)kmalloc((size_t)live_dir->arena_size);
+        if (!arena_copy) {
+            console_println("Init: arena alloc FAILED");
         } else {
-            console_println("Init: init.4th FAILED");
+            const uint8_t *src = capsule_arena;
+            uint8_t *dst = arena_copy;
+            size_t n = (size_t)live_dir->arena_size;
+            while (n--) *dst++ = *src++;
+            live_dir->arena_base = (uint64_t)(uintptr_t)arena_copy;
+
+            console_println("Init: loading init.4th...");
+            CapsuleRunResult cr = capsule_exec_init(
+                mama_vm,
+                "init.4th",
+                live_dir,
+                capsule_descriptors,
+                capsule_names,
+                arena_copy);
+            if (cr == CAPSULE_RUN_OK) {
+                console_println("Init: init.4th OK");
+            } else {
+                console_println("Init: init.4th FAILED");
+            }
         }
     }
 #else
@@ -281,9 +312,15 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Starting heartbeat...");
     apic_timer_start();
     arch_enable_interrupts();
-    console_println("Heartbeat running. (QEMU: Press Ctrl+A, then X to exit)");
+    console_println("Heartbeat running.");
 
-    /* Idle loop */
+#ifdef STARFORTH_ENABLE_VM
+    /* Emergency CLI — runs with heartbeat active in interrupt context */
+    sk_repl((VM *)sk_get_mama_vm());
+#endif
+
+    /* Idle loop (reached if sk_repl exits via BYE or VM halt) */
+    console_println("Kernel idle.");
     for (;;) {
         arch_halt();
     }

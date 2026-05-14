@@ -53,6 +53,9 @@
 #include "log.h"
 #include "starkernel/vm/parity.h"
 #include "starkernel/vm/bootstrap/sk_vm_bootstrap.h"
+
+/* Forward declaration — vm_enable_interpreter not in public vm.h */
+extern void vm_enable_interpreter(VM *vm);
 #include "starkernel/hal/hal.h"
 #include "starkernel/console.h"
 #include "vm_internal.h"

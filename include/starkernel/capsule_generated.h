@@ -22,9 +22,15 @@
 extern "C" {
 #endif
 
+/* Mark as hidden so GCC uses direct RIP-relative addressing in PIC/PE builds,
+ * avoiding GOT references which do not exist in PE/COFF binaries. */
+__attribute__((visibility("hidden")))
 extern const uint8_t         capsule_arena[];
+__attribute__((visibility("hidden")))
 extern const CapsuleDesc     capsule_descriptors[];
+__attribute__((visibility("hidden")))
 extern const CapsuleNameEntry capsule_names[];
+__attribute__((visibility("hidden")))
 extern const CapsuleDirHeader capsule_directory;
 
 #ifdef __cplusplus

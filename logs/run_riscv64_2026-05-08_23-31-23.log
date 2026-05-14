@@ -1,0 +1,10 @@
+# StarForth riscv64 — QEMU user-mode emulation
+# Date: 2026-05-08 23:31:23 UTC
+# Binary: build/riscv64/fastest/starforth
+# Arch:   riscv64 (qemu-riscv64-static on x86_64 host)
+# Host:   x86_64 / 6.18.5
+# QEMU:   qemu-riscv64 version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.16)
+# Build:  fastest (ASM + LTO + direct threading)
+# Invocation: printf '1 2 + . BYE\n' | qemu-riscv64-static ./build/riscv64/fastest/starforth
+#---
+qemu-riscv64-static: Could not open '/lib/ld-linux-riscv64-lp64d.so.1': No such file or directory

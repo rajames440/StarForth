@@ -1,5 +1,5 @@
 # StarForth x86_64 — native execution
-# Date: 2026-05-08 15:17:06 UTC
+# Date: 2026-05-08 23:14:17 UTC
 # Binary: build/amd64/standard/starforth
 # Host: x86_64 / 6.18.5
 # Note: qemu-x86_64-static is not applicable for a glibc static binary on
@@ -7,18 +7,18 @@
 #        Native execution is the authoritative x86_64 baseline.
 # Invocation: printf '2 3 + . CR BYE\n' | ./build/amd64/standard/starforth
 #---
-[32m[15:17:06] INFO: [0mblkio: backend=RAM fbs=1024 blocks=1024 size=1048576B ro=0
-[32m[15:17:06] INFO: [0mRegistering FORTH-79 Standard word set...
-[32m[15:17:06] INFO: [0mRegistering FORTH-79 arithmetic words...
-[32m[15:17:06] INFO: [0mFORTH-79 Standard word set registration complete
-[32m[15:17:06] INFO: [0mblk: hdr 'StarForth Volume' v2: total_devblocks(4k)=256, bam_devblocks=1, devblock_base=2, tracked=32768, total_blocks=762, free=730
-[32m[15:17:06] INFO: [0mDictionary fence set - init words protected from FORGET
-[32m[15:17:06] INFO: [0mRunning comprehensive test suite...
-[32m[15:17:06] INFO: [0mStarting comprehensive FORTH-79 modular test suite...
-[32m[15:17:06] INFO: [0m==============================================
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.078] INFO: [0mblkio: backend=RAM fbs=1024 blocks=1024 size=1048576B ro=0
+[32m[23:14:17.078] INFO: [0mRegistering FORTH-79 Standard word set...
+[32m[23:14:17.078] INFO: [0mRegistering FORTH-79 arithmetic words...
+[32m[23:14:17.078] INFO: [0mFORTH-79 Standard word set registration complete
+[32m[23:14:17.078] INFO: [0mblk: hdr 'StarForth Volume' v2: total_devblocks(4k)=256, bam_devblocks=1, devblock_base=2, tracked=32768, total_blocks=762, free=730
+[32m[23:14:17.078] INFO: [0mDictionary fence set - init words protected from FORGET
+[32m[23:14:17.078] INFO: [0mRunning comprehensive test suite...
+[32m[23:14:17.078] INFO: [0mStarting comprehensive FORTH-79 modular test suite...
+[32m[23:14:17.078] INFO: [0m==============================================
+[32m[23:14:17.078] INFO: [0m
 === Testing Module: Stack Words ===
-[32m[15:17:06] INFO: [0mRunning Stack Words Tests (Module 1: Foundation)...
+[32m[23:14:17.078] INFO: [0mRunning Stack Words Tests (Module 1: Foundation)...
 5 5 
 5 5 
 5 5 
@@ -49,7 +49,7 @@
 -2147483648 -2147483648 
 -2147483648 -2147483648 
 -2147483648 -2147483648 
-[31m[15:17:06] ERROR: [0mDUP: Stack underflow
+[31m[23:14:17.078] ERROR: [0mDUP: Stack underflow
 5 
 5 
 5 
@@ -134,7 +134,7 @@
 3 
 3 
 3 
-[31m[15:17:06] ERROR: [0mDROP: Stack underflow
+[31m[23:14:17.078] ERROR: [0mDROP: Stack underflow
 5 7 
 5 7 
 5 7 
@@ -159,8 +159,8 @@
 -5 10 
 -5 10 
 -5 10 
-[31m[15:17:06] ERROR: [0mSWAP: Insufficient stack items (need 2)
-[31m[15:17:06] ERROR: [0mSWAP: Insufficient stack items (need 2)
+[31m[23:14:17.078] ERROR: [0mSWAP: Insufficient stack items (need 2)
+[31m[23:14:17.078] ERROR: [0mSWAP: Insufficient stack items (need 2)
 5 7 5 
 5 7 5 
 5 7 5 
@@ -179,8 +179,8 @@
 -1 42 -1 
 -1 42 -1 
 -1 42 -1 
-[31m[15:17:06] ERROR: [0mOVER: Insufficient stack items (need 2)
-[31m[15:17:06] ERROR: [0mOVER: Insufficient stack items (need 2)
+[31m[23:14:17.078] ERROR: [0mOVER: Insufficient stack items (need 2)
+[31m[23:14:17.078] ERROR: [0mOVER: Insufficient stack items (need 2)
 1 3 2 
 1 3 2 
 1 3 2 
@@ -199,9 +199,9 @@
 -1 1 0 
 -1 1 0 
 -1 1 0 
-[31m[15:17:06] ERROR: [0mROT: Insufficient stack items (need 3)
-[31m[15:17:06] ERROR: [0mROT: Insufficient stack items (need 3)
-[31m[15:17:06] ERROR: [0mROT: Insufficient stack items (need 3)
+[31m[23:14:17.078] ERROR: [0mROT: Insufficient stack items (need 3)
+[31m[23:14:17.078] ERROR: [0mROT: Insufficient stack items (need 3)
+[31m[23:14:17.078] ERROR: [0mROT: Insufficient stack items (need 3)
 0 
 0 
 0 
@@ -220,9 +220,9 @@
 3 
 3 
 3 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.079] INFO: [0m
 === Testing Module: Return Stack Words ===
-[32m[15:17:06] INFO: [0mRunning Return Stack Words Tests (Module 2)...
+[32m[23:14:17.079] INFO: [0mRunning Return Stack Words Tests (Module 2)...
 42 42 
 42 42 
 42 42 
@@ -247,7 +247,7 @@
 1 1 2 2 
 1 1 2 2 
 1 1 2 2 
-[31m[15:17:06] ERROR: [0m>R: DSP underflow
+[31m[23:14:17.079] ERROR: [0m>R: DSP underflow
 42 
 42 
 42 
@@ -272,9 +272,9 @@
 -1 
 -1 
 -1 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.079] INFO: [0m
 === Testing Module: Memory Words ===
-[32m[15:17:06] INFO: [0mRunning Memory Words Tests (Module 3)...
+[32m[23:14:17.079] INFO: [0mRunning Memory Words Tests (Module 3)...
 0 
 0 
 0 
@@ -413,9 +413,9 @@
 0 
 0 
 0 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.079] INFO: [0m
 === Testing Module: Arithmetic Words ===
-[32m[15:17:06] INFO: [0mRunning Arithmetic Words Tests (Module 5)...
+[32m[23:14:17.079] INFO: [0mRunning Arithmetic Words Tests (Module 5)...
 12 
 12 
 12 
@@ -452,8 +452,8 @@
 -2147483649 
 -2147483649 
 -2147483649 
-[31m[15:17:06] ERROR: [0m+: Stack underflow
-[31m[15:17:06] ERROR: [0m+: Stack underflow
+[31m[23:14:17.079] ERROR: [0m+: Stack underflow
+[31m[23:14:17.079] ERROR: [0m+: Stack underflow
 7 
 7 
 7 
@@ -496,8 +496,8 @@
 2147483648 
 2147483648 
 2147483648 
-[31m[15:17:06] ERROR: [0m-: Stack underflow
-[31m[15:17:06] ERROR: [0m-: Stack underflow
+[31m[23:14:17.079] ERROR: [0m-: Stack underflow
+[31m[23:14:17.079] ERROR: [0m-: Stack underflow
 42 
 42 
 42 
@@ -540,8 +540,8 @@
 4294967296 
 4294967296 
 4294967296 
-[31m[15:17:06] ERROR: [0m*: Stack underflow
-[31m[15:17:06] ERROR: [0m*: Stack underflow
+[31m[23:14:17.079] ERROR: [0m*: Stack underflow
+[31m[23:14:17.079] ERROR: [0m*: Stack underflow
 5 
 5 
 5 
@@ -578,9 +578,9 @@
 2 
 2 
 2 
-[31m[15:17:06] ERROR: [0m/: Division by zero
-[31m[15:17:06] ERROR: [0m/: Stack underflow
-[31m[15:17:06] ERROR: [0m/: Stack underflow
+[31m[23:14:17.079] ERROR: [0m/: Division by zero
+[31m[23:14:17.079] ERROR: [0m/: Stack underflow
+[31m[23:14:17.079] ERROR: [0m/: Stack underflow
 2 
 2 
 2 
@@ -617,12 +617,12 @@
 3 
 3 
 3 
-[31m[15:17:06] ERROR: [0mMOD: Division by zero
-[31m[15:17:06] ERROR: [0mMOD: Stack underflow
-[31m[15:17:06] ERROR: [0mMOD: Stack underflow
-[32m[15:17:06] INFO: [0m
+[31m[23:14:17.079] ERROR: [0mMOD: Division by zero
+[31m[23:14:17.079] ERROR: [0mMOD: Stack underflow
+[31m[23:14:17.079] ERROR: [0mMOD: Stack underflow
+[32m[23:14:17.079] INFO: [0m
 === Testing Module: Logical Words ===
-[32m[15:17:06] INFO: [0mRunning Logical Words Tests (Module 8)...
+[32m[23:14:17.079] INFO: [0mRunning Logical Words Tests (Module 8)...
 -1 
 -1 
 -1 
@@ -653,8 +653,8 @@
 17 
 17 
 17 
-[31m[15:17:06] ERROR: [0mAND: Stack underflow
-[31m[15:17:06] ERROR: [0mAND: Stack underflow
+[31m[23:14:17.079] ERROR: [0mAND: Stack underflow
+[31m[23:14:17.079] ERROR: [0mAND: Stack underflow
 -1 
 -1 
 -1 
@@ -685,8 +685,8 @@
 119 
 119 
 119 
-[31m[15:17:06] ERROR: [0mOR: Stack underflow
-[31m[15:17:06] ERROR: [0mOR: Stack underflow
+[31m[23:14:17.079] ERROR: [0mOR: Stack underflow
+[31m[23:14:17.079] ERROR: [0mOR: Stack underflow
 0 
 0 
 0 
@@ -717,8 +717,8 @@
 102 
 102 
 102 
-[31m[15:17:06] ERROR: [0mXOR: Stack underflow
-[31m[15:17:06] ERROR: [0mXOR: Stack underflow
+[31m[23:14:17.079] ERROR: [0mXOR: Stack underflow
+[31m[23:14:17.079] ERROR: [0mXOR: Stack underflow
 0 
 0 
 0 
@@ -743,7 +743,7 @@
 41 
 41 
 41 
-[31m[15:17:06] ERROR: [0mNOT: Stack underflow
+[31m[23:14:17.079] ERROR: [0mNOT: Stack underflow
 -1 
 -1 
 -1 
@@ -774,8 +774,8 @@
 0 
 0 
 0 
-[31m[15:17:06] ERROR: [0m=: Stack underflow
-[31m[15:17:06] ERROR: [0m=: Stack underflow
+[31m[23:14:17.079] ERROR: [0m=: Stack underflow
+[31m[23:14:17.079] ERROR: [0m=: Stack underflow
 -1 
 -1 
 -1 
@@ -800,8 +800,8 @@
 -1 
 -1 
 -1 
-[31m[15:17:06] ERROR: [0m<>: Stack underflow
-[31m[15:17:06] ERROR: [0m<>: Stack underflow
+[31m[23:14:17.079] ERROR: [0m<>: Stack underflow
+[31m[23:14:17.079] ERROR: [0m<>: Stack underflow
 -1 
 -1 
 -1 
@@ -832,8 +832,8 @@
 -1 
 -1 
 -1 
-[31m[15:17:06] ERROR: [0m<: Stack underflow
-[31m[15:17:06] ERROR: [0m<: Stack underflow
+[31m[23:14:17.080] ERROR: [0m<: Stack underflow
+[31m[23:14:17.080] ERROR: [0m<: Stack underflow
 -1 
 -1 
 -1 
@@ -864,8 +864,8 @@
 -1 
 -1 
 -1 
-[31m[15:17:06] ERROR: [0m>: Stack underflow
-[31m[15:17:06] ERROR: [0m>: Stack underflow
+[31m[23:14:17.080] ERROR: [0m>: Stack underflow
+[31m[23:14:17.080] ERROR: [0m>: Stack underflow
 -1 
 -1 
 -1 
@@ -884,7 +884,7 @@
 0 
 0 
 0 
-[31m[15:17:06] ERROR: [0m0=: Stack underflow
+[31m[23:14:17.080] ERROR: [0m0=: Stack underflow
 -1 
 -1 
 -1 
@@ -903,7 +903,7 @@
 0 
 0 
 0 
-[31m[15:17:06] ERROR: [0m0<: Stack underflow
+[31m[23:14:17.080] ERROR: [0m0<: Stack underflow
 -1 
 -1 
 -1 
@@ -922,10 +922,10 @@
 0 
 0 
 0 
-[31m[15:17:06] ERROR: [0m0>: Stack underflow
-[32m[15:17:06] INFO: [0m
+[31m[23:14:17.080] ERROR: [0m0>: Stack underflow
+[32m[23:14:17.080] INFO: [0m
 === Testing Module: Mixed Arithmetic Words ===
-[32m[15:17:06] INFO: [0mRunning Mixed Arithmetic Words Tests (Module 7)...
+[32m[23:14:17.080] INFO: [0mRunning Mixed Arithmetic Words Tests (Module 7)...
 10 
 20 
 0 
@@ -933,17 +933,17 @@
 10 
 -10 
 -10 
-[31m[15:17:06] ERROR: [0m*/: Division by zero
-[31m[15:17:06] ERROR: [0m*/: Stack underflow
-[31m[15:17:06] ERROR: [0m*/: Stack underflow
+[31m[23:14:17.080] ERROR: [0m*/: Division by zero
+[31m[23:14:17.080] ERROR: [0m*/: Stack underflow
+[31m[23:14:17.080] ERROR: [0m*/: Stack underflow
 10 1 
 20 0 
 0 0 
 210 0 
 11 1 
 -5 -1 
-[31m[15:17:06] ERROR: [0m*/MOD: Division by zero
-[31m[15:17:06] ERROR: [0m*/MOD: Stack underflow
+[31m[23:14:17.080] ERROR: [0m*/MOD: Division by zero
+[31m[23:14:17.080] ERROR: [0m*/MOD: Stack underflow
 300 0 
 2147483648 0 
 -50 0 
@@ -960,9 +960,9 @@
 2147913144729 6 
 42 0 
 -42949662 -96 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.080] INFO: [0m
 === Testing Module: Double Words ===
-[32m[15:17:06] INFO: [0mRunning Double Number Words Tests (Module 6)...
+[32m[23:14:17.080] INFO: [0mRunning Double Number Words Tests (Module 6)...
 2 1 
 0 0 
 -2 -1 
@@ -1033,9 +1033,9 @@
 0 
 -1 
 -1 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.080] INFO: [0m
 === Testing Module: Format Words ===
-[32m[15:17:06] INFO: [0mRunning Format Words Tests (Module 10)...
+[32m[23:14:17.080] INFO: [0mRunning Format Words Tests (Module 10)...
 42 
 255 
 42 
@@ -1070,23 +1070,23 @@
 
 48 2 
 42.
-[31m[15:17:06] ERROR: [0mHOLD: byte out of range (257)
-[32m[15:17:06] INFO: [0m
+[31m[23:14:17.080] ERROR: [0mHOLD: byte out of range (257)
+[32m[23:14:17.080] INFO: [0m
 === Testing Module: String Words ===
-[32m[15:17:06] INFO: [0mRunning String Words Tests (Module 11)...
+[32m[23:14:17.080] INFO: [0mRunning String Words Tests (Module 11)...
 4 49 
 0 57 
 255 57 
 0 
-[31m[15:17:06] ERROR: [0mCOUNT: Data stack underflow
+[31m[23:14:17.080] ERROR: [0mCOUNT: Data stack underflow
  Test
 
 Test
 
 
-[31m[15:17:06] ERROR: [0mCMOVE: out-of-bounds (src=56 dst=5242368 n=1000)
+[31m[23:14:17.080] ERROR: [0mCMOVE: out-of-bounds (src=56 dst=5242368 n=1000)
 
-[31m[15:17:06] ERROR: [0mCMOVE>: out-of-bounds (src=56 dst=5242368 n=1000)
+[31m[23:14:17.080] ERROR: [0mCMOVE>: out-of-bounds (src=56 dst=5242368 n=1000)
 0 
 -1 
 1 
@@ -1106,9 +1106,9 @@ Test
 
      
 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.080] INFO: [0m
 === Testing Module: I/O Words ===
-[32m[15:17:06] INFO: [0mRunning I/O Words Tests (Module 9)...
+[32m[23:14:17.080] INFO: [0mRunning I/O Words Tests (Module 9)...
 42 
 -42 
 0 
@@ -1140,13 +1140,13 @@ HI
 
 A
 1234
-[31m[15:17:06] ERROR: [0mTYPE: Data stack underflow
-[31m[15:17:06] ERROR: [0mTYPE: Data stack underflow
+[31m[23:14:17.080] ERROR: [0mTYPE: Data stack underflow
+[31m[23:14:17.080] ERROR: [0mTYPE: Data stack underflow
 0 5 
 0 57 
 255 57 
 0 
-[31m[15:17:06] ERROR: [0mCOUNT: Data stack underflow
+[31m[23:14:17.080] ERROR: [0mCOUNT: Data stack underflow
 0 
 -1 
 -1 
@@ -1166,9 +1166,9 @@ A
 3 
      42 
 1    10    100 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.080] INFO: [0m
 === Testing Module: Block Words ===
-[32m[15:17:06] INFO: [0mRunning Block Words Tests (Module 16)...
+[32m[23:14:17.080] INFO: [0mRunning Block Words Tests (Module 16)...
 5575424 
 5575424 
 
@@ -1211,9 +1211,9 @@ Block 1
 15:                                                                 
 
 1 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.080] INFO: [0m
 === Testing Module: Dictionary Words ===
-[32m[15:17:06] INFO: [0mRunning Dictionary Words Tests (Module 4)...
+[32m[23:14:17.080] INFO: [0mRunning Dictionary Words Tests (Module 4)...
 -1 
 8 
 8 
@@ -1255,37 +1255,37 @@ Block 1
 -1 
 43 42 
 0 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.080] INFO: [0m
 === Testing Module: Dictionary Manipulation Words ===
-[32m[15:17:06] INFO: [0mRunning Dictionary Manipulation Words Tests (Module 14)...
+[32m[23:14:17.080] INFO: [0mRunning Dictionary Manipulation Words Tests (Module 14)...
 42 
 2 
 42 
-617295008 
-617451568 
+104332448 
+104489008 
 0 
-617341488 
-617364736 
-617364736 
-617452528 
-617452864 
-[31m[15:17:06] ERROR: [0m': word 'NONEXISTENT' not found
-[32m[15:17:06] INFO: [0m
+104378928 
+104402176 
+104402176 
+104489968 
+104490304 
+[31m[23:14:17.081] ERROR: [0m': word 'NONEXISTENT' not found
+[32m[23:14:17.081] INFO: [0m
 === Testing Module: Vocabulary Words ===
-[32m[15:17:06] INFO: [0mRunning Vocabulary Words Tests (Module 15)...
-617454384 
+[32m[23:14:17.081] INFO: [0mRunning Vocabulary Words Tests (Module 15)...
+104491824 
 11 
-[31m[15:17:06] ERROR: [0mVOCABULARY: duplicate 'TESTVOC'
-[31m[15:17:06] ERROR: [0mVOCABULARY: missing name
+[31m[23:14:17.081] ERROR: [0mVOCABULARY: duplicate 'TESTVOC'
+[31m[23:14:17.081] ERROR: [0mVOCABULARY: missing name
 42 
-617457936 
-617347600 
-617457936 
-617457808 
-[32m[15:17:06] INFO: [0m
+104495376 
+104385040 
+104495376 
+104495248 
+[32m[23:14:17.081] INFO: [0m
 === Testing Module: System Words ===
-[32m[15:17:06] INFO: [0mRunning System Words Tests (Module 18)...
-[33m[15:17:06] WARN: [0mSome system tests marked as unimplemented due to system-level effects
+[32m[23:14:17.081] INFO: [0mRunning System Words Tests (Module 18)...
+[33m[23:14:17.081] WARN: [0mSome system tests marked as unimplemented due to system-level effects
 Search order: TEST-VOC8 (FIND)
 Current: TEST-VOC8
 Search order: TEST-VOC9 (FIND)
@@ -1294,12 +1294,12 @@ Search order: (FIND)
 Current: TEST-VOC9
 0 
 0 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.081] INFO: [0m
 === Testing Module: Defining Words ===
-[32m[15:17:06] INFO: [0mRunning Defining Words Tests (Module 13)...
+[32m[23:14:17.081] INFO: [0mRunning Defining Words Tests (Module 13)...
 Error
 42 
-[31m[15:17:06] ERROR: [0mNested ':' inside a definition is not allowed
+[31m[23:14:17.081] ERROR: [0mNested ':' inside a definition is not allowed
 42 
 42 
 0 
@@ -1308,52 +1308,52 @@ Error
 -99 
 42 
 42 
-[31m[15:17:06] ERROR: [0mDOES>: compile-only
+[31m[23:14:17.081] ERROR: [0mDOES>: compile-only
 42 
 42 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.081] INFO: [0m
 === Testing Module: Control Words ===
-[32m[15:17:06] INFO: [0mRunning Control Words Tests (Module 12)...
+[32m[23:14:17.081] INFO: [0mRunning Control Words Tests (Module 12)...
 42 
 24 
 1 
 42 
-[31m[15:17:06] ERROR: [0mIF: compile-only
+[31m[23:14:17.081] ERROR: [0mIF: compile-only
 42 
 24 
 1 
 42 
-[31m[15:17:06] ERROR: [0mIF: compile-only
-[31m[15:17:06] ERROR: [0mELSE: compile-only
-[31m[15:17:06] ERROR: [0mELSE: missing IF
-[31m[15:17:06] ERROR: [0mELSE: compile-only
-[31m[15:17:06] ERROR: [0mELSE: missing IF
-[31m[15:17:06] ERROR: [0mTHEN: compile-only
-[31m[15:17:06] ERROR: [0mCF: underflow
-[31m[15:17:06] ERROR: [0mTHEN: unmatched
-[31m[15:17:06] ERROR: [0mTHEN: compile-only
-[31m[15:17:06] ERROR: [0mCF: underflow
-[31m[15:17:06] ERROR: [0mTHEN: unmatched
+[31m[23:14:17.081] ERROR: [0mIF: compile-only
+[31m[23:14:17.081] ERROR: [0mELSE: compile-only
+[31m[23:14:17.081] ERROR: [0mELSE: missing IF
+[31m[23:14:17.081] ERROR: [0mELSE: compile-only
+[31m[23:14:17.081] ERROR: [0mELSE: missing IF
+[31m[23:14:17.081] ERROR: [0mTHEN: compile-only
+[31m[23:14:17.081] ERROR: [0mCF: underflow
+[31m[23:14:17.081] ERROR: [0mTHEN: unmatched
+[31m[23:14:17.081] ERROR: [0mTHEN: compile-only
+[31m[23:14:17.081] ERROR: [0mCF: underflow
+[31m[23:14:17.081] ERROR: [0mTHEN: unmatched
 5 
 5 
-[31m[15:17:06] ERROR: [0mBEGIN: compile-only
+[31m[23:14:17.081] ERROR: [0mBEGIN: compile-only
 5 
 5 
-[31m[15:17:06] ERROR: [0mBEGIN: compile-only
+[31m[23:14:17.081] ERROR: [0mBEGIN: compile-only
 0 
-[31m[15:17:06] ERROR: [0mUNTIL: compile-only
+[31m[23:14:17.081] ERROR: [0mUNTIL: compile-only
 0 
-[31m[15:17:06] ERROR: [0mUNTIL: compile-only
-5 
-0 
-[31m[15:17:06] ERROR: [0mWHILE: compile-only
+[31m[23:14:17.081] ERROR: [0mUNTIL: compile-only
 5 
 0 
-[31m[15:17:06] ERROR: [0mWHILE: compile-only
+[31m[23:14:17.081] ERROR: [0mWHILE: compile-only
 5 
-[31m[15:17:06] ERROR: [0mREPEAT: compile-only
+0 
+[31m[23:14:17.081] ERROR: [0mWHILE: compile-only
 5 
-[31m[15:17:06] ERROR: [0mREPEAT: compile-only
+[31m[23:14:17.081] ERROR: [0mREPEAT: compile-only
+5 
+[31m[23:14:17.081] ERROR: [0mREPEAT: compile-only
 0 1 2 3 4 
 -5 -4 -3 -2 
 0 1 2 1 2 3 2 3 4 
@@ -1365,140 +1365,172 @@ Error
 0 1 2 3 4 
 0 1 2 2 3 4 
 0 1 2 3 4 
-[31m[15:17:06] ERROR: [0mLOOP: compile-only
+[31m[23:14:17.081] ERROR: [0mLOOP: compile-only
 0 1 2 3 4 
-[31m[15:17:06] ERROR: [0mLOOP: compile-only
+[31m[23:14:17.081] ERROR: [0mLOOP: compile-only
 0 2 4 6 8 
 10 9 8 7 6 5 4 3 2 1 0 
 0 3 6 9 
 0 2 4 6 8 
 10 9 8 7 6 5 4 3 2 1 0 
 0 3 6 9 
-[32m[15:17:06] INFO: [0m
+[32m[23:14:17.081] INFO: [0m
 === Testing Module: StarForth Words ===
-[32m[15:17:06] INFO: [0mRunning StarForth Words Tests (Module 17: StarForth Extensions)...
+[32m[23:14:17.081] INFO: [0mRunning StarForth Words Tests (Module 17: StarForth Extensions)...
 1 
 0 
-2 
-[31m[15:17:06] ERROR: [0mENTROPY@: null dictionary entry
-[31m[15:17:06] ERROR: [0mENTROPY@: data stack underflow
+3 
+[31m[23:14:17.081] ERROR: [0mENTROPY@: null dictionary entry
+[31m[23:14:17.081] ERROR: [0mENTROPY@: data stack underflow
 42 
 20 
 0 
-[31m[15:17:06] ERROR: [0mENTROPY!: null dictionary entry
-[31m[15:17:06] ERROR: [0mENTROPY!: data stack underflow
-[31m[15:17:06] ERROR: [0mENTROPY!: data stack underflow
+[31m[23:14:17.081] ERROR: [0mENTROPY!: null dictionary entry
+[31m[23:14:17.081] ERROR: [0mENTROPY!: data stack underflow
+[31m[23:14:17.081] ERROR: [0mENTROPY!: data stack underflow
 Word Usage Statistics (Execution Heat Counts):
 =============================================
 WORD-ENTROPY: 1
-ENTROPY!: 4
-ENTROPY@: 1
-EXIT: 2
-I: 34
+ENTROPY!: 6
+ENTROPY@: 6
+EXIT: 3
+J: 18
+I: 111
 +LOOP: 1
+LOOP: 7
 DO: 1
-(+LOOP): 24
+?DO: 6
+UNTIL: 6
+REPEAT: 4
+WHILE: 1
+BEGIN: 1
+(+LOOP): 33
+(LOOP): 59
 (DO): 1
-LIT: 19
-;: 1
-:: 1
-': 2
-CR: 692
-.: 876
-+: 2
+(?DO): 6
+(0BRANCH): 31
+(BRANCH): 9
+LIT: 64
+;: 2
+:: 3
+': 7
+CR: 945
+.: 1301
 DUP: 3
 DROP: 4
 -------------------------------------
-Total executions: 1669
+Total executions: 2640
 Total words: 295
-Average executions per word: 5
+Average executions per word: 8
 Word Usage Statistics (Execution Heat Counts):
 =============================================
 WDENT: 2
 WORD-ENTROPY: 2
-ENTROPY!: 4
-ENTROPY@: 1
+ENTROPY!: 6
+ENTROPY@: 6
 EXIT: 2
-I: 34
+J: 18
+I: 111
 +LOOP: 1
+LOOP: 7
 DO: 1
-(+LOOP): 24
+?DO: 6
+UNTIL: 6
+REPEAT: 4
+WHILE: 1
+BEGIN: 1
+(+LOOP): 33
+(LOOP): 59
 (DO): 1
-LIT: 4
+(?DO): 6
+(0BRANCH): 31
+(BRANCH): 9
+LIT: 50
 ;: 1
 :: 1
-': 2
-CR: 692
-.: 876
+': 7
+CR: 945
+.: 1301
 +: 3
 DUP: 3
 DROP: 5
 -------------------------------------
-Total executions: 1659
+Total executions: 2629
 Total words: 296
-Average executions per word: 5
+Average executions per word: 8
 Word Usage Statistics (Execution Heat Counts):
 =============================================
 WDENT: 2
 WORD-ENTROPY: 3
-ENTROPY!: 4
-ENTROPY@: 1
+ENTROPY!: 6
+ENTROPY@: 6
 EXIT: 2
-I: 34
+J: 18
+I: 111
 +LOOP: 1
+LOOP: 7
 DO: 1
-(+LOOP): 24
+?DO: 6
+UNTIL: 6
+REPEAT: 4
+WHILE: 1
+BEGIN: 1
+(+LOOP): 33
+(LOOP): 59
 (DO): 1
-LIT: 4
+(?DO): 6
+(0BRANCH): 31
+(BRANCH): 9
+LIT: 50
 ;: 1
 :: 1
-': 2
-CR: 692
-.: 876
+': 7
+CR: 945
+.: 1301
 +: 3
 DEPTH: 1
 DUP: 3
 DROP: 5
 -------------------------------------
-Total executions: 1661
+Total executions: 2631
 Total words: 296
-Average executions per word: 5
+Average executions per word: 8
 0 
-[31m[15:17:06] ERROR: [0mTOP-WORDS: data stack underflow
-[33m[15:17:06] WARN: [0m(- comment not terminated
-[33m[15:17:06] WARN: [0m(- comment not terminated
-[33m[15:17:06] WARN: [0m(- comment not terminated
-[33m[15:17:06] WARN: [0m(- comment not terminated
-[32m[15:17:06] INFO: [0mFINAL TEST SUMMARY:
-[32m[15:17:06] INFO: [0m  Total tests: 780
-[32m[15:17:06] INFO: [0m  Passed: 729
-[32m[15:17:06] INFO: [0m  Failed: 0
-[32m[15:17:06] INFO: [0m  Skipped: 49
-[32m[15:17:06] INFO: [0m  Errors: 0
-[32m[15:17:06] INFO: [0mALL IMPLEMENTED TESTS PASSED!
-[32m[15:17:06] INFO: [0m  Contract checks (A4'/A1): all passed
-[32m[15:17:06] INFO: [0m==============================================
-[32m[15:17:06] INFO: [0mTest run complete.
-[32m[15:17:06] INFO: [0mRunning system initialization (INIT)...
-[32m[15:17:06] INFO: [0mINIT: Starting system initialization from init.4th
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 1 (1 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 2 (161 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 3 (51 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 4 (161 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 5 (153 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 6 (159 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 7 (62 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 8 (196 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 9 (56 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 10 (80 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 11 (97 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 12 (138 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 13 (101 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 14 (145 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 15 (214 bytes)
-[32m[15:17:06] INFO: [0mINIT: Copied block content to block 16 (35 bytes)
-[32m[15:17:06] INFO: [0mINIT: Loaded 16 blocks from init.4th
-[32m[15:17:06] INFO: [0mINIT: Executing initialization blocks...
+[31m[23:14:17.081] ERROR: [0mTOP-WORDS: data stack underflow
+[33m[23:14:17.081] WARN: [0m(- comment not terminated
+[33m[23:14:17.081] WARN: [0m(- comment not terminated
+[33m[23:14:17.081] WARN: [0m(- comment not terminated
+[33m[23:14:17.081] WARN: [0m(- comment not terminated
+[32m[23:14:17.081] INFO: [0mFINAL TEST SUMMARY:
+[32m[23:14:17.081] INFO: [0m  Total tests: 780
+[32m[23:14:17.081] INFO: [0m  Passed: 729
+[32m[23:14:17.081] INFO: [0m  Failed: 0
+[32m[23:14:17.081] INFO: [0m  Skipped: 49
+[32m[23:14:17.081] INFO: [0m  Errors: 0
+[32m[23:14:17.081] INFO: [0mALL IMPLEMENTED TESTS PASSED!
+[32m[23:14:17.081] INFO: [0m  Contract checks (A4'/A1): all passed
+[32m[23:14:17.081] INFO: [0m==============================================
+[32m[23:14:17.081] INFO: [0mTest run complete.
+[32m[23:14:17.081] INFO: [0mRunning system initialization (INIT)...
+[32m[23:14:17.081] INFO: [0mINIT: Starting system initialization from init.4th
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 1 (1 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 2 (161 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 3 (51 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 4 (161 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 5 (153 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 6 (159 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 7 (62 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 8 (196 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 9 (56 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 10 (80 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 11 (97 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 12 (138 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 13 (101 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 14 (145 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 15 (214 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Copied block content to block 16 (35 bytes)
+[32m[23:14:17.081] INFO: [0mINIT: Loaded 16 blocks from init.4th
+[32m[23:14:17.081] INFO: [0mINIT: Executing initialization blocks...
 Top 5 most frequently used words:
 ==================================
  1. DROP: 6
@@ -1526,11 +1558,11 @@ Top 100 most frequently used words:
  1. TOP-WORDS: 3
 TOP-WORDS: invalid count 0
 TOP-WORDS: invalid count -5
-........[32m[15:17:08] INFO: [0mINIT: Switching to FORTH vocabulary
-[32m[15:17:08] INFO: [0mINIT: Zeroing 16 init blocks for userspace use
-[32m[15:17:08] INFO: [0mINIT: System initialization complete - blocks freed, FORTH context active
-[32m[15:17:08] INFO: [0mSystem initialization complete.
-[32m[15:17:08] INFO: [0mStarting Forth REPL
+........[32m[23:14:19.345] INFO: [0mINIT: Switching to FORTH vocabulary
+[32m[23:14:19.345] INFO: [0mINIT: Zeroing 16 init blocks for userspace use
+[32m[23:14:19.345] INFO: [0mINIT: System initialization complete - blocks freed, FORTH context active
+[32m[23:14:19.345] INFO: [0mSystem initialization complete.
+[32m[23:14:19.345] INFO: [0mStarting Forth REPL
 [36mok>[0m [92m[0m5 
 Goodbye!
  ok

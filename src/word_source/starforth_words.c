@@ -44,10 +44,6 @@
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include "../../include/vm.h"
-#ifdef __STARKERNEL__
-#include "starkernel/vm/arena.h"
-#endif
-#include "include/vocabulary_words.h"
 #include "../../include/version.h"
 #include "../../include/physics_metadata.h"
 #include "../../include/platform_time.h"
@@ -59,19 +55,6 @@
 
 #ifdef __unix__
 #include <time.h>
-#endif
-
-#ifdef __STARKERNEL__
-struct timespec { long tv_sec; long tv_nsec; };
-static int nanosleep(const struct timespec *req, struct timespec *rem)
-{
-    (void)req;
-    (void)rem;
-    return 0;
-}
-#define STARFORTH_CHECK_ARENA(tag) sk_vm_arena_assert_guards(tag)
-#else
-#define STARFORTH_CHECK_ARENA(tag) ((void)0)
 #endif
 
 /* ============================================================================
@@ -334,7 +317,7 @@ void starforth_word_paren_dash(VM* vm)
 /**
  * @brief Initialize system from init.4th configuration file
  *
- * Reads ./capsules/core/init.4th (or ROMFS in L4Re), parses Block headers,
+ * Reads ./capsules/init.4th (or ROMFS in L4Re), parses Block headers,
  * copies blocks sequentially starting at block 1, then executes them.
  * Stack effect: ( -- )
  * @param vm Pointer to the VM instance
@@ -355,7 +338,7 @@ void starforth_word_init(VM* vm)
     return;
 #else
     /* Linux/POSIX: read from filesystem */
-    const char* init_path = "./capsules/core/init.4th";
+    const char* init_path = "./capsules/init.4th";
     FILE* fp = fopen(init_path, "r");
     if (!fp)
     {
@@ -777,7 +760,7 @@ void starforth_word_wait(VM* vm)
 
     log_message(LOG_DEBUG, "WAIT: sleeping for %ld ms", (long)ms);
 
-#ifdef __unix__
+#if defined(__unix__) && !defined(__STARKERNEL__)
     /* POSIX nanosleep for precise, interruptible sleep */
     struct timespec req, rem;
     req.tv_sec = (time_t)(ms / 1000);
@@ -823,7 +806,6 @@ void starforth_word_version(VM* vm)
  */
 void register_starforth_words(VM* vm)
 {
-    STARFORTH_CHECK_ARENA("register_starforth_words:entry");
     // register_word(vm, "ENTROPY@", starforth_word_execution_heat_fetch);
     // register_word(vm, "ENTROPY!", starforth_word_execution_heat_store);
     register_word(vm, "WORD-ENTROPY", starforth_word_word_execution_heat);
@@ -836,8 +818,10 @@ void register_starforth_words(VM* vm)
     register_word(vm, "RANDOM", starforth_word_random);
     register_word(vm, "WAIT", starforth_word_wait);
 
-    vm_bootstrap_root_vocabulary(vm, "STARFORTH");
-    STARFORTH_CHECK_ARENA("register_starforth_words:post-root");
+    /* Create the STARFORTH vocabulary */
+    /* This would need vocabulary_word_vocabulary to be called */
+    vm_interpret(vm, "VOCABULARY STARFORTH");
+    vm_interpret(vm, "STARFORTH DEFINITIONS");
 
     /* Re-register the words in the STARFORTH vocabulary context */
     register_word(vm, "ENTROPY@", starforth_word_execution_heat_fetch);
@@ -852,7 +836,6 @@ void register_starforth_words(VM* vm)
     register_word(vm, "RANDOM", starforth_word_random);
     register_word(vm, "WAIT", starforth_word_wait);
 
-    vocabulary_word_forth(vm);
-    vocabulary_word_definitions(vm);
-    STARFORTH_CHECK_ARENA("register_starforth_words:exit");
+    /* Return to FORTH vocabulary */
+    vm_interpret(vm, "FORTH DEFINITIONS");
 }
