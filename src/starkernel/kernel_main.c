@@ -164,7 +164,7 @@ static void print_banner(void) {
     console_println("  ____) | || (_| | |  | . \\  __/ |  | | | |  __/ |");
     console_println(" |_____/ \\__\\__,_|_|  |_|\\_\\___|_|  |_| |_|\\___|_|");
     console_println("");
-    console_println("StarKernel v0.2.0-lithosananke - FORTH Microkernel");
+    console_println("StarKernel v1.0.0-lithosananke - FORTH Microkernel");
     console_println("Architecture: amd64");
     console_puts("Build: ");
     console_puts(__DATE__);
