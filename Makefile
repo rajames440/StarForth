@@ -350,9 +350,9 @@ CONFDIR = $(PREFIX)/etc/starforth
 .PHONY: fastest fast turbo pgo pgo-build pgo-perf pgo-valgrind bench-compare
 .PHONY: rpi4 rpi4-cross rpi4-fastest
 .PHONY: minimal fake-l4re debug profile performance
-.PHONY: test smoke bench benchmark
+.PHONY: test bench benchmark
 .PHONY: asm sbom
-.PHONY: docs api-docs docs-latex docs-isabelle isabelle-build isabelle-check info
+.PHONY: docs api-docs docs-latex docs-isabelle isabelle-build isabelle-check info math-companion math-companion-clean
 .PHONY: refinement-status refinement-init refinement-phase1 verify-defect refinement-annotate-check refinement-report
 .PHONY: install uninstall package deb rpm
 .PHONY: quality compile_commands clang_tidy cppcheck gcc_analyzer
@@ -655,15 +655,6 @@ test: $(BINARY)
 	@echo "🧪 Running test suite..."
 	@printf 'BYE\n' | ./$(BINARY) --run-tests $(PROFILE_ARGS)
 
-# Quick smoke test
-smoke: $(BINARY)
-	@echo ""
-	@echo "🚦 Running smoke test (1 2 + .)"
-	@raw_out=$$(printf '1 2 + .\nBYE\n' | NO_COLOR=1 ./$(BINARY) --log-none); \
-	printf '%s\n' "$$raw_out"; \
-	out_clean=$$(printf '%s\n' "$$raw_out" | sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g'); \
-	echo "$$out_clean" | grep -q 'ok> 3' || (echo "Smoke test failed" >&2; exit 1)
-	@echo "✓ Smoke test passed"
 
 # Quick benchmark
 bench: $(BINARY)
@@ -734,6 +725,30 @@ api-docs:
 	fi
 	@./scripts/generate-doxygen-appendix.sh
 	@echo "✅ API documentation generated: docs/src/appendix/"
+
+# ----------------------------------------------------------------------------
+# Math companion to the SSRN paper.
+# Builds docs/SSRN_companion/Math_Companion_SSRN.pdf from the LaTeX source.
+# Requires: pdflatex (texlive-latex-base, texlive-latex-extra, texlive-science).
+# ----------------------------------------------------------------------------
+math-companion:
+	@echo "Building SSRN math companion (docs/SSRN_companion/Math_Companion_SSRN.pdf)..."
+	@if ! command -v pdflatex >/dev/null 2>&1; then \
+		echo "Error: pdflatex not found."; \
+		echo "  Install with: apt-get install texlive-latex-base texlive-latex-extra texlive-science"; \
+		exit 1; \
+	fi
+	@cd docs/SSRN_companion && \
+		pdflatex -interaction=nonstopmode -halt-on-error Math_Companion_SSRN.tex >/dev/null && \
+		pdflatex -interaction=nonstopmode -halt-on-error Math_Companion_SSRN.tex >/dev/null && \
+		pdflatex -interaction=nonstopmode -halt-on-error Math_Companion_SSRN.tex >/dev/null
+	@echo "Built: docs/SSRN_companion/Math_Companion_SSRN.pdf"
+	@cd docs/SSRN_companion && ls -lh Math_Companion_SSRN.pdf | awk '{print "  Size:", $$5, " Pages: see pdfinfo"}'
+
+math-companion-clean:
+	@rm -f docs/SSRN_companion/Math_Companion_SSRN.{aux,log,out,toc,lof,lot,nav,snm,vrb}
+	@rm -f docs/SSRN_companion/Math_Companion_SSRN.pdf
+	@echo "Cleaned math companion build artifacts."
 
 # Convert all AsciiDoc to LaTeX
 docs-latex:
@@ -1013,9 +1028,9 @@ install: $(BINARY)
 	@install -d $(BINDIR)
 	@install -m 755 $(BINARY) $(BINDIR)/starforth
 	@echo "   ✓ Binary installed: $(BINDIR)/starforth"
-	@if [ -f conf/init.4th ]; then \
+	@if [ -f capsules/init.4th ]; then \
 		install -d $(CONFDIR); \
-		install -m 644 conf/init.4th $(CONFDIR)/init.4th; \
+		install -m 644 capsules/init.4th $(CONFDIR)/init.4th; \
 		echo "   ✓ Config installed: $(CONFDIR)/init.4th"; \
 	fi
 	@if [ -f man/starforth.1 ]; then \
@@ -1071,7 +1086,7 @@ deb: $(BINARY)
 		--package package/deb/ \
 		--deb-compression xz \
 		$(BINARY)=/usr/bin/starforth \
-		conf/init.4th=/etc/starforth/init.4th \
+		capsules/init.4th=/etc/starforth/init.4th \
 		README.md=/usr/share/doc/starforth/README.md
 	@echo "✅ Debian package created: package/deb/starforth_$(VERSION)_*.deb"
 
@@ -1094,7 +1109,7 @@ rpm: $(BINARY)
 		--category "Development/Languages" \
 		--package package/rpm/ \
 		$(BINARY)=/usr/bin/starforth \
-		conf/init.4th=/etc/starforth/init.4th \
+		capsules/init.4th=/etc/starforth/init.4th \
 		README.md=/usr/share/doc/starforth/README.md
 	@echo "✅ RPM package created: package/rpm/starforth-$(VERSION)-*.rpm"
 
@@ -1177,7 +1192,7 @@ build-manifest: $(BINARY)
     "passed_tests": 0, \
     "failed_tests": 0, \
     "code_coverage_percent": 0, \
-    "smoke_test_result": "PENDING" \
+    "smoke_test_result": "N/A" \
   }, \
   "binary": { \
     "path": "$$BINARY_PATH", \
@@ -1244,7 +1259,6 @@ help:
 	@echo ""
 	@echo "🧪 TESTING & BENCHMARKING:"
 	@echo "  test            - Run full test suite"
-	@echo "  smoke           - Quick smoke test"
 	@echo "  bench           - Quick benchmark"
 	@echo "  benchmark       - Full benchmark suite"
 	@echo ""

@@ -1,0 +1,167 @@
+Block 2048
+
+Block 2049
+: STABLE-WORK
+  1024 0 DO
+    I 3 MOD 0= IF
+      100 0 DO
+        I J + DROP
+      LOOP
+    ELSE
+      50 0 DO
+        I J * DROP
+      LOOP
+    THEN
+  LOOP
+;
+
+Block 2050
+: STABLE-PHASE
+  16 0 DO
+    STABLE-WORK
+  LOOP
+;
+
+Block 2051
+: WAVES-OF-DOOM
+  0 63 DO
+    I 8 MOD 0= IF
+      100 0 DO
+        I J + DROP
+      LOOP
+    ELSE
+      25 0 DO
+        I J * DROP
+      LOOP
+    THEN
+  LOOP
+;
+
+Block 2052
+: BURSTY-STABLE
+  8 0 DO
+    STABLE-WORK
+    I 2 MOD 0= IF
+      4 0 DO
+        256 0 DO
+          I J * DROP
+        LOOP
+      LOOP
+    THEN
+  LOOP
+;
+
+Block 2053
+: TIDAL-WORK
+  0 16 DO
+    I 4 MOD 0= IF
+      512 0 DO
+        I J + DROP
+      LOOP
+    ELSE
+      256 0 DO
+        I J * DROP
+      LOOP
+    THEN
+  LOOP
+;
+
+Block 2054
+: W-TIDAL
+  4 0 DO
+    TIDAL-WORK
+    WAVES-OF-DOOM
+  LOOP
+;
+
+Block 2055
+: VOLATILE-BLOCK
+  128 0 DO
+    I 2 MOD 0= IF
+      64 0 DO I J + DROP LOOP
+    ELSE
+      64 0 DO I J * DROP LOOP
+    THEN
+    I 8 MOD 0= IF
+      256 0 DO I J + J * DROP LOOP
+    THEN
+  LOOP
+;
+
+Block 2056
+: VOLATILE-STORM
+  12 0 DO
+    VOLATILE-BLOCK
+  LOOP
+;
+
+Block 2057
+: TRANSITION-PHASE
+  STABLE-PHASE
+  W-TIDAL
+  BURSTY-STABLE
+  VOLATILE-STORM
+;
+
+Block 2058
+: TRANSITION-RIPPLE
+  4 0 DO
+    256 0 DO I J + DROP LOOP
+    128 0 DO I J * DROP LOOP
+  LOOP
+;
+
+Block 2059
+: MICRO-BURST
+  32 0 DO
+    I 4 MOD 0= IF
+      64 0 DO I J + J * DROP LOOP
+    ELSE
+      64 0 DO I J * I + DROP LOOP
+    THEN
+  LOOP
+;
+
+Block 2060
+: MICRO-BURST-FIELD
+  16 0 DO
+    STABLE-WORK
+    I 3 MOD 0= IF
+      MICRO-BURST
+    THEN
+  LOOP
+;
+
+Block 2061
+: ROLLING-CASCADE
+  1 8 DO
+    I 0 DO
+      STABLE-WORK
+    LOOP
+    MICRO-BURST
+  LOOP
+  8 1 DO
+    I 0 DO
+      STABLE-WORK
+    LOOP
+  LOOP
+;
+
+Block 2062
+: OMNI-WORK
+  STABLE-PHASE 46 EMIT
+  TRANSITION-RIPPLE 46 EMIT
+  W-TIDAL 46 EMIT
+  BURSTY-STABLE 46 EMIT
+  MICRO-BURST-FIELD 46 EMIT
+  VOLATILE-STORM 46 EMIT
+  TRANSITION-PHASE 46 EMIT
+  ROLLING-CASCADE 46 EMIT
+;
+
+Block 2063
+: RUN-OMNI
+  OMNI-WORK
+;
+
+RUN-OMNI

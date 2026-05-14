@@ -1,0 +1,33 @@
+Block 2130
+( init-4.4th - pi series )
+VARIABLE ACC
+VARIABLE SIGN
+1000000 CONSTANT SCALE
+: RESET-PI 0 ACC ! 1 SIGN ! ;
+: FLIP-SIGN
+  SIGN @ 0< IF 1 SIGN ! ELSE -1 SIGN ! THEN
+;
+Block 2131
+: PI-STEP ( n -- )
+  DUP 2 * 1 + >R
+  SCALE R@ / SIGN @ * ACC @ + ACC !
+  FLIP-SIGN R> DROP
+;
+: PI-CHUNK
+  20000 0 DO
+    I PI-STEP
+  LOOP
+;
+Block 2132
+: DO-PI
+  RESET-PI
+  50 0 DO
+    PI-CHUNK
+  LOOP
+;
+: RUN-PI
+  8 0 DO
+    DO-PI 46 EMIT
+  LOOP
+;
+RUN-PI

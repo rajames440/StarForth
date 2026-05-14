@@ -107,6 +107,27 @@ CapsuleRunResult capsule_exec_init(
     const uint8_t          *arena
 );
 
+#ifdef __STARKERNEL__
+/**
+ * capsule_loader_set_ramdrive - Set the kernel ramdrive buffer.
+ *
+ * Must be a pre-zeroed buffer of at least 1024 * 1024 bytes covering
+ * block numbers CAPSULE_RAM_OFFSET (2048) through 2048+1023.
+ */
+void capsule_loader_set_ramdrive(uint8_t *buf);
+
+/**
+ * capsule_blk_init - Initialize block subsystem and kernel ramdrive.
+ *
+ * @param vm       Opaque VM pointer (mama VM)
+ * @param ram_buf  1MB buffer for dedicated RAM blocks (LBN 0-991)
+ * @param ram_size Size of ram_buf (must be >= 1MB)
+ * @param krd_buf  Pre-zeroed 1MB buffer for ramdrive blocks (2048-3071)
+ * @return         0 on success, non-zero on failure
+ */
+int capsule_blk_init(void *vm, uint8_t *ram_buf, size_t ram_size, uint8_t *krd_buf);
+#endif /* __STARKERNEL__ */
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,4 +1,4 @@
-Block 2048
+Block 2049
 ( first init.4th )
 : STAR 42 EMIT ;
 : STARS 0 DO STAR LOOP ;
