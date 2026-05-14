@@ -207,10 +207,14 @@ static int build_capsule_name(const char *relpath, char *out) {
 static int process_file(const char *fpath, const struct stat *sb,
                         int typeflag, struct FTW *ftwbuf) {
     (void)sb;
-    (void)ftwbuf;
 
     if (typeflag != FTW_F) {
         return 0;  /* directories and symlinks: skip */
+    }
+
+    /* Skip hidden files (basename begins with '.') */
+    if (fpath[ftwbuf->base] == '.') {
+        return 0;
     }
 
     /* Derive relative path from base_dir */
