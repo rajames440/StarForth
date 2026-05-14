@@ -33,8 +33,8 @@
 #ifdef STARFORTH_ENABLE_VM
 #include "starkernel/vm/bootstrap/sk_vm_bootstrap.h"
 #include "starkernel/vm/parity.h"
-#include "starkernel/capsule_birth.h"
 #include "starkernel/capsule_generated.h"
+#include "starkernel/capsule_loader.h"
 #include "starkernel/kmalloc.h"
 #endif
 
@@ -239,17 +239,17 @@ void kernel_main(BootInfo *boot_info) {
         console_println("VM: parity bootstrap complete");
     }
 
-    /* M7.1: Hera reads init.4th.
+    /* M7.1: Execute init.4th via capsule loader.
      * capsule_arena lives in .rodata which may not be mapped after VMM takeover.
      * Copy it to heap so the interpreter can safely read payload bytes. */
-    console_println("Hera: loading init.4th...");
+    console_println("Init: loading init.4th...");
     void *mama_vm = sk_get_mama_vm();
     CapsuleDirHeader live_dir = capsule_directory;
     live_dir.arena_base = (uint64_t)(uintptr_t)capsule_arena;
 
     uint8_t *arena_copy = (uint8_t *)kmalloc((size_t)live_dir.arena_size);
     if (!arena_copy) {
-        console_println("Hera: arena alloc FAILED");
+        console_println("Init: arena alloc FAILED");
     } else {
         const uint8_t *src = capsule_arena;
         uint8_t *dst = arena_copy;
@@ -257,16 +257,17 @@ void kernel_main(BootInfo *boot_info) {
         while (n--) *dst++ = *src++;
         live_dir.arena_base = (uint64_t)(uintptr_t)arena_copy;
 
-        CapsuleRunResult cr = capsule_birth_mama(
+        CapsuleRunResult cr = capsule_exec_init(
             mama_vm,
+            "init.4th",
             &live_dir,
             capsule_descriptors,
             capsule_names,
             arena_copy);
         if (cr == CAPSULE_RUN_OK) {
-            console_println("Hera: init.4th OK");
+            console_println("Init: init.4th OK");
         } else {
-            console_println("Hera: init.4th FAILED");
+            console_println("Init: init.4th FAILED");
         }
     }
 #else
