@@ -47,6 +47,48 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __STARKERNEL__
+#include "starkernel/console.h"
+#include "starkernel/hal/hal.h"
+#include "starkernel/vm/arena.h"
+
+/* Forward declaration for canonical check */
+static inline int sf_is_canonical(uint64_t addr) {
+    int64_t saddr = (int64_t)addr;
+    return (saddr >> 47) == 0 || (saddr >> 47) == -1;
+}
+#endif
+
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+static void vocabulary_debug_print_hex(uint64_t value) __attribute__((unused));
+static void vocabulary_debug_print_hex(uint64_t value)
+{
+    char buf[19];
+    buf[0] = '0';
+    buf[1] = 'x';
+    buf[18] = '\0';
+    for (int i = 0; i < 16; ++i) {
+        uint8_t nibble = (uint8_t)((value >> ((15 - i) * 4)) & 0xF);
+        buf[i + 2] = (nibble < 10) ? (char)('0' + nibble) : (char)('a' + nibble - 10);
+    }
+    console_puts(buf);
+}
+#else
+static void vocabulary_debug_print_hex(uint64_t value) __attribute__((unused));
+static void vocabulary_debug_print_hex(uint64_t value) {
+    (void)value;
+}
+#endif
+
+static size_t vocab_safe_len(const char *text, size_t max_len)
+{
+    size_t len = 0;
+    if (!text) return 0;
+    while (len < max_len && text[len] != '\0') {
+        len++;
+    }
+    return len;
+}
 
 
 /* ---- first-character index for vocab chains (lazy rebuild) ---- */
@@ -110,6 +152,51 @@ static vaddr_t current_var_addr = 0; /* cell containing (DictEntry*) CURRENT */
 /* Sync host state -> VM cells */
 static inline void vocab_sync_vm_vars(VM *vm) {
     if (!context_var_addr || !current_var_addr) return;
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    uint64_t cv = (uint64_t)(uintptr_t)context_vocab;
+    uint64_t rv = (uint64_t)(uintptr_t)current_vocab;
+    uint64_t base = (uintptr_t)vm->memory;
+
+    console_puts("[VOC_SYNC] context=");
+    vocabulary_debug_print_hex(cv);
+    console_puts(" current=");
+    vocabulary_debug_print_hex(rv);
+    console_puts(" context_addr=");
+    vocabulary_debug_print_hex((uint64_t)context_var_addr);
+    console_puts(" current_addr=");
+    vocabulary_debug_print_hex((uint64_t)current_var_addr);
+    console_puts(" vm_base=");
+    vocabulary_debug_print_hex(base);
+    console_puts(" context_vocab=");
+    vocabulary_debug_print_hex((uint64_t)(uintptr_t)context_vocab);
+    console_println("");
+
+    /* Truncation check */
+    if (cv > 0xFFFFFFFF && (cv >> 32) == 0) {
+         console_puts("PANIC: context pointer truncated: ");
+         vocabulary_debug_print_hex(cv);
+         console_println("");
+         sk_hal_panic("context pointer truncated");
+    }
+    
+    /* Canonical check */
+    if (!sf_is_canonical(cv)) {
+         console_puts("PANIC: context pointer non-canonical: ");
+         vocabulary_debug_print_hex(cv);
+         console_println("");
+         sk_hal_panic("context pointer non-canonical");
+    }
+
+    /* Arena check */
+    uint64_t arena_start = base;
+    uint64_t arena_end = base + VM_MEMORY_SIZE;
+    if (cv < arena_start || cv >= arena_end) {
+         console_puts("PANIC: context pointer outside arena: ");
+         vocabulary_debug_print_hex(cv);
+         console_println("");
+         sk_hal_panic("context pointer outside arena");
+    }
+#endif
     vm_store_cell(vm, context_var_addr, (cell_t)(uintptr_t)context_vocab);
     vm_store_cell(vm, current_var_addr, (cell_t)(uintptr_t)current_vocab);
 }
@@ -271,6 +358,80 @@ void vocabulary_word_vocabulary(VM *vm) {
 
     vocab_sync_vm_vars(vm);
     log_message(LOG_DEBUG, "VOCABULARY: created '%s'", name);
+}
+
+void vocabulary_create_vocabulary_direct(VM *vm, const char *name)
+{
+    if (!vm || !name) {
+        return;
+    }
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    console_puts("[VOC_DEBUG] create_vocabulary_direct entry: '");
+    console_puts(name);
+    console_puts("' HERE=");
+    vocabulary_debug_print_hex((uint64_t)vm->here);
+    console_puts(" sizeof(cell)=");
+    vocabulary_debug_print_hex(sizeof(cell_t));
+    console_println("");
+#endif
+    char local[64];
+    size_t len = vocab_safe_len(name, sizeof local - 1);
+    if (len == 0) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "VOCABULARY: missing name");
+        return;
+    }
+    memcpy(local, name, len);
+    local[len] = '\0';
+
+    size_t nlen = len;
+    for (DictEntry *e = vm->latest; e; e = e->link) {
+        if (e->name_len == (int)nlen && memcmp(e->name, local, nlen) == 0) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "VOCABULARY: duplicate '%s'", local);
+            return;
+        }
+        if (e->link == vm->latest) break;
+    }
+
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    console_println("[VOC_DEBUG] before vm_create_word");
+#endif
+    DictEntry *entry = vm_create_word(vm, local, (int)nlen, vocabulary_select_runtime);
+    if (!entry) {
+        vm->error = 1;
+        return;
+    }
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    console_println("[VOC_DEBUG] after vm_create_word");
+#endif
+
+#ifdef WORD_SMUDGED
+    entry->flags &= ~WORD_SMUDGED;
+#endif
+#ifdef WORD_HIDDEN
+    entry->flags &= ~WORD_HIDDEN;
+#endif
+
+    void *body = vm_allot(vm, sizeof(cell_t));
+    if (!body) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "VOCABULARY: out of dictionary space");
+        return;
+    }
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    console_println("[VOC_DEBUG] vm_allot succeeded");
+#endif
+    vaddr_t body_addr = (vaddr_t)((uint8_t *) body - vm->memory);
+    vm_store_cell(vm, body_addr, 0);
+
+    vocab_sync_vm_vars(vm);
+#if defined(__STARKERNEL__) && SK_PARITY_DEBUG
+    console_puts("[VOC_DEBUG] create_vocabulary_direct exit: '");
+    console_puts(local);
+    console_println("'");
+#endif
+    log_message(LOG_DEBUG, "VOCABULARY: created '%s'", local);
 }
 
 /* DEFINITIONS ( -- )  CURRENT := CONTEXT */

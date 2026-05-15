@@ -43,7 +43,7 @@
 #ifndef DOUBLE_WORDS_H
 #define DOUBLE_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /* FORTH-79 Double Number Words:
  * S>D       ( n -- d )                  Convert single to double

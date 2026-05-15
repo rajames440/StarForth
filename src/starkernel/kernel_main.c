@@ -36,6 +36,7 @@
 #include "starkernel/capsule_generated.h"
 #include "starkernel/capsule_loader.h"
 #include "starkernel/kmalloc.h"
+#include "starkernel/repl.h"
 #endif
 
 /* Helper: check if memory type is RAM */
@@ -163,7 +164,7 @@ static void print_banner(void) {
     console_println("  ____) | || (_| | |  | . \\  __/ |  | | | |  __/ |");
     console_println(" |_____/ \\__\\__,_|_|  |_|\\_\\___|_|  |_| |_|\\___|_|");
     console_println("");
-    console_println("StarKernel v0.2.0-lithosananke - FORTH Microkernel");
+    console_println("StarKernel v1.0.0-lithosananke - FORTH Microkernel");
     console_println("Architecture: amd64");
     console_puts("Build: ");
     console_puts(__DATE__);
@@ -311,9 +312,15 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Starting heartbeat...");
     apic_timer_start();
     arch_enable_interrupts();
-    console_println("Heartbeat running. (QEMU: Press Ctrl+A, then X to exit)");
+    console_println("Heartbeat running.");
 
-    /* Idle loop */
+#ifdef STARFORTH_ENABLE_VM
+    /* Emergency CLI — runs with heartbeat active in interrupt context */
+    sk_repl((VM *)sk_get_mama_vm());
+#endif
+
+    /* Idle loop (reached if sk_repl exits via BYE or VM halt) */
+    console_println("Kernel idle.");
     for (;;) {
         arch_halt();
     }

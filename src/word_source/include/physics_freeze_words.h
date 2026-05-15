@@ -49,7 +49,7 @@
 #ifndef PHYSICS_FREEZE_WORDS_H
 #define PHYSICS_FREEZE_WORDS_H
 
-#include "../../include/vm.h"
+#include "vm.h"
 
 /**
  * Register all Phase 2 freeze/decay control words with the VM

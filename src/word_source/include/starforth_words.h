@@ -43,7 +43,7 @@
 #ifndef STARFORTH_WORDS_H
 #define STARFORTH_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /** @name StarForth Implementation Vocabulary Words */
 ///@{
