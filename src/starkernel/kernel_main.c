@@ -36,6 +36,7 @@
 #include "starkernel/capsule_generated.h"
 #include "starkernel/capsule_loader.h"
 #include "starkernel/kmalloc.h"
+#include "starkernel/repl.h"
 #endif
 
 /* Helper: check if memory type is RAM */
@@ -311,9 +312,13 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Starting heartbeat...");
     apic_timer_start();
     arch_enable_interrupts();
-    console_println("Heartbeat running. (QEMU: Press Ctrl+A, then X to exit)");
+    console_println("Heartbeat running.");
 
-    /* Idle loop */
+#ifdef STARFORTH_ENABLE_VM
+    sk_repl((VM *)sk_get_mama_vm());
+#endif
+
+    /* Idle loop (reached if sk_repl exits via BYE or vm->halted) */
     for (;;) {
         arch_halt();
     }
