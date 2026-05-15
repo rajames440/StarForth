@@ -49,7 +49,7 @@
 #ifndef PHYSICS_DIAGNOSTIC_WORDS_H
 #define PHYSICS_DIAGNOSTIC_WORDS_H
 
-#include "../../include/vm.h"
+#include "vm.h"
 
 /**
  * Display detailed physics metrics for the most recently executed word
