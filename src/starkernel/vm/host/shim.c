@@ -50,8 +50,6 @@
 
 #ifdef __STARKERNEL__
 
-/* shim.c provides concrete sf_time wrappers below; suppress the inline versions */
-#define PLATFORM_TIME_NO_INLINE
 #include "platform_time.h"
 #include "platform_lock.h"
 #include "log.h"
