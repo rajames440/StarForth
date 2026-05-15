@@ -43,7 +43,7 @@
 #ifndef MIXED_ARITHMETIC_WORDS_H
 #define MIXED_ARITHMETIC_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /* FORTH-79 Mixed Arithmetic Words (single/double precision):
  * M+        ( d1 n -- d2 )               Add single to double

@@ -44,12 +44,24 @@
 #include "include/test_contracts.h"
 #include "../../include/log.h"
 #include <stdint.h>
+
+#ifdef __STARKERNEL__
+#include "platform_time.h"
+/* Kernel uses sf_monotonic_ns() for timing */
+/* strcmp provided by shim.c */
+extern int strcmp(const char *a, const char *b);
+#else
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#endif
 
 /** @brief Global statistics for test execution */
+#ifdef __STARKERNEL__
+/* Ensure visibility for GOT-based access with -fPIC -fvisibility=hidden */
+__attribute__((visibility("default")))
+#endif
 TestStats global_test_stats = {0, 0, 0, 0, 0};
 
 /** @brief Flag indicating if benchmark mode is enabled */
@@ -61,17 +73,21 @@ static int benchmark_iterations = 1000;
 /**
  * @brief Get current time in nanoseconds
  *
- * Uses platform's clock() function to measure time with nanosecond precision.
+ * Uses platform-specific timing: sf_monotonic_ns() on kernel, clock() on hosted.
  *
  * @return Current time in nanoseconds, or 0 on error
  */
 static uint64_t get_time_ns(void) {
+#ifdef __STARKERNEL__
+    return sf_monotonic_ns();
+#else
     clock_t t = clock();
     if (t == (clock_t)(-1)) {
         return 0; /* Error case */
     }
     /* Convert to nanoseconds: (clock_ticks / CLOCKS_PER_SEC) * 1,000,000,000 */
     return (uint64_t)((double) t / CLOCKS_PER_SEC * 1000000000.0);
+#endif
 }
 
 /* Test modules in POST (Power-On Self Test) order:
@@ -98,6 +114,7 @@ static TestModule test_modules[] = {
     {"Defining Words", NULL, 0, run_defining_words_tests}, /* Module 20 */
     {"Control Words", NULL, 0, run_control_words_tests}, /* Module 21 */
     {"StarForth Words", NULL, 0, run_starforth_words_tests}, /* Module 22 */
+    {"Mama FORTH Words", NULL, 0, run_mama_forth_words_tests}, /* Module 23: Capsule System M7.1 */
     {NULL, NULL, 0, NULL} /* End marker */
 };
 

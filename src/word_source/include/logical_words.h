@@ -43,7 +43,7 @@
 #ifndef LOGICAL_WORDS_H
 #define LOGICAL_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup logical_ops FORTH-79 Logical Operations

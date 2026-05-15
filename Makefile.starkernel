@@ -196,7 +196,8 @@ LOADER_SRCS_BASE := $(KERNEL_SRC)/boot/uefi_loader.c \
                     $(wildcard $(KERNEL_SRC)/memory/*.c) \
                     $(wildcard $(KERNEL_SRC)/math/*.c) \
                     $(wildcard $(KERNEL_SRC)/hash/*.c) \
-                    $(wildcard $(KERNEL_SRC)/capsule/*.c)
+                    $(wildcard $(KERNEL_SRC)/capsule/*.c) \
+                    $(KERNEL_SRC)/repl.c
 
 LOADER_ASM := $(KERNEL_SRC)/arch/$(ARCH)/boot.S \
               $(KERNEL_SRC)/arch/$(ARCH)/isr.S
@@ -224,7 +225,8 @@ KERNEL_SRCS_BASE := $(KERNEL_SRC)/kernel_main.c \
                     $(wildcard $(KERNEL_SRC)/hash/*.c) \
                     $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
                     $(wildcard $(KERNEL_SRC)/capsule/*.c) \
-                    $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c)
+                    $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c) \
+                    $(KERNEL_SRC)/repl.c
 
 # Note: arch.c is compiled for BOTH loader and kernel (they're separate binaries)
 
