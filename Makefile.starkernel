@@ -102,12 +102,19 @@ endif
 # preventing GOT references for internal function pointers. Without hidden
 # visibility, -fPIC generates GOT loads for external symbols which read
 # function code bytes instead of addresses (PE has no GOT).
+# PLATFORM_TIME_NO_INLINE: suppress sf_monotonic_ns() inline wrappers globally.
+# Even with -fvisibility=hidden, GCC still emits GOTPCREL relocations for the
+# extern sf_time_backend pointer (confirmed via objdump). PE has no GOT, so these
+# crash at runtime. shim.c provides concrete wrappers that call shim_monotonic_ns()
+# directly. This flag makes every TU link to those wrappers instead of using the
+# GOTPCREL-generating inline.
 COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
                  -ffreestanding -nostdlib -fno-builtin \
                  -fPIC -fvisibility=hidden -fno-stack-protector -fshort-wchar \
                  $(ARCH_CFLAGS) \
                  -I$(KERNEL_INC) -Iinclude -Isrc -include $(STARFORTH_CONFIG_HEADER) \
-                 -DPARITY_MODE=$(PARITY_MODE)
+                 -DPARITY_MODE=$(PARITY_MODE) \
+                 -DPLATFORM_TIME_NO_INLINE
 VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Isrc/test_runner/include -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare -Wno-error=missing-field-initializers
 
 # Loader-specific flags
