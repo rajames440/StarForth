@@ -50,8 +50,12 @@
 
 #ifdef __STARKERNEL__
 
-/* shim.c provides concrete sf_time wrappers below; suppress the inline versions */
+/* shim.c provides concrete sf_time wrappers below; suppress the inline versions.
+ * PLATFORM_TIME_NO_INLINE is also set globally via COMMON_CFLAGS in Makefile.starkernel,
+ * but kept here as documentation and for non-Makefile build contexts. */
+#ifndef PLATFORM_TIME_NO_INLINE
 #define PLATFORM_TIME_NO_INLINE
+#endif
 #include "platform_time.h"
 #include "platform_lock.h"
 #include "log.h"

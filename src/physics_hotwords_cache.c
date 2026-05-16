@@ -52,6 +52,14 @@
 #include <stdlib.h>
 
 #include "physics_hotwords_cache.h"
+/* Suppress platform_time.h inline wrappers in kernel builds.
+ * GCC emits GOTPCREL relocations for the extern sf_time_backend pointer even with
+ * -fvisibility=hidden. PE binaries have no GOT, so those crash at runtime.
+ * PLATFORM_TIME_NO_INLINE is set globally via COMMON_CFLAGS in Makefile.starkernel;
+ * the #ifndef guard here prevents a redefinition warning from -Wall -Werror. */
+#ifndef PLATFORM_TIME_NO_INLINE
+#define PLATFORM_TIME_NO_INLINE
+#endif
 #include "platform_time.h"
 #include "math_portable.h"
 

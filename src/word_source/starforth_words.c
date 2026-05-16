@@ -41,6 +41,7 @@
  */
 
 #include "include/starforth_words.h"
+#include "include/vocabulary_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include "../../include/vm.h"
@@ -806,8 +807,6 @@ void starforth_word_version(VM* vm)
  */
 void register_starforth_words(VM* vm)
 {
-    // register_word(vm, "ENTROPY@", starforth_word_execution_heat_fetch);
-    // register_word(vm, "ENTROPY!", starforth_word_execution_heat_store);
     register_word(vm, "WORD-ENTROPY", starforth_word_word_execution_heat);
     register_word(vm, "RESET-ENTROPY", starforth_word_reset_execution_heat);
     register_word(vm, "TOP-WORDS", starforth_word_top_words);
@@ -818,10 +817,19 @@ void register_starforth_words(VM* vm)
     register_word(vm, "RANDOM", starforth_word_random);
     register_word(vm, "WAIT", starforth_word_wait);
 
-    /* Create the STARFORTH vocabulary */
-    /* This would need vocabulary_word_vocabulary to be called */
-    vm_interpret(vm, "VOCABULARY STARFORTH");
-    vm_interpret(vm, "STARFORTH DEFINITIONS");
+    /* Create the STARFORTH vocabulary directly (no interpreter required) */
+    vocabulary_create_vocabulary_direct(vm, "STARFORTH");
+
+    /* Execute STARFORTH word to select it as CONTEXT, then DEFINITIONS.
+     * vm->latest IS the STARFORTH entry immediately after vocabulary_create_vocabulary_direct,
+     * so use it directly to avoid triggering sf_rebuild_fc_index during early boot. */
+    {
+        DictEntry *starforth_entry = vm->latest;
+        if (starforth_entry && starforth_entry->func) {
+            starforth_entry->func(vm);
+        }
+    }
+    vocabulary_word_definitions(vm);
 
     /* Re-register the words in the STARFORTH vocabulary context */
     register_word(vm, "ENTROPY@", starforth_word_execution_heat_fetch);
@@ -837,5 +845,6 @@ void register_starforth_words(VM* vm)
     register_word(vm, "WAIT", starforth_word_wait);
 
     /* Return to FORTH vocabulary */
-    vm_interpret(vm, "FORTH DEFINITIONS");
+    vocabulary_word_forth(vm);
+    vocabulary_word_definitions(vm);
 }

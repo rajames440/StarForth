@@ -112,7 +112,9 @@ extern const sf_time_backend_t sf_time_backend_l4re; /* L4Re/StarshipOS implemen
 
 /* Convenience wrappers (inline for zero overhead).
  * Define PLATFORM_TIME_NO_INLINE before including this header to suppress
- * these inline definitions (e.g. when providing concrete implementations). */
+ * these inline definitions (e.g. when providing concrete implementations).
+ * When suppressed, non-inline prototypes are declared so callers can link
+ * to a concrete implementation (e.g. shim.c in the kernel). */
 #ifndef PLATFORM_TIME_NO_INLINE
 
 static inline sf_time_ns_t sf_monotonic_ns(void) {
@@ -134,6 +136,15 @@ static inline int sf_format_timestamp(sf_time_ns_t ns, char *buf, int format_24h
 static inline int sf_has_rtc(void) {
     return sf_time_backend->has_rtc();
 }
+
+#else /* PLATFORM_TIME_NO_INLINE */
+
+/* Non-inline prototypes — provided by the platform's concrete implementation. */
+sf_time_ns_t sf_monotonic_ns(void);
+sf_time_ns_t sf_realtime_ns(void);
+int sf_set_realtime_ns(sf_time_ns_t ns);
+int sf_format_timestamp(sf_time_ns_t ns, char *buf, int format_24h);
+int sf_has_rtc(void);
 
 #endif /* PLATFORM_TIME_NO_INLINE */
 
