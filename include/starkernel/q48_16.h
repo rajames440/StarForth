@@ -55,6 +55,10 @@
 #ifndef STARKERNEL_Q48_16_H
 #define STARKERNEL_Q48_16_H
 
+/* If the hosted-VM q48_16.h is already pulled in (e.g. via inference_engine.h),
+ * skip the duplicate static-inline definitions — clang rejects them as errors. */
+#ifndef Q48_16_H
+
 #include <stdint.h>
 
 typedef uint64_t q48_16_t;
@@ -141,4 +145,5 @@ q48_16_t q48_exp_approx(q48_16_t q);
  */
 q48_16_t q48_sqrt_approx(q48_16_t q);
 
+#endif /* !Q48_16_H */
 #endif /* STARKERNEL_Q48_16_H */

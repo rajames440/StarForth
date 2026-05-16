@@ -204,8 +204,6 @@ void starforth_word_word_execution_heat(VM* vm)
  */
 void starforth_word_reset_execution_heat(VM* vm)
 {
-    int reset_count = 0;
-
     for (DictEntry* entry = vm->latest; entry; entry = entry->link)
     {
         if (entry->execution_heat > 0)
@@ -214,7 +212,6 @@ void starforth_word_reset_execution_heat(VM* vm)
             entry->physics.temperature_q8 = 0;
             entry->physics.avg_latency_ns = 0;
             entry->physics.last_active_ns = 0;
-            reset_count++;
         }
     }
 }
@@ -245,8 +242,8 @@ void starforth_word_top_words(VM* vm)
     printf("Top %ld most frequently used words:\n", (long)n);
     printf("==================================\n");
 
-    /* Collect all words with execution_heat > 0 */
-    DictEntry* words_with_heat[1000]; /* Reasonable limit for now */
+    /* Collect all words with execution_heat > 0 (static: avoids large kernel stack frame) */
+    static DictEntry* words_with_heat[1000];
     int word_count = 0;
 
     for (DictEntry* entry = vm->latest; entry && word_count < 1000; entry = entry->link)
@@ -276,7 +273,7 @@ void starforth_word_top_words(VM* vm)
     for (int i = 0; i < display_count; i++)
     {
         DictEntry* entry = words_with_heat[i];
-        printf("%2d. %.*s: %ld\n", i + 1, (int)entry->name_len, entry->name, (long)entry->execution_heat);
+        printf("%d. %.*s: %ld\n", i + 1, (int)entry->name_len, entry->name, (long)entry->execution_heat);
     }
 }
 

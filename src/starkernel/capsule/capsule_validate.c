@@ -47,7 +47,7 @@ static const char *validate_result_strings[] = {
 };
 
 const char *capsule_validate_result_str(CapsuleValidateResult result) {
-    if (result < sizeof(validate_result_strings) / sizeof(validate_result_strings[0])) {
+    if ((size_t)result < sizeof(validate_result_strings) / sizeof(validate_result_strings[0])) {
         return validate_result_strings[result];
     }
     return "unknown error";

@@ -134,6 +134,7 @@ DictEntry *hotwords_cache_lookup(HotwordsCache *cache,
     if (!cache || !cache->enabled) {
         for (size_t i = bucket_count; i-- > 0;) {
             DictEntry *e = bucket[i];
+            if (!e) continue;
             if ((size_t)e->name_len != len) continue;
             if (len > 1 && (unsigned char)e->name[len - 1] != (unsigned char)name[len - 1]) continue;
             if (memcmp(e->name, name, len) == 0) return e;
@@ -178,6 +179,7 @@ DictEntry *hotwords_cache_lookup(HotwordsCache *cache,
     // --- STEP 2: Fall back to bucket search ---
     for (size_t i = bucket_count; i-- > 0;) {
         DictEntry *e = bucket[i];
+        if (!e) continue;
         if ((size_t)e->name_len != len) continue;
         if (len > 1 && (unsigned char)e->name[len - 1] != (unsigned char)name[len - 1]) continue;
         if (memcmp(e->name, name, len) == 0) {

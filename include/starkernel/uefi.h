@@ -85,17 +85,17 @@ typedef UINTN EFI_TPL;
 /* EFI Status Codes */
 typedef UINTN EFI_STATUS;
 #define EFI_SUCCESS               0
-#define EFI_LOAD_ERROR            (1 | (1UL << 63))
-#define EFI_INVALID_PARAMETER     (2 | (1UL << 63))
-#define EFI_UNSUPPORTED           (3 | (1UL << 63))
-#define EFI_BAD_BUFFER_SIZE       (4 | (1UL << 63))
-#define EFI_BUFFER_TOO_SMALL      (5 | (1UL << 63))
-#define EFI_NOT_READY             (6 | (1UL << 63))
-#define EFI_DEVICE_ERROR          (7 | (1UL << 63))
-#define EFI_WRITE_PROTECTED       (8 | (1UL << 63))
-#define EFI_OUT_OF_RESOURCES      (9 | (1UL << 63))
-#define EFI_NOT_FOUND             (14 | (1UL << 63))
-#define EFI_ABORTED               (21 | (1UL << 63))
+#define EFI_LOAD_ERROR            (1 | (1ULL << 63))
+#define EFI_INVALID_PARAMETER     (2 | (1ULL << 63))
+#define EFI_UNSUPPORTED           (3 | (1ULL << 63))
+#define EFI_BAD_BUFFER_SIZE       (4 | (1ULL << 63))
+#define EFI_BUFFER_TOO_SMALL      (5 | (1ULL << 63))
+#define EFI_NOT_READY             (6 | (1ULL << 63))
+#define EFI_DEVICE_ERROR          (7 | (1ULL << 63))
+#define EFI_WRITE_PROTECTED       (8 | (1ULL << 63))
+#define EFI_OUT_OF_RESOURCES      (9 | (1ULL << 63))
+#define EFI_NOT_FOUND             (14 | (1ULL << 63))
+#define EFI_ABORTED               (21 | (1ULL << 63))
 
 /* EFI Handle */
 typedef void* EFI_HANDLE;

@@ -68,6 +68,14 @@
 #include <stddef.h>
 
 /* -----------------------------------------------------------------------------
+ * abort() — freestanding: print to console and spin
+ * ---------------------------------------------------------------------------*/
+void abort(void) {
+    console_println("[ABORT] abort() called — halting");
+    for (;;) { __asm__ volatile ("" ::: "memory"); }
+}
+
+/* -----------------------------------------------------------------------------
  * Minimal malloc/free backed by kmalloc/kfree
  * ---------------------------------------------------------------------------*/
 void *malloc(size_t size) {
@@ -112,11 +120,19 @@ LogLevel log_get_level(void) { return current_level; }
 
 static int kvsnprintf(char *buf, size_t n, const char *fmt, va_list args);
 
-/* Direct TSC read - always works, even when PM Timer calibration fails */
+/* Direct cycle counter read — arch-specific */
 static inline uint64_t shim_rdtsc(void) {
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__)
     uint32_t lo, hi;
     __asm__ volatile ("rdtsc" : "=a"(lo), "=d"(hi));
     return ((uint64_t)hi << 32) | lo;
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    uint64_t val;
+    __asm__ volatile ("mrs %0, CNTVCT_EL0" : "=r"(val));
+    return val;
+#else
+    return 0;
+#endif
 }
 
 static uint64_t log_tsc_base = 0;  /* Captured on first log call */
@@ -366,6 +382,13 @@ long strtol(const char *nptr, char **endptr, int base) {
     return sign * acc;
 }
 
+unsigned long strtoul(const char *s, char **endptr, int base)
+    { return (unsigned long)strtol(s, endptr, base); }
+long long strtoll(const char *s, char **endptr, int base)
+    { return (long long)strtol(s, endptr, base); }
+int  atoi(const char *s) { return (int)strtol(s, (char**)0, 10); }
+long atol(const char *s) { return strtol(s, (char**)0, 10); }
+
 double strtod(const char *nptr, char **endptr) {
     long v = strtol(nptr, endptr, 10);
     return (double)v;
@@ -511,6 +534,9 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) { (void)ptr; (v
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) { (void)ptr; (void)size; (void)nmemb; (void)stream; return 0; }
 int fseek(FILE *stream, long offset, int whence) { (void)stream; (void)offset; (void)whence; return -1; }
 long ftell(FILE *stream) { (void)stream; return 0; }
+void rewind(FILE *stream) { (void)stream; }
+int  fscanf(FILE *stream, const char *fmt, ...) { (void)stream; (void)fmt; return -1; }
+int  sscanf(const char *str, const char *fmt, ...) { (void)str; (void)fmt; return -1; }
 char *fgets(char *s, int size, FILE *stream) { (void)s; (void)size; (void)stream; return NULL; }
 int fputc(int c, FILE *stream) { (void)stream; console_putc((char)c); return c; }
 int fgetc(FILE *stream) { (void)stream; return -1; }

@@ -37,7 +37,8 @@ CAPSULES_DIR       ?= capsules
 MKCAPSULE_SRC       = tools/mkcapsule.c
 MKCAPSULE_BIN       = $(BUILD_DIR)/tools/mkcapsule
 CAPSULE_GENERATED   = $(BUILD_DIR)/capsule_generated.c
-CAPSULE_GENERATED_OBJ = $(BUILD_DIR)/capsule_generated.o
+CAPSULE_GENERATED_OBJ      = $(BUILD_DIR)/capsule_generated.o
+CAPSULE_GENERATED_KOBJ     = $(KERNEL_OBJ_DIR)/capsule_generated.o
 
 # Source directories
 KERNEL_SRC := src/starkernel
@@ -72,10 +73,14 @@ else ifeq ($(ARCH),aarch64)
     else
         $(error No ARM64 toolchain found. Install aarch64-linux-gnu-gcc or aarch64-none-elf-gcc)
     endif
-    ARCH_CFLAGS := -march=armv8-a -mcpu=cortex-a72
+    ARCH_CFLAGS := -march=armv8-a -mcpu=cortex-a72 -DARCH_AARCH64 -mno-outline-atomics
     LOADER_LINKER_SCRIPT := linker/starkernel-loader-aarch64.ld
     KERNEL_LINKER_SCRIPT := linker/starkernel-kernel-aarch64.ld
     EFI_TARGET := efi-app-aarch64
+    # aarch64 loader built with clang + lld-link: GCC cannot produce aarch64 PE,
+    # and the ELF→objcopy→Python-reloc approach is replaced by a clean COFF toolchain.
+    LOADER_CC := clang-18
+    LOADER_LD := lld-link
 else ifeq ($(ARCH),riscv64)
     # Try riscv64-unknown-elf-gcc first, fall back to riscv64-linux-gnu-gcc
     ifneq ($(shell which riscv64-unknown-elf-gcc 2>/dev/null),)
@@ -96,6 +101,10 @@ else ifeq ($(ARCH),riscv64)
 else
     $(error Unsupported architecture: $(ARCH))
 endif
+
+# Default loader toolchain = kernel toolchain (overridden for aarch64 above)
+LOADER_CC ?= $(CC)
+LOADER_LD ?= $(LD)
 
 # Common compiler flags
 # Use -fPIC with -fvisibility=hidden: This makes all symbols local by default,
@@ -118,7 +127,25 @@ COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
 VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Isrc/test_runner/include -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare -Wno-error=missing-field-initializers
 
 # Loader-specific flags
-LOADER_CFLAGS := $(COMMON_CFLAGS) -I$(KERNEL_SRC)/vm
+# aarch64: clang COFF target — -fPIC/-fvisibility=hidden are ELF-only and
+# unsupported on aarch64-pc-windows-msvc; drop them and add COFF-specific flags.
+ifeq ($(ARCH),aarch64)
+LOADER_BASE_CFLAGS := -std=c99 -Wall -Werror -Wextra \
+    --target=aarch64-pc-windows-msvc \
+    -ffreestanding -fno-builtin \
+    -fno-stack-protector -fshort-wchar \
+    -mno-stack-arg-probe \
+    -march=armv8-a \
+    -DARCH_AARCH64 \
+    -I$(KERNEL_INC) -Iinclude -Isrc \
+    -Iinclude/starkernel/freestanding \
+    -include $(STARFORTH_CONFIG_HEADER) \
+    -DPARITY_MODE=$(PARITY_MODE) \
+    -DPLATFORM_TIME_NO_INLINE
+else
+LOADER_BASE_CFLAGS := $(COMMON_CFLAGS)
+endif
+LOADER_CFLAGS := $(LOADER_BASE_CFLAGS) -I$(KERNEL_SRC)/vm
 
 # Kernel-specific flags (with __STARKERNEL__ fence)
 KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm
@@ -166,11 +193,20 @@ ifdef M5_TIMER_VALIDATION
 KERNEL_CFLAGS += -DM5_TIMER_VALIDATION=$(M5_TIMER_VALIDATION)
 endif
 
-# Linker flags
-# PE direct linking with proper base relocations (--enable-reloc-section generates .reloc)
-# --image-base 0 allows UEFI to freely relocate; section alignment is 4K
-LOADER_LINKER_SCRIPT_PE := linker/starkernel-loader-amd64-pe.ld
-LOADER_LDFLAGS_PE := -T $(LOADER_LINKER_SCRIPT_PE) -m i386pep -nostdlib --enable-reloc-section --image-base 0 --subsystem 10 -e efi_main
+# Linker flags — arch-conditional PE strategy
+# amd64: link directly to PE via ld -m i386pep (GNU ld supports this natively)
+# aarch64: clang-18 compiles to COFF objects; lld-link links to PE directly.
+#          This replaces the former ELF→objcopy→pe_reloc_gen.py pipeline.
+#          lld-link generates the .reloc section automatically from COFF relocations.
+# --image-base 0 / /base:0 allows UEFI to freely relocate the image.
+ifeq ($(ARCH),aarch64)
+    # lld-link is called with explicit flags in the link rule below
+    LOADER_LDFLAGS_PE :=
+else
+    LOADER_LINKER_SCRIPT_PE := linker/starkernel-loader-amd64-pe.ld
+    LOADER_LDFLAGS_PE := -T $(LOADER_LINKER_SCRIPT_PE) -m i386pep -nostdlib \
+                          --enable-reloc-section --image-base 0 --subsystem 10 -e efi_main
+endif
 # ELF linking (used as intermediate or for kernel)
 LOADER_LDFLAGS := -T $(LOADER_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -shared -Bsymbolic -znocombreloc -e efi_main
 KERNEL_LDFLAGS := -T $(KERNEL_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -e kernel_main
@@ -203,7 +239,8 @@ LOADER_SRCS_BASE := $(KERNEL_SRC)/boot/uefi_loader.c \
                     $(wildcard $(KERNEL_SRC)/memory/*.c) \
                     $(wildcard $(KERNEL_SRC)/math/*.c) \
                     $(wildcard $(KERNEL_SRC)/hash/*.c) \
-                    $(wildcard $(KERNEL_SRC)/capsule/*.c)
+                    $(wildcard $(KERNEL_SRC)/capsule/*.c) \
+                    $(KERNEL_SRC)/repl.c
 
 LOADER_ASM := $(KERNEL_SRC)/arch/$(ARCH)/boot.S \
               $(KERNEL_SRC)/arch/$(ARCH)/isr.S
@@ -231,7 +268,8 @@ KERNEL_SRCS_BASE := $(KERNEL_SRC)/kernel_main.c \
                     $(wildcard $(KERNEL_SRC)/hash/*.c) \
                     $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
                     $(wildcard $(KERNEL_SRC)/capsule/*.c) \
-                    $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c)
+                    $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c) \
+                    $(KERNEL_SRC)/repl.c
 
 # Note: arch.c is compiled for BOTH loader and kernel (they're separate binaries)
 
@@ -250,8 +288,7 @@ VM_EXCLUDE := src/main.c src/cli.c src/repl.c src/platform/% src/blkio_factory.c
 
 VM_CORE_SRCS := $(filter-out $(VM_EXCLUDE),$(VM_ALL_SRCS))
 
-LOADER_EXTRA_SRCS := $(KERNEL_SRC)/repl.c \
-                     $(KERNEL_SRC)/vm/arena.c \
+LOADER_EXTRA_SRCS := $(KERNEL_SRC)/vm/arena.c \
                      $(KERNEL_SRC)/vm/parity.c \
                      $(KERNEL_SRC)/vm/bootstrap/sk_vm_bootstrap.c \
                      $(KERNEL_SRC)/vm/host/shim.c \
@@ -261,8 +298,7 @@ LOADER_EXTRA_SRCS := $(KERNEL_SRC)/repl.c \
                      $(KERNEL_SRC)/vm/alloc_kernel.c \
                      $(KERNEL_SRC)/vm/q48_stubs.c
 
-KERNEL_EXTRA_SRCS := $(KERNEL_SRC)/repl.c \
-                     $(KERNEL_SRC)/vm/arena.c \
+KERNEL_EXTRA_SRCS := $(KERNEL_SRC)/vm/arena.c \
                      $(KERNEL_SRC)/vm/parity.c \
                      $(KERNEL_SRC)/vm/bootstrap/sk_vm_bootstrap.c \
                      $(KERNEL_SRC)/vm/host/shim.c \
@@ -288,13 +324,13 @@ LOADER_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(LOADER_OBJ_DIR)/%.o,$(LOADER_SRCS)
 KERNEL_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(KERNEL_OBJ_DIR)/%.o,$(KERNEL_SRCS)) \
                $(patsubst $(KERNEL_SRC)/%.S,$(KERNEL_OBJ_DIR)/%.o,$(KERNEL_ASM)) \
                $(KERNEL_VM_OBJS) \
-               $(CAPSULE_GENERATED_OBJ)
+               $(CAPSULE_GENERATED_KOBJ)
 
 # Default target: build both loader and kernel
 VERSION ?= 3.0.1
 
 .PHONY: all
-all: include/version.h $(CAPSULE_GENERATED_OBJ) $(LOADER_EFI) $(KERNEL_ELF)
+all: include/version.h $(CAPSULE_GENERATED_OBJ) $(CAPSULE_GENERATED_KOBJ) $(LOADER_EFI) $(KERNEL_ELF)
 	@echo "StarKernel built successfully for $(ARCH)"
 	@echo "  Loader: $(LOADER_EFI)"
 	@echo "  Kernel: $(KERNEL_ELF)"
@@ -329,10 +365,15 @@ $(CAPSULE_GENERATED): $(MKCAPSULE_BIN) $(CAPSULE_SRCS)
 	@echo "  MKCAP   $(CAPSULES_DIR) -> $@"
 	@$(MKCAPSULE_BIN) $(CAPSULES_DIR) $@
 
-# Compile the generated capsule file with kernel flags
+# Compile the generated capsule file with loader flags
 $(CAPSULE_GENERATED_OBJ): $(CAPSULE_GENERATED)
 	@echo "  CC  $<"
-	@$(CC) $(LOADER_CFLAGS) -c $< -o $@
+	@$(LOADER_CC) $(LOADER_CFLAGS) -c $< -o $@
+
+# Compile the generated capsule file with kernel flags (ELF object for kernel link)
+$(CAPSULE_GENERATED_KOBJ): $(CAPSULE_GENERATED) | $(KERNEL_OBJ_DIR)
+	@echo "  CC (kernel)  $<"
+	@$(CC) $(KERNEL_CFLAGS) -c $< -o $@
 
 # Create build directories
 $(BUILD_DIR) $(LOADER_OBJ_DIR) $(KERNEL_OBJ_DIR):
@@ -343,19 +384,28 @@ $(BUILD_DIR) $(LOADER_OBJ_DIR) $(KERNEL_OBJ_DIR):
 $(LOADER_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(LOADER_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "CC (loader) $<"
-	@$(CC) $(LOADER_CFLAGS) -c $< -o $@
+	@$(LOADER_CC) $(LOADER_CFLAGS) -c $< -o $@
 
 # Compile loader VM core sources (hosted VM code)
 $(LOADER_OBJ_DIR)/vmcore/%.o: src/%.c include/version.h | $(LOADER_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "CC (loader) $<"
-	@$(CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(LOADER_CFLAGS)) -c $< -o $@
+ifeq ($(ARCH),aarch64)
+	@$(LOADER_CC) $(LOADER_CFLAGS) \
+	    -Iinclude -I. -Isrc/test_runner/include \
+	    -Wno-error=unused-parameter -Wno-error=shift-negative-value \
+	    -Wno-error=sign-compare -Wno-error=missing-field-initializers \
+	    -Wno-unused-function \
+	    -c $< -o $@
+else
+	@$(LOADER_CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(LOADER_CFLAGS)) -c $< -o $@
+endif
 
 # Compile loader assembly sources
 $(LOADER_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(LOADER_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "AS (loader) $<"
-	@$(CC) $(LOADER_CFLAGS) -c $< -o $@
+	@$(LOADER_CC) $(LOADER_CFLAGS) -c $< -o $@
 
 # Compile kernel C sources
 $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(KERNEL_OBJ_DIR)
@@ -375,12 +425,20 @@ $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(KERNEL_OBJ_DIR)
 	@echo "AS (kernel) $<"
 	@$(CC) $(KERNEL_CFLAGS) -c $< -o $@
 
-# Link loader directly to PE32+ with proper base relocations
-# --enable-reloc-section generates the .reloc entries needed for UEFI to relocate the image
+# Link loader to PE32+
+# amd64: direct PE output via ld -m i386pep (GNU ld native)
+# aarch64: lld-link links COFF objects directly to PE/EFI; .reloc is auto-generated
 $(LOADER_EFI): $(LOADER_OBJS) | $(BUILD_DIR)
+ifeq ($(ARCH),aarch64)
+	@echo "LLD-LINK (loader PE) $@"
+	@lld-link /subsystem:EFI_APPLICATION /entry:efi_main /nodefaultlib \
+	    /align:4096 /base:0 /out:$@ $(LOADER_OBJS)
+	@echo "Loader built: $@"
+else
 	@echo "LD (loader PE) $@"
 	@$(LD) $(LOADER_LDFLAGS_PE) $(LOADER_OBJS) -o $@
 	@echo "Loader built: $@"
+endif
 
 # Keep ELF target for debugging (optional)
 $(BUILD_DIR)/starkernel_loader.elf: $(LOADER_OBJS) $(LOADER_LINKER_SCRIPT) | $(BUILD_DIR)
@@ -481,8 +539,54 @@ ifeq ($(ARCH),amd64)
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG
+else ifeq ($(ARCH),aarch64)
+	@echo "=== Building ISO for aarch64 ==="
+	@mkdir -p $(BUILD_DIR)/iso/EFI/BOOT
+	@cp $(LOADER_EFI) $(BUILD_DIR)/iso/EFI/BOOT/BOOTAA64.EFI
+	@printf "FS0:\\EFI\\BOOT\\BOOTAA64.EFI\r\n" > $(BUILD_DIR)/iso/startup.nsh
+	@# FAT image: EFI/BOOT/BOOTAA64.EFI is the El Torito EFI boot image
+	@dd if=/dev/zero of=$(BUILD_DIR)/iso/efi.img bs=512 count=8192 2>/dev/null
+	@mformat -i $(BUILD_DIR)/iso/efi.img ::
+	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI
+	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI/BOOT
+	@mcopy   -i $(BUILD_DIR)/iso/efi.img $(LOADER_EFI) ::/EFI/BOOT/BOOTAA64.EFI
+	@xorriso -as mkisofs -r -J \
+		-e efi.img -no-emul-boot \
+		-o $(QEMU_ISO) $(BUILD_DIR)/iso 2>&1
+	@echo "  ISO: $(QEMU_ISO)"
+	@echo ""
+	@mkdir -p $(QEMU_LOG_DIR)
+	@if [ -f /usr/share/AAVMF/AAVMF_CODE.fd ]; then \
+		AAVMF_CODE=/usr/share/AAVMF/AAVMF_CODE.fd; \
+	elif [ -f /usr/share/qemu-efi-aarch64/QEMU_EFI.fd ]; then \
+		AAVMF_CODE=/usr/share/qemu-efi-aarch64/QEMU_EFI.fd; \
+	elif [ -f /usr/share/qemu/edk2-aarch64-code.fd ]; then \
+		AAVMF_CODE=/usr/share/qemu/edk2-aarch64-code.fd; \
+	else \
+		echo "Error: aarch64 UEFI firmware not found. Install qemu-efi-aarch64."; \
+		exit 1; \
+	fi; \
+	LOG=$(QEMU_LOG_DIR)/qemu-aarch64-$$(date +%Y%m%d-%H%M%S).log; \
+	echo "=== Launching QEMU (aarch64) ==="; \
+	echo "  ISO: $(QEMU_ISO)"; \
+	echo "  Serial log: $$LOG"; \
+	echo "  (Ctrl-C to stop)"; \
+	echo ""; \
+	qemu-system-aarch64 \
+		-machine virt \
+		-cpu cortex-a57 \
+		-bios $$AAVMF_CODE \
+		-drive if=virtio,format=raw,file=$(QEMU_ISO),media=cdrom \
+		-serial file:$$LOG \
+		-display none \
+		-m 2048 \
+		-no-reboot \
+		-d guest_errors; \
+	echo ""; \
+	echo "=== Serial log: $$LOG ==="; \
+	cat $$LOG
 else
-	@echo "Error: qemu target only supported for amd64"
+	@echo "Error: qemu target only supported for amd64 and aarch64"
 	@exit 1
 endif
 
