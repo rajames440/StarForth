@@ -102,12 +102,19 @@ endif
 # preventing GOT references for internal function pointers. Without hidden
 # visibility, -fPIC generates GOT loads for external symbols which read
 # function code bytes instead of addresses (PE has no GOT).
+# PLATFORM_TIME_NO_INLINE: suppress sf_monotonic_ns() inline wrappers globally.
+# Even with -fvisibility=hidden, GCC still emits GOTPCREL relocations for the
+# extern sf_time_backend pointer (confirmed via objdump). PE has no GOT, so these
+# crash at runtime. shim.c provides concrete wrappers that call shim_monotonic_ns()
+# directly. This flag makes every TU link to those wrappers instead of using the
+# GOTPCREL-generating inline.
 COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
                  -ffreestanding -nostdlib -fno-builtin \
                  -fPIC -fvisibility=hidden -fno-stack-protector -fshort-wchar \
                  $(ARCH_CFLAGS) \
                  -I$(KERNEL_INC) -Iinclude -Isrc -include $(STARFORTH_CONFIG_HEADER) \
-                 -DPARITY_MODE=$(PARITY_MODE)
+                 -DPARITY_MODE=$(PARITY_MODE) \
+                 -DPLATFORM_TIME_NO_INLINE
 VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Isrc/test_runner/include -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare -Wno-error=missing-field-initializers
 
 # Loader-specific flags
@@ -255,7 +262,15 @@ LOADER_EXTRA_SRCS := $(KERNEL_SRC)/vm/arena.c \
                      $(KERNEL_SRC)/vm/alloc_kernel.c \
                      $(KERNEL_SRC)/vm/q48_stubs.c
 
-KERNEL_EXTRA_SRCS := $(LOADER_EXTRA_SRCS)
+KERNEL_EXTRA_SRCS := $(KERNEL_SRC)/vm/arena.c \
+                     $(KERNEL_SRC)/vm/parity.c \
+                     $(KERNEL_SRC)/vm/bootstrap/sk_vm_bootstrap.c \
+                     $(KERNEL_SRC)/vm/host/shim.c \
+                     $(KERNEL_SRC)/vm/vm_core.c \
+                     $(KERNEL_SRC)/vm/vm_bootstrap.c \
+                     $(KERNEL_SRC)/vm/vm_runtime.c \
+                     $(KERNEL_SRC)/vm/alloc_kernel.c \
+                     $(KERNEL_SRC)/vm/q48_stubs.c
 
 LOADER_VM_OBJS := $(patsubst src/%.c,$(LOADER_OBJ_DIR)/vmcore/%.o,$(VM_CORE_SRCS))
 KERNEL_VM_OBJS := $(patsubst src/%.c,$(KERNEL_OBJ_DIR)/vmcore/%.o,$(VM_CORE_SRCS))
@@ -276,11 +291,30 @@ KERNEL_OBJS := $(patsubst $(KERNEL_SRC)/%.c,$(KERNEL_OBJ_DIR)/%.o,$(KERNEL_SRCS)
                $(CAPSULE_GENERATED_OBJ)
 
 # Default target: build both loader and kernel
+VERSION ?= 3.0.1
+
 .PHONY: all
-all: $(CAPSULE_GENERATED_OBJ) $(LOADER_EFI) $(KERNEL_ELF)
+all: include/version.h $(CAPSULE_GENERATED_OBJ) $(LOADER_EFI) $(KERNEL_ELF)
 	@echo "StarKernel built successfully for $(ARCH)"
 	@echo "  Loader: $(LOADER_EFI)"
 	@echo "  Kernel: $(KERNEL_ELF)"
+
+# Generate version.h so vmcore word_source files can include it
+include/version.h:
+	@mkdir -p include
+	@BUILD_TS=$$(date -Iseconds 2>/dev/null || echo "unknown"); \
+	printf '#ifndef STARFORTH_VERSION_H\n#define STARFORTH_VERSION_H\n\n' > $@; \
+	printf '#define STARFORTH_VERSION "%s"\n' "$(VERSION)" >> $@; \
+	printf '#define STARFORTH_ARCH "%s"\n' "$(ARCH)" >> $@; \
+	printf '#define STARFORTH_TARGET "%s"\n' "kernel" >> $@; \
+	printf '#define STARFORTH_TIMESTAMP "%s"\n' "$$BUILD_TS" >> $@; \
+	printf '#define STARFORTH_VERSION_FULL "StarForth v%s %s kernel %s"\n\n' "$(VERSION)" "$(ARCH)" "$$BUILD_TS" >> $@; \
+	printf '#endif /* STARFORTH_VERSION_H */\n' >> $@
+
+.PHONY: clean
+clean:
+	rm -rf build/$(ARCH)/$(TARGET)
+	rm -f include/version.h
 
 # Build mkcapsule host tool (using host CC, not cross-compiler)
 $(MKCAPSULE_BIN): $(MKCAPSULE_SRC)
@@ -312,7 +346,7 @@ $(LOADER_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(LOADER_OBJ_DIR)
 	@$(CC) $(LOADER_CFLAGS) -c $< -o $@
 
 # Compile loader VM core sources (hosted VM code)
-$(LOADER_OBJ_DIR)/vmcore/%.o: src/%.c | $(LOADER_OBJ_DIR)
+$(LOADER_OBJ_DIR)/vmcore/%.o: src/%.c include/version.h | $(LOADER_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "CC (loader) $<"
 	@$(CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(LOADER_CFLAGS)) -c $< -o $@
@@ -330,7 +364,7 @@ $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(KERNEL_OBJ_DIR)
 	@$(CC) $(KERNEL_CFLAGS) -c $< -o $@
 
 # Compile kernel VM core sources (hosted VM code)
-$(KERNEL_OBJ_DIR)/vmcore/%.o: src/%.c | $(KERNEL_OBJ_DIR)
+$(KERNEL_OBJ_DIR)/vmcore/%.o: src/%.c include/version.h | $(KERNEL_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "CC (kernel) $<"
 	@$(CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(KERNEL_CFLAGS)) -Isrc/starkernel/vm -c $< -o $@
@@ -397,46 +431,58 @@ else
 	@exit 1
 endif
 
-# Launch QEMU with FAT virtual filesystem (development workflow)
-# Uses QEMU's fat:rw: feature which presents a directory as a FAT filesystem.
-# OVMF can boot this directly without shell intervention.
-#
-# This is the canonical QEMU method for fast dev iteration:
-#   - No loop devices, no root, no disk image rebuild
-#   - OVMF loads \EFI\BOOT\BOOTX64.EFI directly
-#   - Loader finds \kernel.elf on same filesystem
-#
-# For real hardware validation, use 'make disk-image' then dd to USB.
+# Build a UEFI-bootable ISO and run under QEMU, capturing serial output to a
+# timestamped log.  This is the canonical finalization target:
+#   1. Full build (all)
+#   2. Pack a 4 MB FAT image containing EFI/BOOT/BOOTX64.EFI
+#   3. Wrap it in an El Torito ISO via xorriso
+#   4. Boot the ISO under QEMU with OVMF; serial → logs/ + terminal
+#   5. Print log path and dump log on exit
+# Requires: qemu-system-x86_64 ovmf xorriso mtools (dosfstools)
+QEMU_LOG_DIR := logs
+QEMU_ISO     := $(BUILD_DIR)/starkernel.iso
+OVMF_CODE    := /usr/share/OVMF/OVMF_CODE_4M.fd
+OVMF_VARS_RO := /usr/share/OVMF/OVMF_VARS_4M.fd
+
 .PHONY: qemu
-qemu: $(LOADER_EFI) $(KERNEL_ELF)
+qemu: all
 ifeq ($(ARCH),amd64)
-	@echo "=== QEMU ESP Staging ==="
-	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
-	@cp $(LOADER_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI
-	@cp $(KERNEL_ELF) $(BUILD_DIR)/esp/kernel.elf
-	@echo "  $(BUILD_DIR)/esp/EFI/BOOT/BOOTX64.EFI"
-	@echo "  $(BUILD_DIR)/esp/kernel.elf"
+	@echo "=== Building ISO ==="
+	@mkdir -p $(BUILD_DIR)/iso
+	@# FAT image: EFI/BOOT/BOOTX64.EFI is the El Torito EFI boot image
+	@dd if=/dev/zero of=$(BUILD_DIR)/iso/efi.img bs=512 count=8192 2>/dev/null
+	@mformat -i $(BUILD_DIR)/iso/efi.img ::
+	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI
+	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI/BOOT
+	@mcopy   -i $(BUILD_DIR)/iso/efi.img $(LOADER_EFI) ::/EFI/BOOT/BOOTX64.EFI
+	@xorriso -as mkisofs -r -J \
+		-e efi.img -no-emul-boot \
+		-o $(QEMU_ISO) $(BUILD_DIR)/iso 2>&1
+	@echo "  ISO: $(QEMU_ISO)"
 	@echo ""
-	@echo "=== Launching QEMU (fat: virtual filesystem) ==="
-	@if [ -f /usr/share/OVMF/OVMF_VARS_4M.fd ]; then \
-		cp /usr/share/OVMF/OVMF_VARS_4M.fd $(BUILD_DIR)/OVMF_VARS.fd; \
-	else \
-		echo "Error: /usr/share/OVMF/OVMF_VARS_4M.fd not found"; \
-		exit 1; \
-	fi
-	@OVMF_CODE=/usr/share/OVMF/OVMF_CODE_4M.fd; \
-	if [ ! -f $$OVMF_CODE ]; then echo "Error: $$OVMF_CODE not found"; exit 1; fi; \
-	TMPDIR=$(BUILD_DIR) qemu-system-x86_64 \
+	@if [ ! -f $(OVMF_CODE) ];    then echo "Error: $(OVMF_CODE) not found — install ovmf";    exit 1; fi
+	@if [ ! -f $(OVMF_VARS_RO) ]; then echo "Error: $(OVMF_VARS_RO) not found — install ovmf"; exit 1; fi
+	@cp $(OVMF_VARS_RO) $(BUILD_DIR)/OVMF_VARS.fd
+	@mkdir -p $(QEMU_LOG_DIR)
+	@LOG=$(QEMU_LOG_DIR)/qemu-$$(date +%Y%m%d-%H%M%S).log; \
+	echo "=== Launching QEMU ==="; \
+	echo "  Serial log: $$LOG"; \
+	echo "  (Ctrl-C to stop)"; \
+	echo ""; \
+	qemu-system-x86_64 \
 		-machine q35,accel=tcg \
 		-m 1024 \
-		-drive if=pflash,format=raw,readonly=on,file=$$OVMF_CODE \
+		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_CODE) \
 		-drive if=pflash,format=raw,file=$(BUILD_DIR)/OVMF_VARS.fd \
-		-drive format=raw,file=fat:rw:$(BUILD_DIR)/esp \
-		-serial stdio \
+		-cdrom $(QEMU_ISO) -boot d \
+		-serial file:$$LOG \
 		-display none \
-		-no-reboot
+		-no-reboot; \
+	echo ""; \
+	echo "=== Serial log: $$LOG ==="; \
+	cat $$LOG
 else
-	@echo "Error: qemu boot only supported for amd64 currently"
+	@echo "Error: qemu target only supported for amd64"
 	@exit 1
 endif
 
