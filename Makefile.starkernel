@@ -76,6 +76,10 @@ else ifeq ($(ARCH),aarch64)
     LOADER_LINKER_SCRIPT := linker/starkernel-loader-aarch64.ld
     KERNEL_LINKER_SCRIPT := linker/starkernel-kernel-aarch64.ld
     EFI_TARGET := efi-app-aarch64
+    # aarch64 loader built with clang + lld-link: GCC cannot produce aarch64 PE,
+    # and the ELF→objcopy→Python-reloc approach is replaced by a clean COFF toolchain.
+    LOADER_CC := clang-18
+    LOADER_LD := lld-link
 else ifeq ($(ARCH),riscv64)
     # Try riscv64-unknown-elf-gcc first, fall back to riscv64-linux-gnu-gcc
     ifneq ($(shell which riscv64-unknown-elf-gcc 2>/dev/null),)
@@ -96,6 +100,10 @@ else ifeq ($(ARCH),riscv64)
 else
     $(error Unsupported architecture: $(ARCH))
 endif
+
+# Default loader toolchain = kernel toolchain (overridden for aarch64 above)
+LOADER_CC ?= $(CC)
+LOADER_LD ?= $(LD)
 
 # Common compiler flags
 # Use -fPIC with -fvisibility=hidden: This makes all symbols local by default,
@@ -118,7 +126,24 @@ COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
 VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Isrc/test_runner/include -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare -Wno-error=missing-field-initializers
 
 # Loader-specific flags
-LOADER_CFLAGS := $(COMMON_CFLAGS) -I$(KERNEL_SRC)/vm
+# aarch64: clang COFF target — -fPIC/-fvisibility=hidden are ELF-only and
+# unsupported on aarch64-pc-windows-msvc; drop them and add COFF-specific flags.
+ifeq ($(ARCH),aarch64)
+LOADER_BASE_CFLAGS := -std=c99 -Wall -Werror -Wextra \
+    --target=aarch64-pc-windows-msvc \
+    -ffreestanding -fno-builtin \
+    -fno-stack-protector -fshort-wchar \
+    -mno-stack-arg-probe \
+    -march=armv8-a \
+    -DARCH_AARCH64 \
+    -I$(KERNEL_INC) -Iinclude -Isrc \
+    -include $(STARFORTH_CONFIG_HEADER) \
+    -DPARITY_MODE=$(PARITY_MODE) \
+    -DPLATFORM_TIME_NO_INLINE
+else
+LOADER_BASE_CFLAGS := $(COMMON_CFLAGS)
+endif
+LOADER_CFLAGS := $(LOADER_BASE_CFLAGS) -I$(KERNEL_SRC)/vm
 
 # Kernel-specific flags (with __STARKERNEL__ fence)
 KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm
@@ -167,25 +192,18 @@ KERNEL_CFLAGS += -DM5_TIMER_VALIDATION=$(M5_TIMER_VALIDATION)
 endif
 
 # Linker flags — arch-conditional PE strategy
-# amd64: link directly to PE via -m i386pep (GNU ld supports this natively)
-# aarch64: GNU ld has no aarch64pe emulation; use ELF intermediate + objcopy
-#          The .reloc stub in arch/aarch64/boot.S provides the required PE
-#          base-relocation block so UEFI firmware accepts the image.
-# --image-base 0 allows UEFI to freely relocate; section alignment is 4K
+# amd64: link directly to PE via ld -m i386pep (GNU ld supports this natively)
+# aarch64: clang-18 compiles to COFF objects; lld-link links to PE directly.
+#          This replaces the former ELF→objcopy→pe_reloc_gen.py pipeline.
+#          lld-link generates the .reloc section automatically from COFF relocations.
+# --image-base 0 / /base:0 allows UEFI to freely relocate the image.
 ifeq ($(ARCH),aarch64)
-    LOADER_LINKER_SCRIPT_PE := linker/starkernel-loader-aarch64.ld
-    LOADER_LDFLAGS_PE := -T $(LOADER_LINKER_SCRIPT_PE) -nostdlib --build-id=none \
-                          -shared -Bsymbolic -znocombreloc -e efi_main
-    LOADER_EFI_INTERMEDIATE := $(BUILD_DIR)/starkernel_loader_elf.tmp
-    LOADER_OBJCOPY_FLAGS := -j .text -j .rodata -j .data -j .bss -j .reloc \
-                             --target=pei-aarch64-little \
-                             --subsystem=efi-app
+    # lld-link is called with explicit flags in the link rule below
+    LOADER_LDFLAGS_PE :=
 else
     LOADER_LINKER_SCRIPT_PE := linker/starkernel-loader-amd64-pe.ld
     LOADER_LDFLAGS_PE := -T $(LOADER_LINKER_SCRIPT_PE) -m i386pep -nostdlib \
                           --enable-reloc-section --image-base 0 --subsystem 10 -e efi_main
-    LOADER_EFI_INTERMEDIATE :=
-    LOADER_OBJCOPY_FLAGS :=
 endif
 # ELF linking (used as intermediate or for kernel)
 LOADER_LDFLAGS := -T $(LOADER_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -shared -Bsymbolic -znocombreloc -e efi_main
@@ -345,10 +363,10 @@ $(CAPSULE_GENERATED): $(MKCAPSULE_BIN) $(CAPSULE_SRCS)
 	@echo "  MKCAP   $(CAPSULES_DIR) -> $@"
 	@$(MKCAPSULE_BIN) $(CAPSULES_DIR) $@
 
-# Compile the generated capsule file with kernel flags
+# Compile the generated capsule file with loader flags
 $(CAPSULE_GENERATED_OBJ): $(CAPSULE_GENERATED)
 	@echo "  CC  $<"
-	@$(CC) $(LOADER_CFLAGS) -c $< -o $@
+	@$(LOADER_CC) $(LOADER_CFLAGS) -c $< -o $@
 
 # Create build directories
 $(BUILD_DIR) $(LOADER_OBJ_DIR) $(KERNEL_OBJ_DIR):
@@ -359,19 +377,27 @@ $(BUILD_DIR) $(LOADER_OBJ_DIR) $(KERNEL_OBJ_DIR):
 $(LOADER_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(LOADER_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "CC (loader) $<"
-	@$(CC) $(LOADER_CFLAGS) -c $< -o $@
+	@$(LOADER_CC) $(LOADER_CFLAGS) -c $< -o $@
 
 # Compile loader VM core sources (hosted VM code)
 $(LOADER_OBJ_DIR)/vmcore/%.o: src/%.c include/version.h | $(LOADER_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "CC (loader) $<"
-	@$(CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(LOADER_CFLAGS)) -c $< -o $@
+ifeq ($(ARCH),aarch64)
+	@$(LOADER_CC) $(LOADER_CFLAGS) \
+	    -Iinclude -I. -Isrc/test_runner/include \
+	    -Wno-error=unused-parameter -Wno-error=shift-negative-value \
+	    -Wno-error=sign-compare -Wno-error=missing-field-initializers \
+	    -c $< -o $@
+else
+	@$(LOADER_CC) $(VMCORE_CFLAGS_COMMON) $(filter-out -I$(KERNEL_INC),$(LOADER_CFLAGS)) -c $< -o $@
+endif
 
 # Compile loader assembly sources
 $(LOADER_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(LOADER_OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@echo "AS (loader) $<"
-	@$(CC) $(LOADER_CFLAGS) -c $< -o $@
+	@$(LOADER_CC) $(LOADER_CFLAGS) -c $< -o $@
 
 # Compile kernel C sources
 $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.c | $(KERNEL_OBJ_DIR)
@@ -392,17 +418,13 @@ $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(KERNEL_OBJ_DIR)
 	@$(CC) $(KERNEL_CFLAGS) -c $< -o $@
 
 # Link loader to PE32+
-# amd64: direct PE output via ld -m i386pep
-# aarch64: ELF intermediate, then objcopy to pei-aarch64-little
+# amd64: direct PE output via ld -m i386pep (GNU ld native)
+# aarch64: lld-link links COFF objects directly to PE/EFI; .reloc is auto-generated
 $(LOADER_EFI): $(LOADER_OBJS) | $(BUILD_DIR)
 ifeq ($(ARCH),aarch64)
-	@echo "LD (loader ELF) $(LOADER_EFI_INTERMEDIATE)"
-	@$(LD) $(LOADER_LDFLAGS_PE) $(LOADER_OBJS) -o $(LOADER_EFI_INTERMEDIATE)
-	@echo "OBJCOPY (ELF→PE) $@.tmp"
-	@$(OBJCOPY) $(LOADER_OBJCOPY_FLAGS) $(LOADER_EFI_INTERMEDIATE) $@.tmp
-	@echo "RELOC   (patch .reloc) $@"
-	@python3 tools/pe_reloc_gen.py $(LOADER_EFI_INTERMEDIATE) $@.tmp $@
-	@rm -f $@.tmp
+	@echo "LLD-LINK (loader PE) $@"
+	@lld-link /subsystem:EFI_APPLICATION /entry:efi_main /nodefaultlib \
+	    /align:4096 /base:0 /out:$@ $(LOADER_OBJS)
 	@echo "Loader built: $@"
 else
 	@echo "LD (loader PE) $@"
