@@ -1,0 +1,98 @@
+UEFI firmware (version 2024.02-2ubuntu0.8 built at 10:08:54 on Dec 10 2025)
+[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01HBdsDxe: loading Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x2,0x0)
+BdsDxe: starting Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x2,0x0)
+[2J[01;01H[=3h[2J[01;01HStarKernel UEFI Loader
+Loading kernel from ESP...
+Collecting boot information...
+
+
+   _____ _             _  __                    _ 
+  / ____| |           | |/ /                   | |
+ | (___ | |_ __ _ _ __| ' / ___ _ __ _ __   ___| |
+  \___ \| __/ _` | '__|  < / _ \ '__| '_ \ / _ \ |
+  ____) | || (_| | |  | . \  __/ |  | | | |  __/ |
+ |_____/ \__\__,_|_|  |_|\_\___|_|  |_| |_|\___|_|
+
+StarKernel v0.2.0-lithosananke - FORTH Microkernel
+Architecture: amd64
+Build: May 16 2026 13:12:39
+
+UEFI BootServices: EXITED
+
+=== StarKernel Boot Information ===
+Memory map entries: 29
+Total memory: 2048 MB
+Usable memory: 2008 MB
+===================================
+
+PMM initialized.
+PMM statistics:
+  Total pages: 515473
+  Free pages : 514049
+  Used pages : 1424
+  Total MB   : 2013
+  Free  MB   : 2008
+  Used  MB   : 5
+
+VMM initialized (mapped RAM, CR3 switched)
+VMM initialized (mapped RAM, CR3 switched)
+VMM self-test: mapped OK at 0xffff800000000000
+VMM self-test complete.
+
+IDT installed.
+
+APIC: init...
+APIC: init done
+
+Timer: init...
+Timer: AArch64 generic timer initialised.
+Timer: init done
+
+Kernel heap initialized.
+Heap statistics:
+  Total bytes: 16777176
+  Free  bytes: 16777176
+  Used  bytes: 0
+  Peak  bytes: 0
+
+Heartbeat: init...
+Heartbeat: init done
+Kernel initialization complete.
+Boot successful!
+
+VM: bootstrap parity...
+[HAL][host] VMHostServices table:
+    alloc = 0x00000000bc05d230
+    free = 0x00000000bc05d37c
+    monotonic_ns = 0x00000000bc05d3c8
+    mutex_init = 0x00000000bc05d458
+    mutex_lock = 0x00000000bc05d46c
+    mutex_unlock = 0x00000000bc05d480
+    mutex_destroy = 0x00000000bc05d494
+    puts = 0x00000000bc05d4a8
+    putc = 0x00000000bc05d508
+    is_executable_ptr = 0x00000000bc05d644
+    owns_xt_entry = 0x00000000bc05d52c
+    panic = 0x00000000bc05d664
+[HAL][init] __text_start=0x00000000bc05b000 __text_end=0x00000000bc092d8c
+[kernel_alloc] size=0x0000000000500000 arena_size=0x0000000000500000 match=YES
+VM arena allocated: 0x0000000041408000
+ (5 MB)
+[kernel_alloc] returning arena ptr=0x0000000041408000
+[KRELTSC: 0] Registering FORTH-79 Standard word set...
+[KRELTSC: 154869] Registering FORTH-79 arithmetic words...
+[KRELTSC: 1010083] FORTH-79 Standard word set registration complete
+[kernel_alloc] size=0x0000000000000198 arena_size=0x0000000000500000 match=NO
+[kernel_alloc] returning kmalloc ptr=0x000000004040dee0
+[kernel_alloc] size=0x000000000000000c arena_size=0x0000000000500000 match=NO
+[kernel_alloc] returning kmalloc ptr=0x000000004040e0c0
+[kernel_alloc] size=0x0000000000000010 arena_size=0x0000000000500000 match=NO
+[kernel_alloc] returning kmalloc ptr=0x000000004040e110
+POST: Running comprehensive test suite...
+[KRELTSC: 1281787] Starting comprehensive FORTH-79 modular test suite...
+[KRELTSC: 1287995] ==============================================
+*** EXCEPTION (aarch64) ***
+  ESR_EL1 = 0x0000000096000046
+  ELR_EL1 = 0x00000000bc091454
+  FAR_EL1 = 0x00000000007056a8
+  SPSR_EL1= 0x00000000600003c5

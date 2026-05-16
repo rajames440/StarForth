@@ -64,7 +64,14 @@
 /* Forward declaration - we'll need the VM struct */
 /* For now, define minimal interface; full integration comes later */
 
+/* aarch64: UEFI provides 1:1 phys=virt mapping after ExitBootServices.
+ * VMM installs page tables only on amd64 (via CR3); on aarch64 the high
+ * virtual address is never mapped.  Use physical address directly instead. */
+#ifdef ARCH_AARCH64
+#define SK_VM_ARENA_VADDR        0x0ULL  /* sentinel: use paddr as vaddr */
+#else
 #define SK_VM_ARENA_VADDR        0xFFFF900000000000ULL
+#endif
 #define SK_VM_GUARD_SIZE         PMM_PAGE_SIZE
 #define SK_VM_GUARD_PATTERN_HEAD 0x5ac0ffeed0c0ffeeULL
 #define SK_VM_GUARD_PATTERN_TAIL 0x0bad0badf00df00dULL
@@ -117,6 +124,13 @@ uint64_t sk_vm_arena_alloc(void) {
         return 0;
     }
 
+#ifdef ARCH_AARCH64
+    /* On aarch64 the VMM page tables are not installed (no CR3 equivalent).
+     * UEFI's 1:1 phys=virt mapping covers all physical RAM — use it directly. */
+    vm_arena_guard_vaddr = vm_arena_paddr;
+    vm_arena_client_vaddr = vm_arena_guard_vaddr + SK_VM_GUARD_SIZE;
+    (void)(VMM_FLAG_WRITABLE); (void)(VMM_FLAG_NX);
+#else
     vm_arena_guard_vaddr = SK_VM_ARENA_VADDR - SK_VM_GUARD_SIZE;
     vm_arena_client_vaddr = vm_arena_guard_vaddr + SK_VM_GUARD_SIZE;
     uint64_t flags = VMM_FLAG_WRITABLE | VMM_FLAG_NX;
@@ -128,6 +142,7 @@ uint64_t sk_vm_arena_alloc(void) {
         vm_arena_paddr = 0;
         return 0;
     }
+#endif
 
     /* Zero the arena */
     uint8_t *arena = (uint8_t *)(uintptr_t)vm_arena_client_vaddr;
