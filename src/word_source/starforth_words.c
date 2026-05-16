@@ -41,6 +41,7 @@
  */
 
 #include "include/starforth_words.h"
+#include "include/vocabulary_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include "../../include/vm.h"
@@ -824,8 +825,6 @@ void starforth_word_version(VM* vm)
 void register_starforth_words(VM* vm)
 {
     STARFORTH_CHECK_ARENA("register_starforth_words:entry");
-    // register_word(vm, "ENTROPY@", starforth_word_execution_heat_fetch);
-    // register_word(vm, "ENTROPY!", starforth_word_execution_heat_store);
     register_word(vm, "WORD-ENTROPY", starforth_word_word_execution_heat);
     register_word(vm, "RESET-ENTROPY", starforth_word_reset_execution_heat);
     register_word(vm, "TOP-WORDS", starforth_word_top_words);
