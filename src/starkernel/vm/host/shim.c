@@ -112,11 +112,19 @@ LogLevel log_get_level(void) { return current_level; }
 
 static int kvsnprintf(char *buf, size_t n, const char *fmt, va_list args);
 
-/* Direct TSC read - always works, even when PM Timer calibration fails */
+/* Arch-portable counter read for relative log timestamps */
 static inline uint64_t shim_rdtsc(void) {
+#if defined(__x86_64__) || defined(__i386__)
     uint32_t lo, hi;
     __asm__ volatile ("rdtsc" : "=a"(lo), "=d"(hi));
     return ((uint64_t)hi << 32) | lo;
+#elif defined(__aarch64__)
+    uint64_t val;
+    __asm__ volatile ("isb; mrs %0, cntpct_el0" : "=r"(val));
+    return val;
+#else
+    return 0;
+#endif
 }
 
 static uint64_t log_tsc_base = 0;  /* Captured on first log call */

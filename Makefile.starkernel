@@ -72,7 +72,7 @@ else ifeq ($(ARCH),aarch64)
     else
         $(error No ARM64 toolchain found. Install aarch64-linux-gnu-gcc or aarch64-none-elf-gcc)
     endif
-    ARCH_CFLAGS := -march=armv8-a -mcpu=cortex-a72
+    ARCH_CFLAGS := -march=armv8-a -mcpu=cortex-a72 -DARCH_AARCH64 -mno-outline-atomics
     LOADER_LINKER_SCRIPT := linker/starkernel-loader-aarch64.ld
     KERNEL_LINKER_SCRIPT := linker/starkernel-kernel-aarch64.ld
     EFI_TARGET := efi-app-aarch64
@@ -166,11 +166,27 @@ ifdef M5_TIMER_VALIDATION
 KERNEL_CFLAGS += -DM5_TIMER_VALIDATION=$(M5_TIMER_VALIDATION)
 endif
 
-# Linker flags
-# PE direct linking with proper base relocations (--enable-reloc-section generates .reloc)
+# Linker flags — arch-conditional PE strategy
+# amd64: link directly to PE via -m i386pep (GNU ld supports this natively)
+# aarch64: GNU ld has no aarch64pe emulation; use ELF intermediate + objcopy
+#          The .reloc stub in arch/aarch64/boot.S provides the required PE
+#          base-relocation block so UEFI firmware accepts the image.
 # --image-base 0 allows UEFI to freely relocate; section alignment is 4K
-LOADER_LINKER_SCRIPT_PE := linker/starkernel-loader-amd64-pe.ld
-LOADER_LDFLAGS_PE := -T $(LOADER_LINKER_SCRIPT_PE) -m i386pep -nostdlib --enable-reloc-section --image-base 0 --subsystem 10 -e efi_main
+ifeq ($(ARCH),aarch64)
+    LOADER_LINKER_SCRIPT_PE := linker/starkernel-loader-aarch64.ld
+    LOADER_LDFLAGS_PE := -T $(LOADER_LINKER_SCRIPT_PE) -nostdlib --build-id=none \
+                          -shared -Bsymbolic -znocombreloc -e efi_main
+    LOADER_EFI_INTERMEDIATE := $(BUILD_DIR)/starkernel_loader_elf.tmp
+    LOADER_OBJCOPY_FLAGS := -j .text -j .rodata -j .data -j .bss -j .reloc \
+                             --target=pei-aarch64-little \
+                             --subsystem=efi-app
+else
+    LOADER_LINKER_SCRIPT_PE := linker/starkernel-loader-amd64-pe.ld
+    LOADER_LDFLAGS_PE := -T $(LOADER_LINKER_SCRIPT_PE) -m i386pep -nostdlib \
+                          --enable-reloc-section --image-base 0 --subsystem 10 -e efi_main
+    LOADER_EFI_INTERMEDIATE :=
+    LOADER_OBJCOPY_FLAGS :=
+endif
 # ELF linking (used as intermediate or for kernel)
 LOADER_LDFLAGS := -T $(LOADER_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -shared -Bsymbolic -znocombreloc -e efi_main
 KERNEL_LDFLAGS := -T $(KERNEL_LINKER_SCRIPT) -nostdlib --build-id=none --emit-relocs -e kernel_main
@@ -375,12 +391,24 @@ $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC)/%.S | $(KERNEL_OBJ_DIR)
 	@echo "AS (kernel) $<"
 	@$(CC) $(KERNEL_CFLAGS) -c $< -o $@
 
-# Link loader directly to PE32+ with proper base relocations
-# --enable-reloc-section generates the .reloc entries needed for UEFI to relocate the image
+# Link loader to PE32+
+# amd64: direct PE output via ld -m i386pep
+# aarch64: ELF intermediate, then objcopy to pei-aarch64-little
 $(LOADER_EFI): $(LOADER_OBJS) | $(BUILD_DIR)
+ifeq ($(ARCH),aarch64)
+	@echo "LD (loader ELF) $(LOADER_EFI_INTERMEDIATE)"
+	@$(LD) $(LOADER_LDFLAGS_PE) $(LOADER_OBJS) -o $(LOADER_EFI_INTERMEDIATE)
+	@echo "OBJCOPY (ELF→PE) $@.tmp"
+	@$(OBJCOPY) $(LOADER_OBJCOPY_FLAGS) $(LOADER_EFI_INTERMEDIATE) $@.tmp
+	@echo "RELOC   (patch .reloc) $@"
+	@python3 tools/pe_reloc_gen.py $(LOADER_EFI_INTERMEDIATE) $@.tmp $@
+	@rm -f $@.tmp
+	@echo "Loader built: $@"
+else
 	@echo "LD (loader PE) $@"
 	@$(LD) $(LOADER_LDFLAGS_PE) $(LOADER_OBJS) -o $@
 	@echo "Loader built: $@"
+endif
 
 # Keep ELF target for debugging (optional)
 $(BUILD_DIR)/starkernel_loader.elf: $(LOADER_OBJS) $(LOADER_LINKER_SCRIPT) | $(BUILD_DIR)
@@ -481,8 +509,42 @@ ifeq ($(ARCH),amd64)
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG
+else ifeq ($(ARCH),aarch64)
+	@echo "=== Building FAT ESP for aarch64 ==="
+	@mkdir -p $(BUILD_DIR)/esp/EFI/BOOT
+	@cp $(LOADER_EFI) $(BUILD_DIR)/esp/EFI/BOOT/BOOTAA64.EFI
+	@printf "FS0:\\EFI\\BOOT\\BOOTAA64.EFI\r\n" > $(BUILD_DIR)/esp/startup.nsh
+	@mkdir -p $(QEMU_LOG_DIR)
+	@if [ -f /usr/share/AAVMF/AAVMF_CODE.fd ]; then \
+		AAVMF_CODE=/usr/share/AAVMF/AAVMF_CODE.fd; \
+	elif [ -f /usr/share/qemu-efi-aarch64/QEMU_EFI.fd ]; then \
+		AAVMF_CODE=/usr/share/qemu-efi-aarch64/QEMU_EFI.fd; \
+	elif [ -f /usr/share/qemu/edk2-aarch64-code.fd ]; then \
+		AAVMF_CODE=/usr/share/qemu/edk2-aarch64-code.fd; \
+	else \
+		echo "Error: aarch64 UEFI firmware not found. Install qemu-efi-aarch64."; \
+		exit 1; \
+	fi; \
+	LOG=$(QEMU_LOG_DIR)/qemu-aarch64-$$(date +%Y%m%d-%H%M%S).log; \
+	echo "=== Launching QEMU (aarch64) ==="; \
+	echo "  Serial log: $$LOG"; \
+	echo "  (Ctrl-C to stop)"; \
+	echo ""; \
+	qemu-system-aarch64 \
+		-machine virt \
+		-cpu cortex-a57 \
+		-bios $$AAVMF_CODE \
+		-drive format=raw,file=fat:rw:$(BUILD_DIR)/esp \
+		-serial file:$$LOG \
+		-display none \
+		-m 2048 \
+		-no-reboot \
+		-d guest_errors; \
+	echo ""; \
+	echo "=== Serial log: $$LOG ==="; \
+	cat $$LOG
 else
-	@echo "Error: qemu target only supported for amd64"
+	@echo "Error: qemu target only supported for amd64 and aarch64"
 	@exit 1
 endif
 

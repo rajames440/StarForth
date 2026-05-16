@@ -75,10 +75,28 @@ static inline uint8_t inb(uint16_t port) {
     return ret;
 }
 
+#elif defined(__aarch64__)
+#define SERIAL_SUPPORTED 1
+
+/* PL011 UART — QEMU virt machine UART0 at 0x09000000 */
+#define PL011_BASE       ((volatile unsigned int *)0x09000000UL)
+#define PL011_DR         (PL011_BASE + 0)   /* Data Register (offset 0x000) */
+#define PL011_FR         (PL011_BASE + 6)   /* Flag Register  (offset 0x018) */
+#define PL011_FR_TXFF    (1u << 5)          /* TX FIFO full */
+
+static inline void outb(uint16_t port, uint8_t val) { (void)port; (void)val; }
+static inline uint8_t inb(uint16_t port) { (void)port; return 0; }
+
+static inline void pl011_putc(char c)
+{
+    while (*PL011_FR & PL011_FR_TXFF) { }
+    *PL011_DR = (unsigned int)(unsigned char)c;
+}
+
 #else
 #define SERIAL_SUPPORTED 0
 
-/* Stubs for non-x86 architectures */
+/* Stubs for other architectures */
 static inline void outb(uint16_t port, uint8_t val) {
     (void)port;
     (void)val;
@@ -92,50 +110,33 @@ static inline uint8_t inb(uint16_t port) {
 
 /**
  * Initialize serial console
- * Sets up COM1 at 115200 baud, 8N1
+ * x86: programs 16550 UART.
+ * aarch64: PL011 is already initialized by UEFI firmware on QEMU virt.
  */
 void console_init(void) {
-#if SERIAL_SUPPORTED
-    /* Disable interrupts */
+#if defined(__x86_64__) || defined(__i386__)
     outb(SERIAL_INT_ENABLE_PORT, 0x00);
-
-    /* Enable DLAB (set baud rate divisor) */
     outb(SERIAL_LINE_CTRL_PORT, 0x80);
-
-    /* Set divisor to 1 (115200 baud) */
-    outb(SERIAL_DATA_PORT, 0x01);        /* Low byte */
-    outb(SERIAL_INT_ENABLE_PORT, 0x00);  /* High byte */
-
-    /* 8 bits, no parity, one stop bit */
+    outb(SERIAL_DATA_PORT, 0x01);
+    outb(SERIAL_INT_ENABLE_PORT, 0x00);
     outb(SERIAL_LINE_CTRL_PORT, 0x03);
-
-    /* Enable FIFO, clear them, with 14-byte threshold */
     outb(SERIAL_FIFO_CTRL_PORT, 0xC7);
-
-    /* IRQs enabled, RTS/DSR set */
     outb(SERIAL_MODEM_CTRL_PORT, 0x0B);
-
-    /* Test serial chip (loopback test) */
-    outb(SERIAL_MODEM_CTRL_PORT, 0x1E);  /* Set in loopback mode */
-    outb(SERIAL_DATA_PORT, 0xAE);        /* Test byte */
-
-    /* Check if serial is working */
+    outb(SERIAL_MODEM_CTRL_PORT, 0x1E);
+    outb(SERIAL_DATA_PORT, 0xAE);
     if (inb(SERIAL_DATA_PORT) != 0xAE) {
-        /* Serial is faulty - we can't do much about it */
         return;
     }
-
-    /* Set in normal operation mode */
     outb(SERIAL_MODEM_CTRL_PORT, 0x0F);
+#elif defined(__aarch64__)
+    /* PL011 already enabled by AAVMF; nothing to do */
+    (void)0;
 #else
     (void)SERIAL_SUPPORTED;
 #endif
 }
 
-#if SERIAL_SUPPORTED
-/**
- * Check if transmit buffer is empty
- */
+#if defined(__x86_64__) || defined(__i386__)
 static int serial_transmit_empty(void) {
     return inb(SERIAL_LINE_STATUS_PORT) & SERIAL_LSR_THR_EMPTY;
 }
@@ -145,27 +146,18 @@ static int serial_transmit_empty(void) {
  * Write a single character to serial console
  */
 void console_putc(char c) {
-#if SERIAL_SUPPORTED
-    /* Convert \n to \r\n for proper terminal display */
+#if defined(__aarch64__)
+    if (c == '\n') pl011_putc('\r');
+    pl011_putc(c);
+#elif defined(__x86_64__) || defined(__i386__)
     if (c == '\n') {
-        /* Wait for transmit buffer to be empty */
-        while (!serial_transmit_empty()) {
-            arch_relax();
-        }
-        /* Send CR first */
+        while (!serial_transmit_empty()) { arch_relax(); }
         outb(SERIAL_DATA_PORT, '\r');
     }
-
-    /* Wait for transmit buffer to be empty */
-    while (!serial_transmit_empty()) {
-        arch_relax();
-    }
-
-    /* Send the character */
+    while (!serial_transmit_empty()) { arch_relax(); }
     outb(SERIAL_DATA_PORT, (uint8_t)c);
 #else
     (void)c;
-    return;
 #endif
 }
 
@@ -192,8 +184,12 @@ void console_println(const char *s) {
  * Check if data is available to read
  */
 int console_poll(void) {
-#if SERIAL_SUPPORTED
+#if defined(__x86_64__) || defined(__i386__)
     return inb(SERIAL_LINE_STATUS_PORT) & SERIAL_LSR_DATA_READY;
+#elif defined(__aarch64__)
+    /* PL011_FR bit 4 = RXFE (RX FIFO empty); data available when RXFE == 0 */
+    #define PL011_FR_RXFE (1u << 4)
+    return !(*PL011_FR & PL011_FR_RXFE);
 #else
     return 0;
 #endif
@@ -204,11 +200,12 @@ int console_poll(void) {
  * Returns -1 if no character available
  */
 int console_getc(void) {
-#if SERIAL_SUPPORTED
-    if (!console_poll()) {
-        return -1;
-    }
-    return inb(SERIAL_DATA_PORT);
+#if defined(__x86_64__) || defined(__i386__)
+    if (!console_poll()) return -1;
+    return (int)(unsigned char)inb(SERIAL_DATA_PORT);
+#elif defined(__aarch64__)
+    if (!console_poll()) return -1;
+    return (int)(*PL011_DR & 0xFF);
 #else
     return -1;
 #endif
