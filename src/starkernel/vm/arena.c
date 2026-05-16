@@ -117,6 +117,15 @@ uint64_t sk_vm_arena_alloc(void) {
         return 0;
     }
 
+#if defined(__aarch64__) || defined(_M_ARM64)
+    /* On aarch64, load_cr3/TTBR1_EL1 switching is not implemented; the VMM
+     * builds x86-format page tables that are never activated.  UEFI's
+     * identity-mapped page tables remain active after ExitBootServices(), so
+     * physical address == virtual address for all RAM.  Skip the VMM remap
+     * and use the physical address directly as the arena virtual address. */
+    vm_arena_guard_vaddr  = vm_arena_paddr;
+    vm_arena_client_vaddr = vm_arena_paddr + SK_VM_GUARD_SIZE;
+#else
     vm_arena_guard_vaddr = SK_VM_ARENA_VADDR - SK_VM_GUARD_SIZE;
     vm_arena_client_vaddr = vm_arena_guard_vaddr + SK_VM_GUARD_SIZE;
     uint64_t flags = VMM_FLAG_WRITABLE | VMM_FLAG_NX;
@@ -128,6 +137,7 @@ uint64_t sk_vm_arena_alloc(void) {
         vm_arena_paddr = 0;
         return 0;
     }
+#endif
 
     /* Zero the arena */
     uint8_t *arena = (uint8_t *)(uintptr_t)vm_arena_client_vaddr;
@@ -194,10 +204,12 @@ void sk_vm_arena_free(void) {
         return;
     }
 
-    /* Unmap each page */
+#if !(defined(__aarch64__) || defined(_M_ARM64))
+    /* Unmap each page (not needed on aarch64 — no VMM remapping was done) */
     for (uint64_t offset = 0; offset < SK_VM_TOTAL_SIZE; offset += PMM_PAGE_SIZE) {
         vmm_unmap_page(vm_arena_guard_vaddr + offset);
     }
+#endif
 
     /* Free physical memory */
     pmm_free_contiguous(vm_arena_paddr, SK_VM_ARENA_PAGES);

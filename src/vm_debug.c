@@ -40,9 +40,17 @@
 
  */
 
-#include <signal.h>
 #include "../include/vm.h"
 #include "../include/vm_debug.h"
+
+/* No POSIX signals in the kernel — provide stubs and skip the rest. */
+#if defined(STARFORTH_MINIMAL)
+void vm_debug_set_current_vm(VM *vm)           { (void)vm; }
+void vm_debug_dump_state(const VM *vm, const char *reason) { (void)vm; (void)reason; }
+void vm_debug_install_signal_handlers(void)    {}
+#else
+
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -193,3 +201,5 @@ void vm_debug_install_signal_handlers(void) {
     signal(SIGABRT, sig_handler);
 #endif
 }
+
+#endif /* !STARFORTH_MINIMAL */

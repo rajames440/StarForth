@@ -142,6 +142,7 @@ DictEntry *dict_find_word_heat_aware(VM *vm, const char *name, size_t len) {
     /* First pass: Top 25% by heat (likely hits) */
     for (size_t i = 0; i < n; i++) {
         DictEntry *e = bucket[i];
+        if (!e) continue;
         if (e->execution_heat < vm->heat_threshold_75th) continue;
 
         if (e->name_len != len) continue;
@@ -152,6 +153,7 @@ DictEntry *dict_find_word_heat_aware(VM *vm, const char *name, size_t len) {
     /* Second pass: Middle 50% by heat (25th-75th) */
     for (size_t i = 0; i < n; i++) {
         DictEntry *e = bucket[i];
+        if (!e) continue;
         if (e->execution_heat < vm->heat_threshold_25th) continue;
         if (e->execution_heat >= vm->heat_threshold_75th) continue;
 
@@ -163,6 +165,7 @@ DictEntry *dict_find_word_heat_aware(VM *vm, const char *name, size_t len) {
     /* Third pass: Bottom 25% (rarely executed) */
     for (size_t i = 0; i < n; i++) {
         DictEntry *e = bucket[i];
+        if (!e) continue;
         if (e->execution_heat >= vm->heat_threshold_25th) continue;
 
         if (e->name_len != len) continue;

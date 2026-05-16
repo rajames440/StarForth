@@ -524,7 +524,7 @@ static uint64_t compute_fit_quality(
 
     /* Simplified: Return ratio of predicted-to-actual variance */
     /* For now: return 0.8 in Q48.16 as placeholder */
-    return q48_from_u64(0.8);  /* ~0.8 in Q48.16, refine later */
+    return (q48_16_t)52429ULL;  /* 0.8 * 65536 ≈ 52429 in Q48.16 */
 }
 
 /* ============================================================================

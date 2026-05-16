@@ -46,7 +46,9 @@
 /* Bare metal - no system headers, but we need FILE for heartbeat CSV export */
 #include <stdint.h>
 #include <stddef.h>
+#if defined(__STDC_HOSTED__) && __STDC_HOSTED__
 #include <stdio.h>
+#endif
 
 #include "platform_lock.h"
 #include "starforth_config.h"

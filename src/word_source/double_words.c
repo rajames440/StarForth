@@ -400,7 +400,7 @@ void double_word_d_two_star(VM *vm) {
     cell_t dlow = vm_pop(vm);
 
     // Left shift: new_low = dlow << 1, new_high = (dhigh << 1) | (carry from dlow)
-    unsigned long udlow = (unsigned long) dlow;
+    unsigned long long udlow = (unsigned long long)(uint64_t) dlow;
     cell_t new_dlow = (cell_t)(udlow << 1);
     cell_t new_dhigh = (dhigh << 1) | ((udlow >> 63) & 1);
 
@@ -420,8 +420,8 @@ void double_word_d_two_slash(VM *vm) {
 
     // Arithmetic right shift: preserve sign in high cell
     cell_t new_dhigh = dhigh >> 1;
-    unsigned long udlow = (unsigned long) dlow;
-    cell_t new_dlow = (cell_t)((udlow >> 1) | ((dhigh & 1) ? (1UL << 63) : 0));
+    unsigned long long udlow = (unsigned long long)(uint64_t) dlow;
+    cell_t new_dlow = (cell_t)((udlow >> 1) | ((dhigh & 1) ? (1ULL << 63) : 0));
 
     vm_push(vm, new_dlow);
     vm_push(vm, new_dhigh);
