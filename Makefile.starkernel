@@ -94,7 +94,7 @@ else ifeq ($(ARCH),riscv64)
     else
         $(error No RISC-V toolchain found. Install riscv64-unknown-elf-gcc or riscv64-linux-gnu-gcc)
     endif
-    ARCH_CFLAGS := -march=rv64gc -mabi=lp64d
+    ARCH_CFLAGS := -march=rv64gc -mabi=lp64d -DARCH_RISCV64
     LOADER_LINKER_SCRIPT := linker/starkernel-loader-riscv64.ld
     KERNEL_LINKER_SCRIPT := linker/starkernel-kernel-riscv64.ld
     EFI_TARGET := efi-app-riscv64
@@ -201,6 +201,9 @@ endif
 # --image-base 0 / /base:0 allows UEFI to freely relocate the image.
 ifeq ($(ARCH),aarch64)
     # lld-link is called with explicit flags in the link rule below
+    LOADER_LDFLAGS_PE :=
+else ifeq ($(ARCH),riscv64)
+    # riscv64: link to ELF then objcopy to pei-riscv64-little (no PE emulation in ld)
     LOADER_LDFLAGS_PE :=
 else
     LOADER_LINKER_SCRIPT_PE := linker/starkernel-loader-amd64-pe.ld
@@ -434,6 +437,32 @@ ifeq ($(ARCH),aarch64)
 	@lld-link /subsystem:EFI_APPLICATION /entry:efi_main /nodefaultlib \
 	    /align:4096 /base:0 /out:$@ $(LOADER_OBJS)
 	@echo "Loader built: $@"
+else ifeq ($(ARCH),riscv64)
+	@echo "LD+OBJCOPY (loader ELF→PE) $@"
+	@$(LD) -T $(LOADER_LINKER_SCRIPT) -nostdlib --build-id=none \
+	    -shared -Bsymbolic -znocombreloc -e efi_main -m elf64lriscv \
+	    $(LOADER_OBJS) -o $(BUILD_DIR)/starkernel_loader_tmp.elf
+	@# Pre-fill pointer values (addends) + generate PE .reloc from .rela.dyn
+	@# ELF shared libs leave R_RISCV_RELATIVE targets zeroed; PE DIR64 needs addend pre-filled.
+	@python3 scripts/gen_pe_reloc.py \
+	    $(BUILD_DIR)/starkernel_loader_tmp.elf \
+	    $(BUILD_DIR)/starkernel_loader_patched.elf \
+	    $(BUILD_DIR)/reloc_rv64.bin
+	@# Strip ELF dynamic sections and inject PE .reloc, then convert to PE
+	@$(OBJCOPY) \
+	    --remove-section=.rela.dyn \
+	    --remove-section=.dynstr \
+	    --remove-section=.hash \
+	    --remove-section=.gnu.hash \
+	    --remove-section=.dynsym \
+	    --remove-section=.dynamic \
+	    --remove-section=.riscv.attributes \
+	    --update-section=.reloc=$(BUILD_DIR)/reloc_rv64.bin \
+	    $(BUILD_DIR)/starkernel_loader_patched.elf \
+	    $(BUILD_DIR)/starkernel_loader_stripped.elf
+	@$(OBJCOPY) -O pei-riscv64-little --subsystem 10 \
+	    $(BUILD_DIR)/starkernel_loader_stripped.elf $@
+	@echo "Loader built: $@"
 else
 	@echo "LD (loader PE) $@"
 	@$(LD) $(LOADER_LDFLAGS_PE) $(LOADER_OBJS) -o $@
@@ -585,8 +614,64 @@ else ifeq ($(ARCH),aarch64)
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG
+else ifeq ($(ARCH),riscv64)
+	@echo "=== Building GPT disk image for riscv64 ==="
+	@# riscv64 QEMU virt requires pflash firmware and a GPT disk with FAT ESP.
+	@# El Torito ISO / -cdrom / -bios do NOT work on riscv64 virt.
+	@mkdir -p $(QEMU_LOG_DIR)
+	@if [ -f /usr/share/qemu-efi-riscv64/RISCV_VIRT_CODE.fd ]; then \
+		EDK2_RISCV_CODE=/usr/share/qemu-efi-riscv64/RISCV_VIRT_CODE.fd; \
+	elif [ -f /usr/share/qemu/edk2-riscv64-code.fd ]; then \
+		EDK2_RISCV_CODE=/usr/share/qemu/edk2-riscv64-code.fd; \
+	else \
+		echo "Error: riscv64 UEFI firmware not found. Install qemu-efi-riscv64."; \
+		exit 1; \
+	fi; \
+	EDK2_RISCV_VARS=""; \
+	if [ -f /usr/share/qemu-efi-riscv64/RISCV_VIRT_VARS.fd ]; then \
+		cp /usr/share/qemu-efi-riscv64/RISCV_VIRT_VARS.fd $(BUILD_DIR)/RISCV_VARS.fd; \
+		EDK2_RISCV_VARS=$(BUILD_DIR)/RISCV_VARS.fd; \
+	fi; \
+	DISK_RV64=$(BUILD_DIR)/starkernel_rv64.img; \
+	dd if=/dev/zero of=$$DISK_RV64 bs=1M count=64 2>/dev/null; \
+	sgdisk -n 1:2048:131038 -t 1:ef00 -c 1:"EFI System" $$DISK_RV64 >/dev/null 2>&1; \
+	dd if=/dev/zero of=$(BUILD_DIR)/esp_rv64.img bs=512 count=128991 2>/dev/null; \
+	mkfs.fat -F 32 -n "ESP" $(BUILD_DIR)/esp_rv64.img >/dev/null 2>&1; \
+	mmd -i $(BUILD_DIR)/esp_rv64.img ::/EFI; \
+	mmd -i $(BUILD_DIR)/esp_rv64.img ::/EFI/BOOT; \
+	mcopy -i $(BUILD_DIR)/esp_rv64.img $(LOADER_EFI) ::/EFI/BOOT/BOOTRISCV64.EFI; \
+	mcopy -i $(BUILD_DIR)/esp_rv64.img $(KERNEL_ELF) ::/kernel.elf; \
+	printf 'FS0:\\EFI\\BOOT\\BOOTRISCV64.EFI\r\n' > $(BUILD_DIR)/startup.nsh; \
+	mcopy -i $(BUILD_DIR)/esp_rv64.img $(BUILD_DIR)/startup.nsh ::/startup.nsh; \
+	dd if=$(BUILD_DIR)/esp_rv64.img of=$$DISK_RV64 bs=512 seek=2048 conv=notrunc 2>/dev/null; \
+	echo "  Disk: $$DISK_RV64"; \
+	echo ""; \
+	LOG=$(QEMU_LOG_DIR)/qemu-riscv64-$$(date +%Y%m%d-%H%M%S).log; \
+	echo "=== Launching QEMU (riscv64) ==="; \
+	echo "  Serial log: $$LOG"; \
+	echo "  (Ctrl-C to stop)"; \
+	echo ""; \
+	PFLASH_VARS_ARG=""; \
+	if [ -n "$$EDK2_RISCV_VARS" ]; then \
+		PFLASH_VARS_ARG="-drive if=pflash,format=raw,unit=1,file=$$EDK2_RISCV_VARS"; \
+	fi; \
+	qemu-system-riscv64 \
+		-machine virt \
+		-cpu rv64 \
+		-m 1024 \
+		-drive if=pflash,format=raw,unit=0,file=$$EDK2_RISCV_CODE,readonly=on \
+		$$PFLASH_VARS_ARG \
+		-drive id=hd0,file=$$DISK_RV64,format=raw,if=none \
+		-device virtio-blk-pci,drive=hd0 \
+		-serial file:$$LOG \
+		-display none \
+		-no-reboot \
+		-d guest_errors; \
+	echo ""; \
+	echo "=== Serial log: $$LOG ==="; \
+	cat $$LOG
 else
-	@echo "Error: qemu target only supported for amd64 and aarch64"
+	@echo "Error: qemu target only supported for amd64, aarch64, and riscv64"
 	@exit 1
 endif
 

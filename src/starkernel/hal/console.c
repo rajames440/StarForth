@@ -90,6 +90,22 @@ static inline void pl011_putc(char c)
     *PL011_DR = (unsigned int)(unsigned char)c;
 }
 
+#elif defined(__riscv)
+#define SERIAL_SUPPORTED 1
+
+/* NS16550 UART — QEMU virt machine UART0 at 0x10000000 (MMIO, byte-wide) */
+#define NS16550_BASE     ((volatile unsigned char *)0x10000000UL)
+#define NS16550_THR      (NS16550_BASE + 0)  /* Transmit Holding Register */
+#define NS16550_LSR      (NS16550_BASE + 5)  /* Line Status Register */
+#define NS16550_LSR_THRE (1u << 5)           /* Transmit Holding Register Empty */
+#define NS16550_LSR_DR   (1u << 0)           /* Data Ready */
+
+static inline void ns16550_putc(char c)
+{
+    while (!(*NS16550_LSR & NS16550_LSR_THRE)) { }
+    *NS16550_THR = (unsigned char)c;
+}
+
 #else
 #define SERIAL_SUPPORTED 0
 
@@ -128,6 +144,9 @@ void console_init(void) {
 #elif defined(__aarch64__)
     /* PL011 already enabled by AAVMF; nothing to do */
     (void)0;
+#elif defined(__riscv)
+    /* NS16550 already enabled by UEFI firmware on QEMU virt; nothing to do */
+    (void)0;
 #else
     (void)SERIAL_SUPPORTED;
 #endif
@@ -146,6 +165,9 @@ void console_putc(char c) {
 #if defined(__aarch64__)
     if (c == '\n') pl011_putc('\r');
     pl011_putc(c);
+#elif defined(__riscv)
+    if (c == '\n') ns16550_putc('\r');
+    ns16550_putc(c);
 #elif defined(__x86_64__) || defined(__i386__)
     if (c == '\n') {
         while (!serial_transmit_empty()) { arch_relax(); }
@@ -187,6 +209,8 @@ int console_poll(void) {
     /* PL011_FR bit 4 = RXFE (RX FIFO empty); data available when RXFE == 0 */
     #define PL011_FR_RXFE (1u << 4)
     return !(*PL011_FR & PL011_FR_RXFE);
+#elif defined(__riscv)
+    return *NS16550_LSR & NS16550_LSR_DR;
 #else
     return 0;
 #endif
@@ -203,6 +227,9 @@ int console_getc(void) {
 #elif defined(__aarch64__)
     if (!console_poll()) return -1;
     return (int)(*PL011_DR & 0xFF);
+#elif defined(__riscv)
+    if (!console_poll()) return -1;
+    return (int)(*NS16550_THR & 0xFF);
 #else
     return -1;
 #endif
