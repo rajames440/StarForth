@@ -43,7 +43,7 @@
 #ifndef FORMAT_WORDS_H
 #define FORMAT_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /* FORTH-79 Formatting & Conversion Words:
  * .         ( n -- )                    Print signed number

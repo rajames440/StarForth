@@ -1,40 +1,38 @@
-# StarForth
+# LithosAnanke
 
-**FORTH-79 virtual machine with a physics-grounded adaptive runtime.** Written in strict ANSI C99. Runs on Linux, L4Re/Fiasco.OC, and bare metal. Formally verified. Deterministic by proof.
+**UEFI-bootable FORTH microkernel.** Boots from firmware, initialises memory and interrupts, then runs the StarForth VM as its sole userspace runtime. No libc. No OS. Just stone and necessity.
 
-The hosted VM under StarshipOS — and the foundation for [LithosAnanke](../../tree/lithosananke).
+*Lithos* (foundation) + *Ananke* (necessity) — the kernel under StarshipOS.
 
 ---
 
-## What makes it different
+## Status — M7.1 (Capsule System)
 
-Seven feedback loops drive self-optimization at runtime while preserving full determinism:
-
-| Loop | Mechanism | Role |
+| Milestone | | Status |
 |---|---|---|
-| #1 | Execution heat tracking | Identifies hot words |
-| #2 | Rolling window of truth | Deterministic history capture |
-| #3 | Linear decay | Prevents heat accumulation |
-| #4 | Pipelining metrics | Word-transition prediction |
-| #5 | Window width inference (Levene's test) | Adaptive window sizing |
-| #6 | Decay slope inference (OLS regression) | Slope tuning |
-| #7 | Adaptive heartrate | Load-responsive tick timing |
+| M0–M6 | UEFI boot · PMM · VMM · IDT · APIC · heap | Complete |
+| M7 | StarForth VM integration + parity validation | Complete |
+| **M7.1** | **Capsule birth protocol · Mama FORTH vocabulary** | **In Progress** |
+| M8 | REPL — keyboard input, interactive Forth | Planned |
+| M9 | Block storage — AHCI driver | Planned |
 
-**Result:** ~0% CV algorithmic variance across 90 experimental runs. Adaptive and reproducible.  
-**Formal proof:** 2-axiom Isabelle/HOL framework in `proof/` — sorry-free, machine-checkable.
+POST at boot: **800 tests · parity hash verified · 295 FORTH-79 words**
 
 ---
 
 ## Quick Start
 
 ```bash
-make                          # standard build
-make fastest                  # LTO + direct threading
-make test                     # 800+ test suite
-make smoke                    # quick sanity check
-./build/amd64/standard/starforth              # interactive REPL
-./build/amd64/standard/starforth -c "1 2 + . BYE"
+# Build kernel (requires cross-compilation toolchain for amd64)
+make -f Makefile.starkernel ARCH=amd64 STARFORTH_ENABLE_VM=1
+
+# Run in QEMU with OVMF
+make -f Makefile.starkernel qemu
 ```
+
+Artifacts: `build/amd64/kernel/starkernel_loader.efi` · `build/amd64/kernel/starkernel_kernel.elf`
+
+For the hosted VM (Linux, no cross-compiler needed): see [`master` branch](../../tree/master).
 
 ---
 
@@ -42,14 +40,10 @@ make smoke                    # quick sanity check
 
 | | |
 |---|---|
-| [Getting Started](docs/01-getting-started/README.md) | Build, install, first steps |
-| [Architecture](docs/03-architecture/README.md) | VM internals, physics engine, heartbeat system |
-| [Feedback Loops](docs/03-architecture/physics-engine/) | All 7 loops in detail |
-| [Formal Proofs](proof/) | Isabelle/HOL — 2 axioms, 21 theory files |
-| [Research & DoE](docs/06-research/README.md) | Experimental methodology, results |
-| [Quality & Validation](docs/04-quality/README.md) | Test coverage, regression tracking |
-| [Ontology](ONTOLOGY.md) | Formal definitions — cite this for academic work |
-| [Academic Paper](docs/FINAL_REPORT/) | 121-page peer-review submission |
+| [System Architecture](docs/lithosananke/SYSTEM_ARCHITECTURE.md) | Full kernel + VM design |
+| [HAL Reference](docs/lithosananke/hal/) | Hardware abstraction layer interfaces |
+| [Capsule System — M7.1](docs/lithosananke/M7.1.md) | Capsule birth protocol design |
+| [Roadmap](docs/lithosananke/ROADMAP.md) | Milestone plan through self-hosting |
 
 ---
 
