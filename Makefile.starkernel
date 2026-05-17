@@ -598,7 +598,7 @@ ifeq ($(ARCH),amd64)
 	echo "  Serial log: $$LOG"; \
 	echo "  (Ctrl-C to stop)"; \
 	echo ""; \
-	qemu-system-x86_64 \
+	timeout 600 qemu-system-x86_64 \
 		-machine q35,accel=tcg \
 		-cpu qemu64 \
 		-m 1024 \
@@ -607,7 +607,7 @@ ifeq ($(ARCH),amd64)
 		-cdrom $(QEMU_ISO) -boot d \
 		-serial file:$$LOG \
 		-display none \
-		-no-reboot; \
+		-no-reboot || true; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG
@@ -642,7 +642,7 @@ else ifeq ($(ARCH),aarch64)
 	echo "  Serial log: $$LOG"; \
 	echo "  (Ctrl-C to stop)"; \
 	echo ""; \
-	qemu-system-aarch64 \
+	timeout 600 qemu-system-aarch64 \
 		-machine virt \
 		-cpu cortex-a57 \
 		-bios $$AAVMF_CODE \
@@ -651,7 +651,7 @@ else ifeq ($(ARCH),aarch64)
 		-display none \
 		-m 2048 \
 		-no-reboot \
-		-d guest_errors; \
+		-d guest_errors || true; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG
@@ -697,7 +697,7 @@ else ifeq ($(ARCH),riscv64)
 	echo "  Serial log: $$LOG"; \
 	echo "  (Ctrl-C to stop)"; \
 	echo ""; \
-	qemu-system-riscv64 \
+	timeout 600 qemu-system-riscv64 \
 		-machine virt \
 		-cpu rv64 \
 		-m 1024 \
@@ -708,7 +708,7 @@ else ifeq ($(ARCH),riscv64)
 		-serial file:$$LOG \
 		-display none \
 		-no-reboot \
-		-d guest_errors; \
+		-d guest_errors || true; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG
