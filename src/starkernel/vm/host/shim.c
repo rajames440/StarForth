@@ -130,6 +130,10 @@ static inline uint64_t shim_rdtsc(void) {
     uint64_t val;
     __asm__ volatile ("isb\n\tmrs %0, cntpct_el0" : "=r"(val));
     return val;
+#elif defined(__riscv)
+    uint64_t val;
+    __asm__ volatile ("rdcycle %0" : "=r"(val));
+    return val;
 #else
     return 0;
 #endif

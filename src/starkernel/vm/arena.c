@@ -64,10 +64,10 @@
 /* Forward declaration - we'll need the VM struct */
 /* For now, define minimal interface; full integration comes later */
 
-/* aarch64: UEFI provides 1:1 phys=virt mapping after ExitBootServices.
- * VMM installs page tables only on amd64 (via CR3); on aarch64 the high
- * virtual address is never mapped.  Use physical address directly instead. */
-#ifdef ARCH_AARCH64
+/* aarch64/riscv64: UEFI provides 1:1 phys=virt mapping after ExitBootServices.
+ * VMM installs page tables only on amd64 (via CR3); on aarch64/riscv64 the
+ * high virtual address is never mapped.  Use physical address directly. */
+#if defined(ARCH_AARCH64) || defined(__riscv)
 #define SK_VM_ARENA_VADDR        0x0ULL  /* sentinel: use paddr as vaddr */
 #else
 #define SK_VM_ARENA_VADDR        0xFFFF900000000000ULL
@@ -124,12 +124,10 @@ uint64_t sk_vm_arena_alloc(void) {
         return 0;
     }
 
-#if defined(__aarch64__) || defined(_M_ARM64) || defined(ARCH_AARCH64)
-    /* On aarch64, load_cr3/TTBR1_EL1 switching is not implemented; the VMM
-     * builds x86-format page tables that are never activated.  UEFI's
-     * identity-mapped page tables remain active after ExitBootServices(), so
-     * physical address == virtual address for all RAM.  Skip the VMM remap
-     * and use the physical address directly as the arena virtual address. */
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(ARCH_AARCH64) || defined(__riscv)
+    /* On aarch64/riscv64, UEFI's identity-mapped page tables remain active
+     * after ExitBootServices(); physical address == virtual address for all RAM.
+     * Skip VMM remap and use physical address directly as arena virtual address. */
     vm_arena_guard_vaddr  = vm_arena_paddr;
     vm_arena_client_vaddr = vm_arena_guard_vaddr + SK_VM_GUARD_SIZE;
     (void)(VMM_FLAG_WRITABLE); (void)(VMM_FLAG_NX);
@@ -212,8 +210,8 @@ void sk_vm_arena_free(void) {
         return;
     }
 
-#if !(defined(__aarch64__) || defined(_M_ARM64) || defined(ARCH_AARCH64))
-    /* Unmap each page (not needed on aarch64 — no VMM remapping was done) */
+#if !(defined(__aarch64__) || defined(_M_ARM64) || defined(ARCH_AARCH64) || defined(__riscv))
+    /* Unmap each page (not needed on aarch64/riscv64 — no VMM remapping was done) */
     for (uint64_t offset = 0; offset < SK_VM_TOTAL_SIZE; offset += PMM_PAGE_SIZE) {
         vmm_unmap_page(vm_arena_guard_vaddr + offset);
     }
