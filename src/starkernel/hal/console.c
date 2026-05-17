@@ -84,6 +84,9 @@ static inline uint8_t inb(uint16_t port) {
 #define PL011_FR         (PL011_BASE + 6)   /* Flag Register  (offset 0x018) */
 #define PL011_FR_TXFF    (1u << 5)          /* TX FIFO full */
 
+static inline void outb(uint16_t port, uint8_t val) { (void)port; (void)val; }
+static inline uint8_t inb(uint16_t port) { (void)port; return 0; }
+
 static inline void pl011_putc(char c)
 {
     while (*PL011_FR & PL011_FR_TXFF) { }

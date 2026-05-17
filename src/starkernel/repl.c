@@ -22,6 +22,9 @@
 #include "starkernel/repl.h"
 #include "console.h"
 #include "vm.h"
+#include "version.h"
+
+#define SK_KERNEL_VERSION "1.0.0"
 
 /*===========================================================================
  * sk_readline - blocking line read from serial console with echo
@@ -80,6 +83,9 @@ void sk_repl(VM *vm)
 {
     char input[256];
 
+    console_puts("LithosAnanke Version "); console_println(SK_KERNEL_VERSION);
+    console_puts("StarForth Version ");    console_println(STARFORTH_VERSION);
+    console_println("");
     console_println("StarForth Emergency CLI");
     console_println("FORTH-79 interpreter — type BYE or power off to exit");
     console_println("");

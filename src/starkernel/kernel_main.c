@@ -315,12 +315,10 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Heartbeat running.");
 
 #ifdef STARFORTH_ENABLE_VM
-    /* Emergency CLI — runs with heartbeat active in interrupt context */
     sk_repl((VM *)sk_get_mama_vm());
 #endif
 
-    /* Idle loop (reached if sk_repl exits via BYE or VM halt) */
-    console_println("Kernel idle.");
+    /* Idle loop (reached if sk_repl exits via BYE or vm->halted) */
     for (;;) {
         arch_halt();
     }

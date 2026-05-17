@@ -120,7 +120,7 @@ LogLevel log_get_level(void) { return current_level; }
 
 static int kvsnprintf(char *buf, size_t n, const char *fmt, va_list args);
 
-/* Direct cycle counter read — arch-specific */
+/* Arch-portable counter read for relative log timestamps */
 static inline uint64_t shim_rdtsc(void) {
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__)
     uint32_t lo, hi;
@@ -128,7 +128,7 @@ static inline uint64_t shim_rdtsc(void) {
     return ((uint64_t)hi << 32) | lo;
 #elif defined(__aarch64__) || defined(_M_ARM64)
     uint64_t val;
-    __asm__ volatile ("mrs %0, CNTVCT_EL0" : "=r"(val));
+    __asm__ volatile ("isb\n\tmrs %0, cntpct_el0" : "=r"(val));
     return val;
 #else
     return 0;
