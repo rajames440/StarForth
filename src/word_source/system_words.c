@@ -188,7 +188,7 @@ void system_word_vlist(VM *vm) {
         size_t pad = (e->name_len < 20) ? (20 - e->name_len) : 0;
         print_word_name(e);
         while (pad--) putchar(' ');
-        printf(" %p %02X\n", (void *) e, e->flags);
+        printf(" %p %02lX\n", (void *) e, (unsigned long)e->flags);
         count++;
         e = e->link;
     }
