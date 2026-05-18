@@ -33,6 +33,25 @@ extern const CapsuleNameEntry capsule_names[];
 __attribute__((visibility("hidden")))
 extern const CapsuleDirHeader capsule_directory;
 
+/*
+ * Accessor functions — defined in the same TU as the symbols above.
+ * PE/COFF builds with -fPIC do not convert GOTPCREL data references to
+ * direct LEA the way the ELF linker does, so any cross-TU access to a
+ * data symbol goes through GOT and reads garbage in a PE image.
+ * These hidden accessor functions are called via a direct CALL (no PLT/GOT)
+ * and access the symbols with direct RIP-relative addressing inside their TU.
+ */
+__attribute__((visibility("hidden")))
+uint32_t                   capsule_get_desc_count(void);
+__attribute__((visibility("hidden")))
+const CapsuleDirHeader    *capsule_get_directory(void);
+__attribute__((visibility("hidden")))
+const CapsuleDesc         *capsule_get_descriptors(void);
+__attribute__((visibility("hidden")))
+const CapsuleNameEntry    *capsule_get_names(void);
+__attribute__((visibility("hidden")))
+const uint8_t             *capsule_get_arena(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -259,7 +259,7 @@ TestResult run_single_test(VM* vm, const char* word_name, const TestCase* test)
     /* Execute the test */
     vm_interpret(vm, test->input);
 
-    /* Check results_run_01_2025_12_08 */
+    /* Check results */
     TestResult result;
     if (test->should_error)
     {
