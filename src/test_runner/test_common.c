@@ -362,11 +362,7 @@ void run_test_suite(VM* vm, const WordTestSuite* suite)
     /* Restore dictionary state after test suite to remove test-created words */
     restore_dict_state(vm, saved_latest, saved_here);
 
-    global_test_stats.total_tests += suite->test_count;
-    global_test_stats.total_pass += suite_pass;
-    global_test_stats.total_fail += suite_fail;
-    global_test_stats.total_skip += suite_skip;
-    global_test_stats.total_error += suite_error;
+    test_stats_accumulate(suite->test_count, suite_pass, suite_fail, suite_skip, suite_error);
 
     log_message(LOG_TEST, "  %s: %d passed, %d failed, %d skipped, %d errors",
                 suite->word_name, suite_pass, suite_fail, suite_skip, suite_error);
@@ -450,11 +446,7 @@ void run_test_suite_m(VM *vm, const WordTestSuite *suite, WordContract module_co
 
     restore_dict_state(vm, saved_latest, saved_here);
 
-    global_test_stats.total_tests += suite->test_count;
-    global_test_stats.total_pass  += suite_pass;
-    global_test_stats.total_fail  += suite_fail;
-    global_test_stats.total_skip  += suite_skip;
-    global_test_stats.total_error += suite_error;
+    test_stats_accumulate(suite->test_count, suite_pass, suite_fail, suite_skip, suite_error);
 
     log_message(LOG_TEST, "  %s: %d passed, %d failed, %d skipped, %d errors",
                 suite->word_name, suite_pass, suite_fail, suite_skip, suite_error);
