@@ -51,6 +51,7 @@
 
 #include "vm.h"
 #include "log.h"
+#include "block_subsystem.h"
 #include "starkernel/vm/parity.h"
 #include "starkernel/vm/bootstrap/sk_vm_bootstrap.h"
 #include "starkernel/hal/hal.h"
@@ -136,6 +137,9 @@ static void sk_bootstrap_debug_log_xt(const char *label, const DictEntry *entry)
 
 static VM sk_mama_vm;  /* Mama's VM — persists after bootstrap */
 
+/* 1 MB POST block RAM — mirrors hosted blk_ram in main.c (BSS, no PE file bloat) */
+static uint8_t sk_post_blk_ram[BLK_RAM_BLOCKS * BLK_FORTH_SIZE];
+
 void *sk_get_mama_vm(void) {
     return (void *)&sk_mama_vm;
 }
@@ -168,6 +172,10 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
 
     /* Enable interpreter - required for POST to execute vm_interpret() calls */
     vm_enable_interpreter(vm);
+
+    /* Initialize block subsystem for POST — mirrors hosted main.c init order.
+     * Without this, all block word tests fail with vm->error=1 (blk_is_valid→0). */
+    blk_subsys_init(vm, sk_post_blk_ram, sizeof(sk_post_blk_ram));
 
     /* Run full POST (Power-On Self Test) */
     console_println("POST: Running comprehensive test suite...");
