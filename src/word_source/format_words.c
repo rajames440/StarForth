@@ -73,7 +73,7 @@ static void ensure_pn(VM *vm) {
 
 #define CELL_BITS   ((int)(sizeof(cell_t) * CHAR_BIT))
 #define CHUNK_BITS  16
-#define CHUNK_MASK  ((unsigned long)((1UL << CHUNK_BITS) - 1))
+#define CHUNK_MASK  ((uint64_t)(UINT64_C(1) << CHUNK_BITS) - 1)
 
 /** @brief Returns current numeric conversion base, defaulting to 10 if invalid */
 static unsigned current_base(VM *vm) {
@@ -90,30 +90,30 @@ static char digit_for(unsigned v) {
 /** @brief Divides unsigned double-cell number by base using portable C99 code */
 static void div_ud_by_base(cell_t dhigh_in, cell_t dlow_in, unsigned base,
                            cell_t *qhigh_out, cell_t *qlow_out, unsigned *rem_out) {
-    unsigned long base_ul = (unsigned long) base;
-    unsigned long r = 0UL;
-    unsigned long qh = 0UL, ql = 0UL;
+    uint64_t base_ul = (uint64_t) base;
+    uint64_t r = 0;
+    uint64_t qh = 0, ql = 0;
 
     /* High word */
     {
-        unsigned long hi = (unsigned long) dhigh_in;
+        uint64_t hi = (uint64_t)(ucell_t) dhigh_in;
         int parts = CELL_BITS / CHUNK_BITS;
         for (int i = parts - 1; i >= 0; --i) {
-            unsigned long chunk = (hi >> (i * CHUNK_BITS)) & CHUNK_MASK;
-            unsigned long val = (r << CHUNK_BITS) + chunk;
-            unsigned long qchunk = val / base_ul;
+            uint64_t chunk = (hi >> (i * CHUNK_BITS)) & CHUNK_MASK;
+            uint64_t val = (r << CHUNK_BITS) + chunk;
+            uint64_t qchunk = val / base_ul;
             r = val % base_ul;
             qh = (qh << CHUNK_BITS) | (qchunk & CHUNK_MASK);
         }
     }
     /* Low word */
     {
-        unsigned long lo = (unsigned long) dlow_in;
+        uint64_t lo = (uint64_t)(ucell_t) dlow_in;
         int parts = CELL_BITS / CHUNK_BITS;
         for (int i = parts - 1; i >= 0; --i) {
-            unsigned long chunk = (lo >> (i * CHUNK_BITS)) & CHUNK_MASK;
-            unsigned long val = (r << CHUNK_BITS) + chunk;
-            unsigned long qchunk = val / base_ul;
+            uint64_t chunk = (lo >> (i * CHUNK_BITS)) & CHUNK_MASK;
+            uint64_t val = (r << CHUNK_BITS) + chunk;
+            uint64_t qchunk = val / base_ul;
             r = val % base_ul;
             ql = (ql << CHUNK_BITS) | (qchunk & CHUNK_MASK);
         }
@@ -134,21 +134,21 @@ static void print_number_formatted(VM *vm, cell_t n, int width, int is_unsigned)
     if (!is_unsigned && n == 0) {
         buf[i++] = '0';
     } else if (is_unsigned) {
-        unsigned long u = (unsigned long) n;
-        if (u == 0UL) buf[i++] = '0';
-        while (u != 0UL) {
-            unsigned long rem = u % (unsigned long) base;
-            u /= (unsigned long) base;
+        uint64_t u = (uint64_t)(ucell_t) n;
+        if (u == 0) buf[i++] = '0';
+        while (u != 0) {
+            uint64_t rem = u % (uint64_t) base;
+            u /= (uint64_t) base;
             buf[i++] = digit_for((unsigned) rem);
         }
     } else {
         int neg = (n < 0);
-        unsigned long u = (unsigned long) n;
-        if (neg) u = (unsigned long) 0 - u;
-        if (u == 0UL) buf[i++] = '0';
-        while (u != 0UL) {
-            unsigned long rem = u % (unsigned long) base;
-            u /= (unsigned long) base;
+        uint64_t u = (uint64_t)(ucell_t) n;
+        if (neg) u = (uint64_t) 0 - u;
+        if (u == 0) buf[i++] = '0';
+        while (u != 0) {
+            uint64_t rem = u % (uint64_t) base;
+            u /= (uint64_t) base;
             buf[i++] = digit_for((unsigned) rem);
         }
         if (neg) buf[i++] = '-';
