@@ -50,11 +50,9 @@ SECTIONS
 
     __loader_end = .;
 
-    /* PE base relocation table at fixed high address.
-     * BSS is ~6.4MB starting at ~0x81000, so it ends ~0x6ED000.
-     * 0x700000 gives a safe gap.  Scripts/gen_pe_reloc.py replaces
-     * this stub with real IMAGE_REL_BASED_DIR64 entries after linking. */
-    . = 0x700000;
+    /* PE base relocation table — immediately after BSS (self-adjusting).
+     * gen_pe_reloc.py replaces this stub with IMAGE_REL_BASED_DIR64 entries.
+     * ALIGN(4K) avoids the old fixed-address overlap when BSS grows. */
     .reloc : ALIGN(4K) {
         KEEP(*(.reloc))
     }

@@ -67,7 +67,7 @@ struct HeartbeatWorker; /* Background heartbeat dispatcher */
 typedef struct HeartbeatWorker HeartbeatWorker;
 
 /* Bare metal type definitions */
-#if defined(__amd64__) || defined(__x86_64__) || defined(__aarch64__)
+#if defined(__amd64__) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64) || defined(_M_X64)
 typedef int64_t cell_t;
 typedef uint64_t ucell_t;
 #else
