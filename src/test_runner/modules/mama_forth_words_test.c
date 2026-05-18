@@ -39,14 +39,11 @@
 #include "../include/test_common.h"
 
 /*
- * For hosted builds, all tests are marked implemented=0 (skipped).
- * For kernel builds, tests would be implemented=1.
+ * Mama FORTH words (CAPSULE-COUNT etc.) are kernel runtime objects, not
+ * FORTH dictionary words.  They do not live in the StarForth dictionary,
+ * so there is nothing to test via vm_interpret.  Mark all tests skipped.
  */
-#ifdef __STARKERNEL__
-#define MAMA_IMPLEMENTED 1
-#else
 #define MAMA_IMPLEMENTED 0
-#endif
 
 /* Mama FORTH Words Test Suites */
 static WordTestSuite mama_word_suites[] = {
