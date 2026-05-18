@@ -436,7 +436,25 @@ static void generate_output(FILE *out) {
         "    .name_count    = %d,\n"
         "    .reserved      = 0,\n"
         "    .dir_hash      = 0x%016" PRIx64 "ULL,\n"
-        "};\n",
+        "};\n\n"
+        "/*===========================================================================\n"
+        " * PE/COFF GOT-indirection fix: accessor functions\n"
+        " *\n"
+        " * In -fPIC PE builds, cross-TU data references go through GOT and the PE\n"
+        " * linker does NOT convert GOTPCREL->LEA as the ELF linker does.  Defining\n"
+        " * these accessors in the same TU as the symbols lets the compiler emit\n"
+        " * direct RIP-relative addressing; callers reach them via a direct CALL.\n"
+        " *===========================================================================*/\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "uint32_t capsule_get_desc_count(void) { return capsule_directory.desc_count; }\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "const CapsuleDirHeader *capsule_get_directory(void) { return &capsule_directory; }\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "const CapsuleDesc *capsule_get_descriptors(void) { return capsule_descriptors; }\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "const CapsuleNameEntry *capsule_get_names(void) { return capsule_names; }\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "const uint8_t *capsule_get_arena(void) { return capsule_arena; }\n",
         (uint64_t)0x44504143ULL,
         capsule_count, MAX_CAPSULES, capsule_count,
         dir_hash);
