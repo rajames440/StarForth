@@ -14,7 +14,7 @@
  * Each row is prefixed with a cyan [LITHOS][DOE ] tag so it can be
  * extracted cleanly:
  *
- *   grep '\[LITHOS\]\[DOE \]' qemu-amd64-*.log
+ *   grep -aP '\[LITHOS\]\[DOE \]' qemu-amd64-*.log
  *
  * Columns (in order):
  *   1.  tick_number           uint32  — monotonic heartbeat counter
@@ -24,14 +24,19 @@
  *   5.  bucket_hits_delta      uint32  — bucket hits this tick (TODO: 0)
  *   6.  word_executions_delta  uint32  — words executed this tick (TODO: 0)
  *   7.  hot_word_count         uint64  — words with heat >= threshold
- *   8.  avg_word_heat          double  — mean execution heat (Q48.16 → double)
+ *   8.  avg_word_heat_q48      uint64  — mean execution heat as raw Q48.16 integer
  *   9.  window_width           uint32  — rolling window effective size
  *   10. actual_window_size     uint32  — ring buffer fill level
  *   11. predicted_label_hits   uint32  — context prediction hits (TODO: 0)
- *   12. estimated_jitter_ns    double  — deviation from nominal tick interval
+ *   12. jitter_bits            uint64  — estimated_jitter_ns IEEE 754 raw bits (union-punned)
  *   13. apic_ticks             uint64  — APIC timer monotonic tick count
  *   14. time_trust_q48         uint64  — TIME-TRUST in Q48.16 format
  *   15. variance_q48           uint64  — timing variance in Q48.16 format
+ *
+ * Note: avg_word_heat and estimated_jitter_ns are stored as double in the
+ * snapshot but the freestanding snprintf has no %%f support. avg_word_heat
+ * is emitted as raw Q48.16 (multiply by 65536); jitter is union-punned to its
+ * IEEE 754 uint64 bit pattern to avoid UB from out-of-range cast.
  */
 
 #include "starkernel/doe_log.h"
@@ -46,8 +51,8 @@ static const char *doe_header =
     DOE_PREFIX
     "tick_number,elapsed_ns,tick_interval_ns,"
     "cache_hits_delta,bucket_hits_delta,word_executions_delta,"
-    "hot_word_count,avg_word_heat,"
-    "window_width,actual_window_size,predicted_label_hits,estimated_jitter_ns,"
+    "hot_word_count,avg_word_heat_q48,"
+    "window_width,actual_window_size,predicted_label_hits,jitter_bits,"
     "apic_ticks,time_trust_q48,variance_q48";
 
 void doe_log_tick_row(VM *vm, const HeartbeatTickSnapshot *snap)
@@ -67,14 +72,21 @@ void doe_log_tick_row(VM *vm, const HeartbeatTickSnapshot *snap)
 
     /* Pull APIC timer trust state */
     const TimeTrustState *ts = heartbeat_state();
-    uint64_t apic_ticks    = ts ? ts->ticks         : 0;
+    uint64_t apic_ticks     = ts ? ts->ticks              : 0;
     uint64_t time_trust_q48 = ts ? (uint64_t)ts->trust    : 0;
-    uint64_t variance_q48   = ts ? (uint64_t)ts->variance  : 0;
+    uint64_t variance_q48   = ts ? (uint64_t)ts->variance : 0;
+
+    /* Convert doubles to integer-safe representations (freestanding snprintf has no %f).
+     * Use union punning for jitter to avoid UB from out-of-range double→int64 cast. */
+    uint64_t avg_heat_q48 = (uint64_t)(snap->avg_word_heat * 65536.0);
+    union { double d; uint64_t u; } jitter_bits;
+    jitter_bits.d = snap->estimated_jitter_ns;
+    uint64_t jitter_raw = jitter_bits.u;
 
     /* Format the 15-column CSV row into a local buffer */
     char buf[DOE_BUF_SIZE];
     snprintf(buf, sizeof(buf),
-             "%u,%lu,%lu,%u,%u,%u,%lu,%.6f,%u,%u,%u,%.2f,%lu,%lu,%lu",
+             "%u,%lu,%lu,%u,%u,%u,%lu,%lu,%u,%u,%u,%lu,%lu,%lu,%lu",
              snap->tick_number,
              snap->elapsed_ns,
              snap->tick_interval_ns,
@@ -82,11 +94,11 @@ void doe_log_tick_row(VM *vm, const HeartbeatTickSnapshot *snap)
              snap->bucket_hits_delta,
              snap->word_executions_delta,
              snap->hot_word_count,
-             snap->avg_word_heat,
+             avg_heat_q48,
              snap->window_width,
              snap->actual_window_size,
              snap->predicted_label_hits,
-             snap->estimated_jitter_ns,
+             jitter_raw,
              apic_ticks,
              time_trust_q48,
              variance_q48);
