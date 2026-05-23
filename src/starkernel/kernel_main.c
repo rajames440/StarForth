@@ -165,6 +165,7 @@ static void print_banner(void) {
     console_println(" |_____/ \\__\\__,_|_|  |_|\\_\\___|_|  |_| |_|\\___|_|");
     console_println("");
     console_println("StarKernel v0.2.0-lithosananke - FORTH Microkernel");
+    console_println(lithos_version);
 #if defined(ARCH_AMD64)
     console_println("Architecture: amd64");
 #elif defined(ARCH_AARCH64)

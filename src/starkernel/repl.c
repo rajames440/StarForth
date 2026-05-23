@@ -24,7 +24,7 @@
 #include "vm.h"
 #include "version.h"
 
-#define SK_KERNEL_VERSION "1.0.0"
+const char lithos_version[64] = LITHOS_VERSION_STR;
 
 /*===========================================================================
  * sk_readline - blocking line read from serial console with echo
@@ -83,7 +83,7 @@ void sk_repl(VM *vm)
 {
     char input[256];
 
-    console_puts("LithosAnanke Version "); console_println(SK_KERNEL_VERSION);
+    console_println(lithos_version);
     console_puts("StarForth Version ");    console_println(STARFORTH_VERSION);
     console_println("");
     console_println("StarForth Emergency CLI");
