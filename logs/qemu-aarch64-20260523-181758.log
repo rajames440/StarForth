@@ -1,0 +1,5553 @@
+UEFI firmware (version 2024.02-2ubuntu0.8 built at 10:08:54 on Dec 10 2025)
+[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01HBdsDxe: loading Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x2,0x0)
+BdsDxe: starting Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x2,0x0)
+[2J[01;01H[=3h[2J[01;01HStarKernel UEFI Loader
+Loading kernel from ESP...
+Collecting boot information...
+
+
+   _____ _             _  __                    _ 
+  / ____| |           | |/ /                   | |
+ | (___ | |_ __ _ _ __| ' / ___ _ __ _ __   ___| |
+  \___ \| __/ _` | '__|  < / _ \ '__| '_ \ / _ \ |
+  ____) | || (_| | |  | . \  __/ |  | | | |  __/ |
+ |_____/ \__\__,_|_|  |_|\_\___|_|  |_| |_|\___|_|
+
+StarKernel v0.2.0-lithosananke - FORTH Microkernel
+LithosAnanke v1.0.0
+Architecture: aarch64
+Build: May 23 2026 18:17:47
+
+UEFI BootServices: EXITED
+
+=== StarKernel Boot Information ===
+Memory map entries: 29
+Total memory: 2048 MB
+Usable memory: 2011 MB
+===================================
+
+PMM initialized.
+PMM statistics:
+  Total pages: 516245
+  Free pages : 514821
+  Used pages : 1424
+  Total MB   : 2016
+  Free  MB   : 2011
+  Used  MB   : 5
+
+VMM initialized (mapped RAM, CR3 switched)
+VMM initialized (mapped RAM, CR3 switched)
+VMM self-test: mapped OK at 0xffff800000000000
+VMM self-test complete.
+
+IDT installed.
+
+APIC: init...
+APIC: init done
+
+Timer: init...
+Timer: AArch64 generic timer initialised.
+Timer: init done
+
+Kernel heap initialized.
+Heap statistics:
+  Total bytes: 16777176
+  Free  bytes: 16777176
+  Used  bytes: 0
+  Peak  bytes: 0
+
+Heartbeat: init...
+Heartbeat: init done
+Kernel initialization complete.
+Boot successful!
+
+VM: bootstrap parity...
+[HAL][host] VMHostServices table:
+    alloc = 0x00000000bbf6c4f8
+    free = 0x00000000bbf6c664
+    monotonic_ns = 0x00000000bbf6c6b8
+    mutex_init = 0x00000000bbf6c73c
+    mutex_lock = 0x00000000bbf6c750
+    mutex_unlock = 0x00000000bbf6c764
+    mutex_destroy = 0x00000000bbf6c778
+    puts = 0x00000000bbf6c788
+    putc = 0x00000000bbf6c800
+    is_executable_ptr = 0x00000000bbf6c824
+    owns_xt_entry = 0x00000000bbf6c848
+    panic = 0x00000000bbf6c9c8
+[HAL][init] __text_start=0x00000000bbf7ac50 __text_end=0x00000000bbf7ac54
+[kernel_alloc] size=0x0000000000500000 arena_size=0x0000000000500000 match=YES
+VM arena allocated: 0x0000000041408000
+ (5 MB)
+[kernel_alloc] returning arena ptr=0x0000000041408000
+[KRELTSC: 0] Registering FORTH-79 Standard word set...
+[KRELTSC: 145008] Registering FORTH-79 arithmetic words...
+[KRELTSC: 538155] FORTH-79 Standard word set registration complete
+[kernel_alloc] size=0x0000000000000198 arena_size=0x0000000000500000 match=NO
+[kernel_alloc] returning kmalloc ptr=0x000000004040df40
+[kernel_alloc] size=0x000000000000000c arena_size=0x0000000000500000 match=NO
+[kernel_alloc] returning kmalloc ptr=0x000000004040e120
+[kernel_alloc] size=0x0000000000000010 arena_size=0x0000000000500000 match=NO
+[kernel_alloc] returning kmalloc ptr=0x000000004040e170
+POST: Running comprehensive test suite...
+[KRELTSC: 965726] Starting comprehensive FORTH-79 modular test suite...
+[KRELTSC: 973020] ==============================================
+[KRELTSC: 982996] 
+=== Testing Module: Stack Words ===
+[KRELTSC: 999665] Running Stack Words Tests (Module 1: Foundation)...
+[KRELTSC: 1008332] ▶ Testing module: src/test_runner/modules/stack_words_test.c
+[KRELTSC: 1017832] Testing word: DUP
+[KRELTSC: 1021758] ------------------------
+[KRELTSC: 1037967]   Running DUP.basic: 5 DUP . . CR
+5 5 
+[KRELTSC: 1235859]     Test passed
+DUP
+[KRELTSC: 1243022]     Expected: Should print: 5 5
+5 5 
+5 5 
+5 5 
+5 5 
+5 5 
+[KRELTSC: 1347103]   Running DUP.zero: 0 DUP . . CR
+0 0 
+[KRELTSC: 1361606]     Test passed
+DUP
+[KRELTSC: 1365481]     Expected: Should print: 0 0
+0 0 
+0 0 
+0 0 
+0 0 
+0 0 
+[KRELTSC: 1409579]   Running DUP.negative: -42 DUP . . CR
+-42 -42 
+[KRELTSC: 1426506]     Test passed
+DUP
+[KRELTSC: 1430360]     Expected: Should print: -42 -42
+-42 -42 
+-42 -42 
+-42 -42 
+-42 -42 
+-42 -42 
+[KRELTSC: 1476378]   Running DUP.max_int: 2147483647 DUP . . CR
+2147483647 2147483647 
+[KRELTSC: 1486393]     Test passed
+DUP
+[KRELTSC: 1490222]     Expected: Should duplicate max int
+2147483647 2147483647 
+2147483647 2147483647 
+2147483647 2147483647 
+2147483647 2147483647 
+2147483647 2147483647 
+[KRELTSC: 1542585]   Running DUP.min_int: -2147483648 DUP . . CR
+-2147483648 -2147483648 
+[KRELTSC: 1554986]     Test passed
+DUP
+[KRELTSC: 1558834]     Expected: Should duplicate min int
+-2147483648 -2147483648 
+-2147483648 -2147483648 
+-2147483648 -2147483648 
+-2147483648 -2147483648 
+-2147483648 -2147483648 
+[KRELTSC: 1611642]   Running DUP.empty_stack: DUP
+[KRELTSC: 1617713] DUP: Stack underflow
+[KRELTSC: 1623694]     Expected error occurred
+DUP
+[KRELTSC: 1629591]     Expected: Should cause stack underflow
+[KRELTSC: 1640660]   DUP: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 1660185] ▶ Testing module: src/test_runner/modules/stack_words_test.c
+[KRELTSC: 1667904] Testing word: DROP
+[KRELTSC: 1671557] ------------------------
+[KRELTSC: 1675842]   Running DROP.basic: 5 7 DROP . CR
+5 
+[KRELTSC: 1686448]     Test passed
+DROP
+[KRELTSC: 1690398]     Expected: Should print: 5
+5 
+5 
+5 
+5 
+5 
+[KRELTSC: 1731297]   Running DROP.zero: 42 0 DROP . CR
+42 
+[KRELTSC: 1738059]     Test passed
+DROP
+[KRELTSC: 1741948]     Expected: Should drop zero, print 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 1783792]   Running DROP.negative: 10 -5 DROP . CR
+10 
+[KRELTSC: 1791134]     Test passed
+DROP
+[KRELTSC: 1795038]     Expected: Should drop negative, print 10
+10 
+10 
+10 
+10 
+10 
+[KRELTSC: 1839610]   Running DROP.double_drop: 1 2 3 DROP DROP . CR
+1 
+[KRELTSC: 1848350]     Test passed
+DROP
+[KRELTSC: 1852242]     Expected: Should print: 1
+1 
+1 
+1 
+1 
+1 
+[KRELTSC: 2254726]   Running DROP.triple_drop: 1 2 3 4 DROP DROP DROP . CR
+1 
+[KRELTSC: 2263971]     Test passed
+DROP
+[KRELTSC: 2267877]     Expected: Should print: 1
+1 
+1 
+1 
+1 
+1 
+[KRELTSC: 2316503]   Running DROP.sequential: 5 DROP 6 DROP 7 . CR
+7 
+[KRELTSC: 2324748]     Test passed
+DROP
+[KRELTSC: 2328647]     Expected: Should print: 7
+7 
+7 
+7 
+7 
+7 
+[KRELTSC: 2370391]   Running DROP.single_item: 99 DROP DEPTH . CR
+0 
+[KRELTSC: 2383852]     Test passed
+DROP
+[KRELTSC: 2387790]     Expected: Should empty stack, depth=0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 2429726]   Running DROP.depth_change: DEPTH 1 2 DROP DEPTH SWAP - . CR
+1 
+[KRELTSC: 2448855]     Test passed
+DROP
+[KRELTSC: 2452793]     Expected: Should change depth by 1
+1 
+1 
+1 
+1 
+1 
+[KRELTSC: 2498923]   Running DROP.preserve_depth: DEPTH 5 6 DROP DROP DEPTH = . CR
+0 
+[KRELTSC: 2514522]     Test passed
+DROP
+[KRELTSC: 2518457]     Expected: Should preserve net depth
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 2573703]   Running DROP.max_int: 2147483647 DROP DEPTH . CR
+0 
+[KRELTSC: 2582069]     Test passed
+DROP
+[KRELTSC: 2586003]     Expected: Should drop max int
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 2627686]   Running DROP.min_int: -2147483648 DROP DEPTH . CR
+0 
+[KRELTSC: 2636212]     Test passed
+DROP
+[KRELTSC: 2640080]     Expected: Should drop min int
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 2683129]   Running DROP.with_dup: 5 DUP DROP . CR
+5 
+[KRELTSC: 2690372]     Test passed
+DROP
+[KRELTSC: 2694569]     Expected: Should duplicate then drop
+5 
+5 
+5 
+5 
+5 
+[KRELTSC: 2736466]   Running DROP.with_swap: 1 2 SWAP DROP . CR
+2 
+[KRELTSC: 2744439]     Test passed
+DROP
+[KRELTSC: 2748327]     Expected: Should swap then drop
+2 
+2 
+2 
+2 
+2 
+[KRELTSC: 2790991]   Running DROP.complex: 1 2 3 ROT DROP SWAP DROP . CR
+3 
+[KRELTSC: 2811581]     Test passed
+DROP
+[KRELTSC: 2815611]     Expected: Should handle complex sequence
+3 
+3 
+3 
+3 
+3 
+[KRELTSC: 2862645]   Running DROP.empty_stack: DROP
+[KRELTSC: 2868732] DROP: Stack underflow
+[KRELTSC: 2873292]     Expected error occurred
+DROP
+[KRELTSC: 2878626]     Expected: Should cause stack underflow
+[KRELTSC: 2884433]   DROP: 15 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 2891927] ▶ Testing module: src/test_runner/modules/stack_words_test.c
+[KRELTSC: 2901522] Testing word: SWAP
+[KRELTSC: 2905145] ------------------------
+[KRELTSC: 2909301]   Running SWAP.basic: 5 7 SWAP . . CR
+5 7 
+[KRELTSC: 2916864]     Test passed
+SWAP
+[KRELTSC: 2920744]     Expected: Should print: 7 5
+5 7 
+5 7 
+5 7 
+5 7 
+5 7 
+[KRELTSC: 2961436]   Running SWAP.same_values: 42 42 SWAP . . CR
+42 42 
+[KRELTSC: 2971163]     Test passed
+SWAP
+[KRELTSC: 2975076]     Expected: Should print: 42 42
+42 42 
+42 42 
+42 42 
+42 42 
+42 42 
+[KRELTSC: 3022208]   Running SWAP.zero_nonzero: 0 99 SWAP . . CR
+0 99 
+[KRELTSC: 3032488]     Test passed
+SWAP
+[KRELTSC: 3036408]     Expected: Should print: 99 0
+0 99 
+0 99 
+0 99 
+0 99 
+0 99 
+[KRELTSC: 3080486]   Running SWAP.negative: -5 10 SWAP . . CR
+-5 10 
+[KRELTSC: 3090229]     Test passed
+SWAP
+[KRELTSC: 3094196]     Expected: Should print: 10 -5
+-5 10 
+-5 10 
+-5 10 
+-5 10 
+-5 10 
+[KRELTSC: 3136528]   Running SWAP.one_item: 42 SWAP
+[KRELTSC: 3142755] SWAP: Insufficient stack items (need 2)
+[KRELTSC: 3150135]     Expected error occurred
+SWAP
+[KRELTSC: 3155452]     Expected: Should cause stack underflow
+[KRELTSC: 3161358]   Running SWAP.empty_stack: SWAP
+[KRELTSC: 3166725] SWAP: Insufficient stack items (need 2)
+[KRELTSC: 3172345]     Expected error occurred
+SWAP
+[KRELTSC: 3177305]     Expected: Should cause stack underflow
+[KRELTSC: 3183094]   SWAP: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 3189433] ▶ Testing module: src/test_runner/modules/stack_words_test.c
+[KRELTSC: 3197283] Testing word: OVER
+[KRELTSC: 3200852] ------------------------
+[KRELTSC: 3205205]   Running OVER.basic: 5 7 OVER . . . CR
+5 7 5 
+[KRELTSC: 3219385]     Test passed
+OVER
+[KRELTSC: 3223345]     Expected: Should print: 5 7 5
+5 7 5 
+5 7 5 
+5 7 5 
+5 7 5 
+5 7 5 
+[KRELTSC: 3266238]   Running OVER.zeros: 0 0 OVER . . . CR
+0 0 0 
+[KRELTSC: 3273936]     Test passed
+OVER
+[KRELTSC: 3279341]     Expected: Should print: 0 0 0
+0 0 0 
+0 0 0 
+0 0 0 
+0 0 0 
+0 0 0 
+[KRELTSC: 3328149]   Running OVER.mixed: -1 42 OVER . . . CR
+-1 42 -1 
+[KRELTSC: 3337853]     Test passed
+OVER
+[KRELTSC: 3342017]     Expected: Should print: -1 42 -1
+-1 42 -1 
+-1 42 -1 
+-1 42 -1 
+-1 42 -1 
+-1 42 -1 
+[KRELTSC: 3387228]   Running OVER.one_item: 42 OVER
+[KRELTSC: 3393459] OVER: Insufficient stack items (need 2)
+[KRELTSC: 3401077]     Expected error occurred
+OVER
+[KRELTSC: 3406332]     Expected: Should cause stack underflow
+[KRELTSC: 3412174]   Running OVER.empty_stack: OVER
+[KRELTSC: 3417427] OVER: Insufficient stack items (need 2)
+[KRELTSC: 3423024]     Expected error occurred
+OVER
+[KRELTSC: 3428008]     Expected: Should cause stack underflow
+[KRELTSC: 3433823]   OVER: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 3440183] ▶ Testing module: src/test_runner/modules/stack_words_test.c
+[KRELTSC: 3448288] Testing word: ROT
+[KRELTSC: 3451812] ------------------------
+[KRELTSC: 3455978]   Running ROT.basic: 1 2 3 ROT . . . CR
+1 3 2 
+[KRELTSC: 3465633]     Test passed
+ROT
+[KRELTSC: 3469473]     Expected: Should print: 2 3 1
+1 3 2 
+1 3 2 
+1 3 2 
+1 3 2 
+1 3 2 
+[KRELTSC: 3514085]   Running ROT.zeros: 0 0 0 ROT . . . CR
+0 0 0 
+[KRELTSC: 3529302]     Test passed
+ROT
+[KRELTSC: 3533184]     Expected: Should print: 0 0 0
+0 0 0 
+0 0 0 
+0 0 0 
+0 0 0 
+0 0 0 
+[KRELTSC: 3580333]   Running ROT.mixed: -1 0 1 ROT . . . CR
+-1 1 0 
+[KRELTSC: 3590405]     Test passed
+ROT
+[KRELTSC: 3594251]     Expected: Should print: 0 1 -1
+-1 1 0 
+-1 1 0 
+-1 1 0 
+-1 1 0 
+-1 1 0 
+[KRELTSC: 3638595]   Running ROT.two_items: 1 2 ROT
+[KRELTSC: 3645261] ROT: Insufficient stack items (need 3)
+[KRELTSC: 3653231]     Expected error occurred
+ROT
+[KRELTSC: 3658242]     Expected: Should cause stack underflow
+[KRELTSC: 3666044]   Running ROT.one_item: 42 ROT
+[KRELTSC: 3671519] ROT: Insufficient stack items (need 3)
+[KRELTSC: 3677025]     Expected error occurred
+ROT
+[KRELTSC: 3681897]     Expected: Should cause stack underflow
+[KRELTSC: 3687649]   Running ROT.empty_stack: ROT
+[KRELTSC: 3692857] ROT: Insufficient stack items (need 3)
+[KRELTSC: 3698724]     Expected error occurred
+ROT
+[KRELTSC: 3703586]     Expected: Should cause stack underflow
+[KRELTSC: 3709357]   ROT: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 3717048] ▶ Testing module: src/test_runner/modules/stack_words_test.c
+[KRELTSC: 3724657] Testing word: DEPTH
+[KRELTSC: 3728341] ------------------------
+[KRELTSC: 3732503]   Running DEPTH.empty: DEPTH . CR
+0 
+[KRELTSC: 3738961]     Test passed
+DEPTH
+[KRELTSC: 3742929]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 3781983]   Running DEPTH.one_item: 42 DEPTH . CR
+1 
+[KRELTSC: 3789009]     Test passed
+DEPTH
+[KRELTSC: 3792994]     Expected: Should print: 1
+1 
+1 
+1 
+1 
+1 
+[KRELTSC: 3834386]   Running DEPTH.multiple: 1 2 3 DEPTH . CR
+3 
+[KRELTSC: 3843612]     Test passed
+DEPTH
+[KRELTSC: 3847608]     Expected: Should print: 3
+3 
+3 
+3 
+3 
+3 
+[KRELTSC: 3889178]   DEPTH: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 3895643] ▶ Testing module: src/test_runner/modules/stack_words_test.c
+[KRELTSC: 3905050] Testing word: PICK
+[KRELTSC: 3910910] ------------------------
+[KRELTSC: 3918115]   Running PICK.pick_0: 1 2 3 0 PICK . CR
+3 
+[KRELTSC: 3940131]     Test passed
+PICK
+[KRELTSC: 3947467]     Expected: Should print: 3
+3 
+3 
+3 
+3 
+3 
+[KRELTSC: 3992590]   Running PICK.pick_1: 1 2 3 1 PICK . CR
+2 
+[KRELTSC: 4000026]     Test passed
+PICK
+[KRELTSC: 4004307]     Expected: Should print: 2
+2 
+2 
+2 
+2 
+2 
+[KRELTSC: 4048692]   Running PICK.pick_2: 1 2 3 2 PICK . CR
+1 
+[KRELTSC: 4058930]     Test passed
+PICK
+[KRELTSC: 4062866]     Expected: Should print: 1
+1 
+1 
+1 
+1 
+1 
+[KRELTSC: 4105361]   PICK: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 4111847] ▶ Testing module: src/test_runner/modules/stack_words_test.c
+[KRELTSC: 4119436] Testing word: ROLL
+[KRELTSC: 4123036] ------------------------
+[KRELTSC: 4127471]   Running ROLL.roll_1: 1 2 3 1 ROLL . . . CR
+1 3 2 
+[KRELTSC: 4146275]     Test passed
+ROLL
+[KRELTSC: 4151903]     Expected: Should print: 1 3 2
+1 3 2 
+1 3 2 
+1 3 2 
+1 3 2 
+1 3 2 
+[KRELTSC: 4196906]   Running ROLL.roll_2: 1 2 3 2 ROLL . . . CR
+2 3 1 
+[KRELTSC: 4205426]     Test passed
+ROLL
+[KRELTSC: 4209349]     Expected: Should print: 2 3 1
+2 3 1 
+2 3 1 
+2 3 1 
+2 3 1 
+2 3 1 
+[KRELTSC: 4255695]   ROLL: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 4264249] === Stack Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 4275850] 
+=== Testing Module: Return Stack Words ===
+[KRELTSC: 4282929] Running Return Stack Words Tests (Module 2)...
+[KRELTSC: 4290988] ▶ Testing module: src/test_runner/modules/return_stack_words_test.c
+[KRELTSC: 4299941] Testing word: >R
+[KRELTSC: 4306792] ------------------------
+[KRELTSC: 4311073]   Running >R.basic: 42 >R R@ . R> . CR
+42 42 
+[KRELTSC: 4333009]     Test passed
+>R
+[KRELTSC: 4338358]     Expected: Should print: 42 42
+42 42 
+42 42 
+42 42 
+42 42 
+42 42 
+[KRELTSC: 4382009]   Running >R.zero: 0 >R R@ . R> . CR
+0 0 
+[KRELTSC: 4389388]     Test passed
+>R
+[KRELTSC: 4393102]     Expected: Should print: 0 0
+0 0 
+0 0 
+0 0 
+0 0 
+0 0 
+[KRELTSC: 4436621]   Running >R.negative: -123 >R R@ . R> . CR
+-123 -123 
+[KRELTSC: 4445610]     Test passed
+>R
+[KRELTSC: 4449325]     Expected: Should print: -123 -123
+-123 -123 
+-123 -123 
+-123 -123 
+-123 -123 
+-123 -123 
+[KRELTSC: 4497589]   Running >R.multiple: 1 2 >R >R R@ . R> . R@ . R> . CR
+1 1 2 2 
+[KRELTSC: 4508634]     Test passed
+>R
+[KRELTSC: 4512351]     Expected: Should print: 2 2 1 1
+1 1 2 2 
+1 1 2 2 
+1 1 2 2 
+1 1 2 2 
+1 1 2 2 
+[KRELTSC: 4567239]   Running >R.empty_stack: >R
+[KRELTSC: 4573461] >R: DSP underflow
+[KRELTSC: 4577343]     Expected error occurred
+>R
+[KRELTSC: 4582186]     Expected: Should cause stack underflow
+[KRELTSC: 4589573]   >R: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 4596590] ▶ Testing module: src/test_runner/modules/return_stack_words_test.c
+[KRELTSC: 4604819] Testing word: R>
+[KRELTSC: 4608246] ------------------------
+[KRELTSC: 4613043]   Running R>.basic: 42 >R R> . CR
+42 
+[KRELTSC: 4620094]     Test passed
+R>
+[KRELTSC: 4623841]     Expected: Should print: 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 4665383]   Running R>.lifo_order: 1 2 >R >R R> . R> . CR
+1 2 
+[KRELTSC: 4674201]     Test passed
+R>
+[KRELTSC: 4677923]     Expected: Should print: 2 1
+1 2 
+1 2 
+1 2 
+1 2 
+1 2 
+[KRELTSC: 4724840]   R>: 2 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 4731243] ▶ Testing module: src/test_runner/modules/return_stack_words_test.c
+[KRELTSC: 4739622] Testing word: R@
+[KRELTSC: 4743103] ------------------------
+[KRELTSC: 4747362]   Running R@.basic: 42 >R R@ . R> DROP CR
+42 
+[KRELTSC: 4755602]     Test passed
+R@
+[KRELTSC: 4759347]     Expected: Should print: 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 4804159]   Running R@.non_destructive: 99 >R R@ R@ = . R> DROP CR
+-1 
+[KRELTSC: 4815192]     Test passed
+R@
+[KRELTSC: 4819199]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 4865282]   R@: 2 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 4872357] === Return Stack Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 4882047] 
+=== Testing Module: Memory Words ===
+[KRELTSC: 4888201] Running Memory Words Tests (Module 3)...
+[KRELTSC: 4896065] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 4906802] Testing word: !
+[KRELTSC: 4910216] ------------------------
+[KRELTSC: 4914416]   Running !.zero: 0 HERE ! HERE @ . CR
+0 
+[KRELTSC: 4931305]     Test passed
+!
+[KRELTSC: 4934984]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 4978534]   Running !.negative: -999 HERE ! HERE @ . CR
+-999 
+[KRELTSC: 4987009]     Test passed
+!
+[KRELTSC: 4990636]     Expected: Should print: -999
+-999 
+-999 
+-999 
+-999 
+-999 
+[KRELTSC: 5035497]   Running !.overwrite: 111 HERE ! 222 HERE ! HERE @ . CR
+222 
+[KRELTSC: 5045457]     Test passed
+!
+[KRELTSC: 5049097]     Expected: Should print: 222
+222 
+222 
+222 
+222 
+222 
+[KRELTSC: 5098923]   Running !.max_int: 2147483647 HERE ! HERE @ . CR
+2147483647 
+[KRELTSC: 5108448]     Test passed
+!
+[KRELTSC: 5112091]     Expected: Should store max int
+2147483647 
+2147483647 
+2147483647 
+2147483647 
+2147483647 
+[KRELTSC: 5160150]   Running !.min_int: -2147483648 HERE ! HERE @ . CR
+-2147483648 
+[KRELTSC: 5169791]     Test passed
+!
+[KRELTSC: 5173432]     Expected: Should store min int
+-2147483648 
+-2147483648 
+-2147483648 
+-2147483648 
+-2147483648 
+[KRELTSC: 5222888]   Running !.empty_stack: !
+[KRELTSC: 5228738]     Expected error occurred
+!
+[KRELTSC: 5233509]     Expected: Should cause stack underflow
+[KRELTSC: 5239485]   Running !.one_item: 42 !
+[KRELTSC: 5244247]     Expected error occurred
+!
+[KRELTSC: 5248977]     Expected: Should cause stack underflow
+[KRELTSC: 5255082]   !: 7 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 5262160] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 5269831] Testing word: @
+[KRELTSC: 5273167] ------------------------
+[KRELTSC: 5278974]   Running @.after_store: 123 HERE ! HERE @ . CR
+123 
+[KRELTSC: 5288067]     Test passed
+@
+[KRELTSC: 5291705]     Expected: Should print: 123
+123 
+123 
+123 
+123 
+123 
+[KRELTSC: 5340185]   Running @.multiple_reads: 456 HERE ! HERE @ HERE @ = . CR
+-1 
+[KRELTSC: 5350883]     Test passed
+@
+[KRELTSC: 5354535]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 5400407]   Running @.empty_stack: @
+[KRELTSC: 5406574]     Expected error occurred
+@
+[KRELTSC: 5411394]     Expected: Should cause stack underflow
+[KRELTSC: 5417280]   @: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 5423429] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 5431177] Testing word: C!
+[KRELTSC: 5434627] ------------------------
+[KRELTSC: 5438841]   Running C!.basic: 65 HERE C! HERE C@ . CR
+65 
+[KRELTSC: 5463391]     Test passed
+C!
+[KRELTSC: 5467241]     Expected: Should print: 65
+65 
+65 
+65 
+65 
+65 
+[KRELTSC: 5509509]   Running C!.zero: 0 HERE C! HERE C@ . CR
+0 
+[KRELTSC: 5517645]     Test passed
+C!
+[KRELTSC: 5521344]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 5567106]   Running C!.high_byte: 255 HERE C! HERE C@ . CR
+255 
+[KRELTSC: 5575886]     Test passed
+C!
+[KRELTSC: 5579582]     Expected: Should print: 255
+255 
+255 
+255 
+255 
+255 
+[KRELTSC: 5624165]   C!: 3 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 5630690] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 5638386] Testing word: C@
+[KRELTSC: 5641805] ------------------------
+[KRELTSC: 5646177]   Running C@.after_cstore: 97 HERE C! HERE C@ . CR
+97 
+[KRELTSC: 5656454]     Test passed
+C@
+[KRELTSC: 5660198]     Expected: Should print: 97
+97 
+97 
+[KRELTSC: 5692985] L8[JACQUARD]: Mode C0_MINIMAL → C2_WINDOW_INF (entropy=2f, cv=2f, temporal=2f)
+97 
+97 
+97 
+[KRELTSC: 5731515]   Running C@.zero_byte: 0 HERE C! HERE C@ . CR
+0 
+[KRELTSC: 5739818]     Test passed
+C@
+[KRELTSC: 5743526]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 5786850]   C@: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 5793081] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 5800744] Testing word: ,
+[KRELTSC: 5807200] ------------------------
+[KRELTSC: 5814548]   Running ,.basic: 42 , HERE 8 - @ . CR
+42 
+[KRELTSC: 5833047]     Test passed
+,
+[KRELTSC: 5838522]     Expected: Should compile 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 5882560]   Running ,.negative: -999 , HERE 8 - @ . CR
+-999 
+[KRELTSC: 5890962]     Test passed
+,
+[KRELTSC: 5894551]     Expected: Should compile -999
+-999 
+-999 
+-999 
+-999 
+-999 
+[KRELTSC: 5939677]   ,: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 5946167] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 5953800] Testing word: C,
+[KRELTSC: 5957219] ------------------------
+[KRELTSC: 5962714]   Running C,.basic: 65 C, HERE 1 - C@ . CR
+65 
+[KRELTSC: 5976833]     Test passed
+C,
+[KRELTSC: 5980558]     Expected: Should compile byte 65
+65 
+65 
+65 
+65 
+65 
+[KRELTSC: 6023692]   Running C,.zero: 0 C, HERE 1 - C@ . CR
+0 
+[KRELTSC: 6033323]     Test passed
+C,
+[KRELTSC: 6037036]     Expected: Should compile byte 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 6083206]   C,: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 6091100] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 6098856] Testing word: 2,
+[KRELTSC: 6102295] ------------------------
+[KRELTSC: 6106522]   2,: 0 passed, 0 failed, 2 skipped, 0 errors
+[KRELTSC: 6112695] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 6120359] Testing word: HERE
+[KRELTSC: 6123954] ------------------------
+[KRELTSC: 6128618]   Running HERE.basic: HERE HERE = . CR
+-1 
+[KRELTSC: 6137175]     Test passed
+HERE
+[KRELTSC: 6141076]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 6182398]   Running HERE.after_comma: HERE 42 , HERE SWAP - . CR
+8 
+[KRELTSC: 6191998]     Test passed
+HERE
+[KRELTSC: 6195876]     Expected: Should print: 4
+8 
+8 
+8 
+8 
+8 
+[KRELTSC: 6239414]   HERE: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 6245840] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 6253809] Testing word: ALLOT
+[KRELTSC: 6257500] ------------------------
+[KRELTSC: 6261669]   Running ALLOT.basic: HERE 10 ALLOT HERE SWAP - . CR
+10 
+[KRELTSC: 6277597]     Test passed
+ALLOT
+[KRELTSC: 6281632]     Expected: Should print: 10
+10 
+10 
+10 
+10 
+10 
+[KRELTSC: 6328831]   Running ALLOT.zero: HERE 0 ALLOT HERE SWAP - . CR
+0 
+[KRELTSC: 6339454]     Test passed
+ALLOT
+[KRELTSC: 6343482]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 6386102]   Running ALLOT.negative: HERE -4 ALLOT HERE SWAP - . CR
+-4 
+[KRELTSC: 6395409]     Test passed
+ALLOT
+[KRELTSC: 6400746]     Expected: Should print: -4
+-4 
+-4 
+-4 
+-4 
+-4 
+[KRELTSC: 6444079]   ALLOT: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 6450551] ▶ Testing module: src/test_runner/modules/memory_words_test.c
+[KRELTSC: 6458222] Testing word: PAD
+[KRELTSC: 6463080] ------------------------
+[KRELTSC: 6471743]   Running PAD.basic: PAD PAD = . CR
+-1 
+[KRELTSC: 6481111]     Test passed
+PAD
+[KRELTSC: 6485080]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 6526330]   Running PAD.different_from_here: PAD HERE = . CR
+0 
+[KRELTSC: 6534853]     Test passed
+PAD
+[KRELTSC: 6538644]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 6581462]   PAD: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 6590302] === Memory Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 6599148] 
+=== Testing Module: Arithmetic Words ===
+[KRELTSC: 6605605] Running Arithmetic Words Tests (Module 5)...
+[KRELTSC: 6613372] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 6622126] Testing word: +
+[KRELTSC: 6625469] ------------------------
+[KRELTSC: 6629992]   Running +.basic: 5 7 + . CR
+12 
+[KRELTSC: 6640542]     Test passed
++
+[KRELTSC: 6644219]     Expected: Should print: 12
+12 
+12 
+12 
+12 
+12 
+[KRELTSC: 6684992]   Running +.zero_add: 42 0 + . CR
+42 
+[KRELTSC: 6691883]     Test passed
++
+[KRELTSC: 6695495]     Expected: Should print: 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 6736124]   Running +.negative: -5 3 + . CR
+-2 
+[KRELTSC: 6742660]     Test passed
++
+[KRELTSC: 6746297]     Expected: Should print: -2
+-2 
+-2 
+-2 
+-2 
+-2 
+[KRELTSC: 6787032]   Running +.both_negative: -5 -3 + . CR
+-8 
+[KRELTSC: 6794205]     Test passed
++
+[KRELTSC: 6797817]     Expected: Should print: -8
+-8 
+-8 
+-8 
+-8 
+-8 
+[KRELTSC: 6841904]   Running +.overflow: 2147483647 1 + . CR
+2147483648 
+[KRELTSC: 6850604]     Test passed
++
+[KRELTSC: 6854243]     Expected: Should overflow
+2147483648 
+2147483648 
+2147483648 
+2147483648 
+2147483648 
+[KRELTSC: 6897619]   Running +.underflow: -2147483648 -1 + . CR
+-2147483649 
+[KRELTSC: 6907717]     Test passed
++
+[KRELTSC: 6911367]     Expected: Should underflow
+-2147483649 
+-2147483649 
+-2147483649 
+-2147483649 
+-2147483649 
+[KRELTSC: 6955254]   Running +.empty_stack: +
+[KRELTSC: 6960970] +: Stack underflow
+[KRELTSC: 6966854]     Expected error occurred
++
+[KRELTSC: 6971693]     Expected: Should cause stack underflow
+[KRELTSC: 6977559]   Running +.one_item: 42 +
+[KRELTSC: 6982512] +: Stack underflow
+[KRELTSC: 6986171]     Expected error occurred
++
+[KRELTSC: 6990874]     Expected: Should cause stack underflow
+[KRELTSC: 6996659]   +: 8 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 7003724] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 7011774] Testing word: -
+[KRELTSC: 7015099] ------------------------
+[KRELTSC: 7019262]   Running -.basic: 10 3 - . CR
+7 
+[KRELTSC: 7027202]     Test passed
+-
+[KRELTSC: 7030845]     Expected: Should print: 7
+7 
+7 
+7 
+7 
+7 
+[KRELTSC: 7071878]   Running -.zero_sub: 42 0 - . CR
+42 
+[KRELTSC: 7078444]     Test passed
+-
+[KRELTSC: 7082077]     Expected: Should print: 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 7125469]   Running -.from_zero: 0 5 - . CR
+-5 
+[KRELTSC: 7133806]     Test passed
+-
+[KRELTSC: 7140235]     Expected: Should print: -5
+-5 
+-5 
+-5 
+-5 
+-5 
+[KRELTSC: 7206868]   Running -.negative: 5 -3 - . CR
+8 
+[KRELTSC: 7226479]     Test passed
+-
+[KRELTSC: 7238906]     Expected: Should print: 8
+8 
+8 
+8 
+8 
+8 
+[KRELTSC: 7317487]   Running -.same_values: 42 42 - . CR
+0 
+[KRELTSC: 7342131]     Test passed
+-
+[KRELTSC: 7353781]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 7413387]   Running -.overflow: -2147483648 1 - . CR
+-2147483649 
+[KRELTSC: 7435428]     Test passed
+-
+[KRELTSC: 7450546]     Expected: Should underflow
+-2147483649 
+-2147483649 
+-2147483649 
+-2147483649 
+-2147483649 
+[KRELTSC: 7505937]   Running -.underflow: 2147483647 -1 - . CR
+2147483648 
+[KRELTSC: 7514398]     Test passed
+-
+[KRELTSC: 7518069]     Expected: Should overflow
+2147483648 
+2147483648 
+2147483648 
+2147483648 
+2147483648 
+[KRELTSC: 7567034]   Running -.empty_stack: -
+[KRELTSC: 7573512] -: Stack underflow
+[KRELTSC: 7577962]     Expected error occurred
+-
+[KRELTSC: 7583396]     Expected: Should cause stack underflow
+[KRELTSC: 7590993]   Running -.one_item: 42 -
+[KRELTSC: 7596081] -: Stack underflow
+[KRELTSC: 7599953]     Expected error occurred
+-
+[KRELTSC: 7604710]     Expected: Should cause stack underflow
+[KRELTSC: 7610564]   -: 9 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 7616711] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 7624786] Testing word: *
+[KRELTSC: 7628430] ------------------------
+[KRELTSC: 7632611]   Running *.basic: 6 7 * . CR
+42 
+[KRELTSC: 7643596]     Test passed
+*
+[KRELTSC: 7647232]     Expected: Should print: 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 7687845]   Running *.by_zero: 42 0 * . CR
+0 
+[KRELTSC: 7694464]     Test passed
+*
+[KRELTSC: 7698077]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 7738058]   Running *.by_one: 42 1 * . CR
+42 
+[KRELTSC: 7744450]     Test passed
+*
+[KRELTSC: 7749025]     Expected: Should print: 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 7790998]   Running *.by_negative: 6 -7 * . CR
+-42 
+[KRELTSC: 7799282]     Test passed
+*
+[KRELTSC: 7805200]     Expected: Should print: -42
+-42 
+-42 
+-42 
+-42 
+-42 
+[KRELTSC: 7847239]   Running *.negative_negative: -6 -7 * . CR
+42 
+[KRELTSC: 7854799]     Test passed
+*
+[KRELTSC: 7858426]     Expected: Should print: 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 7897631]   Running *.large_numbers: 32767 2 * . CR
+65534 
+[KRELTSC: 7906893]     Test passed
+*
+[KRELTSC: 7910551]     Expected: Should print: 65534
+65534 
+65534 
+65534 
+65534 
+65534 
+[KRELTSC: 7951503]   Running *.overflow: 65536 65536 * . CR
+4294967296 
+[KRELTSC: 7959283]     Test passed
+*
+[KRELTSC: 7964214]     Expected: May overflow
+4294967296 
+4294967296 
+4294967296 
+4294967296 
+4294967296 
+[KRELTSC: 8006870]   Running *.empty_stack: *
+[KRELTSC: 8012549] *: Stack underflow
+[KRELTSC: 8016861]     Expected error occurred
+*
+[KRELTSC: 8021592]     Expected: Should cause stack underflow
+[KRELTSC: 8028874]   Running *.one_item: 42 *
+[KRELTSC: 8033818] *: Stack underflow
+[KRELTSC: 8037493]     Expected error occurred
+*
+[KRELTSC: 8042174]     Expected: Should cause stack underflow
+[KRELTSC: 8047952]   *: 9 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 8056167] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 8064204] Testing word: /
+[KRELTSC: 8067824] ------------------------
+[KRELTSC: 8072490]   Running /.basic: 15 3 / . CR
+5 
+[KRELTSC: 8084210]     Test passed
+/
+[KRELTSC: 8089424]     Expected: Should print: 5
+5 
+5 
+5 
+5 
+5 
+[KRELTSC: 8128285]   Running /.by_one: 42 1 / . CR
+42 
+[KRELTSC: 8134630]     Test passed
+/
+[KRELTSC: 8138243]     Expected: Should print: 42
+42 
+42 
+42 
+42 
+42 
+[KRELTSC: 8178699]   Running /.negative_dividend: -15 3 / . CR
+-5 
+[KRELTSC: 8186084]     Test passed
+/
+[KRELTSC: 8189691]     Expected: Should print: -5
+-5 
+-5 
+-5 
+-5 
+-5 
+[KRELTSC: 8230519]   Running /.negative_divisor: 15 -3 / . CR
+-5 
+[KRELTSC: 8237903]     Test passed
+/
+[KRELTSC: 8241529]     Expected: Should print: -5
+-5 
+-5 
+-5 
+-5 
+-5 
+[KRELTSC: 8282593]   Running /.both_negative: -15 -3 / . CR
+5 
+[KRELTSC: 8289725]     Test passed
+/
+[KRELTSC: 8293332]     Expected: Should print: 5
+5 
+5 
+5 
+5 
+5 
+[KRELTSC: 8338161]   Running /.truncation: 7 3 / . CR
+2 
+[KRELTSC: 8345211]     Test passed
+/
+[KRELTSC: 8348842]     Expected: Should print: 2 (truncated)
+2 
+2 
+2 
+2 
+2 
+[KRELTSC: 8389777]   Running /.by_zero: 42 0 /
+[KRELTSC: 8395860] /: Division by zero
+[KRELTSC: 8402059]     Expected error occurred
+/
+[KRELTSC: 8406893]     Expected: Should cause division by zero
+[KRELTSC: 8412873]   Running /.empty_stack: /
+[KRELTSC: 8418233] /: Stack underflow
+[KRELTSC: 8422329]     Expected error occurred
+/
+[KRELTSC: 8427051]     Expected: Should cause stack underflow
+[KRELTSC: 8432800]   Running /.one_item: 42 /
+[KRELTSC: 8437528] /: Stack underflow
+[KRELTSC: 8441482]     Expected error occurred
+/
+[KRELTSC: 8446185]     Expected: Should cause stack underflow
+[KRELTSC: 8452436]   /: 9 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 8458487] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 8467979] Testing word: MOD
+[KRELTSC: 8471515] ------------------------
+[KRELTSC: 8475667]   Running MOD.basic: 17 5 MOD . CR
+2 
+[KRELTSC: 8490335]     Test passed
+MOD
+[KRELTSC: 8494173]     Expected: Should print: 2
+2 
+2 
+2 
+2 
+2 
+[KRELTSC: 8535192]   Running MOD.exact_division: 15 3 MOD . CR
+0 
+[KRELTSC: 8542626]     Test passed
+MOD
+[KRELTSC: 8546444]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 8589743]   Running MOD.by_one: 42 1 MOD . CR
+0 
+[KRELTSC: 8596904]     Test passed
+MOD
+[KRELTSC: 8600712]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 8639223]   Running MOD.negative_dividend: -17 5 MOD . CR
+-2 
+[KRELTSC: 8647021]     Test passed
+MOD
+[KRELTSC: 8652143]     Expected: Should handle negative
+-2 
+-2 
+-2 
+-2 
+-2 
+[KRELTSC: 8692257]   Running MOD.negative_divisor: 17 -5 MOD . CR
+2 
+[KRELTSC: 8699891]     Test passed
+MOD
+[KRELTSC: 8703670]     Expected: Should handle negative
+2 
+2 
+2 
+2 
+2 
+[KRELTSC: 8744837]   Running MOD.small_by_large: 3 7 MOD . CR
+3 
+[KRELTSC: 8752070]     Test passed
+MOD
+[KRELTSC: 8756134]     Expected: Should print: 3
+3 
+3 
+3 
+3 
+3 
+[KRELTSC: 8796073]   Running MOD.by_zero: 42 0 MOD
+[KRELTSC: 8804166] MOD: Division by zero
+[KRELTSC: 8809160]     Expected error occurred
+MOD
+[KRELTSC: 8814135]     Expected: Should cause division by zero
+[KRELTSC: 8820346]   Running MOD.empty_stack: MOD
+[KRELTSC: 8826513] MOD: Stack underflow
+[KRELTSC: 8830831]     Expected error occurred
+MOD
+[KRELTSC: 8835732]     Expected: Should cause stack underflow
+[KRELTSC: 8843156]   Running MOD.one_item: 42 MOD
+[KRELTSC: 8848661] MOD: Stack underflow
+[KRELTSC: 8852519]     Expected error occurred
+MOD
+[KRELTSC: 8857384]     Expected: Should cause stack underflow
+[KRELTSC: 8863135]   MOD: 9 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 8869374] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 8877388] Testing word: /MOD
+[KRELTSC: 8881290] ------------------------
+[KRELTSC: 8885517]   /MOD: 0 passed, 0 failed, 3 skipped, 0 errors
+[KRELTSC: 8891772] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 8901085] Testing word: ABS
+[KRELTSC: 8904660] ------------------------
+[KRELTSC: 8908875]   ABS: 0 passed, 0 failed, 4 skipped, 0 errors
+[KRELTSC: 8915128] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 8923220] Testing word: NEGATE
+[KRELTSC: 8927019] ------------------------
+[KRELTSC: 8931475]   NEGATE: 0 passed, 0 failed, 4 skipped, 0 errors
+[KRELTSC: 8938008] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 8946307] Testing word: MIN
+[KRELTSC: 8949838] ------------------------
+[KRELTSC: 8954023]   MIN: 0 passed, 0 failed, 3 skipped, 0 errors
+[KRELTSC: 8960252] ▶ Testing module: src/test_runner/modules/arithmetic_words_test.c
+[KRELTSC: 8969692] Testing word: MAX
+[KRELTSC: 8973232] ------------------------
+[KRELTSC: 8977388]   MAX: 0 passed, 0 failed, 3 skipped, 0 errors
+[KRELTSC: 8984269] === Arithmetic Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 8993558] 
+=== Testing Module: Logical Words ===
+[KRELTSC: 8999926] Running Logical Words Tests (Module 8)...
+[KRELTSC: 9008237] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 9018236] Testing word: AND
+[KRELTSC: 9021808] ------------------------
+[KRELTSC: 9027587]   Running AND.both_true: -1 -1 AND . CR
+-1 
+[KRELTSC: 9040197]     Test passed
+AND
+[KRELTSC: 9044022]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 9089140]   Running AND.first_false: 0 -1 AND . CR
+0 
+[KRELTSC: 9097027]     Test passed
+AND
+[KRELTSC: 9102669]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 9141773]   Running AND.second_false: -1 0 AND . CR
+0 
+[KRELTSC: 9150591]     Test passed
+AND
+[KRELTSC: 9154473]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 9193911]   Running AND.both_false: 0 0 AND . CR
+0 
+[KRELTSC: 9200828]     Test passed
+AND
+[KRELTSC: 9204925]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 9245133]   Running AND.bitwise: 85 51 AND . CR
+17 
+[KRELTSC: 9252035]     Test passed
+AND
+[KRELTSC: 9256281]     Expected: Should print: 17
+17 
+17 
+17 
+17 
+17 
+[KRELTSC: 9296840]   Running AND.empty_stack: AND
+[KRELTSC: 9306787] AND: Stack underflow
+[KRELTSC: 9311520]     Expected error occurred
+AND
+[KRELTSC: 9316765]     Expected: Should cause stack underflow
+[KRELTSC: 9322606]   Running AND.one_item: 42 AND
+[KRELTSC: 9327806] AND: Stack underflow
+[KRELTSC: 9331671]     Expected error occurred
+AND
+[KRELTSC: 9338066]     Expected: Should cause stack underflow
+[KRELTSC: 9343918]   AND: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 9351051] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 9358834] Testing word: OR
+[KRELTSC: 9362243] ------------------------
+[KRELTSC: 9366584]   Running OR.both_true: -1 -1 OR . CR
+-1 
+[KRELTSC: 9378450]     Test passed
+OR
+[KRELTSC: 9382172]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 9423646]   Running OR.first_false: 0 -1 OR . CR
+-1 
+[KRELTSC: 9430707]     Test passed
+OR
+[KRELTSC: 9434425]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 9475605]   Running OR.second_false: -1 0 OR . CR
+-1 
+[KRELTSC: 9482720]     Test passed
+OR
+[KRELTSC: 9486424]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 9526753]   Running OR.both_false: 0 0 OR . CR
+0 
+[KRELTSC: 9533932]     Test passed
+OR
+[KRELTSC: 9537645]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 9578890]   Running OR.bitwise: 85 51 OR . CR
+119 
+[KRELTSC: 9588658]     Test passed
+OR
+[KRELTSC: 9592436]     Expected: Should print: 119
+119 
+119 
+119 
+119 
+119 
+[KRELTSC: 9632136]   Running OR.empty_stack: OR
+[KRELTSC: 9637836] OR: Stack underflow
+[KRELTSC: 9644174]     Expected error occurred
+OR
+[KRELTSC: 9650625]     Expected: Should cause stack underflow
+[KRELTSC: 9656458]   Running OR.one_item: 42 OR
+[KRELTSC: 9661831] OR: Stack underflow
+[KRELTSC: 9665630]     Expected error occurred
+OR
+[KRELTSC: 9670449]     Expected: Should cause stack underflow
+[KRELTSC: 9676300]   OR: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 9682554] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 9690668] Testing word: XOR
+[KRELTSC: 9694201] ------------------------
+[KRELTSC: 9698414]   Running XOR.both_true: -1 -1 XOR . CR
+0 
+[KRELTSC: 9710142]     Test passed
+XOR
+[KRELTSC: 9715527]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 9756463]   Running XOR.first_false: 0 -1 XOR . CR
+-1 
+[KRELTSC: 9763711]     Test passed
+XOR
+[KRELTSC: 9767477]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 9812119]   Running XOR.second_false: -1 0 XOR . CR
+-1 
+[KRELTSC: 9819839]     Test passed
+XOR
+[KRELTSC: 9825864]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 9870672]   Running XOR.both_false: 0 0 XOR . CR
+0 
+[KRELTSC: 9877910]     Test passed
+XOR
+[KRELTSC: 9881732]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 9921895]   Running XOR.bitwise: 85 51 XOR . CR
+102 
+[KRELTSC: 9928866]     Test passed
+XOR
+[KRELTSC: 9932681]     Expected: Should print: 102
+102 
+102 
+102 
+102 
+102 
+[KRELTSC: 9973756]   Running XOR.empty_stack: XOR
+[KRELTSC: 9979927] XOR: Stack underflow
+[KRELTSC: 9984435]     Expected error occurred
+XOR
+[KRELTSC: 9989367]     Expected: Should cause stack underflow
+[KRELTSC: 9995172]   Running XOR.one_item: 42 XOR
+[KRELTSC: 10000280] XOR: Stack underflow
+[KRELTSC: 10004547]     Expected error occurred
+XOR
+[KRELTSC: 10009517]     Expected: Should cause stack underflow
+[KRELTSC: 10015395]   XOR: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 10021755] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 10031569] Testing word: NOT
+[KRELTSC: 10035625] ------------------------
+[KRELTSC: 10039918]   Running NOT.true: -1 NOT . CR
+0 
+[KRELTSC: 10050444]     Test passed
+NOT
+[KRELTSC: 10056638]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 10097236]   Running NOT.false: 0 NOT . CR
+-1 
+[KRELTSC: 10103671]     Test passed
+NOT
+[KRELTSC: 10107574]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 10146099]   Running NOT.positive: 42 NOT . CR
+-43 
+[KRELTSC: 10154427]     Test passed
+NOT
+[KRELTSC: 10158340]     Expected: Should print: 0
+-43 
+-43 
+-43 
+-43 
+-43 
+[KRELTSC: 10197088]   Running NOT.negative: -42 NOT . CR
+41 
+[KRELTSC: 10204980]     Test passed
+NOT
+[KRELTSC: 10208847]     Expected: Should print: 0
+41 
+41 
+41 
+41 
+41 
+[KRELTSC: 10249083]   Running NOT.empty_stack: NOT
+[KRELTSC: 10255375] NOT: Stack underflow
+[KRELTSC: 10259906]     Expected error occurred
+NOT
+[KRELTSC: 10264915]     Expected: Should cause stack underflow
+[KRELTSC: 10271919]   NOT: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 10280457] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 10288301] Testing word: =
+[KRELTSC: 10291702] ------------------------
+[KRELTSC: 10295943]   Running =.equal: 42 42 = . CR
+-1 
+[KRELTSC: 10306332]     Test passed
+=
+[KRELTSC: 10310104]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 10351217]   Running =.not_equal: 42 43 = . CR
+0 
+[KRELTSC: 10357849]     Test passed
+=
+[KRELTSC: 10361543]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 10400800]   Running =.zero_equal: 0 0 = . CR
+-1 
+[KRELTSC: 10408023]     Test passed
+=
+[KRELTSC: 10411722]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 10450912]   Running =.negative_equal: -42 -42 = . CR
+-1 
+[KRELTSC: 10458380]     Test passed
+=
+[KRELTSC: 10463415]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 10503214]   Running =.negative_positive: -42 42 = . CR
+0 
+[KRELTSC: 10510676]     Test passed
+=
+[KRELTSC: 10514377]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 10556031]   Running =.empty_stack: =
+[KRELTSC: 10562302] =: Stack underflow
+[KRELTSC: 10567052]     Expected error occurred
+=
+[KRELTSC: 10571889]     Expected: Should cause stack underflow
+[KRELTSC: 10577770]   Running =.one_item: 42 =
+[KRELTSC: 10582643] =: Stack underflow
+[KRELTSC: 10588005]     Expected error occurred
+=
+[KRELTSC: 10592915]     Expected: Should cause stack underflow
+[KRELTSC: 10598895]   =: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 10605001] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 10612802] Testing word: <>
+[KRELTSC: 10616291] ------------------------
+[KRELTSC: 10620756]   Running <>.not_equal: 42 43 <> . CR
+-1 
+[KRELTSC: 10633977]     Test passed
+<>
+[KRELTSC: 10637813]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 10678562]   Running <>.equal: 42 42 <> . CR
+0 
+[KRELTSC: 10685020]     Test passed
+<>
+[KRELTSC: 10688818]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 10728848]   Running <>.zero_equal: 0 0 <> . CR
+0 
+[KRELTSC: 10735660]     Test passed
+<>
+[KRELTSC: 10739453]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 10780770]   Running <>.negative: -42 42 <> . CR
+-1 
+[KRELTSC: 10787953]     Test passed
+<>
+[KRELTSC: 10791803]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 10835721]   Running <>.empty_stack: <>
+[KRELTSC: 10843131] <>: Stack underflow
+[KRELTSC: 10847863]     Expected error occurred
+<>
+[KRELTSC: 10852796]     Expected: Should cause stack underflow
+[KRELTSC: 10858683]   Running <>.one_item: 42 <>
+[KRELTSC: 10863904] <>: Stack underflow
+[KRELTSC: 10867764]     Expected error occurred
+<>
+[KRELTSC: 10872677]     Expected: Should cause stack underflow
+[KRELTSC: 10878894]   <>: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 10885191] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 10893050] Testing word: <
+[KRELTSC: 10896475] ------------------------
+[KRELTSC: 10903924]   Running <.less_than: 5 7 < . CR
+-1 
+[KRELTSC: 10917005]     Test passed
+<
+[KRELTSC: 10920772]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 10960014]   Running <.greater_than: 7 5 < . CR
+0 
+[KRELTSC: 10968818]     Test passed
+<
+[KRELTSC: 10972571]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 11010855]   Running <.equal: 5 5 < . CR
+0 
+[KRELTSC: 11016863]     Test passed
+<
+[KRELTSC: 11020551]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 11063240]   Running <.negative_positive: -5 5 < . CR
+-1 
+[KRELTSC: 11071148]     Test passed
+<
+[KRELTSC: 11074840]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 11115512]   Running <.negative_negative: -7 -5 < . CR
+-1 
+[KRELTSC: 11123052]     Test passed
+<
+[KRELTSC: 11126762]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 11167916]   Running <.empty_stack: <
+[KRELTSC: 11173598] <: Stack underflow
+[KRELTSC: 11177966]     Expected error occurred
+<
+[KRELTSC: 11182797]     Expected: Should cause stack underflow
+[KRELTSC: 11188680]   Running <.one_item: 42 <
+[KRELTSC: 11193913] <: Stack underflow
+[KRELTSC: 11197676]     Expected error occurred
+<
+[KRELTSC: 11202478]     Expected: Should cause stack underflow
+[KRELTSC: 11208363]   <: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 11215941] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 11223842] Testing word: >
+[KRELTSC: 11227265] ------------------------
+[KRELTSC: 11231541]   Running >.greater_than: 7 5 > . CR
+-1 
+[KRELTSC: 11244087]     Test passed
+>
+[KRELTSC: 11250292]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 11292085]   Running >.less_than: 5 7 > . CR
+0 
+[KRELTSC: 11298601]     Test passed
+>
+[KRELTSC: 11304555]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 11346476]   Running >.equal: 5 5 > . CR
+0 
+[KRELTSC: 11352619]     Test passed
+>
+[KRELTSC: 11356316]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 11394288]   Running >.positive_negative: 5 -5 > . CR
+-1 
+[KRELTSC: 11403700]     Test passed
+>
+[KRELTSC: 11407440]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 11446486]   Running >.negative_negative: -5 -7 > . CR
+-1 
+[KRELTSC: 11453991]     Test passed
+>
+[KRELTSC: 11457695]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 11498538]   Running >.empty_stack: >
+[KRELTSC: 11504565] >: Stack underflow
+[KRELTSC: 11508938]     Expected error occurred
+>
+[KRELTSC: 11513828]     Expected: Should cause stack underflow
+[KRELTSC: 11519754]   Running >.one_item: 42 >
+[KRELTSC: 11526280] >: Stack underflow
+[KRELTSC: 11530048]     Expected error occurred
+>
+[KRELTSC: 11536363]     Expected: Should cause stack underflow
+[KRELTSC: 11542251]   >: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 11548464] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 11558685] Testing word: 0=
+[KRELTSC: 11562295] ------------------------
+[KRELTSC: 11567725]   Running 0=.zero: 0 0= . CR
+-1 
+[KRELTSC: 11579574]     Test passed
+0=
+[KRELTSC: 11583391]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 11624061]   Running 0=.positive: 42 0= . CR
+0 
+[KRELTSC: 11630771]     Test passed
+0=
+[KRELTSC: 11634563]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 11673720]   Running 0=.negative: -42 0= . CR
+0 
+[KRELTSC: 11680229]     Test passed
+0=
+[KRELTSC: 11684036]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 11726710]   Running 0=.empty_stack: 0=
+[KRELTSC: 11732854] 0=: Stack underflow
+[KRELTSC: 11737385]     Expected error occurred
+0=
+[KRELTSC: 11742379]     Expected: Should cause stack underflow
+[KRELTSC: 11748371]   0=: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 11755053] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 11762976] Testing word: 0<
+[KRELTSC: 11766513] ------------------------
+[KRELTSC: 11771075]   Running 0<.negative: -42 0< . CR
+-1 
+[KRELTSC: 11785184]     Test passed
+0<
+[KRELTSC: 11789036]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 11832155]   Running 0<.zero: 0 0< . CR
+0 
+[KRELTSC: 11839921]     Test passed
+0<
+[KRELTSC: 11843760]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 11881652]   Running 0<.positive: 42 0< . CR
+0 
+[KRELTSC: 11887957]     Test passed
+0<
+[KRELTSC: 11891755]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 11930886]   Running 0<.empty_stack: 0<
+[KRELTSC: 11936967] 0<: Stack underflow
+[KRELTSC: 11941724]     Expected error occurred
+0<
+[KRELTSC: 11946741]     Expected: Should cause stack underflow
+[KRELTSC: 11952767]   0<: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 11959088] ▶ Testing module: src/test_runner/modules/logical_words_test.c
+[KRELTSC: 11968463] Testing word: 0>
+[KRELTSC: 11972056] ------------------------
+[KRELTSC: 11976387]   Running 0>.positive: 42 0> . CR
+-1 
+[KRELTSC: 11987709]     Test passed
+0>
+[KRELTSC: 11991523]     Expected: Should print: -1
+-1 
+-1 
+-1 
+-1 
+-1 
+[KRELTSC: 12033174]   Running 0>.zero: 0 0> . CR
+0 
+[KRELTSC: 12039194]     Test passed
+0>
+[KRELTSC: 12043000]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 12084667]   Running 0>.negative: -42 0> . CR
+0 
+[KRELTSC: 12099286]     Test passed
+0>
+[KRELTSC: 12103220]     Expected: Should print: 0
+0 
+0 
+0 
+0 
+0 
+[KRELTSC: 12141622]   Running 0>.empty_stack: 0>
+[KRELTSC: 12147637] 0>: Stack underflow
+[KRELTSC: 12154428]     Expected error occurred
+0>
+[KRELTSC: 12159597]     Expected: Should cause stack underflow
+[KRELTSC: 12167041]   0>: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 12173961] === Logical Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 12182963] 
+=== Testing Module: Mixed Arithmetic Words ===
+[KRELTSC: 12190472] Running Mixed Arithmetic Words Tests (Module 7)...
+[KRELTSC: 12199325] ▶ Testing module: src/test_runner/modules/mixed_arithmetic_words_test.c
+[KRELTSC: 12209608] Testing word: */
+[KRELTSC: 12215343] ------------------------
+[KRELTSC: 12225419]   Running */.basic: 6 7 4 */ . CR
+10 
+[KRELTSC: 12239758]     Test passed
+*/
+[KRELTSC: 12243630]     Expected: Should print: 10 (6*7/4)
+[KRELTSC: 12250618]   Running */.exact_division: 12 5 3 */ . CR
+20 
+[KRELTSC: 12258985]     Test passed
+*/
+[KRELTSC: 12262823]     Expected: Should print: 20 (12*5/3)
+[KRELTSC: 12268462]   Running */.zero_multiply: 0 999 123 */ . CR
+0 
+[KRELTSC: 12278486]     Test passed
+*/
+[KRELTSC: 12282337]     Expected: Should print: 0
+[KRELTSC: 12287235]   Running */.by_one: 42 5 1 */ . CR
+210 
+[KRELTSC: 12294203]     Test passed
+*/
+[KRELTSC: 12297996]     Expected: Should print: 210 (42*5/1)
+[KRELTSC: 12307738]   Running */.truncation: 7 3 2 */ . CR
+10 
+[KRELTSC: 12316354]     Test passed
+*/
+[KRELTSC: 12320164]     Expected: Should print: 10 (21/2 truncated)
+[KRELTSC: 12326462]   Running */.negative_multiply: -6 7 4 */ . CR
+-10 
+[KRELTSC: 12334431]     Test passed
+*/
+[KRELTSC: 12339752]     Expected: Should print: -10
+[KRELTSC: 12344742]   Running */.negative_divisor: 6 7 -4 */ . CR
+-10 
+[KRELTSC: 12353173]     Test passed
+*/
+[KRELTSC: 12356974]     Expected: Should print: -10
+[KRELTSC: 12361841]   Running */.div_by_zero: 6 7 0 */
+[KRELTSC: 12368636] */: Division by zero
+[KRELTSC: 12373603]     Expected error occurred
+*/
+[KRELTSC: 12378888]     Expected: Should cause division by zero
+[KRELTSC: 12384884]   Running */.empty_stack: */
+[KRELTSC: 12390309] */: Stack underflow
+[KRELTSC: 12394607]     Expected error occurred
+*/
+[KRELTSC: 12401090]     Expected: Should cause stack underflow
+[KRELTSC: 12407037]   Running */.two_items: 1 2 */
+[KRELTSC: 12412687] */: Stack underflow
+[KRELTSC: 12416554]     Expected error occurred
+*/
+[KRELTSC: 12421423]     Expected: Should cause stack underflow
+[KRELTSC: 12429608]   */: 10 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 12437127] ▶ Testing module: src/test_runner/modules/mixed_arithmetic_words_test.c
+[KRELTSC: 12446225] Testing word: */MOD
+[KRELTSC: 12450429] ------------------------
+[KRELTSC: 12454719]   Running */MOD.basic: 17 3 5 */MOD . . CR
+10 1 
+[KRELTSC: 12470334]     Test passed
+*/MOD
+[KRELTSC: 12474490]     Expected: Should print: 1 10 (51/5 = 10 rem 1)
+[KRELTSC: 12481152]   Running */MOD.exact_division: 15 4 3 */MOD . . CR
+20 0 
+[KRELTSC: 12489992]     Test passed
+*/MOD
+[KRELTSC: 12494071]     Expected: Should print: 0 20 (60/3 = 20 rem 0)
+[KRELTSC: 12500672]   Running */MOD.zero_multiply: 0 999 123 */MOD . . CR
+0 0 
+[KRELTSC: 12509891]     Test passed
+*/MOD
+[KRELTSC: 12513965]     Expected: Should print: 0 0
+[KRELTSC: 12518841]   Running */MOD.by_one: 42 5 1 */MOD . . CR
+210 0 
+[KRELTSC: 12529154]     Test passed
+*/MOD
+[KRELTSC: 12533470]     Expected: Should print: 0 210
+[KRELTSC: 12538527]   Running */MOD.remainder: 7 8 5 */MOD . . CR
+11 1 
+[KRELTSC: 12546669]     Test passed
+*/MOD
+[KRELTSC: 12550736]     Expected: Should print: 1 11 (56/5 = 11 rem 1)
+[KRELTSC: 12560172]   Running */MOD.negative: -7 3 4 */MOD . . CR
+-5 -1 
+[KRELTSC: 12569153]     Test passed
+*/MOD
+[KRELTSC: 12573251]     Expected: Should handle negative
+[KRELTSC: 12578583]   Running */MOD.div_by_zero: 6 7 0 */MOD
+[KRELTSC: 12587220] */MOD: Division by zero
+[KRELTSC: 12592427]     Expected error occurred
+*/MOD
+[KRELTSC: 12597685]     Expected: Should cause division by zero
+[KRELTSC: 12603757]   Running */MOD.empty_stack: */MOD
+[KRELTSC: 12610185] */MOD: Stack underflow
+[KRELTSC: 12614787]     Expected error occurred
+*/MOD
+[KRELTSC: 12619981]     Expected: Should cause stack underflow
+[KRELTSC: 12625901]   */MOD: 8 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 12632782] ▶ Testing module: src/test_runner/modules/mixed_arithmetic_words_test.c
+[KRELTSC: 12641524] Testing word: M+
+[KRELTSC: 12645065] ------------------------
+[KRELTSC: 12650795]   Running M+.basic: 0 100 200 M+ . . CR
+300 0 
+[KRELTSC: 12665895]     Test passed
+M+
+[KRELTSC: 12669729]     Expected: Should print: 200 100
+[KRELTSC: 12675009]   Running M+.overflow: 0 2147483647 1 M+ . . CR
+2147483648 0 
+[KRELTSC: 12684347]     Test passed
+M+
+[KRELTSC: 12688118]     Expected: Should handle overflow
+[KRELTSC: 12693772]   Running M+.negative: 0 -100 50 M+ . . CR
+-50 0 
+[KRELTSC: 12701819]     Test passed
+M+
+[KRELTSC: 12705625]     Expected: Should print: 50 -100
+[KRELTSC: 12712434]   Running M+.zero_add: 0 42 0 M+ . . CR
+42 0 
+[KRELTSC: 12720522]     Test passed
+M+
+[KRELTSC: 12724348]     Expected: Should print: 0 42
+[KRELTSC: 12729343]   Running M+.both_negative: 0 -100 -200 M+ . . CR
+-300 0 
+[KRELTSC: 12740123]     Test passed
+M+
+[KRELTSC: 12743957]     Expected: Should print: -200 -100
+[KRELTSC: 12749402]   Running M+.empty_stack: M+
+[KRELTSC: 12755353]     Expected error occurred
+M+
+[KRELTSC: 12760333]     Expected: Should cause stack underflow
+[KRELTSC: 12766249]   Running M+.one_item: 42 M+
+[KRELTSC: 12771307]     Expected error occurred
+M+
+[KRELTSC: 12777672]     Expected: Should cause stack underflow
+[KRELTSC: 12783660]   M+: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 12789923] ▶ Testing module: src/test_runner/modules/mixed_arithmetic_words_test.c
+[KRELTSC: 12800601] Testing word: M*
+[KRELTSC: 12807473] ------------------------
+[KRELTSC: 12811770]   Running M*.basic: 123 456 M* . . CR
+0 56088 
+[KRELTSC: 12826191]     Test passed
+M*
+[KRELTSC: 12830089]     Expected: Should print: 56088 0
+[KRELTSC: 12835384]   Running M*.by_zero: 999 0 M* . . CR
+0 0 
+[KRELTSC: 12844764]     Test passed
+M*
+[KRELTSC: 12848758]     Expected: Should print: 0 0
+[KRELTSC: 12853666]   Running M*.by_one: 42 1 M* . . CR
+0 42 
+[KRELTSC: 12860903]     Test passed
+M*
+[KRELTSC: 12864706]     Expected: Should print: 42 0
+[KRELTSC: 12869680]   Running M*.negative: -123 456 M* . . CR
+-1 4294911208 
+[KRELTSC: 12878560]     Test passed
+M*
+[KRELTSC: 12882360]     Expected: Should print: -56088 -1
+[KRELTSC: 12887759]   Running M*.large_multiply: 65536 65536 M* . . CR
+1 0 
+[KRELTSC: 12896074]     Test passed
+M*
+[KRELTSC: 12901270]     Expected: Should handle large result
+[KRELTSC: 12907422]   Running M*.both_negative: -100 -200 M* . . CR
+0 20000 
+[KRELTSC: 12916498]     Test passed
+M*
+[KRELTSC: 12920298]     Expected: Should print: 20000 0
+[KRELTSC: 12925533]   Running M*.empty_stack: M*
+[KRELTSC: 12931932]     Expected error occurred
+M*
+[KRELTSC: 12936909]     Expected: Should cause stack underflow
+[KRELTSC: 12943034]   Running M*.one_item: 42 M*
+[KRELTSC: 12948088]     Expected error occurred
+M*
+[KRELTSC: 12953000]     Expected: Should cause stack underflow
+[KRELTSC: 12958887]   M*: 8 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 12966657] ▶ Testing module: src/test_runner/modules/mixed_arithmetic_words_test.c
+[KRELTSC: 12975484] Testing word: M/MOD
+[KRELTSC: 12979294] ------------------------
+[KRELTSC: 12983620]   Running M/MOD.basic: 0 1000 100 M/MOD . . CR
+10 0 
+[KRELTSC: 12998451]     Test passed
+M/MOD
+[KRELTSC: 13002874]     Expected: Should print: 0 10 (1000/100)
+[KRELTSC: 13008855]   Running M/MOD.with_remainder: 0 1234 100 M/MOD . . CR
+12 34 
+[KRELTSC: 13018212]     Test passed
+M/MOD
+[KRELTSC: 13022270]     Expected: Should handle remainder
+[KRELTSC: 13029316]   Running M/MOD.double_dividend: 5001 0 10 M/MOD . . CR
+2147913144729 6 
+[KRELTSC: 13040061]     Test passed
+M/MOD
+[KRELTSC: 13044152]     Expected: Should print: 1 500 (5001/10)
+[KRELTSC: 13050098]   Running M/MOD.by_one: 0 42 1 M/MOD . . CR
+42 0 
+[KRELTSC: 13061779]     Test passed
+M/MOD
+[KRELTSC: 13066171]     Expected: Should print: 0 42
+[KRELTSC: 13071146]   Running M/MOD.negative_dividend: -1 1000 100 M/MOD . . CR
+-42949662 -96 
+[KRELTSC: 13081577]     Test passed
+M/MOD
+[KRELTSC: 13086898]     Expected: Should handle negative
+[KRELTSC: 13092560]   Running M/MOD.div_by_zero: 0 100 0 M/MOD
+[KRELTSC: 13100782]     Expected error occurred
+M/MOD
+[KRELTSC: 13106021]     Expected: Should cause division by zero
+[KRELTSC: 13112001]   Running M/MOD.empty_stack: M/MOD
+[KRELTSC: 13118113]     Expected error occurred
+M/MOD
+[KRELTSC: 13123297]     Expected: Should cause stack underflow
+[KRELTSC: 13129660]   M/MOD: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 13136796] === Mixed Arithmetic Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 13146553] 
+=== Testing Module: Double Words ===
+[KRELTSC: 13154554] Running Double Number Words Tests (Module 6)...
+[KRELTSC: 13163137] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 13171638] Testing word: 2DROP
+[KRELTSC: 13175480] ------------------------
+[KRELTSC: 13179834]   Running 2DROP.basic: 1 2 3 4 2DROP . . CR
+2 1 
+[KRELTSC: 13191143]     Test passed
+2DROP
+[KRELTSC: 13195254]     Expected: Should print: 1 2
+[KRELTSC: 13200144]   Running 2DROP.zeros: 0 0 42 99 2DROP . . CR
+0 0 
+[KRELTSC: 13208386]     Test passed
+2DROP
+[KRELTSC: 13214029]     Expected: Should print: 0 0
+[KRELTSC: 13218953]   Running 2DROP.negative: -1 -2 100 200 2DROP . . CR
+-2 -1 
+[KRELTSC: 13228498]     Test passed
+2DROP
+[KRELTSC: 13232572]     Expected: Should print: -1 -2
+[KRELTSC: 13237625]   Running 2DROP.exact_four: 10 20 30 40 2DROP DEPTH . CR
+2 
+[KRELTSC: 13246824]     Test passed
+2DROP
+[KRELTSC: 13250855]     Expected: Should print: 2
+[KRELTSC: 13255807]   Running 2DROP.empty_stack: 2DROP
+[KRELTSC: 13262383]     Expected error occurred
+2DROP
+[KRELTSC: 13267569]     Expected: Should cause stack underflow
+[KRELTSC: 13274901]   Running 2DROP.one_item: 42 2DROP
+[KRELTSC: 13280833]     Expected error occurred
+2DROP
+[KRELTSC: 13286044]     Expected: Should cause stack underflow
+[KRELTSC: 13291971]   2DROP: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 13299322] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 13310279] Testing word: 2DUP
+[KRELTSC: 13314053] ------------------------
+[KRELTSC: 13318650]   Running 2DUP.basic: 100 200 2DUP . . . . CR
+200 100 200 100 
+[KRELTSC: 13333084]     Test passed
+2DUP
+[KRELTSC: 13338835]     Expected: Should print: 100 200 100 200
+[KRELTSC: 13345023]   Running 2DUP.zeros: 0 0 2DUP . . . . CR
+0 0 0 0 
+[KRELTSC: 13354120]     Test passed
+2DUP
+[KRELTSC: 13358115]     Expected: Should print: 0 0 0 0
+[KRELTSC: 13363570]   Running 2DUP.negative: -100 -200 2DUP . . . . CR
+-200 -100 -200 -100 
+[KRELTSC: 13374072]     Test passed
+2DUP
+[KRELTSC: 13378388]     Expected: Should duplicate negatives
+[KRELTSC: 13384074]   Running 2DUP.depth_check: 10 20 2DUP DEPTH . CR
+4 
+[KRELTSC: 13392438]     Test passed
+2DUP
+[KRELTSC: 13396425]     Expected: Should print: 4
+[KRELTSC: 13402611]   Running 2DUP.empty_stack: 2DUP
+[KRELTSC: 13409048]     Expected error occurred
+2DUP
+[KRELTSC: 13414206]     Expected: Should cause stack underflow
+[KRELTSC: 13420123]   Running 2DUP.one_item: 42 2DUP
+[KRELTSC: 13427234]     Expected error occurred
+2DUP
+[KRELTSC: 13432386]     Expected: Should cause stack underflow
+[KRELTSC: 13438381]   2DUP: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 13445219] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 13453082] Testing word: 2OVER
+[KRELTSC: 13456902] ------------------------
+[KRELTSC: 13462725]   Running 2OVER.basic: 10 20 30 40 2OVER . . . . . . CR
+20 10 40 30 20 10 
+[KRELTSC: 13479502]     Test passed
+2OVER
+[KRELTSC: 13483597]     Expected: Should print: 10 20 30 40 10 20
+[KRELTSC: 13489754]   Running 2OVER.zeros: 0 0 99 88 2OVER . . . . . . CR
+0 0 88 99 0 0 
+[KRELTSC: 13500481]     Test passed
+2OVER
+[KRELTSC: 13504862]     Expected: Should print: 0 0 99 88 0 0
+[KRELTSC: 13510686]   Running 2OVER.mixed: -1 2 -3 4 2OVER . . . . . . CR
+2 -1 4 -3 2 -1 
+[KRELTSC: 13521561]     Test passed
+2OVER
+[KRELTSC: 13527157]     Expected: Should handle mixed signs
+[KRELTSC: 13532870]   Running 2OVER.depth_check: 1 2 3 4 2OVER DEPTH . CR
+6 
+[KRELTSC: 13542151]     Test passed
+2OVER
+[KRELTSC: 13546226]     Expected: Should print: 6
+[KRELTSC: 13550930]   Running 2OVER.three_items: 1 2 3 2OVER
+[KRELTSC: 13561524]     Expected error occurred
+2OVER
+[KRELTSC: 13567077]     Expected: Should cause stack underflow
+[KRELTSC: 13572989]   Running 2OVER.empty_stack: 2OVER
+[KRELTSC: 13578476]     Expected error occurred
+2OVER
+[KRELTSC: 13583656]     Expected: Should cause stack underflow
+[KRELTSC: 13591084]   2OVER: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 13597685] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 13605461] Testing word: 2SWAP
+[KRELTSC: 13609248] ------------------------
+[KRELTSC: 13613492]   Running 2SWAP.basic: 10 20 30 40 2SWAP . . . . CR
+20 10 40 30 
+[KRELTSC: 13629938]     Test passed
+2SWAP
+[KRELTSC: 13634011]     Expected: Should print: 30 40 10 20
+[KRELTSC: 13639606]   Running 2SWAP.zeros: 0 0 99 88 2SWAP . . . . CR
+0 0 88 99 
+[KRELTSC: 13651162]     Test passed
+2SWAP
+[KRELTSC: 13655268]     Expected: Should print: 99 88 0 0
+[KRELTSC: 13660694]   Running 2SWAP.same_pairs: 42 42 42 42 2SWAP . . . . CR
+42 42 42 42 
+[KRELTSC: 13671122]     Test passed
+2SWAP
+[KRELTSC: 13675193]     Expected: Should print: 42 42 42 42
+[KRELTSC: 13680785]   Running 2SWAP.negative: -10 -20 30 40 2SWAP . . . . CR
+-20 -10 40 30 
+[KRELTSC: 13691781]     Test passed
+2SWAP
+[KRELTSC: 13695857]     Expected: Should print: 30 40 -10 -20
+[KRELTSC: 13701632]   Running 2SWAP.depth_check: 1 2 3 4 2SWAP DEPTH . CR
+4 
+[KRELTSC: 13710438]     Test passed
+2SWAP
+[KRELTSC: 13715941]     Expected: Should print: 4
+[KRELTSC: 13720775]   Running 2SWAP.three_items: 1 2 3 2SWAP
+[KRELTSC: 13728508]     Expected error occurred
+2SWAP
+[KRELTSC: 13733743]     Expected: Should cause stack underflow
+[KRELTSC: 13739607]   Running 2SWAP.empty_stack: 2SWAP
+[KRELTSC: 13745048]     Expected error occurred
+2SWAP
+[KRELTSC: 13750201]     Expected: Should cause stack underflow
+[KRELTSC: 13756370]   2SWAP: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 13762849] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 13770547] Testing word: 2ROT
+[KRELTSC: 13775707] ------------------------
+[KRELTSC: 13780561]   Running 2ROT.basic: 10 20 30 40 50 60 2ROT . . . . . . CR
+20 10 60 50 40 30 
+[KRELTSC: 13799725]     Test passed
+2ROT
+[KRELTSC: 13807253]     Expected: Should print: 30 40 50 60 10 20
+[KRELTSC: 13813501]   Running 2ROT.zeros: 0 0 1 1 2 2 2ROT . . . . . . CR
+0 0 2 2 1 1 
+[KRELTSC: 13825365]     Test passed
+2ROT
+[KRELTSC: 13829379]     Expected: Should rotate with zeros
+[KRELTSC: 13834910]   Running 2ROT.negative: -1 -2 3 4 -5 -6 2ROT . . . . . . CR
+-2 -1 -6 -5 4 3 
+[KRELTSC: 13848756]     Test passed
+2ROT
+[KRELTSC: 13852763]     Expected: Should handle negatives
+[KRELTSC: 13858164]   Running 2ROT.depth_check: 1 2 3 4 5 6 2ROT DEPTH . CR
+6 
+[KRELTSC: 13867342]     Test passed
+2ROT
+[KRELTSC: 13871311]     Expected: Should print: 6
+[KRELTSC: 13875960]   Running 2ROT.five_items: 1 2 3 4 5 2ROT
+[KRELTSC: 13883958]     Expected error occurred
+2ROT
+[KRELTSC: 13889089]     Expected: Should cause stack underflow
+[KRELTSC: 13894956]   Running 2ROT.empty_stack: 2ROT
+[KRELTSC: 13901813]     Expected error occurred
+2ROT
+[KRELTSC: 13906889]     Expected: Should cause stack underflow
+[KRELTSC: 13912779]   2ROT: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 13919631] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 13927479] Testing word: D+
+[KRELTSC: 13931021] ------------------------
+[KRELTSC: 13935314]   Running D+.basic: 100 200 300 400 D+ . . CR
+600 400 
+[KRELTSC: 13951603]     Test passed
+D+
+[KRELTSC: 13955455]     Expected: Should print: 400 600
+[KRELTSC: 13962246]   Running D+.zero_add: 42 99 0 0 D+ . . CR
+99 42 
+[KRELTSC: 13972167]     Test passed
+D+
+[KRELTSC: 13975974]     Expected: Should print: 42 99
+[KRELTSC: 13981023]   Running D+.negative: -100 -200 50 75 D+ . . CR
+-125 4294967246 
+[KRELTSC: 13990935]     Test passed
+D+
+[KRELTSC: 13994709]     Expected: Should handle negatives
+[KRELTSC: 14000099]   Running D+.carry: 2147483647 0 1 0 D+ . . CR
+0 2147483648 
+[KRELTSC: 14009733]     Test passed
+D+
+[KRELTSC: 14013519]     Expected: Should handle carry
+[KRELTSC: 14018577]   Running D+.both_negative: -100 -200 -300 -400 D+ . . CR
+-599 4294966896 
+[KRELTSC: 14030995]     Test passed
+D+
+[KRELTSC: 14034981]     Expected: Should add negatives
+[KRELTSC: 14040179]   Running D+.three_items: 1 2 3 D+
+[KRELTSC: 14047237]     Expected error occurred
+D+
+[KRELTSC: 14056093]     Expected: Should cause stack underflow
+[KRELTSC: 14062060]   Running D+.empty_stack: D+
+[KRELTSC: 14067702]     Expected error occurred
+D+
+[KRELTSC: 14072597]     Expected: Should cause stack underflow
+[KRELTSC: 14078462]   D+: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 14084713] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 14094033] Testing word: D-
+[KRELTSC: 14097634] ------------------------
+[KRELTSC: 14101966]   Running D-.basic: 500 600 100 200 D- . . CR
+400 400 
+[KRELTSC: 14118598]     Test passed
+D-
+[KRELTSC: 14122452]     Expected: Should print: 400 400
+[KRELTSC: 14128090]   Running D-.zero_sub: 42 99 0 0 D- . . CR
+99 42 
+[KRELTSC: 14136396]     Test passed
+D-
+[KRELTSC: 14140210]     Expected: Should print: 42 99
+[KRELTSC: 14145250]   Running D-.from_zero: 0 0 100 200 D- . . CR
+-201 4294967196 
+[KRELTSC: 14156667]     Test passed
+D-
+[KRELTSC: 14160520]     Expected: Should print: -100 -200
+[KRELTSC: 14165960]   Running D-.negative: 100 200 -50 -75 D- . . CR
+274 150 
+[KRELTSC: 14175072]     Test passed
+D-
+[KRELTSC: 14178896]     Expected: Should handle negatives
+[KRELTSC: 14184322]   Running D-.borrow: 0 0 1 0 D- . . CR
+-1 4294967295 
+[KRELTSC: 14193262]     Test passed
+D-
+[KRELTSC: 14197084]     Expected: Should handle borrow
+[KRELTSC: 14202258]   Running D-.same_values: 100 200 100 200 D- . . CR
+0 0 
+[KRELTSC: 14212932]     Test passed
+D-
+[KRELTSC: 14216773]     Expected: Should print: 0 0
+[KRELTSC: 14221657]   Running D-.three_items: 1 2 3 D-
+[KRELTSC: 14228897]     Expected error occurred
+D-
+[KRELTSC: 14233862]     Expected: Should cause stack underflow
+[KRELTSC: 14239760]   Running D-.empty_stack: D-
+[KRELTSC: 14244669]     Expected error occurred
+D-
+[KRELTSC: 14249926]     Expected: Should cause stack underflow
+[KRELTSC: 14256166]   D-: 8 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 14262453] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 14270249] Testing word: DNEGATE
+[KRELTSC: 14275630] ------------------------
+[KRELTSC: 14279987]   Running DNEGATE.positive: 100 200 DNEGATE . . CR
+-201 4294967196 
+[KRELTSC: 14295176]     Test passed
+DNEGATE
+[KRELTSC: 14299434]     Expected: Should negate positive double
+[KRELTSC: 14309671]   Running DNEGATE.negative: -100 -200 DNEGATE . . CR
+199 100 
+[KRELTSC: 14319797]     Test passed
+DNEGATE
+[KRELTSC: 14324097]     Expected: Should negate negative double
+[KRELTSC: 14330086]   Running DNEGATE.zero: 0 0 DNEGATE . . CR
+0 0 
+[KRELTSC: 14339699]     Test passed
+DNEGATE
+[KRELTSC: 14344008]     Expected: Should print: 0 0
+[KRELTSC: 14348918]   Running DNEGATE.max_positive: 2147483647 0 DNEGATE . . CR
+-1 2147483649 
+[KRELTSC: 14359342]     Test passed
+DNEGATE
+[KRELTSC: 14363598]     Expected: Should negate max positive
+[KRELTSC: 14369312]   Running DNEGATE.one_item: 42 DNEGATE
+[KRELTSC: 14376352]     Expected error occurred
+DNEGATE
+[KRELTSC: 14382028]     Expected: Should cause stack underflow
+[KRELTSC: 14387887]   Running DNEGATE.empty_stack: DNEGATE
+[KRELTSC: 14393701]     Expected error occurred
+DNEGATE
+[KRELTSC: 14400415]     Expected: Should cause stack underflow
+[KRELTSC: 14406352]   DNEGATE: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 14413074] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 14420849] Testing word: DABS
+[KRELTSC: 14424533] ------------------------
+[KRELTSC: 14428789]   Running DABS.positive: 100 200 DABS . . CR
+200 100 
+[KRELTSC: 14440433]     Test passed
+DABS
+[KRELTSC: 14444450]     Expected: Should print: 100 200
+[KRELTSC: 14449706]   Running DABS.negative: -100 -200 DABS . . CR
+199 100 
+[KRELTSC: 14459491]     Test passed
+DABS
+[KRELTSC: 14464921]     Expected: Should print: 100 200
+[KRELTSC: 14470269]   Running DABS.zero: 0 0 DABS . . CR
+0 0 
+[KRELTSC: 14477738]     Test passed
+DABS
+[KRELTSC: 14481710]     Expected: Should print: 0 0
+[KRELTSC: 14486596]   Running DABS.mixed_sign: 100 -1 DABS . . CR
+0 4294967196 
+[KRELTSC: 14495538]     Test passed
+DABS
+[KRELTSC: 14499513]     Expected: Should handle mixed sign
+[KRELTSC: 14505298]   Running DABS.min_double: -2147483648 -1 DABS . . CR
+0 2147483648 
+[KRELTSC: 14514959]     Test passed
+DABS
+[KRELTSC: 14518933]     Expected: Should handle min double
+[KRELTSC: 14525840]   Running DABS.one_item: 42 DABS
+[KRELTSC: 14532365]     Expected error occurred
+DABS
+[KRELTSC: 14537519]     Expected: Should cause stack underflow
+[KRELTSC: 14543426]   Running DABS.empty_stack: DABS
+[KRELTSC: 14548717]     Expected error occurred
+DABS
+[KRELTSC: 14555952]     Expected: Should cause stack underflow
+[KRELTSC: 14561900]   DABS: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 14568659] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 14576430] Testing word: DMIN
+[KRELTSC: 14580126] ------------------------
+[KRELTSC: 14584603]   Running DMIN.basic: 100 200 300 400 DMIN . . CR
+200 100 
+[KRELTSC: 14603321]     Test passed
+DMIN
+[KRELTSC: 14607377]     Expected: Should print: 100 200
+[KRELTSC: 14612838]   Running DMIN.equal: 42 99 42 99 DMIN . . CR
+99 42 
+[KRELTSC: 14623747]     Test passed
+DMIN
+[KRELTSC: 14628061]     Expected: Should print: 42 99
+[KRELTSC: 14633165]   Running DMIN.negative: -100 -200 -50 -75 DMIN . . CR
+-200 -100 
+[KRELTSC: 14643079]     Test passed
+DMIN
+[KRELTSC: 14647062]     Expected: Should find min negative
+[KRELTSC: 14654128]   Running DMIN.mixed: -100 -1 100 0 DMIN . . CR
+-1 -100 
+[KRELTSC: 14663447]     Test passed
+DMIN
+[KRELTSC: 14667446]     Expected: Should handle mixed signs
+[KRELTSC: 14673022]   Running DMIN.three_items: 1 2 3 DMIN
+[KRELTSC: 14680413]     Expected error occurred
+DMIN
+[KRELTSC: 14687058]     Expected: Should cause stack underflow
+[KRELTSC: 14693283]   Running DMIN.empty_stack: DMIN
+[KRELTSC: 14699138]     Expected error occurred
+DMIN
+[KRELTSC: 14704287]     Expected: Should cause stack underflow
+[KRELTSC: 14710251]   DMIN: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 14718348] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 14726254] Testing word: DMAX
+[KRELTSC: 14730008] ------------------------
+[KRELTSC: 14734330]   Running DMAX.basic: 100 200 300 400 DMAX . . CR
+400 300 
+[KRELTSC: 14749594]     Test passed
+DMAX
+[KRELTSC: 14753942]     Expected: Should print: 300 400
+[KRELTSC: 14759236]   Running DMAX.equal: 42 99 42 99 DMAX . . CR
+99 42 
+[KRELTSC: 14769028]     Test passed
+DMAX
+[KRELTSC: 14774334]     Expected: Should print: 42 99
+[KRELTSC: 14779662]   Running DMAX.negative: -300 -400 -100 -200 DMAX . . CR
+-200 -100 
+[KRELTSC: 14790050]     Test passed
+DMAX
+[KRELTSC: 14794072]     Expected: Should find max negative
+[KRELTSC: 14799602]   Running DMAX.mixed: -100 -1 100 0 DMAX . . CR
+0 100 
+[KRELTSC: 14812738]     Test passed
+DMAX
+[KRELTSC: 14817045]     Expected: Should handle mixed signs
+[KRELTSC: 14822689]   Running DMAX.three_items: 1 2 3 DMAX
+[KRELTSC: 14830413]     Expected error occurred
+DMAX
+[KRELTSC: 14837215]     Expected: Should cause stack underflow
+[KRELTSC: 14843367]   Running DMAX.empty_stack: DMAX
+[KRELTSC: 14848842]     Expected error occurred
+DMAX
+[KRELTSC: 14853961]     Expected: Should cause stack underflow
+[KRELTSC: 14859917]   DMAX: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 14866415] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 14874251] Testing word: D=
+[KRELTSC: 14878080] ------------------------
+[KRELTSC: 14882398]   Running D=.equal: 100 200 100 200 D= . CR
+-1 
+[KRELTSC: 14895713]     Test passed
+D=
+[KRELTSC: 14901217]     Expected: Should print: -1
+[KRELTSC: 14906150]   Running D=.not_equal_low: 100 200 101 200 D= . CR
+0 
+[KRELTSC: 14915104]     Test passed
+D=
+[KRELTSC: 14918928]     Expected: Should print: 0
+[KRELTSC: 14923652]   Running D=.not_equal_high: 100 200 100 201 D= . CR
+0 
+[KRELTSC: 14932321]     Test passed
+D=
+[KRELTSC: 14936130]     Expected: Should print: 0
+[KRELTSC: 14941177]   Running D=.zero_equal: 0 0 0 0 D= . CR
+-1 
+[KRELTSC: 14948806]     Test passed
+D=
+[KRELTSC: 14952645]     Expected: Should print: -1
+[KRELTSC: 14957460]   Running D=.negative_equal: -100 -200 -100 -200 D= . CR
+-1 
+[KRELTSC: 14968421]     Test passed
+D=
+[KRELTSC: 14972272]     Expected: Should print: -1
+[KRELTSC: 14977153]   Running D=.three_items: 1 2 3 D=
+[KRELTSC: 14985252]     Expected error occurred
+D=
+[KRELTSC: 14990240]     Expected: Should cause stack underflow
+[KRELTSC: 14996138]   Running D=.empty_stack: D=
+[KRELTSC: 15001051]     Expected error occurred
+D=
+[KRELTSC: 15006262]     Expected: Should cause stack underflow
+[KRELTSC: 15012153]   D=: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 15018380] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 15027861] Testing word: D<
+[KRELTSC: 15031485] ------------------------
+[KRELTSC: 15035840]   Running D<.less_than: 100 200 300 400 D< . CR
+-1 
+[KRELTSC: 15049342]     Test passed
+D<
+[KRELTSC: 15055438]     Expected: Should print: -1
+[KRELTSC: 15060320]   Running D<.greater_than: 300 400 100 200 D< . CR
+0 
+[KRELTSC: 15070302]     Test passed
+D<
+[KRELTSC: 15074149]     Expected: Should print: 0
+[KRELTSC: 15078890]   Running D<.equal: 100 200 100 200 D< . CR
+0 
+[KRELTSC: 15088665]     Test passed
+D<
+[KRELTSC: 15092541]     Expected: Should print: 0
+[KRELTSC: 15097297]   Running D<.negative_positive: -100 -1 100 0 D< . CR
+-1 
+[KRELTSC: 15106209]     Test passed
+D<
+[KRELTSC: 15110025]     Expected: Should print: -1
+[KRELTSC: 15114824]   Running D<.negative_negative: -300 -1 -100 -1 D< . CR
+-1 
+[KRELTSC: 15123815]     Test passed
+D<
+[KRELTSC: 15128056]     Expected: Should compare negatives
+[KRELTSC: 15133558]   Running D<.high_word_diff: 100 200 100 300 D< . CR
+-1 
+[KRELTSC: 15142212]     Test passed
+D<
+[KRELTSC: 15146365]     Expected: Should print: -1
+[KRELTSC: 15152667]   Running D<.three_items: 1 2 3 D<
+[KRELTSC: 15160048]     Expected error occurred
+D<
+[KRELTSC: 15165000]     Expected: Should cause stack underflow
+[KRELTSC: 15170895]   Running D<.empty_stack: D<
+[KRELTSC: 15175784]     Expected error occurred
+D<
+[KRELTSC: 15180669]     Expected: Should cause stack underflow
+[KRELTSC: 15186524]   D<: 8 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 15193009] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 15200732] Testing word: D0=
+[KRELTSC: 15204312] ------------------------
+[KRELTSC: 15208752]   Running D0=.zero: 0 0 D0= . CR
+-1 
+[KRELTSC: 15222260]     Test passed
+D0=
+[KRELTSC: 15226213]     Expected: Should print: -1
+[KRELTSC: 15231084]   Running D0=.positive: 100 200 D0= . CR
+0 
+[KRELTSC: 15238605]     Test passed
+D0=
+[KRELTSC: 15242503]     Expected: Should print: 0
+[KRELTSC: 15247225]   Running D0=.negative: -100 -200 D0= . CR
+0 
+[KRELTSC: 15254979]     Test passed
+D0=
+[KRELTSC: 15258875]     Expected: Should print: 0
+[KRELTSC: 15263584]   Running D0=.zero_high: 0 100 D0= . CR
+0 
+[KRELTSC: 15270600]     Test passed
+D0=
+[KRELTSC: 15275947]     Expected: Should print: 0
+[KRELTSC: 15280723]   Running D0=.zero_low: 100 0 D0= . CR
+0 
+[KRELTSC: 15287941]     Test passed
+D0=
+[KRELTSC: 15291832]     Expected: Should print: 0
+[KRELTSC: 15296547]   Running D0=.one_item: 42 D0=
+[KRELTSC: 15304618]     Expected error occurred
+D0=
+[KRELTSC: 15310000]     Expected: Should cause stack underflow
+[KRELTSC: 15317719]   Running D0=.empty_stack: D0=
+[KRELTSC: 15323124]     Expected error occurred
+D0=
+[KRELTSC: 15328159]     Expected: Should cause stack underflow
+[KRELTSC: 15334057]   D0=: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 15342039] ▶ Testing module: src/test_runner/modules/double_words_test.c
+[KRELTSC: 15349924] Testing word: D0<
+[KRELTSC: 15353501] ------------------------
+[KRELTSC: 15357767]   Running D0<.negative: -100 -1 D0< . CR
+-1 
+[KRELTSC: 15369595]     Test passed
+D0<
+[KRELTSC: 15373531]     Expected: Should print: -1
+[KRELTSC: 15378684]   Running D0<.zero: 0 0 D0< . CR
+0 
+[KRELTSC: 15385210]     Test passed
+D0<
+[KRELTSC: 15389073]     Expected: Should print: 0
+[KRELTSC: 15393747]   Running D0<.positive: 100 0 D0< . CR
+0 
+[KRELTSC: 15402529]     Test passed
+D0<
+[KRELTSC: 15406494]     Expected: Should print: 0
+[KRELTSC: 15411258]   Running D0<.negative_high_only: 100 -1 D0< . CR
+-1 
+[KRELTSC: 15419433]     Test passed
+D0<
+[KRELTSC: 15423348]     Expected: Should print: -1
+[KRELTSC: 15428208]   Running D0<.large_negative: -1 -1 D0< . CR
+-1 
+[KRELTSC: 15435868]     Test passed
+D0<
+[KRELTSC: 15440072]     Expected: Should print: -1
+[KRELTSC: 15444896]   Running D0<.one_item: 42 D0<
+[KRELTSC: 15451059]     Expected error occurred
+D0<
+[KRELTSC: 15456113]     Expected: Should cause stack underflow
+[KRELTSC: 15463452]   Running D0<.empty_stack: D0<
+[KRELTSC: 15468731]     Expected error occurred
+D0<
+[KRELTSC: 15473707]     Expected: Should cause stack underflow
+[KRELTSC: 15479555]   D0<: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 15486513] === Double Number Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 15495969] 
+=== Testing Module: Format Words ===
+[KRELTSC: 15502484] Running Format Words Tests (Module 10)...
+[KRELTSC: 15510101] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 15518526] Testing word: BASE
+[KRELTSC: 15522266] ------------------------
+[KRELTSC: 15527980]   Running BASE.decimal: DECIMAL 42 . CR
+42 
+[KRELTSC: 15539289]     Test passed
+BASE
+[KRELTSC: 15543347]     Expected: Should print: 42
+[KRELTSC: 15548183]   Running BASE.hex: HEX FF . CR
+255 
+[KRELTSC: 15562146]     Test passed
+BASE
+[KRELTSC: 15566556]     Expected: Should print: FF
+[KRELTSC: 15571464]   Running BASE.octal: OCTAL 52 . CR
+42 
+[KRELTSC: 15579949]     Test passed
+BASE
+[KRELTSC: 15583942]     Expected: Should print: 52
+[KRELTSC: 15590452]   Running BASE.base_store: 16 BASE ! 255 . CR
+467 
+[KRELTSC: 15602309]     Test passed
+BASE
+[KRELTSC: 15606339]     Expected: Should print: FF
+[KRELTSC: 15611146]   Running BASE.base_fetch: BASE @ . CR
+14 
+[KRELTSC: 15618258]     Test passed
+BASE
+[KRELTSC: 15622255]     Expected: Should print current base
+[KRELTSC: 15628197]   BASE: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 15635308] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 15643131] Testing word: DECIMAL
+[KRELTSC: 15647106] ------------------------
+[KRELTSC: 15653150]   Running DECIMAL.from_hex: HEX FF DECIMAL . CR
+255 
+[KRELTSC: 15661812]     Test passed
+DECIMAL
+[KRELTSC: 15666062]     Expected: Should print: 255
+[KRELTSC: 15670945]   Running DECIMAL.from_octal: OCTAL 52 DECIMAL . CR
+42 
+[KRELTSC: 15679289]     Test passed
+DECIMAL
+[KRELTSC: 15683528]     Expected: Should print: 42
+[KRELTSC: 15688303]   Running DECIMAL.state_persist: DECIMAL 42 . CR 42 . CR HEX 42 . CR
+42 
+42 
+66 
+[KRELTSC: 15700546]     Test passed
+DECIMAL
+[KRELTSC: 15704801]     Expected: Should maintain base
+[KRELTSC: 15709953]   DECIMAL: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 15718079] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 15725976] Testing word: HEX
+[KRELTSC: 15729617] ------------------------
+[KRELTSC: 15733927]   Running HEX.from_decimal: DECIMAL 255 HEX . CR
+255 
+[KRELTSC: 15742566]     Test passed
+HEX
+[KRELTSC: 15746484]     Expected: Should print: FF
+[KRELTSC: 15751293]   Running HEX.from_octal: OCTAL 52 HEX . CR
+42 
+[KRELTSC: 15759111]     Test passed
+HEX
+[KRELTSC: 15763002]     Expected: Should print: 2A
+[KRELTSC: 15767809]   Running HEX.state_persist: HEX FF . CR DECIMAL 255 . CR
+255 
+255 
+[KRELTSC: 15779772]     Test passed
+HEX
+[KRELTSC: 15783727]     Expected: Should maintain base
+[KRELTSC: 15788938]   HEX: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 15795311] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 15806278] Testing word: OCTAL
+[KRELTSC: 15810104] ------------------------
+[KRELTSC: 15814353]   Running OCTAL.from_decimal: DECIMAL 42 OCTAL . CR
+42 
+[KRELTSC: 15823449]     Test passed
+OCTAL
+[KRELTSC: 15827548]     Expected: Should print: 52
+[KRELTSC: 15832344]   Running OCTAL.from_hex: HEX 2A OCTAL . CR
+42 
+[KRELTSC: 15841763]     Test passed
+OCTAL
+[KRELTSC: 15845870]     Expected: Should print: 52
+[KRELTSC: 15850700]   Running OCTAL.state_persist: DECIMAL 42 . CR OCTAL 52 . CR
+42 
+42 
+[KRELTSC: 15861051]     Test passed
+OCTAL
+[KRELTSC: 15865126]     Expected: Should maintain base
+[KRELTSC: 15870278]   OCTAL: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 15876794] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 15884820] Testing word: <#
+[KRELTSC: 15888341] ------------------------
+[KRELTSC: 15892590]   Running <#.basic: DECIMAL 42 S>D <# #S #> TYPE CR
+774763251095801167872
+[KRELTSC: 15965059]     Test passed
+<#
+[KRELTSC: 15968990]     Expected: Should format number
+[KRELTSC: 15974221]   Running <#.empty: 0 <# #> TYPE CR
+
+[KRELTSC: 15981211]     Test passed
+<#
+[KRELTSC: 15985024]     Expected: Should handle zero
+[KRELTSC: 15990018]   Running <#.negative: -42 <# #S #> TYPE CR
+42
+[KRELTSC: 16001989]     Test passed
+<#
+[KRELTSC: 16006217]     Expected: Should handle negative
+[KRELTSC: 16011584]   <#: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16017844] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 16027185] Testing word: #
+[KRELTSC: 16030703] ------------------------
+[KRELTSC: 16035193]   Running #.single_digit: 15 <# # #> TYPE CR
+5
+[KRELTSC: 16046820]     Test passed
+#
+[KRELTSC: 16050578]     Expected: Should print rightmost digit
+[KRELTSC: 16060005]   Running #.multiple: 15 <# # # #> TYPE CR
+15
+[KRELTSC: 16068953]     Test passed
+#
+[KRELTSC: 16072668]     Expected: Should print digits right to left
+[KRELTSC: 16078990]   Running #.zero_pad: 5 <# # 0 # #> TYPE CR
+05
+[KRELTSC: 16089270]     Test passed
+#
+[KRELTSC: 16093385]     Expected: Should handle zero padding
+[KRELTSC: 16099108]   #: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16105241] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 16113016] Testing word: #S
+[KRELTSC: 16116515] ------------------------
+[KRELTSC: 16120762]   Running #S.basic: 42 <# #S #> TYPE CR
+42
+[KRELTSC: 16129634]     Test passed
+#S
+[KRELTSC: 16133435]     Expected: Should convert all digits
+[KRELTSC: 16139024]   Running #S.zero: 0 <# #S #> TYPE CR
+0
+[KRELTSC: 16146222]     Test passed
+#S
+[KRELTSC: 16151588]     Expected: Should handle zero
+[KRELTSC: 16156635]   Running #S.large: 1234567890 <# #S #> TYPE CR
+1234567890
+[KRELTSC: 16166806]     Test passed
+#S
+[KRELTSC: 16170618]     Expected: Should handle large numbers
+[KRELTSC: 16176384]   #S: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16182639] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 16190716] Testing word: SIGN
+[KRELTSC: 16194430] ------------------------
+[KRELTSC: 16198700]   Running SIGN.negative: -42 ABS <# #S SIGN #> TYPE CR
+42
+[KRELTSC: 16217235]     Test passed
+SIGN
+[KRELTSC: 16221331]     Expected: Should add minus
+[KRELTSC: 16226192]   Running SIGN.positive: 42 <# #S SIGN #> TYPE CR
+42
+[KRELTSC: 16236999]     Test passed
+SIGN
+[KRELTSC: 16241030]     Expected: Should not add sign
+[KRELTSC: 16246118]   Running SIGN.zero: 0 <# #S SIGN #> TYPE CR
+0
+[KRELTSC: 16254702]     Test passed
+SIGN
+[KRELTSC: 16258669]     Expected: Should handle zero
+[KRELTSC: 16263649]   SIGN: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16270097] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 16279337] Testing word: #>
+[KRELTSC: 16282925] ------------------------
+[KRELTSC: 16287208]   Running #>.normal: 42 <# #S #> TYPE CR
+42
+[KRELTSC: 16295202]     Test passed
+#>
+[KRELTSC: 16299012]     Expected: Should terminate formatting
+[KRELTSC: 16308655]   Running #>.empty: 0 <# #> TYPE CR
+
+[KRELTSC: 16315959]     Test passed
+#>
+[KRELTSC: 16319765]     Expected: Should handle empty format
+[KRELTSC: 16325411]   Running #>.stack_effect: 42 <# #S #> SWAP . . CR
+48 2 
+[KRELTSC: 16334952]     Test passed
+#>
+[KRELTSC: 16340173]     Expected: Should leave addr u
+[KRELTSC: 16345298]   #>: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16351551] ▶ Testing module: src/test_runner/modules/format_words_test.c
+[KRELTSC: 16359313] Testing word: HOLD
+[KRELTSC: 16362985] ------------------------
+[KRELTSC: 16367429]   Running HOLD.basic: 42 <# 46 HOLD #S #> TYPE CR
+42.
+[KRELTSC: 16376705]     Test passed
+HOLD
+[KRELTSC: 16380982]     Expected: Should insert dot
+[KRELTSC: 16385880]   Running HOLD.overflow: <# 257 HOLD #>
+[KRELTSC: 16394076] HOLD: byte out of range (257)
+[KRELTSC: 16411722]     Expected error occurred
+HOLD
+[KRELTSC: 16416883]     Expected: Should handle overflow
+[KRELTSC: 16422296]   HOLD: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16429195] === Format Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 16438038] 
+=== Testing Module: String Words ===
+[KRELTSC: 16444791] Running String Words Tests (Module 11)...
+[KRELTSC: 16452341] ▶ Testing module: src/test_runner/modules/string_words_test.c
+[KRELTSC: 16462251] Testing word: COUNT
+[KRELTSC: 16466290] ------------------------
+[KRELTSC: 16470567]   Running COUNT.basic: HERE S" Test" DROP COUNT . . CR
+4 49 
+[KRELTSC: 16505249]     Test passed
+COUNT
+[KRELTSC: 16509451]     Expected: Should show length and addr+1
+[KRELTSC: 16515554]   Running COUNT.empty: HERE 0 OVER C! COUNT . . CR
+0 54 
+[KRELTSC: 16527086]     Test passed
+COUNT
+[KRELTSC: 16531189]     Expected: Should handle empty string
+[KRELTSC: 16536938]   Running COUNT.max_length: HERE 255 OVER C! COUNT . . CR
+255 54 
+[KRELTSC: 16547134]     Test passed
+COUNT
+[KRELTSC: 16551197]     Expected: Should handle max length
+[KRELTSC: 16558919]   Running COUNT.string_bounds: HERE COUNT SWAP 1- = . CR
+0 
+[KRELTSC: 16572752]     Test passed
+COUNT
+[KRELTSC: 16578637]     Expected: Should increment address
+[KRELTSC: 16584211]   Running COUNT.empty_stack: COUNT
+[KRELTSC: 16592521] COUNT: Data stack underflow
+[KRELTSC: 16597821]     Expected error occurred
+COUNT
+[KRELTSC: 16602998]     Expected: Should cause stack underflow
+[KRELTSC: 16608885]   COUNT: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16616010] ▶ Testing module: src/test_runner/modules/string_words_test.c
+[KRELTSC: 16623740] Testing word: -TRAILING
+[KRELTSC: 16628178] ------------------------
+[KRELTSC: 16632437]   Running -TRAILING.basic: HERE S"  Test  " -TRAILING TYPE CR
+ Test
+[KRELTSC: 16657064]     Test passed
+-TRAILING
+[KRELTSC: 16661563]     Expected: Should trim spaces
+[KRELTSC: 16666584]   Running -TRAILING.all_spaces: HERE S"     " -TRAILING TYPE CR
+
+[KRELTSC: 16676280]     Test passed
+-TRAILING
+[KRELTSC: 16680701]     Expected: Should handle all spaces
+[KRELTSC: 16686207]   Running -TRAILING.no_spaces: HERE S" Test" -TRAILING TYPE CR
+Test
+[KRELTSC: 16696292]     Test passed
+-TRAILING
+[KRELTSC: 16700705]     Expected: Should handle no spaces
+[KRELTSC: 16706123]   Running -TRAILING.empty: HERE 0 -TRAILING TYPE CR
+
+[KRELTSC: 16716246]     Test passed
+-TRAILING
+[KRELTSC: 16720689]     Expected: Should handle empty string
+[KRELTSC: 16726405]   -TRAILING: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16733260] ▶ Testing module: src/test_runner/modules/string_words_test.c
+[KRELTSC: 16741010] Testing word: CMOVE
+[KRELTSC: 16744769] ------------------------
+[KRELTSC: 16749198]   Running CMOVE.basic: HERE S" Test" DUP >R HERE 10 + SWAP CMOVE CR
+
+[KRELTSC: 16769925]     Test passed
+CMOVE
+[KRELTSC: 16775541]     Expected: Should copy string
+[KRELTSC: 16780614]   Running CMOVE.empty: HERE HERE 10 + 0 CMOVE
+[KRELTSC: 16789054]     Test passed
+CMOVE
+[KRELTSC: 16793186]     Expected: Should handle zero count
+[KRELTSC: 16798711]   Running CMOVE.overlap: HERE DUP 1+ 5 CMOVE
+[KRELTSC: 16812968]     Test passed
+CMOVE
+[KRELTSC: 16817545]     Expected: Should handle overlap
+[KRELTSC: 16822855]   Running CMOVE.bounds: HERE PAD 1000 CMOVE
+[KRELTSC: 16831311] CMOVE: out-of-bounds (src=53 dst=5242368 n=1000)
+[KRELTSC: 16840020]     Expected error occurred
+CMOVE
+[KRELTSC: 16845324]     Expected: Should check bounds
+[KRELTSC: 16850492]   CMOVE: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16857163] ▶ Testing module: src/test_runner/modules/string_words_test.c
+[KRELTSC: 16865027] Testing word: CMOVE>
+[KRELTSC: 16868938] ------------------------
+[KRELTSC: 16873237]   Running CMOVE>.basic: HERE S" Test" DUP >R HERE 10 + SWAP CMOVE> CR
+
+[KRELTSC: 16894908]     Test passed
+CMOVE>
+[KRELTSC: 16900663]     Expected: Should copy backward
+[KRELTSC: 16906005]   Running CMOVE>.empty: HERE HERE 10 + 0 CMOVE>
+[KRELTSC: 16914536]     Test passed
+CMOVE>
+[KRELTSC: 16918737]     Expected: Should handle zero count
+[KRELTSC: 16924281]   Running CMOVE>.overlap: HERE DUP 1+ 5 CMOVE>
+[KRELTSC: 16931885]     Test passed
+CMOVE>
+[KRELTSC: 16936045]     Expected: Should handle overlap
+[KRELTSC: 16941609]   Running CMOVE>.bounds: HERE PAD 1000 CMOVE>
+[KRELTSC: 16949979] CMOVE>: out-of-bounds (src=53 dst=5242368 n=1000)
+[KRELTSC: 16956989]     Expected error occurred
+CMOVE>
+[KRELTSC: 16963755]     Expected: Should check bounds
+[KRELTSC: 16968953]   CMOVE>: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 16975543] ▶ Testing module: src/test_runner/modules/string_words_test.c
+[KRELTSC: 16983296] Testing word: COMPARE
+[KRELTSC: 16987245] ------------------------
+[KRELTSC: 16991483]   Running COMPARE.equal: HERE S" Test" HERE S" Test" COMPARE . CR
+0 
+[KRELTSC: 17030410]     Test passed
+COMPARE
+[KRELTSC: 17034808]     Expected: Should return 0
+[KRELTSC: 17039637]   Running COMPARE.less: HERE S" Test1" HERE S" Test2" COMPARE . CR
+-1 
+[KRELTSC: 17054595]     Test passed
+COMPARE
+[KRELTSC: 17058927]     Expected: Should return -1
+[KRELTSC: 17063822]   Running COMPARE.greater: HERE S" Test2" HERE S" Test1" COMPARE . CR
+1 
+[KRELTSC: 17075571]     Test passed
+COMPARE
+[KRELTSC: 17080232]     Expected: Should return 1
+[KRELTSC: 17084931]   Running COMPARE.different_lengths: HERE S" Test" HERE S" Testing" COMPARE . CR
+-1 
+[KRELTSC: 17100447]     Test passed
+COMPARE
+[KRELTSC: 17104737]     Expected: Should handle lengths
+[KRELTSC: 17110202]   Running COMPARE.empty: HERE 0 HERE 0 COMPARE . CR
+0 
+[KRELTSC: 17119074]     Test passed
+COMPARE
+[KRELTSC: 17123295]     Expected: Should handle empty
+[KRELTSC: 17128667]   COMPARE: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 17135374] ▶ Testing module: src/test_runner/modules/string_words_test.c
+[KRELTSC: 17143135] Testing word: SEARCH
+[KRELTSC: 17147005] ------------------------
+[KRELTSC: 17152712]   Running SEARCH.found: HERE S" Testing" HERE S" Test" SEARCH . . . CR
+-1 7 49 
+[KRELTSC: 17186653]     Test passed
+SEARCH
+[KRELTSC: 17191214]     Expected: Should find substring
+[KRELTSC: 17196457]   Running SEARCH.not_found: HERE S" Testing" HERE S" Xyz" SEARCH . . . CR
+0 7 62 
+[KRELTSC: 17215193]     Test passed
+SEARCH
+[KRELTSC: 17219432]     Expected: Should return false
+[KRELTSC: 17224743]   Running SEARCH.empty_pattern: HERE S" Test" HERE 0 SEARCH . . . CR
+-1 4 74 
+[KRELTSC: 17239625]     Test passed
+SEARCH
+[KRELTSC: 17243797]     Expected: Should handle empty pattern
+[KRELTSC: 17249592]   Running SEARCH.empty_string: HERE 0 HERE S" Test" SEARCH . . . CR
+0 0 78 
+[KRELTSC: 17264019]     Test passed
+SEARCH
+[KRELTSC: 17268192]     Expected: Should handle empty string
+[KRELTSC: 17275696]   SEARCH: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 17282343] ▶ Testing module: src/test_runner/modules/string_words_test.c
+[KRELTSC: 17290291] Testing word: SCAN
+[KRELTSC: 17293953] ------------------------
+[KRELTSC: 17298392]   Running SCAN.basic: HERE S" Test,Data" BL SCAN TYPE CR
+
+[KRELTSC: 17326704]     Test passed
+SCAN
+[KRELTSC: 17330776]     Expected: Should find space
+[KRELTSC: 17337304]   Running SCAN.not_found: HERE S" TestData" BL SCAN TYPE CR
+
+[KRELTSC: 17347304]     Test passed
+SCAN
+[KRELTSC: 17351287]     Expected: Should scan to end
+[KRELTSC: 17356234]   Running SCAN.empty: HERE 0 BL SCAN TYPE CR
+
+[KRELTSC: 17365234]     Test passed
+SCAN
+[KRELTSC: 17369215]     Expected: Should handle empty
+[KRELTSC: 17374271]   Running SCAN.all_delims: HERE S"     " BL SCAN TYPE CR
+    
+[KRELTSC: 17386388]     Test passed
+SCAN
+[KRELTSC: 17390375]     Expected: Should handle all delims
+[KRELTSC: 17395895]   SCAN: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 17404108] ▶ Testing module: src/test_runner/modules/string_words_test.c
+[KRELTSC: 17412035] Testing word: SKIP
+[KRELTSC: 17415772] ------------------------
+[KRELTSC: 17420080]   Running SKIP.basic: HERE S"   Test" BL SKIP TYPE CR
+Test
+[KRELTSC: 17442733]     Test passed
+SKIP
+[KRELTSC: 17446763]     Expected: Should skip spaces
+[KRELTSC: 17451786]   Running SKIP.no_delims: HERE S" Test" BL SKIP TYPE CR
+Test
+[KRELTSC: 17462881]     Test passed
+SKIP
+[KRELTSC: 17466921]     Expected: Should not skip
+[KRELTSC: 17471641]   Running SKIP.empty: HERE 0 BL SKIP TYPE CR
+
+[KRELTSC: 17480920]     Test passed
+SKIP
+[KRELTSC: 17484895]     Expected: Should handle empty
+[KRELTSC: 17489953]   Running SKIP.all_delims: HERE S"     " BL SKIP TYPE CR
+[KRELTSC: 17499018] L8[JACQUARD]: Mode C2_WINDOW_INF → C7_FULL_INFERENCE (entropy=2f, cv=2f, temporal=2f)
+
+[KRELTSC: 17517350]     Test passed
+SKIP
+[KRELTSC: 17521354]     Expected: Should skip all
+[KRELTSC: 17527672]   SKIP: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 17534252] ▶ Testing module: src/test_runner/modules/string_words_test.c
+[KRELTSC: 17542138] Testing word: BLANK
+[KRELTSC: 17545989] ------------------------
+[KRELTSC: 17550309]   Running BLANK.basic: HERE 5 BLANK HERE 5 TYPE CR
+     
+[KRELTSC: 17572738]     Test passed
+BLANK
+[KRELTSC: 17576887]     Expected: Should fill with spaces
+[KRELTSC: 17582343]   Running BLANK.zero: HERE 0 BLANK HERE 0 TYPE CR
+
+[KRELTSC: 17593140]     Test passed
+BLANK
+[KRELTSC: 17597234]     Expected: Should handle zero count
+[KRELTSC: 17603088]   BLANK: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 17610083] === String Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 17618833] 
+=== Testing Module: I/O Words ===
+[KRELTSC: 17624738] Running I/O Words Tests (Module 9)...
+[KRELTSC: 17632275] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 17640478] Testing word: .
+[KRELTSC: 17643935] ------------------------
+[KRELTSC: 17649748]   Running ..positive: 42 . CR
+42 
+[KRELTSC: 17656222]     Test passed
+.
+[KRELTSC: 17659967]     Expected: Should print: 42
+[KRELTSC: 17664795]   Running ..negative: -42 . CR
+-42 
+[KRELTSC: 17670976]     Test passed
+.
+[KRELTSC: 17674697]     Expected: Should print: -42
+[KRELTSC: 17679598]   Running ..zero: 0 . CR
+0 
+[KRELTSC: 17684915]     Test passed
+.
+[KRELTSC: 17688613]     Expected: Should print: 0
+[KRELTSC: 17693611]   Running ..max_int: 2147483647 . CR
+2147483647 
+[KRELTSC: 17701010]     Test passed
+.
+[KRELTSC: 17704733]     Expected: Should print: 2147483647
+[KRELTSC: 17710238]   Running ..min_int: -2147483648 . CR
+-2147483648 
+[KRELTSC: 17719541]     Test passed
+.
+[KRELTSC: 17723263]     Expected: Should print: -2147483648
+[KRELTSC: 17728877]   Running ..multiple: 1 2 3 . . . CR
+3 2 1 
+[KRELTSC: 17737202]     Test passed
+.
+[KRELTSC: 17740908]     Expected: Should print: 3 2 1
+[KRELTSC: 17745966]   Running ..empty_stack: .
+[KRELTSC: 17751341]     Expected error occurred
+.
+[KRELTSC: 17756435]     Expected: Should cause stack underflow
+[KRELTSC: 17762274]   .: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 17769046] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 17778053] Testing word: CR
+[KRELTSC: 17781677] ------------------------
+[KRELTSC: 17786031]   Running CR.basic: 42 . CR 43 . CR
+42 
+43 
+[KRELTSC: 17799110]     Test passed
+CR
+[KRELTSC: 17806248]     Expected: Should print on separate lines
+[KRELTSC: 17812418]   Running CR.multiple: CR CR CR
+
+
+
+[KRELTSC: 17819313]     Test passed
+CR
+[KRELTSC: 17823133]     Expected: Should print multiple newlines
+[KRELTSC: 17829256]   Running CR.no_stack_effect: DEPTH CR DEPTH = . CR
+
+0 
+[KRELTSC: 17840921]     Test passed
+CR
+[KRELTSC: 17844783]     Expected: Should not affect stack
+[KRELTSC: 17850235]   Running CR.after_output: 1 2 3 . . . CR
+3 2 1 
+[KRELTSC: 17858393]     Test passed
+CR
+[KRELTSC: 17862184]     Expected: Should work after output
+[KRELTSC: 17867672]   CR: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 17873938] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 17881802] Testing word: SPACE
+[KRELTSC: 17885580] ------------------------
+[KRELTSC: 17889807]   Running SPACE.basic: 42 . SPACE 43 . CR
+42  43 
+[KRELTSC: 17902220]     Test passed
+SPACE
+[KRELTSC: 17906356]     Expected: Should add space between numbers
+[KRELTSC: 17912647]   Running SPACE.multiple: SPACE SPACE SPACE
+   [KRELTSC: 17919857]     Test passed
+SPACE
+[KRELTSC: 17923935]     Expected: Should print multiple spaces
+[KRELTSC: 17929837]   Running SPACE.no_stack_effect: DEPTH SPACE DEPTH = . CR
+ 0 
+[KRELTSC: 17939087]     Test passed
+SPACE
+[KRELTSC: 17943519]     Expected: Should not affect stack
+[KRELTSC: 17948986]   Running SPACE.with_text: 65 EMIT SPACE 66 EMIT CR
+A B
+[KRELTSC: 17962712]     Test passed
+SPACE
+[KRELTSC: 17966876]     Expected: Should space between chars
+[KRELTSC: 17972631]   SPACE: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 17979171] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 17986577] Testing word: SPACES
+[KRELTSC: 17990450] ------------------------
+[KRELTSC: 17994721]   Running SPACES.zero: 0 SPACES
+[KRELTSC: 18004947]     Test passed
+SPACES
+[KRELTSC: 18009217]     Expected: Should print no spaces
+[KRELTSC: 18014577]   Running SPACES.one: 1 SPACES
+ [KRELTSC: 18021243]     Test passed
+SPACES
+[KRELTSC: 18026972]     Expected: Should print one space
+[KRELTSC: 18032420]   Running SPACES.multiple: 5 SPACES
+     [KRELTSC: 18038879]     Test passed
+SPACES
+[KRELTSC: 18043404]     Expected: Should print five spaces
+[KRELTSC: 18048883]   Running SPACES.large: 20 SPACES
+                    [KRELTSC: 18058964]     Test passed
+SPACES
+[KRELTSC: 18063161]     Expected: Should print twenty spaces
+[KRELTSC: 18069188]   Running SPACES.negative: -5 SPACES
+[KRELTSC: 18075740]     Test passed
+SPACES
+[KRELTSC: 18079924]     Expected: Should handle negative
+[KRELTSC: 18086547]   Running SPACES.with_output: 42 . 3 SPACES 43 . CR
+42    43 
+[KRELTSC: 18096384]     Test passed
+SPACES
+[KRELTSC: 18100552]     Expected: Should space output
+[KRELTSC: 18105616]   Running SPACES.empty_stack: SPACES
+[KRELTSC: 18112134]     Expected error occurred
+SPACES
+[KRELTSC: 18117453]     Expected: Should cause stack underflow
+[KRELTSC: 18123344]   SPACES: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 18130286] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 18137677] Testing word: EMIT
+[KRELTSC: 18141358] ------------------------
+[KRELTSC: 18145829]   Running EMIT.letter_A: 65 EMIT CR
+A
+[KRELTSC: 18153770]     Test passed
+EMIT
+[KRELTSC: 18157790]     Expected: Should print: A
+[KRELTSC: 18162541]   Running EMIT.letter_Z: 90 EMIT CR
+Z
+[KRELTSC: 18168771]     Test passed
+EMIT
+[KRELTSC: 18172758]     Expected: Should print: Z
+[KRELTSC: 18177473]   Running EMIT.digit: 48 EMIT CR
+0
+[KRELTSC: 18183399]     Test passed
+EMIT
+[KRELTSC: 18187383]     Expected: Should print: 0
+[KRELTSC: 18192363]   Running EMIT.space_char: 32 EMIT CR
+ 
+[KRELTSC: 18198752]     Test passed
+EMIT
+[KRELTSC: 18202702]     Expected: Should print space
+[KRELTSC: 18207640]   Running EMIT.newline: 10 EMIT
+
+[KRELTSC: 18214733]     Test passed
+EMIT
+[KRELTSC: 18218752]     Expected: Should print newline
+[KRELTSC: 18223941]   Running EMIT.high_ascii: 127 EMIT CR
+
+[KRELTSC: 18230494]     Test passed
+EMIT
+[KRELTSC: 18234475]     Expected: Should print DEL char
+[KRELTSC: 18239714]   Running EMIT.truncation: 321 EMIT CR
+A
+[KRELTSC: 18246181]     Test passed
+EMIT
+[KRELTSC: 18250159]     Expected: Should truncate to low byte
+[KRELTSC: 18256206]   Running EMIT.negative: -1 EMIT CR
+�
+[KRELTSC: 18262476]     Test passed
+EMIT
+[KRELTSC: 18266439]     Expected: Should handle negative
+[KRELTSC: 18271770]   Running EMIT.sequence: 72 EMIT 73 EMIT 10 EMIT
+HI
+[KRELTSC: 18281439]     Test passed
+EMIT
+[KRELTSC: 18285449]     Expected: Should print: HI
+[KRELTSC: 18290269]   Running EMIT.empty_stack: EMIT
+[KRELTSC: 18296461]     Expected error occurred
+EMIT
+[KRELTSC: 18304470]     Expected: Should cause stack underflow
+[KRELTSC: 18310535]   EMIT: 10 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 18317329] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 18324717] Testing word: KEY
+[KRELTSC: 18328321] ------------------------
+[KRELTSC: 18333544]   KEY: 0 passed, 0 failed, 4 skipped, 0 errors
+[KRELTSC: 18341433] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 18349055] Testing word: ?KEY
+[KRELTSC: 18352749] ------------------------
+[KRELTSC: 18357012]   ?KEY: 0 passed, 0 failed, 3 skipped, 0 errors
+[KRELTSC: 18363642] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 18371045] Testing word: TYPE
+[KRELTSC: 18374776] ------------------------
+[KRELTSC: 18379359]   Running TYPE.basic_string: HERE S" Hello" DUP >R HERE SWAP CMOVE HERE R> TYPE CR
+Hell
+[KRELTSC: 18393504]     Test passed
+TYPE
+[KRELTSC: 18397509]     Expected: Should print: Hello
+[KRELTSC: 18404051]   Running TYPE.empty_string: HERE 0 TYPE CR
+
+[KRELTSC: 18411575]     Test passed
+TYPE
+[KRELTSC: 18415583]     Expected: Should print nothing
+[KRELTSC: 18420756]   Running TYPE.single_char: HERE 65 OVER C! 1 TYPE CR
+A
+[KRELTSC: 18434315]     Test passed
+TYPE
+[KRELTSC: 18439997]     Expected: Should print: A
+[KRELTSC: 18444827]   Running TYPE.numbers: HERE S" 12345" DUP >R HERE SWAP CMOVE HERE R> TYPE CR
+1234
+[KRELTSC: 18458020]     Test passed
+TYPE
+[KRELTSC: 18463935]     Expected: Should print: 12345
+[KRELTSC: 18471024]   Running TYPE.zero_length: PAD 0 TYPE
+[KRELTSC: 18477776]     Test passed
+TYPE
+[KRELTSC: 18481792]     Expected: Should handle zero length
+[KRELTSC: 18487388]   Running TYPE.one_item: PAD TYPE
+[KRELTSC: 18494331] TYPE: Data stack underflow
+[KRELTSC: 18499485]     Expected error occurred
+TYPE
+[KRELTSC: 18505003]     Expected: Should cause stack underflow
+[KRELTSC: 18511008]   Running TYPE.empty_stack: TYPE
+[KRELTSC: 18516266] TYPE: Data stack underflow
+[KRELTSC: 18520750]     Expected error occurred
+TYPE
+[KRELTSC: 18527418]     Expected: Should cause stack underflow
+[KRELTSC: 18533596]   TYPE: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 18540118] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 18547643] Testing word: COUNT
+[KRELTSC: 18551480] ------------------------
+[KRELTSC: 18558125]   Running COUNT.basic: HERE S" Test" DROP C@ HERE 1+ SWAP COUNT . . CR
+0 5 
+[KRELTSC: 18571727]     Test passed
+COUNT
+[KRELTSC: 18575799]     Expected: Should show length and addr+1
+[KRELTSC: 18581754]   Running COUNT.empty: HERE 0 OVER C! COUNT . . CR
+0 54 
+[KRELTSC: 18592935]     Test passed
+COUNT
+[KRELTSC: 18597042]     Expected: Should handle empty string
+[KRELTSC: 18602756]   Running COUNT.max_length: HERE 255 OVER C! COUNT . . CR
+255 54 
+[KRELTSC: 18612861]     Test passed
+COUNT
+[KRELTSC: 18616962]     Expected: Should handle max length
+[KRELTSC: 18622467]   Running COUNT.zero_addr_plus_one: HERE COUNT SWAP 1- = . CR
+0 
+[KRELTSC: 18632496]     Test passed
+COUNT
+[KRELTSC: 18636564]     Expected: Should increment address
+[KRELTSC: 18643791]   Running COUNT.empty_stack: COUNT
+[KRELTSC: 18650803] COUNT: Data stack underflow
+[KRELTSC: 18655466]     Expected error occurred
+COUNT
+[KRELTSC: 18660653]     Expected: Should cause stack underflow
+[KRELTSC: 18666588]   COUNT: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 18673149] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 18680577] Testing word: EXPECT
+[KRELTSC: 18684468] ------------------------
+[KRELTSC: 18688763]   Running EXPECT.zero_length: PAD 0 EXPECT
+[KRELTSC: 18717625]     Test passed
+EXPECT
+[KRELTSC: 18722195]     Expected: Should handle zero length
+[KRELTSC: 18727886]   Running EXPECT.one_item: PAD EXPECT
+[KRELTSC: 18734771]     Expected error occurred
+EXPECT
+[KRELTSC: 18740087]     Expected: Should cause stack underflow
+[KRELTSC: 18746009]   Running EXPECT.empty_stack: EXPECT
+[KRELTSC: 18751683]     Expected error occurred
+EXPECT
+[KRELTSC: 18757296]     Expected: Should cause stack underflow
+[KRELTSC: 18763206]   EXPECT: 3 passed, 0 failed, 2 skipped, 0 errors
+[KRELTSC: 18769842] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 18778714] Testing word: SPAN
+[KRELTSC: 18782501] ------------------------
+[KRELTSC: 18786817]   Running SPAN.zero_input: PAD 0 EXPECT SPAN @ . CR
+0 
+[KRELTSC: 18801001]     Test passed
+SPAN
+[KRELTSC: 18808413]     Expected: Should show zero
+[KRELTSC: 18813338]   Running SPAN.variable_test: SPAN @ SPAN @ = . CR
+-1 
+[KRELTSC: 18823017]     Test passed
+SPAN
+[KRELTSC: 18827006]     Expected: Should be consistent
+[KRELTSC: 18832145]   Running SPAN.address_test: SPAN 0<> . CR
+-1 
+[KRELTSC: 18844876]     Test passed
+SPAN
+[KRELTSC: 18848901]     Expected: Should be valid address
+[KRELTSC: 18854341]   SPAN: 3 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 18860770] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 18868231] Testing word: WORD
+[KRELTSC: 18871930] ------------------------
+[KRELTSC: 18876207]   Running WORD.empty_input: BL WORD COUNT . CR
+0 
+[KRELTSC: 18907469]     Test passed
+WORD
+[KRELTSC: 18911552]     Expected: Should handle empty input
+[KRELTSC: 18917214]   Running WORD.space_delim: 32 WORD DROP
+[KRELTSC: 18923984]     Test passed
+WORD
+[KRELTSC: 18927999]     Expected: Should use space as delimiter
+[KRELTSC: 18934013]   Running WORD.newline_delim: 10 WORD DROP
+[KRELTSC: 18941123]     Test passed
+WORD
+[KRELTSC: 18945144]     Expected: Should use newline as delimiter
+[KRELTSC: 18951647]   Running WORD.tab_delim: 9 WORD DROP
+[KRELTSC: 18957832]     Test passed
+WORD
+[KRELTSC: 18963337]     Expected: Should use tab as delimiter
+[KRELTSC: 18969238]   Running WORD.comma_delim: 44 WORD DROP
+[KRELTSC: 18975969]     Test passed
+WORD
+[KRELTSC: 18979996]     Expected: Should use comma as delimiter
+[KRELTSC: 18986170]   Running WORD.skip_leading: BL WORD DROP
+[KRELTSC: 18992808]     Test passed
+WORD
+[KRELTSC: 18996805]     Expected: Should skip leading spaces
+[KRELTSC: 19002947]   Running WORD.single_char: BL WORD COUNT . CR
+0 
+[KRELTSC: 19011031]     Test passed
+WORD
+[KRELTSC: 19015000]     Expected: Should parse single character
+[KRELTSC: 19021023]   Running WORD.long_word: BL WORD COUNT 0 > . CR
+0 
+[KRELTSC: 19032609]     Test passed
+WORD
+[KRELTSC: 19036650]     Expected: Should parse long word
+[KRELTSC: 19042029]   Running WORD.zero_delim: 0 WORD DROP
+[KRELTSC: 19048342]     Test passed
+WORD
+[KRELTSC: 19054579]     Expected: Should handle null delimiter
+[KRELTSC: 19060567]   Running WORD.high_ascii: 127 WORD DROP
+[KRELTSC: 19067715]     Test passed
+WORD
+[KRELTSC: 19071717]     Expected: Should handle DEL delimiter
+[KRELTSC: 19077536]   Running WORD.count_format: BL WORD C@ . CR
+0 
+[KRELTSC: 19086769]     Test passed
+WORD
+[KRELTSC: 19090869]     Expected: Should have count byte
+[KRELTSC: 19096637]   Running WORD.count_value: BL WORD COUNT SWAP DROP . CR
+0 
+[KRELTSC: 19107624]     Test passed
+WORD
+[KRELTSC: 19111633]     Expected: Should return count
+[KRELTSC: 19116737]   Running WORD.empty_stack: WORD
+[KRELTSC: 19123552]     Expected error occurred
+WORD
+[KRELTSC: 19129099]     Expected: Should cause stack underflow
+[KRELTSC: 19134982]   Running WORD.multi_delim: BL WORD DROP BL WORD DROP
+[KRELTSC: 19143464]     Test passed
+WORD
+[KRELTSC: 19147450]     Expected: Should handle multiple parses
+[KRELTSC: 19155032]   WORD: 14 passed, 0 failed, 2 skipped, 0 errors
+[KRELTSC: 19161584] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 19168997] Testing word: BASE_OUTPUT
+[KRELTSC: 19173350] ------------------------
+[KRELTSC: 19177664]   Running BASE_OUTPUT.decimal: 10 BASE ! 255 . CR
+255 
+[KRELTSC: 19186736]     Test passed
+BASE_OUTPUT
+[KRELTSC: 19191655]     Expected: Should print: 255
+[KRELTSC: 19196582]   Running BASE_OUTPUT.hex: 16 BASE ! 255 . CR
+597 
+[KRELTSC: 19204832]     Test passed
+BASE_OUTPUT
+[KRELTSC: 19209454]     Expected: Should print: FF
+[KRELTSC: 19215614]   Running BASE_OUTPUT.octal: 8 BASE ! 64 . CR
+52 
+[KRELTSC: 19223774]     Test passed
+BASE_OUTPUT
+[KRELTSC: 19228388]     Expected: Should print: 100
+[KRELTSC: 19233310]   Running BASE_OUTPUT.binary: 5 2 BASE ! . CR
+5 
+[KRELTSC: 19241367]     Test passed
+BASE_OUTPUT
+[KRELTSC: 19245984]     Expected: Should print: 101
+[KRELTSC: 19250901]   Running BASE_OUTPUT.base_restore: BASE @  DECIMAL  255  16 BASE !  .  BASE !  CR
+255 
+[KRELTSC: 19263983]     Test passed
+BASE_OUTPUT
+[KRELTSC: 19268630]     Expected: Should restore base
+[KRELTSC: 19275103]   BASE_OUTPUT: 5 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 19282255] ▶ Testing module: src/test_runner/modules/io_words_test.c
+[KRELTSC: 19289692] Testing word: FORMAT_COMBO
+[KRELTSC: 19294121] ------------------------
+[KRELTSC: 19298385]   Running FORMAT_COMBO.number_space_number: DECIMAL 42 . SPACE 43 . CR
+42  43 
+[KRELTSC: 19312751]     Test passed
+FORMAT_COMBO
+[KRELTSC: 19317786]     Expected: Should format: 42 43
+[KRELTSC: 19322930]   Running FORMAT_COMBO.multi_line: DECIMAL 1 . CR 2 . CR 3 . CR
+1 
+2 
+3 
+[KRELTSC: 19334026]     Test passed
+FORMAT_COMBO
+[KRELTSC: 19340239]     Expected: Should print on separate lines
+[KRELTSC: 19346439]   Running FORMAT_COMBO.indented: DECIMAL 5 SPACES 42 . CR
+     42 
+[KRELTSC: 19356268]     Test passed
+FORMAT_COMBO
+[KRELTSC: 19360972]     Expected: Should indent number
+[KRELTSC: 19366190]   Running FORMAT_COMBO.table_format: DECIMAL 1 . 3 SPACES 10 . 3 SPACES 100 . CR
+1    10    100 
+[KRELTSC: 19380051]     Test passed
+FORMAT_COMBO
+[KRELTSC: 19385130]     Expected: Should format table
+[KRELTSC: 19390244]   FORMAT_COMBO: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 19399489] === I/O Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 19408501] 
+=== Testing Module: Block Words ===
+[KRELTSC: 19414763] Running Block Words Tests (Module 16)...
+[KRELTSC: 19422079] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 19430489] Testing word: BLOCK
+[KRELTSC: 19434311] ------------------------
+[KRELTSC: 19438833]   Running BLOCK.basic: 1 BLOCK DUP . CR
+3156552720 
+[KRELTSC: 19465647]     Test passed
+BLOCK
+[KRELTSC: 19469844]     Expected: Should return block address
+[KRELTSC: 19475718]   Running BLOCK.zero_block: 0 BLOCK
+[KRELTSC: 19482209]     Expected error occurred
+BLOCK
+[KRELTSC: 19487431]     Expected: Should handle block 0
+[KRELTSC: 19492691]   Running BLOCK.large_block: 65536 BLOCK
+[KRELTSC: 19499141]     Expected error occurred
+BLOCK
+[KRELTSC: 19504692]     Expected: Should handle large number
+[KRELTSC: 19510372]   Running BLOCK.negative: -1 BLOCK
+[KRELTSC: 19516052]     Expected error occurred
+BLOCK
+[KRELTSC: 19521217]     Expected: Should handle negative
+[KRELTSC: 19528069]   Running BLOCK.empty_stack: BLOCK
+[KRELTSC: 19534740]     Expected error occurred
+BLOCK
+[KRELTSC: 19539981]     Expected: Should cause stack underflow
+[KRELTSC: 19545925]   BLOCK: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 19555520] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 19563301] Testing word: BUFFER
+[KRELTSC: 19567482] ------------------------
+[KRELTSC: 19571755]   Running BUFFER.basic: 1 BUFFER DUP . CR
+3156552720 
+[KRELTSC: 19587881]     Test passed
+BUFFER
+[KRELTSC: 19592133]     Expected: Should return buffer address
+[KRELTSC: 19598060]   Running BUFFER.zero_block: 0 BUFFER
+[KRELTSC: 19604779]     Expected error occurred
+BUFFER
+[KRELTSC: 19610289]     Expected: Should handle block 0
+[KRELTSC: 19615573]   Running BUFFER.flush_dirty: 2 BLOCK 1+ 2 BUFFER
+[KRELTSC: 19623580]     Test passed
+BUFFER
+[KRELTSC: 19628085]     Expected: Should flush if dirty
+[KRELTSC: 19633344]   Running BUFFER.empty_stack: BUFFER
+[KRELTSC: 19639836]     Expected error occurred
+BUFFER
+[KRELTSC: 19645134]     Expected: Should cause stack underflow
+[KRELTSC: 19652540]   BUFFER: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 19659217] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 19666909] Testing word: UPDATE
+[KRELTSC: 19670780] ------------------------
+[KRELTSC: 19675043]   UPDATE: 0 passed, 0 failed, 3 skipped, 0 errors
+[KRELTSC: 19681599] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 19689504] Testing word: SAVE-BUFFERS
+[KRELTSC: 19693937] ------------------------
+[KRELTSC: 19698192]   Running SAVE-BUFFERS.basic: SAVE-BUFFERS
+[KRELTSC: 19713362]     Test passed
+SAVE-BUFFERS
+[KRELTSC: 19718295]     Expected: Should flush all buffers
+[KRELTSC: 19723818]   Running SAVE-BUFFERS.dirty_blocks: 1 BLOCK UPDATE SAVE-BUFFERS
+[KRELTSC: 19742721]     Test passed
+SAVE-BUFFERS
+[KRELTSC: 19747573]     Expected: Should save dirty blocks
+[KRELTSC: 19753530]   Running SAVE-BUFFERS.no_dirty: SAVE-BUFFERS
+[KRELTSC: 19760771]     Test passed
+SAVE-BUFFERS
+[KRELTSC: 19765475]     Expected: Should handle no dirty blocks
+[KRELTSC: 19771457]   SAVE-BUFFERS: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 19780323] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 19788313] Testing word: EMPTY-BUFFERS
+[KRELTSC: 19792826] ------------------------
+[KRELTSC: 19797325]   Running EMPTY-BUFFERS.basic: EMPTY-BUFFERS
+[KRELTSC: 19813365]     Test passed
+EMPTY-BUFFERS
+[KRELTSC: 19818612]     Expected: Should invalidate all buffers
+[KRELTSC: 19824625]   Running EMPTY-BUFFERS.after_use: 1 BLOCK EMPTY-BUFFERS
+[KRELTSC: 19833006]     Test passed
+EMPTY-BUFFERS
+[KRELTSC: 19839381]     Expected: Should invalidate used buffers
+[KRELTSC: 19845579]   Running EMPTY-BUFFERS.dirty_blocks: 1 BLOCK UPDATE EMPTY-BUFFERS
+[KRELTSC: 19855422]     Test passed
+EMPTY-BUFFERS
+[KRELTSC: 19860227]     Expected: Should handle dirty blocks
+[KRELTSC: 19865947]   EMPTY-BUFFERS: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 19873188] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 19881140] Testing word: FLUSH
+[KRELTSC: 19884921] ------------------------
+[KRELTSC: 19889176]   Running FLUSH.basic: FLUSH
+[KRELTSC: 19896290]     Test passed
+FLUSH
+[KRELTSC: 19901943]     Expected: Should save and invalidate buffers
+[KRELTSC: 19908441]   Running FLUSH.dirty_blocks: 1 BLOCK UPDATE FLUSH
+[KRELTSC: 19917148]     Test passed
+FLUSH
+[KRELTSC: 19921259]     Expected: Should flush dirty blocks
+[KRELTSC: 19926871]   Running FLUSH.after_empty: EMPTY-BUFFERS FLUSH
+[KRELTSC: 19934543]     Test passed
+FLUSH
+[KRELTSC: 19938638]     Expected: Should handle empty buffers
+[KRELTSC: 19944714]   FLUSH: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 19951249] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 19958915] Testing word: LOAD
+[KRELTSC: 19964025] ------------------------
+[KRELTSC: 19968308]   Running LOAD.basic: 1 LOAD
+[KRELTSC: 19981167]     Test passed
+LOAD
+[KRELTSC: 19985286]     Expected: Should interpret block 1
+[KRELTSC: 19990808]   Running LOAD.zero_block: 0 LOAD
+[KRELTSC: 19997121]     Expected error occurred
+LOAD
+[KRELTSC: 20002557]     Expected: Should handle block 0
+[KRELTSC: 20007800]   Running LOAD.nonexistent: 9999 LOAD
+[KRELTSC: 20014068]     Expected error occurred
+LOAD
+[KRELTSC: 20019147]     Expected: Should handle missing block
+[KRELTSC: 20026575]   Running LOAD.empty_stack: LOAD
+[KRELTSC: 20032918]     Expected error occurred
+LOAD
+[KRELTSC: 20038048]     Expected: Should cause stack underflow
+[KRELTSC: 20043941]   LOAD: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 20050353] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 20060283] Testing word: LIST
+[KRELTSC: 20064050] ------------------------
+[KRELTSC: 20068572]   Running LIST.basic: 1 LIST
+
+Block 1
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+
+
+[KRELTSC: 20206982]     Test passed
+LIST
+[KRELTSC: 20212418]     Expected: Should display block 1
+[KRELTSC: 20217873]   Running LIST.zero_block: 0 LIST
+[KRELTSC: 20224635]     Expected error occurred
+LIST
+[KRELTSC: 20229816]     Expected: Should handle block 0
+[KRELTSC: 20235332]   Running LIST.nonexistent: 9999 LIST
+[KRELTSC: 20241620]     Expected error occurred
+LIST
+[KRELTSC: 20246753]     Expected: Should handle missing block
+[KRELTSC: 20252865]   Running LIST.empty_stack: LIST
+[KRELTSC: 20258742]     Expected error occurred
+LIST
+[KRELTSC: 20263872]     Expected: Should cause stack underflow
+[KRELTSC: 20269807]   LIST: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 20277711] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 20285798] Testing word: SCR
+[KRELTSC: 20289419] ------------------------
+[KRELTSC: 20293845]   Running SCR.basic: SCR @ . CR
+1 
+[KRELTSC: 20306257]     Test passed
+SCR
+[KRELTSC: 20310263]     Expected: Should show current block
+[KRELTSC: 20316295]   Running SCR.after_list: 1 LIST SCR @ . CR
+
+Block 1
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+2d: 
+                                                                
+
+
+
+1 
+[KRELTSC: 20444129]     Test passed
+SCR
+[KRELTSC: 20448057]     Expected: Should update after LIST
+[KRELTSC: 20453587]   Running SCR.after_load: 1 LOAD SCR @ . CR
+[KRELTSC: 20462456]     Test passed
+SCR
+[KRELTSC: 20466607]     Expected: Should update after LOAD
+[KRELTSC: 20472237]   SCR: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 20478680] ▶ Testing module: src/test_runner/modules/block_words_test.c
+[KRELTSC: 20486404] Testing word: THRU
+[KRELTSC: 20490131] ------------------------
+[KRELTSC: 20494421]   Running THRU.single_block: 1 1 THRU
+[KRELTSC: 20510684]     Test passed
+THRU
+[KRELTSC: 20514837]     Expected: Should load single block (1-1)
+[KRELTSC: 20520919]   Running THRU.ascending: 1 3 THRU
+[KRELTSC: 20531390]     Test passed
+THRU
+[KRELTSC: 20535512]     Expected: Should load blocks 1-3 in order
+[KRELTSC: 20541858]   Running THRU.descending: 3 1 THRU
+[KRELTSC: 20553566]     Test passed
+THRU
+[KRELTSC: 20557941]     Expected: Should auto-swap and load 1-3
+[KRELTSC: 20564005]   Running THRU.same_block: 2 2 THRU
+[KRELTSC: 20571581]     Test passed
+THRU
+[KRELTSC: 20575595]     Expected: Should load single block (2-2)
+[KRELTSC: 20581689]   Running THRU.zero_start: 0 3 THRU
+[KRELTSC: 20590037]     Expected error occurred
+THRU
+[KRELTSC: 20595205]     Expected: Should reject block 0 as start
+[KRELTSC: 20601325]   Running THRU.zero_end: 1 0 THRU
+[KRELTSC: 20607036]     Expected error occurred
+THRU
+[KRELTSC: 20612137]     Expected: Should reject block 0 as end
+[KRELTSC: 20618031]   Running THRU.both_zero: 0 0 THRU
+[KRELTSC: 20623742]     Expected error occurred
+THRU
+[KRELTSC: 20629142]     Expected: Should reject both blocks as 0
+[KRELTSC: 20635190]   Running THRU.invalid_start: 9999 10000 THRU
+[KRELTSC: 20641938]     Expected error occurred
+THRU
+[KRELTSC: 20647037]     Expected: Should reject invalid start block
+[KRELTSC: 20654777]   Running THRU.invalid_end: 1 9999 THRU
+[KRELTSC: 20661655]     Expected error occurred
+THRU
+[KRELTSC: 20666810]     Expected: Should reject invalid end block
+[KRELTSC: 20673021]   Running THRU.both_invalid: 9998 9999 THRU
+[KRELTSC: 20679577]     Expected error occurred
+THRU
+[KRELTSC: 20688337]     Expected: Should reject both invalid blocks
+[KRELTSC: 20695509]   Running THRU.empty_stack: THRU
+[KRELTSC: 20702105]     Expected error occurred
+THRU
+[KRELTSC: 20707228]     Expected: Should cause stack underflow (no args)
+[KRELTSC: 20715844]   Running THRU.one_arg: 1 THRU
+[KRELTSC: 20721551]     Expected error occurred
+THRU
+[KRELTSC: 20726696]     Expected: Should cause stack underflow (one arg)
+[KRELTSC: 20733916]   Running THRU.small_range: 1 2 THRU
+[KRELTSC: 20741884]     Test passed
+THRU
+[KRELTSC: 20745879]     Expected: Should load 2-block range
+[KRELTSC: 20751485]   Running THRU.medium_range: 1 5 THRU
+[KRELTSC: 20762381]     Test passed
+THRU
+[KRELTSC: 20766362]     Expected: Should load 5-block range
+[KRELTSC: 20771928]   Running THRU.negative_start: -1 3 THRU
+[KRELTSC: 20779965]     Expected error occurred
+THRU
+[KRELTSC: 20785081]     Expected: Should handle negative start
+[KRELTSC: 20790960]   Running THRU.negative_end: 1 -3 THRU
+[KRELTSC: 20797049]     Expected error occurred
+THRU
+[KRELTSC: 20805318]     Expected: Should handle negative end
+[KRELTSC: 20811043]   Running THRU.both_negative: -3 -1 THRU
+[KRELTSC: 20817932]     Expected error occurred
+THRU
+[KRELTSC: 20823037]     Expected: Should handle both negative
+[KRELTSC: 20828813]   THRU: 17 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 20837614] === Block Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 20846476] 
+=== Testing Module: Dictionary Words ===
+[KRELTSC: 20853185] Running Dictionary Words Tests (Module 4)...
+[KRELTSC: 20861694] Testing word: HERE
+[KRELTSC: 20865468] ------------------------
+[KRELTSC: 20869784]   Running HERE.basic: HERE HERE = . CR
+-1 
+[KRELTSC: 20877891]     Test passed
+HERE
+[KRELTSC: 20881904]     Expected: Should print: -1
+[KRELTSC: 20886706]   Running HERE.after_comma: HERE 42 , HERE SWAP - . CR
+8 
+[KRELTSC: 20896241]     Test passed
+HERE
+[KRELTSC: 20901892]     Expected: Should print: 8 (1 cell = sizeof(cell_t) on 64-bit)
+[KRELTSC: 20909909]   Running HERE.after_c_comma: HERE 65 C, HERE SWAP - . CR
+1 
+[KRELTSC: 20919745]     Test passed
+HERE
+[KRELTSC: 20923737]     Expected: Should print: 1
+[KRELTSC: 20928439]   Running HERE.after_allot: HERE 10 ALLOT HERE SWAP - . CR
+10 
+[KRELTSC: 20938178]     Test passed
+HERE
+[KRELTSC: 20942610]     Expected: Should print: 10
+[KRELTSC: 20947453]   Running HERE.stability: HERE DUP HERE = . CR
+-1 
+[KRELTSC: 20956731]     Test passed
+HERE
+[KRELTSC: 20962362]     Expected: Should be stable
+[KRELTSC: 20967201]   HERE: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 20974704] Testing word: ALLOT
+[KRELTSC: 20978502] ------------------------
+[KRELTSC: 20982763]   Running ALLOT.basic: HERE 10 ALLOT HERE SWAP - . CR
+10 
+[KRELTSC: 20994169]     Test passed
+ALLOT
+[KRELTSC: 20998264]     Expected: Should print: 10
+[KRELTSC: 21003395]   Running ALLOT.zero: HERE 0 ALLOT HERE SWAP - . CR
+0 
+[KRELTSC: 21012262]     Test passed
+ALLOT
+[KRELTSC: 21016305]     Expected: Should print: 0
+[KRELTSC: 21020968]   Running ALLOT.negative: HERE -4 ALLOT HERE SWAP - . CR
+-4 
+[KRELTSC: 21032467]     Test passed
+ALLOT
+[KRELTSC: 21036709]     Expected: Should print: -4
+[KRELTSC: 21041516]   Running ALLOT.large: HERE 100 ALLOT HERE SWAP - . CR
+100 
+[KRELTSC: 21050920]     Test passed
+ALLOT
+[KRELTSC: 21057360]     Expected: Should print: 100
+[KRELTSC: 21062875]   Running ALLOT.after_use: ALIGN HERE 10 ALLOT 42 OVER ! @ . CR
+42 
+[KRELTSC: 21080761]     Test passed
+ALLOT
+[KRELTSC: 21084883]     Expected: Should store and retrieve
+[KRELTSC: 21092268]   Running ALLOT.empty_stack: ALLOT
+[KRELTSC: 21098935]     Expected error occurred
+ALLOT
+[KRELTSC: 21104167]     Expected: Should cause stack underflow
+[KRELTSC: 21110171]   ALLOT: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 21116781] Testing word: ,
+[KRELTSC: 21120242] ------------------------
+[KRELTSC: 21124542]   Running ,.basic: 42 , HERE 1 CELLS - @ . CR
+42 
+[KRELTSC: 21136769]     Test passed
+,
+[KRELTSC: 21140499]     Expected: Should compile 42
+[KRELTSC: 21145390]   Running ,.negative: -999 , HERE 1 CELLS - @ . CR
+-999 
+[KRELTSC: 21156760]     Test passed
+,
+[KRELTSC: 21160514]     Expected: Should compile -999
+[KRELTSC: 21165618]   Running ,.zero: 0 , HERE 1 CELLS - @ . CR
+0 
+[KRELTSC: 21173959]     Test passed
+,
+[KRELTSC: 21177663]     Expected: Should compile 0
+[KRELTSC: 21182445]   Running ,.max_int: 2147483647 , HERE 1 CELLS - @ . CR
+2147483647 
+[KRELTSC: 21193679]     Test passed
+,
+[KRELTSC: 21197374]     Expected: Should compile max int
+[KRELTSC: 21202678]   Running ,.min_int: -2147483648 , HERE 1 CELLS - @ . CR
+-2147483648 
+[KRELTSC: 21215273]     Test passed
+,
+[KRELTSC: 21219048]     Expected: Should compile min int
+[KRELTSC: 21224441]   Running ,.multiple: 10 , 20 , HERE 1 CELLS - @ . HERE 1 CELLS - @ . CR
+20 20 
+[KRELTSC: 21238078]     Test passed
+,
+[KRELTSC: 21241817]     Expected: Should compile multiple
+[KRELTSC: 21247265]   Running ,.empty_stack: ,
+[KRELTSC: 21253304]     Expected error occurred
+,
+[KRELTSC: 21258178]     Expected: Should cause stack underflow
+[KRELTSC: 21264105]   ,: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 21270313] Testing word: C,
+[KRELTSC: 21275394] ------------------------
+[KRELTSC: 21279718]   Running C,.basic: 65 C, HERE 1 - C@ . CR
+65 
+[KRELTSC: 21288346]     Test passed
+C,
+[KRELTSC: 21292169]     Expected: Should compile byte 65
+[KRELTSC: 21297528]   Running C,.zero: 0 C, HERE 1 - C@ . CR
+0 
+[KRELTSC: 21308982]     Test passed
+C,
+[KRELTSC: 21312894]     Expected: Should compile byte 0
+[KRELTSC: 21318546]   Running C,.high_byte: 255 C, HERE 1 - C@ . CR
+255 
+[KRELTSC: 21327451]     Test passed
+C,
+[KRELTSC: 21331260]     Expected: Should compile byte 255
+[KRELTSC: 21338305]   Running C,.truncation: 256 C, HERE 1 - C@ . CR
+0 
+[KRELTSC: 21347289]     Test passed
+C,
+[KRELTSC: 21351104]     Expected: Should truncate to 0
+[KRELTSC: 21356278]   Running C,.negative: -1 C, HERE 1 - C@ . CR
+255 
+[KRELTSC: 21364755]     Test passed
+C,
+[KRELTSC: 21368569]     Expected: Should handle negative
+[KRELTSC: 21373891]   Running C,.multiple: 65 C, 66 C, HERE 2 - C@ . HERE 1 - C@ . CR
+65 66 
+[KRELTSC: 21385969]     Test passed
+C,
+[KRELTSC: 21389767]     Expected: Should compile multiple
+[KRELTSC: 21395176]   Running C,.empty_stack: C,
+[KRELTSC: 21402781]     Expected error occurred
+C,
+[KRELTSC: 21407789]     Expected: Should cause stack underflow
+[KRELTSC: 21413707]   C,: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 21419987] Testing word: 2,
+[KRELTSC: 21423512] ------------------------
+[KRELTSC: 21427990]   Running 2,.basic: 12345 67890 2, HERE 2 CELLS - 2@ . . CR
+67890 12345 
+[KRELTSC: 21451458]     Test passed
+2,
+[KRELTSC: 21455338]     Expected: Should compile double
+[KRELTSC: 21462259]   Running 2,.zero: 0 0 2, HERE 2 CELLS - 2@ . . CR
+0 0 
+[KRELTSC: 21472449]     Test passed
+2,
+[KRELTSC: 21476283]     Expected: Should compile zero double
+[KRELTSC: 21481979]   Running 2,.negative: -1000 -2000 2, HERE 2 CELLS - 2@ . . CR
+-2000 -1000 
+[KRELTSC: 21493835]     Test passed
+2,
+[KRELTSC: 21497654]     Expected: Should compile negative double
+[KRELTSC: 21504017]   Running 2,.large: 2147483647 -1 2, HERE 2 CELLS - 2@ . . CR
+-1 2147483647 
+[KRELTSC: 21515798]     Test passed
+2,
+[KRELTSC: 21519615]     Expected: Should compile large double
+[KRELTSC: 21526953]   Running 2,.one_item: 42 2,
+[KRELTSC: 21533166]     Expected error occurred
+2,
+[KRELTSC: 21538160]     Expected: Should cause stack underflow
+[KRELTSC: 21544076]   Running 2,.empty_stack: 2,
+[KRELTSC: 21548990]     Expected error occurred
+2,
+[KRELTSC: 21556228]     Expected: Should cause stack underflow
+[KRELTSC: 21562216]   2,: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 21568838] Testing word: PAD
+[KRELTSC: 21572495] ------------------------
+[KRELTSC: 21576838]   Running PAD.basic: PAD PAD = . CR
+-1 
+[KRELTSC: 21584241]     Test passed
+PAD
+[KRELTSC: 21589724]     Expected: Should print: -1
+[KRELTSC: 21594603]   Running PAD.different_from_here: PAD HERE = . CR
+0 
+[KRELTSC: 21602985]     Test passed
+PAD
+[KRELTSC: 21606885]     Expected: Should print: 0
+[KRELTSC: 21611584]   Running PAD.stability: PAD DUP PAD = . CR
+-1 
+[KRELTSC: 21620021]     Test passed
+PAD
+[KRELTSC: 21624791]     Expected: Should be stable
+[KRELTSC: 21629920]   Running PAD.usable: PAD 42 OVER ! @ . CR
+42 
+[KRELTSC: 21638232]     Test passed
+PAD
+[KRELTSC: 21642535]     Expected: Should be usable memory
+[KRELTSC: 21649600]   PAD: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 21655999] Testing word: SP@
+[KRELTSC: 21659592] ------------------------
+[KRELTSC: 21663844]   Running SP@.depth_effect: 42 SP@ SWAP DROP SP@ = . CR
+-1 
+[KRELTSC: 21675769]     Test passed
+SP@
+[KRELTSC: 21679731]     Expected: Should show stack effect
+[KRELTSC: 21685290]   Running SP@.empty_stack: DEPTH 0= SP@ AND . CR
+0 
+[KRELTSC: 21694131]     Test passed
+SP@
+[KRELTSC: 21698052]     Expected: Should work on empty stack
+[KRELTSC: 21703785]   Running SP@.multiple_items: 1 2 3 SP@ SWAP DROP SWAP DROP SWAP DROP SP@ = . CR
+0 
+[KRELTSC: 21719991]     Test passed
+SP@
+[KRELTSC: 21723904]     Expected: Should track changes
+[KRELTSC: 21729037]   SP@: 3 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 21735343] Testing word: SP!
+[KRELTSC: 21738910] ------------------------
+[KRELTSC: 21743150]   Running SP!.basic_restore: 1 2 3 SP@ 4 5 6 DROP DROP DROP SP! DEPTH .
+3 [KRELTSC: 21759237]     Test passed
+SP!
+[KRELTSC: 21763182]     Expected: Should restore stack
+[KRELTSC: 21768389]   Running SP!.invalid_addr: 0 SP!
+[KRELTSC: 21776672]     Expected error occurred
+SP!
+[KRELTSC: 21781771]     Expected: Should cause error
+[KRELTSC: 21786796]   Running SP!.empty_stack: SP!
+[KRELTSC: 21792473]     Expected error occurred
+SP!
+[KRELTSC: 21797502]     Expected: Should cause stack underflow
+[KRELTSC: 21806712]   SP!: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 21813714] Testing word: LATEST
+[KRELTSC: 21820932] ------------------------
+[KRELTSC: 21826128]   Running LATEST.basic: LATEST LATEST = . CR
+-1 
+[KRELTSC: 21838251]     Test passed
+LATEST
+[KRELTSC: 21842539]     Expected: Should print: -1
+[KRELTSC: 21847399]   Running LATEST.stability: LATEST DUP LATEST = . CR
+-1 
+[KRELTSC: 21856198]     Test passed
+LATEST
+[KRELTSC: 21860359]     Expected: Should be stable
+[KRELTSC: 21865159]   LATEST: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 21871771] Testing word: COMPILATION
+[KRELTSC: 21876098] ------------------------
+[KRELTSC: 21880712]   Running COMPILATION.here_comma_sequence: HERE 10 , 20 , 30 , HERE SWAP - 12 = . CR
+0 
+[KRELTSC: 21894032]     Test passed
+COMPILATION
+[KRELTSC: 21900071]     Expected: Should advance HERE by 12
+[KRELTSC: 21905725]   Running COMPILATION.mixed_compilation: HERE 42 , 65 C, 100 200 2, HERE SWAP - 13 = . CR
+0 
+[KRELTSC: 21919962]     Test passed
+COMPILATION
+[KRELTSC: 21924577]     Expected: Should advance correctly
+[KRELTSC: 21930111]   Running COMPILATION.allot_comma_combo: HERE 10 ALLOT 99 , HERE SWAP - 14 = . CR
+0 
+[KRELTSC: 21942789]     Test passed
+COMPILATION
+[KRELTSC: 21947422]     Expected: Should combine allot and comma
+[KRELTSC: 21953498]   Running COMPILATION.pad_isolation: PAD 999 OVER ! HERE 42 , PAD @ 999 = . CR
+-1 
+[KRELTSC: 21967621]     Test passed
+COMPILATION
+[KRELTSC: 21972292]     Expected: PAD should be isolated
+[KRELTSC: 21977676]   COMPILATION: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 21984777] Testing word: STACK_MGMT
+[KRELTSC: 21989029] ------------------------
+[KRELTSC: 21993292]   Running STACK_MGMT.sp_round_trip: 42 43 SP@ >R 44 45 R> SP! . . CR
+43 42 
+[KRELTSC: 22004828]     Test passed
+STACK_MGMT
+[KRELTSC: 22009354]     Expected: Should print: 43 42
+[KRELTSC: 22014404]   Running STACK_MGMT.depth_preservation: 1 2 3 DEPTH >R SP@ >R 4 5 6 R> SP! R> DEPTH = . CR
+0 
+[KRELTSC: 22030186]     Test passed
+STACK_MGMT
+[KRELTSC: 22034701]     Expected: Should preserve depth
+[KRELTSC: 22039918]   STACK_MGMT: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 22047878] === Dictionary Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 22059644] 
+=== Testing Module: Dictionary Manipulation Words ===
+[KRELTSC: 22067803] Running Dictionary Manipulation Words Tests (Module 14)...
+[KRELTSC: 22077536] ▶ Testing module: src/test_runner/modules/dictionary_manipulation_words_test.c
+[KRELTSC: 22089341] Testing word: CREATE
+[KRELTSC: 22093316] ------------------------
+[KRELTSC: 22097938]   Running CREATE.basic: CREATE test1 42 , test1 @ . CR
+42 
+[KRELTSC: 22130733]     Test passed
+CREATE
+[KRELTSC: 22134981]     Expected: Should create and store
+[KRELTSC: 22140454]   Running CREATE.empty_name: CREATE
+[KRELTSC: 22146731]     Expected error occurred
+CREATE
+[KRELTSC: 22153814]     Expected: Should handle empty name
+[KRELTSC: 22159421]   Running CREATE.redefine_shadows: CREATE T 1 , CREATE T 2 , T @ . CR
+2 
+[KRELTSC: 22173876]     Test passed
+CREATE
+[KRELTSC: 22178051]     Expected: Newest definition should win (prints 2)
+[KRELTSC: 22184885]   Running CREATE.duplicate: CREATE test2 CREATE test2
+[KRELTSC: 22193997]     Test passed
+CREATE
+[KRELTSC: 22198153]     Expected: Should allow redefinition (latest shadows)
+[KRELTSC: 22205274]   CREATE: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 22214843] ▶ Testing module: src/test_runner/modules/dictionary_manipulation_words_test.c
+[KRELTSC: 22224446] Testing word: FORGET
+[KRELTSC: 22228301] ------------------------
+[KRELTSC: 22232713]   Running FORGET.basic: CREATE temp1 FORGET temp1
+[KRELTSC: 22281565]     Test passed
+FORGET
+[KRELTSC: 22286527]     Expected: Should forget word
+[KRELTSC: 22291544]   Running FORGET.nonexistent: FORGET nonexistent
+[KRELTSC: 22306475]     Expected error occurred
+FORGET
+[KRELTSC: 22312777]     Expected: Should handle missing word
+[KRELTSC: 22318868]   Running FORGET.protected: FORGET FORGET
+[KRELTSC: 22327630]     Expected error occurred
+FORGET
+[KRELTSC: 22332960]     Expected: Should protect system words
+[KRELTSC: 22340395]   FORGET: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 22347251] ▶ Testing module: src/test_runner/modules/dictionary_manipulation_words_test.c
+[KRELTSC: 22356607] Testing word: IMMEDIATE
+[KRELTSC: 22360769] ------------------------
+[KRELTSC: 22365062]   Running IMMEDIATE.basic: : test3 42 ; IMMEDIATE test3 . CR
+42 
+[KRELTSC: 22447875]     Test passed
+IMMEDIATE
+[KRELTSC: 22452473]     Expected: Should execute immediately
+[KRELTSC: 22458308]   Running IMMEDIATE.already_immediate: : test4 43 ; IMMEDIATE IMMEDIATE
+[KRELTSC: 22471777]     Test passed
+IMMEDIATE
+[KRELTSC: 22476315]     Expected: Should handle double immediate
+[KRELTSC: 22482501]   IMMEDIATE: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 22489394] ▶ Testing module: src/test_runner/modules/dictionary_manipulation_words_test.c
+[KRELTSC: 22498705] Testing word: FIND
+[KRELTSC: 22502732] ------------------------
+[KRELTSC: 22507030]   Running FIND.existing: FIND DUP . CR
+3157566800 
+[KRELTSC: 22521121]     Test passed
+FIND
+[KRELTSC: 22526861]     Expected: Should find system word
+[KRELTSC: 22532350]   Running FIND.user_word: : test5 44 ; FIND test5 . CR
+3157688976 
+[KRELTSC: 22543860]     Test passed
+FIND
+[KRELTSC: 22547843]     Expected: Should find user word
+[KRELTSC: 22555405]   Running FIND.nonexistent: FIND nonexistent . CR
+0 
+[KRELTSC: 22565134]     Test passed
+FIND
+[KRELTSC: 22569155]     Expected: Should return 0
+[KRELTSC: 22573894]   Running FIND.empty: FIND
+[KRELTSC: 22579347]     Expected error occurred
+FIND
+[KRELTSC: 22584463]     Expected: Should error (no token)
+[KRELTSC: 22591670]   FIND: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 22598135] ▶ Testing module: src/test_runner/modules/dictionary_manipulation_words_test.c
+[KRELTSC: 22607390] Testing word: DEFINITIONS
+[KRELTSC: 22611715] ------------------------
+[KRELTSC: 22615966]   Running DEFINITIONS.basic: FORTH DEFINITIONS
+[KRELTSC: 22625344]     Test passed
+DEFINITIONS
+[KRELTSC: 22630306]     Expected: Should set current to context
+[KRELTSC: 22636296]   Running DEFINITIONS.multiple: FORTH DEFINITIONS DEFINITIONS
+[KRELTSC: 22644929]     Test passed
+DEFINITIONS
+[KRELTSC: 22651036]     Expected: Should be idempotent
+[KRELTSC: 22656314]   DEFINITIONS: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 22663360] ▶ Testing module: src/test_runner/modules/dictionary_manipulation_words_test.c
+[KRELTSC: 22672688] Testing word: SMUDGE
+[KRELTSC: 22676598] ------------------------
+[KRELTSC: 22681249]   Running SMUDGE.during_def: : test6 SMUDGE 45 ;
+[KRELTSC: 22692621]     Test passed
+SMUDGE
+[KRELTSC: 22696965]     Expected: Should hide incomplete def
+[KRELTSC: 22702740]   Running SMUDGE.outside_def: SMUDGE
+[KRELTSC: 22712102]     Expected error occurred
+SMUDGE
+[KRELTSC: 22717637]     Expected: Should error outside def
+[KRELTSC: 22723229]   SMUDGE: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 22729861] ▶ Testing module: src/test_runner/modules/dictionary_manipulation_words_test.c
+[KRELTSC: 22739376] Testing word: LATEST
+[KRELTSC: 22743285] ------------------------
+[KRELTSC: 22747611]   Running LATEST.basic: LATEST @ . CR
+3157603128 
+[KRELTSC: 22758063]     Test passed
+LATEST
+[KRELTSC: 22762242]     Expected: Should show latest word
+[KRELTSC: 22767677]   Running LATEST.after_def: : test7 46 ; LATEST @ . CR
+3157621152 
+[KRELTSC: 22780943]     Test passed
+LATEST
+[KRELTSC: 22785160]     Expected: Should update after def
+[KRELTSC: 22790618]   Running LATEST.after_forget: CREATE test8 FORGET test8 LATEST @ . CR
+3157621152 
+[KRELTSC: 22808787]     Test passed
+LATEST
+[KRELTSC: 22813006]     Expected: Should update after forget
+[KRELTSC: 22819103]   LATEST: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 22825763] ▶ Testing module: src/test_runner/modules/dictionary_manipulation_words_test.c
+[KRELTSC: 22836595] Testing word: >BODY
+[KRELTSC: 22840459] ------------------------
+[KRELTSC: 22844719]   Running >BODY.basic: CREATE test9 ' test9 >BODY . CR
+3157689976 
+[KRELTSC: 22867060]     Test passed
+>BODY
+[KRELTSC: 22871206]     Expected: Should get param field
+[KRELTSC: 22877030]   Running >BODY.variable: VARIABLE var1 ' var1 >BODY . CR
+3157690200 
+[KRELTSC: 22896502]     Test passed
+>BODY
+[KRELTSC: 22902464]     Expected: Should get var storage
+[KRELTSC: 22907953]   Running >BODY.nonexistent: ' NONEXISTENT >BODY
+[KRELTSC: 22915936] ': word 'NONEXISTENT' not found
+[KRELTSC: 22929187]     Expected error occurred
+>BODY
+[KRELTSC: 22934448]     Expected: Should handle missing word
+[KRELTSC: 22940632]   >BODY: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 22947262] ▶ Testing module: src/test_runner/modules/dictionary_manipulation_words_test.c
+[KRELTSC: 22956682] Testing word: HIDDEN
+[KRELTSC: 22962278] ------------------------
+[KRELTSC: 22966649]   Running HIDDEN.basic: : test10 HIDDEN 47 ;
+[KRELTSC: 22977693]     Test passed
+HIDDEN
+[KRELTSC: 22981931]     Expected: Should hide word
+[KRELTSC: 22986797]   Running HIDDEN.outside_def: HIDDEN
+[KRELTSC: 22994684]     Expected error occurred
+HIDDEN
+[KRELTSC: 23000038]     Expected: Should error outside def
+[KRELTSC: 23005957]   HIDDEN: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 23013091] === Dictionary Manipulation Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 23025466] 
+=== Testing Module: Vocabulary Words ===
+[KRELTSC: 23032338] Running Vocabulary Words Tests (Module 15)...
+[KRELTSC: 23040332] ▶ Testing module: src/test_runner/modules/vocabulary_words_test.c
+[KRELTSC: 23049139] Testing word: VOCABULARY
+[KRELTSC: 23055686] ------------------------
+[KRELTSC: 23059984]   Running VOCABULARY.basic: VOCABULARY TEST-VOC1 TEST-VOC1 DEFINITIONS
+[KRELTSC: 23106549]     Test passed
+VOCABULARY
+[KRELTSC: 23111553]     Expected: Should create vocabulary
+[KRELTSC: 23117186]   Running VOCABULARY.create_and_switch: VOCABULARY MYVOC MYVOC DEFINITIONS CONTEXT @ . CR
+3157690840 
+[KRELTSC: 23161158]     Test passed
+VOCABULARY
+[KRELTSC: 23165819]     Expected: Should create and switch
+[KRELTSC: 23171410]   Running VOCABULARY.word_isolation: VOCABULARY ISOLATED ISOLATED DEFINITIONS : ISOWORD 99 ; FORTH DEFINITIONS
+[KRELTSC: 23220406]     Test passed
+VOCABULARY
+[KRELTSC: 23225321]     Expected: Should create word in isolated vocab
+[KRELTSC: 23232094]   Running VOCABULARY.cross_vocab_access: VOCABULARY V1 V1 DEFINITIONS : V1WORD 11 ; FORTH V1WORD . CR
+11 
+[KRELTSC: 23283298]     Test passed
+VOCABULARY
+[KRELTSC: 23287942]     Expected: Should access word across vocabs
+[KRELTSC: 23294669]   Running VOCABULARY.multiple_vocabs: VOCABULARY VA VOCABULARY VB VOCABULARY VC VA DEFINITIONS
+[KRELTSC: 23332197]     Test passed
+VOCABULARY
+[KRELTSC: 23338561]     Expected: Should create multiple vocabs
+[KRELTSC: 23344725]   Running VOCABULARY.duplicate: VOCABULARY TESTVOC VOCABULARY TESTVOC
+[KRELTSC: 23357372] VOCABULARY: duplicate 'TESTVOC'
+[KRELTSC: 23362953]     Expected error occurred
+VOCABULARY
+[KRELTSC: 23368610]     Expected: Should handle duplicate
+[KRELTSC: 23374088]   Running VOCABULARY.empty_name: VOCABULARY
+[KRELTSC: 23381963] VOCABULARY: missing name
+[KRELTSC: 23386618]     Expected error occurred
+VOCABULARY
+[KRELTSC: 23392238]     Expected: Should handle empty name
+[KRELTSC: 23399448]   VOCABULARY: 7 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 23409073] ▶ Testing module: src/test_runner/modules/vocabulary_words_test.c
+[KRELTSC: 23417221] Testing word: FORTH
+[KRELTSC: 23420995] ------------------------
+[KRELTSC: 23425258]   Running FORTH.basic: FORTH DEFINITIONS
+[KRELTSC: 23448719]     Test passed
+FORTH
+[KRELTSC: 23452941]     Expected: Should select FORTH vocab
+[KRELTSC: 23458580]   Running FORTH.persistence: FORTH : TEST1 42 ; TEST1 . CR
+42 
+[KRELTSC: 23488240]     Test passed
+FORTH
+[KRELTSC: 23492437]     Expected: Should find word in FORTH
+[KRELTSC: 23498118]   Running FORTH.from_other: VOCABULARY OTHER-VOC OTHER-VOC FORTH
+[KRELTSC: 23531116]     Test passed
+FORTH
+[KRELTSC: 23535898]     Expected: Should return to FORTH
+[KRELTSC: 23541368]   FORTH: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 23547995] ▶ Testing module: src/test_runner/modules/vocabulary_words_test.c
+[KRELTSC: 23558583] Testing word: DEFINITIONS
+[KRELTSC: 23563504] ------------------------
+[KRELTSC: 23568318]   Running DEFINITIONS.basic: FORTH DEFINITIONS
+[KRELTSC: 23593192]     Test passed
+DEFINITIONS
+[KRELTSC: 23598207]     Expected: Should set current vocabulary
+[KRELTSC: 23604195]   Running DEFINITIONS.new_vocab: VOCABULARY TEST-VOC6 TEST-VOC6 DEFINITIONS
+[KRELTSC: 23632236]     Test passed
+DEFINITIONS
+[KRELTSC: 23636890]     Expected: Should set new current
+[KRELTSC: 23642223]   Running DEFINITIONS.word_creation: VOCABULARY TEST-VOC7 TEST-VOC7 DEFINITIONS : TEST2 43 ;
+[KRELTSC: 23675415]     Test passed
+DEFINITIONS
+[KRELTSC: 23680132]     Expected: Should create in correct vocab
+[KRELTSC: 23686218]   DEFINITIONS: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 23693618] ▶ Testing module: src/test_runner/modules/vocabulary_words_test.c
+[KRELTSC: 23701767] Testing word: CONTEXT
+[KRELTSC: 23705729] ------------------------
+[KRELTSC: 23711455]   Running CONTEXT.basic: CONTEXT @ . CR
+3157693680 
+[KRELTSC: 23721927]     Test passed
+CONTEXT
+[KRELTSC: 23726149]     Expected: Should show current context
+[KRELTSC: 23731889]   Running CONTEXT.modify: CONTEXT @ 1+ CONTEXT !
+[KRELTSC: 23739593]     Test passed
+CONTEXT
+[KRELTSC: 23743814]     Expected: Should allow modification (impl-defined effect)
+[KRELTSC: 23751376]   Running CONTEXT.initial: FORTH CONTEXT @ . CR
+3157607864 
+[KRELTSC: 23775998]     Test passed
+CONTEXT
+[KRELTSC: 23780314]     Expected: Should show FORTH vocab
+[KRELTSC: 23785775]   CONTEXT: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 23792484] ▶ Testing module: src/test_runner/modules/vocabulary_words_test.c
+[KRELTSC: 23800634] Testing word: CURRENT
+[KRELTSC: 23807907] ------------------------
+[KRELTSC: 23812234]   Running CURRENT.basic: CURRENT @ . CR
+3157693680 
+[KRELTSC: 23823698]     Test passed
+CURRENT
+[KRELTSC: 23828028]     Expected: Should show current vocab
+[KRELTSC: 23833677]   Running CURRENT.after_def: VOCABULARY TEST-VOC8 TEST-VOC8 DEFINITIONS CURRENT @ . CR
+3157694136 
+[KRELTSC: 23866474]     Test passed
+CURRENT
+[KRELTSC: 23870755]     Expected: Should show new vocab
+[KRELTSC: 23876007]   Running CURRENT.protect: CURRENT @ 1+ CURRENT !
+[KRELTSC: 23884142]     Test passed
+CURRENT
+[KRELTSC: 23888383]     Expected: Should allow modification (impl-defined effect)
+[KRELTSC: 23896319]   CURRENT: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 23904566] ▶ Testing module: src/test_runner/modules/vocabulary_words_test.c
+[KRELTSC: 23912832] Testing word: ORDER
+[KRELTSC: 23916652] ------------------------
+[KRELTSC: 23920962]   Running ORDER.basic: ORDER
+Search order: 
+ 
+
+
+Current: 
+
+
+[KRELTSC: 23944729]     Test passed
+ORDER
+[KRELTSC: 23948831]     Expected: Should list search order
+[KRELTSC: 23954337]   Running ORDER.multiple: VOCABULARY TEST-VOC9 TEST-VOC9 DEFINITIONS ORDER
+Search order: 
+ 
+
+
+Current: 
+
+
+[KRELTSC: 23988187]     Test passed
+ORDER
+[KRELTSC: 23992289]     Expected: Should show all vocabs
+[KRELTSC: 23997650]   Running ORDER.after_forth: TEST-VOC9 FORTH ORDER
+Search order: 
+
+
+Current: 
+
+
+[KRELTSC: 24024084]     Test passed
+ORDER
+[KRELTSC: 24028205]     Expected: Should show FORTH only
+[KRELTSC: 24034072]   ORDER: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 24042353] === Vocabulary Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 24053705] 
+=== Testing Module: System Words ===
+[KRELTSC: 24060834] Running System Words Tests (Module 18)...
+[KRELTSC: 24068281] Some system tests marked as unimplemented due to system-level effects
+[KRELTSC: 24078309] ▶ Testing module: src/test_runner/modules/system_words_test.c
+[KRELTSC: 24088724] Testing word: QUIT
+[KRELTSC: 24092515] ------------------------
+[KRELTSC: 24097206]   Running QUIT.in_definition: : BAD-WORD QUIT ;
+[KRELTSC: 24110297]     Expected error occurred
+QUIT
+[KRELTSC: 24115552]     Expected: Should prevent compilation
+[KRELTSC: 24121267]   QUIT: 1 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 24128766] ▶ Testing module: src/test_runner/modules/system_words_test.c
+[KRELTSC: 24136585] Testing word: ABORT
+[KRELTSC: 24140358] ------------------------
+[KRELTSC: 24146111]   Running ABORT.basic: ABORT
+[KRELTSC: 24160350]     Test passed
+ABORT
+[KRELTSC: 24164561]     Expected: Should clear stacks and return to QUIT
+[KRELTSC: 24171395]   Running ABORT.with_data: 1 2 3 ABORT DEPTH . CR
+0 
+[KRELTSC: 24180394]     Test passed
+ABORT
+[KRELTSC: 24184486]     Expected: Should clear stack
+[KRELTSC: 24189854]   Running ABORT.in_definition_runtime: : BAD-WORD ABORT ;  123 BAD-WORD  DEPTH . CR
+0 
+[KRELTSC: 24204441]     Test passed
+ABORT
+[KRELTSC: 24208553]     Expected: ABORT may appear in a definition; when executed it clears both stacks
+[KRELTSC: 24219882]   ABORT: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 24226440] ▶ Testing module: src/test_runner/modules/system_words_test.c
+[KRELTSC: 24234225] Testing word: ABORT"
+[KRELTSC: 24238096] ------------------------
+[KRELTSC: 24242370]   Running ABORT".condition_true: -1 ABORT" Error"
+
+[KRELTSC: 24268509]     Test passed
+ABORT"
+[KRELTSC: 24274391]     Expected: Should abort with message (no error; stacks cleared to QUIT)
+[KRELTSC: 24283334]   Running ABORT".condition_false: 0 ABORT" Error"
+[KRELTSC: 24291221]     Test passed
+ABORT"
+[KRELTSC: 24295423]     Expected: Should not abort
+[KRELTSC: 24300204]   Running ABORT".empty_stack: ABORT"
+[KRELTSC: 24310984]     Expected error occurred
+ABORT"
+[KRELTSC: 24316622]     Expected: Should cause stack underflow
+[KRELTSC: 24322592]   ABORT": 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 24329255] ▶ Testing module: src/test_runner/modules/system_words_test.c
+[KRELTSC: 24338458] Testing word: BYE
+[KRELTSC: 24342136] ------------------------
+[KRELTSC: 24346439]   BYE: 0 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 24352760] ▶ Testing module: src/test_runner/modules/system_words_test.c
+[KRELTSC: 24360488] Testing word: COLD
+[KRELTSC: 24364159] ------------------------
+[KRELTSC: 24368389]   COLD: 0 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 24374772] ▶ Testing module: src/test_runner/modules/system_words_test.c
+[KRELTSC: 24382781] Testing word: WARM
+[KRELTSC: 24386459] ------------------------
+[KRELTSC: 24390688]   WARM: 0 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 24398935] === System Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 24408614] 
+=== Testing Module: Defining Words ===
+[KRELTSC: 24415055] Running Defining Words Tests (Module 13)...
+[KRELTSC: 24422943] ▶ Testing module: src/test_runner/modules/defining_words_tests.c
+[KRELTSC: 24431623] Testing word: :
+[KRELTSC: 24435062] ------------------------
+[KRELTSC: 24439635]   Running :.basic: : TEST1 42 ; TEST1 . CR
+42 
+[KRELTSC: 24450239]     Test passed
+:
+[KRELTSC: 24454024]     Expected: Should define and execute
+[KRELTSC: 24461163]   Running :.empty_name: :
+[KRELTSC: 24467232]     Expected error occurred
+:
+[KRELTSC: 24472086]     Expected: Should handle empty definition
+[KRELTSC: 24478193]   Running :.nested: : TEST3 : ;
+[KRELTSC: 24485720] Nested ':' inside a definition is not allowed
+[KRELTSC: 24492444]     Expected error occurred
+:
+[KRELTSC: 24497287]     Expected: Should prevent nested definition
+[KRELTSC: 24503896]   :: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 24510757] ▶ Testing module: src/test_runner/modules/defining_words_tests.c
+[KRELTSC: 24518826] Testing word: ;
+[KRELTSC: 24523631] ------------------------
+[KRELTSC: 24528067]   Running ;.alone: ;
+[KRELTSC: 24535094]     Expected error occurred
+;
+[KRELTSC: 24539966]     Expected: Should error outside definition
+[KRELTSC: 24546184]   Running ;.immediate: : TEST4 42 ; IMMEDIATE TEST4 . CR
+42 
+[KRELTSC: 24560230]     Test passed
+;
+[KRELTSC: 24564383]     Expected: Should handle immediate
+[KRELTSC: 24569843]   ;: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 24575985] ▶ Testing module: src/test_runner/modules/defining_words_tests.c
+[KRELTSC: 24584228] Testing word: CONSTANT
+[KRELTSC: 24589906] ------------------------
+[KRELTSC: 24594356]   Running CONSTANT.basic: 42 CONSTANT MEANING MEANING . CR
+42 
+[KRELTSC: 24617203]     Test passed
+CONSTANT
+[KRELTSC: 24621599]     Expected: Should create constant
+[KRELTSC: 24627382]   Running CONSTANT.zero: 0 CONSTANT ZERO ZERO . CR
+0 
+[KRELTSC: 24636712]     Test passed
+CONSTANT
+[KRELTSC: 24641078]     Expected: Should handle zero
+[KRELTSC: 24646060]   Running CONSTANT.negative: -1 CONSTANT MINUS MINUS . CR
+-1 
+[KRELTSC: 24658125]     Test passed
+CONSTANT
+[KRELTSC: 24662487]     Expected: Should handle negative
+[KRELTSC: 24669322]   Running CONSTANT.empty_stack: CONSTANT
+[KRELTSC: 24676636]     Expected error occurred
+CONSTANT
+[KRELTSC: 24682685]     Expected: Should cause stack underflow
+[KRELTSC: 24689423]   CONSTANT: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 24696182] ▶ Testing module: src/test_runner/modules/defining_words_tests.c
+[KRELTSC: 24708758] Testing word: VARIABLE
+[KRELTSC: 24714531] ------------------------
+[KRELTSC: 24718948]   Running VARIABLE.basic: VARIABLE VAR1 42 VAR1 ! VAR1 @ . CR
+42 
+[KRELTSC: 24738244]     Test passed
+VARIABLE
+[KRELTSC: 24742640]     Expected: Should create variable
+[KRELTSC: 24748018]   Running VARIABLE.multiple: VARIABLE VAR2 VARIABLE VAR3
+[KRELTSC: 24757815]     Test passed
+VARIABLE
+[KRELTSC: 24762194]     Expected: Should create multiple
+[KRELTSC: 24767535]   Running VARIABLE.store_fetch: VARIABLE VAR4 -99 VAR4 ! VAR4 @ . CR
+-99 
+[KRELTSC: 24782852]     Test passed
+VARIABLE
+[KRELTSC: 24787227]     Expected: Should store/fetch
+[KRELTSC: 24792239]   VARIABLE: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 24798992] ▶ Testing module: src/test_runner/modules/defining_words_tests.c
+[KRELTSC: 24810997] Testing word: CREATE
+[KRELTSC: 24815281] ------------------------
+[KRELTSC: 24819618]   Running CREATE.basic: CREATE OBJ1
+[KRELTSC: 24828584]     Test passed
+CREATE
+[KRELTSC: 24832778]     Expected: Should create word
+[KRELTSC: 24839338]   Running CREATE.with_data: CREATE OBJ2 42 , OBJ2 @ . CR
+42 
+[KRELTSC: 24850422]     Test passed
+CREATE
+[KRELTSC: 24854575]     Expected: Should allow data
+[KRELTSC: 24859426]   Running CREATE.empty_name: CREATE
+[KRELTSC: 24864948]     Expected error occurred
+CREATE
+[KRELTSC: 24870173]     Expected: Should handle empty name
+[KRELTSC: 24875663]   CREATE: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 24882957] ▶ Testing module: src/test_runner/modules/defining_words_tests.c
+[KRELTSC: 24890956] Testing word: DOES>
+[KRELTSC: 24894726] ------------------------
+[KRELTSC: 24900498]   Running DOES>.basic: : CONST CREATE , DOES> @ ; 42 CONST MEANING MEANING . CR
+42 
+[KRELTSC: 24964634]     Test passed
+DOES>
+[KRELTSC: 24968897]     Expected: Should define behavior
+[KRELTSC: 24974396]   Running DOES>.multiple: : ARRAY CREATE DOES> SWAP CELLS + ; CREATE ARR 10 CELLS ALLOT
+[KRELTSC: 24990011]     Test passed
+DOES>
+[KRELTSC: 24994170]     Expected: Should work with arrays
+[KRELTSC: 24999668]   Running DOES>.outside: DOES>
+[KRELTSC: 25006256] DOES>: compile-only
+[KRELTSC: 25010441]     Expected error occurred
+DOES>
+[KRELTSC: 25015641]     Expected: Should error outside definition
+[KRELTSC: 25021872]   DOES>: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25030303] ▶ Testing module: src/test_runner/modules/defining_words_tests.c
+[KRELTSC: 25038495] Testing word: [
+[KRELTSC: 25041955] ------------------------
+[KRELTSC: 25046298]   Running [.basic: : TEST5 [ 42 ] LITERAL ; TEST5 . CR
+42 
+[KRELTSC: 25065285]     Test passed
+[
+[KRELTSC: 25069092]     Expected: Should enter interpret
+[KRELTSC: 25074523]   Running [.outside: [
+[KRELTSC: 25078941]     Test passed
+[
+[KRELTSC: 25082687]     Expected: Should be allowed outside definition (no error)
+[KRELTSC: 25092138]   [: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25098387] ▶ Testing module: src/test_runner/modules/defining_words_tests.c
+[KRELTSC: 25106499] Testing word: ]
+[KRELTSC: 25109948] ------------------------
+[KRELTSC: 25114278]   Running ].basic: [ 42 ] . CR
+[KRELTSC: 25122353]     Test passed
+]
+[KRELTSC: 25126100]     Expected: Should resume compile
+[KRELTSC: 25131689]   Running ].nested: : TEST6 [ ] 42 ; TEST6 . CR
+42 
+[KRELTSC: 25142294]     Test passed
+]
+[KRELTSC: 25146028]     Expected: Should handle nesting
+[KRELTSC: 25153226]   ]: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25160224] === Defining Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 25169552] 
+=== Testing Module: Control Words ===
+[KRELTSC: 25175936] Running Control Words Tests (Module 12)...
+[KRELTSC: 25183569] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 25192809] Testing word: IF
+[KRELTSC: 25196373] ------------------------
+[KRELTSC: 25200638]   Running IF.true: : TEST1 IF 42 ELSE 24 THEN ; -1 TEST1 . CR
+42 
+[KRELTSC: 25257827]     Test passed
+IF
+[KRELTSC: 25261769]     Expected: Should take true branch
+[KRELTSC: 25267299]   Running IF.false: : TEST2 IF 42 ELSE 24 THEN ; 0 TEST2 . CR
+24 
+[KRELTSC: 25284546]     Test passed
+IF
+[KRELTSC: 25288434]     Expected: Should take false branch
+[KRELTSC: 25294024]   Running IF.nested: : TEST3 IF IF 1 ELSE 2 THEN ELSE 3 THEN ; -1 -1 TEST3 . CR
+1 
+[KRELTSC: 25316597]     Test passed
+IF
+[KRELTSC: 25320475]     Expected: Should handle nesting
+[KRELTSC: 25325800]   Running IF.no_else: : TEST4 IF 42 THEN ; -1 TEST4 . CR
+42 
+[KRELTSC: 25353967]     Test passed
+IF
+[KRELTSC: 25357902]     Expected: Should work without ELSE
+[KRELTSC: 25363541]   Running IF.empty_stack: IF
+[KRELTSC: 25371751] IF: compile-only
+[KRELTSC: 25375690]     Expected error occurred
+IF
+[KRELTSC: 25380978]     Expected: Should cause stack underflow
+[KRELTSC: 25386893]   IF: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25393948] Testing word: IF
+[KRELTSC: 25399196] ------------------------
+[KRELTSC: 25404285]   Running IF.true: : TEST1 IF 42 ELSE 24 THEN ; -1 TEST1 . CR
+42 
+[KRELTSC: 25421120]     Test passed
+IF
+[KRELTSC: 25424984]     Expected: Should take true branch
+[KRELTSC: 25430760]   Running IF.false: : TEST2 IF 42 ELSE 24 THEN ; 0 TEST2 . CR
+24 
+[KRELTSC: 25444097]     Test passed
+IF
+[KRELTSC: 25447932]     Expected: Should take false branch
+[KRELTSC: 25453444]   Running IF.nested: : TEST3 IF IF 1 ELSE 2 THEN ELSE 3 THEN ; -1 -1 TEST3 . CR
+1 
+[KRELTSC: 25471263]     Test passed
+IF
+[KRELTSC: 25475520]     Expected: Should handle nesting
+[KRELTSC: 25480797]   Running IF.no_else: : TEST4 IF 42 THEN ; -1 TEST4 . CR
+42 
+[KRELTSC: 25492061]     Test passed
+IF
+[KRELTSC: 25495861]     Expected: Should work without ELSE
+[KRELTSC: 25501715]   Running IF.empty_stack: IF
+[KRELTSC: 25506561] IF: compile-only
+[KRELTSC: 25510118]     Expected error occurred
+IF
+[KRELTSC: 25514968]     Expected: Should cause stack underflow
+[KRELTSC: 25520824]   IF: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25529835] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 25537816] Testing word: ELSE
+[KRELTSC: 25541510] ------------------------
+[KRELTSC: 25545767]   Running ELSE.alone: ELSE
+[KRELTSC: 25555798] ELSE: compile-only
+[KRELTSC: 25560331]     Expected error occurred
+ELSE
+[KRELTSC: 25565758]     Expected: Should error outside IF
+[KRELTSC: 25571221]   Running ELSE.double: : BAD IF 1 ELSE ELSE 2 THEN ;
+[KRELTSC: 25582180] ELSE: missing IF
+[KRELTSC: 25588060]     Expected error occurred
+ELSE
+[KRELTSC: 25593207]     Expected: Should prevent double ELSE
+[KRELTSC: 25598994]   ELSE: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25605458] Testing word: ELSE
+[KRELTSC: 25609166] ------------------------
+[KRELTSC: 25613440]   Running ELSE.alone: ELSE
+[KRELTSC: 25620168] ELSE: compile-only
+[KRELTSC: 25623924]     Expected error occurred
+ELSE
+[KRELTSC: 25629300]     Expected: Should error outside IF
+[KRELTSC: 25634720]   Running ELSE.double: : BAD IF 1 ELSE ELSE 2 THEN ;
+[KRELTSC: 25644240] ELSE: missing IF
+[KRELTSC: 25649792]     Expected error occurred
+ELSE
+[KRELTSC: 25654951]     Expected: Should prevent double ELSE
+[KRELTSC: 25660746]   ELSE: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25667458] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 25675334] Testing word: THEN
+[KRELTSC: 25679025] ------------------------
+[KRELTSC: 25683458]   Running THEN.alone: THEN
+[KRELTSC: 25691691] THEN: compile-only
+[KRELTSC: 25695788]     Expected error occurred
+THEN
+[KRELTSC: 25700893]     Expected: Should error outside IF
+[KRELTSC: 25706340]   Running THEN.extra: : BAD IF 1 THEN THEN ;
+[KRELTSC: 25717646] CF: underflow
+[KRELTSC: 25721973] THEN: unmatched
+[KRELTSC: 25725738]     Expected error occurred
+THEN
+[KRELTSC: 25730830]     Expected: Should prevent extra THEN
+[KRELTSC: 25736529]   THEN: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25742961] Testing word: THEN
+[KRELTSC: 25746647] ------------------------
+[KRELTSC: 25750904]   Running THEN.alone: THEN
+[KRELTSC: 25757859] THEN: compile-only
+[KRELTSC: 25761643]     Expected error occurred
+THEN
+[KRELTSC: 25766717]     Expected: Should error outside IF
+[KRELTSC: 25773585]   Running THEN.extra: : BAD IF 1 THEN THEN ;
+[KRELTSC: 25782536] CF: underflow
+[KRELTSC: 25785844] THEN: unmatched
+[KRELTSC: 25789315]     Expected error occurred
+THEN
+[KRELTSC: 25794405]     Expected: Should prevent extra THEN
+[KRELTSC: 25800032]   THEN: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25809740] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 25818034] Testing word: BEGIN
+[KRELTSC: 25821846] ------------------------
+[KRELTSC: 25826153]   Running BEGIN.until: : TEST5 0 BEGIN 1+ DUP 5 = UNTIL ; TEST5 . CR
+5 
+[KRELTSC: 25855151]     Test passed
+BEGIN
+[KRELTSC: 25859306]     Expected: Should loop until true
+[KRELTSC: 25864882]   Running BEGIN.while: : TEST6 0 BEGIN DUP 5 < WHILE 1+ REPEAT ; TEST6 . CR
+5 
+[KRELTSC: 25895604]     Test passed
+BEGIN
+[KRELTSC: 25901608]     Expected: Should loop while true
+[KRELTSC: 25907122]   Running BEGIN.alone: BEGIN
+[KRELTSC: 25913528] BEGIN: compile-only
+[KRELTSC: 25917694]     Expected error occurred
+BEGIN
+[KRELTSC: 25922881]     Expected: Should error outside definition
+[KRELTSC: 25930557]   BEGIN: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 25937128] Testing word: BEGIN
+[KRELTSC: 25941273] ------------------------
+[KRELTSC: 25945578]   Running BEGIN.until: : TEST5 0 BEGIN 1+ DUP 5 = UNTIL ; TEST5 . CR
+5 
+[KRELTSC: 25966936]     Test passed
+BEGIN
+[KRELTSC: 25971305]     Expected: Should loop until true
+[KRELTSC: 25976688]   Running BEGIN.while: : TEST6 0 BEGIN DUP 5 < WHILE 1+ REPEAT ; TEST6 . CR
+5 
+[KRELTSC: 26012273]     Test passed
+BEGIN
+[KRELTSC: 26016442]     Expected: Should loop while true
+[KRELTSC: 26023943]   Running BEGIN.alone: BEGIN
+[KRELTSC: 26029103] BEGIN: compile-only
+[KRELTSC: 26033220]     Expected error occurred
+BEGIN
+[KRELTSC: 26039593]     Expected: Should error outside definition
+[KRELTSC: 26045812]   BEGIN: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 26054731] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 26063208] Testing word: UNTIL
+[KRELTSC: 26067291] ------------------------
+[KRELTSC: 26071605]   Running UNTIL.basic: : TEST8 BEGIN DUP 1- DUP 0= UNTIL ; 5 TEST8 . CR
+0 
+[KRELTSC: 26092279]     Test passed
+UNTIL
+[KRELTSC: 26096640]     Expected: Should count down
+[KRELTSC: 26101620]   Running UNTIL.immediate: : TEST9 BEGIN 1 UNTIL ; IMMEDIATE
+[KRELTSC: 26112222]     Test passed
+UNTIL
+[KRELTSC: 26116336]     Expected: Should be immediate
+[KRELTSC: 26121411]   Running UNTIL.no_begin: UNTIL
+[KRELTSC: 26128325] UNTIL: compile-only
+[KRELTSC: 26132500]     Expected error occurred
+UNTIL
+[KRELTSC: 26137686]     Expected: Should error without BEGIN
+[KRELTSC: 26143419]   UNTIL: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 26151519] Testing word: UNTIL
+[KRELTSC: 26155456] ------------------------
+[KRELTSC: 26159982]   Running UNTIL.basic: : TEST8 BEGIN DUP 1- DUP 0= UNTIL ; 5 TEST8 . CR
+0 
+[KRELTSC: 26178364]     Test passed
+UNTIL
+[KRELTSC: 26182468]     Expected: Should count down
+[KRELTSC: 26187374]   Running UNTIL.immediate: : TEST9 BEGIN 1 UNTIL ; IMMEDIATE
+[KRELTSC: 26198506]     Test passed
+UNTIL
+[KRELTSC: 26202648]     Expected: Should be immediate
+[KRELTSC: 26207722]   Running UNTIL.no_begin: UNTIL
+[KRELTSC: 26214862] UNTIL: compile-only
+[KRELTSC: 26218780]     Expected error occurred
+UNTIL
+[KRELTSC: 26223956]     Expected: Should error without BEGIN
+[KRELTSC: 26229695]   UNTIL: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 26236237] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 26244106] Testing word: WHILE
+[KRELTSC: 26247889] ------------------------
+[KRELTSC: 26252445]   Running WHILE.basic: : TEST10 BEGIN DUP 5 < WHILE 1+ REPEAT ; 0 TEST10 . CR
+5 
+[KRELTSC: 26274303]     Test passed
+WHILE
+[KRELTSC: 26278446]     Expected: Should count up
+[KRELTSC: 26283222]   Running WHILE.zero_times: : TEST11 BEGIN DUP 0< WHILE 1+ REPEAT ; 0 TEST11 . CR
+0 
+[KRELTSC: 26297972]     Test passed
+WHILE
+[KRELTSC: 26304362]     Expected: Should handle zero iterations
+[KRELTSC: 26310465]   Running WHILE.no_begin: WHILE
+[KRELTSC: 26317561] WHILE: compile-only
+[KRELTSC: 26321762]     Expected error occurred
+WHILE
+[KRELTSC: 26326980]     Expected: Should error without BEGIN
+[KRELTSC: 26332718]   WHILE: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 26340949] Testing word: WHILE
+[KRELTSC: 26344764] ------------------------
+[KRELTSC: 26349025]   Running WHILE.basic: : TEST10 BEGIN DUP 5 < WHILE 1+ REPEAT ; 0 TEST10 . CR
+5 
+[KRELTSC: 26369523]     Test passed
+WHILE
+[KRELTSC: 26373630]     Expected: Should count up
+[KRELTSC: 26378755]   Running WHILE.zero_times: : TEST11 BEGIN DUP 0< WHILE 1+ REPEAT ; 0 TEST11 . CR
+0 
+[KRELTSC: 26393397]     Test passed
+WHILE
+[KRELTSC: 26399022]     Expected: Should handle zero iterations
+[KRELTSC: 26405119]   Running WHILE.no_begin: WHILE
+[KRELTSC: 26410440] WHILE: compile-only
+[KRELTSC: 26414336]     Expected error occurred
+WHILE
+[KRELTSC: 26419546]     Expected: Should error without BEGIN
+[KRELTSC: 26425293]   WHILE: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 26431923] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 26440175] Testing word: REPEAT
+[KRELTSC: 26444104] ------------------------
+[KRELTSC: 26448566]   Running REPEAT.basic: : TEST12 BEGIN DUP 5 < WHILE 1+ REPEAT ; 0 TEST12 . CR
+5 
+[KRELTSC: 26485427]     Test passed
+REPEAT
+[KRELTSC: 26489719]     Expected: Should terminate loop
+[KRELTSC: 26495093]   Running REPEAT.no_while: REPEAT
+[KRELTSC: 26502292] REPEAT: compile-only
+[KRELTSC: 26506860]     Expected error occurred
+REPEAT
+[KRELTSC: 26512219]     Expected: Should error without WHILE
+[KRELTSC: 26518020]   REPEAT: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 26526390] Testing word: REPEAT
+[KRELTSC: 26530389] ------------------------
+[KRELTSC: 26534735]   Running REPEAT.basic: : TEST12 BEGIN DUP 5 < WHILE 1+ REPEAT ; 0 TEST12 . CR
+5 
+[KRELTSC: 26559667]     Test passed
+REPEAT
+[KRELTSC: 26564500]     Expected: Should terminate loop
+[KRELTSC: 26569861]   Running REPEAT.no_while: REPEAT
+[KRELTSC: 26575307] REPEAT: compile-only
+[KRELTSC: 26579290]     Expected error occurred
+REPEAT
+[KRELTSC: 26586037]     Expected: Should error without WHILE
+[KRELTSC: 26591992]   REPEAT: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 26598819] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 26606783] Testing word: DO
+[KRELTSC: 26610333] ------------------------
+[KRELTSC: 26614631]   Running DO.basic: : TEST13 5 0 DO I . LOOP ; TEST13 CR
+0 1 2 3 4 
+[KRELTSC: 26667101]     Test passed
+DO
+[KRELTSC: 26671058]     Expected: Should count 0 to 4
+[KRELTSC: 26676268]   Running DO.negative: : TEST14 -1 -5 DO I . LOOP ; TEST14 CR
+-5 -4 -3 -2 
+[KRELTSC: 26692457]     Test passed
+DO
+[KRELTSC: 26696300]     Expected: Should handle negative
+[KRELTSC: 26701662]   Running DO.empty: : TEST15 0 0 DO LOOP ;
+[KRELTSC: 26712354]     Test passed
+DO
+[KRELTSC: 26716427]     Expected: Should handle empty range
+[KRELTSC: 26722131]   Running DO.nested: : TEST16 3 0 DO 3 0 DO J I + . LOOP LOOP ; TEST16 CR
+0 1 2 1 2 3 2 3 4 
+[KRELTSC: 26748747]     Test passed
+DO
+[KRELTSC: 26753140]     Expected: Should handle nesting
+[KRELTSC: 26759132]   DO: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 26765427] Testing word: DO
+[KRELTSC: 26768962] ------------------------
+[KRELTSC: 26775004]   Running DO.basic: : TEST13 5 0 DO I . LOOP ; TEST13 CR
+0 1 2 3 4 
+[KRELTSC: 26792893]     Test passed
+DO
+[KRELTSC: 26796742]     Expected: Should count 0 to 4
+[KRELTSC: 26805283]   Running DO.negative: : TEST14 -1 -5 DO I . LOOP ; TEST14 CR
+-5 -4 [KRELTSC: 26836120] L8[JACQUARD]: Mode C7_FULL_INFERENCE → C15_FULL_ADAPTIVE (entropy=2f, cv=2f, temporal=2f)
+-3 -2 
+[KRELTSC: 26850065]     Test passed
+DO
+[KRELTSC: 26853915]     Expected: Should handle negative
+[KRELTSC: 26859288]   Running DO.empty: : TEST15 0 0 DO LOOP ;
+[KRELTSC: 26868486]     Test passed
+DO
+[KRELTSC: 26872314]     Expected: Should handle empty range
+[KRELTSC: 26878231]   Running DO.nested: : TEST16 3 0 DO 3 0 DO J I + . LOOP LOOP ; TEST16 CR
+0 1 2 1 2 3 2 3 4 
+[KRELTSC: 26902778]     Test passed
+DO
+[KRELTSC: 26906646]     Expected: Should handle nesting
+[KRELTSC: 26912069]   DO: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 26918373] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 26926341] Testing word: ?DO
+[KRELTSC: 26929983] ------------------------
+[KRELTSC: 26934286]   Running ?DO.basic: : TEST17 5 0 ?DO I . LOOP ; TEST17 CR
+0 1 2 3 4 
+[KRELTSC: 26971130]     Test passed
+?DO
+[KRELTSC: 26975117]     Expected: Should count 0 to 4
+[KRELTSC: 26980215]   Running ?DO.skip: : TEST18 1 1 ?DO I . LOOP ;
+[KRELTSC: 26990282]     Test passed
+?DO
+[KRELTSC: 26994265]     Expected: Should skip when equal
+[KRELTSC: 26999606]   Running ?DO.nested: : TEST19 3 0 ?DO 3 I ?DO J I + . LOOP LOOP ; TEST19 CR
+0 1 2 2 3 4 
+[KRELTSC: 27020626]     Test passed
+?DO
+[KRELTSC: 27026247]     Expected: Should handle nesting
+[KRELTSC: 27031562]   ?DO: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 27038078] Testing word: ?DO
+[KRELTSC: 27041679] ------------------------
+[KRELTSC: 27045914]   Running ?DO.basic: : TEST17 5 0 ?DO I . LOOP ; TEST17 CR
+0 1 2 3 4 
+[KRELTSC: 27065782]     Test passed
+?DO
+[KRELTSC: 27069749]     Expected: Should count 0 to 4
+[KRELTSC: 27075228]   Running ?DO.skip: : TEST18 1 1 ?DO I . LOOP ;
+[KRELTSC: 27086358]     Test passed
+?DO
+[KRELTSC: 27090490]     Expected: Should skip when equal
+[KRELTSC: 27096097]   Running ?DO.nested: : TEST19 3 0 ?DO 3 I ?DO J I + . LOOP LOOP ; TEST19 CR
+0 1 2 2 3 4 
+[KRELTSC: 27132080]     Test passed
+?DO
+[KRELTSC: 27135975]     Expected: Should handle nesting
+[KRELTSC: 27141231]   ?DO: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 27149082] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 27157095] Testing word: LOOP
+[KRELTSC: 27160773] ------------------------
+[KRELTSC: 27165055]   Running LOOP.basic: : TEST20 5 0 DO I . LOOP ; TEST20 CR
+0 1 2 3 4 
+[KRELTSC: 27182013]     Test passed
+LOOP
+[KRELTSC: 27186031]     Expected: Should increment by 1
+[KRELTSC: 27193492]   Running LOOP.no_do: LOOP
+[KRELTSC: 27199893] LOOP: compile-only
+[KRELTSC: 27204069]     Expected error occurred
+LOOP
+[KRELTSC: 27209220]     Expected: Should error without DO
+[KRELTSC: 27216372]   LOOP: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 27224350] Testing word: LOOP
+[KRELTSC: 27228088] ------------------------
+[KRELTSC: 27232406]   Running LOOP.basic: : TEST20 5 0 DO I . LOOP ; TEST20 CR
+0 1 2 3 4 
+[KRELTSC: 27250282]     Test passed
+LOOP
+[KRELTSC: 27254684]     Expected: Should increment by 1
+[KRELTSC: 27259976]   Running LOOP.no_do: LOOP
+[KRELTSC: 27264669] LOOP: compile-only
+[KRELTSC: 27268444]     Expected error occurred
+LOOP
+[KRELTSC: 27275184]     Expected: Should error without DO
+[KRELTSC: 27280669]   LOOP: 2 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 27287257] ▶ Testing module: src/test_runner/modules/control_words_test.c
+[KRELTSC: 27296045] Testing word: +LOOP
+[KRELTSC: 27300223] ------------------------
+[KRELTSC: 27309070]   Running +LOOP.basic: : TEST21 10 0 DO I . 2 +LOOP ; TEST21 CR
+0 2 4 6 8 
+[KRELTSC: 27352432]     Test passed
++LOOP
+[KRELTSC: 27356657]     Expected: Should count by 2
+[KRELTSC: 27361662]   Running +LOOP.negative: : TEST22 0 10 DO I . -1 +LOOP ; TEST22 CR
+10 9 8 7 6 5 4 3 2 1 0 
+[KRELTSC: 27384138]     Test passed
++LOOP
+[KRELTSC: 27388308]     Expected: Should count down
+[KRELTSC: 27393302]   Running +LOOP.variable: : TEST23 10 0 DO I . DUP +LOOP ; 3 TEST23 CR
+0 3 6 9 
+[KRELTSC: 27411742]     Test passed
++LOOP
+[KRELTSC: 27415835]     Expected: Should use stack value
+[KRELTSC: 27421177]   +LOOP: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 27427669] Testing word: +LOOP
+[KRELTSC: 27431421] ------------------------
+[KRELTSC: 27435643]   Running +LOOP.basic: : TEST21 10 0 DO I . 2 +LOOP ; TEST21 CR
+0 2 4 6 8 
+[KRELTSC: 27469230]     Test passed
++LOOP
+[KRELTSC: 27473585]     Expected: Should count by 2
+[KRELTSC: 27478557]   Running +LOOP.negative: : TEST22 0 10 DO I . -1 +LOOP ; TEST22 CR
+10 9 8 7 6 5 4 3 2 1 0 
+[KRELTSC: 27499137]     Test passed
++LOOP
+[KRELTSC: 27503573]     Expected: Should count down
+[KRELTSC: 27508466]   Running +LOOP.variable: : TEST23 10 0 DO I . DUP +LOOP ; 3 TEST23 CR
+0 3 6 9 
+[KRELTSC: 27526056]     Test passed
++LOOP
+[KRELTSC: 27530182]     Expected: Should use stack value
+[KRELTSC: 27535531]   +LOOP: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 27542901] === Control Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 27554037] 
+=== Testing Module: StarForth Words ===
+[KRELTSC: 27561073] Running StarForth Words Tests (Module 17: StarForth Extensions)...
+[KRELTSC: 27571119] ▶ Testing module: src/test_runner/modules/starforth_words_test.c
+[KRELTSC: 27580133] Testing word: ENTROPY@
+[KRELTSC: 27584280] ------------------------
+[KRELTSC: 27590140]   Running ENTROPY@.after_execution: : TESTWORD 1 1 + DROP ; TESTWORD ' TESTWORD ENTROPY@ . CR
+1 
+[KRELTSC: 27617983]     Test passed
+ENTROPY@
+[KRELTSC: 27622412]     Expected: Should show execution count > 0
+[KRELTSC: 27629017]   Running ENTROPY@.zero_initial: : NEWWORD ; ' NEWWORD ENTROPY@ . CR
+0 
+[KRELTSC: 27640576]     Test passed
+ENTROPY@
+[KRELTSC: 27644962]     Expected: Should show 0 for unused word
+[KRELTSC: 27652959]   Running ENTROPY@.multiple_calls: : ENTTEST 1 DROP ; ENTTEST ENTTEST ENTTEST ' ENTTEST ENTROPY@ . CR
+3 
+[KRELTSC: 27670237]     Test passed
+ENTROPY@
+[KRELTSC: 27674592]     Expected: Should increment with each call
+[KRELTSC: 27680756]   Running ENTROPY@.null_addr: 0 ENTROPY@
+[KRELTSC: 27688177] ENTROPY@: null dictionary entry
+[KRELTSC: 27693802]     Expected error occurred
+ENTROPY@
+[KRELTSC: 27699268]     Expected: Should handle null address
+[KRELTSC: 27704990]   Running ENTROPY@.empty_stack: ENTROPY@
+[KRELTSC: 27713944] ENTROPY@: data stack underflow
+[KRELTSC: 27719146]     Expected error occurred
+ENTROPY@
+[KRELTSC: 27724639]     Expected: Should cause stack underflow
+[KRELTSC: 27730596]   ENTROPY@: 5 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 27738224] ▶ Testing module: src/test_runner/modules/starforth_words_test.c
+[KRELTSC: 27746404] Testing word: ENTROPY!
+[KRELTSC: 27750511] ------------------------
+[KRELTSC: 27755155]   Running ENTROPY!.set_entropy: : ENTSET ; 42 ' ENTSET ENTROPY! ' ENTSET ENTROPY@ . CR
+42 
+[KRELTSC: 27778605]     Test passed
+ENTROPY!
+[KRELTSC: 27783039]     Expected: Should set entropy to 42
+[KRELTSC: 27788636]   Running ENTROPY!.overwrite: : ENTOV ; 10 ' ENTOV ENTROPY! 20 ' ENTOV ENTROPY! ' ENTOV ENTROPY@ . CR
+20 
+[KRELTSC: 27808688]     Test passed
+ENTROPY!
+[KRELTSC: 27813117]     Expected: Should overwrite previous value
+[KRELTSC: 27821306]   Running ENTROPY!.zero_entropy: : ENTZERO ; 0 ' ENTZERO ENTROPY! ' ENTZERO ENTROPY@ . CR
+0 
+[KRELTSC: 27837840]     Test passed
+ENTROPY!
+[KRELTSC: 27842235]     Expected: Should set entropy to 0
+[KRELTSC: 27847872]   Running ENTROPY!.null_addr: 42 0 ENTROPY!
+[KRELTSC: 27856053] ENTROPY!: null dictionary entry
+[KRELTSC: 27861339]     Expected error occurred
+ENTROPY!
+[KRELTSC: 27866806]     Expected: Should handle null address
+[KRELTSC: 27872546]   Running ENTROPY!.one_arg: 42 ENTROPY!
+[KRELTSC: 27879987] ENTROPY!: data stack underflow
+[KRELTSC: 27885154]     Expected error occurred
+ENTROPY!
+[KRELTSC: 27890598]     Expected: Should cause stack underflow
+[KRELTSC: 27896481]   Running ENTROPY!.empty_stack: ENTROPY!
+[KRELTSC: 27904171] ENTROPY!: data stack underflow
+[KRELTSC: 27909253]     Expected error occurred
+ENTROPY!
+[KRELTSC: 27914744]     Expected: Should cause stack underflow
+[KRELTSC: 27920754]   ENTROPY!: 6 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 27929009] ▶ Testing module: src/test_runner/modules/starforth_words_test.c
+[KRELTSC: 27937097] Testing word: WORD-ENTROPY
+[KRELTSC: 27941841] ------------------------
+[KRELTSC: 27946338]   Running WORD-ENTROPY.display_all: 1 DUP DUP DUP DROP DROP DROP DROP WORD-ENTROPY
+Word Usage Statistics (Execution Heat Counts):
+
+=============================================
+
+WORD-ENTROPY: 1
+
+ENTROPY!: 1
+
+ENTROPY@: 1
+
+EXIT: 1
+
+J: 1
+
+I: 1
+
++LOOP: 1
+
+LOOP: 1
+
+DO: 1
+
+?DO: 1
+
+UNTIL: 1
+
+REPEAT: 1
+
+WHILE: 1
+
+BEGIN: 1
+
+(+LOOP): 1
+
+(LOOP): 1
+
+(DO): 1
+
+(?DO): 1
+
+(0BRANCH): 1
+
+(BRANCH): 1
+
+LIT: 1
+
+;: 1
+
+:: 1
+
+': 1
+
+CR: 1
+
+.: 1
+
++: 1
+
+DUP: 3
+
+DROP: 3
+
+-------------------------------------
+
+Total executions: 33
+
+Total words: 296
+
+Average executions per word: 0
+
+[KRELTSC: 28026352]     Test passed
+WORD-ENTROPY
+[KRELTSC: 28031210]     Expected: Should display all word entropy stats
+[KRELTSC: 28038069]   Running WORD-ENTROPY.after_execution: : WDENT 1 2 + DROP ; WDENT WDENT WORD-ENTROPY
+Word Usage Statistics (Execution Heat Counts):
+
+=============================================
+
+WDENT: 1
+
+WORD-ENTROPY: 1
+
+ENTROPY!: 1
+
+ENTROPY@: 1
+
+EXIT: 1
+
+J: 1
+
+I: 1
+
++LOOP: 1
+
+LOOP: 1
+
+DO: 1
+
+?DO: 1
+
+UNTIL: 1
+
+REPEAT: 1
+
+WHILE: 1
+
+BEGIN: 1
+
+(+LOOP): 1
+
+(LOOP): 1
+
+(DO): 1
+
+(?DO): 1
+
+(0BRANCH): 1
+
+(BRANCH): 1
+
+LIT: 2
+
+;: 1
+
+:: 1
+
+': 1
+
+CR: 1
+
+.: 1
+
++: 1
+
+DUP: 3
+
+DROP: 1
+
+-------------------------------------
+
+Total executions: 33
+
+Total words: 297
+
+Average executions per word: 0
+
+[KRELTSC: 28111449]     Test passed
+WORD-ENTROPY
+[KRELTSC: 28120502]     Expected: Should show defined word entropy
+[KRELTSC: 28127185]   Running WORD-ENTROPY.stack_preserved: DEPTH WORD-ENTROPY DEPTH = . CR
+Word Usage Statistics (Execution Heat Counts):
+
+=============================================
+
+WDENT: 1
+
+WORD-ENTROPY: 1
+
+ENTROPY!: 1
+
+ENTROPY@: 1
+
+EXIT: 1
+
+J: 1
+
+I: 1
+
++LOOP: 1
+
+LOOP: 1
+
+DO: 1
+
+?DO: 1
+
+UNTIL: 1
+
+REPEAT: 1
+
+WHILE: 1
+
+BEGIN: 1
+
+(+LOOP): 1
+
+(LOOP): 1
+
+(DO): 1
+
+(?DO): 1
+
+(0BRANCH): 1
+
+(BRANCH): 1
+
+LIT: 2
+
+;: 1
+
+:: 1
+
+': 1
+
+CR: 1
+
+.: 1
+
++: 1
+
+DEPTH: 1
+
+DUP: 3
+
+DROP: 1
+
+-------------------------------------
+
+Total executions: 34
+
+Total words: 297
+
+Average executions per word: 0
+
+0 
+[KRELTSC: 28194199]     Test passed
+WORD-ENTROPY
+[KRELTSC: 28198947]     Expected: Should not affect stack
+[KRELTSC: 28204402]   WORD-ENTROPY: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 28212899] ▶ Testing module: src/test_runner/modules/starforth_words_test.c
+[KRELTSC: 28220995] Testing word: RESET-ENTROPY
+[KRELTSC: 28225495] ------------------------
+[KRELTSC: 28229767]   Running RESET-ENTROPY.reset_defined: : RESETTEST 1 DROP ; RESETTEST RESETTEST RESETTEST RESET-ENTROPY
+[KRELTSC: 28253496]     Test passed
+RESET-ENTROPY
+[KRELTSC: 28258548]     Expected: Should reset all entropy counters
+[KRELTSC: 28264914]   Running RESET-ENTROPY.double_reset: RESET-ENTROPY RESET-ENTROPY
+[KRELTSC: 28275754]     Test passed
+RESET-ENTROPY
+[KRELTSC: 28280601]     Expected: Should handle multiple resets
+[KRELTSC: 28286609]   Running RESET-ENTROPY.after_usage: 1 DUP DUP DUP DROP DROP DROP DROP RESET-ENTROPY
+[KRELTSC: 28298740]     Test passed
+RESET-ENTROPY
+[KRELTSC: 28306765]     Expected: Should reset after word usage
+[KRELTSC: 28312759]   RESET-ENTROPY: 3 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 28320334] ▶ Testing module: src/test_runner/modules/starforth_words_test.c
+[KRELTSC: 28328442] Testing word: TOP-WORDS
+[KRELTSC: 28332623] ------------------------
+[KRELTSC: 28338276]   Running TOP-WORDS.display_top5: : TOPTEST 1 DROP ; TOPTEST TOPTEST TOPTEST TOPTEST TOPTEST 5 TOP-WORDS
+Top 5 most frequently used words:
+
+==================================
+
+1. TOPTEST: 4
+
+2. TOP-WORDS: 1
+
+3. EXIT: 1
+
+4. LIT: 1
+
+5. ;: 1
+
+[KRELTSC: 28407239]     Test passed
+TOP-WORDS
+[KRELTSC: 28411766]     Expected: Should display top 5 hot words
+[KRELTSC: 28417870]   Running TOP-WORDS.display_top10: 10 TOP-WORDS
+Top 10 most frequently used words:
+
+==================================
+
+1. TOPTEST: 4
+
+2. TOP-WORDS: 1
+
+3. EXIT: 1
+
+4. LIT: 1
+
+5. ;: 1
+
+6. :: 1
+
+7. DROP: 1
+
+[KRELTSC: 28443390]     Test passed
+TOP-WORDS
+[KRELTSC: 28447823]     Expected: Should display top 10 words
+[KRELTSC: 28455216]   Running TOP-WORDS.after_reset: RESET-ENTROPY 5 TOP-WORDS
+Top 5 most frequently used words:
+
+==================================
+
+1. TOP-WORDS: 1
+
+[KRELTSC: 28481783]     Test passed
+TOP-WORDS
+[KRELTSC: 28486412]     Expected: Should handle display after reset
+[KRELTSC: 28493249]   Running TOP-WORDS.single_word: 1 TOP-WORDS
+Top 1 most frequently used words:
+
+==================================
+
+1. TOP-WORDS: 1
+
+[KRELTSC: 28511614]     Test passed
+TOP-WORDS
+[KRELTSC: 28516455]     Expected: Should display top 1 word
+[KRELTSC: 28524759]   Running TOP-WORDS.large_count: 100 TOP-WORDS
+Top 100 most frequently used words:
+
+==================================
+
+1. TOP-WORDS: 1
+
+[KRELTSC: 28541844]     Test passed
+TOP-WORDS
+[KRELTSC: 28546295]     Expected: Should handle large count
+[KRELTSC: 28554329]   Running TOP-WORDS.zero_count: 0 TOP-WORDS
+TOP-WORDS: invalid count 0
+
+[KRELTSC: 28568690]     Test passed
+TOP-WORDS
+[KRELTSC: 28573191]     Expected: Should handle zero count
+[KRELTSC: 28578773]   Running TOP-WORDS.negative_count: -5 TOP-WORDS
+TOP-WORDS: invalid count -5
+
+[KRELTSC: 28594745]     Test passed
+TOP-WORDS
+[KRELTSC: 28599262]     Expected: Should handle negative count
+[KRELTSC: 28605260]   Running TOP-WORDS.empty_stack: TOP-WORDS
+[KRELTSC: 28613133] TOP-WORDS: data stack underflow
+[KRELTSC: 28618399]     Expected error occurred
+TOP-WORDS
+[KRELTSC: 28624352]     Expected: Should cause stack underflow
+[KRELTSC: 28630289]   TOP-WORDS: 8 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 28637204] ▶ Testing module: src/test_runner/modules/starforth_words_test.c
+[KRELTSC: 28645262] Testing word: (-
+[KRELTSC: 28650378] ------------------------
+[KRELTSC: 28654694]   Running (-.comment_line: (- This is a comment
+1 2 + . CR
+[KRELTSC: 28671853] (- comment not terminated
+[KRELTSC: 28677254]     Test passed
+(-
+[KRELTSC: 28681138]     Expected: Should ignore rest of line
+[KRELTSC: 28687278]   Running (-.mid_line: 1 (- comment here
+2 + . CR
+[KRELTSC: 28694612] (- comment not terminated
+[KRELTSC: 28699101]     Test passed
+(-
+[KRELTSC: 28702900]     Expected: Should work mid-expression
+[KRELTSC: 28708611]   Running (-.no_stack_effect: DEPTH (- comment
+DEPTH = . CR
+[KRELTSC: 28718657] (- comment not terminated
+[KRELTSC: 28723121]     Test passed
+(-
+[KRELTSC: 28726908]     Expected: Should not affect stack
+[KRELTSC: 28732376]   Running (-.multiple: 1 (- first
+2 (- second
++ . CR
+[KRELTSC: 28740747] (- comment not terminated
+[KRELTSC: 28745275]     Test passed
+(-
+[KRELTSC: 28749431]     Expected: Should handle multiple comments
+[KRELTSC: 28755695]   (-: 4 passed, 0 failed, 0 skipped, 0 errors
+[KRELTSC: 28762549] === StarForth Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 28771779] 
+=== Testing Module: Mama FORTH Words ===
+[KRELTSC: 28780401] Running Mama FORTH Words Tests (Capsule System M7.1)...
+[KRELTSC: 28789436] Testing word: CAPSULE-COUNT
+[KRELTSC: 28794054] ------------------------
+[KRELTSC: 28798360]   CAPSULE-COUNT: 0 passed, 0 failed, 2 skipped, 0 errors
+[KRELTSC: 28809722] Testing word: CAPSULE@
+[KRELTSC: 28814165] ------------------------
+[KRELTSC: 28818708]   CAPSULE@: 0 passed, 0 failed, 3 skipped, 0 errors
+[KRELTSC: 28825547] Testing word: CAPSULE-FLAGS@
+[KRELTSC: 28830186] ------------------------
+[KRELTSC: 28836358]   CAPSULE-FLAGS@: 0 passed, 0 failed, 3 skipped, 0 errors
+[KRELTSC: 28843926] Testing word: CAPSULE-LEN@
+[KRELTSC: 28848377] ------------------------
+[KRELTSC: 28852668]   CAPSULE-LEN@: 0 passed, 0 failed, 2 skipped, 0 errors
+[KRELTSC: 28859830] Testing word: CAPSULE-HASH@
+[KRELTSC: 28864369] ------------------------
+[KRELTSC: 28868650]   CAPSULE-HASH@: 0 passed, 0 failed, 2 skipped, 0 errors
+[KRELTSC: 28876244] Testing word: MAMA-VM-ID
+[KRELTSC: 28880503] ------------------------
+[KRELTSC: 28884763]   MAMA-VM-ID: 0 passed, 0 failed, 2 skipped, 0 errors
+[KRELTSC: 28891731] Testing word: VM-COUNT
+[KRELTSC: 28895826] ------------------------
+[KRELTSC: 28901610]   VM-COUNT: 0 passed, 0 failed, 2 skipped, 0 errors
+[KRELTSC: 28908461] Testing word: CAPSULE-BIRTH
+[KRELTSC: 28913007] ------------------------
+[KRELTSC: 28917266]   CAPSULE-BIRTH: 0 passed, 0 failed, 2 skipped, 0 errors
+[KRELTSC: 28924499] Testing word: CAPSULE-RUN
+[KRELTSC: 28928837] ------------------------
+[KRELTSC: 28933099]   CAPSULE-RUN: 0 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 28940424] Testing word: CAPSULE-TEST
+[KRELTSC: 28944885] ------------------------
+[KRELTSC: 28949160]   CAPSULE-TEST: 0 passed, 0 failed, 1 skipped, 0 errors
+[KRELTSC: 28956973] === Mama FORTH Words Summary: 0 passed, 0 failed, 0 skipped, 0 errors ===
+[KRELTSC: 28968619] FINAL TEST SUMMARY:
+[KRELTSC: 28973258]   Total tests: 800
+[KRELTSC: 28977600]   Passed: 734
+[KRELTSC: 28981381]   Failed: 0
+[KRELTSC: 28985155]   Skipped: 64
+[KRELTSC: 28988920]   Errors: 0
+[KRELTSC: 28993656] ALL IMPLEMENTED TESTS PASSED!
+[KRELTSC: 29000244]   Contract checks (A4'/A1): all passed
+[KRELTSC: 29006263] ==============================================
+PARITY:M7.1a word_count=296 here=0x0000000000000030 latest_id=295 hash=0xc71faef50dd5ebd8
+PARITY:OK
+POST: PASSED
+[HAL][exec] regions frozen:
+    kernel.text: [0x00000000bbf7ac50, 0x00000000bbf7ac54)
+VM: parity bootstrap complete
+Init: loading init.4th...
+
+                              *****
+                              *
+                              *****
+                              *
+                              *
+
+Init: init.4th OK
+Starting heartbeat...
+Heartbeat running.
+LithosAnanke v1.0.0
+StarForth Version 3.0.1
+
+StarForth Emergency CLI
+FORTH-79 interpreter — type BYE or power off to exit
+
+ok> 
