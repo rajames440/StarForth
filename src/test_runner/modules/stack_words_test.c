@@ -152,9 +152,9 @@ static WordTestSuite stack_word_suites[] = {
 
     {
         "PICK", {
-            {"pick_0", "1 2 3 0 PICK . CR", "Should print: 3", TEST_NORMAL, 0, 0}, /* Not implemented yet */
-            {"pick_1", "1 2 3 1 PICK . CR", "Should print: 2", TEST_NORMAL, 0, 0},
-            {"pick_2", "1 2 3 2 PICK . CR", "Should print: 1", TEST_NORMAL, 0, 0},
+            {"pick_0", "1 2 3 0 PICK . CR", "Should print: 3", TEST_NORMAL, 0, 1},
+            {"pick_1", "1 2 3 1 PICK . CR", "Should print: 2", TEST_NORMAL, 0, 1},
+            {"pick_2", "1 2 3 2 PICK . CR", "Should print: 1", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         3
@@ -162,8 +162,8 @@ static WordTestSuite stack_word_suites[] = {
 
     {
         "ROLL", {
-            {"roll_1", "1 2 3 1 ROLL . . . CR", "Should print: 1 3 2", TEST_NORMAL, 0, 0}, /* Stub */
-            {"roll_2", "1 2 3 2 ROLL . . . CR", "Should print: 2 3 1", TEST_NORMAL, 0, 0},
+            {"roll_1", "1 2 3 1 ROLL . . . CR", "Should print: 1 3 2", TEST_NORMAL, 0, 1},
+            {"roll_2", "1 2 3 2 ROLL . . . CR", "Should print: 2 3 1", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         2
