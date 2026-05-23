@@ -269,18 +269,16 @@ static void stack_word_pick(VM *vm) {
         return;
     }
 
-    cell_t n = vm->data_stack[vm->dsp];
+    cell_t n = vm_pop(vm); /* pop (consume) the index */
 
-    /* n=0 means duplicate TOS, n=1 means copy second item, etc. */
     if (n < 0 || n >= vm->dsp + 1) {
         log_message(LOG_ERROR, "PICK: Invalid index %ld (stack depth: %d)", (long) n, vm->dsp + 1);
         vm->error = 1;
         return;
     }
 
-    /* Don't consume the index for PICK - it copies the nth item to replace the index */
     cell_t value = vm->data_stack[vm->dsp - n];
-    vm->data_stack[vm->dsp] = value;
+    vm_push(vm, value);
 
     log_message(LOG_DEBUG, "PICK: Copied item at index %ld to top", (long) n);
 }
@@ -306,27 +304,20 @@ static void stack_word_roll(VM *vm) {
     }
 
     if (n == 0) {
-        /* n=0 means do nothing (no item to move) */
         log_message(LOG_DEBUG, "ROLL: n=0, no operation");
         return;
     }
 
-    if (n == 1) {
-        /* n=1 means top item is already at top, do nothing */
-        log_message(LOG_DEBUG, "ROLL: n=1, no operation needed");
-        return;
-    }
+    /* 1-indexed from bottom: n=1 moves bottom item to top */
+    int bottom = 0;
+    int top = vm->dsp;
+    int target = bottom + (n - 1);
 
-    /* Save the item to be moved to top */
-    cell_t value = vm->data_stack[vm->dsp + 1 - n];
-
-    /* Shift items down to fill the gap */
-    for (int i = vm->dsp + 1 - n; i < vm->dsp + 1; i++) {
+    cell_t value = vm->data_stack[target];
+    for (int i = target; i < top; i++) {
         vm->data_stack[i] = vm->data_stack[i + 1];
     }
-
-    /* Put the saved item on top */
-    vm->data_stack[vm->dsp + 1] = value;
+    vm->data_stack[top] = value;
 
     log_message(LOG_DEBUG, "ROLL: Moved item at index %ld to top", (long) n);
 }

@@ -457,7 +457,9 @@ void vm_heartbeat_run_cycle(VM *vm)
     /* Phase 2: Real-time heartbeat metrics emission */
     HeartbeatTickSnapshot tick_snapshot;
     heartbeat_capture_tick_snapshot(vm, &tick_snapshot);
+#if defined(HEARTBEAT_CSV_ENABLED) && HEARTBEAT_CSV_ENABLED
     heartbeat_emit_tick_row(vm, &tick_snapshot);
+#endif
 }
 
 #if HEARTBEAT_THREAD_ENABLED

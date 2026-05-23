@@ -52,8 +52,11 @@
  * @param vm Pointer to the VM structure
  */
 void dictionary_word_here(VM *vm) {
-    vm_align(vm);
     vm_push(vm, vm->here);
+}
+
+static void dictionary_word_align(VM *vm) {
+    vm_align(vm);
 }
 
 /**
@@ -205,6 +208,7 @@ void dictionary_word_latest(VM *vm) {
 /* Registration */
 void register_dictionary_words(VM *vm) {
     register_word(vm, "HERE", dictionary_word_here);
+    register_word(vm, "ALIGN", dictionary_word_align);
     register_word(vm, "ALLOT", dictionary_word_allot);
     register_word(vm, ",", dictionary_word_comma);
     register_word(vm, "C,", dictionary_word_c_comma);
