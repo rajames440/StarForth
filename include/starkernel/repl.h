@@ -20,9 +20,6 @@
 extern "C" {
 #endif
 
-/* 64-byte build-time constant baked from LITHOS_VERSION_STR (defined in repl.c) */
-extern const char lithos_version[64];
-
 /**
  * sk_repl - Run the emergency FORTH REPL on the serial console.
  *
