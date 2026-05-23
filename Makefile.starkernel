@@ -179,7 +179,7 @@ LOADER_BASE_CFLAGS := $(COMMON_CFLAGS)
 endif
 
 LOADER_CFLAGS := $(LOADER_BASE_CFLAGS) -I$(KERNEL_SRC)/vm
-KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm
+KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm -DHEARTBEAT_DOE_LOG=1
 
 # Linker flags
 ifeq ($(ARCH),aarch64)
@@ -296,7 +296,8 @@ KERNEL_SRCS_BASE := \
     $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
     $(wildcard $(KERNEL_SRC)/capsule/*.c) \
     $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c) \
-    $(KERNEL_SRC)/repl.c
+    $(KERNEL_SRC)/repl.c \
+    $(KERNEL_SRC)/doe_log.c
 
 KERNEL_ASM := $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.S)
 
