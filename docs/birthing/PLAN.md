@@ -23,70 +23,82 @@ The system must support **thousands of concurrent children** within a single pro
 
 ## 2. Hard Constraints
 
-These are non-negotiable given the target environment:
+These are fixed by the execution model — not by Hera's current implementation. Hera herself
+can and will be expanded as the design requires.
 
 | Constraint | Implication |
 |------------|-------------|
 | Same process as Hera | No `fork()`, no `pthread_create()` |
 | No threads | All scheduling is cooperative, inside the interpreter loop |
-| No OS processes | Children share Hera's file descriptors, address space, signal handlers |
-| Thousands of children | Per-child memory must be measured in KB, not MB |
-| ANSI C99, `-Wall -Werror` | No GNU extensions, no dynamic language tricks |
+| No OS processes | Children share Hera's address space, file descriptors, signal handlers |
+| ANSI C99, `-Wall -Werror` | No GNU extensions, no C++ features |
 | Hades is the substrate | I/O, timing, and memory services come from Hades (the kernel+HAL) |
 
----
-
-## 3. Memory Reality Check
-
-The current `VM` struct owns approximately:
-
-| Resource | Size | Per-child fate |
-|----------|------|----------------|
-| `memory[5MB]` | 5 MB | Cannot clone — shared or sliced |
-| `data_stack[1024]` + `return_stack[1024]` | 32 KB | **Must own** — each child needs isolated stacks |
-| `rolling_window` history buffer | ~16 KB | Shared (Hera's physics observes all) |
-| `heartbeat.tick_buffer` | ~800 KB | Shared (one heartbeat for the whole system) |
-| `word_id_map[1024]` | 8 KB | Shared (children look up words in Hera's dictionary) |
-| Struct metadata, input buffer, compile buffer | ~2 KB | **Must own** — per-child execution context |
-
-**At full clone:** ~5.8 MB × 1,000 children = 5.8 GB. Not feasible.  
-**At thin context (stacks + metadata only):** ~34 KB × 1,000 = 34 MB. Feasible.
-
-**Conclusion:** Children must be thin. They share Hera's memory, dictionary, and physics
-infrastructure. A child is a *saved execution context* — not a full VM.
+**What is NOT a hard constraint:** Hera's current memory size, struct layout, or any
+implementation detail of the existing VM. Hera grows to meet the design. We design for
+what's correct and rich; Hera expands to support it.
 
 ---
 
-## 4. The Child VM Model
+## 3. Memory Architecture
 
-### 4.1 What a Child Owns
+### 3.1 Hera's Expansion Model
 
-A child VM owns exactly:
+The current VM struct is a starting point, not a ceiling. Hera can be expanded in any of
+these directions as the child system demands:
 
-1. **Data stack** — isolated, fixed-size (size TBD; likely 256 or 512 cells)
-2. **Return stack** — isolated, fixed-size (same)
-3. **Instruction pointer (IP)** — where it is currently executing
-4. **Mode** — interpret vs. compile (children probably always interpret)
-5. **Input buffer + parse state** — for any Forth words it reads
-6. **Identity** — a name or handle by which Hera tracks it
-7. **Status** — alive, suspended, dying, dead
-8. **Parent reference** — pointer back to Hera's VM
+- **Larger or elastic memory arena** — Hera's 5 MB `memory[]` becomes a dynamically grown
+  heap or a large fixed arena (e.g., 512 MB on hosted platforms, as much as Hades allows
+  on kernel targets)
+- **Child memory pool** — a dedicated allocation arena carved from Hera's expanded memory,
+  from which child stacks, local dictionaries, and private memory slices are sub-allocated
+- **VM struct refactor** — the `VM` struct can be split into a "core execution state" and
+  separately managed subsystems (physics, heartbeat, dictionary) so children can compose
+  exactly what they need
 
-### 4.2 What a Child Shares with Hera
+### 3.2 Child Richness Classes
 
-- **Memory arena** — children execute Forth code compiled into Hera's memory
-- **Dictionary** — children look up and call words defined in Hera's dictionary
-- **Hades interface** — Hades HAL calls go through the same kernel paths
-- **Physics/SSM state** — Hera's L8 Jacquard and heartbeat observe all execution
-- **I/O** — children emit to the same console as Hera (unless redirected)
+Design for three classes. Which class a given child uses is a decision for Captain Bob (D2).
 
-### 4.3 What a Child Cannot Do
+| Class | What Child Owns | Memory per Child | Max at 4 GB |
+|-------|----------------|-----------------|-------------|
+| **Thin** (task) | IP + stacks (256 cells each) + metadata | ~4 KB | ~1,000,000 |
+| **Medium** (worker) | Thin + private memory slice (e.g., 256 KB) | ~260 KB | ~15,000 |
+| **Full** (VM) | Complete VM state — own dict, physics, memory | ~6–64 MB | ~60–700 |
 
-- Define new words that persist after its death (unless explicitly promoted to Hera's dictionary)
-- Corrupt Hera's own stacks
-- Block Hera (it must yield)
-- Access memory outside its permitted slice (if isolation enforced)
-- Directly call Hades without going through Hera's capability layer (TBD — see §8)
+All three are valid. The system need not be uniform — Hera can birth thin, medium, and full
+children simultaneously depending on the use case.
+
+### 3.3 What Every Child Owns (Minimum)
+
+Regardless of class, every child independently owns:
+
+1. **Data stack** — isolated (size TBD; see D2)
+2. **Return stack** — isolated (same size)
+3. **Instruction pointer (IP)** — current execution position
+4. **Mode** — interpret vs. compile
+5. **Input buffer + parse state** — for Forth words it reads
+6. **Identity** — name or handle in Hera's child registry
+7. **Status** — alive / suspended / dying / dead
+8. **Class** — thin / medium / full
+9. **Parent reference** — back to Hera
+
+### 3.4 What a Child May Share with Hera (Class-Dependent)
+
+| Resource | Thin | Medium | Full |
+|----------|------|--------|------|
+| Memory arena | Shared (executes in Hera's memory) | Private slice | Own arena |
+| Dictionary | Shared (read-only or vocab-scoped) | Shared | Own copy |
+| Physics/SSM | Hera observes all | Hera observes all | Per-child SSM |
+| Heartbeat | Hera's heartbeat | Hera's heartbeat | Shared or own |
+| Hades access | Via Hera | Via Hera | Direct or via Hera |
+
+### 3.5 What a Child Cannot Do (Regardless of Class)
+
+- Corrupt Hera's own stacks or IP
+- Block Hera (must yield)
+- Modify Hera's core VM state directly
+- Exceed its allocated memory class without Hera's explicit permission
 
 ---
 
@@ -318,14 +330,16 @@ The following must be decided before any code is written:
 | # | Decision | Options | Recommendation |
 |---|----------|---------|----------------|
 | D1 | Spawn mechanism | A: SPAWN, B: BEGET, C: BIRTH | A primary, C for capsule-boot |
-| D2 | Child stack size | 128 / 256 / 512 / 1024 cells | 256 cells (2 KB per stack, 4 KB per child total) |
-| D3 | Max children | 256 / 1024 / 4096 / dynamic | 4096 (compile-time constant pool) |
-| D4 | Dictionary access | A: shared, B: per-vocabulary, C: read-only | C first, then B |
-| D5 | Yield model | Explicit YIELD word vs. automatic every N ops | Explicit YIELD (deterministic) |
-| D6 | Hades access | A: Hera proxies, B: direct, C: capability tokens | A first |
-| D7 | SSM scope | A: global, B: per-child, C: hybrid | A first |
-| D8 | Child naming | Anonymous handles vs. named (registered in dict) | Named (registered in Hera's namespace) |
-| D9 | Child definition word | SPAWN vs. some other Forth word name | Captain Bob decides |
+| D2 | Default child class | Thin (task) / Medium (worker) / Full (VM) / Mixed | Captain Bob decides; system can support all three |
+| D3 | Child stack size | 256 / 512 / 1024 / configurable per class | Captain Bob decides; not constrained by Hera's current size |
+| D4 | Max children | 1024 / 4096 / dynamic (Hera allocates as needed) | Dynamic preferred; Hera expands her pool on demand |
+| D5 | Dictionary access | A: shared, B: per-vocabulary, C: read-only | Captain Bob decides per class (thin=C, full=own) |
+| D6 | Yield model | Explicit YIELD word vs. automatic every N ops | Explicit YIELD (deterministic) |
+| D7 | Hades access | A: Hera proxies, B: direct, C: capability tokens | Captain Bob decides; class-dependent makes sense |
+| D8 | SSM scope | A: global, B: per-child, C: hybrid | Global for thin/medium; per-child for full VMs |
+| D9 | Child naming | Anonymous handles vs. named (registered in dict) | Named (registered in Hera's namespace) |
+| D10 | Child definition word | SPAWN vs. some other Forth word name | Captain Bob decides |
+| D11 | Hera expansion strategy | Elastic arena / large fixed pool / multi-segment | Captain Bob decides; drives how Hera's VM struct is refactored |
 
 ---
 
@@ -334,10 +348,10 @@ The following must be decided before any code is written:
 To keep the plan honest:
 
 - **Not a thread scheduler.** There are no threads. This is cooperative Forth-level multitasking.
-- **Not an OS process model.** Children share Hera's address space completely.
-- **Not a full VM clone.** Children do not get their own 5 MB memory arenas.
-- **Not a security boundary.** Without explicit capability enforcement (D6-C), children are trusted.
+- **Not an OS process model.** Children share Hera's address space (thin/medium) or are isolated sub-VMs (full class).
+- **Not a security boundary by default.** Without capability enforcement (D6-C), children are trusted workers.
 - **Not a priority system.** All children are equal in the round-robin queue (initially).
+- **Not constrained by Hera's current implementation.** Hera expands as needed — the plan drives the code, not the reverse.
 
 ---
 
@@ -347,16 +361,18 @@ These phases are for planning reference only. No code written until Captain Bob 
 
 | Phase | Scope | Deliverable |
 |-------|-------|-------------|
-| 0 | Design approval | This document, signed off |
-| 1 | Child context struct | `ChildVM` struct, pool allocator, lifecycle states |
-| 2 | Scheduler | Round-robin queue in Hera's interpreter loop, `YIELD` word |
-| 3 | `SPAWN` word | Birth a child from a named Forth word |
-| 4 | Child death | Cleanup, stack reclaim, registry slot free |
-| 5 | Communication | Named channels, stack handoff at birth/death |
-| 6 | `BIRTH` word | Capsule-based child initialization |
-| 7 | Hades interface | Proxy layer (if D6-A chosen) |
-| 8 | SSM integration | Verify Hera's physics are not perturbed by children |
-| 9 | Scale testing | 1K, 4K child stress tests |
+| 0 | Design approval | This document, signed off by Captain Bob |
+| 1 | Hera expansion | Refactor Hera's VM struct and memory arena per D11; establish child pool infrastructure |
+| 2 | Child context struct | `ChildVM` struct covering all three classes; lifecycle states; allocator |
+| 3 | Scheduler | Round-robin queue in Hera's interpreter loop; `YIELD` word |
+| 4 | `SPAWN` word | Birth a thin child from a named Forth word |
+| 5 | Child death | Cleanup, stack reclaim, registry slot free |
+| 6 | Communication | Named channels, stack handoff at birth/death |
+| 7 | `BIRTH` word | Capsule-based child initialization |
+| 8 | Medium children | Private memory slices, per-vocabulary dictionary |
+| 9 | Full children | Complete sub-VM; per-child SSM if D8-B chosen |
+| 10 | Hades interface | Proxy or capability layer per D7 |
+| 11 | Scale testing | Thin: 10K+, Medium: 1K+, Full: 100+ child stress tests |
 
 ---
 
