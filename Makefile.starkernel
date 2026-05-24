@@ -178,8 +178,8 @@ else
 LOADER_BASE_CFLAGS := $(COMMON_CFLAGS)
 endif
 
-LOADER_CFLAGS := $(LOADER_BASE_CFLAGS) -I$(KERNEL_SRC)/vm
-KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm
+LOADER_CFLAGS := $(LOADER_BASE_CFLAGS) -I$(KERNEL_SRC)/vm -DHEARTBEAT_DOE_LOG=1
+KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm -DHEARTBEAT_DOE_LOG=1
 
 # Linker flags
 ifeq ($(ARCH),aarch64)
@@ -267,7 +267,8 @@ LOADER_SRCS_BASE := \
     $(wildcard $(KERNEL_SRC)/math/*.c) \
     $(wildcard $(KERNEL_SRC)/hash/*.c) \
     $(wildcard $(KERNEL_SRC)/capsule/*.c) \
-    $(KERNEL_SRC)/repl.c
+    $(KERNEL_SRC)/repl.c \
+    $(KERNEL_SRC)/doe_log.c
 
 LOADER_ASM := \
     $(KERNEL_SRC)/arch/$(ARCH)/boot.S \
@@ -296,7 +297,8 @@ KERNEL_SRCS_BASE := \
     $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
     $(wildcard $(KERNEL_SRC)/capsule/*.c) \
     $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c) \
-    $(KERNEL_SRC)/repl.c
+    $(KERNEL_SRC)/repl.c \
+    $(KERNEL_SRC)/doe_log.c
 
 KERNEL_ASM := $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.S)
 
