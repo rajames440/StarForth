@@ -204,3 +204,12 @@ Key documentation files:
 ## License
 
 See ./LICENSE
+
+## Critical Git Rules
+
+**NEVER use `git rebase` under any circumstances.** This project uses merge commits only.
+
+- All commits must be made inside `/home/user/StarForth` (the signing server is bound to this path)
+- Active development branch is `lithosananke` — never push feature work directly to `master`
+- Always use `git push -u origin <branch>` when pushing
+- Do NOT clone the repo, create worktrees, or work in other directories
