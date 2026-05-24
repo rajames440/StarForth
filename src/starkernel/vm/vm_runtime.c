@@ -47,6 +47,9 @@
 #include "../include/inference_engine.h"
 #include "../include/physics_metadata.h"
 #include "../include/physics_hotwords_cache.h"
+#if defined(HEARTBEAT_DOE_LOG) && HEARTBEAT_DOE_LOG
+#include "starkernel/doe_log.h"
+#endif
 #include "../include/ssm_jacquard.h"
 #include "vm_internal.h"
 
@@ -459,6 +462,9 @@ void vm_heartbeat_run_cycle(VM *vm)
     heartbeat_capture_tick_snapshot(vm, &tick_snapshot);
 #if defined(HEARTBEAT_CSV_ENABLED) && HEARTBEAT_CSV_ENABLED
     heartbeat_emit_tick_row(vm, &tick_snapshot);
+#endif
+#if defined(HEARTBEAT_DOE_LOG) && HEARTBEAT_DOE_LOG
+    doe_log_tick_row(vm, &tick_snapshot);
 #endif
 }
 

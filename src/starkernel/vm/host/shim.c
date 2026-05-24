@@ -162,14 +162,34 @@ static char *u64_to_dec(char *buf, uint64_t val) {
 void log_message(LogLevel level, const char *fmt, ...) {
     if (level > current_level || !fmt) return;
 
-    /* Capture TSC base on first call for relative timing */
+    /* Relative TSC timestamp */
     uint64_t now = shim_rdtsc();
-    if (log_tsc_base == 0) {
-        log_tsc_base = now;
-    }
+    if (log_tsc_base == 0) log_tsc_base = now;
     uint64_t rel_tsc = now - log_tsc_base;
 
-    /* Build prefix: [KRELTSC: <delta_tsc>] - relative TSC ticks from first log */
+    /* ANSI colors and level names indexed by LogLevel (0–4) */
+    static const char *colors[] = {
+        "\x1b[31m",  /* ERROR — red     */
+        "\x1b[33m",  /* WARN  — yellow  */
+        "\x1b[32m",  /* INFO  — green   */
+        "\x1b[35m",  /* TEST  — magenta */
+        "\x1b[34m",  /* DEBUG — blue    */
+    };
+    static const char *names[] = {
+        "ERROR", "WARN ", "INFO ", "TEST ", "DEBUG"
+    };
+    static const char *reset = "\x1b[0m";
+
+    int idx = (level < LOG_ERROR || level > LOG_DEBUG) ? LOG_ERROR : level;
+
+    /* Format message */
+    char buf[LOG_LINE_MAX];
+    va_list args;
+    va_start(args, fmt);
+    kvsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
+    /* Build KRELTSC prefix */
     char prefix[32];
     char *p = prefix;
     const char *tag = "[KRELTSC: ";
@@ -179,22 +199,36 @@ void log_message(LogLevel level, const char *fmt, ...) {
     *p++ = ' ';
     *p = '\0';
 
-    char buf[256];
-    va_list args;
-    va_start(args, fmt);
-    kvsnprintf(buf, sizeof(buf), fmt, args);
-    va_end(args);
-
-    /* Print prefix + message */
+    /* Emit: COLOR[LITHOS][LEVEL] RESET[KRELTSC: xxx] message\n */
+    console_puts(colors[idx]);
+    console_puts("[LITHOS][");
+    console_puts(names[idx]);
+    console_puts("] ");
+    console_puts(reset);
     console_puts(prefix);
     console_println(buf);
 }
 
 void log_test_result(const char *word_name, TestResult result) {
-    (void)result;
-    if (word_name) {
-        console_println(word_name);
+    if (current_level == LOG_NONE || current_level < LOG_TEST) return;
+    if (!word_name) return;
+
+    const char *color;
+    const char *status;
+    switch (result) {
+        case TEST_PASS:  color = "\x1b[32m"; status = "PASS"; break;
+        case TEST_FAIL:  color = "\x1b[31m"; status = "FAIL"; break;
+        case TEST_SKIP:  color = "\x1b[33m"; status = "SKIP"; break;
+        default:         color = "\x1b[0m";  status = "????"; break;
     }
+
+    console_puts("\x1b[35m[LITHOS][TEST ] \x1b[0m");
+    console_puts("Testing ");
+    console_puts(word_name);
+    console_puts(" ... ");
+    console_puts(color);
+    console_puts(status);
+    console_println("\x1b[0m");
 }
 
 void log_set_vm(struct VM *vm) { (void)vm; }
