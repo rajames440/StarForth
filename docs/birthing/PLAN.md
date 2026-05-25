@@ -106,8 +106,8 @@ Birth a new VM from the capsule whose namespace matches the given name.
 8. Log parity record: `PARITY:BIRTH name=Artemis vm_id=N capsule_id=X`
 9. On success: push 0; on failure: push error code
 
-**Open question D1:** What happens if a VM named "Artemis" is already alive?
-(Error? Replace? Queue?) — Captain Bob decides.
+**If a VM named "Artemis" is already alive:** check its health. If healthy, skip the birth
+and log the fact. Do not error, do not replace. BIRTH is idempotent for healthy VMs.
 
 ---
 
@@ -149,8 +149,9 @@ before returning control to the caller. Concurrent interleaved execution is a la
 
 Suspend a named VM. Its execution state is preserved; `START` will resume it.
 
-At this phase, a VM can only STOP itself (called from within the running VM's context).
-Hera calling `S" Hermes" STOP` on a different VM is a future capability.
+Any VM can STOP any other. Authority comes from identity — a VM may assume another
+identity for failsafe and recovery. The identity assumption mechanism is a future
+milestone; in Phase 1, cross-VM STOP is permitted without restriction.
 
 **Sequence:**
 1. Verify name matches the current VM
@@ -171,11 +172,15 @@ S" Hermes" USE    \ REPL now talks to Hermes
 S" Hera" USE      \ REPL returns to Hera
 ```
 
+USE is **system-wide** — it is not scoped to a capsule or identity. All REPL input and
+output redirects to the named VM until the next `USE` call. The `[Name]` prefix in the
+console reflects the active USE target.
+
 **Sequence:**
-1. Look up VM by name
-2. Set it as the active REPL/console VM
-3. Log line prefix changes to `[VMName]`
-4. Push 0
+1. Look up VM by name in registry
+2. Set as the active system-wide REPL/console VM
+3. Console prefix changes to `[VMName]`
+4. Stack unchanged (no return value)
 
 ---
 
@@ -230,19 +235,10 @@ prefix — **not the file name**. Under the current `mkcapsule` logic:
 - `capsules/hermes/init.4th` → does not match `production:*`, `core:*`, or `domains:*`
   → currently gets `FLAG_EXPERIMENT`
 
-**This is a gap.** Production VM capsules (Hermes, Artemis) must be `FLAG_PRODUCTION` to
-be `BIRTH`-eligible. The mkcapsule flag logic must be updated to treat `capsules/<name>/`
-subdirectories as production capsules, OR the `hermes/` and `artemis/` directories must be
-moved under a `production/` prefix.
-
-**Open question D2:** How do named VM capsules get `FLAG_PRODUCTION`?
-- Option A: rename directories to `production/hermes/`, `production/artemis/`
-  → capsule names become `production:hermes:init.4th`
-- Option B: update `mkcapsule.c` to treat any `capsules/<name>/init.4th` (1 level deep,
-  no special prefix) as production
-- Option C: add an explicit production marker file or naming convention
-
-Captain Bob decides.
+**All capsules carry both `FLAG_PRODUCTION` and `FLAG_EXPERIMENT`.** Birth eligibility is
+not gated on the flag type — any capsule can be used for any identity. mkcapsule will be
+updated to set both flags on every capsule it generates. The distinction between production
+and experiment remains in the flags for audit/logging purposes but does not block BIRTH.
 
 ---
 
@@ -349,17 +345,17 @@ The heartbeat runs per-VM. Hera's SSM does not observe Hermes' or Artemis' execu
 
 ---
 
-## 12. Open Decisions — Requires Captain Bob Approval
+## 12. Decisions — RESOLVED
 
-| # | Decision | Options | Status |
-|---|----------|---------|--------|
-| D1 | BIRTH name collision | Error / replace / queue | Captain Bob decides |
-| D2 | Production flag for named VM capsules | A: `production/` prefix, B: mkcapsule update, C: other | Captain Bob decides |
-| D3 | `BIRTH` return value | Push 0/error vs. push VM ID vs. leave nothing | Captain Bob decides |
-| D4 | `USE` scope | REPL-only vs. also redirects EMIT/TYPE globally | Captain Bob decides |
-| D5 | STOP across VMs | Can Hera STOP Hermes directly, or only self-STOP? | Captain Bob decides |
-| D6 | Max named VMs | Fixed pool (e.g., 64) vs. dynamic | Captain Bob decides |
-| D7 | Log prefix format | `[Name]` vs. `Name:` vs. `(Name)` vs. other | Captain Bob decides |
+| # | Decision | Resolution |
+|---|----------|-----------|
+| D1 | BIRTH name collision | **Idempotent — check health of existing VM; if healthy, skip and log. No error, no replace.** |
+| D2 | Production flag | **All capsules carry both `FLAG_PRODUCTION` and `FLAG_EXPERIMENT`. Birth eligibility is not gated on flag type. mkcapsule updated accordingly.** |
+| D3 | `BIRTH` return value | **Nothing — BIRTH is a pure side-effect word, leaves stack clean.** |
+| D4 | `USE` scope | **REPL only, but system-wide. Not bound to any specific capsule or identity. All REPL I/O redirects to the named VM.** |
+| D5 | STOP across VMs | **Any VM may assume another identity for failsafe and recovery purposes, enabling cross-VM STOP. Identity assumption mechanism is a future milestone; Phase 1 allows any VM to STOP any other.** |
+| D6 | Max named VMs | **Dynamic — Hera allocates as needed. No fixed ceiling.** |
+| D7 | Log prefix format | **`[Name]`** — e.g., `[Hera]`, `[Hermes]`, `[Artemis]` |
 
 ---
 
@@ -382,14 +378,14 @@ No code until Captain Bob approves the plan.
 | 1 | VM registry naming | Add `name[64]` to `VMRegistryEntry`; name lookup functions |
 | 2 | Log prefix | HAL console layer emits `[VMName]` prefix per active VM |
 | 3 | Capsule stubs | Write `capsules/hermes/init.4th`, `capsules/artemis/init.4th` |
-| 4 | mkcapsule flag fix | Resolve D2 — ensure named VM capsules get `FLAG_PRODUCTION` |
-| 5 | BIRTH word | C primitive; name→capsule lookup; full VM alloc; registry entry |
+| 4 | mkcapsule flag update | Set both `FLAG_PRODUCTION` and `FLAG_EXPERIMENT` on all capsules |
+| 5 | BIRTH word | C primitive; name→capsule lookup; health-check idempotence; full VM alloc |
 | 6 | KILL word | C primitive; teardown; registry clear |
 | 7 | START word | C primitive; synchronous execution hand-off |
-| 8 | STOP word | C primitive; state save; return to caller |
-| 9 | USE word | C primitive; REPL/console redirect |
+| 8 | STOP word | C primitive; cross-VM; state save; return to caller |
+| 9 | USE word | C primitive; system-wide REPL/console redirect |
 | 10 | Hera init.4th update | Use new words to birth Hermes and Artemis at boot |
-| 11 | Integration test | Boot sequence: Hera → BIRTH Hermes → BIRTH Artemis → logs show names |
+| 11 | Integration test | Boot sequence: Hera → BIRTH Hermes → BIRTH Artemis → `[Name]` in logs |
 
 ---
 
