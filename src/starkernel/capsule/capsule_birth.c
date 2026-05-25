@@ -29,6 +29,7 @@
 #include "starkernel/capsule_birth.h"
 #include "starkernel/capsule.h"
 #include "starkernel/capsule_run.h"
+#include "starkernel/kmalloc.h"
 
 /*===========================================================================
  * VM Execution Hooks
@@ -49,55 +50,146 @@ void capsule_birth_set_hooks(
 }
 
 /*===========================================================================
- * VM Registry
+ * VM Registry — dynamic linked list, heap-allocated via kmalloc
  *===========================================================================*/
 
-#define MAX_VMS 64
+typedef struct vm_node {
+    VMRegistryEntry  entry;
+    struct vm_node  *next;
+} vm_node_t;
 
-static VMRegistryEntry vm_registry[MAX_VMS];
-static uint32_t        vm_registry_count = 0;
-static uint32_t        next_vm_id = 1;   /* VM 0 is reserved for Mama */
+static vm_node_t *vm_registry_head  = (void *)0;
+static uint32_t   vm_registry_count = 0;
+static uint32_t   next_vm_id        = 1;  /* VM 0 reserved for Mama */
+
+/* Copy at most VM_NAME_MAX-1 chars, always null-terminate */
+static void vm_name_copy(char *dst, const char *src) {
+    uint32_t i;
+    for (i = 0; i < (VM_NAME_MAX - 1u) && src[i]; i++)
+        dst[i] = src[i];
+    dst[i] = '\0';
+}
+
+/* Case-sensitive equality test (no libc) */
+static int vm_name_eq(const char *a, const char *b) {
+    while (*a && *b) {
+        if (*a != *b) return 0;
+        a++; b++;
+    }
+    return *a == *b;
+}
+
+/* Internal: return mutable pointer into registry node for vm_id */
+static VMRegistryEntry *vm_find_entry_ptr(uint32_t vm_id) {
+    vm_node_t *node = vm_registry_head;
+    while (node) {
+        if (node->entry.vm_id == vm_id) return &node->entry;
+        node = node->next;
+    }
+    return (void *)0;
+}
 
 void capsule_vm_registry_init(void) {
-    vm_registry_count = 0;
-    next_vm_id = 1;
+    uint32_t   i;
+    vm_node_t *node;
+    vm_node_t *next;
+    vm_node_t *mama;
 
-    uint32_t i;
-    for (i = 0; i < MAX_VMS; i++) {
-        vm_registry[i].vm_id              = 0;
-        vm_registry[i].state              = VM_STATE_EMBRYO;
-        vm_registry[i].birth_capsule_id   = 0;
-        vm_registry[i].birth_timestamp_ns = 0;
-        vm_registry[i].birth_dict_hash    = 0;
-        vm_registry[i].flags              = 0;
-        vm_registry[i].reserved           = 0;
+    /* Free any nodes from a previous init (defensive) */
+    node = vm_registry_head;
+    while (node) {
+        next = node->next;
+        kfree(node);
+        node = next;
     }
 
+    vm_registry_head  = (void *)0;
+    vm_registry_count = 0;
+    next_vm_id        = 1;
+
     /* Mama is always VM 0 */
-    vm_registry[0].vm_id  = 0;
-    vm_registry[0].state  = VM_STATE_LIVE;
-    vm_registry_count     = 1;
+    mama = (vm_node_t *)kmalloc(sizeof(vm_node_t));
+    if (!mama) return;
+
+    mama->entry.vm_id              = 0;
+    mama->entry.state              = VM_STATE_LIVE;
+    mama->entry.birth_capsule_id   = 0;
+    mama->entry.birth_timestamp_ns = 0;
+    mama->entry.birth_dict_hash    = 0;
+    mama->entry.flags              = 0;
+    mama->entry.reserved           = 0;
+    for (i = 0; i < VM_NAME_MAX; i++) mama->entry.name[i] = '\0';
+    vm_name_copy(mama->entry.name, "Hera");
+    mama->next = (void *)0;
+
+    vm_registry_head  = mama;
+    vm_registry_count = 1;
 }
 
 static VMRegistryEntry *vm_registry_alloc(void) {
-    if (vm_registry_count >= MAX_VMS) return (void *)0;
-    return &vm_registry[vm_registry_count++];
+    uint32_t   i;
+    vm_node_t *node;
+    vm_node_t *tail;
+
+    node = (vm_node_t *)kmalloc(sizeof(vm_node_t));
+    if (!node) return (void *)0;
+
+    node->entry.vm_id              = 0;
+    node->entry.state              = VM_STATE_EMBRYO;
+    node->entry.birth_capsule_id   = 0;
+    node->entry.birth_timestamp_ns = 0;
+    node->entry.birth_dict_hash    = 0;
+    node->entry.flags              = 0;
+    node->entry.reserved           = 0;
+    for (i = 0; i < VM_NAME_MAX; i++) node->entry.name[i] = '\0';
+    node->next = (void *)0;
+
+    /* Append to tail */
+    if (!vm_registry_head) {
+        vm_registry_head = node;
+    } else {
+        tail = vm_registry_head;
+        while (tail->next) tail = tail->next;
+        tail->next = node;
+    }
+
+    vm_registry_count++;
+    return &node->entry;
 }
 
 int capsule_vm_registry_get(uint32_t vm_id, VMRegistryEntry *out) {
-    uint32_t i;
+    VMRegistryEntry *entry;
     if (!out) return -1;
-    for (i = 0; i < vm_registry_count; i++) {
-        if (vm_registry[i].vm_id == vm_id) {
-            *out = vm_registry[i];
-            return 0;
-        }
-    }
-    return -1;
+    entry = vm_find_entry_ptr(vm_id);
+    if (!entry) return -1;
+    *out = *entry;
+    return 0;
 }
 
 uint32_t capsule_vm_registry_count(void) {
     return vm_registry_count;
+}
+
+int capsule_vm_find_by_name(const char *name, VMRegistryEntry *out) {
+    vm_node_t *node;
+    if (!name || !out) return -1;
+    node = vm_registry_head;
+    while (node) {
+        if (vm_name_eq(node->entry.name, name)) {
+            *out = node->entry;
+            return 0;
+        }
+        node = node->next;
+    }
+    return -1;
+}
+
+void capsule_vm_registry_set_name(uint32_t vm_id, const char *name) {
+    VMRegistryEntry *entry;
+    if (!name) return;
+    entry = vm_find_entry_ptr(vm_id);
+    if (!entry) return;
+    vm_name_copy(entry->name, name);
 }
 
 /*===========================================================================
@@ -153,8 +245,13 @@ CapsuleRunResult capsule_birth_mama(
         mama_cap->content_hash,
         post_dict_hash);
 
-    vm_registry[0].birth_capsule_id = mama_cap->capsule_id;
-    vm_registry[0].birth_dict_hash  = post_dict_hash;
+    {
+        VMRegistryEntry *mama_entry = vm_find_entry_ptr(0);
+        if (mama_entry) {
+            mama_entry->birth_capsule_id = mama_cap->capsule_id;
+            mama_entry->birth_dict_hash  = post_dict_hash;
+        }
+    }
 
     return CAPSULE_RUN_OK;
 }

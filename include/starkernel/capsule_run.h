@@ -78,9 +78,13 @@ typedef struct {
  * VM Registry Entry
  *===========================================================================*/
 
+/** Maximum length of a VM symbolic name, including null terminator */
+#define VM_NAME_MAX 64
+
 typedef enum {
     VM_STATE_EMBRYO = 0,     /* Allocated but not yet born */
     VM_STATE_LIVE,           /* Successfully born, operational */
+    VM_STATE_STOPPED,        /* Suspended — execution state saved */
     VM_STATE_STILLBORN,      /* Birth failed */
     VM_STATE_DEAD,           /* Terminated */
 } VMState;
@@ -93,6 +97,7 @@ typedef struct {
     uint64_t birth_dict_hash;    /* Dictionary hash after birth */
     uint32_t flags;              /* VM flags */
     uint32_t reserved;           /* Padding */
+    char name[VM_NAME_MAX];      /* Symbolic name, e.g. "Hera", "Hermes" */
 } VMRegistryEntry;
 
 /*===========================================================================

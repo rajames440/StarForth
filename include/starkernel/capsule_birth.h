@@ -188,6 +188,9 @@ void capsule_vm_hooks_register(void);
 
 /**
  * capsule_vm_registry_init - Initialize VM registry
+ *
+ * Allocates Mama's registry node (VM 0, name "Hera") via kmalloc.
+ * Must be called after kmalloc_init().
  */
 void capsule_vm_registry_init(void);
 
@@ -195,7 +198,7 @@ void capsule_vm_registry_init(void);
  * capsule_vm_registry_get - Get VM registry entry by ID
  *
  * @param vm_id  VM ID to look up
- * @param out    Output: registry entry
+ * @param out    Output: registry entry copy
  * @return 0 on success, -1 if not found
  */
 int capsule_vm_registry_get(uint32_t vm_id, VMRegistryEntry *out);
@@ -204,6 +207,27 @@ int capsule_vm_registry_get(uint32_t vm_id, VMRegistryEntry *out);
  * capsule_vm_registry_count - Get number of registered VMs
  */
 uint32_t capsule_vm_registry_count(void);
+
+/**
+ * capsule_vm_find_by_name - Find VM registry entry by symbolic name
+ *
+ * Case-sensitive. Returns the first match.
+ *
+ * @param name  Symbolic VM name, e.g. "Hermes"
+ * @param out   Output: registry entry copy
+ * @return 0 if found, -1 if not found
+ */
+int capsule_vm_find_by_name(const char *name, VMRegistryEntry *out);
+
+/**
+ * capsule_vm_registry_set_name - Assign a symbolic name to a registered VM
+ *
+ * Truncates to VM_NAME_MAX-1 characters. No-op if vm_id not found.
+ *
+ * @param vm_id  VM ID to name
+ * @param name   Symbolic name string
+ */
+void capsule_vm_registry_set_name(uint32_t vm_id, const char *name);
 
 #ifdef __cplusplus
 }
