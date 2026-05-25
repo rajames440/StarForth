@@ -80,4 +80,11 @@ int console_getc(void);
  */
 int console_poll(void);
 
+/**
+ * Set the active VM name shown as [Name] prefix on each output line.
+ * Pass NULL to suppress the prefix (kernel-only output before any VM).
+ * The pointer must remain valid for as long as it is active.
+ */
+void console_set_vm_name(const char *name);
+
 #endif /* STARKERNEL_CONSOLE_H */
