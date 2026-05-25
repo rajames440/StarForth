@@ -131,15 +131,26 @@ Stub `init.4th` files must be written before the kernel build runs `mkcapsule`.
 - [x] `docs/birthing/PLAN.md` written
 - [x] All seven decisions resolved with Captain Bob
 - [x] `docs/birthing/STATUS.md` created (this file)
-- [ ] **Captain Bob approves plan — gate for Phase 1**
+- [x] **Captain Bob approves plan — gate for Phase 1**
 
 ---
 
 ### Phase 1 — VM Registry Naming
-- [ ] Add `char name[64]` to `VMRegistryEntry` in `src/starkernel/capsule/`
-- [ ] Add `vm_find_by_name()` lookup function
-- [ ] Ensure VM 0 (Hera) is registered as `"Hera"` at bootstrap
-- [ ] Tests: find by name, not-found returns NULL, name persists across states
+- [x] Add `char name[VM_NAME_MAX]` + `VM_STATE_STOPPED` to `VMRegistryEntry` (`include/starkernel/capsule_run.h`)
+- [x] Replace static `vm_registry[64]` with dynamic kmalloc linked list (`src/starkernel/capsule/capsule_birth.c`)
+- [x] Hera (VM 0) registered as `"Hera"` in `capsule_vm_registry_init()`
+- [x] Add `capsule_vm_find_by_name()` — walks linked list, copies entry on match
+- [x] Add `capsule_vm_registry_set_name()` — sets symbolic name by vm_id
+- [x] Declare both new functions in `include/starkernel/capsule_birth.h`
+- [x] Kernel build (`make -f Makefile.starkernel ARCH=amd64 STARFORTH_ENABLE_VM=1`) passes clean
+- [ ] Tests: find by name, not-found returns -1, name persists across states
+
+---
+
+**Gap 1 (deferred to Phase 4):** `CAPSULE_MODE_VALID` enforces XOR between `FLAG_PRODUCTION`
+and `FLAG_EXPERIMENT`. Captain Bob's answer about D2 points at a runtime logger/mode
+selector (`LOG-DOE`) that does not yet exist. Design of `LOG-DOE` and the runtime mode
+selection is a separate task before Phase 4 (mkcapsule flag update) can proceed.
 
 ---
 
