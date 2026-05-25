@@ -293,9 +293,9 @@ birthing (HEAD)
   time (depth-first down the call stack). True cooperative interleaving (Hermes and Artemis
   sharing time while Hera waits) would require an explicit `YIELD` mechanism and a trampoline
   scheduler — future milestone, designed separately.
-- **Graph depth:** Any VM can BIRTH sub-VMs. There is no enforced depth limit. Deep graphs
-  consume C stack space — a practical concern for the kernel where the stack is bounded.
-  Monitor and document safe recursion depth when known.
+- **Graph depth — CONFIRMED unlimited:** Any VM can BIRTH sub-VMs at any depth. The birth
+  graph is a true rooted directed graph. Deep graphs consume C stack space — note for kernel
+  stack budgeting. No enforced limit; document safe depth in practice.
 - **Hermes pub/sub and Artemis storage:** Their full vocabularies are future work. Current
   phase only needs stub `init.4th` files.
 - **`capsules/hermes/` and `capsules/artemis/`** currently contain only `.gitkeep`. Stub
