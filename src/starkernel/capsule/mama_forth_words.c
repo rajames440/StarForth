@@ -157,6 +157,96 @@ void mama_word_capsule_len_fetch(VM *vm)
  * ============================================================================ */
 
 /**
+ * @brief BIRTH ( c-addr u -- )
+ * Birth a named VM from its capsule.  Idempotent — if a live VM with
+ * that name already exists (case-insensitive), logs and returns.
+ *
+ * Name mapping: S" Artemis" → capsule "artemis:init.4th"
+ * Exception:    S" Hera"    → rejected (cannot re-birth Mama)
+ */
+void mama_word_birth(VM *vm)
+{
+    char            name_buf[VM_NAME_MAX];
+    char            capsule_name[VM_NAME_MAX + 12]; /* name + ":init.4th" + NUL */
+    VMRegistryEntry existing;
+    uint32_t        i, j;
+    cell_t          u, caddr;
+    const char     *src;
+    char            lower[VM_NAME_MAX];
+    CapsuleRunResult result;
+    uint32_t        new_vm_id;
+
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        return;
+    }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("BIRTH: name too long or empty");
+        return;
+    }
+
+    src = (const char *)(uintptr_t)caddr;
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    /* Idempotency: live VM with same name → skip */
+    if (capsule_vm_find_by_name_nocase(name_buf, &existing) == 0 &&
+        existing.state == VM_STATE_LIVE) {
+        console_puts("BIRTH: ");
+        console_puts(name_buf);
+        console_println(" already live (idempotent)");
+        return;
+    }
+
+    /* Lowercase name for capsule path */
+    for (i = 0; name_buf[i]; i++) {
+        char c = name_buf[i];
+        lower[i] = (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
+    }
+    lower[i] = '\0';
+
+    /* Hera cannot be re-birthed */
+    if (lower[0]=='h' && lower[1]=='e' && lower[2]=='r' && lower[3]=='a' && lower[4]=='\0') {
+        console_println("BIRTH: cannot re-birth Hera");
+        return;
+    }
+
+    /* Build "lower:init.4th" */
+    j = 0;
+    for (i = 0; lower[i]; i++) capsule_name[j++] = lower[i];
+    capsule_name[j++] = ':';
+    { const char *suf = "init.4th"; for (i = 0; suf[i]; i++) capsule_name[j++] = suf[i]; }
+    capsule_name[j] = '\0';
+
+    new_vm_id = 0;
+    result = capsule_birth_baby(
+        capsule_name,
+        capsule_get_directory(),
+        capsule_get_descriptors(),
+        capsule_get_names(),
+        capsule_get_arena(),
+        &new_vm_id,
+        (void **)0
+    );
+
+    if (result == CAPSULE_RUN_OK) {
+        capsule_vm_registry_set_name(new_vm_id, name_buf);
+        console_puts("BIRTH: ");
+        console_puts(name_buf);
+        console_println(" live");
+    } else {
+        console_puts("BIRTH: ");
+        console_puts(name_buf);
+        console_println(" FAILED");
+    }
+    /* D3: stack clean on exit */
+}
+
+/**
  * @brief CAPSULE-BIRTH ( capsule-id -- vm-id )
  * Birth a baby VM from a production (p) capsule.
  * Returns the new VM's ID, or -1 on failure.
@@ -279,6 +369,7 @@ void mama_word_capsule_test(VM *vm)
 void register_mama_forth_words(VM *vm)
 {
     /* Register words in FORTH vocabulary first */
+    register_word(vm, "BIRTH", mama_word_birth);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);
@@ -294,6 +385,7 @@ void register_mama_forth_words(VM *vm)
     vm_bootstrap_root_vocabulary(vm, "MAMA");
 
     /* Re-register in MAMA vocabulary context */
+    register_word(vm, "BIRTH", mama_word_birth);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);

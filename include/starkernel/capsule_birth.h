@@ -220,6 +220,18 @@ uint32_t capsule_vm_registry_count(void);
 int capsule_vm_find_by_name(const char *name, VMRegistryEntry *out);
 
 /**
+ * capsule_vm_find_by_name_nocase - Find VM registry entry by name (case-insensitive)
+ *
+ * Used by BIRTH for idempotency: prevents birthing a second VM with the
+ * same name regardless of case differences.
+ *
+ * @param name  Symbolic VM name (compared case-insensitively)
+ * @param out   Output: registry entry copy
+ * @return 0 if found, -1 if not found
+ */
+int capsule_vm_find_by_name_nocase(const char *name, VMRegistryEntry *out);
+
+/**
  * capsule_vm_registry_set_name - Assign a symbolic name to a registered VM
  *
  * Truncates to VM_NAME_MAX-1 characters. No-op if vm_id not found.

@@ -188,6 +188,34 @@ int capsule_vm_find_by_name(const char *name, VMRegistryEntry *out) {
     return -1;
 }
 
+/* Fold ASCII letter to lowercase (no libc) */
+static char vm_to_lower(char c) {
+    return (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
+}
+
+/* Case-insensitive ASCII equality (no libc) */
+static int vm_name_eq_nocase(const char *a, const char *b) {
+    while (*a && *b) {
+        if (vm_to_lower(*a) != vm_to_lower(*b)) return 0;
+        a++; b++;
+    }
+    return *a == *b;
+}
+
+int capsule_vm_find_by_name_nocase(const char *name, VMRegistryEntry *out) {
+    vm_node_t *node;
+    if (!name || !out) return -1;
+    node = vm_registry_head;
+    while (node) {
+        if (vm_name_eq_nocase(node->entry.name, name)) {
+            *out = node->entry;
+            return 0;
+        }
+        node = node->next;
+    }
+    return -1;
+}
+
 void capsule_vm_registry_set_name(uint32_t vm_id, const char *name) {
     VMRegistryEntry *entry;
     if (!name) return;

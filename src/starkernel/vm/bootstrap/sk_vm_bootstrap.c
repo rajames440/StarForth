@@ -56,6 +56,8 @@
 #include "starkernel/vm/bootstrap/sk_vm_bootstrap.h"
 #include "starkernel/hal/hal.h"
 #include "starkernel/console.h"
+#include "starkernel/capsule_birth.h"
+#include "starkernel/capsule_run.h"
 #include "vm_internal.h"
 #include "platform_time.h"
 #include "test_runner/include/test_runner.h"
@@ -163,6 +165,13 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
         sk_parity_print(pkt);
         return -1;
     }
+
+    /* Capsule subsystem: hooks, registry (Hera), run log.
+     * Called exactly once here for Mama — child VMs go through
+     * capsule_birth_baby() which never calls vm_init_with_host(). */
+    capsule_vm_hooks_register();
+    capsule_vm_registry_init();   /* establishes [Hera] console prefix */
+    capsule_run_log_init();
 #if SK_PARITY_DEBUG
     log_set_level(LOG_DEBUG);
 #else
