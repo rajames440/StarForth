@@ -6,6 +6,50 @@
 
 ---
 
+## Execution Model — Single Process, VM Graph
+
+**Hard constraints:**
+- One OS process. No threads. No fork. No shared memory between processes.
+- All VMs live in the same heap, same address space.
+- The C call stack IS the execution stack.
+
+**The graph:**
+
+VMs are nodes. Edges are relationships — birth (who created whom) and execution (who
+STARTed whom). These are distinct:
+
+```
+Birth graph (static, ownership):        Execution stack (dynamic, runtime):
+
+        Hera                                 C call stack:
+       /    \                                  hera_interp()
+   Hermes  Artemis                              └─ vm_start("Hermes")
+                                                    └─ hermes_interp()
+                                                        └─ vm_start("Artemis")
+                                                            └─ artemis_interp()
+                                                                └─ STOP → unwind
+```
+
+**`START` = push.** Calling `S" Hermes" START` from Hera literally calls Hermes's
+interpreter loop from within Hera's C execution context. Hera blocks in the `vm_start()`
+call until Hermes returns.
+
+**`STOP` = pop.** A VM stops itself — execution returns up the C call stack to whoever
+called `vm_start()`. In Phase 1, STOP is always self-stop. Cross-VM STOP (via identity
+assumption) is a future milestone.
+
+**`BIRTH` does not equal `START`.** BIRTH allocates and initializes the VM. START runs it.
+A VM can be birthed and left dormant.
+
+**`USE` is orthogonal.** It redirects the REPL I/O independently of which VM is currently
+executing. It does not affect the C call stack.
+
+**Any VM can birth sub-VMs.** Hermes can call `S" Companion" BIRTH` — it is not Hera's
+exclusive privilege. This makes the birth graph a true directed graph (rooted at Hera),
+not a strict two-level tree.
+
+---
+
 ## What This Branch Is
 
 We are designing and implementing the multi-VM birth system for LithosAnanke. Hera (the
@@ -155,22 +199,27 @@ Stub `init.4th` files must be written before the kernel build runs `mkcapsule`.
 ### Phase 7 — `START` Word
 - [ ] Register `START` as a C primitive
 - [ ] Look up VM by name
-- [ ] If EMBRYO or STOPPED: set state LIVE, transfer execution (synchronous in Phase 1)
-- [ ] If LIVE: log error, return
-- [ ] On VM completion or self-STOP: return control to caller
+- [ ] If EMBRYO or STOPPED: set state → LIVE
+- [ ] Call the target VM's interpreter loop directly (C function call — no threads)
+      The calling VM blocks inside `vm_start()` until the target returns
+- [ ] On target self-STOP or normal exit: `vm_start()` returns, calling VM resumes
+- [ ] If target is already LIVE: log error, return clean (cannot double-enter)
 - [ ] Stack clean on exit
-- [ ] Tests: START Hermes runs init, START already-live VM errors, START then STOP returns
+- [ ] Tests: START Hermes, Hermes runs and returns; START already-live errors; nested
+      START (Hera→Hermes→Artemis) unwinds correctly
 
 ---
 
 ### Phase 8 — `STOP` Word
 - [ ] Register `STOP` as a C primitive
-- [ ] Look up VM by name (any VM can STOP any other)
-- [ ] Save VM execution state (IP, dsp, rsp, stacks)
+- [ ] Phase 1: STOP is self-stop only — saves current VM state, returns from the C
+      interpreter loop, unwinding back to whoever called `vm_start()`
+- [ ] Save execution state: IP, dsp, rsp, stack contents
 - [ ] Set state → STOPPED
-- [ ] Return control to the VM that called START (or the calling VM)
-- [ ] Stack clean on exit
-- [ ] Tests: STOP from within, cross-VM STOP, STOP already-stopped is no-op
+- [ ] Return from the C interpreter loop (this is how the C call stack unwinds)
+- [ ] Stack clean on exit (from the calling VM's perspective)
+- [ ] Cross-VM STOP (any VM stops any other) deferred to identity-assumption milestone
+- [ ] Tests: self-STOP returns to START caller; STOP saves state; re-START resumes;
 
 ---
 
@@ -238,13 +287,16 @@ birthing (HEAD)
 
 ## Notes and Open Threads
 
-- **Identity assumption (D5 future):** VMs can assume another VM's identity for failsafe/
-  recovery operations. This adds authority to cross-VM STOP/KILL. Not in scope for current
-  phases — design separately when needed.
-- **Concurrent scheduling:** Phase 1 uses synchronous (sequential) execution — `START` runs
-  a VM to completion before returning. Round-robin cooperative scheduling with `YIELD` is a
-  future milestone, designed separately.
-- **Hermes pub/sub and Artemis storage:** These are the VMs' eventual responsibilities. For
-  now their `init.4th` are stubs. Their full vocabularies are designed in separate branches.
-- **`capsules/hermes/` and `capsules/artemis/`** currently contain only `.gitkeep`. The stub
-  `init.4th` files in Phase 3 must exist before `make -f Makefile.starkernel` is run.
+- **Identity assumption (D5 future):** Cross-VM STOP requires a VM to assume another's
+  identity. Not in scope for current phases — design separately. Phase 1 STOP is self-stop.
+- **Cooperative scheduling / YIELD:** The single-process graph model means VMs run one at a
+  time (depth-first down the call stack). True cooperative interleaving (Hermes and Artemis
+  sharing time while Hera waits) would require an explicit `YIELD` mechanism and a trampoline
+  scheduler — future milestone, designed separately.
+- **Graph depth:** Any VM can BIRTH sub-VMs. There is no enforced depth limit. Deep graphs
+  consume C stack space — a practical concern for the kernel where the stack is bounded.
+  Monitor and document safe recursion depth when known.
+- **Hermes pub/sub and Artemis storage:** Their full vocabularies are future work. Current
+  phase only needs stub `init.4th` files.
+- **`capsules/hermes/` and `capsules/artemis/`** currently contain only `.gitkeep`. Stub
+  `init.4th` files must exist before `make -f Makefile.starkernel` calls `mkcapsule`.
