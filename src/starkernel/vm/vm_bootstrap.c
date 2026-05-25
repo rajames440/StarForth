@@ -57,6 +57,8 @@
 #ifdef __STARKERNEL__
 #include "starkernel/vm/arena.h"
 #include "starkernel/console.h"
+#include "starkernel/capsule_birth.h"
+#include "starkernel/capsule_run.h"
 #endif
 
 #include <string.h>
@@ -336,4 +338,13 @@ void vm_init_with_host(VM* vm, const VMHostServices *host)
     ((ssm_config_t*)vm->ssm_config)->L3_linear_decay = 0;
     ((ssm_config_t*)vm->ssm_config)->L5_window_inference = 0;
     ((ssm_config_t*)vm->ssm_config)->L6_decay_inference = 0;
+
+#ifdef __STARKERNEL__
+    /* Capsule subsystem: registry, hooks, run log.
+     * capsule_birth_mama() is called separately after the caller has the
+     * compiled-in capsule directory. */
+    capsule_vm_hooks_register();
+    capsule_vm_registry_init();   /* sets [Hera] console prefix */
+    capsule_run_log_init();
+#endif
 }

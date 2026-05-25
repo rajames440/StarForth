@@ -158,10 +158,16 @@ static int serial_transmit_empty(void) {
 }
 #endif
 
-/**
- * Write a single character to serial console
- */
-void console_putc(char c) {
+/* Active VM name for [Name] line prefix; NULL = no prefix */
+static const char *g_active_vm_name = (void *)0;
+static int         g_line_start     = 1;
+
+void console_set_vm_name(const char *name) {
+    g_active_vm_name = name;
+}
+
+/* Raw single-character write — no prefix logic, called by emit_prefix() */
+static void raw_putc(char c) {
 #if defined(__aarch64__)
     if (c == '\n') pl011_putc('\r');
     pl011_putc(c);
@@ -178,6 +184,30 @@ void console_putc(char c) {
 #else
     (void)c;
 #endif
+}
+
+/* Emit "[VMName] " directly via raw_putc — no recursion into console_putc */
+static void emit_prefix(void) {
+    const char *p;
+    raw_putc('[');
+    for (p = g_active_vm_name; *p; p++) raw_putc(*p);
+    raw_putc(']');
+    raw_putc(' ');
+}
+
+/**
+ * Write a single character to serial console.
+ * Emits "[VMName] " at the start of each new line when a VM name is set.
+ */
+void console_putc(char c) {
+    if (g_active_vm_name && g_line_start && c != '\n') {
+        emit_prefix();
+        g_line_start = 0;
+    }
+    raw_putc(c);
+    if (c == '\n') {
+        g_line_start = 1;
+    }
 }
 
 /**

@@ -30,6 +30,7 @@
 #include "starkernel/capsule.h"
 #include "starkernel/capsule_run.h"
 #include "starkernel/kmalloc.h"
+#include "starkernel/console.h"
 
 /*===========================================================================
  * VM Execution Hooks
@@ -124,6 +125,9 @@ void capsule_vm_registry_init(void) {
 
     vm_registry_head  = mama;
     vm_registry_count = 1;
+
+    /* From this point on all console output is prefixed [Hera] */
+    console_set_vm_name("Hera");
 }
 
 static VMRegistryEntry *vm_registry_alloc(void) {
