@@ -190,7 +190,12 @@ void mama_word_birth(VM *vm)
         return;
     }
 
-    src = (const char *)(uintptr_t)caddr;
+    /* caddr is a VM address; S" stores count byte at caddr, chars at caddr+1 */
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)(caddr + 1));
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
     for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
     name_buf[u] = '\0';
 
@@ -224,15 +229,25 @@ void mama_word_birth(VM *vm)
     capsule_name[j] = '\0';
 
     new_vm_id = 0;
-    result = capsule_birth_baby(
-        capsule_name,
-        capsule_get_directory(),
-        capsule_get_descriptors(),
-        capsule_get_names(),
-        capsule_get_arena(),
-        &new_vm_id,
-        (void **)0
-    );
+
+    /* Switch console prefix to the baby's name so its init capsule output
+     * appears tagged [Hermes] / [Artemis] rather than [Hera]. */
+    {
+        const char *saved_prefix = console_get_vm_name();
+        console_set_vm_name(name_buf);
+
+        result = capsule_birth_baby(
+            capsule_name,
+            capsule_get_directory(),
+            capsule_get_descriptors(),
+            capsule_get_names(),
+            capsule_get_arena(),
+            &new_vm_id,
+            (void **)0
+        );
+
+        console_set_vm_name(saved_prefix);  /* restore [Hera] (or whoever called BIRTH) */
+    }
 
     if (result == CAPSULE_RUN_OK) {
         capsule_vm_registry_set_name(new_vm_id, name_buf);
@@ -276,7 +291,12 @@ void mama_word_start(VM *vm)
         return;
     }
 
-    src = (const char *)(uintptr_t)caddr;
+    /* caddr is a VM address; S" stores count byte at caddr, chars at caddr+1 */
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)(caddr + 1));
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
     for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
     name_buf[u] = '\0';
 
@@ -371,7 +391,12 @@ void mama_word_use(VM *vm)
         return;
     }
 
-    src = (const char *)(uintptr_t)caddr;
+    /* caddr is a VM address; S" stores count byte at caddr, chars at caddr+1 */
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)(caddr + 1));
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
     for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
     name_buf[u] = '\0';
 
@@ -428,7 +453,12 @@ void mama_word_kill(VM *vm)
         return;
     }
 
-    src = (const char *)(uintptr_t)caddr;
+    /* caddr is a VM address; S" stores count byte at caddr, chars at caddr+1 */
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)(caddr + 1));
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
     for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
     name_buf[u] = '\0';
 

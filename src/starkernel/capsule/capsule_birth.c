@@ -242,10 +242,10 @@ void capsule_vm_registry_set_name(uint32_t vm_id, const char *name) {
  *===========================================================================*/
 
 static void dispatch_init_forth(void *vm_ctx) {
-    /* "1 LOAD" — load and execute block 1.  If the block subsystem has no
-     * block 1, LOAD will set vm->error which the exec hook clears. */
-    vm_exec_fn(vm_ctx, "1 LOAD", 6);
-    /* error from a missing personal init.4th is expected and intentional */
+    /* M9: run baby's personal init.4th from block 1 once per-VM block
+     * storage is isolated.  Until then this is a no-op to avoid executing
+     * Mama's block 1 content on every child VM. */
+    (void)vm_ctx;
 }
 
 /*===========================================================================
@@ -429,7 +429,7 @@ CapsuleRunResult capsule_birth_baby(
         return CAPSULE_RUN_ERR_EXEC_FAIL;
     }
 
-    /* PERSONALITY: run baby's personal init.4th from block 1 if present */
+    /* PERSONALITY: per-VM block storage is M9 scope; no-op until then */
     dispatch_init_forth(new_vm);
 
     uint64_t dict_hash = vm_dict_hash_fn(new_vm);
