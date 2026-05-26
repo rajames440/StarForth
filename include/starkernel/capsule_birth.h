@@ -247,6 +247,14 @@ int capsule_vm_find_by_name(const char *name, VMRegistryEntry *out);
 int capsule_vm_find_by_name_nocase(const char *name, VMRegistryEntry *out);
 
 /**
+ * capsule_vm_set_state - Update a VM's state in the registry
+ *
+ * @param vm_id  VM ID to update
+ * @param state  New VMState value
+ */
+void capsule_vm_set_state(uint32_t vm_id, uint32_t state);
+
+/**
  * capsule_vm_registry_set_name - Assign a symbolic name to a registered VM
  *
  * Truncates to VM_NAME_MAX-1 characters. No-op if vm_id not found.

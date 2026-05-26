@@ -39,6 +39,7 @@
 #include "starkernel/capsule.h"
 #include "starkernel/capsule_birth.h"
 #include "starkernel/capsule_run.h"
+#include "starkernel/repl.h"
 #include "starkernel/capsule_generated.h"
 #include "starkernel/console.h"
 #include "vm.h"
@@ -247,6 +248,103 @@ void mama_word_birth(VM *vm)
 }
 
 /**
+ * @brief START ( c-addr u -- )
+ * Enter a named VM's REPL loop synchronously.  The calling VM blocks
+ * inside sk_repl_run() until the target halts (via STOP or BYE).
+ * Cannot start a LIVE, DEAD, or STILLBORN VM.
+ */
+void mama_word_start(VM *vm)
+{
+    char             name_buf[VM_NAME_MAX];
+    VMRegistryEntry  entry;
+    uint32_t         i;
+    cell_t           u, caddr;
+    const char      *src;
+    const char      *caller_name;
+    VM              *target;
+
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        return;
+    }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("START: name too long or empty");
+        return;
+    }
+
+    src = (const char *)(uintptr_t)caddr;
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    if (capsule_vm_find_by_name_nocase(name_buf, &entry) != 0) {
+        console_puts("START: ");
+        console_puts(name_buf);
+        console_println(" not found");
+        return;
+    }
+
+    if (entry.state == VM_STATE_LIVE) {
+        console_puts("START: ");
+        console_puts(name_buf);
+        console_println(" already live");
+        return;
+    }
+
+    if (entry.state == VM_STATE_DEAD || entry.state == VM_STATE_STILLBORN) {
+        console_puts("START: ");
+        console_puts(name_buf);
+        console_println(" dead/stillborn — BIRTH first");
+        return;
+    }
+
+    target = (VM *)entry.vm_ptr;
+    if (!target) {
+        console_puts("START: ");
+        console_puts(name_buf);
+        console_println(" no VM pointer");
+        return;
+    }
+
+    /* Switch console prefix to target VM's name */
+    caller_name = console_get_vm_name();
+    console_set_vm_name(entry.name);
+
+    capsule_vm_set_state(entry.vm_id, VM_STATE_LIVE);
+
+    console_puts("START: entering ");
+    console_println(entry.name);
+
+    /* Run target's REPL — blocks until target->halted */
+    sk_repl_run(target);
+
+    /* Target halted (STOP or BYE) — restore caller's context */
+    capsule_vm_set_state(entry.vm_id, VM_STATE_STOPPED);
+    console_set_vm_name(caller_name);
+
+    console_puts("START: ");
+    console_puts(entry.name);
+    console_println(" stopped");
+    /* Stack clean on exit */
+}
+
+/**
+ * @brief STOP ( -- )
+ * Self-stop: set vm->halted so sk_repl_run() exits on the next iteration.
+ * State is updated to VM_STATE_STOPPED by the START word after the REPL
+ * returns.  STOP is registered in every VM's dictionary (including children)
+ * so any VM can stop itself.
+ */
+void mama_word_stop(VM *vm)
+{
+    vm->halted = 1;
+    /* sk_repl_run's while(!vm->halted) loop exits after this word returns */
+}
+
+/**
  * @brief KILL ( c-addr u -- )
  * Destroy a named VM unconditionally.  Hera cannot be killed.
  * Idempotent: killing an already-dead VM is a no-op.
@@ -404,6 +502,8 @@ void register_mama_forth_words(VM *vm)
     /* Register words in FORTH vocabulary first */
     register_word(vm, "BIRTH", mama_word_birth);
     register_word(vm, "KILL", mama_word_kill);
+    register_word(vm, "START", mama_word_start);
+    register_word(vm, "STOP", mama_word_stop);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);
@@ -421,6 +521,8 @@ void register_mama_forth_words(VM *vm)
     /* Re-register in MAMA vocabulary context */
     register_word(vm, "BIRTH", mama_word_birth);
     register_word(vm, "KILL", mama_word_kill);
+    register_word(vm, "START", mama_word_start);
+    register_word(vm, "STOP", mama_word_stop);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);

@@ -79,16 +79,11 @@ static int sk_readline(char *buf, int size)
  *   - Resets vm->error and loops
  *===========================================================================*/
 
-void sk_repl(VM *vm)
+void sk_repl_run(VM *vm)
 {
     char input[256];
 
-    console_println(lithos_version);
-    console_puts("StarForth Version ");    console_println(STARFORTH_VERSION);
-    console_println("");
-    console_println("StarForth Emergency CLI");
-    console_println("FORTH-79 interpreter — type BYE or power off to exit");
-    console_println("");
+    vm->halted = 0;
 
     while (!vm->halted) {
         console_puts("ok> ");
@@ -109,4 +104,16 @@ void sk_repl(VM *vm)
             console_puts(" ok\n");
         }
     }
+}
+
+void sk_repl(VM *vm)
+{
+    console_println(lithos_version);
+    console_puts("StarForth Version ");    console_println(STARFORTH_VERSION);
+    console_println("");
+    console_println("StarForth Emergency CLI");
+    console_println("FORTH-79 interpreter — type BYE or power off to exit");
+    console_println("");
+
+    sk_repl_run(vm);
 }
