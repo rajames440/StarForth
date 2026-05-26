@@ -61,6 +61,7 @@
 #include "vm_internal.h"
 #include "platform_time.h"
 #include "test_runner/include/test_runner.h"
+#include "word_source/include/mama_forth_words.h"
 
 #if SK_PARITY_DEBUG
 extern char __text_start[];
@@ -170,8 +171,9 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
      * Called exactly once here for Mama — child VMs go through
      * capsule_birth_baby() which never calls vm_init_with_host(). */
     capsule_vm_hooks_register();
-    capsule_vm_registry_init();   /* establishes [Hera] console prefix */
+    capsule_vm_registry_init(vm);  /* establishes [Hera] console prefix */
     capsule_run_log_init();
+    register_mama_forth_words(vm); /* BIRTH KILL START STOP USE + capsule words */
 #if SK_PARITY_DEBUG
     log_set_level(LOG_DEBUG);
 #else

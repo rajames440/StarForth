@@ -247,6 +247,39 @@ void mama_word_birth(VM *vm)
 }
 
 /**
+ * @brief KILL ( c-addr u -- )
+ * Destroy a named VM unconditionally.  Hera cannot be killed.
+ * Idempotent: killing an already-dead VM is a no-op.
+ */
+void mama_word_kill(VM *vm)
+{
+    char        name_buf[VM_NAME_MAX];
+    uint32_t    i;
+    cell_t      u, caddr;
+    const char *src;
+
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        return;
+    }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("KILL: name too long or empty");
+        return;
+    }
+
+    src = (const char *)(uintptr_t)caddr;
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    capsule_vm_kill(name_buf);
+    /* Stack clean on exit */
+}
+
+/**
  * @brief CAPSULE-BIRTH ( capsule-id -- vm-id )
  * Birth a baby VM from a production (p) capsule.
  * Returns the new VM's ID, or -1 on failure.
@@ -370,6 +403,7 @@ void register_mama_forth_words(VM *vm)
 {
     /* Register words in FORTH vocabulary first */
     register_word(vm, "BIRTH", mama_word_birth);
+    register_word(vm, "KILL", mama_word_kill);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);
@@ -386,6 +420,7 @@ void register_mama_forth_words(VM *vm)
 
     /* Re-register in MAMA vocabulary context */
     register_word(vm, "BIRTH", mama_word_birth);
+    register_word(vm, "KILL", mama_word_kill);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);

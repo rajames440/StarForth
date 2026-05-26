@@ -189,10 +189,25 @@ void capsule_vm_hooks_register(void);
 /**
  * capsule_vm_registry_init - Initialize VM registry
  *
- * Allocates Mama's registry node (VM 0, name "Hera") via kmalloc.
+ * Allocates Mama's registry node (VM 0, name "Hera") via kmalloc and
+ * stores mama_vm_ptr so KILL can guard against destroying Mama.
  * Must be called after kmalloc_init().
+ *
+ * @param mama_vm_ptr  Pointer to Mama's VM object (e.g. &sk_mama_vm)
  */
-void capsule_vm_registry_init(void);
+void capsule_vm_registry_init(void *mama_vm_ptr);
+
+/**
+ * capsule_vm_kill - Destroy a named VM and release all its resources
+ *
+ * Looks up the VM by name (case-insensitive).  Hera (VM 0) cannot be
+ * killed.  If the VM is already DEAD the call is a no-op.
+ * On success: vm_cleanup + sf_free, state → VM_STATE_DEAD, name cleared.
+ *
+ * @param name  Symbolic name of the VM to kill (case-insensitive)
+ * @return 0 on success (or already dead), -1 if not found or refused
+ */
+int capsule_vm_kill(const char *name);
 
 /**
  * capsule_vm_registry_get - Get VM registry entry by ID

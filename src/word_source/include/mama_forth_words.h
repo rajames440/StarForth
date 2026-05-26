@@ -117,6 +117,18 @@ void mama_word_mama_vm_id(VM *vm);
 void mama_word_vm_count(VM *vm);
 
 /**
+ * @brief BIRTH ( c-addr u -- )
+ * Birth a named VM from its capsule.  Idempotent if already live.
+ */
+void mama_word_birth(VM *vm);
+
+/**
+ * @brief KILL ( c-addr u -- )
+ * Destroy a named VM.  Hera cannot be killed.  Idempotent if dead.
+ */
+void mama_word_kill(VM *vm);
+
+/**
  * @brief CAPSULE-TEST ( -- )
  * Print diagnostic message confirming capsule system is active.
  */
