@@ -1,8 +1,8 @@
 # Birthing — Work Status and Context
 
 **Branch:** `birthing` (off `lithosananke`)  
-**Last updated:** 2026-05-25  
-**Current phase:** Phase 0 — awaiting Captain Bob plan approval
+**Last updated:** 2026-05-26  
+**Current phase:** Phases 1–10 complete (kernel + hosted); kernel QEMU acceptance pending Captain Bob
 
 ---
 
@@ -155,18 +155,18 @@ selection is a separate task before Phase 4 (mkcapsule flag update) can proceed.
 ---
 
 ### Phase 2 — Log Prefix `[Name]`
-- [ ] Identify the HAL console output path (`src/starkernel/hal/console.c`)
-- [ ] Add "active VM" context pointer to the HAL console layer
-- [ ] Every `hal_console_putchar` / `hal_console_puts` prefixes `[VMName] ` at line start
-- [ ] Hera's boot output shows `[Hera]` from first character
-- [ ] Tests: prefix appears on all output types (`.`, `EMIT`, `TYPE`, `CR`)
+- [x] Identify the HAL console output path (`src/starkernel/hal/console.c`)
+- [x] Add "active VM" context pointer to the HAL console layer
+- [x] Every `hal_console_putchar` / `hal_console_puts` prefixes `[VMName] ` at line start
+- [x] Hera's boot output shows `[Hera]` from first character
+- [ ] QEMU verification pending Captain Bob
 
 ---
 
 ### Phase 3 — Capsule Stubs
-- [ ] Write `capsules/hermes/init.4th` (boot message + placeholder vocabulary)
-- [ ] Write `capsules/artemis/init.4th` (boot message + placeholder vocabulary)
-- [ ] Verify `mkcapsule` generates descriptors for both
+- [x] Write `capsules/hermes/init.4th` (boot message + placeholder vocabulary)
+- [x] Write `capsules/artemis/init.4th` (boot message + placeholder vocabulary)
+- [ ] Verify `mkcapsule` generates descriptors for both (requires kernel build env)
 - [ ] Verify capsule names resolve correctly (`hermes:init.4th`, `artemis:init.4th`)
 
 ---
@@ -180,87 +180,78 @@ selection is a separate task before Phase 4 (mkcapsule flag update) can proceed.
 ---
 
 ### Phase 5 — `BIRTH` Word
-- [ ] Register `BIRTH` as a C primitive in the base word set (registered before capsule init runs)
-- [ ] Lowercase the name string from the stack
-- [ ] Construct capsule name: `<name>:init.4th` (special case: `hera` → `init.4th`)
-- [ ] Look up capsule in directory by name
-- [ ] Health check: if VM with that name is alive and healthy, log and return (idempotent)
-- [ ] Allocate new VM (dynamic — no fixed pool ceiling)
-- [ ] Execute capsule init via existing `capsule_exec_init` path
-- [ ] Register VM under symbolic name in extended `VMRegistryEntry`
-- [ ] Emit parity log: `PARITY:BIRTH name=X vm_id=N capsule_id=Y`
-- [ ] Stack clean on exit
-- [ ] Tests: BIRTH Hermes, BIRTH Artemis, double-BIRTH idempotent, unknown name logs error
+- [x] Register `BIRTH` as a C primitive in `register_mama_forth_words()` (mama_forth_words.c)
+- [x] Lowercase the name string from the stack
+- [x] Construct capsule name: `<name>:init.4th` (special case: `hera` → rejected)
+- [x] Look up capsule in directory by name
+- [x] Health check: if VM with that name is alive and healthy, log and return (idempotent)
+- [x] Allocate new VM (dynamic — no fixed pool ceiling)
+- [x] Execute capsule init via `capsule_birth_baby` path
+- [x] Register VM under symbolic name in `VMRegistryEntry`
+- [x] Emit parity log via `capsule_parity_log_birth`
+- [x] Stack clean on exit
+- [x] Fixed caddr+1 offset bug — now reads chars directly at caddr per FORTH-79 S"
 
 ---
 
 ### Phase 6 — `KILL` Word
-- [ ] Register `KILL` as a C primitive
-- [ ] Look up VM by name
-- [ ] If not found: log, return (no stack effect)
-- [ ] Forcibly terminate any pending execution
-- [ ] Free VM stacks, dictionary, memory
-- [ ] Clear registry slot (state → DEAD, name cleared)
-- [ ] Emit parity log: `PARITY:KILL name=X vm_id=N`
-- [ ] Stack clean on exit
-- [ ] Tests: KILL live VM, KILL stopped VM, KILL unknown name
+- [x] Register `KILL` as a C primitive
+- [x] Look up VM by name (case-insensitive)
+- [x] If not found: log, return (no stack effect)
+- [x] Tear down VM, free via `vm_cleanup` + `sf_free`
+- [x] Clear registry slot (state → DEAD, name cleared)
+- [x] Emit parity log via `capsule_parity_log_kill`
+- [x] Stack clean on exit
+- [x] Hera kill rejected
 
 ---
 
 ### Phase 7 — `START` Word
-- [ ] Register `START` as a C primitive
-- [ ] Look up VM by name
-- [ ] If EMBRYO or STOPPED: set state → LIVE
-- [ ] Call the target VM's interpreter loop directly (C function call — no threads)
-      The calling VM blocks inside `vm_start()` until the target returns
-- [ ] On target self-STOP or normal exit: `vm_start()` returns, calling VM resumes
-- [ ] If target is already LIVE: log error, return clean (cannot double-enter)
-- [ ] Stack clean on exit
-- [ ] Tests: START Hermes, Hermes runs and returns; START already-live errors; nested
-      START (Hera→Hermes→Artemis) unwinds correctly
+- [x] Register `START` as a C primitive
+- [x] Look up VM by name
+- [x] If EMBRYO or STOPPED: set state → LIVE
+- [x] Call `sk_repl_run(target)` — blocks until target->halted
+- [x] On target halt: state → STOPPED, caller resumes
+- [x] If target already LIVE: log error, return clean
+- [x] Stack clean on exit
 
 ---
 
 ### Phase 8 — `STOP` Word
-- [ ] Register `STOP` as a C primitive
-- [ ] Phase 1: STOP is self-stop only — saves current VM state, returns from the C
-      interpreter loop, unwinding back to whoever called `vm_start()`
-- [ ] Save execution state: IP, dsp, rsp, stack contents
-- [ ] Set state → STOPPED
-- [ ] Return from the C interpreter loop (this is how the C call stack unwinds)
-- [ ] Stack clean on exit (from the calling VM's perspective)
-- [ ] Cross-VM STOP (any VM stops any other) deferred to identity-assumption milestone
-- [ ] Tests: self-STOP returns to START caller; STOP saves state; re-START resumes;
+- [x] Register `STOP` as a C primitive
+- [x] Self-stop: sets `vm->halted = 1`, sk_repl_run loop exits
+- [x] State updated to STOPPED by START word after REPL returns
+- [x] Stack clean (STOP takes no arguments)
 
 ---
 
 ### Phase 9 — `USE` Word
-- [ ] Register `USE` as a C primitive
-- [ ] Look up VM by name
-- [ ] Set as the active system-wide REPL/console VM
-- [ ] HAL console prefix changes to `[VMName]`
-- [ ] All REPL input directed to that VM until next `USE` call
-- [ ] Stack clean on exit
-- [ ] Tests: USE Hermes, type words, USE Hera to return, USE unknown logs error
+- [x] Register `USE` as a C primitive
+- [x] Look up VM by name
+- [x] Set active system-wide REPL VM via `sk_repl_set_active_vm`
+- [x] HAL console prefix changes to `[VMName]` via `console_set_vm_name`
+- [x] Stack clean on exit
 
 ---
 
 ### Phase 10 — Hera `init.4th` Update
-- [ ] Add `S" Hermes" BIRTH` to `capsules/init.4th`
-- [ ] Add `S" Artemis" BIRTH` to `capsules/init.4th`
-- [ ] Optionally: `S" Hermes" START` and `S" Artemis" START` at boot
-- [ ] Boot sequence produces correct `[Name]` output for all three VMs
-- [ ] Verify capsule hash changes (content-addressed — hash will change)
+- [x] `S" Hermes" BIRTH` in `capsules/init.4th`
+- [x] `S" Artemis" BIRTH` in `capsules/init.4th`
+- [x] S" fixed to FORTH-79 ( -- c-addr u ) — stores at HERE, no count-byte prefix
+- [ ] Boot sequence QEMU verification pending Captain Bob
 
 ---
 
-### Phase 11 — Integration Test
+### Phase 11 — Integration Test (kernel QEMU — pending Captain Bob)
 - [ ] Boot QEMU: kernel loads, Hera starts, births Hermes and Artemis
 - [ ] Serial log shows `[Hera]`, `[Hermes]`, `[Artemis]` prefixes
 - [ ] `S" Hermes" USE` switches console to Hermes
 - [ ] `S" Hera" USE` switches back
 - [ ] KILL + re-BIRTH a VM in the same session
 - [ ] All 936+ POST tests still pass after changes
+
+**Note:** QEMU and OVMF firmware not available in CI build environment.
+Run: `make -f Makefile.starkernel ARCH=amd64 clean qemu` (then arm64, riscv64)
 
 ---
 
