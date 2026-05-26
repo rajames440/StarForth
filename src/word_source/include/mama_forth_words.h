@@ -142,6 +142,13 @@ void mama_word_start(VM *vm);
 void mama_word_stop(VM *vm);
 
 /**
+ * @brief USE ( c-addr u -- )
+ * Redirect REPL input to a named VM without C stack push.
+ * USE Hera resets to default (Mama).
+ */
+void mama_word_use(VM *vm);
+
+/**
  * @brief CAPSULE-TEST ( -- )
  * Print diagnostic message confirming capsule system is active.
  */
