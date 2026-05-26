@@ -86,5 +86,6 @@ int console_poll(void);
  * The pointer must remain valid for as long as it is active.
  */
 void console_set_vm_name(const char *name);
+const char *console_get_vm_name(void);
 
 #endif /* STARKERNEL_CONSOLE_H */

@@ -27,7 +27,9 @@
 #include "starkernel/capsule_birth.h"
 #include "starkernel/xxhash64.h"
 #include "vm.h"
+#include "word_registry.h"
 #include "platform_alloc.h"
+#include "word_source/include/mama_forth_words.h"
 
 /*===========================================================================
  * exec hook  ( vm_ctx, code, code_len ) -> 0 on success
@@ -125,6 +127,9 @@ static void *capsule_vm_alloc_hook(void) {
         sf_free(vm);
         return (void *)0;
     }
+
+    /* Give every child VM the STOP word so it can self-stop */
+    register_word(vm, "STOP", mama_word_stop);
 
     return (void *)vm;
 }

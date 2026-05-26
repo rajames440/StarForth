@@ -30,6 +30,16 @@ extern "C" {
  */
 void sk_repl(VM *vm);
 
+/**
+ * sk_repl_run - Bare REPL loop (no banner).
+ *
+ * Same as sk_repl but skips the version/welcome banner.  Used by START
+ * to enter a child VM's interpreter loop without reprinting the header.
+ *
+ * @param vm  Fully initialised VM instance
+ */
+void sk_repl_run(VM *vm);
+
 #ifdef __cplusplus
 }
 #endif

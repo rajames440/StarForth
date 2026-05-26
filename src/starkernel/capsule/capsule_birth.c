@@ -220,6 +220,11 @@ int capsule_vm_find_by_name_nocase(const char *name, VMRegistryEntry *out) {
     return -1;
 }
 
+void capsule_vm_set_state(uint32_t vm_id, uint32_t state) {
+    VMRegistryEntry *entry = vm_find_entry_ptr(vm_id);
+    if (entry) entry->state = state;
+}
+
 void capsule_vm_registry_set_name(uint32_t vm_id, const char *name) {
     VMRegistryEntry *entry;
     if (!name) return;

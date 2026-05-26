@@ -166,6 +166,10 @@ void console_set_vm_name(const char *name) {
     g_active_vm_name = name;
 }
 
+const char *console_get_vm_name(void) {
+    return g_active_vm_name;
+}
+
 /* Raw single-character write — no prefix logic, called by emit_prefix() */
 static void raw_putc(char c) {
 #if defined(__aarch64__)
