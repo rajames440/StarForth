@@ -128,6 +128,9 @@ static void *capsule_vm_alloc_hook(void) {
         return (void *)0;
     }
 
+    /* Enable interpreter — child VMs skip sk_vm_bootstrap_parity, must set manually */
+    vm_enable_interpreter(vm);
+
     /* Give every child VM the STOP word so it can self-stop */
     register_word(vm, "STOP", mama_word_stop);
 
