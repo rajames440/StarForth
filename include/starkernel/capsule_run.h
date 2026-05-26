@@ -97,7 +97,8 @@ typedef struct {
     uint64_t birth_dict_hash;    /* Dictionary hash after birth */
     uint32_t flags;              /* VM flags */
     uint32_t reserved;           /* Padding */
-    char name[VM_NAME_MAX];      /* Symbolic name, e.g. "Hera", "Hermes" */
+    void    *vm_ptr;             /* Pointer to live VM object; NULL when dead */
+    char     name[VM_NAME_MAX];  /* Symbolic name, e.g. "Hera", "Hermes" */
 } VMRegistryEntry;
 
 /*===========================================================================
@@ -185,6 +186,17 @@ void capsule_parity_log_mama_init(
     uint64_t capsule_id,
     uint64_t capsule_hash,
     uint64_t dict_hash
+);
+
+/**
+ * capsule_parity_log_kill - Log VM kill parity record
+ *
+ * Output format:
+ *   PARITY:KILL vm_id=N name=X
+ */
+void capsule_parity_log_kill(
+    uint32_t vm_id,
+    const char *name
 );
 
 /**

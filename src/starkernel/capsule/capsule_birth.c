@@ -31,6 +31,8 @@
 #include "starkernel/capsule_run.h"
 #include "starkernel/kmalloc.h"
 #include "starkernel/console.h"
+#include "vm.h"
+#include "platform_alloc.h"
 
 /*===========================================================================
  * VM Execution Hooks
@@ -90,7 +92,7 @@ static VMRegistryEntry *vm_find_entry_ptr(uint32_t vm_id) {
     return (void *)0;
 }
 
-void capsule_vm_registry_init(void) {
+void capsule_vm_registry_init(void *mama_vm_ptr) {
     uint32_t   i;
     vm_node_t *node;
     vm_node_t *next;
@@ -119,6 +121,7 @@ void capsule_vm_registry_init(void) {
     mama->entry.birth_dict_hash    = 0;
     mama->entry.flags              = 0;
     mama->entry.reserved           = 0;
+    mama->entry.vm_ptr             = mama_vm_ptr;
     for (i = 0; i < VM_NAME_MAX; i++) mama->entry.name[i] = '\0';
     vm_name_copy(mama->entry.name, "Hera");
     mama->next = (void *)0;
@@ -145,6 +148,7 @@ static VMRegistryEntry *vm_registry_alloc(void) {
     node->entry.birth_dict_hash    = 0;
     node->entry.flags              = 0;
     node->entry.reserved           = 0;
+    node->entry.vm_ptr             = (void *)0;
     for (i = 0; i < VM_NAME_MAX; i++) node->entry.name[i] = '\0';
     node->next = (void *)0;
 
@@ -240,6 +244,74 @@ static void dispatch_init_forth(void *vm_ctx) {
 }
 
 /*===========================================================================
+ * VM Kill
+ *===========================================================================*/
+
+int capsule_vm_kill(const char *name) {
+    VMRegistryEntry *entry;
+    VM              *vm;
+    uint32_t         vm_id;
+    uint32_t         i;
+
+    if (!name) return -1;
+
+    /* Locate by name (case-insensitive) */
+    {
+        vm_node_t *node = vm_registry_head;
+        entry = (VMRegistryEntry *)0;
+        while (node) {
+            if (vm_name_eq_nocase(node->entry.name, name)) {
+                entry = &node->entry;
+                break;
+            }
+            node = node->next;
+        }
+    }
+
+    if (!entry) {
+        console_puts("KILL: ");
+        console_puts(name);
+        console_println(" not found");
+        return -1;
+    }
+
+    /* Hera cannot be killed */
+    if (entry->vm_id == 0) {
+        console_println("KILL: cannot kill Hera");
+        return -1;
+    }
+
+    /* Already dead — idempotent */
+    if (entry->state == VM_STATE_DEAD) {
+        console_puts("KILL: ");
+        console_puts(name);
+        console_println(" already dead");
+        return 0;
+    }
+
+    vm_id = entry->vm_id;
+    vm    = (VM *)entry->vm_ptr;
+
+    /* Tear down and free */
+    if (vm) {
+        vm_cleanup(vm);
+        sf_free(vm);
+    }
+
+    entry->vm_ptr = (void *)0;
+    entry->state  = VM_STATE_DEAD;
+    for (i = 0; i < VM_NAME_MAX; i++) entry->name[i] = '\0';
+
+    capsule_parity_log_kill(vm_id, name);
+
+    console_puts("KILL: ");
+    console_puts(name);
+    console_println(" dead");
+
+    return 0;
+}
+
+/*===========================================================================
  * Mama Init
  *===========================================================================*/
 
@@ -325,6 +397,7 @@ CapsuleRunResult capsule_birth_baby(
 
     /* Allocate baby VM */
     void *new_vm = vm_alloc_fn();
+    entry->vm_ptr = new_vm;
     if (!new_vm) {
         entry->state = VM_STATE_STILLBORN;
         capsule_parity_log_birth_failed(vm_id, cap->capsule_id,
