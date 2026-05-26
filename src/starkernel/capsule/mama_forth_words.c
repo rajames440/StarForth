@@ -345,6 +345,65 @@ void mama_word_stop(VM *vm)
 }
 
 /**
+ * @brief USE ( c-addr u -- )
+ * Redirect system-wide REPL input to a named VM without touching the C
+ * call stack.  The console prefix changes to [VMName].
+ * USE Hera (vm_id 0) resets dispatch to the default (Mama's VM, NULL slot).
+ */
+void mama_word_use(VM *vm)
+{
+    char            name_buf[VM_NAME_MAX];
+    VMRegistryEntry entry;
+    uint32_t        i;
+    cell_t          u, caddr;
+    const char     *src;
+
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        return;
+    }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("USE: name too long or empty");
+        return;
+    }
+
+    src = (const char *)(uintptr_t)caddr;
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    if (capsule_vm_find_by_name_nocase(name_buf, &entry) != 0) {
+        console_puts("USE: ");
+        console_puts(name_buf);
+        console_println(" not found");
+        return;
+    }
+
+    if (entry.state == VM_STATE_DEAD || entry.state == VM_STATE_STILLBORN) {
+        console_puts("USE: ");
+        console_puts(name_buf);
+        console_println(" dead/stillborn");
+        return;
+    }
+
+    /* vm_id 0 = Hera — restore default dispatch (NULL = use REPL's own vm) */
+    if (entry.vm_id == 0) {
+        sk_repl_set_active_vm((void *)0);
+    } else {
+        sk_repl_set_active_vm((VM *)entry.vm_ptr);
+    }
+
+    console_set_vm_name(entry.name);
+
+    console_puts("USE: now using ");
+    console_println(entry.name);
+    /* Stack clean on exit */
+}
+
+/**
  * @brief KILL ( c-addr u -- )
  * Destroy a named VM unconditionally.  Hera cannot be killed.
  * Idempotent: killing an already-dead VM is a no-op.
@@ -504,6 +563,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "KILL", mama_word_kill);
     register_word(vm, "START", mama_word_start);
     register_word(vm, "STOP", mama_word_stop);
+    register_word(vm, "USE", mama_word_use);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);
@@ -523,6 +583,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "KILL", mama_word_kill);
     register_word(vm, "START", mama_word_start);
     register_word(vm, "STOP", mama_word_stop);
+    register_word(vm, "USE", mama_word_use);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);
