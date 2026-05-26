@@ -483,6 +483,10 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    /* Register VM lifecycle words (BIRTH KILL PAUSE RESUME USE) */
+    extern void register_lifecycle_words(VM *vm);
+    register_lifecycle_words(&vm);
+
     /* Install VM debug hooks */
     vm_debug_set_current_vm(&vm);
     vm_debug_install_signal_handlers();
