@@ -190,9 +190,9 @@ void mama_word_birth(VM *vm)
         return;
     }
 
-    /* caddr is a VM address; S" stores count byte at caddr, chars at caddr+1 */
+    /* caddr is a VM address; S" ( -- c-addr u ) stores chars directly at caddr */
     {
-        const uint8_t *p = vm_ptr(vm, (vaddr_t)(caddr + 1));
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
         if (!p) { vm->error = 1; return; }
         src = (const char *)p;
     }
@@ -291,9 +291,9 @@ void mama_word_start(VM *vm)
         return;
     }
 
-    /* caddr is a VM address; S" stores count byte at caddr, chars at caddr+1 */
+    /* caddr is a VM address; S" ( -- c-addr u ) stores chars directly at caddr */
     {
-        const uint8_t *p = vm_ptr(vm, (vaddr_t)(caddr + 1));
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
         if (!p) { vm->error = 1; return; }
         src = (const char *)p;
     }
@@ -391,9 +391,9 @@ void mama_word_use(VM *vm)
         return;
     }
 
-    /* caddr is a VM address; S" stores count byte at caddr, chars at caddr+1 */
+    /* caddr is a VM address; S" ( -- c-addr u ) stores chars directly at caddr */
     {
-        const uint8_t *p = vm_ptr(vm, (vaddr_t)(caddr + 1));
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
         if (!p) { vm->error = 1; return; }
         src = (const char *)p;
     }
@@ -453,9 +453,9 @@ void mama_word_kill(VM *vm)
         return;
     }
 
-    /* caddr is a VM address; S" stores count byte at caddr, chars at caddr+1 */
+    /* caddr is a VM address; S" ( -- c-addr u ) stores chars directly at caddr */
     {
-        const uint8_t *p = vm_ptr(vm, (vaddr_t)(caddr + 1));
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
         if (!p) { vm->error = 1; return; }
         src = (const char *)p;
     }
