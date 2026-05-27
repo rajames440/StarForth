@@ -30,6 +30,31 @@ extern "C" {
  */
 void sk_repl(VM *vm);
 
+/**
+ * sk_repl_run - Bare REPL loop (no banner).
+ *
+ * Same as sk_repl but skips the version/welcome banner.  Used by START
+ * to enter a child VM's interpreter loop without reprinting the header.
+ *
+ * @param vm  Fully initialised VM instance
+ */
+void sk_repl_run(VM *vm);
+
+/**
+ * sk_repl_set_active_vm - Redirect REPL input to a different VM (USE word).
+ *
+ * Pass NULL to restore default dispatch (Mama's VM).
+ * The change takes effect on the next REPL iteration.
+ *
+ * @param vm  Target VM, or NULL for default
+ */
+void sk_repl_set_active_vm(VM *vm);
+
+/**
+ * sk_repl_get_active_vm - Return the current USE-redirected VM, or NULL.
+ */
+VM *sk_repl_get_active_vm(void);
+
 #ifdef __cplusplus
 }
 #endif

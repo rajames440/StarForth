@@ -39,6 +39,7 @@
 #include "starkernel/capsule.h"
 #include "starkernel/capsule_birth.h"
 #include "starkernel/capsule_run.h"
+#include "starkernel/repl.h"
 #include "starkernel/capsule_generated.h"
 #include "starkernel/console.h"
 #include "vm.h"
@@ -155,6 +156,315 @@ void mama_word_capsule_len_fetch(VM *vm)
 /* ============================================================================
  * VM Birth and Experiment Words
  * ============================================================================ */
+
+/**
+ * @brief BIRTH ( c-addr u -- )
+ * Birth a named VM from its capsule.  Idempotent — if a live VM with
+ * that name already exists (case-insensitive), logs and returns.
+ *
+ * Name mapping: S" Artemis" → capsule "artemis:init.4th"
+ * Exception:    S" Hera"    → rejected (cannot re-birth Mama)
+ */
+void mama_word_birth(VM *vm)
+{
+    char            name_buf[VM_NAME_MAX];
+    char            capsule_name[VM_NAME_MAX + 12]; /* name + ":init.4th" + NUL */
+    VMRegistryEntry existing;
+    uint32_t        i, j;
+    cell_t          u, caddr;
+    const char     *src;
+    char            lower[VM_NAME_MAX];
+    CapsuleRunResult result;
+    uint32_t        new_vm_id;
+
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        return;
+    }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("BIRTH: name too long or empty");
+        return;
+    }
+
+    /* caddr is a VM address; S" ( -- c-addr u ) stores chars directly at caddr */
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    /* Idempotency: live VM with same name → skip */
+    if (capsule_vm_find_by_name_nocase(name_buf, &existing) == 0 &&
+        existing.state == VM_STATE_LIVE) {
+        console_puts("BIRTH: ");
+        console_puts(name_buf);
+        console_println(" already live (idempotent)");
+        return;
+    }
+
+    /* Lowercase name for capsule path */
+    for (i = 0; name_buf[i]; i++) {
+        char c = name_buf[i];
+        lower[i] = (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
+    }
+    lower[i] = '\0';
+
+    /* Hera cannot be re-birthed */
+    if (lower[0]=='h' && lower[1]=='e' && lower[2]=='r' && lower[3]=='a' && lower[4]=='\0') {
+        console_println("BIRTH: cannot re-birth Hera");
+        return;
+    }
+
+    /* Build "lower:init.4th" */
+    j = 0;
+    for (i = 0; lower[i]; i++) capsule_name[j++] = lower[i];
+    capsule_name[j++] = ':';
+    { const char *suf = "init.4th"; for (i = 0; suf[i]; i++) capsule_name[j++] = suf[i]; }
+    capsule_name[j] = '\0';
+
+    new_vm_id = 0;
+
+    /* Switch console prefix to the baby's name so its init capsule output
+     * appears tagged [Hermes] / [Artemis] rather than [Hera]. */
+    {
+        const char *saved_prefix = console_get_vm_name();
+        console_set_vm_name(name_buf);
+
+        result = capsule_birth_baby(
+            capsule_name,
+            capsule_get_directory(),
+            capsule_get_descriptors(),
+            capsule_get_names(),
+            capsule_get_arena(),
+            &new_vm_id,
+            (void **)0
+        );
+
+        console_set_vm_name(saved_prefix);  /* restore [Hera] (or whoever called BIRTH) */
+    }
+
+    if (result == CAPSULE_RUN_OK) {
+        capsule_vm_registry_set_name(new_vm_id, name_buf);
+        console_puts("BIRTH: ");
+        console_puts(name_buf);
+        console_println(" live");
+    } else {
+        console_puts("BIRTH: ");
+        console_puts(name_buf);
+        console_println(" FAILED");
+    }
+    /* D3: stack clean on exit */
+}
+
+/**
+ * @brief START ( c-addr u -- )
+ * Enter a named VM's REPL loop synchronously.  The calling VM blocks
+ * inside sk_repl_run() until the target halts (via STOP or BYE).
+ * Cannot start a LIVE, DEAD, or STILLBORN VM.
+ */
+void mama_word_start(VM *vm)
+{
+    char             name_buf[VM_NAME_MAX];
+    VMRegistryEntry  entry;
+    uint32_t         i;
+    cell_t           u, caddr;
+    const char      *src;
+    const char      *caller_name;
+    VM              *target;
+
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        return;
+    }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("START: name too long or empty");
+        return;
+    }
+
+    /* caddr is a VM address; S" ( -- c-addr u ) stores chars directly at caddr */
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    if (capsule_vm_find_by_name_nocase(name_buf, &entry) != 0) {
+        console_puts("START: ");
+        console_puts(name_buf);
+        console_println(" not found");
+        return;
+    }
+
+    if (entry.state == VM_STATE_LIVE) {
+        console_puts("START: ");
+        console_puts(name_buf);
+        console_println(" already live");
+        return;
+    }
+
+    if (entry.state == VM_STATE_DEAD || entry.state == VM_STATE_STILLBORN) {
+        console_puts("START: ");
+        console_puts(name_buf);
+        console_println(" dead/stillborn — BIRTH first");
+        return;
+    }
+
+    target = (VM *)entry.vm_ptr;
+    if (!target) {
+        console_puts("START: ");
+        console_puts(name_buf);
+        console_println(" no VM pointer");
+        return;
+    }
+
+    /* Switch console prefix to target VM's name */
+    caller_name = console_get_vm_name();
+    console_set_vm_name(entry.name);
+
+    capsule_vm_set_state(entry.vm_id, VM_STATE_LIVE);
+
+    console_puts("START: entering ");
+    console_println(entry.name);
+
+    /* Run target's REPL — blocks until target->halted */
+    sk_repl_run(target);
+
+    /* Target halted (STOP or BYE) — restore caller's context */
+    capsule_vm_set_state(entry.vm_id, VM_STATE_STOPPED);
+    console_set_vm_name(caller_name);
+
+    console_puts("START: ");
+    console_puts(entry.name);
+    console_println(" stopped");
+    /* Stack clean on exit */
+}
+
+/**
+ * @brief STOP ( -- )
+ * Self-stop: set vm->halted so sk_repl_run() exits on the next iteration.
+ * State is updated to VM_STATE_STOPPED by the START word after the REPL
+ * returns.  STOP is registered in every VM's dictionary (including children)
+ * so any VM can stop itself.
+ */
+void mama_word_stop(VM *vm)
+{
+    vm->halted = 1;
+    /* sk_repl_run's while(!vm->halted) loop exits after this word returns */
+}
+
+/**
+ * @brief USE ( c-addr u -- )
+ * Redirect system-wide REPL input to a named VM without touching the C
+ * call stack.  The console prefix changes to [VMName].
+ * USE Hera (vm_id 0) resets dispatch to the default (Mama's VM, NULL slot).
+ */
+void mama_word_use(VM *vm)
+{
+    char            name_buf[VM_NAME_MAX];
+    VMRegistryEntry entry;
+    uint32_t        i;
+    cell_t          u, caddr;
+    const char     *src;
+
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        return;
+    }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("USE: name too long or empty");
+        return;
+    }
+
+    /* caddr is a VM address; S" ( -- c-addr u ) stores chars directly at caddr */
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    if (capsule_vm_find_by_name_nocase(name_buf, &entry) != 0) {
+        console_puts("USE: ");
+        console_puts(name_buf);
+        console_println(" not found");
+        return;
+    }
+
+    if (entry.state == VM_STATE_DEAD || entry.state == VM_STATE_STILLBORN) {
+        console_puts("USE: ");
+        console_puts(name_buf);
+        console_println(" dead/stillborn");
+        return;
+    }
+
+    /* vm_id 0 = Hera — restore default dispatch (NULL = use REPL's own vm) */
+    if (entry.vm_id == 0) {
+        sk_repl_set_active_vm((void *)0);
+    } else {
+        sk_repl_set_active_vm((VM *)entry.vm_ptr);
+    }
+
+    console_set_vm_name(entry.name);
+
+    console_puts("USE: now using ");
+    console_println(entry.name);
+    /* Stack clean on exit */
+}
+
+/**
+ * @brief KILL ( c-addr u -- )
+ * Destroy a named VM unconditionally.  Hera cannot be killed.
+ * Idempotent: killing an already-dead VM is a no-op.
+ */
+void mama_word_kill(VM *vm)
+{
+    char        name_buf[VM_NAME_MAX];
+    uint32_t    i;
+    cell_t      u, caddr;
+    const char *src;
+
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        return;
+    }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("KILL: name too long or empty");
+        return;
+    }
+
+    /* caddr is a VM address; S" ( -- c-addr u ) stores chars directly at caddr */
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    capsule_vm_kill(name_buf);
+    /* Stack clean on exit */
+}
 
 /**
  * @brief CAPSULE-BIRTH ( capsule-id -- vm-id )
@@ -279,6 +589,11 @@ void mama_word_capsule_test(VM *vm)
 void register_mama_forth_words(VM *vm)
 {
     /* Register words in FORTH vocabulary first */
+    register_word(vm, "BIRTH", mama_word_birth);
+    register_word(vm, "KILL", mama_word_kill);
+    register_word(vm, "START", mama_word_start);
+    register_word(vm, "STOP", mama_word_stop);
+    register_word(vm, "USE", mama_word_use);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);
@@ -294,6 +609,11 @@ void register_mama_forth_words(VM *vm)
     vm_bootstrap_root_vocabulary(vm, "MAMA");
 
     /* Re-register in MAMA vocabulary context */
+    register_word(vm, "BIRTH", mama_word_birth);
+    register_word(vm, "KILL", mama_word_kill);
+    register_word(vm, "START", mama_word_start);
+    register_word(vm, "STOP", mama_word_stop);
+    register_word(vm, "USE", mama_word_use);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);

@@ -188,14 +188,32 @@ void capsule_vm_hooks_register(void);
 
 /**
  * capsule_vm_registry_init - Initialize VM registry
+ *
+ * Allocates Mama's registry node (VM 0, name "Hera") via kmalloc and
+ * stores mama_vm_ptr so KILL can guard against destroying Mama.
+ * Must be called after kmalloc_init().
+ *
+ * @param mama_vm_ptr  Pointer to Mama's VM object (e.g. &sk_mama_vm)
  */
-void capsule_vm_registry_init(void);
+void capsule_vm_registry_init(void *mama_vm_ptr);
+
+/**
+ * capsule_vm_kill - Destroy a named VM and release all its resources
+ *
+ * Looks up the VM by name (case-insensitive).  Hera (VM 0) cannot be
+ * killed.  If the VM is already DEAD the call is a no-op.
+ * On success: vm_cleanup + sf_free, state → VM_STATE_DEAD, name cleared.
+ *
+ * @param name  Symbolic name of the VM to kill (case-insensitive)
+ * @return 0 on success (or already dead), -1 if not found or refused
+ */
+int capsule_vm_kill(const char *name);
 
 /**
  * capsule_vm_registry_get - Get VM registry entry by ID
  *
  * @param vm_id  VM ID to look up
- * @param out    Output: registry entry
+ * @param out    Output: registry entry copy
  * @return 0 on success, -1 if not found
  */
 int capsule_vm_registry_get(uint32_t vm_id, VMRegistryEntry *out);
@@ -204,6 +222,47 @@ int capsule_vm_registry_get(uint32_t vm_id, VMRegistryEntry *out);
  * capsule_vm_registry_count - Get number of registered VMs
  */
 uint32_t capsule_vm_registry_count(void);
+
+/**
+ * capsule_vm_find_by_name - Find VM registry entry by symbolic name
+ *
+ * Case-sensitive. Returns the first match.
+ *
+ * @param name  Symbolic VM name, e.g. "Hermes"
+ * @param out   Output: registry entry copy
+ * @return 0 if found, -1 if not found
+ */
+int capsule_vm_find_by_name(const char *name, VMRegistryEntry *out);
+
+/**
+ * capsule_vm_find_by_name_nocase - Find VM registry entry by name (case-insensitive)
+ *
+ * Used by BIRTH for idempotency: prevents birthing a second VM with the
+ * same name regardless of case differences.
+ *
+ * @param name  Symbolic VM name (compared case-insensitively)
+ * @param out   Output: registry entry copy
+ * @return 0 if found, -1 if not found
+ */
+int capsule_vm_find_by_name_nocase(const char *name, VMRegistryEntry *out);
+
+/**
+ * capsule_vm_set_state - Update a VM's state in the registry
+ *
+ * @param vm_id  VM ID to update
+ * @param state  New VMState value
+ */
+void capsule_vm_set_state(uint32_t vm_id, uint32_t state);
+
+/**
+ * capsule_vm_registry_set_name - Assign a symbolic name to a registered VM
+ *
+ * Truncates to VM_NAME_MAX-1 characters. No-op if vm_id not found.
+ *
+ * @param vm_id  VM ID to name
+ * @param name   Symbolic name string
+ */
+void capsule_vm_registry_set_name(uint32_t vm_id, const char *name);
 
 #ifdef __cplusplus
 }

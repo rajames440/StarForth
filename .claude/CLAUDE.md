@@ -132,11 +132,31 @@ Tuning knobs:
 ```
 
 ### Kernel via QEMU
+
+**ACCEPTANCE CRITERIA — non-negotiable:**
+The ONLY valid acceptance test for any kernel change is booting all three
+architectures in QEMU and capturing the serial log. There is no other test.
+`make test` (hosted VM) is NEVER used to validate kernel changes.
+
 ```bash
-make -f Makefile.starkernel qemu              # Boot in QEMU with OVMF
-# Serial output captures: POST results, boot banner, REPL prompt
-# DoE logs emitted via serial as CSV rows (see src/starkernel/doe_log.c)
+# Run in this exact order for every kernel change:
+make -f Makefile.starkernel ARCH=amd64   clean qemu
+make -f Makefile.starkernel ARCH=aarch64 clean qemu
+make -f Makefile.starkernel ARCH=riscv64 clean qemu
 ```
+
+Always pass `clean` before `qemu` — never build-only without clean.
+Serial output is automatically captured to:
+```
+logs/qemu-amd64-YYYYMMDD-HHMMSS.log
+logs/qemu-aarch64-YYYYMMDD-HHMMSS.log
+logs/qemu-riscv64-YYYYMMDD-HHMMSS.log
+```
+These logs are for Captain Bob's manual inspection. Do not delete them.
+`logs/` is tracked in git — it is a canonical optimistic history of all QEMU acceptance
+runs. Commit and push new logs after every acceptance test run.
+Do not claim a change is accepted until all three architectures have booted
+to `ok>` and their logs are present in `logs/`.
 
 ## Architecture
 
