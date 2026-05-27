@@ -221,7 +221,7 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Timer: init done\n");
 
     /* M6: Kernel heap */
-    #define KERNEL_HEAP_SIZE (16 * 1024 * 1024)  /* 16 MB */
+    #define KERNEL_HEAP_SIZE (2ULL * 1024ULL * 1024ULL * 1024ULL)  /* 2 GiB — floor for 256+ baby VMs */
     kmalloc_init(KERNEL_HEAP_SIZE);
     console_println("Kernel heap initialized.");
     print_heap_stats();

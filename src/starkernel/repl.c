@@ -27,6 +27,18 @@
 const char lithos_version[64] = LITHOS_VERSION_STR;
 
 /*===========================================================================
+ * USE-word dispatch: which VM receives REPL input.
+ *
+ * NULL means "use the REPL's own vm parameter" (default — Mama).
+ * Set via sk_repl_set_active_vm(); read by sk_repl_run() each iteration.
+ *===========================================================================*/
+
+static VM *g_repl_active_vm = (void *)0;
+
+void sk_repl_set_active_vm(VM *vm) { g_repl_active_vm = vm; }
+VM  *sk_repl_get_active_vm(void)   { return g_repl_active_vm; }
+
+/*===========================================================================
  * sk_readline - blocking line read from serial console with echo
  *
  * Spins on console_getc() until a full line arrives.
@@ -79,18 +91,17 @@ static int sk_readline(char *buf, int size)
  *   - Resets vm->error and loops
  *===========================================================================*/
 
-void sk_repl(VM *vm)
+void sk_repl_run(VM *vm)
 {
     char input[256];
+    VM  *active;
 
-    console_println(lithos_version);
-    console_puts("StarForth Version ");    console_println(STARFORTH_VERSION);
-    console_println("");
-    console_println("StarForth Emergency CLI");
-    console_println("FORTH-79 interpreter — type BYE or power off to exit");
-    console_println("");
+    vm->halted = 0;
 
     while (!vm->halted) {
+        /* USE may redirect input to a different VM each iteration */
+        active = g_repl_active_vm ? g_repl_active_vm : vm;
+
         console_puts("ok> ");
 
         sk_readline(input, sizeof(input));
@@ -100,13 +111,25 @@ void sk_repl(VM *vm)
             continue;
         }
 
-        vm_interpret(vm, input);
+        vm_interpret(active, input);
 
-        if (vm->error) {
+        if (active->error) {
             console_puts(" ERROR\n");
-            vm->error = 0;
+            active->error = 0;
         } else {
             console_puts(" ok\n");
         }
     }
+}
+
+void sk_repl(VM *vm)
+{
+    console_println(lithos_version);
+    console_puts("StarForth Version ");    console_println(STARFORTH_VERSION);
+    console_println("");
+    console_println("StarForth Emergency CLI");
+    console_println("FORTH-79 interpreter — type BYE or power off to exit");
+    console_println("");
+
+    sk_repl_run(vm);
 }

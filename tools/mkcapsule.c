@@ -158,26 +158,17 @@ static size_t       base_dir_len = 0;
 /*
  * Determine flags from the colon-separated capsule name.
  *
- * Directory conventions:
- *   core:*           -> (m) Mama's init
- *   production:*     -> (p) production
- *   domains:*        -> (p) production
- *   experiments:*    -> (e) experiment
- *   anything else    -> (e) experiment (safe default)
+ * init.4th (bare) is Mama's canonical init — gets FLAG_MAMA_INIT only.
+ * All other capsules carry both FLAG_PRODUCTION and FLAG_EXPERIMENT so
+ * that birth eligibility is not gated on mode type (D2).
  */
 static uint32_t flags_from_name(const char *name) {
     uint32_t flags = FLAG_ACTIVE;
 
-    if (strncmp(name, "core:", 5) == 0) {
+    if (strcmp(name, "init.4th") == 0) {
         flags |= FLAG_MAMA_INIT;
-    } else if (strncmp(name, "production:", 11) == 0) {
-        flags |= FLAG_PRODUCTION;
-    } else if (strncmp(name, "domains:", 8) == 0) {
-        flags |= FLAG_PRODUCTION;
-    } else if (strncmp(name, "experiments:", 12) == 0) {
-        flags |= FLAG_EXPERIMENT;
     } else {
-        flags |= FLAG_EXPERIMENT;
+        flags |= FLAG_PRODUCTION | FLAG_EXPERIMENT;
     }
 
     return flags;
@@ -374,9 +365,8 @@ static void generate_output(FILE *out) {
     for (int i = 0; i < capsule_count; i++) {
         CapsuleEntry *e = &capsules[i];
         const char *flags_comment =
-            (e->flags & FLAG_MAMA_INIT)    ? "MAMA_INIT | ACTIVE" :
-            (e->flags & FLAG_PRODUCTION)   ? "PRODUCTION | ACTIVE" :
-                                             "EXPERIMENT | ACTIVE";
+            (e->flags & FLAG_MAMA_INIT) ? "MAMA_INIT | ACTIVE" :
+                                          "PRODUCTION | EXPERIMENT | ACTIVE";
         fprintf(out,
             "    /* [%d] %s */\n"
             "    {\n"

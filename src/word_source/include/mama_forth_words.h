@@ -117,6 +117,38 @@ void mama_word_mama_vm_id(VM *vm);
 void mama_word_vm_count(VM *vm);
 
 /**
+ * @brief BIRTH ( c-addr u -- )
+ * Birth a named VM from its capsule.  Idempotent if already live.
+ */
+void mama_word_birth(VM *vm);
+
+/**
+ * @brief KILL ( c-addr u -- )
+ * Destroy a named VM.  Hera cannot be killed.  Idempotent if dead.
+ */
+void mama_word_kill(VM *vm);
+
+/**
+ * @brief START ( c-addr u -- )
+ * Enter a named VM's REPL synchronously.  Blocks until target STOPs.
+ */
+void mama_word_start(VM *vm);
+
+/**
+ * @brief STOP ( -- )
+ * Self-stop: set vm->halted so the REPL loop exits.  Registered in
+ * every VM (including child VMs) so any VM can stop itself.
+ */
+void mama_word_stop(VM *vm);
+
+/**
+ * @brief USE ( c-addr u -- )
+ * Redirect REPL input to a named VM without C stack push.
+ * USE Hera resets to default (Mama).
+ */
+void mama_word_use(VM *vm);
+
+/**
  * @brief CAPSULE-TEST ( -- )
  * Print diagnostic message confirming capsule system is active.
  */

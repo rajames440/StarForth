@@ -247,3 +247,14 @@ void capsule_parity_log_mama_init(
     parity_put_hex64(dict_hash);
     parity_puts("\n");
 }
+
+void capsule_parity_log_kill(uint32_t vm_id, const char *name)
+{
+    if (!parity_puts) return;
+
+    parity_puts("PARITY:KILL vm_id=");
+    parity_put_u32(vm_id);
+    parity_puts(" name=");
+    if (name) parity_puts(name);
+    parity_puts("\n");
+}

@@ -336,4 +336,5 @@ void vm_init_with_host(VM* vm, const VMHostServices *host)
     ((ssm_config_t*)vm->ssm_config)->L3_linear_decay = 0;
     ((ssm_config_t*)vm->ssm_config)->L5_window_inference = 0;
     ((ssm_config_t*)vm->ssm_config)->L6_decay_inference = 0;
+
 }

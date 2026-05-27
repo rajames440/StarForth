@@ -481,20 +481,8 @@ void string_word_enclose(VM *vm) {
     vm_push(vm, n3);
 }
 
-/* S" ( addr -- addr u ) — write counted string at addr from source text */
-/* S" ( addr -- addr u ) — write counted string at addr from interpreter input */
+/* S" ( -- c-addr u ) — parse string literal, store at HERE, push addr+len */
 static void string_word_s_quote(VM *vm) {
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        log_message(LOG_ERROR, "S\": data stack underflow");
-        return;
-    }
-
-    /* Destination VM address (offset) */
-    cell_t addr_cell = vm_pop(vm);
-    vaddr_t dst = VM_ADDR(addr_cell);
-
-    /* Parse from interpreter input buffer, not TIB */
     const char *src = vm->input_buffer;
     size_t pos = vm->input_pos;
     size_t end = vm->input_length;
@@ -505,15 +493,14 @@ static void string_word_s_quote(VM *vm) {
         return;
     }
 
-    /* Optional single leading space per `S\" Test\"` style */
+    /* Skip single leading space */
     if (pos < end && src[pos] == ' ') pos++;
 
-    /* Collect until next double quote */
+    /* Collect until closing double-quote */
     size_t start = pos;
     while (pos < end && src[pos] != '"') pos++;
 
     if (pos >= end) {
-        /* no closing quote */
         vm->error = 1;
         log_message(LOG_ERROR, "S\": missing closing quote");
         return;
@@ -525,33 +512,27 @@ static void string_word_s_quote(VM *vm) {
         log_message(LOG_ERROR, "S\": string too long (%zu)", n);
         return;
     }
-    if (!vm_addr_ok(vm, dst, 1 + n)) {
+
+    /* Store at HERE — characters only, no count byte */
+    vaddr_t dst = (vaddr_t)vm->here;
+    if (!vm_addr_ok(vm, dst, n + 1)) {
         vm->error = 1;
         log_message(LOG_ERROR, "S\": dest out of bounds");
         return;
     }
+    for (size_t i = 0; i < n; i++)
+        vm_store_u8(vm, dst + i, (uint8_t)src[start + i]);
+    vm_store_u8(vm, dst + n, 0); /* null terminator */
 
-    /* Write counted string into VM memory */
-    vm_store_u8(vm, dst, (uint8_t) n);
-    for (size_t i = 0; i < n; i++) {
-        vm_store_u8(vm, dst + 1 + i, (uint8_t) src[start + i]);
-    }
+    /* Advance past closing quote and advance HERE */
+    vm->input_pos = pos + 1;
+    vm->here = (size_t)(dst + n + 1);
 
-    /* Advance interpreter input past the closing quote */
-    pos++; /* skip the '"' itself */
-    vm->input_pos = pos;
+    /* Leave ( c-addr u ) */
+    vm_push(vm, (cell_t)dst);
+    vm_push(vm, (cell_t)n);
 
-    /* If caller used HERE, advance HERE to the end of stored string */
-    size_t old_here = vm->here;
-    if ((vaddr_t) old_here == dst) {
-        vm->here = (size_t) (dst + 1 + n);
-    }
-
-    /* Leave addr and length */
-    vm_push(vm, addr_cell);
-    vm_push(vm, (cell_t) n);
-
-    log_message(LOG_DEBUG, "S\": wrote %zu bytes at %ld; HERE=%zu", n, (long) addr_cell, vm->here);
+    log_message(LOG_DEBUG, "S\": %zu bytes at %zu", n, (size_t)dst);
 }
 
 /* -TRAILING ( addr u -- addr u' )
