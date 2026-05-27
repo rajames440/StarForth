@@ -53,7 +53,7 @@
 #include "kmalloc.h"
 #include "pmm.h"
 
-#define KMALLOC_DEFAULT_HEAP_SIZE   (16u * 1024u * 1024u) /* 16 MiB */
+#define KMALLOC_DEFAULT_HEAP_SIZE   (2ULL * 1024ULL * 1024ULL * 1024ULL) /* 2 GiB — floor for 256+ baby VMs */
 #define KMALLOC_MIN_ALIGN           16u
 #define KMALLOC_MAGIC               0x4B4D414Cu /* 'KMAL' */
 
