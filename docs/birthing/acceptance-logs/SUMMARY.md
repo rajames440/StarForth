@@ -1,68 +1,63 @@
-# Birthing — Hosted Build Acceptance Test Summary
+# Birthing — Kernel QEMU Acceptance Test Summary
 
-**Date:** 2026-05-26
+**Date:** 2026-05-27
 **Branch:** `birthing`
-**Feature:** Lifecycle words (BIRTH KILL PAUSE RESUME USE) + S" FORTH-79 standard
+**Feature:** Lifecycle words (BIRTH KILL START STOP USE) + `."` compile-mode fix
 
 ## Scope
 
-These logs cover the **hosted Linux build** only (`lfs/<arch>/starforth`).
-The canonical acceptance test for LithosAnanke is QEMU UEFI boot via
-`make -f Makefile.starkernel ARCH=<arch> clean qemu` — that requires OVMF
-firmware and QEMU, which are not available in this build environment.
-Kernel QEMU acceptance must be run by Captain Bob before merge to lithosananke.
+These logs cover the **kernel UEFI build** (`make -f Makefile.starkernel ARCH=<arch> clean qemu`).
+All three architectures booted to `ok>`, ran POST, and executed `capsules/init.4th` successfully.
 
-## Hosted Build Results
+## Kernel QEMU Results
 
-| Arch | Tests | Passed | Failed | INIT | BIRTH Hermes | BIRTH Artemis |
-|------|-------|--------|--------|------|-------------|---------------|
-| amd64 | 800 | 729 | 0 | CLEAN | LOGGED | LOGGED |
-| arm64 | 800 | 729 | 0 | CLEAN | LOGGED | LOGGED |
-| riscv64 | 800 | 729 | 0 | CLEAN | LOGGED | LOGGED |
+| Arch | Tests | Passed | Failed | Errors | BIRTH Hermes | BIRTH Artemis | `."` |
+|------|-------|--------|--------|--------|-------------|---------------|------|
+| amd64   | 800 | 734 | 0 | 0 | `[Hermes] Hermes Up` / live | `[Artemis] Artimis Up` / live | PASS |
+| aarch64 | 800 | 734 | 0 | 0 | `[Hermes] Hermes Up` / live | `[Artemis] Artimis Up` / live | PASS |
+| riscv64 | 800 | 734 | 0 | 0 | `[Hermes] Hermes Up` / live | `[Artemis] Artimis Up` / live | PASS |
 
-## Key Evidence (hosted build)
-
-All three architectures show:
+## Key Evidence (all three architectures identical)
 
 ```
-INIT: Starting system initialization from init.4th
-INIT: Loaded 1 blocks from init.4th
-INIT: Executing initialization blocks...
-BIRTH Hermes (hosted)
-BIRTH Artemis (hosted)
-INIT: System initialization complete
+[Hera] POST: PASSED
+[Hera] Init: loading init.4th...
+[Hermes] Hermes UpBIRTH: Hermes live
+[Artemis] Artimis UpBIRTH: Artemis live
+[Hera] Init: init.4th OK
 ```
+
+`."` in compile mode now uses the `(do-string)` inline runtime — string bytes live
+inside the threaded code body, not at `body_addr`. The previous LIT-addr-LIT-len-TYPE
+approach overwrote the start of the word body with string bytes, causing a triple fault
+when `execute_colon_word` read them as DictEntry pointers.
 
 ## What Changed
 
+- `src/word_source/io_words.c` — `."` compile mode replaced with `(do-string)` inline
+  approach; `(do-string)` runtime word reads inline string via return-stack IP, prints,
+  advances IP past padded block
 - `src/starkernel/capsule/mama_forth_words.c` — BIRTH KILL START STOP USE kernel
-  implementations; fixed caddr+1 offset bug (old counted-string convention) to
-  align with FORTH-79 S" which pushes chars directly at caddr
-- `src/word_source/string_words.c` — S" fixed to FORTH-79 standard ( -- c-addr u ),
-  stores string at HERE automatically, no count-byte prefix
-- `src/word_source/lifecycle_words_hosted.c` — hosted Linux stubs; BIRTH KILL PAUSE
-  RESUME USE all ( c-addr u -- ), stack-clean, errors logged not pushed
-- `src/main.c` — register_lifecycle_words(&vm) called after init_vm_and_subsystem
-- `capsules/init.4th` — already has S" Hermes" BIRTH and S" Artemis" BIRTH
+  implementations; fixed caddr+1 offset bug to align with FORTH-79 S"
+- `src/word_source/string_words.c` — S" fixed to FORTH-79 standard ( -- c-addr u )
+- `src/word_source/lifecycle_words_hosted.c` — hosted Linux stubs (guarded #ifndef __STARKERNEL__)
+- `src/main.c` — register_lifecycle_words(&vm) wired in for hosted build
+- `capsules/init.4th` — S" Hermes" BIRTH + S" Artemis" BIRTH
+- `capsules/hermes/init.4th` — stub: `: UP ." Hermes Up" ; UP`
+- `capsules/artemis/init.4th` — stub: `: UP ." Artimis Up" ; UP`
 
-## Binaries Tested
+## Serial Logs
 
-| Arch | Binary | Notes |
-|------|--------|-------|
-| amd64 | `lfs/amd64/starforth` | Native x86-64, static, hosted Linux |
-| arm64 | `lfs/arm64/starforth` | aarch64, static, hosted Linux |
-| riscv64 | `lfs/riscv64/starforth` | riscv64, static, hosted Linux |
+| Arch | Log file |
+|------|----------|
+| amd64   | `logs/qemu-amd64-20260526-234957.log` |
+| aarch64 | `logs/qemu-aarch64-20260526-235056.log` |
+| riscv64 | `logs/qemu-riscv64-20260527-000127.log` |
 
-## Kernel QEMU Acceptance (pending — requires Captain Bob's environment)
+(`logs/` is gitignored — run locally to reproduce)
 
-```bash
-make -f Makefile.starkernel ARCH=amd64   clean qemu
-make -f Makefile.starkernel ARCH=aarch64 clean qemu
-make -f Makefile.starkernel ARCH=riscv64 clean qemu
-```
+## Remaining Interactive Tests (require Captain Bob)
 
-Expected serial output after kernel BIRTH fix (caddr+1 → caddr):
-```
-[Hera] BIRTH: Hermes live
-[Hera] BIRTH: Artemis live
-```
+- `S" Hermes" USE` — switches system console to Hermes
+- `S" Hera" USE` — switches back
+- KILL + re-BIRTH a VM in the same session
