@@ -25,5 +25,4 @@ experiments/**/results/*.log
 # OS junk
 .DS_Store
 Thumbs.db
-logs/
 qemu.log
