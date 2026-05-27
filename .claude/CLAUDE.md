@@ -153,7 +153,8 @@ logs/qemu-aarch64-YYYYMMDD-HHMMSS.log
 logs/qemu-riscv64-YYYYMMDD-HHMMSS.log
 ```
 These logs are for Captain Bob's manual inspection. Do not delete them.
-`logs/` is gitignored — logs are local artifacts, not committed to the repo.
+`logs/` is tracked in git — it is a canonical optimistic history of all QEMU acceptance
+runs. Commit and push new logs after every acceptance test run.
 Do not claim a change is accepted until all three architectures have booted
 to `ok>` and their logs are present in `logs/`.
 
