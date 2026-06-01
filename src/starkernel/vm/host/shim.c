@@ -199,9 +199,9 @@ void log_message(LogLevel level, const char *fmt, ...) {
     *p++ = ' ';
     *p = '\0';
 
-    /* Emit: COLOR[LITHOS][LEVEL] RESET[KRELTSC: xxx] message\n */
+    /* Emit: COLOR[HADES][LEVEL] RESET[KRELTSC: xxx] message\n */
     console_puts(colors[idx]);
-    console_puts("[LITHOS][");
+    console_puts("[HADES][");
     console_puts(names[idx]);
     console_puts("] ");
     console_puts(reset);
@@ -222,7 +222,7 @@ void log_test_result(const char *word_name, TestResult result) {
         default:         color = "\x1b[0m";  status = "????"; break;
     }
 
-    console_puts("\x1b[35m[LITHOS][TEST ] \x1b[0m");
+    console_puts("\x1b[35m[HADES][TEST ] \x1b[0m");
     console_puts("Testing ");
     console_puts(word_name);
     console_puts(" ... ");

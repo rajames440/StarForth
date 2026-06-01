@@ -95,6 +95,11 @@ q48_16_t q48_mul(q48_16_t a, q48_16_t b);
  */
 q48_16_t q48_div(q48_16_t a, q48_16_t b);
 
+/* Guard: skip static inlines already provided by include/starkernel/q48_16.h
+ * (both headers share the same definitions; STARKERNEL_Q48_16_H is defined
+ * by the kernel version so we avoid -Werror redefinition in mixed builds). */
+#ifndef STARKERNEL_Q48_16_H
+
 /**
  * @brief Add two Q48.16 values
  *
@@ -163,6 +168,8 @@ static inline q48_16_t q48_from_u64(uint64_t u) {
 static inline uint64_t q48_to_u64(q48_16_t q) {
     return q >> 16;
 }
+
+#endif /* STARKERNEL_Q48_16_H */
 
 /**
  * @brief Convert double to Q48.16 (for testing/initialization only)
