@@ -25,6 +25,7 @@
  */
 
 #include "starkernel/capsule_birth.h"
+#include "starkernel/capsule_loader.h"
 #include "starkernel/xxhash64.h"
 #include "vm.h"
 #include "word_registry.h"
@@ -36,47 +37,7 @@
  *===========================================================================*/
 
 static int capsule_exec_hook(void *vm_ctx, const char *code, uint64_t code_len) {
-    VM *vm = (VM *)vm_ctx;
-    if (!vm || !code) return -1;
-
-    /*
-     * vm_interpret works on null-terminated strings.  The payload arena
-     * is not guaranteed null-terminated, so copy into a temp buffer.
-     * We build the buffer in chunks matching the VM's interpreter line
-     * limit to avoid single-allocation failures on large payloads.
-     *
-     * The simplest correct approach: walk the payload line-by-line,
-     * feeding each line to vm_interpret.  Lines are separated by '\n'.
-     */
-    const char *p   = code;
-    const char *end = code + code_len;
-
-    while (p < end) {
-        /* Find next newline or end of payload */
-        const char *nl = p;
-        while (nl < end && *nl != '\n') nl++;
-
-        size_t line_len = (size_t)(nl - p);
-
-        /* Copy line into a stack buffer (max line 4095 chars) */
-        char line[4096];
-        if (line_len >= sizeof(line)) line_len = sizeof(line) - 1;
-        size_t i;
-        for (i = 0; i < line_len; i++) line[i] = p[i];
-        line[line_len] = '\0';
-
-        if (line_len > 0) {
-            vm_interpret(vm, line);
-            if (vm->error) {
-                vm->error = 0;  /* reset so subsequent lines still run */
-                return -1;
-            }
-        }
-
-        p = (nl < end) ? nl + 1 : end;
-    }
-
-    return 0;
+    return capsule_exec_payload(vm_ctx, (const uint8_t *)code, code_len);
 }
 
 /*===========================================================================

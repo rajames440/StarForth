@@ -1,3 +1,5 @@
-( hermes/init.4th — Hermes messaging stratum, stub )
+Block 2050
+VOCABULARY HERMES
+HERMES DEFINITIONS
 : UP ." Hermes Up" CR ;
 UP
