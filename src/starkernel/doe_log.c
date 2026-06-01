@@ -11,10 +11,10 @@
  * doe_log.c — DoE CSV logger for the LithosAnanke kernel
  *
  * Emits 15-column CSV rows to the serial log once per heartbeat tick.
- * Each row is prefixed with a cyan [LITHOS][DOE ] tag so it can be
+ * Each row is prefixed with a cyan [HADES][DOE ] tag so it can be
  * extracted cleanly:
  *
- *   grep -aP '\[LITHOS\]\[DOE \]' qemu-amd64-*.log
+ *   grep -aP '\[HADES\]\[DOE \]' qemu-amd64-*.log
  *
  * Columns (in order):
  *   1.  tick_number           uint32  — monotonic heartbeat counter
@@ -44,7 +44,7 @@
 #include "starkernel/timer.h"
 #include "freestanding/stdio.h"
 
-#define DOE_PREFIX   "\x1b[36m[LITHOS][DOE ]\x1b[0m "
+#define DOE_PREFIX   "\x1b[36m[HADES][DOE ]\x1b[0m "
 #define DOE_BUF_SIZE 512
 
 static const char *doe_header =
