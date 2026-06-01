@@ -11,7 +11,7 @@
  * starkernel/doe_log.h — DoE (Design of Experiments) CSV logger
  *
  * Emits per-heartbeat-tick CSV rows to the serial log, tagged with
- * [LITHOS][DOE ] so they can be grepped cleanly from the QEMU log.
+ * [HADES][DOE ] so they can be grepped cleanly from the QEMU log.
  *
  * Each row contains the 12 standard heartbeat snapshot fields plus
  * 3 APIC timer fields from TimeTrustState:
