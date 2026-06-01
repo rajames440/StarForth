@@ -1,3 +1,3 @@
-( artemis/init.4th — Artemis storage manager, stub )
-: UP ." Artimis Up" CR ;
+Block 2051
+: UP ." Artemis Up" CR ;
 UP

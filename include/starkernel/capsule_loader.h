@@ -29,12 +29,12 @@
  *
  * Format:
  *   Block <decimal>\n
- *   <content: up to 1024 bytes, text or binary>
+ *   <content: up to 1024 bytes of FORTH source>
  *   Block <decimal>\n
  *   ...
  *
- * Blocks may appear in any order.  Each ramdrive slot is zeroed before
- * content is written.  Content exceeding 1024 bytes is silently truncated.
+ * Blocks may appear in any order; block numbers are arbitrary.
+ * Content exceeding 1024 bytes is truncated with a warning.
  */
 
 #ifndef STARKERNEL_CAPSULE_LOADER_H
@@ -81,14 +81,26 @@ int capsule_load_blocks(const uint8_t *payload, uint64_t length,
 void capsule_clear_blocks(const uint8_t *payload, uint64_t length);
 
 /**
+ * capsule_exec_payload - Parse, populate block device, and execute a payload
+ *
+ * For each "Block <num>" section: write content to block device (warn+truncate
+ * if > 1KB), then execute line-by-line via vm_interpret.  No LOAD is injected.
+ *
+ * @param vm_opaque  VM to execute on
+ * @param payload    Raw payload bytes
+ * @param length     Payload length in bytes
+ * @return 0 on success, -1 on execution error
+ */
+int capsule_exec_payload(void *vm_opaque, const uint8_t *payload, uint64_t length);
+
+/**
  * capsule_exec_init - Load, execute, and clean up an init capsule
  *
  * Full init sequence:
  *   1. Locate capsule by colon-separated name in the capsule directory
  *   2. Validate content hash
- *   3. Write all blocks to the ramdrive (capsule_load_blocks)
- *   4. Execute the entry block via "<num> LOAD" on the VM
- *   5. Zero ramdrive slots (capsule_clear_blocks)
+ *   3. capsule_exec_payload: populate block device + execute content
+ *   4. Zero block slots for userspace (capsule_clear_blocks)
  *
  * @param vm            VM to execute on
  * @param capsule_name  Colon-separated capsule name, e.g. "init.4th"
