@@ -261,32 +261,92 @@ int capsule_load_blocks(const uint8_t *payload, uint64_t length,
 }
 
 /*===========================================================================
- * Internal: walk payload headers and copy each ramdrive block to RAM
+ * capsule_exec_payload — unified block parse + populate + execute
+ *
+ * For each "Block <num>" section in the payload:
+ *   1. Write content to block device; warn and truncate if > 1KB
+ *   2. Execute content line-by-line via vm_interpret
+ *
+ * Block numbers are arbitrary; order is irrelevant.
+ * No LOAD is injected — FORTH code calls LOAD itself if needed.
  *===========================================================================*/
 
-static void copy_device_to_ram(const uint8_t *payload, uint64_t length)
+int capsule_exec_payload(void *vm_opaque, const uint8_t *payload, uint64_t length)
 {
+    VM *vm = (VM *)vm_opaque;
+    if (!vm || !payload || length == 0) return -1;
+
     const uint8_t *p   = payload;
     const uint8_t *end = payload + length;
-    int      in_block          = 0;
-    uint32_t current_block_num = 0;
 
-    while (p < end) {
-        uint32_t       block_num;
-        const uint8_t *content_start;
+    int            in_block          = 0;
+    uint32_t       current_block_num = 0;
+    const uint8_t *block_start       = (void *)0;
 
-        if (is_block_header(p, end, &block_num, &content_start)) {
-            if (in_block) copy_block_to_ram(current_block_num);
-            current_block_num = block_num;
+    for (;;) {
+        uint32_t       next_num      = 0;
+        const uint8_t *content_start = (void *)0;
+        int            at_end        = (p >= end);
+        int            is_hdr        = !at_end &&
+                                       is_block_header(p, end, &next_num, &content_start);
+
+        if (in_block && (is_hdr || at_end)) {
+            /* Flush completed block */
+            const uint8_t *block_end = at_end ? end : p;
+            size_t         block_len = (size_t)(block_end - block_start);
+
+            if (block_len > LOADER_BLOCK_SIZE) {
+#ifdef __STARKERNEL__
+                char nbuf[12];
+                u32_to_dec(current_block_num, nbuf, sizeof(nbuf));
+                console_puts("WARN: block ");
+                console_puts(nbuf);
+                console_puts(" exceeds 1KB, truncating\n");
+#endif
+                block_len = LOADER_BLOCK_SIZE;
+            }
+
+            /* 1. Populate block device */
+            write_ramdrive_block(current_block_num, block_start, (uint32_t)block_len);
+            copy_block_to_ram(current_block_num);
+
+            /* 2. Execute line by line */
+            {
+                const uint8_t *lp   = block_start;
+                const uint8_t *lend = block_start + block_len;
+                while (lp < lend) {
+                    const uint8_t *nl = lp;
+                    while (nl < lend && *nl != '\n') nl++;
+                    size_t line_len = (size_t)(nl - lp);
+                    char   line[256];
+                    size_t i;
+                    if (line_len >= sizeof(line)) line_len = sizeof(line) - 1u;
+                    for (i = 0; i < line_len; i++) line[i] = (char)lp[i];
+                    line[line_len] = '\0';
+                    if (line_len > 0) {
+                        vm_interpret(vm, line);
+                        if (vm->error) { vm->error = 0; return -1; }
+                    }
+                    lp = (nl < lend) ? nl + 1 : lend;
+                }
+            }
+        }
+
+        if (at_end) break;
+
+        if (is_hdr) {
+            current_block_num = next_num;
+            block_start       = content_start;
             in_block          = 1;
             p                 = content_start;
         } else {
+            /* Pre-block or unrecognised line — skip */
             while (p < end && *p != '\n') p++;
             if (p < end) p++;
         }
     }
 
-    if (in_block) copy_block_to_ram(current_block_num);
+    return 0;
 }
 
 /*===========================================================================
@@ -349,36 +409,8 @@ CapsuleRunResult capsule_exec_init(
     const uint8_t *payload = capsule_get_payload(cap, arena);
     if (!payload) return CAPSULE_RUN_ERR_INVALID;
 
-    /* Step 1: write to ramdrive (establishes device content) */
-    uint32_t entry_block = 0;
-    int n = capsule_load_blocks(payload, cap->length, &entry_block);
-    if (n < 1 || entry_block == 0 || entry_block <= CAPSULE_RAM_OFFSET)
-        return CAPSULE_RUN_ERR_INVALID;
-
-    /* Step 2: copy from ramdrive (N) to dedicated RAM (N-2048) */
-    /* TODO: conflict handling */
-    copy_device_to_ram(payload, cap->length);
-
-    /* Step 3: execute entry block from dedicated RAM */
-    uint32_t ram_entry = entry_block - CAPSULE_RAM_OFFSET;
-
-    char   load_cmd[32];
-    size_t nc = u32_to_dec(ram_entry, load_cmd, sizeof(load_cmd) - 6u);
-    load_cmd[nc++] = ' ';
-    load_cmd[nc++] = 'L';
-    load_cmd[nc++] = 'O';
-    load_cmd[nc++] = 'A';
-    load_cmd[nc++] = 'D';
-    load_cmd[nc]   = '\0';
-
-    vm->error = 0;
-    vm_interpret(vm, load_cmd);
-    CapsuleRunResult result = vm->error ? CAPSULE_RUN_ERR_EXEC_FAIL
-                                        : CAPSULE_RUN_OK;
-    vm->error = 0;
-
-    /* Step 4: zero dedicated RAM blocks — free for userspace */
+    /* Unified: populate block device + execute; then free slots for userspace */
+    int rc = capsule_exec_payload(vm, payload, cap->length);
     capsule_clear_blocks(payload, cap->length);
-
-    return result;
+    return (rc == 0) ? CAPSULE_RUN_OK : CAPSULE_RUN_ERR_EXEC_FAIL;
 }

@@ -1,3 +1,3 @@
-( hermes/init.4th — Hermes messaging stratum, stub )
+Block 2050
 : UP ." Hermes Up" CR ;
 UP
