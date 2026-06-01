@@ -52,14 +52,16 @@
 #include <stdlib.h>
 
 #include "physics_hotwords_cache.h"
-/* Suppress platform_time.h inline wrappers in kernel builds.
- * GCC emits GOTPCREL relocations for the extern sf_time_backend pointer even with
- * -fvisibility=hidden. PE binaries have no GOT, so those crash at runtime.
- * PLATFORM_TIME_NO_INLINE is set globally via COMMON_CFLAGS in Makefile.starkernel;
- * the #ifndef guard here prevents a redefinition warning from -Wall -Werror. */
+/* In kernel builds, suppress platform_time.h inline wrappers to avoid
+ * GOTPCREL relocations in PE binaries (no GOT in PE format). shim.c
+ * provides the concrete sf_monotonic_ns() symbol in that case.
+ * PLATFORM_TIME_NO_INLINE is also set globally via COMMON_CFLAGS in
+ * Makefile.starkernel; the #ifndef guard prevents -Wall -Werror redefinition. */
+#ifdef __STARKERNEL__
 #ifndef PLATFORM_TIME_NO_INLINE
 #define PLATFORM_TIME_NO_INLINE
 #endif
+#endif /* __STARKERNEL__ */
 #include "platform_time.h"
 #include "math_portable.h"
 
