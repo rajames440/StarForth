@@ -75,31 +75,12 @@ static bool host_services_logged = false;
  * Memory Allocation
  * ============================================================================ */
 
-static void print_hex64(uint64_t v) {
-    char buf[19];
-    buf[0] = '0'; buf[1] = 'x'; buf[18] = '\0';
-    for (int i = 0; i < 16; ++i) {
-        uint8_t nibble = (uint8_t)((v >> ((15 - i) * 4)) & 0xF);
-        buf[i + 2] = (nibble < 10) ? (char)('0' + nibble) : (char)('a' + nibble - 10);
-    }
-    console_puts(buf);
-}
-
 static void* kernel_alloc(size_t size, size_t align) {
     if (size == 0) {
         return (void*)0;
     }
 
-    /* VM arena requests get routed through the PMM-backed allocator */
     size_t arena_size = sk_vm_arena_size();
-    console_puts("[kernel_alloc] size=");
-    print_hex64((uint64_t)size);
-    console_puts(" arena_size=");
-    print_hex64((uint64_t)arena_size);
-    console_puts(" match=");
-    console_puts((size == arena_size) ? "YES" : "NO");
-    console_println("");
-    
     if (size == arena_size) {
         if (!sk_vm_arena_is_initialized()) {
             if (sk_vm_arena_alloc() == 0) {
@@ -107,9 +88,6 @@ static void* kernel_alloc(size_t size, size_t align) {
             }
         }
         void *ptr = sk_vm_arena_ptr();
-        console_puts("[kernel_alloc] returning arena ptr=");
-        print_hex64((uint64_t)(uintptr_t)ptr);
-        console_println("");
         return ptr;
     }
 
@@ -119,9 +97,6 @@ static void* kernel_alloc(size_t size, size_t align) {
     } else {
         ptr = kmalloc_aligned(size, align);
     }
-    console_puts("[kernel_alloc] returning kmalloc ptr=");
-    print_hex64((uint64_t)(uintptr_t)ptr);
-    console_println("");
     return ptr;
 }
 
@@ -249,50 +224,7 @@ static void kernel_panic(const char *message) {
     sk_hal_panic(message);
 }
 
-static void host_services_print_hex(const void *ptr) {
-    if (!ptr) {
-        console_puts("NULL");
-        return;
-    }
-    char buf[19];
-    buf[0] = '0';
-    buf[1] = 'x';
-    buf[18] = '\0';
-    uint64_t value = (uint64_t)(uintptr_t)ptr;
-    for (int i = 0; i < 16; ++i) {
-        uint8_t nibble = (value >> ((15 - i) * 4)) & 0xF;
-        buf[i + 2] = (nibble < 10) ? ('0' + nibble) : ('a' + nibble - 10);
-    }
-    console_puts(buf);
-}
-
-static void host_services_log_ptr(const char *label, const void *ptr) {
-    console_puts("    ");
-    console_puts(label);
-    console_puts(" = ");
-    host_services_print_hex(ptr);
-    console_println("");
-}
-
-
 static void host_services_dump_table(void) {
-    if (host_services_logged) {
-        return;
-    }
-
-    console_println("[HAL][host] VMHostServices table:");
-    host_services_log_ptr("alloc", kernel_services.alloc);
-    host_services_log_ptr("free", kernel_services.free);
-    host_services_log_ptr("monotonic_ns", kernel_services.monotonic_ns);
-    host_services_log_ptr("mutex_init", kernel_services.mutex_init);
-    host_services_log_ptr("mutex_lock", kernel_services.mutex_lock);
-    host_services_log_ptr("mutex_unlock", kernel_services.mutex_unlock);
-    host_services_log_ptr("mutex_destroy", kernel_services.mutex_destroy);
-    host_services_log_ptr("puts", kernel_services.puts);
-    host_services_log_ptr("putc", kernel_services.putc);
-    host_services_log_ptr("is_executable_ptr", kernel_services.is_executable_ptr);
-    host_services_log_ptr("owns_xt_entry", kernel_services.owns_xt_entry);
-    host_services_log_ptr("panic", kernel_services.panic);
     host_services_logged = true;
 }
 

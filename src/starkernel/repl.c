@@ -65,56 +65,14 @@ static void sk_repl_idle(void)
  * Returns the number of characters placed in buf (not counting '\0').
  *===========================================================================*/
 
-#ifdef ARCH_AMD64
-/* Idle-loop diagnostics — amd64 only (LAPIC CCR + RFLAGS IF check) */
-static void repl_print_dec32(uint32_t v) {
-    char buf[12];
-    int i = 0;
-    if (v == 0) { console_putc('0'); return; }
-    while (v > 0) { buf[i++] = (char)('0' + (v % 10u)); v /= 10u; }
-    while (i-- > 0) console_putc(buf[i]);
-}
-static uint32_t repl_lapic_ccr(void) {
-    volatile uint32_t *lapic = (volatile uint32_t *)0xFEE00000u;
-    return lapic[0x390u / 4u];
-}
-static void repl_print_hex32(uint32_t v) {
-    for (int i = 28; i >= 0; i -= 4)
-        console_putc("0123456789abcdef"[(v >> i) & 0xF]);
-}
-#endif
-
 static int sk_readline(char *buf, int size)
 {
     int n = 0;
-#ifdef ARCH_AMD64
-    uint32_t idle_iters = 0;
-#endif
 
     for (;;) {
         int c = console_getc();   /* non-blocking poll */
 
         if (c < 0) {
-#ifdef ARCH_AMD64
-            idle_iters++;
-            /* Print live diagnostic every 2M idle iterations */
-            if ((idle_iters & 0x1FFFFFu) == 0) {
-                uint64_t rfl;
-                __asm__ volatile ("pushfq; popq %0" : "=r"(rfl));
-                uint32_t ccr = repl_lapic_ccr();
-                uint64_t ticks = heartbeat_ticks();
-                console_puts("IDLE iters=");
-                repl_print_dec32(idle_iters);
-                console_puts(" IF=");
-                console_putc((rfl & 0x200u) ? '1' : '0');
-                console_puts(" CCR=0x");
-                repl_print_hex32(ccr);
-                console_puts(" hticks=");
-                repl_print_dec32((uint32_t)ticks);
-                console_putc('\n');
-            }
-#endif
-
             /* Idle — service the adaptive heartbeat if a beat has elapsed */
             uint64_t now = heartbeat_ticks();
             if (now - g_last_beat_tick >= SK_IDLE_BEAT_INTERVAL) {

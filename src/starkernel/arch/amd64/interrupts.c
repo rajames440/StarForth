@@ -287,42 +287,13 @@ extern void isr_stub0(void) __attribute__((visibility("hidden")));  /* Defined i
 
 void arch_interrupts_init(void)
 {
-    /*
-     * Calculate relocation offset: difference between runtime address
-     * and link-time address stored in isr_stub_table[0].
-     */
     uint64_t link_time_addr = (uint64_t)isr_stub_table[0];
     uint64_t runtime_addr = (uint64_t)&isr_stub0;
     int64_t reloc_offset = (int64_t)(runtime_addr - link_time_addr);
 
-    /* Print addresses of the data structures themselves, then their values */
-    console_puts("isr_stub_table @ 0x");
-    print_hex64((uint64_t)(void *)isr_stub_table);
-    console_puts(" [0]= 0x");
-    print_hex64(link_time_addr);
-    console_putc('\n');
-    console_puts("&isr_stub0     = 0x");
-    print_hex64(runtime_addr);
-    console_puts(" stub_table_link_vs_run delta=0x");
-    print_hex64((uint64_t)reloc_offset);
-    console_putc('\n');
-
     for (int i = 0; i < IDT_ENTRIES; ++i) {
-        /* Apply relocation offset to get correct runtime address */
         void *isr_addr = (void *)((uint64_t)isr_stub_table[i] + (uint64_t)reloc_offset);
         set_idt_entry(i, isr_addr);
-    }
-
-    /* Verify IDT entry for vector 32 (APIC timer) */
-    {
-        uint64_t h32 = (uint64_t)idt[32].offset_low
-                     | ((uint64_t)idt[32].offset_mid  << 16)
-                     | ((uint64_t)idt[32].offset_high << 32);
-        console_puts("IDT[32] handler=0x");
-        print_hex64(h32);
-        console_puts(" (isr_stub32 run=0x");
-        print_hex64((uint64_t)isr_stub_table[32] + (uint64_t)reloc_offset);
-        console_println(")");
     }
 
     struct idtr idtr_desc;
@@ -331,5 +302,4 @@ void arch_interrupts_init(void)
 
     lidt(&idtr_desc);
     pic_disable();
-    console_println("IDT installed.");
 }
