@@ -176,6 +176,80 @@ static WordTestSuite arithmetic_word_suites[] = {
         3
     },
 
+    {
+        "1+", {
+            {"basic",          "5 1+ . CR",          "Should print: 6",  TEST_NORMAL, 0, 1},
+            {"zero",           "0 1+ . CR",           "Should print: 1",  TEST_NORMAL, 0, 1},
+            {"negative",       "-1 1+ . CR",          "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"chain",          "3 1+ 1+ 1+ . CR",     "Should print: 6",  TEST_NORMAL, 0, 1},
+            {"overflow",       "2147483647 1+ . CR",  "Should overflow",  TEST_EDGE_CASE, 0, 1},
+            {"empty_stack",    "1+",                  "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        6
+    },
+
+    {
+        "1-", {
+            {"basic",          "5 1- . CR",           "Should print: 4",  TEST_NORMAL, 0, 1},
+            {"to_zero",        "1 1- . CR",           "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"to_negative",    "0 1- . CR",           "Should print: -1", TEST_NORMAL, 0, 1},
+            {"chain",          "6 1- 1- 1- . CR",     "Should print: 3",  TEST_NORMAL, 0, 1},
+            {"underflow",      "-2147483648 1- . CR", "Should underflow", TEST_EDGE_CASE, 0, 1},
+            {"empty_stack",    "1-",                  "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        6
+    },
+
+    {
+        "2+", {
+            {"basic",          "5 2+ . CR",           "Should print: 7",  TEST_NORMAL, 0, 1},
+            {"zero",           "0 2+ . CR",           "Should print: 2",  TEST_NORMAL, 0, 1},
+            {"negative",       "-3 2+ . CR",          "Should print: -1", TEST_NORMAL, 0, 1},
+            {"empty_stack",    "2+",                  "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "2-", {
+            {"basic",          "7 2- . CR",           "Should print: 5",  TEST_NORMAL, 0, 1},
+            {"zero",           "2 2- . CR",           "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"negative",       "0 2- . CR",           "Should print: -2", TEST_NORMAL, 0, 1},
+            {"empty_stack",    "2-",                  "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "2*", {
+            {"basic",          "5 2* . CR",           "Should print: 10", TEST_NORMAL, 0, 1},
+            {"zero",           "0 2* . CR",           "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"negative",       "-3 2* . CR",          "Should print: -6", TEST_NORMAL, 0, 1},
+            {"one",            "1 2* . CR",           "Should print: 2",  TEST_NORMAL, 0, 1},
+            {"large",          "1073741823 2* . CR",  "Should print: 2147483646", TEST_EDGE_CASE, 0, 1},
+            {"empty_stack",    "2*",                  "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        6
+    },
+
+    {
+        "2/", {
+            {"basic",          "10 2/ . CR",          "Should print: 5",  TEST_NORMAL, 0, 1},
+            {"odd",            "7 2/ . CR",           "Should print: 3",  TEST_NORMAL, 0, 1},
+            {"zero",           "0 2/ . CR",           "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"negative_even",  "-10 2/ . CR",         "Should print: -5", TEST_NORMAL, 0, 1},
+            {"one",            "1 2/ . CR",           "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"empty_stack",    "2/",                  "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        6
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };

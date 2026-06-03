@@ -187,6 +187,74 @@ static WordTestSuite logical_word_suites[] = {
         4
     },
 
+    {
+        "0<>", {
+            {"nonzero_pos", "42 0<> . CR",     "Should print: -1", TEST_NORMAL, 0, 1},
+            {"nonzero_neg", "-1 0<> . CR",     "Should print: -1", TEST_NORMAL, 0, 1},
+            {"zero",        "0 0<> . CR",      "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"empty_stack", "0<>",             "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "U<", {
+            {"less",        "3 5 U< . CR",     "Should print: -1", TEST_NORMAL, 0, 1},
+            {"equal",       "5 5 U< . CR",     "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"greater",     "7 5 U< . CR",     "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"zero_one",    "0 1 U< . CR",     "Should print: -1", TEST_NORMAL, 0, 1},
+            {"empty_stack", "U<",              "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        5
+    },
+
+    {
+        "U>", {
+            {"greater",     "5 3 U> . CR",     "Should print: -1", TEST_NORMAL, 0, 1},
+            {"equal",       "5 5 U> . CR",     "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"less",        "3 5 U> . CR",     "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"one_zero",    "1 0 U> . CR",     "Should print: -1", TEST_NORMAL, 0, 1},
+            {"empty_stack", "U>",              "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        5
+    },
+
+    {
+        "WITHIN", {
+            {"in_range",    "3 1 5 WITHIN . CR",  "Should print: -1", TEST_NORMAL, 0, 1},
+            {"at_low",      "1 1 5 WITHIN . CR",  "Should print: -1", TEST_NORMAL, 0, 1},
+            {"at_high",     "5 1 5 WITHIN . CR",  "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"below",       "0 1 5 WITHIN . CR",  "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"above",       "6 1 5 WITHIN . CR",  "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"empty_stack", "WITHIN",             "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        6
+    },
+
+    {
+        "TRUE", {
+            {"value",    "TRUE . CR",           "Should print: -1", TEST_NORMAL, 0, 1},
+            {"as_flag",  "TRUE 0= . CR",        "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"in_and",   "TRUE TRUE AND . CR",  "Should print: -1", TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
+    {
+        "FALSE", {
+            {"value",   "FALSE . CR",           "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"as_flag", "FALSE 0= . CR",        "Should print: -1", TEST_NORMAL, 0, 1},
+            {"in_or",   "TRUE FALSE OR . CR",   "Should print: -1", TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };

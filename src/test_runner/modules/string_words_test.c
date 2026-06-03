@@ -155,6 +155,47 @@ static WordTestSuite string_word_suites[] = {
         2
     },
 
+    {
+        "S\"", {
+            {"interpret_len",  "S\" hello\" . CR",                              "Should print: 5 (length)",  TEST_NORMAL, 0, 1},
+            {"interpret_type", "S\" hello\" TYPE CR",                           "Should print: hello",       TEST_NORMAL, 0, 1},
+            {"empty",          "S\" \" . CR",                                   "Should print: 0",           TEST_NORMAL, 0, 1},
+            {"compile_type",   ": TSQ S\" world\" TYPE CR ; TSQ",               "Should print: world",       TEST_NORMAL, 0, 1},
+            {"compile_len",    ": TSQ2 S\" forth\" SWAP DROP . CR ; TSQ2",       "Should print: 5",           TEST_NORMAL, 0, 1},
+            {"compile_twice",  ": TSQ3 S\" ab\" TYPE S\" cd\" TYPE CR ; TSQ3",  "Should print: abcd",        TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        6
+    },
+
+    {
+        "BL", {
+            {"value",    "BL . CR",              "Should print: 32",          TEST_NORMAL, 0, 1},
+            {"as_char",  "BL EMIT CR",           "Should emit a space",       TEST_NORMAL, 0, 1},
+            {"in_scan",  "HERE S\" a b\" BL SCAN SWAP DROP . CR", "Should find space at offset 1", TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
+    {
+        "SOURCE", {
+            {"returns_pair", "SOURCE SWAP DROP 0< NOT . CR",        "Should return non-negative length", TEST_NORMAL, 0, 1},
+            {"has_addr",     "SOURCE DROP 0<> . CR",         "Should return non-null address",    TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        2
+    },
+
+    {
+        ">IN", {
+            {"initial",    ">IN @ . CR",                   "Should return input offset",    TEST_NORMAL, 0, 1},
+            {"advances",   ": TWIN >IN @ DROP >IN @ SWAP - . CR ; TWIN", "Should advance >IN", TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        2
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };

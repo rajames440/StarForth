@@ -160,12 +160,18 @@ static int sf_fc_reserve(size_t i, size_t need) {
     size_t newcap = sf_fc_cap[i] ? sf_fc_cap[i] : 8;
     while (newcap < need) newcap <<= 1;
     DictEntry **old = sf_fc_list[i];
-    size_t old_count = sf_fc_count[i];
     DictEntry **newv = (DictEntry **) sf_xrealloc(old, newcap * sizeof(*newv));
     if (!newv) return 0;
-    /* Kernel sf_realloc is a bump allocator that does not copy; patch that up. */
-    if (newv != old && old && old_count > 0)
-        memcpy(newv, old, old_count * sizeof(*newv));
+    /* Kernel sf_realloc is a bump allocator that does not copy; patch that up.
+     * On hosted Linux, realloc already copied before freeing old — do NOT memcpy
+     * from freed memory (UB; glibc overwrites freed block with heap metadata). */
+#ifdef __STARKERNEL__
+    {
+        size_t old_count = sf_fc_count[i];
+        if (newv != old && old && old_count > 0)
+            memcpy(newv, old, old_count * sizeof(*newv));
+    }
+#endif
     sf_fc_list[i] = newv;
     sf_fc_cap[i] = newcap;
     return 1;

@@ -151,6 +151,71 @@ static WordTestSuite memory_word_suites[] = {
         2
     },
 
+    {
+        "+!", {
+            {"basic",       "10 HERE ! 5 HERE +! HERE @ . CR",                       "Should print: 15",  TEST_NORMAL, 0, 1},
+            {"by_zero",     "42 HERE ! 0 HERE +! HERE @ . CR",                       "Should print: 42",  TEST_NORMAL, 0, 1},
+            {"negative",    "10 HERE ! -3 HERE +! HERE @ . CR",                      "Should print: 7",   TEST_NORMAL, 0, 1},
+            {"accumulate",  "0 HERE ! 1 HERE +! 2 HERE +! 3 HERE +! HERE @ . CR",   "Should print: 6",   TEST_NORMAL, 0, 1},
+            {"empty_stack", "+!",                                                     "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        5
+    },
+
+    {
+        "-!", {
+            {"basic",       "10 HERE ! 3 HERE -! HERE @ . CR",      "Should print: 7",   TEST_NORMAL, 0, 1},
+            {"by_zero",     "42 HERE ! 0 HERE -! HERE @ . CR",      "Should print: 42",  TEST_NORMAL, 0, 1},
+            {"negative",    "10 HERE ! -5 HERE -! HERE @ . CR",     "Should print: 15",  TEST_NORMAL, 0, 1},
+            {"empty_stack", "-!",                                    "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "2!", {
+            {"basic",       "11 22 HERE 2! HERE @ . HERE 8 + @ . CR",  "Should print: 22 11",  TEST_NORMAL, 0, 1},
+            {"zeros",       "0 0 HERE 2! HERE @ . HERE 8 + @ . CR",    "Should print: 0 0",    TEST_NORMAL, 0, 1},
+            {"negative",    "-1 -2 HERE 2! HERE @ . HERE 8 + @ . CR",  "Should print: -2 -1",  TEST_NORMAL, 0, 1},
+            {"empty_stack", "2!",                                       "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "FILL", {
+            {"basic",       "HERE 8 65 FILL HERE C@ . HERE 1+ C@ . CR", "Should print: 65 65", TEST_NORMAL, 0, 1},
+            {"zero_n",      "HERE 0 88 FILL",                            "Should do nothing",   TEST_NORMAL, 0, 1},
+            {"zero_byte",   "HERE 4 0 FILL HERE C@ . CR",                "Should print: 0",     TEST_NORMAL, 0, 1},
+            {"empty_stack", "FILL",                                      "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "MOVE", {
+            {"basic",       "HERE 65 OVER C! HERE 1+ 66 OVER C! HERE HERE 16 + 2 MOVE HERE 16 + C@ . HERE 17 + C@ . CR", "Should print: 65 66", TEST_NORMAL, 0, 1},
+            {"zero_n",      "HERE HERE 8 + 0 MOVE",                                  "Should do nothing",   TEST_NORMAL, 0, 1},
+            {"empty_stack", "MOVE",                                                   "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
+    {
+        "ERASE", {
+            {"basic",       "HERE 4 65 FILL HERE 4 ERASE HERE C@ . HERE 3 + C@ . CR", "Should print: 0 0", TEST_NORMAL, 0, 1},
+            {"zero_n",      "HERE 0 ERASE",                                            "Should do nothing",  TEST_NORMAL, 0, 1},
+            {"empty_stack", "ERASE",                                                   "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
