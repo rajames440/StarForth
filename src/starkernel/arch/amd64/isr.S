@@ -153,13 +153,6 @@ ISR_NOERR 31
 isr_stub32:
     push 0
     push 0x20
-    push rax
-    push rdx
-    mov dx, 0x3F8
-    mov al, 0x49        /* 'I' */
-    out dx, al
-    pop rdx
-    pop rax
     jmp isr_common_entry
 
 /* Default stub for other vectors (33-255) */
