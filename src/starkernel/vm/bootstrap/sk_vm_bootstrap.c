@@ -163,7 +163,12 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
         sk_parity_print(pkt);
         return -1;
     }
-    log_set_level(LOG_NONE);
+#if SK_PARITY_DEBUG
+    log_set_level(LOG_DEBUG);
+#else
+    /* Enable LOG_TEST level to see test output and count statistics */
+    log_set_level(LOG_TEST);
+#endif
 
     /* Enable interpreter - required for POST to execute vm_interpret() calls */
     vm_enable_interpreter(vm);
