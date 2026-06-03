@@ -169,6 +169,29 @@ static WordTestSuite stack_word_suites[] = {
         2
     },
 
+    {
+        "?DUP", {
+            {"nonzero",     "42 ?DUP . . CR",     "Should print: 42 42",     TEST_NORMAL, 0, 1},
+            {"negative",    "-5 ?DUP . . CR",     "Should print: -5 -5",     TEST_NORMAL, 0, 1},
+            {"zero",        "0 ?DUP DEPTH . CR",  "Should not dup: depth 1", TEST_NORMAL, 0, 1},
+            {"empty_stack", "?DUP",               "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "-ROT", {
+            {"basic",       "1 2 3 -ROT . . . CR",       "Should print: 1 3 2",              TEST_NORMAL, 0, 1},
+            {"zeros",       "0 0 0 -ROT . . . CR",       "Should print: 0 0 0",              TEST_NORMAL, 0, 1},
+            {"roundtrip",   "1 2 3 -ROT ROT . . . CR",   "Should restore original order",    TEST_NORMAL, 0, 1},
+            {"two_items",   "1 2 -ROT",                  "Should cause stack underflow",     TEST_ERROR_CASE, 1, 1},
+            {"empty_stack", "-ROT",                      "Should cause stack underflow",     TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        5
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
