@@ -178,11 +178,11 @@ void run_all_tests(VM *vm) {
 
     /* Print test summary */
     log_message(LOG_INFO, "FINAL TEST SUMMARY:");
-    log_message(LOG_INFO, "  Total tests: %d", global_test_stats.total_tests);
-    log_message(LOG_INFO, "  Passed: %d", global_test_stats.total_pass);
-    log_message(LOG_INFO, "  Failed: %d", global_test_stats.total_fail);
-    log_message(LOG_INFO, "  Skipped: %d", global_test_stats.total_skip);
-    log_message(LOG_INFO, "  Errors: %d", global_test_stats.total_error);
+    log_message(LOG_INFO, "  Total tests run: %d", global_test_stats.total_tests);
+    log_message(LOG_INFO, "  Passed:          %d", global_test_stats.total_pass);
+    log_message(LOG_INFO, "  Failed:          %d", global_test_stats.total_fail);
+    log_message(LOG_INFO, "  Stubs (not yet implemented): %d", global_test_stats.total_skip);
+    log_message(LOG_INFO, "  Errors:          %d", global_test_stats.total_error);
 
     if (global_test_stats.total_fail == 0 && global_test_stats.total_error == 0) {
         log_message(LOG_INFO, "ALL IMPLEMENTED TESTS PASSED!");
