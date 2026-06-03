@@ -49,45 +49,9 @@
 #include "console.h"
 #include "apic.h"
 #include "timer.h"
-#include "q48_16.h"
 
 #define IDT_ENTRIES 256
 #define INTERRUPT_GATE 0x8E
-
-/* Print Q48.16 as decimal (e.g., "0.99609" for 0xFE00) */
-static void print_q48_16(q48_16_t q)
-{
-    /* Integer part */
-    uint64_t integer_part = q >> 16;
-    uint16_t frac_bits = (uint16_t)(q & 0xFFFF);
-
-    /* Print integer part */
-    char buf[32];
-    int i = 0;
-    uint64_t temp = integer_part;
-    if (temp == 0) {
-        buf[i++] = '0';
-    } else {
-        while (temp > 0 && i < (int)sizeof(buf)) {
-            buf[i++] = (char)('0' + (temp % 10));
-            temp /= 10;
-        }
-    }
-    while (i-- > 0) {
-        console_putc(buf[i]);
-    }
-
-    console_putc('.');
-
-    /* Fractional part: frac_bits / 65536 * 100000 to get 5 decimal digits */
-    uint64_t frac = ((uint64_t)frac_bits * 100000ULL) / 65536ULL;
-    char frac_buf[6] = {'0', '0', '0', '0', '0', '\0'};
-    for (int j = 4; j >= 0; j--) {
-        frac_buf[j] = (char)('0' + (frac % 10));
-        frac /= 10;
-    }
-    console_puts(frac_buf);
-}
 
 static inline void outb(uint16_t port, uint8_t val)
 {
@@ -109,7 +73,7 @@ struct idtr {
     uint64_t base;
 } __attribute__((packed));
 
-extern void *isr_stub_table[IDT_ENTRIES];
+extern void *isr_stub_table[IDT_ENTRIES] __attribute__((visibility("hidden")));
 
 /*
  * Assembly hands us:
@@ -213,16 +177,6 @@ void isr_common_handler(uint64_t vector,
     if (vector == APIC_TIMER_VECTOR) {
         heartbeat_tick();
 
-        /* Print every 100 ticks (1 second at 100Hz) for visibility */
-        uint64_t ticks = heartbeat_ticks();
-        if ((ticks % 100) == 0) {
-            console_puts("Heartbeat: ");
-            print_dec_u64(ticks);
-            console_puts(" ticks  TIME-TRUST=");
-            print_q48_16(heartbeat_trust());
-            console_println("");
-        }
-
         /* Acknowledge interrupt and return (don't halt!) */
         apic_eoi();
         return;
@@ -283,20 +237,15 @@ void isr_common_handler(uint64_t vector,
  * This is necessary because UEFI PE loading doesn't apply relocations to
  * addresses stored in the .data section (isr_stub_table).
  */
-extern void isr_stub0(void);  /* Defined in isr.S */
+extern void isr_stub0(void) __attribute__((visibility("hidden")));  /* Defined in isr.S */
 
 void arch_interrupts_init(void)
 {
-    /*
-     * Calculate relocation offset: difference between runtime address
-     * and link-time address stored in isr_stub_table[0].
-     */
     uint64_t link_time_addr = (uint64_t)isr_stub_table[0];
     uint64_t runtime_addr = (uint64_t)&isr_stub0;
     int64_t reloc_offset = (int64_t)(runtime_addr - link_time_addr);
 
     for (int i = 0; i < IDT_ENTRIES; ++i) {
-        /* Apply relocation offset to get correct runtime address */
         void *isr_addr = (void *)((uint64_t)isr_stub_table[i] + (uint64_t)reloc_offset);
         set_idt_entry(i, isr_addr);
     }
@@ -307,5 +256,4 @@ void arch_interrupts_init(void)
 
     lidt(&idtr_desc);
     pic_disable();
-    console_println("IDT installed.");
 }
