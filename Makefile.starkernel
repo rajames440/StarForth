@@ -232,6 +232,13 @@ KERNEL_CFLAGS += $(VM_FEATURE_OVERRIDES)
 LOADER_CFLAGS += $(VM_FEATURE_OVERRIDES)
 endif
 
+# SK_CMD — optional startup FORTH script injected before the interactive REPL.
+# Usage: make -f Makefile.starkernel qemu SK_CMD="TIME-TICKS . BYE"
+ifdef SK_CMD
+KERNEL_CFLAGS += -DSK_STARTUP_FORTH='"$(SK_CMD)"'
+LOADER_CFLAGS += -DSK_STARTUP_FORTH='"$(SK_CMD)"'
+endif
+
 # Self-test flags (div-by-zero, page fault, timer validation)
 ifdef DIV0_SELF_TEST
 KERNEL_CFLAGS += -DDIV0_SELF_TEST=$(DIV0_SELF_TEST)
