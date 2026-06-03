@@ -126,54 +126,65 @@ static WordTestSuite arithmetic_word_suites[] = {
 
     {
         "/MOD", {
-            {"basic", "17 5 /MOD . . CR", "Should print: 3 2", TEST_NORMAL, 0, 0}, /* Stub */
-            {"exact", "15 3 /MOD . . CR", "Should print: 5 0", TEST_NORMAL, 0, 0},
-            {"by_zero", "42 0 /MOD", "Should cause division by zero", TEST_ERROR_CASE, 1, 0},
+            {"basic",       "17 5 /MOD . . CR", "Should print: 3 2",              TEST_NORMAL,     0, 1},
+            {"exact",       "15 3 /MOD . . CR", "Should print: 5 0",              TEST_NORMAL,     0, 1},
+            {"negative",    "-17 5 /MOD . . CR","Should handle negative dividend", TEST_NORMAL,     0, 1},
+            {"by_zero",     "42 0 /MOD",        "Should cause division by zero",   TEST_ERROR_CASE, 1, 1},
+            {"empty_stack", "/MOD",             "Should cause stack underflow",    TEST_ERROR_CASE, 1, 1},
+            {"one_item",    "42 /MOD",          "Should cause stack underflow",    TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
-        3
+        6
     },
 
     {
         "ABS", {
-            {"positive", "42 ABS . CR", "Should print: 42", TEST_NORMAL, 0, 0}, /* Stub */
-            {"negative", "-42 ABS . CR", "Should print: 42", TEST_NORMAL, 0, 0},
-            {"zero", "0 ABS . CR", "Should print: 0", TEST_NORMAL, 0, 0},
-            {"min_int", "-2147483648 ABS . CR", "Should handle min int", TEST_EDGE_CASE, 0, 0},
+            {"positive",    "42 ABS . CR",          "Should print: 42",  TEST_NORMAL,     0, 1},
+            {"negative",    "-42 ABS . CR",         "Should print: 42",  TEST_NORMAL,     0, 1},
+            {"zero",        "0 ABS . CR",           "Should print: 0",   TEST_NORMAL,     0, 1},
+            {"min_int",     "-2147483648 ABS . CR", "Should print: 2147483648", TEST_EDGE_CASE, 0, 1},
+            {"empty_stack", "ABS",                  "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
-        4
+        5
     },
 
     {
         "NEGATE", {
-            {"positive", "42 NEGATE . CR", "Should print: -42", TEST_NORMAL, 0, 0}, /* Stub */
-            {"negative", "-42 NEGATE . CR", "Should print: 42", TEST_NORMAL, 0, 0},
-            {"zero", "0 NEGATE . CR", "Should print: 0", TEST_NORMAL, 0, 0},
-            {"min_int", "-2147483648 NEGATE . CR", "Should handle min int", TEST_EDGE_CASE, 0, 0},
+            {"positive",    "42 NEGATE . CR",          "Should print: -42", TEST_NORMAL,     0, 1},
+            {"negative",    "-42 NEGATE . CR",         "Should print: 42",  TEST_NORMAL,     0, 1},
+            {"zero",        "0 NEGATE . CR",           "Should print: 0",   TEST_NORMAL,     0, 1},
+            {"min_int",     "-2147483648 NEGATE . CR", "Should print: 2147483648", TEST_EDGE_CASE, 0, 1},
+            {"empty_stack", "NEGATE",                  "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
-        4
+        5
     },
 
     {
         "MIN", {
-            {"basic", "5 3 MIN . CR", "Should print: 3", TEST_NORMAL, 0, 0}, /* Stub */
-            {"equal", "42 42 MIN . CR", "Should print: 42", TEST_NORMAL, 0, 0},
-            {"negative", "-5 -3 MIN . CR", "Should print: -5", TEST_NORMAL, 0, 0},
+            {"basic",       "5 3 MIN . CR",    "Should print: 3",   TEST_NORMAL,     0, 1},
+            {"equal",       "42 42 MIN . CR",  "Should print: 42",  TEST_NORMAL,     0, 1},
+            {"negative",    "-5 -3 MIN . CR",  "Should print: -5",  TEST_NORMAL,     0, 1},
+            {"mixed",       "-1 1 MIN . CR",   "Should print: -1",  TEST_NORMAL,     0, 1},
+            {"one_item",    "42 MIN",          "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {"empty_stack", "MIN",             "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
-        3
+        6
     },
 
     {
         "MAX", {
-            {"basic", "5 3 MAX . CR", "Should print: 5", TEST_NORMAL, 0, 0}, /* Stub */
-            {"equal", "42 42 MAX . CR", "Should print: 42", TEST_NORMAL, 0, 0},
-            {"negative", "-5 -3 MAX . CR", "Should print: -3", TEST_NORMAL, 0, 0},
+            {"basic",       "5 3 MAX . CR",    "Should print: 5",   TEST_NORMAL,     0, 1},
+            {"equal",       "42 42 MAX . CR",  "Should print: 42",  TEST_NORMAL,     0, 1},
+            {"negative",    "-5 -3 MAX . CR",  "Should print: -3",  TEST_NORMAL,     0, 1},
+            {"mixed",       "-1 1 MAX . CR",   "Should print: 1",   TEST_NORMAL,     0, 1},
+            {"one_item",    "42 MAX",          "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {"empty_stack", "MAX",             "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
-        3
+        6
     },
 
     {
