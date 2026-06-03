@@ -211,19 +211,6 @@ void isr_common_handler(uint64_t vector,
 {
     /* Handle APIC timer interrupt (heartbeat) */
     if (vector == APIC_TIMER_VECTOR) {
-        /* Diagnostic: print saved RIP before doing anything else.
-         * If this is non-canonical (e.g. 0x6a006a...) then the CPU pushed
-         * a wrong interrupt frame — suspect a VMM page-table alias on the
-         * stack virtual address.  If it looks correct, the corruption is in
-         * the assembly cleanup after we return. */
-        console_puts("TIMER RIP=0x");
-        print_hex64(rip);
-        console_puts(" SP=0x");
-        print_hex64(stack_frame_ptr);
-        console_puts(" frm=0x");
-        print_hex64(*(uint64_t *)(uintptr_t)(stack_frame_ptr + 136u));
-        console_putc('\n');
-
         heartbeat_tick();
 
         /* Print every 100 ticks (1 second at 100Hz) for visibility */
