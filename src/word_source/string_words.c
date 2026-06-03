@@ -482,6 +482,31 @@ void string_word_enclose(VM *vm) {
 }
 
 /* S" ( -- c-addr u ) — parse string literal, store at HERE, push addr+len */
+/* (s") — runtime half of compiled S" ; reads inline [len][chars][pad] from
+ * the threaded-code stream via the return-stack IP, pushes ( c-addr u ), then
+ * advances IP past the padded block.  NOT immediate.
+ *
+ * Inline layout immediately after the (s") cell in the thread:
+ *   [1 length byte][n string bytes][padding to next cell boundary]
+ */
+static void string_runtime_s_quote(VM *vm) {
+    if (vm->rsp < 0) { vm->error = 1; return; }
+    uint8_t *data = (uint8_t *)(uintptr_t)vm->return_stack[vm->rsp];
+    if (!data) { vm->error = 1; return; }
+    uint8_t n = data[0];
+    /* c-addr points at the characters (byte after the length byte) */
+    vaddr_t caddr = vaddr_from_ptr(vm, data + 1);
+    /* advance IP past inline block */
+    size_t padded = (1 + (size_t)n + (sizeof(cell_t) - 1)) & ~(sizeof(cell_t) - 1);
+    vm->return_stack[vm->rsp] = (cell_t)(uintptr_t)(data + padded);
+    vm_push(vm, (cell_t)caddr);
+    vm_push(vm, (cell_t)n);
+}
+
+/* S" ( "ccc<quote>" -- c-addr u )
+ * Immediate.  Interpretation: parse string, store at HERE, push c-addr u.
+ * Compilation: compile (s") followed by inline [len][chars][pad].
+ */
 static void string_word_s_quote(VM *vm) {
     const char *src = vm->input_buffer;
     size_t pos = vm->input_pos;
@@ -513,7 +538,23 @@ static void string_word_s_quote(VM *vm) {
         return;
     }
 
-    /* Store at HERE — characters only, no count byte */
+    vm->input_pos = pos + 1;  /* advance past closing quote */
+
+    if (vm->mode == MODE_COMPILE) {
+        /* Compile (s") + inline [len][chars][pad] — mirrors ." / (do-string) */
+        DictEntry *s_rt = vm_find_word(vm, "(s\")", 4);
+        if (!s_rt) { vm->error = 1; return; }
+        vm_compile_word(vm, s_rt);
+        size_t padded = (1 + n + (sizeof(cell_t) - 1)) & ~(sizeof(cell_t) - 1);
+        uint8_t *raw = (uint8_t *)vm_allot(vm, padded);
+        if (!raw) { vm->error = 1; return; }
+        raw[0] = (uint8_t)n;
+        for (size_t i = 0; i < n; i++) raw[1 + i] = (uint8_t)src[start + i];
+        for (size_t i = 1 + n; i < padded; i++) raw[i] = 0;
+        return;
+    }
+
+    /* Interpret mode: store at HERE, push ( c-addr u ) */
     vaddr_t dst = (vaddr_t)vm->here;
     if (!vm_addr_ok(vm, dst, n + 1)) {
         vm->error = 1;
@@ -522,13 +563,9 @@ static void string_word_s_quote(VM *vm) {
     }
     for (size_t i = 0; i < n; i++)
         vm_store_u8(vm, dst + i, (uint8_t)src[start + i]);
-    vm_store_u8(vm, dst + n, 0); /* null terminator */
-
-    /* Advance past closing quote and advance HERE */
-    vm->input_pos = pos + 1;
+    vm_store_u8(vm, dst + n, 0);
     vm->here = (size_t)(dst + n + 1);
 
-    /* Leave ( c-addr u ) */
     vm_push(vm, (cell_t)dst);
     vm_push(vm, (cell_t)n);
 
@@ -983,7 +1020,9 @@ void register_string_words(VM *vm) {
     register_word(vm, "QUERY", string_word_query);
     register_word(vm, "TIB", string_word_tib);
     register_word(vm, "WORD", string_word_word);
+    register_word(vm, "(s\")", string_runtime_s_quote);
     register_word(vm, "S\"", string_word_s_quote);
+    vm_make_immediate(vm);
     register_word(vm, ">IN", string_word_to_in);
     register_word(vm, "SOURCE", string_word_source);
     register_word(vm, "BL", string_word_bl);
