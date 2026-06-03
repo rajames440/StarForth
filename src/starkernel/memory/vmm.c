@@ -129,9 +129,10 @@ static uint64_t *get_table(uint64_t *parent, uint16_t idx) {
 
 static uint64_t make_pte(uint64_t paddr, uint64_t flags) {
     uint64_t pte = paddr & ADDR_MASK;
-    if (flags & VMM_FLAG_PRESENT) pte |= PTE_PRESENT;
-    if (flags & VMM_FLAG_WRITABLE) pte |= PTE_WRITABLE;
-    if (flags & VMM_FLAG_USER) pte |= PTE_USER;
+    if (flags & VMM_FLAG_PRESENT)       pte |= PTE_PRESENT;
+    if (flags & VMM_FLAG_WRITABLE)      pte |= PTE_WRITABLE;
+    if (flags & VMM_FLAG_USER)          pte |= PTE_USER;
+    if (flags & VMM_FLAG_CACHE_DISABLE) pte |= PTE_PCD;
     if (!(flags & VMM_FLAG_NX)) pte &= ~PTE_NX;
     else pte |= PTE_NX;
     return pte;
@@ -334,12 +335,14 @@ int vmm_init(BootInfo *boot_info) {
         }
     }
 
-    /* Map LAPIC and HPET identity */
-    if (vmm_map_range(lapic_phys_base, lapic_phys_base, VMM_PAGE_SIZE, VMM_FLAG_WRITABLE) != 0) {
+    /* Map LAPIC and HPET identity — cache-disabled (PCD) as required for MMIO */
+    if (vmm_map_range(lapic_phys_base, lapic_phys_base, VMM_PAGE_SIZE,
+                      VMM_FLAG_WRITABLE | VMM_FLAG_CACHE_DISABLE) != 0) {
         console_println("VMM init failed: map LAPIC MMIO");
         return -1;
     }
-    if (vmm_map_range(hpet_phys_base, hpet_phys_base, VMM_PAGE_SIZE, VMM_FLAG_WRITABLE) != 0) {
+    if (vmm_map_range(hpet_phys_base, hpet_phys_base, VMM_PAGE_SIZE,
+                      VMM_FLAG_WRITABLE | VMM_FLAG_CACHE_DISABLE) != 0) {
         console_println("VMM init failed: map HPET MMIO");
         return -1;
     }

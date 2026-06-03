@@ -109,7 +109,7 @@ struct idtr {
     uint64_t base;
 } __attribute__((packed));
 
-extern void *isr_stub_table[IDT_ENTRIES];
+extern void *isr_stub_table[IDT_ENTRIES] __attribute__((visibility("hidden")));
 
 /*
  * Assembly hands us:
@@ -211,6 +211,19 @@ void isr_common_handler(uint64_t vector,
 {
     /* Handle APIC timer interrupt (heartbeat) */
     if (vector == APIC_TIMER_VECTOR) {
+        /* Diagnostic: print saved RIP before doing anything else.
+         * If this is non-canonical (e.g. 0x6a006a...) then the CPU pushed
+         * a wrong interrupt frame — suspect a VMM page-table alias on the
+         * stack virtual address.  If it looks correct, the corruption is in
+         * the assembly cleanup after we return. */
+        console_puts("TIMER RIP=0x");
+        print_hex64(rip);
+        console_puts(" SP=0x");
+        print_hex64(stack_frame_ptr);
+        console_puts(" frm=0x");
+        print_hex64(*(uint64_t *)(uintptr_t)(stack_frame_ptr + 136u));
+        console_putc('\n');
+
         heartbeat_tick();
 
         /* Print every 100 ticks (1 second at 100Hz) for visibility */
@@ -283,7 +296,7 @@ void isr_common_handler(uint64_t vector,
  * This is necessary because UEFI PE loading doesn't apply relocations to
  * addresses stored in the .data section (isr_stub_table).
  */
-extern void isr_stub0(void);  /* Defined in isr.S */
+extern void isr_stub0(void) __attribute__((visibility("hidden")));  /* Defined in isr.S */
 
 void arch_interrupts_init(void)
 {
@@ -295,10 +308,34 @@ void arch_interrupts_init(void)
     uint64_t runtime_addr = (uint64_t)&isr_stub0;
     int64_t reloc_offset = (int64_t)(runtime_addr - link_time_addr);
 
+    /* Print addresses of the data structures themselves, then their values */
+    console_puts("isr_stub_table @ 0x");
+    print_hex64((uint64_t)(void *)isr_stub_table);
+    console_puts(" [0]= 0x");
+    print_hex64(link_time_addr);
+    console_putc('\n');
+    console_puts("&isr_stub0     = 0x");
+    print_hex64(runtime_addr);
+    console_puts(" stub_table_link_vs_run delta=0x");
+    print_hex64((uint64_t)reloc_offset);
+    console_putc('\n');
+
     for (int i = 0; i < IDT_ENTRIES; ++i) {
         /* Apply relocation offset to get correct runtime address */
         void *isr_addr = (void *)((uint64_t)isr_stub_table[i] + (uint64_t)reloc_offset);
         set_idt_entry(i, isr_addr);
+    }
+
+    /* Verify IDT entry for vector 32 (APIC timer) */
+    {
+        uint64_t h32 = (uint64_t)idt[32].offset_low
+                     | ((uint64_t)idt[32].offset_mid  << 16)
+                     | ((uint64_t)idt[32].offset_high << 32);
+        console_puts("IDT[32] handler=0x");
+        print_hex64(h32);
+        console_puts(" (isr_stub32 run=0x");
+        print_hex64((uint64_t)isr_stub_table[32] + (uint64_t)reloc_offset);
+        console_println(")");
     }
 
     struct idtr idtr_desc;

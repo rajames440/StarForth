@@ -190,6 +190,16 @@ static void print_banner(void) {
  * At this point we own the machine - no UEFI services available.
  */
 void kernel_main(BootInfo *boot_info) {
+    /*
+     * Establish our own GDT before anything else.  UEFI hands us CS=0x38
+     * (OVMF's 64-bit segment at GDT[7]).  Our IDT entries use selector 0x08,
+     * so if UEFI's GDT[1] (0x08) is not a valid 64-bit code descriptor the
+     * ISR will run with the wrong CS type and all serial output from the ISR
+     * will fail silently.  arch_early_init() installs a minimal GDT with a
+     * proper 64-bit code segment at 0x08 and reloads CS via lretq.
+     */
+    arch_early_init();
+
     /* M1: Console initialization */
     console_init();
     print_banner();
@@ -323,11 +333,35 @@ void kernel_main(BootInfo *boot_info) {
     arch_enable_interrupts();
     console_println("Heartbeat running.");
 
+
 #ifdef STARFORTH_ENABLE_VM
-    sk_repl((VM *)sk_get_mama_vm());
+    VM *mama = (VM *)sk_get_mama_vm();
+
+    /*
+     * SK_STARTUP_FORTH — optional compile-time FORTH script injected before
+     * the interactive REPL.  Useful for automated testing from the Makefile:
+     *   make -f Makefile.starkernel qemu SK_CMD="TIME-TICKS . BYE"
+     * The kernel executes the string, then either exits (if BYE is included)
+     * or falls through to the interactive REPL.
+     */
+#ifdef SK_STARTUP_FORTH
+    console_puts("Startup: ");
+    console_println(SK_STARTUP_FORTH);
+    vm_interpret(mama, SK_STARTUP_FORTH);
+    if (mama->error) {
+        console_puts("Startup: ERROR\n");
+        mama->error = 0;
+    }
+    if (mama->halted) goto idle;
+#endif
+
+    sk_repl(mama);
 #endif
 
     /* Idle loop (reached if sk_repl exits via BYE or vm->halted) */
+#ifdef SK_STARTUP_FORTH
+idle:
+#endif
     for (;;) {
         arch_halt();
     }

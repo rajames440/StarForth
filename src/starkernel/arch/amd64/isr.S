@@ -17,6 +17,16 @@
     .intel_syntax noprefix
     .section .text
 
+/* Mark symbols referenced from C as hidden so the C compiler uses direct
+ * RIP-relative addressing (LEA) rather than GOT indirection.  Without this,
+ * -fPIC code collapses the GOT reference to a direct MOV that reads the
+ * symbol's *bytes* instead of its *address*, corrupting the IDT setup. */
+.hidden isr_stub_table
+.hidden isr_stub0
+.hidden isr_stub32
+.hidden isr_stub_default
+.hidden isr_common_entry
+
 .macro ISR_NOERR num
     .global isr_stub\num
 isr_stub\num:
@@ -136,7 +146,21 @@ ISR_ERR   30
 ISR_NOERR 31
 
 /* Stub for APIC Timer (vector 0x20 = 32) */
-ISR_NOERR 32
+/* Diagnostic: write raw 'I' to COM1 (0x3F8) when stub is entered.
+ * If 'I' never appears in the serial log, the stub is never reached
+ * (bad IDT entry or fault during CPU interrupt delivery). */
+    .global isr_stub32
+isr_stub32:
+    push 0
+    push 0x20
+    push rax
+    push rdx
+    mov dx, 0x3F8
+    mov al, 0x49        /* 'I' */
+    out dx, al
+    pop rdx
+    pop rax
+    jmp isr_common_entry
 
 /* Default stub for other vectors (33-255) */
 .global isr_stub_default
