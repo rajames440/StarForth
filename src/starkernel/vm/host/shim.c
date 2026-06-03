@@ -113,7 +113,7 @@ void *realloc(void *ptr, size_t size) {
 /* -----------------------------------------------------------------------------
  * Minimal logging stubs (no formatting)
  * ---------------------------------------------------------------------------*/
-static LogLevel current_level = LOG_INFO;
+static LogLevel current_level = LOG_NONE;
 
 void log_set_level(LogLevel level) { current_level = level; }
 LogLevel log_get_level(void) { return current_level; }
