@@ -46,6 +46,8 @@
  */
 
 #include "console.h"
+#include "framebuffer.h"
+#include "vt100.h"
 #include "arch.h"
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -202,8 +204,11 @@ static void emit_prefix(void) {
 /**
  * Write a single character to serial console.
  * Emits "[VMName] " at the start of each new line when a VM name is set.
+ * Also mirrors output to the framebuffer VT100 terminal when available.
+ * Serial output is ALWAYS active regardless of framebuffer state.
  */
 void console_putc(char c) {
+    /* --- serial UART path (always on) --- */
     if (g_active_vm_name && g_line_start && c != '\n') {
         emit_prefix();
         g_line_start = 0;
@@ -211,6 +216,11 @@ void console_putc(char c) {
     raw_putc(c);
     if (c == '\n') {
         g_line_start = 1;
+    }
+
+    /* --- framebuffer VT100 path (when available) --- */
+    if (fb_is_available()) {
+        vt100_putc(c);
     }
 }
 
@@ -248,6 +258,21 @@ int console_poll(void) {
 #else
     return 0;
 #endif
+}
+
+/**
+ * Initialize the framebuffer VT100 terminal and attach it to the console.
+ * Safe to call with info == NULL or when the framebuffer base is zero (no-op).
+ * After this call every console_putc / console_puts output is mirrored to
+ * the screen; the serial UART continues to function concurrently.
+ */
+void console_fb_init(const FramebufferInfo *info, FbPixelFormat fmt)
+{
+    if (!info || !info->base) return;
+    fb_init(info, fmt);
+    if (fb_is_available()) {
+        vt100_init();
+    }
 }
 
 /**
