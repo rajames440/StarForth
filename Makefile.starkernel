@@ -817,6 +817,54 @@ endif
 # INFO / HELP
 # ==============================================================================
 
+# ==============================================================================
+# Host render harness — framebuffer/VT100 unit tests (no QEMU needed)
+# Compiles framebuffer.c + vt100.c + font_8x16.c with host gcc into a test
+# program that renders an ANSI test page, asserts on pixels, and writes PNGs.
+# ==============================================================================
+
+FBTEST_BIN  := build/host/fbtest
+FBTEST_SRCS := tools/fbtest.c \
+               src/starkernel/hal/framebuffer.c \
+               src/starkernel/hal/vt100.c \
+               src/starkernel/hal/font_8x16.c
+
+$(FBTEST_BIN): $(FBTEST_SRCS)
+	@mkdir -p build/host
+	@echo "HOSTCC  fbtest"
+	@cc -std=c99 -Wall -Wextra -O2 \
+	    -Iinclude/starkernel \
+	    -Iinclude \
+	    -Wno-unused-variable \
+	    -o $@ $^
+
+.PHONY: fbtest
+fbtest: $(FBTEST_BIN)
+	@mkdir -p build/host
+	@echo "=== Running framebuffer console host render test ==="
+	@$(FBTEST_BIN) && echo "" && echo "Images written to build/host/"
+
+# ==============================================================================
+# QEMU screendump — end-to-end framebuffer capture (amd64 only)
+# Boots the real kernel under QEMU + QMP monitor, waits for ok>, and captures
+# the GOP framebuffer surface to a PNG via screendump.
+# Requires: socat, imagemagick (convert), amd64 OVMF
+# ==============================================================================
+
+.PHONY: qemu-screenshot
+qemu-screenshot: all
+ifeq ($(ARCH),amd64)
+	@echo "=== Framebuffer screendump (amd64) ==="
+	@bash scripts/qemu_screenshot.sh \
+	    "$(LOADER_EFI)" \
+	    "$(OVMF_CODE)" \
+	    "$(OVMF_VARS_RO)" \
+	    "$(BUILD_DIR)" \
+	    "$(QEMU_LOG_DIR)"
+else
+	@echo "qemu-screenshot is only supported for amd64"; exit 1
+endif
+
 info:
 	@echo "StarKernel Build Configuration"
 	@echo "==============================="
