@@ -41,18 +41,35 @@
  */
 
 /**
- * console.h - Serial console interface for StarKernel
+ * console.h - Serial console + framebuffer VT100 interface for StarKernel
+ *
+ * Output policy:
+ *   - Serial UART is always active (initialized by console_init).
+ *   - When console_fb_init() has been called and the framebuffer is ready,
+ *     every character is also rendered through the VT100 terminal on screen.
+ *   - Both outputs are always live simultaneously; serial cannot be disabled.
  */
 
 #ifndef STARKERNEL_CONSOLE_H
 #define STARKERNEL_CONSOLE_H
 
 #include <stdint.h>
+#include "uefi.h"
 
 /**
- * Initialize serial console (UART)
+ * Initialize serial console (UART).
+ * Must be called once during early kernel boot.
  */
 void console_init(void);
+
+/**
+ * Initialize the framebuffer VT100 terminal.
+ * Call after UEFI boot services have been exited and the GOP framebuffer
+ * address is known (from BootInfo).  Safe to call with info==NULL (no-op).
+ * fmt: FB_PIXEL_BGRX32 is correct for most QEMU / real hardware GOP.
+ */
+#include "framebuffer.h"
+void console_fb_init(const FramebufferInfo *info, FbPixelFormat fmt);
 
 /**
  * Write a single character to serial console

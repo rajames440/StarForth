@@ -200,8 +200,9 @@ void kernel_main(BootInfo *boot_info) {
      */
     arch_early_init();
 
-    /* M1: Console initialization */
+    /* M1: Console initialization — serial UART first, then framebuffer VT100 */
     console_init();
+    console_fb_init(&boot_info->framebuffer, FB_PIXEL_BGRX32);
     print_banner();
     print_boot_info(boot_info);
 
