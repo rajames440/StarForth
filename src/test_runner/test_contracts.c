@@ -19,6 +19,13 @@
 /* Global violation counter (defined here; declared extern in test_contracts.h) */
 int global_contract_violations = 0;
 
+/*
+ * Accessor functions — same-TU direct access avoids R_X86_64_REX_GOTPCRELX
+ * double-dereference in -fPIC PE builds where GOTPCRELX is not relaxed to LEA.
+ */
+int  contract_get_violation_count(void)  { return global_contract_violations; }
+void contract_reset_violation_count(void) { global_contract_violations = 0; }
+
 /* ============================================================================
  * xorshift64 RNG — deterministic, seeded per-round so each perturbation
  * produces a distinct physics state.

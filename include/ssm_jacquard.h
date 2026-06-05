@@ -99,17 +99,6 @@ typedef enum {
 } ssm_l8_mode_t;
 
 /* ============================================================================
- * L8 State
- * ============================================================================
- */
-
-typedef struct {
-    ssm_l8_mode_t current_mode;       /* Current operating mode (C0-C3) */
-    uint32_t hysteresis_counter;      /* Counts consecutive ticks before mode change */
-    ssm_l8_mode_t pending_mode;       /* Mode waiting for hysteresis confirmation */
-} ssm_l8_state_t;
-
-/* ============================================================================
  * L8 Metrics (Input to Mode Selection)
  * ============================================================================
  */
@@ -119,6 +108,8 @@ typedef struct {
     double cv;                        /* Coefficient of variation (short-term volatility) */
     double temporal_decay;            /* Temporal locality strength (0.0-1.0) */
     double stability_score;           /* Combined stability metric for hysteresis */
+    int    inference_ran_this_tick;   /* 1 if inference engine ran this tick */
+    int    inference_early_exited;    /* 1 if inference early-exited (ANOVA stable) */
 } ssm_l8_metrics_t;
 
 /* ============================================================================
@@ -159,42 +150,161 @@ typedef struct {
 #endif
 
 /* ============================================================================
+ * Adaptive Table Constants (L8 Heat-Ranked 128-Config Selector)
+ * Trial duration is a relative-time promise in ticks, not wall-clock.
+ * Half-life of benefit score ≈ 69 trials. Calibrate against observed
+ * regime dwell time measured in trials, not seconds.
+ * ============================================================================
+ */
+
+#ifndef SSM_MIN_TRIAL_TICKS
+#define SSM_MIN_TRIAL_TICKS       2000u   /* 2 × HEARTBEAT_INFERENCE_FREQUENCY */
+#endif
+
+#ifndef SSM_SCORE_MAX
+#define SSM_SCORE_MAX             65535u
+#endif
+
+#ifndef SSM_SCORE_MIN
+#define SSM_SCORE_MIN             0u
+#endif
+
+/* DECAY_FACTOR 0.99 in Q16: floor(0.99 * 65536) = 64881 */
+#ifndef SSM_SCORE_DECAY_FACTOR_Q16
+#define SSM_SCORE_DECAY_FACTOR_Q16  64881u
+#endif
+
+/* UCB exploration coefficient: 10% of SCORE_MAX */
+#ifndef SSM_UCB_K
+#define SSM_UCB_K                 6554u
+#endif
+
+/* Reward gain: 25% of SCORE_MAX per trial */
+#ifndef SSM_REWARD_GAIN
+#define SSM_REWARD_GAIN           16384u
+#endif
+
+/* Combined-stability weights in Q16 (Option A fixed split, see design doc §5.4) */
+/* w_joint = 0.75 = 49152/65536, w_anova = 0.25 = 16384/65536 */
+#ifndef SSM_JOINT_WEIGHT_Q16
+#define SSM_JOINT_WEIGHT_Q16      49152u
+#endif
+
+#ifndef SSM_ANOVA_WEIGHT_Q16
+#define SSM_ANOVA_WEIGHT_Q16      16384u
+#endif
+
+/* ============================================================================
+ * 7-bit Config Bit Positions (b6=L1, b5=L2, b4=L3, b3=L4, b2=L5, b1=L6, b0=L7)
+ * ============================================================================
+ */
+
+#define SSM_CFG_L1  0x40u
+#define SSM_CFG_L2  0x20u
+#define SSM_CFG_L3  0x10u
+#define SSM_CFG_L4  0x08u
+#define SSM_CFG_L5  0x04u
+#define SSM_CFG_L6  0x02u
+#define SSM_CFG_L7  0x01u
+
+/* ============================================================================
+ * Adaptive Table Data Structures
+ * ============================================================================
+ */
+
+/* One entry: per-config metadata used by the reward signal */
+typedef struct {
+    uint8_t  config_bits;    /* 7-bit DoE config (b6=L1..b0=L7) */
+    uint8_t  _pad[3];
+    uint32_t benefit_score;  /* Heat analog in [SSM_SCORE_MIN, SSM_SCORE_MAX] */
+    uint32_t trial_count;    /* Total completed trials for this config */
+    uint32_t prev_window;    /* effective_window_size at end of last trial (0 = none) */
+    uint64_t prev_slope;     /* decay_slope_q48 at end of last trial (0 = none) */
+} SsmConfigEntry;            /* 24 bytes */
+
+/* Full stratified table: 8 regime bins × 128 configs */
+typedef struct {
+    SsmConfigEntry entries[128];           /* Per-config metadata      (3,072 bytes) */
+    uint32_t       regime_scores[8][128];  /* Benefit score per (r,c)  (4,096 bytes) */
+    uint32_t       regime_trials[8][128];  /* Trial count per (r,c)    (4,096 bytes) */
+    uint8_t        current_config;         /* Active config index 0-127 */
+    uint8_t        current_regime;         /* Regime bin at trial start */
+    uint8_t        _pad[2];
+    uint32_t       trial_tick_count;       /* Ticks in current trial (relative time) */
+    uint32_t       inference_runs_this_trial;  /* Inference runs in current trial */
+    uint32_t       anova_exits_this_trial;     /* Phase 2A early-exits this trial */
+    uint32_t       total_regime_trials[8]; /* Total trials per regime (UCB ln term) */
+} SsmConfigTable;                          /* ~11.3 KB, L1-cache resident */
+
+/* ============================================================================
+ * L8 State (extended with adaptive table pointer)
+ * ============================================================================
+ */
+
+typedef struct {
+    ssm_l8_mode_t   current_mode;       /* Mirrored from table for diagnostics */
+    uint32_t        hysteresis_counter; /* Legacy threshold mode hysteresis */
+    ssm_l8_mode_t   pending_mode;       /* Legacy threshold mode pending */
+    SsmConfigTable *table;              /* NULL = legacy threshold; non-NULL = adaptive */
+} ssm_l8_state_t;
+
+/* ============================================================================
  * L8 API
  * ============================================================================
  */
 
 /**
- * @brief Initialize L8 state
- *
- * @param state L8 state to initialize
- * @param initial_mode Starting mode (default: C0_CRUISE)
+ * @brief Initialize L8 state (legacy fields only; call ssm_l8_init_table separately)
  */
 void ssm_l8_init(ssm_l8_state_t *state, ssm_l8_mode_t initial_mode);
 
 /**
- * @brief Update L8 state based on current metrics
+ * @brief Allocate and seed the adaptive config table
+ * Sets state->table; must be called after ssm_l8_init().
+ * On allocation failure, state->table remains NULL (legacy mode is used).
+ */
+void ssm_l8_init_table(ssm_l8_state_t *state);
+
+/**
+ * @brief Free the adaptive config table
+ */
+void ssm_l8_free_table(ssm_l8_state_t *state);
+
+/**
+ * @brief Per-tick update for the adaptive table path
  *
- * Uses rule-based classification to select mode based on entropy and CV.
- * Includes hysteresis to prevent rapid mode flapping.
+ * Accumulates tick count and ANOVA exit stats. Runs trial-end reward
+ * computation + UCB selection every SSM_MIN_TRIAL_TICKS ticks and
+ * applies the selected config to ssm_config_t.
  *
- * @param metrics Current runtime metrics (ns_ewma, cv, entropy)
- * @param state L8 state (updated in-place)
+ * @param state      L8 state (must have state->table != NULL)
+ * @param metrics    Current runtime metrics including inference status
+ * @param config     SSM config to update when a trial ends
+ * @param current_window  VM's effective_window_size this tick
+ * @param current_slope   VM's decay_slope_q48 this tick
+ */
+void ssm_l8_update_table(ssm_l8_state_t *state, const ssm_l8_metrics_t *metrics,
+                         ssm_config_t *config,
+                         uint32_t current_window, uint64_t current_slope);
+
+/**
+ * @brief Apply the current table config to ssm_config_t
+ * Used on first tick to set the initial DoE-seeded config immediately.
+ */
+void ssm_apply_mode_from_table(const ssm_l8_state_t *state, ssm_config_t *config);
+
+/**
+ * @brief Update L8 state based on current metrics (legacy threshold path)
  */
 void ssm_l8_update(const ssm_l8_metrics_t *metrics, ssm_l8_state_t *state);
 
 /**
- * @brief Apply L8 mode to SSM configuration (set L3/L4 bits)
- *
- * @param state L8 state containing current mode
- * @param config SSM configuration to update (L3/L4 bits)
+ * @brief Apply L8 mode to SSM configuration (legacy threshold path)
  */
 void ssm_apply_mode(const ssm_l8_state_t *state, ssm_config_t *config);
 
 /**
  * @brief Get human-readable mode name
- *
- * @param mode Mode to describe
- * @return Static string describing mode (e.g., "C0_CRUISE")
  */
 const char* ssm_l8_mode_name(ssm_l8_mode_t mode);
 

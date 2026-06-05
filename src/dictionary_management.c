@@ -159,8 +159,19 @@ static int sf_fc_reserve(size_t i, size_t need) {
     if (sf_fc_cap[i] >= need) return 1;
     size_t newcap = sf_fc_cap[i] ? sf_fc_cap[i] : 8;
     while (newcap < need) newcap <<= 1;
-    DictEntry **newv = (DictEntry **) sf_xrealloc(sf_fc_list[i], newcap * sizeof(*newv));
+    DictEntry **old = sf_fc_list[i];
+    DictEntry **newv = (DictEntry **) sf_xrealloc(old, newcap * sizeof(*newv));
     if (!newv) return 0;
+    /* Kernel sf_realloc is a bump allocator that does not copy; patch that up.
+     * On hosted Linux, realloc already copied before freeing old — do NOT memcpy
+     * from freed memory (UB; glibc overwrites freed block with heap metadata). */
+#ifdef __STARKERNEL__
+    {
+        size_t old_count = sf_fc_count[i];
+        if (newv != old && old && old_count > 0)
+            memcpy(newv, old, old_count * sizeof(*newv));
+    }
+#endif
     sf_fc_list[i] = newv;
     sf_fc_cap[i] = newcap;
     return 1;
@@ -274,6 +285,7 @@ DictEntry *vm_find_word(VM *vm, const char *name, size_t len) {
     /* NEWEST-first: scan backwards so recent defs win and we bail early. */
     for (size_t i = n; i-- > 0;) {
         DictEntry *e = bucket[i];
+        if (!e) continue;
 
         /* Length check first - most discriminating and cheapest */
         if ((size_t) e->name_len != len) continue;

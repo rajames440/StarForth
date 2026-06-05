@@ -61,8 +61,14 @@
 #define LAPIC_DEFAULT_PHYS     0xFEE00000u
 #define LAPIC_VIRT_BASE        0xFEE00000u  /* identity-mapped */
 
+/* IA32_APIC_BASE MSR */
+#define IA32_APIC_BASE_MSR          0x1Bu
+#define IA32_APIC_BASE_GLOBAL_EN    (1ull << 11)  /* Global APIC hardware enable */
+#define IA32_APIC_BASE_X2APIC_EN    (1ull << 10)  /* x2APIC mode enable */
+
 /* Core registers */
 #define APIC_REG_ID            0x020  /* APIC ID */
+#define APIC_REG_TPR           0x080  /* Task Priority Register */
 #define APIC_REG_EOI           0x0B0  /* End of Interrupt */
 #define APIC_REG_SIVR          0x0F0  /* Spurious Interrupt Vector Register */
 
@@ -98,6 +104,25 @@ static uint64_t timer_period_tsc_ticks = 0;
 static uint32_t timer_tick_hz = 0;
 
 /* ============================================================================
+ * MSR access (freestanding — no libgcc, no libc)
+ * ============================================================================ */
+
+static uint64_t rdmsr64(uint32_t msr)
+{
+    uint32_t lo, hi;
+    __asm__ volatile ("rdmsr" : "=a"(lo), "=d"(hi) : "c"(msr));
+    return ((uint64_t)hi << 32) | lo;
+}
+
+static void wrmsr64(uint32_t msr, uint64_t val)
+{
+    __asm__ volatile ("wrmsr"
+        : : "a"((uint32_t)(val & 0xFFFFFFFFu)),
+            "d"((uint32_t)(val >> 32)),
+            "c"(msr));
+}
+
+/* ============================================================================
  * Low-level APIC access
  * ============================================================================ */
 
@@ -118,12 +143,64 @@ int apic_init(BootInfo *boot_info) {
     lapic_phys_base = LAPIC_DEFAULT_PHYS;
     lapic_base = (volatile uint32_t *)(uintptr_t)LAPIC_VIRT_BASE;
 
-    /* Enable local APIC via Spurious Interrupt Vector Register */
-    const uint8_t  SPURIOUS_VECTOR = 0xFF;
-    const uint32_t APIC_ENABLE = (1u << 8);
+    /*
+     * Read IA32_APIC_BASE MSR.  UEFI (OVMF) may have left the APIC in x2APIC
+     * mode (bit 10) or may have left the global hardware enable (bit 11) in an
+     * indeterminate state.  We need xAPIC MMIO mode with global enable set.
+     */
+    uint64_t apic_base_msr = rdmsr64(IA32_APIC_BASE_MSR);
+    console_puts("APIC: IA32_APIC_BASE MSR=0x");
+    {
+        /* print upper 32 bits then lower 32 bits */
+        uint32_t hi = (uint32_t)(apic_base_msr >> 32);
+        uint32_t lo = (uint32_t)(apic_base_msr & 0xFFFFFFFFu);
+        for (int s = 28; s >= 0; s -= 4)
+            console_putc("0123456789abcdef"[(hi >> s) & 0xF]);
+        for (int s = 28; s >= 0; s -= 4)
+            console_putc("0123456789abcdef"[(lo >> s) & 0xF]);
+    }
+    console_putc('\n');
 
+    if (apic_base_msr & IA32_APIC_BASE_X2APIC_EN) {
+        /*
+         * x2APIC is active.  Switching back to xAPIC requires: disable x2APIC
+         * (clear bit 10) while keeping global enable (bit 11) set.
+         * Intel SDM Vol.3 §10.12.5: software must not clear both bits at once.
+         */
+        console_puts("APIC: x2APIC active — switching to xAPIC MMIO mode\n");
+        apic_base_msr &= ~IA32_APIC_BASE_X2APIC_EN;
+        wrmsr64(IA32_APIC_BASE_MSR, apic_base_msr);
+    }
+
+    if (!(apic_base_msr & IA32_APIC_BASE_GLOBAL_EN)) {
+        console_puts("APIC: global enable was clear — asserting bit 11\n");
+        apic_base_msr |= IA32_APIC_BASE_GLOBAL_EN;
+        wrmsr64(IA32_APIC_BASE_MSR, apic_base_msr);
+    }
+
+    /* Software-enable APIC and set spurious vector */
+    const uint8_t  SPURIOUS_VECTOR = 0xFF;
+    const uint32_t APIC_ENABLE     = (1u << 8);
     lapic_write(APIC_REG_SIVR, APIC_ENABLE | SPURIOUS_VECTOR);
-    console_println("APIC enabled (SIVR=0xFF).");
+
+    /*
+     * Clear Task Priority Register.  If UEFI left TPR non-zero, all APIC
+     * interrupts at or below that priority are silently suppressed — the timer
+     * ISR never fires.  TPR=0 allows all priorities through.
+     */
+    lapic_write(APIC_REG_TPR, 0);
+
+    /*
+     * Issue a spurious EOI to clear any stale in-service interrupt left by
+     * UEFI firmware.  UEFI's last APIC timer tick may have fired just before
+     * ExitBootServices with no subsequent EOI; the APIC's ISR then shows
+     * vector 0x20 still "in service", which suppresses all future 0x20
+     * delivery until an EOI is written.  Issuing EOI here is always safe —
+     * it is a no-op if the ISR is already clear.
+     */
+    lapic_write(APIC_REG_EOI, 0);
+
+    console_puts("APIC: initialized (xAPIC MMIO, TPR=0, SIVR=0x1FF, EOI-clear)\n");
     return 0;
 }
 
@@ -275,11 +352,39 @@ int apic_timer_init(uint64_t tsc_hz, uint32_t tick_hz) {
 }
 
 void apic_timer_start(void) {
-    /* Unmask the timer to start periodic interrupts */
+    /* Unmask the timer first */
     uint32_t lvt = lapic_read(APIC_REG_LVT_TIMER);
-    lvt &= ~LVT_MASKED;  /* Clear mask bit */
+    lvt &= ~LVT_MASKED;
     lapic_write(APIC_REG_LVT_TIMER, lvt);
-    console_puts("APIC Timer: started\r\n");
+
+    /*
+     * Re-arm by writing ICR after unmask.  QEMU TCG's APIC emulation arms its
+     * internal timer only when ICR is written; unmasking alone may not trigger
+     * a new countdown cycle in the emulator.  On real hardware this is also
+     * correct — ICR write restarts the countdown from the programmed value.
+     */
+    lapic_write(APIC_REG_TIMER_ICR, timer_initial_count);
+
+    /* Readback verification — confirm writes reached the LAPIC */
+    uint32_t lvt_rb  = lapic_read(APIC_REG_LVT_TIMER);
+    uint32_t icr_rb  = lapic_read(APIC_REG_TIMER_ICR);
+    console_puts("APIC Timer: started (LVT=0x");
+    {
+        for (int s = 28; s >= 0; s -= 4)
+            console_putc("0123456789abcdef"[(lvt_rb >> s) & 0xF]);
+    }
+    console_puts(" ICR=");
+    {
+        char buf[16]; int i = 0;
+        uint32_t v = icr_rb;
+        if (v == 0) buf[i++] = '0';
+        else { char tmp[16]; int j = 0;
+               while (v > 0) { tmp[j++] = '0' + (v % 10); v /= 10; }
+               while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0';
+        console_puts(buf);
+    }
+    console_puts(")\r\n");
 }
 
 void apic_timer_stop(void) {

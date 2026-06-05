@@ -15,7 +15,7 @@
 # CONFIGURATION
 # ==============================================================================
 
-VERSION ?= 3.0.3
+VERSION ?= 3.0.2
 STRICT_PTR ?= 1
 CC = gcc
 
@@ -346,7 +346,7 @@ CONFDIR = $(PREFIX)/etc/starforth
 # PHONY TARGETS
 # ==============================================================================
 
-.PHONY: all banner help clean clean-obj clean-docs
+.PHONY: all banner help clean clean-obj clean-docs starkernel mkcapsule capsule-gen
 .PHONY: fastest fast turbo pgo pgo-build pgo-perf pgo-valgrind bench-compare
 .PHONY: rpi4 rpi4-cross rpi4-fastest
 .PHONY: minimal fake-l4re debug profile performance
@@ -583,8 +583,50 @@ include/version.h: FORCE
 # Ensure version.h exists and is up-to-date before compilation
 FORCE:
 
+# ==============================================================================
+# CAPSULE SUBSYSTEM
+# ==============================================================================
+
+CAPSULES_DIR   ?= capsules
+MKCAPSULE_SRC   = tools/mkcapsule.c
+MKCAPSULE_BIN   = $(BUILD_DIR)/tools/mkcapsule
+CAPSULE_GENERATED = $(BUILD_DIR)/capsule_generated.c
+CAPSULE_GENERATED_OBJ = $(BUILD_DIR)/capsule_generated.o
+
+# Build the mkcapsule host tool
+$(MKCAPSULE_BIN): $(MKCAPSULE_SRC)
+	@mkdir -p $(dir $@)
+	@echo "  HOSTCC  $<"
+	@$(CC) -O2 -Wall -o $@ $<
+
+# Run mkcapsule to generate the capsule directory C source
+$(CAPSULE_GENERATED): $(MKCAPSULE_BIN) $(CAPSULES_DIR)
+	@mkdir -p $(dir $@)
+	@echo "  MKCAP   $(CAPSULES_DIR) -> $@"
+	@$(MKCAPSULE_BIN) $(CAPSULES_DIR) $@
+
+# Compile the generated capsule directory
+$(CAPSULE_GENERATED_OBJ): $(CAPSULE_GENERATED) | include/version.h
+	@mkdir -p $(dir $@)
+	@echo "  CC  $<"
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: mkcapsule capsule-gen
+mkcapsule: $(MKCAPSULE_BIN)
+capsule-gen: $(CAPSULE_GENERATED)
+
+# starkernel: full capsule-aware build
+#   1. Build mkcapsule tool
+#   2. Generate capsule_generated.c from capsules/
+#   3. Compile StarForth with __STARKERNEL__ and capsule_generated.o linked in
+starkernel: $(MKCAPSULE_BIN) $(CAPSULE_GENERATED_OBJ)
+	@$(MAKE) $(BINARY) \
+		EXTRA_CFLAGS="-D__STARKERNEL__=1 -Iinclude" \
+		EXTRA_OBJ="$(CAPSULE_GENERATED_OBJ)"
+
+# ==============================================================================
 # Main executable
-$(BINARY): $(OBJ)
+$(BINARY): $(OBJ) $(EXTRA_OBJ)
 	@echo "🔗 Linking $(BINARY)..."
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)

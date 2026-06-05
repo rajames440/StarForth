@@ -62,6 +62,12 @@
 #include "../include/dictionary_heat_optimization.h"
 #include "../include/ssm_jacquard.h"
 #include "../include/platform_alloc.h"
+#include "word_source/include/vocabulary_words.h"
+
+#ifdef __STARKERNEL__
+#include "../include/starkernel/capsule_birth.h"
+#include "../include/starkernel/capsule_run.h"
+#endif
 
 #include <string.h>
 
@@ -85,6 +91,32 @@ static void vm_bootstrap_scr(VM* vm)
         vm->scr_addr = (vaddr_t)((uint8_t*)p - vm->memory);
     }
     vm_store_cell(vm, vm->scr_addr, 0);
+}
+
+/**
+ * @brief Bootstrap a root vocabulary for the VM
+ *
+ * Creates a vocabulary by name, finds its dictionary entry, executes
+ * it to make it current, then calls DEFINITIONS.
+ *
+ * @param vm Pointer to VM structure
+ * @param name Vocabulary name to bootstrap
+ */
+void vm_bootstrap_root_vocabulary(VM *vm, const char *name)
+{
+    if (!vm || !name) {
+        return;
+    }
+    vocabulary_create_vocabulary_direct(vm, name);
+    size_t len = strlen(name);
+    DictEntry *entry = vm_find_word(vm, name, len);
+    if (!entry || !entry->func) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "bootstrap: missing vocabulary '%s'", name);
+        return;
+    }
+    entry->func(vm);
+    vocabulary_word_definitions(vm);
 }
 
 /* ====================== VM init / teardown ======================= */
@@ -264,6 +296,7 @@ void vm_init(VM* vm)
         return;
     }
     ssm_l8_init((ssm_l8_state_t*)vm->ssm_l8_state, SSM_MODE_C0);
+    ssm_l8_init_table((ssm_l8_state_t*)vm->ssm_l8_state);
 
     vm->ssm_config = sf_malloc(sizeof(ssm_config_t));
     if (!vm->ssm_config)
@@ -277,6 +310,15 @@ void vm_init(VM* vm)
     ((ssm_config_t*)vm->ssm_config)->L3_linear_decay = 0;
     ((ssm_config_t*)vm->ssm_config)->L5_window_inference = 0;
     ((ssm_config_t*)vm->ssm_config)->L6_decay_inference = 0;
+
+#ifdef __STARKERNEL__
+    /* Capsule subsystem: register VM hooks, init registry and run log.
+     * capsule_birth_mama() is called separately after vm_init() returns,
+     * once the caller has access to the compiled-in capsule directory. */
+    capsule_vm_hooks_register();
+    capsule_vm_registry_init();
+    capsule_run_log_init();
+#endif
 }
 
 /**
@@ -307,6 +349,7 @@ void vm_cleanup(VM* vm)
     /* Clean up SSM L8 state */
     if (vm->ssm_l8_state)
     {
+        ssm_l8_free_table((ssm_l8_state_t*)vm->ssm_l8_state);
         sf_free(vm->ssm_l8_state);
         vm->ssm_l8_state = NULL;
     }

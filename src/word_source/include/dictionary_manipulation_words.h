@@ -43,7 +43,7 @@
 #ifndef DICTIONARY_MANIPULATION_WORDS_H
 #define DICTIONARY_MANIPULATION_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /**
  * @defgroup dictionary_words FORTH-79 Dictionary Manipulation Words

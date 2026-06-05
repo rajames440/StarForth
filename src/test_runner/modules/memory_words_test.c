@@ -47,7 +47,7 @@
 static WordTestSuite memory_word_suites[] = {
     {
         "!", {
-            {"basic", "42 HERE ! HERE @ . CR", "Should Should be misaligned", TEST_ERROR_CASE, 1, 0},
+            {"basic", "42 HERE ! HERE @ . CR", "Should print: 42", TEST_NORMAL, 0, 1},
             {"zero", "0 HERE ! HERE @ . CR", "Should print: 0", TEST_NORMAL, 0, 1},
             {"negative", "-999 HERE ! HERE @ . CR", "Should print: -999", TEST_NORMAL, 0, 1},
             {"overwrite", "111 HERE ! 222 HERE ! HERE @ . CR", "Should print: 222", TEST_NORMAL, 0, 1},
@@ -75,7 +75,7 @@ static WordTestSuite memory_word_suites[] = {
             {"basic", "65 HERE C! HERE C@ . CR", "Should print: 65", TEST_NORMAL, 0, 1},
             {"zero", "0 HERE C! HERE C@ . CR", "Should print: 0", TEST_NORMAL, 0, 1},
             {"high_byte", "255 HERE C! HERE C@ . CR", "Should print: 255", TEST_NORMAL, 0, 1},
-            {"truncation", "256 HERE C! HERE C@ . CR", "Should print: 0 (truncated)", TEST_EDGE_CASE, 0, 0}, /* Stub */
+            {"truncation", "256 HERE C! HERE C@ . CR", "Should print: 0 (truncated)", TEST_EDGE_CASE, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         4
@@ -111,12 +111,12 @@ static WordTestSuite memory_word_suites[] = {
     {
         "2,", {
             {
-                "roundtrip", "12345 67890 2, HERE 16 - 2@ . . CR", "Should store and retrieve 2-cell double",
-                TEST_NORMAL, 0, 0
+                "roundtrip", "12345 67890 2, HERE 16 - 2@ . . CR", "Should print: 67890 12345",
+                TEST_NORMAL, 0, 1
             },
             {
-                "save-and-verify", "12345 67890 2, HERE 16 - dup 2@ swap 67890 = swap 12345 = and . CR",
-                "Should verify values via comparison", TEST_NORMAL, 0, 0
+                "save-and-verify", "12345 67890 2, HERE 16 - 2@ 67890 = SWAP 12345 = AND . CR",
+                "Should print: -1", TEST_NORMAL, 0, 1
             },
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
@@ -149,6 +149,71 @@ static WordTestSuite memory_word_suites[] = {
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         2
+    },
+
+    {
+        "+!", {
+            {"basic",       "10 HERE ! 5 HERE +! HERE @ . CR",                       "Should print: 15",  TEST_NORMAL, 0, 1},
+            {"by_zero",     "42 HERE ! 0 HERE +! HERE @ . CR",                       "Should print: 42",  TEST_NORMAL, 0, 1},
+            {"negative",    "10 HERE ! -3 HERE +! HERE @ . CR",                      "Should print: 7",   TEST_NORMAL, 0, 1},
+            {"accumulate",  "0 HERE ! 1 HERE +! 2 HERE +! 3 HERE +! HERE @ . CR",   "Should print: 6",   TEST_NORMAL, 0, 1},
+            {"empty_stack", "+!",                                                     "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        5
+    },
+
+    {
+        "-!", {
+            {"basic",       "10 HERE ! 3 HERE -! HERE @ . CR",      "Should print: 7",   TEST_NORMAL, 0, 1},
+            {"by_zero",     "42 HERE ! 0 HERE -! HERE @ . CR",      "Should print: 42",  TEST_NORMAL, 0, 1},
+            {"negative",    "10 HERE ! -5 HERE -! HERE @ . CR",     "Should print: 15",  TEST_NORMAL, 0, 1},
+            {"empty_stack", "-!",                                    "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "2!", {
+            {"basic",       "11 22 HERE 2! HERE @ . HERE 8 + @ . CR",  "Should print: 22 11",  TEST_NORMAL, 0, 1},
+            {"zeros",       "0 0 HERE 2! HERE @ . HERE 8 + @ . CR",    "Should print: 0 0",    TEST_NORMAL, 0, 1},
+            {"negative",    "-1 -2 HERE 2! HERE @ . HERE 8 + @ . CR",  "Should print: -2 -1",  TEST_NORMAL, 0, 1},
+            {"empty_stack", "2!",                                       "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "FILL", {
+            {"basic",       "HERE 8 65 FILL HERE C@ . HERE 1+ C@ . CR", "Should print: 65 65", TEST_NORMAL, 0, 1},
+            {"zero_n",      "HERE 0 88 FILL",                            "Should do nothing",   TEST_NORMAL, 0, 1},
+            {"zero_byte",   "HERE 4 0 FILL HERE C@ . CR",                "Should print: 0",     TEST_NORMAL, 0, 1},
+            {"empty_stack", "FILL",                                      "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "MOVE", {
+            {"basic",       "HERE 65 OVER C! HERE 1+ 66 OVER C! HERE HERE 16 + 2 MOVE HERE 16 + C@ . HERE 17 + C@ . CR", "Should print: 65 66", TEST_NORMAL, 0, 1},
+            {"zero_n",      "HERE HERE 8 + 0 MOVE",                                  "Should do nothing",   TEST_NORMAL, 0, 1},
+            {"empty_stack", "MOVE",                                                   "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
+    {
+        "ERASE", {
+            {"basic",       "HERE 4 65 FILL HERE 4 ERASE HERE C@ . HERE 3 + C@ . CR", "Should print: 0 0", TEST_NORMAL, 0, 1},
+            {"zero_n",      "HERE 0 ERASE",                                            "Should do nothing",  TEST_NORMAL, 0, 1},
+            {"empty_stack", "ERASE",                                                   "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
     },
 
     /* End marker */

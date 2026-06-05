@@ -52,10 +52,11 @@
 #define VMM_PAGE_SIZE         4096ull
 
 /* Page table entry flags */
-#define VMM_FLAG_PRESENT   (1ull << 0)
-#define VMM_FLAG_WRITABLE  (1ull << 1)
-#define VMM_FLAG_USER      (1ull << 2)
-#define VMM_FLAG_NX        (1ull << 63)
+#define VMM_FLAG_PRESENT        (1ull << 0)
+#define VMM_FLAG_WRITABLE       (1ull << 1)
+#define VMM_FLAG_USER           (1ull << 2)
+#define VMM_FLAG_CACHE_DISABLE  (1ull << 4)   /* maps to PTE_PCD — required for MMIO */
+#define VMM_FLAG_NX             (1ull << 63)
 
 #include "uefi.h"
 

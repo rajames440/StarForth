@@ -292,6 +292,7 @@ void vm_cleanup(VM* vm)
     /* Clean up SSM L8 state */
     if (vm->ssm_l8_state)
     {
+        ssm_l8_free_table((ssm_l8_state_t*)vm->ssm_l8_state);
         vm_host_free(vm, vm->ssm_l8_state);
         vm->ssm_l8_state = NULL;
     }

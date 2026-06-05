@@ -214,11 +214,6 @@ void sk_hal_init(void) {
     /* Use inline asm wrappers to avoid -fPIC GOT references */
     uint64_t text_start_addr = get_text_start_addr();
     uint64_t text_end_addr = get_text_end_addr();
-    console_puts("[HAL][init] __text_start=");
-    hal_print_hex64(text_start_addr);
-    console_puts(" __text_end=");
-    hal_print_hex64(text_end_addr);
-    console_println("");
     sk_hal_whitelist_exec_region(text_start_addr, text_end_addr, "kernel.text");
 }
 

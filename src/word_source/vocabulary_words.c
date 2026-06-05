@@ -122,13 +122,14 @@ static void fc_rebuild(DictEntry *head, DictEntry ***lists, size_t *counts, Dict
     for (size_t i = 0; i < SF_FC_BUCKETS; ++i) {
         if (counts[i]) {
             lists[i] = (DictEntry **) malloc(counts[i] * sizeof(DictEntry *));
+            if (!lists[i]) counts[i] = 0; /* malloc failed: zero count so fill skips */
         }
     }
     /* second pass: fill oldest→newest (we’ll search newest-first by iterating backwards) */
     size_t filled[SF_FC_BUCKETS] = {0};
     for (DictEntry *e = head; e; e = e->link) {
         unsigned c = (unsigned char) e->name[0];
-        lists[c][filled[c]++] = e;
+        if (lists[c]) lists[c][filled[c]++] = e; /* skip null buckets */
     }
     *cached_head = head;
 }
@@ -253,8 +254,10 @@ static DictEntry *vocab_find_word(VM *vm, const char *name, size_t len) {
     {
         DictEntry **bucket = ctx_fc[first];
         size_t n = ctx_n[first];
+        if (UNLIKELY(!bucket || n == 0)) goto skip_ctx;
         for (size_t i = n; i-- > 0;) {
             DictEntry *e = bucket[i];
+            if (!e) continue;
             if ((size_t) e->name_len != len) continue;
             const char *en = e->name;
             if ((unsigned char) en[len - 1] != last) continue;
@@ -267,13 +270,16 @@ static DictEntry *vocab_find_word(VM *vm, const char *name, size_t len) {
             if (memcmp(en, name, len) == 0) return e;
         }
     }
+    skip_ctx:;
 
     /* then FORTH bucket (if different) */
     if (context_vocab != forth_vocab) {
         DictEntry **bucket = forth_fc[first];
         size_t n = forth_n[first];
+        if (UNLIKELY(!bucket || n == 0)) goto skip_forth;
         for (size_t i = n; i-- > 0;) {
             DictEntry *e = bucket[i];
+            if (!e) continue;
             if ((size_t) e->name_len != len) continue;
             const char *en = e->name;
             if ((unsigned char) en[len - 1] != last) continue;
@@ -286,6 +292,7 @@ static DictEntry *vocab_find_word(VM *vm, const char *name, size_t len) {
             if (memcmp(en, name, len) == 0) return e;
         }
     }
+    skip_forth:;
     return NULL;
 }
 
@@ -294,8 +301,12 @@ static DictEntry *vocab_find_word(VM *vm, const char *name, size_t len) {
 static void vocabulary_select_runtime(VM *vm) {
     init_vocabulary_system(vm);
 
-    /* We don’t have a “currently executing entry” field; use newest header. */
-    context_vocab = vm->latest;
+    /* current_executing_entry is set by the interpreter before calling this func,
+     * so it correctly identifies which vocabulary word is executing (VA vs VB vs VC).
+     * Fall back to vm->latest only if somehow NULL. */
+    DictEntry *selected = vm->current_executing_entry;
+    if (!selected) selected = vm->latest;
+    context_vocab = selected;
     vocab_sync_vm_vars(vm);
 
     log_message(LOG_DEBUG, "Vocabulary selected (CONTEXT updated)");

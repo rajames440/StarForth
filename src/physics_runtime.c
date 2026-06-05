@@ -54,6 +54,18 @@
 #include "physics_runtime.h"
 #include "platform_time.h"
 
+/* STARFORTH_MINIMAL: kernel build — skip Linux /proc runtime monitoring.
+ * Provide stub API so vmcore link succeeds; none of these are called. */
+#if defined(STARFORTH_MINIMAL)
+int  physics_runtime_init(size_t analytics_heap_bytes)
+    { (void)analytics_heap_bytes; return 0; }
+void physics_runtime_shutdown(void) {}
+int  physics_analytics_publish_event(uint32_t channel, const void *payload, uint16_t payload_bytes)
+    { (void)channel; (void)payload; (void)payload_bytes; return 0; }
+int  physics_host_snapshot(physics_host_snapshot_t *out)
+    { (void)out; return -1; }
+#else /* !STARFORTH_MINIMAL — full Linux/POSIX implementation below */
+
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -547,6 +559,8 @@ publish:
     }
     return 0;
 }
+
+#endif /* STARFORTH_MINIMAL */
 
 /* ------------------------------------------------------------------------- */
 /* End                                                                       */

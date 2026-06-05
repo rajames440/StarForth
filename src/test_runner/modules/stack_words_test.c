@@ -152,9 +152,9 @@ static WordTestSuite stack_word_suites[] = {
 
     {
         "PICK", {
-            {"pick_0", "1 2 3 0 PICK . CR", "Should print: 3", TEST_NORMAL, 0, 0}, /* Not implemented yet */
-            {"pick_1", "1 2 3 1 PICK . CR", "Should print: 2", TEST_NORMAL, 0, 0},
-            {"pick_2", "1 2 3 2 PICK . CR", "Should print: 1", TEST_NORMAL, 0, 0},
+            {"pick_0", "1 2 3 0 PICK . CR", "Should print: 3", TEST_NORMAL, 0, 1},
+            {"pick_1", "1 2 3 1 PICK . CR", "Should print: 2", TEST_NORMAL, 0, 1},
+            {"pick_2", "1 2 3 2 PICK . CR", "Should print: 1", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         3
@@ -162,11 +162,34 @@ static WordTestSuite stack_word_suites[] = {
 
     {
         "ROLL", {
-            {"roll_1", "1 2 3 1 ROLL . . . CR", "Should print: 1 3 2", TEST_NORMAL, 0, 0}, /* Stub */
-            {"roll_2", "1 2 3 2 ROLL . . . CR", "Should print: 2 3 1", TEST_NORMAL, 0, 0},
+            {"roll_1", "1 2 3 1 ROLL . . . CR", "Should print: 1 3 2", TEST_NORMAL, 0, 1},
+            {"roll_2", "1 2 3 2 ROLL . . . CR", "Should print: 2 3 1", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         2
+    },
+
+    {
+        "?DUP", {
+            {"nonzero",     "42 ?DUP . . CR",     "Should print: 42 42",     TEST_NORMAL, 0, 1},
+            {"negative",    "-5 ?DUP . . CR",     "Should print: -5 -5",     TEST_NORMAL, 0, 1},
+            {"zero",        "0 ?DUP DEPTH . CR",  "Should not dup: depth 1", TEST_NORMAL, 0, 1},
+            {"empty_stack", "?DUP",               "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "-ROT", {
+            {"basic",       "1 2 3 -ROT . . . CR",       "Should print: 1 3 2",              TEST_NORMAL, 0, 1},
+            {"zeros",       "0 0 0 -ROT . . . CR",       "Should print: 0 0 0",              TEST_NORMAL, 0, 1},
+            {"roundtrip",   "1 2 3 -ROT ROT . . . CR",   "Should restore original order",    TEST_NORMAL, 0, 1},
+            {"two_items",   "1 2 -ROT",                  "Should cause stack underflow",     TEST_ERROR_CASE, 1, 1},
+            {"empty_stack", "-ROT",                      "Should cause stack underflow",     TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        5
     },
 
     /* End marker */
