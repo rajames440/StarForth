@@ -269,10 +269,71 @@ anova_stability = anova_exits_this_trial / trial_ticks     ∈ [0, 1]
 combined_stability = w_joint × stability + w_anova × anova_stability
 ```
 
-Suggested weights: `w_joint = 0.75`, `w_anova = 0.25`.
+#### What each signal actually measures
 
-The joint signal dominates because it directly measures coupled system behavior.
-The ANOVA rate fills in information on ticks where inference didn't run.
+`stability` (from `joint_error`) is **output convergence**: did the inference engine's
+corrections reach a fixed point? It requires at least one of L5 or L6 to be active —
+if neither is running, `Δwindow = Δslope = 0` always and the signal collapses (Section 5.7).
+
+`anova_stability` is **input stationarity**: is the execution trajectory quiet enough that
+the inference engine decided not to bother computing? It fires regardless of L5/L6 state,
+making it the only signal available when both are disabled.
+
+These are not redundant. A config can show:
+- High `anova_stability`, low `stability`: input is quiet (ANOVA skips often) but corrections
+  keep churning — window and slope are wandering on a flat input landscape. Indicates
+  misconfigured L5/L6 or an under-constrained attractor.
+- Low `anova_stability`, high `stability`: input is noisy/dynamic but corrections have
+  settled — the config found a stable operating point despite volatile input. Desirable.
+- Both high: ideal. Both low: still converging, not yet settled.
+
+#### The partial-inference bias problem
+
+When only one of L5 or L6 is active, `joint_error` is only half-informed:
+- L5-on, L6-off: `Δslope = 0` always (slope frozen) → `joint_error = |Δw|/sqrt(2)`,
+  biased toward 1.0 because the frozen component contributes zero.
+- L5-off, L6-on: symmetric bias in the other dimension.
+
+A fixed weight like 0.75 treats both the one-active and both-active cases identically,
+overstating the signal quality in the one-active case.
+
+#### Option A: Fixed weights (simpler, conservative)
+
+```
+w_joint = 0.75, w_anova = 0.25
+```
+
+This is the design-conservative choice. The joint signal dominates when it is available;
+ANOVA fills in when it cannot run (full fallback in Section 5.7). The 3:1 ratio reflects
+the ordering: output convergence is what we ultimately care about; input stationarity
+is a proxy that is easier to measure. These weights need DoE validation — they are an
+informed initial guess, not a derived result.
+
+#### Option B: Activity-weighted (principled, slightly more complex)
+
+```c
+active_outputs = L5_enabled + L6_enabled;   /* ∈ {0, 1, 2} */
+w_joint = active_outputs / 2;               /* 0.0, 0.5, or 1.0 */
+w_anova = 1 - w_joint;
+```
+
+When both L5 and L6 are active: 100% joint (both components of `joint_error` valid).  
+When one is active: 50/50 (half the joint signal is meaningful, ANOVA fills the rest).  
+When neither is active: 100% ANOVA (collapses cleanly to the Section 5.7 special case,
+eliminating the need for a separate branch).
+
+This is strictly more correct than Option A for the partial-inference cases. It costs
+three integer operations per trial end. The tradeoff: it makes the effective weight
+a function of the current config, which complicates reasoning about the reward surface
+when comparing configs with different L5/L6 settings.
+
+#### Decision required
+
+This is the most consequential tunable in the design. **Recommend starting with Option A
+at the conservative 0.75/0.25 split and adding instrumented logging of both components**
+so the effective ratio can be observed over real workload runs before any adjustment.
+Option B should be considered if the logs show systematic bias in the partial-inference
+configs (e.g., L5-on/L6-off configs consistently overscoring their L5-on/L6-on neighbors).
 
 ### 5.5 Negative Feedback Reward Update
 
@@ -289,26 +350,122 @@ new_score = clamp(new_score, SCORE_MIN, SCORE_MAX)
   benefit_score falls.
 - `combined_stability = 0.5`: neutral → no update.
 
-`DECAY_FACTOR < 1.0` (suggest 0.99 per trial end) ensures scores decay over time,
-preventing a config from holding the top position indefinitely based on past performance.
+`DECAY_FACTOR < 1.0` ensures scores decay over time, preventing a config from holding
+the top position indefinitely based on past performance.
+
+#### DECAY_FACTOR stability analysis
+
+The half-life of a benefit score is:
+
+```
+half_life_trials = ln(0.5) / ln(DECAY_FACTOR)
+```
+
+At `DECAY_FACTOR = 0.99`:
+
+```
+half_life_trials = ln(0.5) / ln(0.99) ≈ 69 trials
+```
+
+**Converting to wall clock requires knowing trial duration.** Section 5.6 shows this is
+wall-clock-bounded to ≥ 20ms, but the upper bound depends on L7's adaptive heartrate.
+
+| Effective tick period (L7) | Trial duration (min) | Half-life |
+|---------------------------|---------------------|-----------|
+| 10 µs (base rate)         | 20 ms               | ~1.4 s    |
+| 50 µs (moderate load)     | ~100 ms (bounded)   | ~6.9 s    |
+| 100 µs (heavy load)       | ~200 ms (bounded)   | ~13.8 s   |
+
+**The key assumption** is that regime dwell time is on the order of seconds. If a FORTH
+session stays in the same metric regime for several seconds at a time (reasonable for
+interactive use or batch computation), a half-life of 1–14 seconds means the table retains
+useful regime-specific memory without freezing on past performance.
+
+If regimes change faster than ~1.4 s (e.g., rapid alternation between compute-heavy and
+I/O-bound FORTH), `DECAY_FACTOR = 0.99` causes the scores to reset before they have
+stabilized — the table becomes noise rather than signal. In that case, a slower decay
+(`DECAY_FACTOR = 0.999`, half-life ~693 trials ≈ 14s at base rate) is more appropriate.
+
+If regimes dwell for minutes, the current rate is fine — a config earns and retains its
+score well within one dwell period, and the exploration bonus from UCB keeps the table
+from stagnating.
+
+**Effective-zero crossover:** a score decays below 1% of its peak after:
+
+```
+0.99^n = 0.01 → n ≈ 458 trials ≈ 9.2 s at base rate
+```
+
+This is the "memory horizon" — how far back the table looks. Flag `SSM_SCORE_DECAY_FACTOR`
+as a first-class tunable alongside `SSM_MIN_TRIAL_NS` and calibrate them together.
 
 ### 5.6 Minimum Trial Duration
 
 Because the reward signal requires two consecutive trials under the same config to measure
 `joint_error`, and because each trial must contain at least one full inference run to update
-(window, slope), the minimum trial duration is:
+(window, slope), each trial must span at least two inference cycles. Since inference runs
+every `HEARTBEAT_INFERENCE_FREQUENCY = 1,000` ticks, the tick-count floor is:
 
 ```
-min_trial_ticks = 2 × HEARTBEAT_INFERENCE_FREQUENCY = 2 × 1000 = 2,000 ticks = 20 ms
+min_trial_ticks = 2 × HEARTBEAT_INFERENCE_FREQUENCY = 2,000 ticks
 ```
 
-The first trial establishes `(prev_window, prev_slope)`. The second trial measures how much
-they moved. The reward update fires at the end of the second trial. Subsequent trials under
-the same config continue to update the reward.
+**However, ticks are not fixed-duration.** L7 is the *adaptive heartrate* loop — it varies
+the heartbeat wake frequency based on observed workload. `HEARTBEAT_TICK_NS = 10,000 ns` is
+the *base* period; under load L7 may extend this to 50–100 µs or beyond. Therefore:
 
-A trial period of 2,000–5,000 ticks (20–50 ms) is suggested. Longer trials give more stable
-reward estimates; shorter trials allow faster adaptation to workload regime changes. This is
-a tunable parameter.
+```
+2,000 ticks = 20 ms  only at the base heartrate.
+              ≈ 100–200 ms  if L7 has adapted to 5–10× longer tick periods.
+```
+
+A tick-count-only termination condition drifts with L7. The trial duration can expand by an
+order of magnitude without warning, making score decay rates (Section 5.5) and regime dwell
+assumptions inconsistent.
+
+#### Fix: wall-clock minimum
+
+Terminate a trial when **both** conditions hold:
+
+1. `trial_tick_count >= SSM_MIN_TRIAL_TICKS` (2,000) — ensures ≥ 2 inference cycles ran
+2. `hal_time_ns() - trial_start_ns >= SSM_MIN_TRIAL_NS` (20,000,000 = 20 ms) — ensures
+   minimum wall-clock coverage regardless of heartrate
+
+In practice condition 2 is the binding constraint at base rate; condition 1 is the binding
+constraint when L7 has slowed ticks significantly (preventing a trial from ending before
+inference has run twice).
+
+This requires adding `trial_start_ns` to `SsmConfigTable` (see updated struct below) and
+recording `hal_time_ns()` at trial start. `hal_time_ns()` is already called by the heartbeat
+thread at every tick — no additional HAL calls needed if the timestamp is forwarded.
+
+#### Updated `SsmConfigTable` struct (adds `trial_start_ns`)
+
+```c
+typedef struct {
+    SsmConfigEntry entries[128];
+    uint32_t       regime_scores[8][128];
+    uint32_t       regime_trials[8][128];
+    uint8_t        current_config;
+    uint8_t        current_regime;
+    uint32_t       trial_tick_count;
+    uint64_t       trial_start_ns;          /* ← NEW: wall-clock start of current trial */
+    uint32_t       anova_exits_this_trial;
+    uint32_t       total_regime_trials[8];
+} SsmConfigTable;
+```
+
+Memory impact: +8 bytes. Negligible.
+
+#### Suggested values
+
+```
+SSM_MIN_TRIAL_TICKS = 2,000        /* 2 × HEARTBEAT_INFERENCE_FREQUENCY */
+SSM_MIN_TRIAL_NS    = 20,000,000   /* 20 ms — calibrate against expected regime dwell */
+```
+
+Both are first-class tunables in `starforth_config.h`. Longer wall-clock minimums give more
+stable reward estimates at the cost of slower adaptation to regime changes.
 
 ### 5.7 Special Case: L5 and L6 Both Disabled
 
@@ -424,8 +581,14 @@ Mirrors `dict_adaptive_optimization_pass` / `dict_reorganize_buckets_by_heat` ex
 ```
 1. Increment trial_tick_count
 2. If inference ran this tick: increment anova_exits_this_trial (if early-exited)
-3. If trial_tick_count >= min_trial_ticks: run per-trial-end sequence (step 1-10 above)
+3. If trial_tick_count >= SSM_MIN_TRIAL_TICKS
+      AND hal_time_ns() - trial_start_ns >= SSM_MIN_TRIAL_NS:
+       run per-trial-end sequence (steps 1–10 above)
+       record trial_start_ns = hal_time_ns() at step 9 (trial reset)
 ```
+
+The dual condition (tick count AND wall clock) prevents L7 adaptive heartrate from silently
+inflating or deflating the effective trial window. See Section 5.6 for full rationale.
 
 ---
 
@@ -530,13 +693,15 @@ L7 hardwired to ON (as today).
 
 **Q2: Tunable constants — bake in or expose via `starforth_config.h`?**  
 Proposed new constants:
-- `SSM_MIN_TRIAL_TICKS` (suggest 2000)
+- `SSM_MIN_TRIAL_TICKS` (suggest 2000 — tick-count floor, ≥ 2 inference cycles)
+- `SSM_MIN_TRIAL_NS` (suggest 20,000,000 — wall-clock floor; see Section 5.6)
 - `SSM_SCORE_MAX` (suggest 65535 to match Q48.16 range intuition)
-- `SSM_SCORE_DECAY_FACTOR` (suggest 0.99 per trial end ≈ Q48.16 64881)
+- `SSM_SCORE_DECAY_FACTOR` (suggest 0.99 ≈ Q48.16 64881; half-life ~69 trials at base
+  rate — calibrate against expected regime dwell time; see Section 5.5)
 - `SSM_UCB_K` (suggest `SSM_SCORE_MAX / 10`)
 - `SSM_REWARD_GAIN` (suggest `SSM_SCORE_MAX / 4`)
-- `SSM_JOINT_WEIGHT` (suggest 0.75)
-- `SSM_ANOVA_WEIGHT` (suggest 0.25)
+- `SSM_JOINT_WEIGHT` (suggest 0.75 for Option A; see Section 5.4)
+- `SSM_ANOVA_WEIGHT` (suggest 0.25 for Option A; or use activity-weighted Option B)
 
 All of these map naturally alongside the existing `ROLLING_WINDOW_SIZE`, `SSM_HYSTERESIS_TICKS`
 etc. in `include/starforth_config.h`.
