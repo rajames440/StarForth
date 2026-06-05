@@ -47,11 +47,11 @@ MONOLITHIC ?= 1
 
 # Version
 # Roadmap:
-#   v1.0.x — serial-only production (current)
-#   v1.5.0 — framebuffer VT100 terminal/console milestone
+#   v1.0.x — serial-only production
+#   v1.5.0 — framebuffer VT100 terminal/console milestone (current)
 #   v2.0.0 — StarForth SDK release; v2.x.x development begins from there
 VERSION ?= 3.0.3
-LITHOS_VERSION ?= 1.0.8
+LITHOS_VERSION ?= 1.5.0
 
 # ==============================================================================
 # BUILD PATHS
