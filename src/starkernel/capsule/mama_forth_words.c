@@ -588,14 +588,11 @@ void mama_word_capsule_test(VM *vm)
  */
 void mama_word_exec(VM *vm)
 {
-    char            name_buf[VM_NAME_MAX];
-    uint32_t        i;
-    cell_t          u, caddr;
-    const char     *src;
-    const CapsuleDesc      *cap;
-    CapsuleValidateResult   vr;
-    const uint8_t          *payload;
-    int                     rc;
+    char             name_buf[VM_NAME_MAX];
+    uint32_t         i;
+    cell_t           u, caddr;
+    const char      *src;
+    CapsuleRunResult result;
 
     if (vm->dsp < 1) {
         vm->error = 1;
@@ -618,35 +615,15 @@ void mama_word_exec(VM *vm)
     for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
     name_buf[u] = '\0';
 
-    cap = capsule_find_by_name(
+    result = capsule_exec_init(
+        vm,
+        name_buf,
         capsule_get_directory(),
         capsule_get_descriptors(),
         capsule_get_names(),
-        name_buf);
+        capsule_get_arena());
 
-    if (!cap) {
-        console_puts("EXEC: not found: ");
-        console_println(name_buf);
-        return;
-    }
-
-    vr = capsule_validate(cap, capsule_get_arena(),
-                          capsule_get_directory()->arena_size, 1);
-    if (vr != CAPSULE_VALID) {
-        console_puts("EXEC: invalid: ");
-        console_println(name_buf);
-        return;
-    }
-
-    payload = capsule_get_payload(cap, capsule_get_arena());
-    if (!payload) {
-        console_puts("EXEC: null payload: ");
-        console_println(name_buf);
-        return;
-    }
-
-    rc = capsule_exec_payload(vm, payload, cap->length);
-    if (rc != 0) {
+    if (result != CAPSULE_RUN_OK) {
         console_puts("EXEC: failed: ");
         console_println(name_buf);
     }
