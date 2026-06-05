@@ -52,6 +52,16 @@
 #include <stdlib.h>
 
 #include "physics_hotwords_cache.h"
+/* In kernel builds, suppress platform_time.h inline wrappers to avoid
+ * GOTPCREL relocations in PE binaries (no GOT in PE format). shim.c
+ * provides the concrete sf_monotonic_ns() symbol in that case.
+ * PLATFORM_TIME_NO_INLINE is also set globally via COMMON_CFLAGS in
+ * Makefile.starkernel; the #ifndef guard prevents -Wall -Werror redefinition. */
+#ifdef __STARKERNEL__
+#ifndef PLATFORM_TIME_NO_INLINE
+#define PLATFORM_TIME_NO_INLINE
+#endif
+#endif /* __STARKERNEL__ */
 #include "platform_time.h"
 #include "math_portable.h"
 
@@ -126,6 +136,7 @@ DictEntry *hotwords_cache_lookup(HotwordsCache *cache,
     if (!cache || !cache->enabled) {
         for (size_t i = bucket_count; i-- > 0;) {
             DictEntry *e = bucket[i];
+            if (!e) continue;
             if ((size_t)e->name_len != len) continue;
             if (len > 1 && (unsigned char)e->name[len - 1] != (unsigned char)name[len - 1]) continue;
             if (memcmp(e->name, name, len) == 0) return e;
@@ -170,6 +181,7 @@ DictEntry *hotwords_cache_lookup(HotwordsCache *cache,
     // --- STEP 2: Fall back to bucket search ---
     for (size_t i = bucket_count; i-- > 0;) {
         DictEntry *e = bucket[i];
+        if (!e) continue;
         if ((size_t)e->name_len != len) continue;
         if (len > 1 && (unsigned char)e->name[len - 1] != (unsigned char)name[len - 1]) continue;
         if (memcmp(e->name, name, len) == 0) {

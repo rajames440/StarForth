@@ -64,6 +64,20 @@ __attribute__((visibility("default")))
 #endif
 TestStats global_test_stats = {0, 0, 0, 0, 0};
 
+/*
+ * Same-TU accessor — avoids R_X86_64_REX_GOTPCRELX double-dereference in
+ * -fPIC PE builds where struct access generates GOT-indirect code that the
+ * PE linker does not relax.
+ */
+void test_stats_accumulate(int tests, int pass, int fail, int skip, int error)
+{
+    global_test_stats.total_tests += tests;
+    global_test_stats.total_pass  += pass;
+    global_test_stats.total_fail  += fail;
+    global_test_stats.total_skip  += skip;
+    global_test_stats.total_error += error;
+}
+
 /** @brief Flag indicating if benchmark mode is enabled */
 static int benchmark_mode = 0;
 /** @brief Number of iterations for benchmark tests */
@@ -147,7 +161,7 @@ void run_all_tests(VM *vm) {
     global_test_stats.total_fail = 0;
     global_test_stats.total_skip = 0;
     global_test_stats.total_error = 0;
-    global_contract_violations = 0;
+    contract_reset_violation_count();
 
     /* Run each test module */
     for (int i = 0; test_modules[i].module_name != NULL; i++) {
@@ -164,11 +178,11 @@ void run_all_tests(VM *vm) {
 
     /* Print test summary */
     log_message(LOG_INFO, "FINAL TEST SUMMARY:");
-    log_message(LOG_INFO, "  Total tests: %d", global_test_stats.total_tests);
-    log_message(LOG_INFO, "  Passed: %d", global_test_stats.total_pass);
-    log_message(LOG_INFO, "  Failed: %d", global_test_stats.total_fail);
-    log_message(LOG_INFO, "  Skipped: %d", global_test_stats.total_skip);
-    log_message(LOG_INFO, "  Errors: %d", global_test_stats.total_error);
+    log_message(LOG_INFO, "  Total tests run: %d", global_test_stats.total_tests);
+    log_message(LOG_INFO, "  Passed:          %d", global_test_stats.total_pass);
+    log_message(LOG_INFO, "  Failed:          %d", global_test_stats.total_fail);
+    log_message(LOG_INFO, "  Stubs (not yet implemented): %d", global_test_stats.total_skip);
+    log_message(LOG_INFO, "  Errors:          %d", global_test_stats.total_error);
 
     if (global_test_stats.total_fail == 0 && global_test_stats.total_error == 0) {
         log_message(LOG_INFO, "ALL IMPLEMENTED TESTS PASSED!");
@@ -176,9 +190,9 @@ void run_all_tests(VM *vm) {
         log_message(LOG_ERROR, "%d tests FAILED or had ERRORS!",
                     global_test_stats.total_fail + global_test_stats.total_error);
     }
-    if (global_contract_violations > 0) {
+    if (contract_get_violation_count() > 0) {
         log_message(LOG_ERROR, "  Contract violations (A4'/A1): %d  *** AXIOM WITNESSES FAILED ***",
-                    global_contract_violations);
+                    contract_get_violation_count());
     } else {
         log_message(LOG_INFO, "  Contract checks (A4'/A1): all passed");
     }

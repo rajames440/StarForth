@@ -48,7 +48,7 @@ static WordTestSuite dictionary_word_suites[] = {
     {
         "HERE", {
             {"basic", "HERE HERE = . CR", "Should print: -1", TEST_NORMAL, 0, 1},
-            {"after_comma", "HERE 42 , HERE SWAP - . CR", "Should print: 4", TEST_NORMAL, 0, 1},
+            {"after_comma", "HERE 42 , HERE SWAP - . CR", "Should print: 8 (1 cell = sizeof(cell_t) on 64-bit)", TEST_NORMAL, 0, 1},
             {"after_c_comma", "HERE 65 C, HERE SWAP - . CR", "Should print: 1", TEST_NORMAL, 0, 1},
             {"after_allot", "HERE 10 ALLOT HERE SWAP - . CR", "Should print: 10", TEST_NORMAL, 0, 1},
             {"stability", "HERE DUP HERE = . CR", "Should be stable", TEST_NORMAL, 0, 1},
@@ -63,7 +63,7 @@ static WordTestSuite dictionary_word_suites[] = {
             {"zero", "HERE 0 ALLOT HERE SWAP - . CR", "Should print: 0", TEST_NORMAL, 0, 1},
             {"negative", "HERE -4 ALLOT HERE SWAP - . CR", "Should print: -4", TEST_NORMAL, 0, 1},
             {"large", "HERE 100 ALLOT HERE SWAP - . CR", "Should print: 100", TEST_NORMAL, 0, 1},
-            {"after_use", "HERE 10 ALLOT 42 OVER ! @ . CR", "Should store and retrieve", TEST_NORMAL, 0, 1},
+            {"after_use", "ALIGN HERE 10 ALLOT 42 OVER ! @ . CR", "Should store and retrieve", TEST_NORMAL, 0, 1},
             {"empty_stack", "ALLOT", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
@@ -72,12 +72,12 @@ static WordTestSuite dictionary_word_suites[] = {
 
     {
         ",", {
-            {"basic", "42 , HERE 8 - @ . CR", "Should compile 42", TEST_NORMAL, 0, 1},
-            {"negative", "-999 , HERE 8 - @ . CR", "Should compile -999", TEST_NORMAL, 0, 1},
-            {"zero", "0 , HERE 8 - @ . CR", "Should compile 0", TEST_NORMAL, 0, 1},
-            {"max_int", "2147483647 , HERE 8 - @ . CR", "Should compile max int", TEST_EDGE_CASE, 0, 1},
-            {"min_int", "-2147483648 , HERE 8 - @ . CR", "Should compile min int", TEST_EDGE_CASE, 0, 1},
-            {"multiple", "10 , 20 , HERE 8 - @ . HERE 8 - @ . CR", "Should compile multiple", TEST_NORMAL, 0, 1},
+            {"basic", "42 , HERE 1 CELLS - @ . CR", "Should compile 42", TEST_NORMAL, 0, 1},
+            {"negative", "-999 , HERE 1 CELLS - @ . CR", "Should compile -999", TEST_NORMAL, 0, 1},
+            {"zero", "0 , HERE 1 CELLS - @ . CR", "Should compile 0", TEST_NORMAL, 0, 1},
+            {"max_int", "2147483647 , HERE 1 CELLS - @ . CR", "Should compile max int", TEST_EDGE_CASE, 0, 1},
+            {"min_int", "-2147483648 , HERE 1 CELLS - @ . CR", "Should compile min int", TEST_EDGE_CASE, 0, 1},
+            {"multiple", "10 , 20 , HERE 1 CELLS - @ . HERE 1 CELLS - @ . CR", "Should compile multiple", TEST_NORMAL, 0, 1},
             {"empty_stack", ",", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
@@ -100,10 +100,10 @@ static WordTestSuite dictionary_word_suites[] = {
 
     {
         "2,", {
-            {"basic", "12345 67890 2, HERE 16 - 2@ . . CR", "Should compile double", TEST_NORMAL, 0, 1},
-            {"zero", "0 0 2, HERE 16 - 2@ . . CR", "Should compile zero double", TEST_NORMAL, 0, 1},
-            {"negative", "-1000 -2000 2, HERE 16 - 2@ . . CR", "Should compile negative double", TEST_NORMAL, 0, 1},
-            {"large", "2147483647 -1 2, HERE 16 - 2@ . . CR", "Should compile large double", TEST_EDGE_CASE, 0, 1},
+            {"basic", "12345 67890 2, HERE 2 CELLS - 2@ . . CR", "Should compile double", TEST_NORMAL, 0, 1},
+            {"zero", "0 0 2, HERE 2 CELLS - 2@ . . CR", "Should compile zero double", TEST_NORMAL, 0, 1},
+            {"negative", "-1000 -2000 2, HERE 2 CELLS - 2@ . . CR", "Should compile negative double", TEST_NORMAL, 0, 1},
+            {"large", "2147483647 -1 2, HERE 2 CELLS - 2@ . . CR", "Should compile large double", TEST_EDGE_CASE, 0, 1},
             {"one_item", "42 2,", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
             {"empty_stack", "2,", "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}

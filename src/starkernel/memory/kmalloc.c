@@ -53,7 +53,7 @@
 #include "kmalloc.h"
 #include "pmm.h"
 
-#define KMALLOC_DEFAULT_HEAP_SIZE   (16u * 1024u * 1024u) /* 16 MiB */
+#define KMALLOC_DEFAULT_HEAP_SIZE   (2ULL * 1024ULL * 1024ULL * 1024ULL) /* 2 GiB — floor for 256+ baby VMs */
 #define KMALLOC_MIN_ALIGN           16u
 #define KMALLOC_MAGIC               0x4B4D414Cu /* 'KMAL' */
 
@@ -244,7 +244,15 @@ int kmalloc_init(uint64_t heap_size_bytes)
         pages += 1;
     }
 
-    uint64_t paddr = pmm_alloc_contiguous(pages);
+    /* Bisect down to largest contiguous region PMM can serve.
+     * Floor: 64 MiB — below that the kernel cannot function usefully. */
+#define KMALLOC_MIN_PAGES ((64u * 1024u * 1024u) / PMM_PAGE_SIZE)
+    uint64_t paddr = 0;
+    while (pages >= KMALLOC_MIN_PAGES) {
+        paddr = pmm_alloc_contiguous(pages);
+        if (paddr != 0) break;
+        pages >>= 1;
+    }
     if (paddr == 0) {
         return -1;
     }

@@ -51,16 +51,17 @@
 
 #include "vm.h"
 #include "log.h"
+#include "block_subsystem.h"
 #include "starkernel/vm/parity.h"
 #include "starkernel/vm/bootstrap/sk_vm_bootstrap.h"
-
-/* Forward declaration — vm_enable_interpreter not in public vm.h */
-extern void vm_enable_interpreter(VM *vm);
 #include "starkernel/hal/hal.h"
 #include "starkernel/console.h"
+#include "starkernel/capsule_birth.h"
+#include "starkernel/capsule_run.h"
 #include "vm_internal.h"
 #include "platform_time.h"
 #include "test_runner/include/test_runner.h"
+#include "word_source/include/mama_forth_words.h"
 
 #if SK_PARITY_DEBUG
 extern char __text_start[];
@@ -139,6 +140,9 @@ static void sk_bootstrap_debug_log_xt(const char *label, const DictEntry *entry)
 
 static VM sk_mama_vm;  /* Mama's VM — persists after bootstrap */
 
+/* 1 MB POST block RAM — mirrors hosted blk_ram in main.c (BSS, no PE file bloat) */
+static uint8_t sk_post_blk_ram[BLK_RAM_BLOCKS * BLK_FORTH_SIZE];
+
 void *sk_get_mama_vm(void) {
     return (void *)&sk_mama_vm;
 }
@@ -162,6 +166,14 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
         sk_parity_print(pkt);
         return -1;
     }
+
+    /* Capsule subsystem: hooks, registry (Hera), run log.
+     * Called exactly once here for Mama — child VMs go through
+     * capsule_birth_baby() which never calls vm_init_with_host(). */
+    capsule_vm_hooks_register();
+    capsule_vm_registry_init(vm);  /* establishes [Hera] console prefix */
+    capsule_run_log_init();
+    register_mama_forth_words(vm); /* BIRTH KILL START STOP USE + capsule words */
 #if SK_PARITY_DEBUG
     log_set_level(LOG_DEBUG);
 #else
@@ -171,6 +183,10 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
 
     /* Enable interpreter - required for POST to execute vm_interpret() calls */
     vm_enable_interpreter(vm);
+
+    /* Initialize block subsystem for POST — mirrors hosted main.c init order.
+     * Without this, all block word tests fail with vm->error=1 (blk_is_valid→0). */
+    blk_subsys_init(vm, sk_post_blk_ram, sizeof(sk_post_blk_ram));
 
     /* Run full POST (Power-On Self Test) */
     console_println("POST: Running comprehensive test suite...");

@@ -50,8 +50,12 @@
 
 #ifdef __STARKERNEL__
 
-/* shim.c provides concrete sf_time wrappers below; suppress the inline versions */
+/* shim.c provides concrete sf_time wrappers below; suppress the inline versions.
+ * PLATFORM_TIME_NO_INLINE is also set globally via COMMON_CFLAGS in Makefile.starkernel,
+ * but kept here as documentation and for non-Makefile build contexts. */
+#ifndef PLATFORM_TIME_NO_INLINE
 #define PLATFORM_TIME_NO_INLINE
+#endif
 #include "platform_time.h"
 #include "platform_lock.h"
 #include "log.h"
@@ -62,6 +66,14 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stddef.h>
+
+/* -----------------------------------------------------------------------------
+ * abort() — freestanding: print to console and spin
+ * ---------------------------------------------------------------------------*/
+void abort(void) {
+    console_println("[ABORT] abort() called — halting");
+    for (;;) { __asm__ volatile ("" ::: "memory"); }
+}
 
 /* -----------------------------------------------------------------------------
  * Minimal malloc/free backed by kmalloc/kfree
@@ -108,11 +120,23 @@ LogLevel log_get_level(void) { return current_level; }
 
 static int kvsnprintf(char *buf, size_t n, const char *fmt, va_list args);
 
-/* Direct TSC read - always works, even when PM Timer calibration fails */
+/* Arch-portable counter read for relative log timestamps */
 static inline uint64_t shim_rdtsc(void) {
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__)
     uint32_t lo, hi;
     __asm__ volatile ("rdtsc" : "=a"(lo), "=d"(hi));
     return ((uint64_t)hi << 32) | lo;
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    uint64_t val;
+    __asm__ volatile ("isb\n\tmrs %0, cntpct_el0" : "=r"(val));
+    return val;
+#elif defined(__riscv)
+    uint64_t val;
+    __asm__ volatile ("rdcycle %0" : "=r"(val));
+    return val;
+#else
+    return 0;
+#endif
 }
 
 static uint64_t log_tsc_base = 0;  /* Captured on first log call */
@@ -138,14 +162,34 @@ static char *u64_to_dec(char *buf, uint64_t val) {
 void log_message(LogLevel level, const char *fmt, ...) {
     if (level > current_level || !fmt) return;
 
-    /* Capture TSC base on first call for relative timing */
+    /* Relative TSC timestamp */
     uint64_t now = shim_rdtsc();
-    if (log_tsc_base == 0) {
-        log_tsc_base = now;
-    }
+    if (log_tsc_base == 0) log_tsc_base = now;
     uint64_t rel_tsc = now - log_tsc_base;
 
-    /* Build prefix: [KRELTSC: <delta_tsc>] - relative TSC ticks from first log */
+    /* ANSI colors and level names indexed by LogLevel (0–4) */
+    static const char *colors[] = {
+        "\x1b[31m",  /* ERROR — red     */
+        "\x1b[33m",  /* WARN  — yellow  */
+        "\x1b[32m",  /* INFO  — green   */
+        "\x1b[35m",  /* TEST  — magenta */
+        "\x1b[34m",  /* DEBUG — blue    */
+    };
+    static const char *names[] = {
+        "ERROR", "WARN ", "INFO ", "TEST ", "DEBUG"
+    };
+    static const char *reset = "\x1b[0m";
+
+    int idx = (level < LOG_ERROR || level > LOG_DEBUG) ? LOG_ERROR : level;
+
+    /* Format message */
+    char buf[LOG_LINE_MAX];
+    va_list args;
+    va_start(args, fmt);
+    kvsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
+    /* Build KRELTSC prefix */
     char prefix[32];
     char *p = prefix;
     const char *tag = "[KRELTSC: ";
@@ -155,22 +199,36 @@ void log_message(LogLevel level, const char *fmt, ...) {
     *p++ = ' ';
     *p = '\0';
 
-    char buf[256];
-    va_list args;
-    va_start(args, fmt);
-    kvsnprintf(buf, sizeof(buf), fmt, args);
-    va_end(args);
-
-    /* Print prefix + message */
+    /* Emit: COLOR[HADES][LEVEL] RESET[KRELTSC: xxx] message\n */
+    console_puts(colors[idx]);
+    console_puts("[HADES][");
+    console_puts(names[idx]);
+    console_puts("] ");
+    console_puts(reset);
     console_puts(prefix);
     console_println(buf);
 }
 
 void log_test_result(const char *word_name, TestResult result) {
-    (void)result;
-    if (word_name) {
-        console_println(word_name);
+    if (current_level == LOG_NONE || current_level < LOG_TEST) return;
+    if (!word_name) return;
+
+    const char *color;
+    const char *status;
+    switch (result) {
+        case TEST_PASS:  color = "\x1b[32m"; status = "PASS"; break;
+        case TEST_FAIL:  color = "\x1b[31m"; status = "FAIL"; break;
+        case TEST_SKIP:  color = "\x1b[33m"; status = "SKIP"; break;
+        default:         color = "\x1b[0m";  status = "????"; break;
     }
+
+    console_puts("\x1b[35m[HADES][TEST ] \x1b[0m");
+    console_puts("Testing ");
+    console_puts(word_name);
+    console_puts(" ... ");
+    console_puts(color);
+    console_puts(status);
+    console_println("\x1b[0m");
 }
 
 void log_set_vm(struct VM *vm) { (void)vm; }
@@ -362,6 +420,13 @@ long strtol(const char *nptr, char **endptr, int base) {
     return sign * acc;
 }
 
+unsigned long strtoul(const char *s, char **endptr, int base)
+    { return (unsigned long)strtol(s, endptr, base); }
+long long strtoll(const char *s, char **endptr, int base)
+    { return (long long)strtol(s, endptr, base); }
+int  atoi(const char *s) { return (int)strtol(s, (char**)0, 10); }
+long atol(const char *s) { return strtol(s, (char**)0, 10); }
+
 double strtod(const char *nptr, char **endptr) {
     long v = strtol(nptr, endptr, 10);
     return (double)v;
@@ -507,6 +572,9 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) { (void)ptr; (v
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) { (void)ptr; (void)size; (void)nmemb; (void)stream; return 0; }
 int fseek(FILE *stream, long offset, int whence) { (void)stream; (void)offset; (void)whence; return -1; }
 long ftell(FILE *stream) { (void)stream; return 0; }
+void rewind(FILE *stream) { (void)stream; }
+int  fscanf(FILE *stream, const char *fmt, ...) { (void)stream; (void)fmt; return -1; }
+int  sscanf(const char *str, const char *fmt, ...) { (void)str; (void)fmt; return -1; }
 char *fgets(char *s, int size, FILE *stream) { (void)s; (void)size; (void)stream; return NULL; }
 int fputc(int c, FILE *stream) { (void)stream; console_putc((char)c); return c; }
 int fgetc(FILE *stream) { (void)stream; return -1; }

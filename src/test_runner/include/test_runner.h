@@ -71,6 +71,13 @@ typedef struct {
 /* Global test statistics - extern declaration */
 extern TestStats global_test_stats;
 
+/*
+ * Same-TU accumulator — use instead of direct struct access from other TUs.
+ * Direct extern struct access generates R_X86_64_REX_GOTPCRELX which the
+ * PE linker does not relax, causing double-dereference in -fPIC PE builds.
+ */
+void test_stats_accumulate(int tests, int pass, int fail, int skip, int error);
+
 /**
  * @brief Run tests for stack manipulation words
  * @param vm Pointer to the VM instance

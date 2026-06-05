@@ -177,6 +177,77 @@ static WordTestSuite control_word_suites[] = {
         3
     },
 
+    {
+        "I", {
+            {"basic",    ": TI 4 0 DO I . LOOP CR ; TI",        "Should print: 0 1 2 3", TEST_NORMAL, 0, 1},
+            {"single",   ": TI1 1 0 DO I . LOOP CR ; TI1",      "Should print: 0",        TEST_NORMAL, 0, 1},
+            {"offset",   ": TI2 5 3 DO I . LOOP CR ; TI2",      "Should print: 3 4",      TEST_NORMAL, 0, 1},
+            {"in_expr",  ": TI3 3 0 DO I 2 * . LOOP CR ; TI3",  "Should print: 0 2 4",    TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "J", {
+            {"basic",  ": TJ 2 0 DO 3 0 DO J . LOOP LOOP CR ; TJ",     "Should print: 0 0 0 1 1 1", TEST_NORMAL, 0, 1},
+            {"paired", ": TJ2 2 0 DO 2 0 DO J I + . LOOP LOOP CR ; TJ2", "Should print: 0 1 1 2",   TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        2
+    },
+
+    {
+        "EXIT", {
+            {"early_return",  ": TEX 5 EXIT 99 ; TEX . CR",                           "Should print: 5",    TEST_NORMAL, 0, 1},
+            {"cond_exit_pos", ": TEX2 DUP 0> IF EXIT THEN NEGATE ; 3 TEX2 . CR",      "Should print: 3",    TEST_NORMAL, 0, 1},
+            {"cond_exit_neg", ": TEX2 DUP 0> IF EXIT THEN NEGATE ; -4 TEX2 . CR",     "Should print: 4",    TEST_NORMAL, 0, 1},
+            {"no_skipped",    ": TEX3 1 2 EXIT 3 ; TEX3 . . CR",                      "Should print: 2 1",  TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        4
+    },
+
+    {
+        "LEAVE", {
+            {"basic",    ": TLV 0 5 0 DO I 3 = IF LEAVE THEN 1+ LOOP ; TLV . CR",      "Should print: 3",  TEST_NORMAL, 0, 1},
+            {"at_start", ": TLV2 0 5 0 DO LEAVE 1+ LOOP ; TLV2 . CR",                  "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"qdloop",   ": TLV3 0 5 0 ?DO I 2 = IF LEAVE THEN 1+ LOOP ; TLV3 . CR",   "Should print: 2",  TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
+    {
+        "UNLOOP", {
+            {"early_exit",  ": TUL 5 0 DO I 2 = IF UNLOOP 42 EXIT THEN LOOP 99 ; TUL . CR",  "Should print: 42", TEST_NORMAL, 0, 1},
+            {"full_loop",   ": TUL2 5 0 DO I 9 = IF UNLOOP 77 EXIT THEN LOOP 99 ; TUL2 . CR", "Should print: 99", TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        2
+    },
+
+    {
+        "AGAIN", {
+            {"basic",    ": TAG 0 BEGIN 1+ DUP 3 = IF EXIT THEN AGAIN ; TAG . CR",     "Should print: 3",  TEST_NORMAL, 0, 1},
+            {"countdown","10 BEGIN 1- DUP 0= IF EXIT THEN AGAIN . CR",                 "Should print: 0",  TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        2
+    },
+
+    {
+        "CASE", {
+            {"match_1",    ": TC CASE 1 OF 10 ENDOF 2 OF 20 ENDOF 99 SWAP ENDCASE . CR ; 1 TC", "Should print: 10", TEST_NORMAL, 0, 1},
+            {"match_2",    ": TC CASE 1 OF 10 ENDOF 2 OF 20 ENDOF 99 SWAP ENDCASE . CR ; 2 TC", "Should print: 20", TEST_NORMAL, 0, 1},
+            {"default",    ": TC CASE 1 OF 10 ENDOF 2 OF 20 ENDOF 99 SWAP ENDCASE . CR ; 5 TC", "Should print: 99", TEST_NORMAL, 0, 1},
+            {"zero_case",  ": TC CASE 0 OF 88 ENDOF 1 OF 77 ENDOF 66 SWAP ENDCASE . CR ; 0 TC", "Should print: 88", TEST_NORMAL, 0, 1},
+            {"neg_case",   ": TC CASE -1 OF 55 ENDOF 44 SWAP ENDCASE . CR ; -1 TC",             "Should print: 55", TEST_NORMAL, 0, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        5
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };

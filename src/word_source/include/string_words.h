@@ -43,7 +43,7 @@
 #ifndef STRING_WORDS_H
 #define STRING_WORDS_H
 
-#include "../../../include/vm.h"
+#include "vm.h"
 
 /** @file string_words.h
  * @brief FORTH-79 Standard string and text processing words implementation

@@ -158,26 +158,17 @@ static size_t       base_dir_len = 0;
 /*
  * Determine flags from the colon-separated capsule name.
  *
- * Directory conventions:
- *   core:*           -> (m) Mama's init
- *   production:*     -> (p) production
- *   domains:*        -> (p) production
- *   experiments:*    -> (e) experiment
- *   anything else    -> (e) experiment (safe default)
+ * init.4th (bare) is Mama's canonical init — gets FLAG_MAMA_INIT only.
+ * All other capsules carry both FLAG_PRODUCTION and FLAG_EXPERIMENT so
+ * that birth eligibility is not gated on mode type (D2).
  */
 static uint32_t flags_from_name(const char *name) {
     uint32_t flags = FLAG_ACTIVE;
 
-    if (strncmp(name, "core:", 5) == 0) {
+    if (strcmp(name, "init.4th") == 0) {
         flags |= FLAG_MAMA_INIT;
-    } else if (strncmp(name, "production:", 11) == 0) {
-        flags |= FLAG_PRODUCTION;
-    } else if (strncmp(name, "domains:", 8) == 0) {
-        flags |= FLAG_PRODUCTION;
-    } else if (strncmp(name, "experiments:", 12) == 0) {
-        flags |= FLAG_EXPERIMENT;
     } else {
-        flags |= FLAG_EXPERIMENT;
+        flags |= FLAG_PRODUCTION | FLAG_EXPERIMENT;
     }
 
     return flags;
@@ -374,9 +365,8 @@ static void generate_output(FILE *out) {
     for (int i = 0; i < capsule_count; i++) {
         CapsuleEntry *e = &capsules[i];
         const char *flags_comment =
-            (e->flags & FLAG_MAMA_INIT)    ? "MAMA_INIT | ACTIVE" :
-            (e->flags & FLAG_PRODUCTION)   ? "PRODUCTION | ACTIVE" :
-                                             "EXPERIMENT | ACTIVE";
+            (e->flags & FLAG_MAMA_INIT) ? "MAMA_INIT | ACTIVE" :
+                                          "PRODUCTION | EXPERIMENT | ACTIVE";
         fprintf(out,
             "    /* [%d] %s */\n"
             "    {\n"
@@ -436,7 +426,25 @@ static void generate_output(FILE *out) {
         "    .name_count    = %d,\n"
         "    .reserved      = 0,\n"
         "    .dir_hash      = 0x%016" PRIx64 "ULL,\n"
-        "};\n",
+        "};\n\n"
+        "/*===========================================================================\n"
+        " * PE/COFF GOT-indirection fix: accessor functions\n"
+        " *\n"
+        " * In -fPIC PE builds, cross-TU data references go through GOT and the PE\n"
+        " * linker does NOT convert GOTPCREL->LEA as the ELF linker does.  Defining\n"
+        " * these accessors in the same TU as the symbols lets the compiler emit\n"
+        " * direct RIP-relative addressing; callers reach them via a direct CALL.\n"
+        " *===========================================================================*/\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "uint32_t capsule_get_desc_count(void) { return capsule_directory.desc_count; }\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "const CapsuleDirHeader *capsule_get_directory(void) { return &capsule_directory; }\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "const CapsuleDesc *capsule_get_descriptors(void) { return capsule_descriptors; }\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "const CapsuleNameEntry *capsule_get_names(void) { return capsule_names; }\n\n"
+        "__attribute__((visibility(\"hidden\")))\n"
+        "const uint8_t *capsule_get_arena(void) { return capsule_arena; }\n",
         (uint64_t)0x44504143ULL,
         capsule_count, MAX_CAPSULES, capsule_count,
         dir_hash);

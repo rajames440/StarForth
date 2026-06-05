@@ -37,6 +37,7 @@
 #include "starkernel/capsule_loader.h"
 #include "starkernel/kmalloc.h"
 #include "starkernel/repl.h"
+#include "version.h"
 #endif
 
 /* Helper: check if memory type is RAM */
@@ -164,8 +165,16 @@ static void print_banner(void) {
     console_println("  ____) | || (_| | |  | . \\  __/ |  | | | |  __/ |");
     console_println(" |_____/ \\__\\__,_|_|  |_|\\_\\___|_|  |_| |_|\\___|_|");
     console_println("");
-    console_println("StarKernel v0.2.0-lithosananke - FORTH Microkernel");
+    console_println(LITHOS_VERSION_STR);
+#if defined(ARCH_AMD64)
     console_println("Architecture: amd64");
+#elif defined(ARCH_AARCH64)
+    console_println("Architecture: aarch64");
+#elif defined(__riscv)
+    console_println("Architecture: riscv64");
+#else
+    console_println("Architecture: unknown");
+#endif
     console_puts("Build: ");
     console_puts(__DATE__);
     console_puts(" ");
@@ -181,8 +190,19 @@ static void print_banner(void) {
  * At this point we own the machine - no UEFI services available.
  */
 void kernel_main(BootInfo *boot_info) {
-    /* M1: Console initialization */
+    /*
+     * Establish our own GDT before anything else.  UEFI hands us CS=0x38
+     * (OVMF's 64-bit segment at GDT[7]).  Our IDT entries use selector 0x08,
+     * so if UEFI's GDT[1] (0x08) is not a valid 64-bit code descriptor the
+     * ISR will run with the wrong CS type and all serial output from the ISR
+     * will fail silently.  arch_early_init() installs a minimal GDT with a
+     * proper 64-bit code segment at 0x08 and reloads CS via lretq.
+     */
+    arch_early_init();
+
+    /* M1: Console initialization — serial UART first, then framebuffer VT100 */
     console_init();
+    console_fb_init(&boot_info->framebuffer, FB_PIXEL_BGRX32);
     print_banner();
     print_boot_info(boot_info);
 
@@ -212,7 +232,7 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Timer: init done\n");
 
     /* M6: Kernel heap */
-    #define KERNEL_HEAP_SIZE (16 * 1024 * 1024)  /* 16 MB */
+    #define KERNEL_HEAP_SIZE (2ULL * 1024ULL * 1024ULL * 1024ULL)  /* 2 GiB — floor for 256+ baby VMs */
     kmalloc_init(KERNEL_HEAP_SIZE);
     console_println("Kernel heap initialized.");
     print_heap_stats();
@@ -314,13 +334,35 @@ void kernel_main(BootInfo *boot_info) {
     arch_enable_interrupts();
     console_println("Heartbeat running.");
 
+
 #ifdef STARFORTH_ENABLE_VM
-    /* Emergency CLI — runs with heartbeat active in interrupt context */
-    sk_repl((VM *)sk_get_mama_vm());
+    VM *mama = (VM *)sk_get_mama_vm();
+
+    /*
+     * SK_STARTUP_FORTH — optional compile-time FORTH script injected before
+     * the interactive REPL.  Useful for automated testing from the Makefile:
+     *   make -f Makefile.starkernel qemu SK_CMD="TIME-TICKS . BYE"
+     * The kernel executes the string, then either exits (if BYE is included)
+     * or falls through to the interactive REPL.
+     */
+#ifdef SK_STARTUP_FORTH
+    console_puts("Startup: ");
+    console_println(SK_STARTUP_FORTH);
+    vm_interpret(mama, SK_STARTUP_FORTH);
+    if (mama->error) {
+        console_puts("Startup: ERROR\n");
+        mama->error = 0;
+    }
+    if (mama->halted) goto idle;
 #endif
 
-    /* Idle loop (reached if sk_repl exits via BYE or VM halt) */
-    console_println("Kernel idle.");
+    sk_repl(mama);
+#endif
+
+    /* Idle loop (reached if sk_repl exits via BYE or vm->halted) */
+#ifdef SK_STARTUP_FORTH
+idle:
+#endif
     for (;;) {
         arch_halt();
     }

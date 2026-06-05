@@ -64,6 +64,14 @@ typedef struct {
 extern int global_contract_violations;
 
 /*
+ * Accessor functions for global_contract_violations.
+ * Use these from other TUs — direct extern access generates GOTPCRELX which
+ * the PE linker does not relax, causing double-dereference bugs in -fPIC PE builds.
+ */
+int  contract_get_violation_count(void);
+void contract_reset_violation_count(void);
+
+/*
  * capture_exec_result — snapshot the four exec-equiv fields from vm into r.
  */
 void capture_exec_result(VM *vm, ExecResult *r);

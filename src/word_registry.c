@@ -68,6 +68,9 @@
 #include "word_source/include/physics_pipelining_diagnostic_words.h"
 #include "word_source/include/physics_freeze_words.h"
 #include "word_source/include/dictionary_heat_diagnostic_words.h"
+#include "word_source/include/log_words.h"
+#include "word_source/include/q48_words.h"
+#include "word_source/include/inference_words.h"
 
 /**
  * @brief Registers a single FORTH word in the virtual machine
@@ -118,6 +121,9 @@ void register_forth79_words(VM *vm) {
     register_physics_pipelining_diagnostic_words(vm); /* Module 21: Pipelining Diagnostics */
     register_physics_freeze_words(vm); /* Module 22: Phase 2 Freeze/Decay Control Words */
     register_dictionary_heat_diagnostic_words(vm); /* Module 23: Dictionary Heat Optimization */
+    register_log_words(vm); /* Module 24: Log Level Control */
+    register_q48_words(vm); /* Module 25: Q48.16 Fixed-Point Math */
+    register_inference_words(vm); /* Module 26: SSM Inference + Jacquard */
 
     log_message(LOG_INFO, "FORTH-79 Standard word set registration complete");
 }

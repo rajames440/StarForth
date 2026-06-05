@@ -65,7 +65,7 @@ static WordTestSuite return_stack_word_suites[] = {
         "R>", {
             {"basic", "42 >R R> . CR", "Should print: 42", TEST_NORMAL, 0, 1},
             {"lifo_order", "1 2 >R >R R> . R> . CR", "Should print: 2 1", TEST_NORMAL, 0, 1},
-            {"empty_rstack", "R>", "Should cause return stack underflow", TEST_ERROR_CASE, 1, 0}, /* Stub */
+            {"empty_rstack", "R>", "Should cause return stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         3
@@ -75,7 +75,7 @@ static WordTestSuite return_stack_word_suites[] = {
         "R@", {
             {"basic", "42 >R R@ . R> DROP CR", "Should print: 42", TEST_NORMAL, 0, 1},
             {"non_destructive", "99 >R R@ R@ = . R> DROP CR", "Should print: -1", TEST_NORMAL, 0, 1},
-            {"empty_rstack", "R@", "Should cause return stack underflow", TEST_ERROR_CASE, 1, 0}, /* Stub */
+            {"empty_rstack", "R@", "Should cause return stack underflow", TEST_ERROR_CASE, 1, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         3

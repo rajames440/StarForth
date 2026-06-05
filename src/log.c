@@ -130,7 +130,7 @@ void log_message(LogLevel level, const char *fmt, ...) {
     if (current_level == LOG_NONE || level > current_level)
         return;
 
-    char timestamp[SF_TIME_STAMP_SIZE];
+    char timestamp[16];
     get_timestamp(timestamp, sizeof(timestamp));
 
 #ifndef STARFORTH_MINIMAL
@@ -158,7 +158,7 @@ void log_test_result(const char *word_name, TestResult result) {
     if (current_level == LOG_NONE || current_level < LOG_TEST)
         return;
 
-    char timestamp[SF_TIME_STAMP_SIZE];
+    char timestamp[16];
     get_timestamp(timestamp, sizeof(timestamp));
 
     const char *color;

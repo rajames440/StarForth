@@ -80,28 +80,28 @@ typedef enum {
 #define CAPSULE_FLAG_DEPRECATED   0x00000004  /* Eligible but discouraged */
 #define CAPSULE_FLAG_PINNED       0x00000008  /* Immune to GC */
 
-/** Mode flags (exactly one must be set for babies) */
+/** Mode flags (D2: babies carry both) */
 #define CAPSULE_FLAG_PRODUCTION   0x00000010  /* (p) truth-bearing */
 #define CAPSULE_FLAG_EXPERIMENT   0x00000020  /* (e) workload only */
 
 /** Mama init flag (exactly one capsule must have this) */
 #define CAPSULE_FLAG_MAMA_INIT    0x00000040  /* (m) Mama's init */
 
-/** Validate mode flags: exactly one of (p), (e), or (m) must be set */
+/** Validate mode flags.
+ *  Mama: neither (p) nor (e) may be set.
+ *  Babies: at least one of (p) or (e) must be set (both is fine — D2). */
 #define CAPSULE_MODE_VALID(f) \
     ((((f) & CAPSULE_FLAG_MAMA_INIT) != 0) ? \
         (!((f) & (CAPSULE_FLAG_PRODUCTION | CAPSULE_FLAG_EXPERIMENT))) : \
-        ((((f) & CAPSULE_FLAG_PRODUCTION) != 0) ^ \
-         (((f) & CAPSULE_FLAG_EXPERIMENT) != 0)))
+        (((f) & CAPSULE_FLAG_PRODUCTION) || ((f) & CAPSULE_FLAG_EXPERIMENT)))
 
 /** Check if capsule is Mama's init */
 #define CAPSULE_IS_MAMA_INIT(f) \
     (((f) & CAPSULE_FLAG_MAMA_INIT) && ((f) & CAPSULE_FLAG_ACTIVE))
 
-/** Birth eligibility: production, active, not revoked */
+/** Birth eligibility: active and not revoked (flag type irrelevant — D2) */
 #define CAPSULE_BIRTH_ELIGIBLE(f) \
-    (((f) & CAPSULE_FLAG_PRODUCTION) && \
-     ((f) & CAPSULE_FLAG_ACTIVE) && \
+    (((f) & CAPSULE_FLAG_ACTIVE) && \
      !((f) & CAPSULE_FLAG_REVOKED))
 
 /** DoE eligibility: experiment, active, not revoked */

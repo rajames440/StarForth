@@ -425,28 +425,56 @@ static void vm_heartbeat_update_l8(VM *vm)
     metrics.temporal_decay = (decay_slope > 0.0) ? (1.0 / decay_slope) : 0.0; /* Higher slope = stronger temporal locality */
     if (metrics.temporal_decay > 1.0) metrics.temporal_decay = 1.0; /* Clamp to [0,1] */
 
-    /* L5/L6: Inference stability for hysteresis */
-    sf_mutex_lock(&vm->tuning_lock);
-    int early_exited = (vm->last_inference_outputs && vm->last_inference_outputs->early_exited);
-    sf_mutex_unlock(&vm->tuning_lock);
-    metrics.stability_score = early_exited ? 0.9 : 0.1; /* High stability if inference early-exited */
+    /* L5/L6: Inference stability for hysteresis + table ANOVA tracking */
+    {
+        int early_exited;
+        sf_mutex_lock(&vm->tuning_lock);
+        early_exited = (vm->last_inference_outputs && vm->last_inference_outputs->early_exited);
+        sf_mutex_unlock(&vm->tuning_lock);
+        metrics.stability_score        = early_exited ? 0.9 : 0.1;
+        metrics.inference_early_exited = early_exited;
+        /* Inference ran this tick if last_inference_tick == tick_count */
+        metrics.inference_ran_this_tick =
+            (vm->heartbeat.tick_count == vm->heartbeat.last_inference_tick) ? 1 : 0;
+    }
 
-    /* === Run L8 Mode Selection === */
-    ssm_l8_mode_t old_mode = l8->current_mode;
-    ssm_l8_update(&metrics, l8);
-
-    /* === Apply Mode Configuration (if changed) === */
-    if (l8->current_mode != old_mode) {
-        ssm_config_t *config = (ssm_config_t*)vm->ssm_config;
-        ssm_apply_mode(l8, config);
-
-        log_message(LOG_DEBUG,
-                   "L8[JACQUARD]: Mode %s → %s (entropy=%.2f, cv=%.2f, temporal=%.2f)",
-                   ssm_l8_mode_name(old_mode),
-                   ssm_l8_mode_name(l8->current_mode),
-                   metrics.entropy,
-                   metrics.cv,
-                   metrics.temporal_decay);
+    if (l8->table) {
+        /* === Adaptive table-based selection === */
+        uint8_t old_config = l8->table->current_config;
+        ssm_l8_update_table(l8, &metrics,
+                            (ssm_config_t*)vm->ssm_config,
+                            vm->rolling_window.effective_window_size,
+                            vm->decay_slope_q48);
+        if (l8->table->current_config != old_config) {
+            uint8_t bits = l8->table->entries[l8->table->current_config].config_bits;
+            ssm_config_t *cfg = (ssm_config_t*)vm->ssm_config;
+            log_message(LOG_DEBUG,
+                       "L8[TABLE]: Config %u → %u regime=%u score=%u "
+                       "L2=%d L3=%d L5=%d L6=%d",
+                       (unsigned)old_config,
+                       (unsigned)l8->table->current_config,
+                       (unsigned)l8->table->current_regime,
+                       (unsigned)l8->table->regime_scores
+                           [l8->table->current_regime][l8->table->current_config],
+                       cfg->L2_rolling_window, cfg->L3_linear_decay,
+                       cfg->L5_window_inference, cfg->L6_decay_inference);
+            (void)bits;
+        }
+    } else {
+        /* === Legacy threshold classifier === */
+        ssm_l8_mode_t old_mode = l8->current_mode;
+        ssm_l8_update(&metrics, l8);
+        if (l8->current_mode != old_mode) {
+            ssm_config_t *config = (ssm_config_t*)vm->ssm_config;
+            ssm_apply_mode(l8, config);
+            log_message(LOG_DEBUG,
+                       "L8[JACQUARD]: Mode %s → %s (entropy=%.2f, cv=%.2f, temporal=%.2f)",
+                       ssm_l8_mode_name(old_mode),
+                       ssm_l8_mode_name(l8->current_mode),
+                       metrics.entropy,
+                       metrics.cv,
+                       metrics.temporal_decay);
+        }
     }
 }
 

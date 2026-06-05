@@ -250,6 +250,77 @@ static WordTestSuite double_word_suites[] = {
         7
     },
 
+    {
+        "S>D", {
+            {"positive",    "5 S>D . . CR",          "Should sign-extend positive: 0 5",         TEST_NORMAL,     0, 1},
+            {"negative",    "-5 S>D . . CR",         "Should sign-extend negative: -1 -5",       TEST_NORMAL,     0, 1},
+            {"zero",        "0 S>D . . CR",          "Should sign-extend zero: 0 0",             TEST_NORMAL,     0, 1},
+            {"max_int",     "2147483647 S>D . . CR", "Should extend max int: 0 2147483647",      TEST_EDGE_CASE,  0, 1},
+            {"min_int",     "-2147483648 S>D . . CR","Should extend min int: -1 -2147483648",    TEST_EDGE_CASE,  0, 1},
+            {"empty_stack", "S>D",                   "Should cause stack underflow",             TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        6
+    },
+
+    {
+        "D2*", {
+            {"basic",       "5 0 D2* . . CR",     "Should double 5: 0 10",               TEST_NORMAL,     0, 1},
+            {"zero",        "0 0 D2* . . CR",     "Should double zero: 0 0",             TEST_NORMAL,     0, 1},
+            {"negative",    "-1 -1 D2* . . CR",   "Should double -1: -1 -2",            TEST_NORMAL,     0, 1},
+            {"carry",       "0 1 D2* . . CR",     "Should shift high cell: 0 2",        TEST_EDGE_CASE,  0, 1},
+            {"empty_stack", "D2*",                "Should cause stack underflow",        TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        5
+    },
+
+    {
+        "D2/", {
+            {"basic",       "10 0 D2/ . . CR",   "Should halve 10: 0 5",                TEST_NORMAL,     0, 1},
+            {"negative",    "-2 -1 D2/ . . CR",  "Should halve -2: -1 -1",             TEST_NORMAL,     0, 1},
+            {"zero",        "0 0 D2/ . . CR",    "Should halve zero: 0 0",              TEST_NORMAL,     0, 1},
+            {"odd",         "3 0 D2/ . . CR",    "Should truncate toward zero: 0 1",    TEST_EDGE_CASE,  0, 1},
+            {"empty_stack", "D2/",               "Should cause stack underflow",         TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        5
+    },
+
+    {
+        /* NOTE: 2>R/2R>/2R@ are tested at REPL level (not inside compiled words).
+         * The execution loop stores the IP in return_stack[rsp]; if 2>R were called
+         * inside a colon definition, it would increment rsp and the loop would
+         * dereference the pushed data value as a pointer — same model as >R tests. */
+        "2>R", {
+            {"roundtrip",   "10 20 2>R 2R> . . CR",              "Should store and retrieve: 20 10",  TEST_NORMAL,     0, 1},
+            {"depth_after", "1 2 2>R DEPTH . 2R> DROP DROP CR",  "Should empty data stack: 0",        TEST_NORMAL,     0, 1},
+            {"empty_stack", "2>R",                                "Should cause stack underflow",      TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
+    {
+        "2R>", {
+            {"roundtrip",   "5 6 2>R 2R> . . CR",           "Should retrieve double: 6 5",              TEST_NORMAL,     0, 1},
+            {"depth",       "9 8 2>R 2R> DEPTH . CR",       "Should push 2 items to data stack: 2",     TEST_NORMAL,     0, 1},
+            {"empty_rstack","2R>",                           "Should cause return stack underflow",      TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
+    {
+        "2R@", {
+            {"peek",            "3 4 2>R 2R@ . . 2R> DROP DROP CR",     "Should peek: 4 3",             TEST_NORMAL,     0, 1},
+            {"non_destructive", "7 8 2>R 2R@ DROP DROP 2R> . . CR",     "Should leave rstack intact",   TEST_NORMAL,     0, 1},
+            {"empty_rstack",    "2R@",                                   "Should cause return stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
