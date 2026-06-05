@@ -296,6 +296,7 @@ void vm_init(VM* vm)
         return;
     }
     ssm_l8_init((ssm_l8_state_t*)vm->ssm_l8_state, SSM_MODE_C0);
+    ssm_l8_init_table((ssm_l8_state_t*)vm->ssm_l8_state);
 
     vm->ssm_config = sf_malloc(sizeof(ssm_config_t));
     if (!vm->ssm_config)
@@ -348,6 +349,7 @@ void vm_cleanup(VM* vm)
     /* Clean up SSM L8 state */
     if (vm->ssm_l8_state)
     {
+        ssm_l8_free_table((ssm_l8_state_t*)vm->ssm_l8_state);
         sf_free(vm->ssm_l8_state);
         vm->ssm_l8_state = NULL;
     }

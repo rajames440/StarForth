@@ -324,6 +324,7 @@ void vm_init_with_host(VM* vm, const VMHostServices *host)
         return;
     }
     ssm_l8_init((ssm_l8_state_t*)vm->ssm_l8_state, SSM_MODE_C0);
+    ssm_l8_init_table((ssm_l8_state_t*)vm->ssm_l8_state);
 
     vm->ssm_config = vm_host_alloc(vm, sizeof(ssm_config_t), sizeof(void*));
     if (!vm->ssm_config)
