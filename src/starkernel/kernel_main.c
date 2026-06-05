@@ -200,9 +200,8 @@ void kernel_main(BootInfo *boot_info) {
      */
     arch_early_init();
 
-    /* M1: Console initialization — serial UART first, then framebuffer VT100 */
+    /* M1: Console initialization — serial UART first */
     console_init();
-    console_fb_init(&boot_info->framebuffer, FB_PIXEL_BGRX32);
     print_banner();
     print_boot_info(boot_info);
 
@@ -355,6 +354,17 @@ void kernel_main(BootInfo *boot_info) {
     }
     if (mama->halted) goto idle;
 #endif
+
+    /* Activate framebuffer VT100 now that POST is done — REPL-only */
+    if (boot_info->framebuffer.base != NULL && boot_info->framebuffer.size > 0) {
+        FbPixelFormat fb_fmt;
+        switch (boot_info->framebuffer.pixel_format) {
+            case (UINT32)PixelRedGreenBlueReserved8BitPerColor: fb_fmt = FB_PIXEL_RGBX32; break;
+            case (UINT32)PixelBlueGreenRedReserved8BitPerColor: fb_fmt = FB_PIXEL_BGRX32; break;
+            default: fb_fmt = FB_PIXEL_BGRX32; break;
+        }
+        console_fb_init(&boot_info->framebuffer, fb_fmt);
+    }
 
     sk_repl(mama);
 #endif
