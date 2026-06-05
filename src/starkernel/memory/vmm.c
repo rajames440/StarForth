@@ -347,6 +347,21 @@ int vmm_init(BootInfo *boot_info) {
         return -1;
     }
 
+    /* Map GOP framebuffer identity — MMIO not covered by the RAM walk above.
+     * QEMU's emulated GOP linear framebuffer sits in a reserved memory range
+     * (EfiMemoryMappedIO) that is excluded from the RAM walk.  Map it WB here
+     * so the VT100 renderer can write to it after load_cr3().  CACHE_DISABLE
+     * is omitted deliberately: QEMU's VGA emulation is coherent and UC- mapping
+     * causes #GP on some PAT/MTRR combinations. */
+    if (boot_info->framebuffer.base != NULL && boot_info->framebuffer.size > 0) {
+        uint64_t fb_phys = (uint64_t)(uintptr_t)boot_info->framebuffer.base;
+        uint64_t fb_size = (uint64_t)boot_info->framebuffer.size;
+        if (vmm_map_range(fb_phys, fb_phys, fb_size, VMM_FLAG_WRITABLE) != 0) {
+            console_println("VMM init failed: map GOP framebuffer");
+            return -1;
+        }
+    }
+
     load_cr3(vmm_root_pml4_phys);
     console_println("VMM initialized (mapped RAM, CR3 switched)");
     return 0;
