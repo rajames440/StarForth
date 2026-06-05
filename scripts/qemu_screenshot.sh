@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # qemu_screenshot.sh — Boot LithosAnanke under QEMU, wait for ok>, capture framebuffer.
 #
-# Usage (called by Makefile.starkernel qemu-screenshot target):
+# Usage:
 #   scripts/qemu_screenshot.sh <LOADER_EFI> <OVMF_CODE> <OVMF_VARS_RO> <BUILD_DIR> <LOG_DIR>
+#   scripts/qemu_screenshot.sh <LOADER_EFI> <OVMF_CODE> <OVMF_VARS_RO> <BUILD_DIR> <LOG_DIR> <PRE_BUILT_ISO>
+#
+# If PRE_BUILT_ISO is supplied the ISO build step is skipped (used by the `qemu`
+# Makefile target which already built the ISO during the serial acceptance run).
 #
 # Outputs:
-#   <BUILD_DIR>/screenshot.ppm  — raw PPM from QEMU screendump
-#   <BUILD_DIR>/screenshot.png  — converted PNG (requires imagemagick convert)
-#   <LOG_DIR>/qemu-screenshot-YYYYMMDD-HHMMSS.log  — serial log
+#   <BUILD_DIR>/screenshot.ppm              — raw PPM from QEMU screendump
+#   <LOG_DIR>/qemu-screenshot-YYYYMMDD-HHMMSS.{log,png}  — serial log + PNG
 #
 # Requires: qemu-system-x86_64, socat, xorriso, mtools, ovmf, imagemagick
 
@@ -18,10 +21,11 @@ OVMF_CODE="$2"
 OVMF_VARS_RO="$3"
 BUILD_DIR="$4"
 LOG_DIR="$5"
+PRE_BUILT_ISO="$6"   # optional: skip ISO build if supplied
 
 if [ -z "$LOADER_EFI" ] || [ -z "$OVMF_CODE" ] || [ -z "$OVMF_VARS_RO" ] \
    || [ -z "$BUILD_DIR" ] || [ -z "$LOG_DIR" ]; then
-    echo "Usage: $0 <LOADER_EFI> <OVMF_CODE> <OVMF_VARS_RO> <BUILD_DIR> <LOG_DIR>"
+    echo "Usage: $0 <LOADER_EFI> <OVMF_CODE> <OVMF_VARS_RO> <BUILD_DIR> <LOG_DIR> [PRE_BUILT_ISO]"
     exit 1
 fi
 
@@ -33,19 +37,26 @@ for dep in qemu-system-x86_64 socat xorriso mformat; do
 done
 
 # --------------------------------------------------------------------------
-# Build ISO (same process as the qemu: target)
+# Build ISO — skipped when a pre-built ISO is provided (e.g. from `qemu` target)
 # --------------------------------------------------------------------------
-echo "  Building ISO for screendump..."
-mkdir -p "${BUILD_DIR}/iso"
-dd if=/dev/zero of="${BUILD_DIR}/iso/efi.img" bs=512 count=8192 2>/dev/null
-mformat -i "${BUILD_DIR}/iso/efi.img" ::
-mmd     -i "${BUILD_DIR}/iso/efi.img" ::/EFI
-mmd     -i "${BUILD_DIR}/iso/efi.img" ::/EFI/BOOT
-mcopy   -i "${BUILD_DIR}/iso/efi.img" "${LOADER_EFI}" ::/EFI/BOOT/BOOTX64.EFI
+if [ -n "$PRE_BUILT_ISO" ]; then
+    QEMU_ISO="$PRE_BUILT_ISO"
+    echo "  Using pre-built ISO: ${QEMU_ISO}"
+else
+    echo "  Building ISO for screendump..."
+    mkdir -p "${BUILD_DIR}/iso"
+    dd if=/dev/zero of="${BUILD_DIR}/iso/efi.img" bs=512 count=8192 2>/dev/null
+    mformat -i "${BUILD_DIR}/iso/efi.img" ::
+    mmd     -i "${BUILD_DIR}/iso/efi.img" ::/EFI
+    mmd     -i "${BUILD_DIR}/iso/efi.img" ::/EFI/BOOT
+    mcopy   -i "${BUILD_DIR}/iso/efi.img" "${LOADER_EFI}" ::/EFI/BOOT/BOOTX64.EFI
 
-xorriso -as mkisofs -r -J \
-    -e efi.img -no-emul-boot \
-    -o "${BUILD_DIR}/starkernel.iso" "${BUILD_DIR}/iso" 2>&1 | grep -v "^xorriso" || true
+    xorriso -as mkisofs -r -J \
+        -e efi.img -no-emul-boot \
+        -o "${BUILD_DIR}/starkernel.iso" "${BUILD_DIR}/iso" 2>&1 | grep -v "^xorriso" || true
+
+    QEMU_ISO="${BUILD_DIR}/starkernel.iso"
+fi
 
 # --------------------------------------------------------------------------
 # Setup paths
@@ -57,7 +68,7 @@ SERIAL_LOG="${LOG_DIR}/qemu-screenshot-${TS}.log"
 VARS_COPY="${BUILD_DIR}/OVMF_VARS_screenshot.fd"
 MONITOR_SOCK="${BUILD_DIR}/qemu-monitor-${TS}.sock"
 PPM_OUT="${BUILD_DIR}/screenshot.ppm"
-PNG_OUT="${BUILD_DIR}/screenshot.png"
+PNG_LOG="${LOG_DIR}/qemu-screenshot-${TS}.png"   # committed artifact
 QEMU_PID_FILE="${BUILD_DIR}/qemu-screenshot.pid"
 
 cp "${OVMF_VARS_RO}" "${VARS_COPY}"
@@ -78,7 +89,7 @@ qemu-system-x86_64 \
     -m 1024 \
     -drive if=pflash,format=raw,readonly=on,file="${OVMF_CODE}" \
     -drive if=pflash,format=raw,file="${VARS_COPY}" \
-    -cdrom "${BUILD_DIR}/starkernel.iso" -boot d \
+    -cdrom "${QEMU_ISO}" -boot d \
     -serial file:"${SERIAL_LOG}" \
     -monitor unix:"${MONITOR_SOCK}",server,nowait \
     -display none \
@@ -130,15 +141,17 @@ rm -f "${QEMU_PID_FILE}" "${MONITOR_SOCK}" "${VARS_COPY}"
 if [ -f "${PPM_OUT}" ]; then
     echo "  PPM        : ${PPM_OUT} ($(wc -c < "${PPM_OUT}") bytes)"
     if command -v convert >/dev/null 2>&1; then
-        convert "${PPM_OUT}" "${PNG_OUT}"
-        echo "  PNG        : ${PNG_OUT}"
+        convert "${PPM_OUT}" "${PNG_LOG}"
+        rm -f "${PPM_OUT}"
+        echo "  PNG        : ${PNG_LOG}"
     else
         echo "  WARN: imagemagick 'convert' not found — PPM only (install imagemagick)"
+        PNG_LOG="${PPM_OUT}"
     fi
     echo ""
     echo "=== Screendump complete ==="
     echo "    Serial log : ${SERIAL_LOG}"
-    echo "    Screenshot : ${PNG_OUT}"
+    echo "    Screenshot : ${PNG_LOG}"
 else
     echo "  ERROR: PPM not written — screendump may have failed"
     echo "  Serial log: ${SERIAL_LOG}"

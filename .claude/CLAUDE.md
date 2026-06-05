@@ -146,17 +146,37 @@ make -f Makefile.starkernel ARCH=riscv64 clean qemu
 ```
 
 Always pass `clean` before `qemu` — never build-only without clean.
-Serial output is automatically captured to:
+
+**What the amd64 `qemu` target now does (three steps in one command):**
+1. **Host render test** (`fbtest`) — compiles `framebuffer.c`/`vt100.c`/`font_8x16.c` with
+   host gcc, renders an ANSI test page into RAM, asserts 8 pixel-level properties (ANSI colors,
+   truecolor, reverse video, cursor positioning, scroll), writes PNG renders to `build/host/`.
+   Exits non-zero on any assertion failure — do not proceed to QEMU if this fails.
+2. **Serial acceptance boot** — boots the kernel under QEMU, captures serial output,
+   verifies `ok>` prompt, prints the full log.
+3. **Framebuffer screendump** — boots the kernel a second time with a HMP monitor socket,
+   waits for `ok>`, issues `screendump` to capture the live GOP framebuffer surface, and
+   saves a PNG proving that `console_fb_init → BootInfo.framebuffer → VRAM` works end-to-end.
+
+Output artifacts captured to `logs/`:
 ```
-logs/qemu-amd64-YYYYMMDD-HHMMSS.log
+logs/qemu-amd64-YYYYMMDD-HHMMSS.log          ← serial acceptance log
+logs/qemu-screenshot-YYYYMMDD-HHMMSS.log      ← screendump serial log (amd64 only)
+logs/qemu-screenshot-YYYYMMDD-HHMMSS.png      ← framebuffer screendump PNG (amd64 only)
 logs/qemu-aarch64-YYYYMMDD-HHMMSS.log
 logs/qemu-riscv64-YYYYMMDD-HHMMSS.log
 ```
-These logs are for Captain Bob's manual inspection. Do not delete them.
+These artifacts are for Captain Bob's manual inspection. Do not delete them.
 `logs/` is tracked in git — it is a canonical optimistic history of all QEMU acceptance
-runs. Commit and push new logs after every acceptance test run.
+runs. Commit and push new logs (including PNG screendumps) after every acceptance test run.
 Do not claim a change is accepted until all three architectures have booted
 to `ok>` and their logs are present in `logs/`.
+
+The standalone `fbtest` and `qemu-screenshot` targets remain available:
+```bash
+make -f Makefile.starkernel fbtest             # host render test only (no QEMU)
+make -f Makefile.starkernel ARCH=amd64 qemu-screenshot  # screendump only
+```
 
 ## Architecture
 
