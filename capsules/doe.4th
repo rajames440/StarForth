@@ -1,18 +1,18 @@
 Block 2049
 ( doe.4th - unified L8 adaptive-map DoE for LithosAnanke              )
 ( Factors: entropy x cv x temporal_decay x stability, 2 levels each   )
-( 2^4 = 16 configurations x 120 reps = 1920 randomised runs           )
-( Run matrix stores sequential indices 0..1919; Fisher-Yates shuffles  )
+( 2^4 = 16 configurations x 30 reps = 480 randomised runs             )
+( Run matrix stores sequential indices 0..479; Fisher-Yates shuffles   )
 ( them so cfg and rep assignments are preserved through the shuffle.   )
 ( Decode at runtime: cfg = idx / N-REPS, rep = idx MOD N-REPS         )
-( Output: CSV to serial only. Invoke at ok> prompt: DOE               )
+( Self-executing: capsule runs DOE on load; CSV streams to serial.     )
 49152 CONSTANT ENT-HI    ( 0.75 * 65536 )
  9830 CONSTANT CV-HI     ( 0.15 * 65536 )
 32768 CONSTANT TMP-HI    ( 0.50 * 65536 )
 32768 CONSTANT STB-HI    ( 0.50 * 65536 )
    16 CONSTANT N-CFG
-  120 CONSTANT N-REPS
- 1920 CONSTANT N-RUNS
+   30 CONSTANT N-REPS
+  480 CONSTANT N-RUNS
 
 Block 2050
 ( serial output primitives )
@@ -63,7 +63,7 @@ Block 2052
   LOOP ;
 
 Block 2053
-( run matrix: 1920 cells holding sequential indices 0..1919           )
+( run matrix: 480 cells holding sequential indices 0..479             )
 ( Fisher-Yates shuffles the indices; cfg and rep decoded at runtime   )
 ( cfg = mat[i] / N-REPS,  rep = mat[i] MOD N-REPS                    )
 CREATE RUN-MATRIX N-RUNS 8 * ALLOT
@@ -107,7 +107,7 @@ Block 2055
   INFER-FIT@        CSV-LAST ( fit_q         ) ;
 
 Block 2056
-( DOE entry point )
+( DOE entry point — self-executing on capsule load )
 : DOE ( -- )
   12345 SEED
   INIT-MATRIX
@@ -123,4 +123,5 @@ Block 2056
     EMIT-ROW
     RUN-ID @ 1 + RUN-ID !
   LOOP
-  ." DOE: 1920 runs complete" CRLF ;
+  ." DOE: 480 runs complete" CRLF ;
+DOE
