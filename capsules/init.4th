@@ -8,4 +8,3 @@ Block 2049
 : F CR BAR BLIP BAR BLIP BLIP CR ;
 S" Hermes" BIRTH
 S" Artemis" BIRTH
-S" doe.4th" EXEC
