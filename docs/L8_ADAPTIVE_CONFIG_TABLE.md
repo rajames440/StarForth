@@ -174,11 +174,11 @@ typedef struct {
     SsmConfigEntry entries[128];        /* Config metadata, static */
     uint32_t       regime_scores[8][128]; /* Benefit score per regime per config */
     uint32_t       regime_trials[8][128]; /* Trial count per regime per config */
-    uint8_t        current_config;       /* Index of active config (0–127) */
-    uint8_t        current_regime;       /* Regime bin at start of current trial */
-    uint32_t       trial_tick_count;     /* Ticks elapsed in current trial */
-    uint32_t       anova_exits_this_trial; /* Phase 2A early-exits accumulated */
-    uint32_t       total_regime_trials[8]; /* Total trials per regime (for UCB ln term) */
+    uint8_t        current_config;          /* Index of active config (0–127) */
+    uint8_t        current_regime;          /* Regime bin at start of current trial */
+    uint32_t       trial_tick_count;        /* Ticks elapsed in current trial (relative time) */
+    uint32_t       anova_exits_this_trial;  /* Phase 2A early-exits accumulated */
+    uint32_t       total_regime_trials[8];  /* Total trials per regime (for UCB ln term) */
 } SsmConfigTable;
 ```
 
@@ -355,7 +355,8 @@ the top position indefinitely based on past performance.
 
 #### DECAY_FACTOR stability analysis
 
-The half-life of a benefit score is:
+The half-life of a benefit score is expressed in **trials** — the natural relative-time unit
+for this system. Wall-clock conversion is L7's concern and is not the right framing here.
 
 ```
 half_life_trials = ln(0.5) / ln(DECAY_FACTOR)
@@ -364,108 +365,52 @@ half_life_trials = ln(0.5) / ln(DECAY_FACTOR)
 At `DECAY_FACTOR = 0.99`:
 
 ```
-half_life_trials = ln(0.5) / ln(0.99) ≈ 69 trials
+half_life_trials ≈ 69 trials
 ```
 
-**Converting to wall clock requires knowing trial duration.** Section 5.6 shows this is
-wall-clock-bounded to ≥ 20ms, but the upper bound depends on L7's adaptive heartrate.
+The key assumption: **regime dwell time, measured in trials**. A config earns its score
+over many trials in a given regime. If the system typically dwells in a regime for ~200 trials
+before the metric signature shifts, a 69-trial half-life means scores from the previous dwell
+carry moderate weight into the next — which is appropriate. If regimes shift every ~20 trials,
+the half-life is too long and the table remembers the wrong regime. If regimes dwell for
+~2,000 trials, the half-life is fine and the exploration bonus from UCB prevents stagnation.
 
-| Effective tick period (L7) | Trial duration (min) | Half-life |
-|---------------------------|---------------------|-----------|
-| 10 µs (base rate)         | 20 ms               | ~1.4 s    |
-| 50 µs (moderate load)     | ~100 ms (bounded)   | ~6.9 s    |
-| 100 µs (heavy load)       | ~200 ms (bounded)   | ~13.8 s   |
-
-**The key assumption** is that regime dwell time is on the order of seconds. If a FORTH
-session stays in the same metric regime for several seconds at a time (reasonable for
-interactive use or batch computation), a half-life of 1–14 seconds means the table retains
-useful regime-specific memory without freezing on past performance.
-
-If regimes change faster than ~1.4 s (e.g., rapid alternation between compute-heavy and
-I/O-bound FORTH), `DECAY_FACTOR = 0.99` causes the scores to reset before they have
-stabilized — the table becomes noise rather than signal. In that case, a slower decay
-(`DECAY_FACTOR = 0.999`, half-life ~693 trials ≈ 14s at base rate) is more appropriate.
-
-If regimes dwell for minutes, the current rate is fine — a config earns and retains its
-score well within one dwell period, and the exploration bonus from UCB keeps the table
-from stagnating.
-
-**Effective-zero crossover:** a score decays below 1% of its peak after:
+**Effective-zero crossover:**
 
 ```
-0.99^n = 0.01 → n ≈ 458 trials ≈ 9.2 s at base rate
+0.99^n = 0.01 → n ≈ 458 trials
 ```
 
-This is the "memory horizon" — how far back the table looks. Flag `SSM_SCORE_DECAY_FACTOR`
-as a first-class tunable alongside `SSM_MIN_TRIAL_NS` and calibrate them together.
+This is the memory horizon — how many trials back the table looks. Flag `SSM_SCORE_DECAY_FACTOR`
+as a first-class tunable. Calibrate it against observed regime dwell time in trials, not
+against wall-clock expectations.
 
 ### 5.6 Minimum Trial Duration
 
-Because the reward signal requires two consecutive trials under the same config to measure
-`joint_error`, and because each trial must contain at least one full inference run to update
-(window, slope), each trial must span at least two inference cycles. Since inference runs
-every `HEARTBEAT_INFERENCE_FREQUENCY = 1,000` ticks, the tick-count floor is:
+Each trial must contain at least two inference cycles — one to establish `(prev_window,
+prev_slope)` and one to measure how much they moved. Since inference runs every
+`HEARTBEAT_INFERENCE_FREQUENCY = 1,000` ticks:
 
 ```
-min_trial_ticks = 2 × HEARTBEAT_INFERENCE_FREQUENCY = 2,000 ticks
+SSM_MIN_TRIAL_TICKS = 2 × HEARTBEAT_INFERENCE_FREQUENCY = 2,000 ticks
 ```
 
-**However, ticks are not fixed-duration.** L7 is the *adaptive heartrate* loop — it varies
-the heartbeat wake frequency based on observed workload. `HEARTBEAT_TICK_NS = 10,000 ns` is
-the *base* period; under load L7 may extend this to 50–100 µs or beyond. Therefore:
+**This is a relative-time measure, not a wall-clock measure — intentionally so.**
 
-```
-2,000 ticks = 20 ms  only at the base heartrate.
-              ≈ 100–200 ms  if L7 has adapted to 5–10× longer tick periods.
-```
+The tick is the fundamental unit of relative time in this system. L7 (adaptive heartrate)
+varies the *wall-clock duration* of a tick based on observed workload. That variation is the
+system's own response to workload; it is not noise. A trial lasting 2,000 ticks at a slower
+L7 heartrate is a trial over a longer relative-time span, which corresponds to more actual
+system activity — it is a larger, not smaller, sample. Anchoring to wall clock here would
+import an absolute time dependency into a system built deliberately around relative time with
+CV promises.
 
-A tick-count-only termination condition drifts with L7. The trial duration can expand by an
-order of magnitude without warning, making score decay rates (Section 5.5) and regime dwell
-assumptions inconsistent.
+The correct framing: `SSM_MIN_TRIAL_TICKS` is a promise — "this trial will not end until
+the system has processed at least 2,000 of its own ticks." What that means in nanoseconds
+is L7's concern, not the adaptive selector's.
 
-#### Fix: wall-clock minimum
-
-Terminate a trial when **both** conditions hold:
-
-1. `trial_tick_count >= SSM_MIN_TRIAL_TICKS` (2,000) — ensures ≥ 2 inference cycles ran
-2. `hal_time_ns() - trial_start_ns >= SSM_MIN_TRIAL_NS` (20,000,000 = 20 ms) — ensures
-   minimum wall-clock coverage regardless of heartrate
-
-In practice condition 2 is the binding constraint at base rate; condition 1 is the binding
-constraint when L7 has slowed ticks significantly (preventing a trial from ending before
-inference has run twice).
-
-This requires adding `trial_start_ns` to `SsmConfigTable` (see updated struct below) and
-recording `hal_time_ns()` at trial start. `hal_time_ns()` is already called by the heartbeat
-thread at every tick — no additional HAL calls needed if the timestamp is forwarded.
-
-#### Updated `SsmConfigTable` struct (adds `trial_start_ns`)
-
-```c
-typedef struct {
-    SsmConfigEntry entries[128];
-    uint32_t       regime_scores[8][128];
-    uint32_t       regime_trials[8][128];
-    uint8_t        current_config;
-    uint8_t        current_regime;
-    uint32_t       trial_tick_count;
-    uint64_t       trial_start_ns;          /* ← NEW: wall-clock start of current trial */
-    uint32_t       anova_exits_this_trial;
-    uint32_t       total_regime_trials[8];
-} SsmConfigTable;
-```
-
-Memory impact: +8 bytes. Negligible.
-
-#### Suggested values
-
-```
-SSM_MIN_TRIAL_TICKS = 2,000        /* 2 × HEARTBEAT_INFERENCE_FREQUENCY */
-SSM_MIN_TRIAL_NS    = 20,000,000   /* 20 ms — calibrate against expected regime dwell */
-```
-
-Both are first-class tunables in `starforth_config.h`. Longer wall-clock minimums give more
-stable reward estimates at the cost of slower adaptation to regime changes.
+`SSM_MIN_TRIAL_TICKS` is a first-class tunable in `starforth_config.h`. Larger values give
+more stable reward estimates; smaller values allow faster adaptation to regime changes.
 
 ### 5.7 Special Case: L5 and L6 Both Disabled
 
@@ -581,21 +526,19 @@ Mirrors `dict_adaptive_optimization_pass` / `dict_reorganize_buckets_by_heat` ex
 ```
 1. Increment trial_tick_count
 2. If inference ran this tick: increment anova_exits_this_trial (if early-exited)
-3. If trial_tick_count >= SSM_MIN_TRIAL_TICKS
-      AND hal_time_ns() - trial_start_ns >= SSM_MIN_TRIAL_NS:
+3. If trial_tick_count >= SSM_MIN_TRIAL_TICKS:
        run per-trial-end sequence (steps 1–10 above)
-       record trial_start_ns = hal_time_ns() at step 9 (trial reset)
 ```
 
-The dual condition (tick count AND wall clock) prevents L7 adaptive heartrate from silently
-inflating or deflating the effective trial window. See Section 5.6 for full rationale.
+Trial duration is a relative-time promise in ticks. L7 adaptive heartrate affects wall-clock
+duration but not relative-time semantics. See Section 5.6 for full rationale.
 
 ---
 
 ## 9. Overhead Estimates
 
-All figures assume 3 GHz CPU, 10 µs heartbeat tick, 1,000-tick inference frequency,
-2,000-tick minimum trial period.
+All figures assume 3 GHz CPU, base heartrate tick, 1,000-tick inference frequency,
+2,000-tick minimum trial period. Trial duration in wall-clock time varies with L7.
 
 ### 9.1 Per-Tick Additions
 
@@ -617,7 +560,7 @@ All figures assume 3 GHz CPU, 10 µs heartbeat tick, 1,000-tick inference freque
 | Score update + decay (1 array write) | ~15 ns | 0.0075 ns |
 | UCB over 128 entries (int sqrt ×128) | ~1,500 ns | 0.75 ns |
 | Argmax selection | ~50 ns | 0.025 ns |
-| **Per-trial-end total** | **~1,655 ns** | **~0.83 ns/tick** |
+| **Per-trial-end total** | **~1,655 ns** | **~0.83 ns/tick at base heartrate** |
 
 ### 9.3 Memory Access
 
@@ -693,11 +636,11 @@ L7 hardwired to ON (as today).
 
 **Q2: Tunable constants — bake in or expose via `starforth_config.h`?**  
 Proposed new constants:
-- `SSM_MIN_TRIAL_TICKS` (suggest 2000 — tick-count floor, ≥ 2 inference cycles)
-- `SSM_MIN_TRIAL_NS` (suggest 20,000,000 — wall-clock floor; see Section 5.6)
+- `SSM_MIN_TRIAL_TICKS` (suggest 2000 — relative-time floor, guarantees ≥ 2 inference
+  cycles; wall-clock meaning is L7's concern, not ours; see Section 5.6)
 - `SSM_SCORE_MAX` (suggest 65535 to match Q48.16 range intuition)
-- `SSM_SCORE_DECAY_FACTOR` (suggest 0.99 ≈ Q48.16 64881; half-life ~69 trials at base
-  rate — calibrate against expected regime dwell time; see Section 5.5)
+- `SSM_SCORE_DECAY_FACTOR` (suggest 0.99 ≈ Q48.16 64881; half-life ~69 trials —
+  calibrate against observed regime dwell time in trials; see Section 5.5)
 - `SSM_UCB_K` (suggest `SSM_SCORE_MAX / 10`)
 - `SSM_REWARD_GAIN` (suggest `SSM_SCORE_MAX / 4`)
 - `SSM_JOINT_WEIGHT` (suggest 0.75 for Option A; see Section 5.4)
