@@ -596,6 +596,9 @@ OVMF_VARS_RO := /usr/share/OVMF/OVMF_VARS_4M.fd
 
 qemu: all
 ifeq ($(ARCH),amd64)
+	@echo "=== Host framebuffer render test (amd64 acceptance) ==="
+	@$(MAKE) --no-print-directory -f Makefile.starkernel fbtest
+	@echo ""
 	@echo "=== Building ISO (amd64) ==="
 	@mkdir -p $(BUILD_DIR)/iso
 	@dd if=/dev/zero of=$(BUILD_DIR)/iso/efi.img bs=512 count=8192 2>/dev/null
@@ -628,6 +631,15 @@ ifeq ($(ARCH),amd64)
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG
+	@echo ""
+	@echo "=== Framebuffer screendump (amd64 acceptance) ==="
+	@bash scripts/qemu_screenshot.sh \
+		"$(LOADER_EFI)" \
+		"$(OVMF_CODE)" \
+		"$(OVMF_VARS_RO)" \
+		"$(BUILD_DIR)" \
+		"$(QEMU_LOG_DIR)" \
+		"$(QEMU_ISO)"
 
 else ifeq ($(ARCH),aarch64)
 	@echo "=== Building ISO (aarch64) ==="
