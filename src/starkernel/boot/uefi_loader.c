@@ -280,6 +280,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     g_boot_info.framebuffer.width = 0;
     g_boot_info.framebuffer.height = 0;
     g_boot_info.framebuffer.pixels_per_scanline = 0;
+    g_boot_info.framebuffer.pixel_format = (UINT32)PixelBltOnly;
     g_boot_info.uefi_boot_services_exited = 0;
 
     /* Locate ACPI table (safe pre-EBS) */
@@ -294,6 +295,29 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
                 g_boot_info.acpi_table = config_tables[i].VendorTable;
                 break;
             }
+        }
+    }
+
+    /* Locate GOP and populate framebuffer info (safe pre-EBS) */
+    {
+        EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+        EFI_GRAPHICS_OUTPUT_PROTOCOL *gop = NULL;
+        EFI_STATUS gop_status = BS->LocateProtocol(&gop_guid, NULL, (void **)&gop);
+        if (gop_status == EFI_SUCCESS && gop && gop->Mode && gop->Mode->Info) {
+            EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE *mode = gop->Mode;
+            if (mode->Info->PixelFormat != PixelBltOnly) {
+                g_boot_info.framebuffer.base             = (void *)(UINTN)mode->FrameBufferBase;
+                g_boot_info.framebuffer.size             = (UINTN)mode->FrameBufferSize;
+                g_boot_info.framebuffer.width            = mode->Info->HorizontalResolution;
+                g_boot_info.framebuffer.height           = mode->Info->VerticalResolution;
+                g_boot_info.framebuffer.pixels_per_scanline = mode->Info->PixelsPerScanLine;
+                g_boot_info.framebuffer.pixel_format     = (UINT32)mode->Info->PixelFormat;
+                RAW_LOG("GOP: linear framebuffer found\n");
+            } else {
+                RAW_LOG("GOP: PixelBltOnly - no linear framebuffer\n");
+            }
+        } else {
+            RAW_LOG("GOP: protocol not found\n");
         }
     }
 
