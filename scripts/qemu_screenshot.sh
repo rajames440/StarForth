@@ -103,7 +103,7 @@ echo "  QEMU PID   : ${QEMU_PID}"
 # Wait for ok> prompt in serial log (up to 120 s)
 # --------------------------------------------------------------------------
 echo "  Waiting for ok> prompt..."
-DEADLINE=$(( $(date +%s) + 600 ))
+DEADLINE=$(( $(date +%s) + 900 ))
 while true; do
     if [ "$(date +%s)" -ge "$DEADLINE" ]; then
         echo "  TIMEOUT waiting for ok> — killing QEMU"
