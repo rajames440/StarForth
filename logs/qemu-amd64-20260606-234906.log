@@ -8361,3 +8361,39 @@ VM arena allocated: 0xffff900000000000
 
 [Hera] DOE-RUN,13,11,11,1
 [Hera] [32m[HADES][INFO ] [0m[KRELTSC: 305794385062] L8[TABLE]: Config 0 → 79 regime=3 score=3276 L2=0 L3=0 L5=1 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 309480005406] L8[TABLE]: Config 79 → 80 regime=3 score=6553 L2=0 L3=1 L5=0 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 313273339582] L8[TABLE]: Config 80 → 81 regime=3 score=6553 L2=0 L3=1 L5=0 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 316860404136] L8[TABLE]: Config 81 → 82 regime=3 score=6553 L2=0 L3=1 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 320511736430] L8[TABLE]: Config 82 → 83 regime=3 score=6553 L2=0 L3=1 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 324115412300] INFERENCE[slope]: 3f → 3f (fit_quality=6f Q48.16)
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 324228360466] L8[TABLE]: Config 83 → 84 regime=3 score=6553 L2=0 L3=1 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 326765789092] L8[TABLE]: Config 84 → 85 regime=3 score=6553 L2=0 L3=1 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 330368397742] L8[TABLE]: Config 85 → 86 regime=3 score=6553 L2=0 L3=1 L5=1 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 334012851816] L8[TABLE]: Config 86 → 87 regime=3 score=6553 L2=0 L3=1 L5=1 L6=1
+[Hera] [33m[HADES][WARN ] [0m[KRELTSC: 336598456720] INFERENCE: Output validation failed, ignoring results
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 337260815490] L8[TABLE]: Config 87 → 88 regime=3 score=3276 L2=0 L3=1 L5=0 L6=0
+[Hera] [33m[HADES][WARN ] [0m[KRELTSC: 337812089810] INFERENCE: Output validation failed, ignoring results
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 340021713970] L8[TABLE]: Config 88 → 89 regime=3 score=3276 L2=0 L3=1 L5=0 L6=0
+[Hera] ...[32m[HADES][INFO ] [0m[KRELTSC: 343769088106] L8[TABLE]: Config 89 → 90 regime=3 score=3276 L2=0 L3=1 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 347357089758] L8[TABLE]: Config 90 → 91 regime=3 score=3276 L2=0 L3=1 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 351017878046] L8[TABLE]: Config 91 → 92 regime=3 score=3276 L2=0 L3=1 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 354600157692] L8[TABLE]: Config 92 → 93 regime=3 score=3276 L2=0 L3=1 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 358227754708] L8[TABLE]: Config 93 → 94 regime=3 score=3276 L2=0 L3=1 L5=1 L6=1
+[Hera] .[32m[HADES][INFO ] [0m[KRELTSC: 361956930394] L8[TABLE]: Config 94 → 95 regime=3 score=3276 L2=0 L3=1 L5=1 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 365558405356] L8[TABLE]: Config 95 → 96 regime=3 score=6553 L2=1 L3=0 L5=0 L6=0
+[Hera] [33m[HADES][WARN ] [0m[KRELTSC: 366619379096] INFERENCE: Output validation failed, ignoring results
+[Hera] [33m[HADES][WARN ] [0m[KRELTSC: 367838360660] INFERENCE: Output validation failed, ignoring results
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 368356620850] L8[TABLE]: Config 96 → 97 regime=3 score=6553 L2=1 L3=0 L5=0 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 371596821058] L8[TABLE]: Config 97 → 98 regime=3 score=6553 L2=1 L3=0 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 375057789412] L8[TABLE]: Config 98 → 99 regime=3 score=6553 L2=1 L3=0 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 378578203672] L8[TABLE]: Config 99 → 100 regime=3 score=6553 L2=1 L3=0 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 382099966468] L8[TABLE]: Config 100 → 101 regime=3 score=6553 L2=1 L3=0 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 385604359302] L8[TABLE]: Config 101 → 102 regime=3 score=6553 L2=1 L3=0 L5=1 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 389120224398] L8[TABLE]: Config 102 → 103 regime=3 score=6553 L2=1 L3=0 L5=1 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 390930651430] INFERENCE[slope]: 3f → 3f (fit_quality=6f Q48.16)
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 392115420068] L8[TABLE]: Config 103 → 104 regime=3 score=3276 L2=1 L3=0 L5=0 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 395120869002] L8[TABLE]: Config 104 → 105 regime=3 score=3276 L2=1 L3=0 L5=0 L6=0
+[Hera] .[32m[HADES][INFO ] [0m[KRELTSC: 398647587954] L8[TABLE]: Config 105 → 106 regime=3 score=3276 L2=1 L3=0 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 402120571670] L8[TABLE]: Config 106 → 107 regime=3 score=3276 L2=1 L3=0 L5=0 L6=1
+[Hera] .[32m[HADES][INFO ] [0m[KRELTSC: 405767682122] L8[TABLE]: Config 107 → 108 regime=3 score=3276 L2=1 L3=0 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 409263425020] L8[TABLE]: Config 108 → 109 regime=3 score=3276 L2=1 L3=0 L5=1 L6=0
