@@ -1,38 +1,34 @@
 Block 2049
-( doe.4th - unified L8 adaptive-map DoE for LithosAnanke              )
-( Factors: entropy x cv x temporal_decay x stability, 2 levels each   )
-( 2^4 = 16 configurations x 30 reps = 480 randomised runs             )
-( Run matrix stores sequential indices 0..479; Fisher-Yates shuffles   )
-( them so cfg and rep assignments are preserved through the shuffle.   )
-( Decode at runtime: cfg = idx / N-REPS, rep = idx MOD N-REPS         )
-( Self-executing: capsule runs DOE on load; CSV streams to serial.     )
+( doe.4th - L8-DOE ( seed reps -- )                 )
+( Blind full-factorial L8 DoE for LithosAnanke       )
+( 16 L8 configs x 16 workload capsules x N-REPS reps )
+( Run matrix: N-CFG*REPS rows; workload blindly drawn )
+( Response: heartbeat [HADES][DOE] ticks during EXEC  )
+( Same seed = same experiment; different seed = vary  )
 49152 CONSTANT ENT-HI    ( 0.75 * 65536 )
  9830 CONSTANT CV-HI     ( 0.15 * 65536 )
 32768 CONSTANT TMP-HI    ( 0.50 * 65536 )
 32768 CONSTANT STB-HI    ( 0.50 * 65536 )
    16 CONSTANT N-CFG
-   30 CONSTANT N-REPS
-  480 CONSTANT N-RUNS
+   16 CONSTANT N-WL
+VARIABLE DOE-SEED
+VARIABLE DOE-REPS
+VARIABLE DOE-RUNS
+VARIABLE CURR-CFG
+VARIABLE CURR-WL
+VARIABLE CURR-REP
+VARIABLE RUN-ID
 
 Block 2050
 ( serial output primitives )
 : N. ( n -- )
   DUP 0 < IF 45 EMIT ABS THEN
   0 SWAP <# #S #> TYPE ;
-: COMMA    44 EMIT ;
-: CRLF     13 EMIT 10 EMIT ;
-: CSV-COL  ( n -- ) N. COMMA ;
-: CSV-LAST ( n -- ) N. CRLF ;
-: CSV-HEADER ( -- )
-  ." run_id,cfg,rep,ent_in,cv_in,tmp_in,stb_in," CRLF
-  ." l8_mode,win_div,infer_win,infer_dec_q," CRLF
-  ." infer_var_q,early_exit,bc_mean_q,bb_mean_q,fit_q" CRLF ;
+: COMMA  44 EMIT ;
+: CRLF   13 EMIT 10 EMIT ;
 
 Block 2051
-( factor extraction: cfg is 4 bits b3=entropy b2=cv b1=tmp b0=stb )
-VARIABLE CURR-CFG
-VARIABLE CURR-REP
-VARIABLE RUN-ID
+( factor extraction: cfg 4 bits b3=ent b2=cv b1=tmp b0=stb )
 : CFG-ENT ( cfg -- q ) 8 AND IF ENT-HI ELSE 0 THEN ;
 : CFG-CV  ( cfg -- q ) 4 AND IF CV-HI  ELSE 0 THEN ;
 : CFG-TMP ( cfg -- q ) 2 AND IF TMP-HI ELSE 0 THEN ;
@@ -46,82 +42,104 @@ VARIABLE RUN-ID
   L8-UPDATE L8-APPLY ;
 
 Block 2052
-( DOE-WORK: arithmetic workload that populates the rolling window     )
-( ~35000 word executions per run -- enough for heat and window stats  )
-: DOE-WORK ( -- )
-  PHYSICS-RESET-STATS
-  5000 0 DO
-    I 13 * 7 +
-    I 11 MOD +
-    I 3 AND CASE
-      0 OF DUP *      ENDOF
-      1 OF NEGATE      ENDOF
-      2 OF 1 +         ENDOF
-      3 OF DROP 0      ENDOF
-    ENDCASE
-    DROP
-  LOOP ;
+( workload name table -- blind study; callers see wl index only )
+: WL-NAME ( n -- c-addr u )
+  CASE
+     0 OF S" init-0.4th"             ENDOF
+     1 OF S" init-1.4th"             ENDOF
+     2 OF S" init-2.4th"             ENDOF
+     3 OF S" init-3.4th"             ENDOF
+     4 OF S" init-4.4th"             ENDOF
+     5 OF S" init-5.4th"             ENDOF
+     6 OF S" init-6.4th"             ENDOF
+     7 OF S" init-7.4th"             ENDOF
+     8 OF S" init-8.4th"             ENDOF
+     9 OF S" init-9.4th"             ENDOF
+    10 OF S" init-l8-diverse.4th"    ENDOF
+    11 OF S" init-l8-omni.4th"       ENDOF
+    12 OF S" init-l8-stable.4th"     ENDOF
+    13 OF S" init-l8-temporal.4th"   ENDOF
+    14 OF S" init-l8-transition.4th" ENDOF
+    15 OF S" init-l8-volatile.4th"   ENDOF
+    DROP S" init-0.4th"
+  ENDCASE ;
+: EXEC-WL ( n -- ) WL-NAME EXEC ;
 
 Block 2053
-( run matrix: 480 cells holding sequential indices 0..479             )
-( Fisher-Yates shuffles the indices; cfg and rep decoded at runtime   )
-( cfg = mat[i] / N-REPS,  rep = mat[i] MOD N-REPS                    )
-CREATE RUN-MATRIX N-RUNS 8 * ALLOT
-: MATRIX! ( val idx -- ) 8 * RUN-MATRIX + ! ;
-: MATRIX@ ( idx     -- val ) 8 * RUN-MATRIX + @ ;
-: SWAP-MTX ( i j -- )
-  OVER MATRIX@ >R
-  DUP MATRIX@ ROT MATRIX!
-  R> SWAP MATRIX! ;
-: INIT-MATRIX ( -- )
-  N-RUNS 0 DO I I MATRIX! LOOP ;
+( run and workload matrices -- max N-CFG * 200 reps = 3200 cells )
+CREATE RUN-MATRIX N-CFG 200 * 8 * ALLOT
+CREATE WL-MATRIX  N-CFG 200 * 8 * ALLOT
+: RM@ ( idx -- val ) 8 * RUN-MATRIX + @ ;
+: RM! ( val idx -- ) 8 * RUN-MATRIX + ! ;
+: WL@ ( idx -- val ) 8 * WL-MATRIX  + @ ;
+: WL! ( val idx -- ) 8 * WL-MATRIX  + ! ;
+: SWAP-RM ( i j -- )
+  OVER RM@ >R
+  DUP  RM@ ROT RM!
+  R>   SWAP RM! ;
+: SWAP-WL ( i j -- )
+  OVER WL@ >R
+  DUP  WL@ ROT WL!
+  R>   SWAP WL! ;
 
 Block 2054
-( Fisher-Yates forward shuffle over N-RUNS elements )
-( for i in [0, N-RUNS-2]: j = random[i, N-RUNS-1]; swap mat[i] mat[j] )
-: SHUFFLE-MATRIX ( -- )
-  N-RUNS 1 - 0 DO
-    I N-RUNS 1 - RANDOM
-    I SWAP-MTX
+( matrix initialisation and Fisher-Yates shuffle )
+: INIT-RM ( -- )
+  DOE-RUNS @ 0 DO I I RM! LOOP ;
+: INIT-WL ( -- )
+  DOE-RUNS @ 0 DO I N-WL MOD I WL! LOOP ;
+: SHUFFLE-RM ( -- )
+  DOE-RUNS @ 1 - 0 DO
+    I DOE-RUNS @ 1 - RANDOM
+    I SWAP-RM
   LOOP ;
+: SHUFFLE-WL ( -- )
+  DOE-RUNS @ 1 - 0 DO
+    I DOE-RUNS @ 1 - RANDOM
+    I SWAP-WL
+  LOOP ;
+: DECODE-CFG ( val -- cfg ) DOE-REPS @ / ;
+: DECODE-REP ( val -- rep ) DOE-REPS @ MOD ;
 
 Block 2055
-( CSV row emitter )
-: EMIT-ROW ( -- )
-  INFER-RUN
-  RUN-ID @        CSV-COL    ( run_id        )
-  CURR-CFG @      CSV-COL    ( cfg           )
-  CURR-REP @      CSV-COL    ( rep           )
-  CURR-CFG @ CFG-ENT CSV-COL ( ent_in        )
-  CURR-CFG @ CFG-CV  CSV-COL ( cv_in         )
-  CURR-CFG @ CFG-TMP CSV-COL ( tmp_in        )
-  CURR-CFG @ CFG-STB CSV-COL ( stb_in        )
-  L8-MODE           CSV-COL  ( l8_mode       )
-  WINDOW-DIVERSITY  CSV-COL  ( win_div       )
-  INFER-WINDOW@     CSV-COL  ( infer_win     )
-  INFER-DECAY@      CSV-COL  ( infer_dec_q   )
-  INFER-VARIANCE@   CSV-COL  ( infer_var_q   )
-  INFER-EARLY-EXIT@ CSV-COL  ( early_exit    )
-  BAYES-CACHE-MEAN  CSV-COL  ( bc_mean_q     )
-  BAYES-BUCKET-MEAN CSV-COL  ( bb_mean_q     )
-  INFER-FIT@        CSV-LAST ( fit_q         ) ;
+( single run: set config, emit DOE-RUN marker, exec workload )
+( marker format: DOE-RUN,run_id,cfg,wl_id,rep               )
+( heartbeat [HADES][DOE] rows emitted during EXEC-WL are     )
+( the response variable -- no separate measurement needed    )
+: RUN-MARKER ( -- )
+  ." DOE-RUN," RUN-ID @ N. COMMA
+  CURR-CFG @ N. COMMA
+  CURR-WL @ N. COMMA
+  CURR-REP @ N. CRLF ;
+: ONE-RUN ( pos -- )
+  DUP RM@ DUP DECODE-CFG CURR-CFG ! DECODE-REP CURR-REP !
+  DUP WL@ CURR-WL !
+  DROP
+  CURR-CFG @ APPLY-CFG
+  PHYSICS-RESET-STATS
+  RUN-MARKER
+  CURR-WL @ EXEC-WL
+  RUN-ID @ 1 + RUN-ID ! ;
 
 Block 2056
-( DOE entry point -- self-executing on capsule load )
-: DOE ( -- )
-  12345 SEED
-  INIT-MATRIX
-  SHUFFLE-MATRIX
-  CSV-HEADER
+( L8-DOE ( seed reps -- ) : seed-parameterized DoE entry point )
+: L8-DOE ( seed reps -- )
+  DUP 0= IF 2DROP ." L8-DOE: reps=0, aborted" CRLF EXIT THEN
+  DUP 200 > IF 2DROP ." L8-DOE: reps>200, aborted" CRLF EXIT THEN
+  DOE-REPS !
+  DUP DOE-SEED ! SEED
+  N-CFG DOE-REPS @ * DOE-RUNS !
   0 RUN-ID !
-  N-RUNS 0 DO
-    I MATRIX@
-    DUP N-REPS / CURR-CFG !
-    N-REPS MOD CURR-REP !
-    CURR-CFG @ APPLY-CFG
-    DOE-WORK
-    EMIT-ROW
-    RUN-ID @ 1 + RUN-ID !
+  ." L8-DOE: SEED=" DOE-SEED @ N. ."  REPS=" DOE-REPS @ N. CRLF
+  ."   Generating matrix..." CRLF
+  INIT-RM INIT-WL
+  ."   Shuffling..." CRLF
+  SHUFFLE-RM SHUFFLE-WL
+  ."   Executing..." CRLF
+  DOE-RUNS @ 0 DO
+    I ONE-RUN
+    I 1 + N-CFG MOD 0 = IF
+      ." REP " I 1 + N-CFG / N. CRLF
+    THEN
   LOOP
-  ." DOE: 480 runs complete" CRLF ;
-DOE
+  ."   Done. " DOE-RUNS @ N. ."  runs complete" CRLF ;
