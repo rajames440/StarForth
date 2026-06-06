@@ -367,6 +367,8 @@ void execute_colon_word(VM* vm)
 
     DictEntry* prev = NULL;
 
+    vm->colon_depth++;
+
     for (;;)
     {
         DictEntry* w = (DictEntry*)(uintptr_t)(*ip);
@@ -378,7 +380,7 @@ void execute_colon_word(VM* vm)
         /* Advance IP and save resume point */
         ip++;
         vm_rpush(vm, (cell_t)(uintptr_t)ip);
-        if (vm->error) return;
+        if (vm->error) { vm->colon_depth--; return; }
 
         /* Execute the word */
         vm->current_executing_entry = w;
@@ -390,28 +392,35 @@ void execute_colon_word(VM* vm)
         }
         else
         {
-            log_message(LOG_ERROR, "execute_colon_word: null word func");
+            const char *pname = (entry && entry->name_len > 0) ? entry->name : "?";
+            if (!w)
+                log_message(LOG_ERROR, "execute_colon_word: NULL DictEntry* in '%s' (ip-1=%p)",
+                            pname, (void *)(ip - 1));
+            else
+                log_message(LOG_ERROR, "execute_colon_word: null func for '%s' in '%s' (ip-1=%p)",
+                            w->name, pname, (void *)(ip - 1));
             vm->error = 1;
         }
         vm->current_executing_entry = entry;
         prev = w;
 
-        if (vm->error) return;
+        if (vm->error) { vm->colon_depth--; return; }
 
         /* ABORT clears stacks and returns immediately */
-        if (vm->abort_requested) { vm->abort_requested = 0; return; }
+        if (vm->abort_requested) { vm->abort_requested = 0; vm->colon_depth--; return; }
 
         /* EXIT discards saved IP and returns */
         if (vm->exit_colon)
         {
             vm->exit_colon = 0;
             (void)vm_rpop(vm);
+            vm->colon_depth--;
             return;
         }
 
         /* Resume at (possibly modified) IP from return stack */
         ip = (cell_t*)(uintptr_t)vm_rpop(vm);
-        if (vm->error) return;
+        if (vm->error) { vm->colon_depth--; return; }
     }
 }
 
