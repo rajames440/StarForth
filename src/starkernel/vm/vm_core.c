@@ -609,6 +609,8 @@ void execute_colon_word(VM* vm)
     /* L8 FINAL INTEGRATION: Loop always-on */
     DictEntry* prev_word = NULL;
 
+    vm->colon_depth++;
+
     for (;;)
     {
         /* Each code cell stores a DictEntry* (called word) */
@@ -677,7 +679,7 @@ void execute_colon_word(VM* vm)
         /* Advance IP to next cell and save resume IP on return stack */
         ip = ip + 1;
         vm_rpush(vm, (cell_t)(uintptr_t)ip);
-        if (vm->error) { return; }
+        if (vm->error) { vm->colon_depth--; return; }
 
         /* Execute the word */
         vm->current_executing_entry = w;
@@ -695,16 +697,31 @@ void execute_colon_word(VM* vm)
         }
         else
         {
-            log_message(LOG_ERROR, "execute_colon_word: null word func");
+            const char *pname = (entry && entry->name_len > 0) ? entry->name : "?";
+            cell_t *bad_ip = ip - 1;
+            const char *prev_name = (prev_word && prev_word->name_len > 0) ? prev_word->name : "(start)";
+            if (!w)
+                log_message(LOG_ERROR,
+                    "execute_colon_word: NULL cell in '%s' after '%s' at %p",
+                    pname, prev_name, (void *)bad_ip);
+            else
+                log_message(LOG_ERROR,
+                    "execute_colon_word: null func '%s' in '%s' after '%s' at %p",
+                    w->name, pname, prev_name, (void *)bad_ip);
+            /* Dump 3 preceding cells — raw values as pointer-sized hex via %p */
+            log_message(LOG_ERROR, "  [ip-3]=%p val=%p",
+                (void *)(bad_ip - 2), (void *)(uintptr_t)*(bad_ip - 2));
+            log_message(LOG_ERROR, "  [ip-2]=%p val=%p",
+                (void *)(bad_ip - 1), (void *)(uintptr_t)*(bad_ip - 1));
+            log_message(LOG_ERROR, "  [ip-1]=%p val=%p (BAD)",
+                (void *)bad_ip,       (void *)(uintptr_t)*bad_ip);
             vm->error = 1;
         }
         vm->current_executing_entry = entry; /* restore current colon */
 
         /* L8 FINAL INTEGRATION: Loop #4 always-on - Pipelining */
-        if (ENABLE_PIPELINING && w)
-        {
-            prev_word = w;
-        }
+        if (w) prev_word = w;  /* always track for diagnostics */
+        if (ENABLE_PIPELINING && w) { /* transition metrics wired here when enabled */ }
 
         /* Heartbeat: Periodic time-driven tuning (Loop #3 & #5) */
         if (!vm->heartbeat.worker && ++vm->heartbeat.check_counter >= HEARTBEAT_CHECK_FREQUENCY)
@@ -713,12 +730,13 @@ void execute_colon_word(VM* vm)
             vm->heartbeat.check_counter = 0;
         }
 
-        if (vm->error) { return; }
+        if (vm->error) { vm->colon_depth--; return; }
 
         /* Check for ABORT request (clears both stacks, immediate termination) */
         if (vm->abort_requested)
         {
             vm->abort_requested = 0;
+            vm->colon_depth--;
             return;
         }
 
@@ -730,12 +748,13 @@ void execute_colon_word(VM* vm)
             /* CRITICAL: discard the per-step resume IP */
             (void)vm_rpop(vm);
 
+            vm->colon_depth--;
             return;
         }
 
         /* Normal path: resume at IP popped from RS (possibly patched by runtime) */
         ip = (cell_t*)(uintptr_t)vm_rpop(vm);
-        if (vm->error) { return; }
+        if (vm->error) { vm->colon_depth--; return; }
     }
 }
 
