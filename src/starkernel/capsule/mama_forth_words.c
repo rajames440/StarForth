@@ -39,6 +39,7 @@
 #include "starkernel/capsule.h"
 #include "starkernel/capsule_birth.h"
 #include "starkernel/capsule_run.h"
+#include "starkernel/capsule_loader.h"
 #include "starkernel/repl.h"
 #include "starkernel/capsule_generated.h"
 #include "starkernel/console.h"
@@ -580,6 +581,50 @@ void mama_word_capsule_test(VM *vm)
  * ============================================================================ */
 
 /**
+ * @brief EXEC ( c-addr u -- )
+ * Execute a named capsule in the current VM — same path as mama init auto-run.
+ */
+static void mama_word_exec(VM *vm)
+{
+    char         name_buf[VM_NAME_MAX];
+    uint32_t     i;
+    cell_t       u, caddr;
+    const char  *src;
+    CapsuleRunResult result;
+
+    if (vm->dsp < 1) { vm->error = 1; return; }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("EXEC: name too long or empty");
+        return;
+    }
+
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    result = capsule_exec_init(
+        vm,
+        name_buf,
+        capsule_get_directory(),
+        capsule_get_descriptors(),
+        capsule_get_names(),
+        capsule_get_arena());
+
+    if (result != CAPSULE_RUN_OK) {
+        console_puts("EXEC: failed: ");
+        console_println(name_buf);
+    }
+}
+
+/**
  * @brief Register Mama FORTH vocabulary words with the VM
  *
  * Creates the MAMA vocabulary and registers all capsule-related words.
@@ -604,6 +649,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "MAMA-VM-ID", mama_word_mama_vm_id);
     register_word(vm, "VM-COUNT", mama_word_vm_count);
     register_word(vm, "CAPSULE-TEST", mama_word_capsule_test);
+    register_word(vm, "EXEC", mama_word_exec);
 
     /* Create and switch to MAMA vocabulary */
     vm_bootstrap_root_vocabulary(vm, "MAMA");
@@ -624,6 +670,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "MAMA-VM-ID", mama_word_mama_vm_id);
     register_word(vm, "VM-COUNT", mama_word_vm_count);
     register_word(vm, "CAPSULE-TEST", mama_word_capsule_test);
+    register_word(vm, "EXEC", mama_word_exec);
 
     /* Return to FORTH vocabulary */
     vocabulary_word_forth(vm);

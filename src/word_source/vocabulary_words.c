@@ -188,15 +188,8 @@ static inline void vocab_sync_vm_vars(VM *vm) {
          sk_hal_panic("context pointer non-canonical");
     }
 
-    /* Arena check */
-    uint64_t arena_start = base;
-    uint64_t arena_end = base + VM_MEMORY_SIZE;
-    if (cv < arena_start || cv >= arena_end) {
-         console_puts("PANIC: context pointer outside arena: ");
-         vocabulary_debug_print_hex(cv);
-         console_println("");
-         sk_hal_panic("context pointer outside arena");
-    }
+    /* NOTE: DictEntry* (vocabulary pointers) live in the kernel heap, not the
+     * VM arena.  An arena-range check here is always wrong — omitted. */
 #endif
     vm_store_cell(vm, context_var_addr, (cell_t)(uintptr_t)context_vocab);
     vm_store_cell(vm, current_var_addr, (cell_t)(uintptr_t)current_vocab);
