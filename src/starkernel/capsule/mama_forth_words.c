@@ -618,6 +618,11 @@ static void mama_word_exec(VM *vm)
         capsule_get_names(),
         capsule_get_arena());
 
+    /* Clear any error the capsule set so the calling word (e.g. a DoE
+     * loop) survives a workload crash and continues to the next run. */
+    vm->error      = 0;
+    vm->exit_colon = 0;
+
     if (result != CAPSULE_RUN_OK) {
         console_puts("EXEC: failed: ");
         console_println(name_buf);
