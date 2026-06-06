@@ -592,6 +592,7 @@ static void mama_word_exec(VM *vm)
     const char  *src;
     CapsuleRunResult result;
     int          saved_dsp;
+    int          saved_rsp;
 
     if (vm->dsp < 1) { vm->error = 1; return; }
 
@@ -611,8 +612,12 @@ static void mama_word_exec(VM *vm)
     for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
     name_buf[u] = '\0';
 
-    /* Save DSP so a crashing capsule cannot corrupt the caller's stack. */
+    /* Save both stacks so a crashing capsule cannot corrupt the caller.
+     * DSP: any partial pushes by the capsule are discarded.
+     * RSP: DO-LOOP indices pushed by the caller (e.g. the DoE loop) are
+     * preserved; a capsule that crashed mid->R/R> cannot corrupt them. */
     saved_dsp = vm->dsp;
+    saved_rsp = vm->rsp;
 
     result = capsule_exec_init(
         vm,
@@ -622,9 +627,10 @@ static void mama_word_exec(VM *vm)
         capsule_get_names(),
         capsule_get_arena());
 
-    /* Restore stack and clear error/exit flags so the DoE loop survives
+    /* Restore stacks and clear error/exit flags so the DoE loop survives
      * a workload crash and continues cleanly to the next run. */
     vm->dsp        = saved_dsp;
+    vm->rsp        = saved_rsp;
     vm->error      = 0;
     vm->exit_colon = 0;
 
