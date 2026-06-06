@@ -6,6 +6,7 @@ Block 2049
 : BAR MARGIN 5 STARS CR ;
 : BLIP MARGIN STAR CR ;
 : F CR BAR BLIP BAR BLIP BLIP CR ;
-S" Hermes" BIRTH
-S" Artemis" BIRTH
+( S" Hermes" BIRTH )
+( S" Artemis" BIRTH )
 S" doe.4th" EXEC
+123456 3 L8-DOE

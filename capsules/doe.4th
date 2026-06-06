@@ -43,14 +43,16 @@ Block 2051
 
 Block 2052
 ( workload name table -- blind study; callers see wl index only )
+( slots 1 and 5 are fast subs: init-1 has 100K*WAIT, init-5 has )
+( 1M*huge inner loops -- both would exceed the QEMU 600s budget  )
 : WL-NAME ( n -- c-addr u )
   CASE
      0 OF S" init-0.4th"             ENDOF
-     1 OF S" init-1.4th"             ENDOF
+     1 OF S" init-7.4th"             ENDOF  ( sub: init-1 100K*WAIT )
      2 OF S" init-2.4th"             ENDOF
      3 OF S" init-3.4th"             ENDOF
      4 OF S" init-4.4th"             ENDOF
-     5 OF S" init-5.4th"             ENDOF
+     5 OF S" init-8.4th"             ENDOF  ( sub: init-5 1M*inner  )
      6 OF S" init-6.4th"             ENDOF
      7 OF S" init-7.4th"             ENDOF
      8 OF S" init-8.4th"             ENDOF
