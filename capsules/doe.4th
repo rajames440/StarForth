@@ -42,29 +42,37 @@ Block 2051
   L8-UPDATE L8-APPLY ;
 
 Block 2052
-( workload name table -- blind study; callers see wl index only )
-( slots 1 and 5 are fast subs: init-1 has 100K*WAIT, init-5 has )
-( 1M*huge inner loops -- both would exceed the QEMU 600s budget  )
-: WL-NAME ( n -- c-addr u )
+( workload names 0-7: blind study, callers see index only )
+( slot 1=init-7 sub init-1 100K*WAIT; slot 5=init-8 sub init-5 1M*inner )
+: WL-LO ( n -- c-addr u )
   CASE
-     0 OF S" init-0.4th"             ENDOF
-     1 OF S" init-7.4th"             ENDOF  ( sub: init-1 100K*WAIT )
-     2 OF S" init-2.4th"             ENDOF
-     3 OF S" init-3.4th"             ENDOF
-     4 OF S" init-4.4th"             ENDOF
-     5 OF S" init-8.4th"             ENDOF  ( sub: init-5 1M*inner  )
-     6 OF S" init-6.4th"             ENDOF
-     7 OF S" init-7.4th"             ENDOF
-     8 OF S" init-8.4th"             ENDOF
-     9 OF S" init-9.4th"             ENDOF
-    10 OF S" init-l8-diverse.4th"    ENDOF
-    11 OF S" init-l8-omni.4th"       ENDOF
-    12 OF S" init-l8-stable.4th"     ENDOF
-    13 OF S" init-l8-temporal.4th"   ENDOF
-    14 OF S" init-l8-transition.4th" ENDOF
-    15 OF S" init-l8-volatile.4th"   ENDOF
+    0 OF S" init-0.4th" ENDOF
+    1 OF S" init-7.4th" ENDOF
+    2 OF S" init-2.4th" ENDOF
+    3 OF S" init-3.4th" ENDOF
+    4 OF S" init-4.4th" ENDOF
+    5 OF S" init-8.4th" ENDOF
+    6 OF S" init-6.4th" ENDOF
+    7 OF S" init-7.4th" ENDOF
     DROP S" init-0.4th"
   ENDCASE ;
+
+Block 2057
+( workload names 8-15 and WL-NAME dispatch )
+: WL-HI ( n -- c-addr u )
+  CASE
+    0 OF S" init-8.4th"             ENDOF
+    1 OF S" init-9.4th"             ENDOF
+    2 OF S" init-l8-diverse.4th"    ENDOF
+    3 OF S" init-l8-omni.4th"       ENDOF
+    4 OF S" init-l8-stable.4th"     ENDOF
+    5 OF S" init-l8-temporal.4th"   ENDOF
+    6 OF S" init-l8-transition.4th" ENDOF
+    7 OF S" init-l8-volatile.4th"   ENDOF
+    DROP S" init-0.4th"
+  ENDCASE ;
+: WL-NAME ( n -- c-addr u )
+  DUP 8 < IF WL-LO ELSE 8 - WL-HI THEN ;
 : EXEC-WL ( n -- ) WL-NAME EXEC ;
 
 Block 2053
