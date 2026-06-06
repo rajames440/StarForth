@@ -591,6 +591,7 @@ static void mama_word_exec(VM *vm)
     cell_t       u, caddr;
     const char  *src;
     CapsuleRunResult result;
+    int          saved_dsp;
 
     if (vm->dsp < 1) { vm->error = 1; return; }
 
@@ -610,6 +611,9 @@ static void mama_word_exec(VM *vm)
     for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
     name_buf[u] = '\0';
 
+    /* Save DSP so a crashing capsule cannot corrupt the caller's stack. */
+    saved_dsp = vm->dsp;
+
     result = capsule_exec_init(
         vm,
         name_buf,
@@ -618,8 +622,9 @@ static void mama_word_exec(VM *vm)
         capsule_get_names(),
         capsule_get_arena());
 
-    /* Clear any error the capsule set so the calling word (e.g. a DoE
-     * loop) survives a workload crash and continues to the next run. */
+    /* Restore stack and clear error/exit flags so the DoE loop survives
+     * a workload crash and continues cleanly to the next run. */
+    vm->dsp        = saved_dsp;
     vm->error      = 0;
     vm->exit_colon = 0;
 
