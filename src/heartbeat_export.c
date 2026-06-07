@@ -62,20 +62,18 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
 
     HeartbeatState* hb = &vm->heartbeat;
 
-    /* Monotonic tick counter */
-    snapshot->tick_number = (uint32_t)hb->tick_count_total;
+    /* Monotonic tick counter — use the real heartbeat counter, not tick_count_total */
+    snapshot->tick_number = (uint32_t)hb->tick_count;
 
-    /* Timing metrics */
-    uint64_t now_ns = sf_monotonic_ns();
-    snapshot->elapsed_ns = now_ns - hb->run_start_ns;
+    /* Timing: heartbeats ARE the clock ("we count heartbeats not timer ticks").
+     * sf_monotonic_ns() is unreliable in freestanding kernel (returns 0 on amd64,
+     * raw counter on riscv64). Use nominal tick period instead. */
+    snapshot->elapsed_ns = hb->tick_count * (uint64_t)HEARTBEAT_TICK_NS;
 
-    /* Calculate actual tick interval from previous tick */
-    static uint64_t last_tick_ns = 0;
-    if (last_tick_ns == 0) {
-        last_tick_ns = hb->run_start_ns;
-    }
-    snapshot->tick_interval_ns = now_ns - last_tick_ns;
-    last_tick_ns = now_ns;
+    static uint64_t last_tick_count = 0;
+    uint64_t delta_ticks = hb->tick_count - last_tick_count;
+    snapshot->tick_interval_ns = delta_ticks * (uint64_t)HEARTBEAT_TICK_NS;
+    last_tick_count = hb->tick_count;
 
     /* Delta metrics - compute from VM counters
      * NOTE: These require tracking "last tick" values to compute deltas.
@@ -128,16 +126,11 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
     /* Pipelining metrics */
     snapshot->predicted_label_hits = 0; /* TODO: Extract from pipelining metrics */
 
-    /* Jitter estimation - deviation from nominal tick interval */
-    uint64_t nominal_tick_ns = hb->tick_target_ns ? hb->tick_target_ns : HEARTBEAT_TICK_NS;
-    if (snapshot->tick_interval_ns > nominal_tick_ns)
-    {
-        snapshot->estimated_jitter_ns = (double)(snapshot->tick_interval_ns - nominal_tick_ns);
-    }
-    else
-    {
-        snapshot->estimated_jitter_ns = (double)(nominal_tick_ns - snapshot->tick_interval_ns);
-    }
+    /* Jitter: tick-based timing has no wall-clock deviation to measure.
+     * Encode delta_ticks as a deviation: 0 means exactly on schedule (1 tick/call). */
+    snapshot->estimated_jitter_ns = (delta_ticks > 1)
+        ? (double)((delta_ticks - 1) * (uint64_t)HEARTBEAT_TICK_NS)
+        : 0.0;
 }
 
 /**
