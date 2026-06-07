@@ -1,0 +1,2 @@
+logs/*.log filter=lfs diff=lfs merge=lfs -text
+doe/*.csv filter=lfs diff=lfs merge=lfs -text
