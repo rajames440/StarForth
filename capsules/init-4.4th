@@ -14,14 +14,14 @@ Block 2131
   FLIP-SIGN
 ;
 : PI-CHUNK
-  20000 0 DO
+  100 0 DO
     I PI-STEP
   LOOP
 ;
 Block 2132
 : DO-PI
   RESET-PI
-  50 0 DO
+  5 0 DO
     PI-CHUNK
   LOOP
 ;
