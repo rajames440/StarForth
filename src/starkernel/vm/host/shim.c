@@ -488,6 +488,15 @@ static int kvsnprintf(char *buf, size_t n, const char *fmt, va_list args) {
                 p += 2; /* skip "ld" */
                 continue;
             }
+            /* Handle %llu (unsigned long long — unambiguous 64-bit on all arches) */
+            if (*p == 'l' && *(p + 1) == 'l' && *(p + 2) == 'u') {
+                unsigned long long v = va_arg(args, unsigned long long);
+                char tmp[32]; int i = 0;
+                do { tmp[i++] = (char)('0' + (v % 10)); v /= 10; } while (v && i < (int)sizeof(tmp));
+                while (i-- && used + 1 < n) buf[used++] = tmp[i];
+                p += 3; /* skip "llu" */
+                continue;
+            }
             /* Handle %lu (unsigned long) */
             if (*p == 'l' && *(p + 1) == 'u') {
                 unsigned long v = va_arg(args, unsigned long);

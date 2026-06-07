@@ -83,25 +83,27 @@ void doe_log_tick_row(VM *vm, const HeartbeatTickSnapshot *snap)
     jitter_bits.d = snap->estimated_jitter_ns;
     uint64_t jitter_raw = jitter_bits.u;
 
-    /* Format the 15-column CSV row into a local buffer */
+    /* Format the 15-column CSV row into a local buffer.
+     * Use %llu (unsigned long long) for all uint64_t fields — %lu is unreliable
+     * for values > 2^32 on aarch64 due to mixed-width varargs ABI behaviour. */
     char buf[DOE_BUF_SIZE];
     snprintf(buf, sizeof(buf),
-             "%u,%lu,%lu,%u,%u,%u,%lu,%lu,%u,%u,%u,%lu,%lu,%lu,%lu",
+             "%u,%llu,%llu,%u,%u,%u,%llu,%llu,%u,%u,%u,%llu,%llu,%llu,%llu",
              snap->tick_number,
-             snap->elapsed_ns,
-             snap->tick_interval_ns,
+             (unsigned long long)snap->elapsed_ns,
+             (unsigned long long)snap->tick_interval_ns,
              snap->cache_hits_delta,
              snap->bucket_hits_delta,
              snap->word_executions_delta,
-             snap->hot_word_count,
-             avg_heat_q48,
+             (unsigned long long)snap->hot_word_count,
+             (unsigned long long)avg_heat_q48,
              snap->window_width,
              snap->actual_window_size,
              snap->predicted_label_hits,
-             jitter_raw,
-             apic_ticks,
-             time_trust_q48,
-             variance_q48);
+             (unsigned long long)jitter_raw,
+             (unsigned long long)apic_ticks,
+             (unsigned long long)time_trust_q48,
+             (unsigned long long)variance_q48);
 
     console_puts(DOE_PREFIX);
     console_puts(buf);
