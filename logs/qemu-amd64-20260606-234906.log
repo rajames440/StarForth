@@ -8560,3 +8560,30 @@ VM arena allocated: 0xffff900000000000
 [Hera] [32m[HADES][INFO ] [0m[KRELTSC: 1550944688236] INFERENCE[slope]: 3f → 3f (fit_quality=6f Q48.16)
 [Hera] .[33m[HADES][WARN ] [0m[KRELTSC: 1645387113814] INFERENCE: Output validation failed, ignoring results
 [Hera] [32m[HADES][INFO ] [0m[KRELTSC: 1646692163044] INFERENCE[slope]: 3f → 3f (fit_quality=6f Q48.16)
+[Hera] .Cache statistics reset.
+
+[Hera] DOE-RUN,44,15,5,1
+[Hera] Cache statistics reset.
+
+[Hera] DOE-RUN,45,5,9,0
+[Hera] [31m[HADES][ERROR] [0m[KRELTSC: 1675920991436] DO: compile-only
+[Hera] EXEC: failed: init-9.4th
+[Hera] Cache statistics reset.
+
+[Hera] DOE-RUN,46,8,5,0
+[Hera] Cache statistics reset.
+
+[Hera] DOE-RUN,47,4,0,1
+[Hera] REP 3
+[Hera]   Done. 48 runs complete
+[Hera] Init: init.4th OK
+[Hera] Starting heartbeat...
+[Hera] APIC Timer: started (LVT=0x00020020 ICR=4819301)
+[Hera] Heartbeat running.
+[Hera] LithosAnanke v1.0.8
+[Hera] StarForth Version 3.0.3
+
+[Hera] StarForth Emergency CLI
+[Hera] FORTH-79 interpreter — type BYE or power off to exit
+
+[Hera] ok> 
