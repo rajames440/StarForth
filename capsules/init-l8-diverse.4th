@@ -19,7 +19,7 @@ Block 3002
 
 Block 3003
 : MAIN
-  1000000 0 DO
+  1000 0 DO
     MIXED-OPS
     STACK-CHURN
   LOOP
