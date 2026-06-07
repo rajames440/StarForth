@@ -9,9 +9,9 @@ VARIABLE SIGN
 ;
 Block 2131
 : PI-STEP ( n -- )
-  DUP 2 * 1 + >R
-  SCALE R@ / SIGN @ * ACC @ + ACC !
-  FLIP-SIGN R> DROP
+  2 * 1 +
+  SCALE SWAP / SIGN @ * ACC @ + ACC !
+  FLIP-SIGN
 ;
 : PI-CHUNK
   20000 0 DO
