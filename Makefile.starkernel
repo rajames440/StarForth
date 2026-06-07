@@ -618,7 +618,7 @@ ifeq ($(ARCH),amd64)
 	echo "  Serial log: $$LOG"; \
 	echo "  (Ctrl-C to stop)"; \
 	echo ""; \
-	timeout 900 qemu-system-x86_64 \
+	timeout 1800 qemu-system-x86_64 \
 		-machine q35,accel=tcg \
 		-cpu qemu64 \
 		-m 1024 \
