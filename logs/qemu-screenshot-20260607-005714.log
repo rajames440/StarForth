@@ -8228,3 +8228,17 @@ VM arena allocated: 0xffff900000000000
 [Hera] DOE-RUN,0,3,11,1
 [Hera] [33m[HADES][WARN ] [0m[KRELTSC: 2914312728] INFERENCE: Output validation failed, ignoring results
 [Hera] [32m[HADES][INFO ] [0m[KRELTSC: 4276395044] L8[TABLE]: Config 17 → 0 regime=3 score=26214 L2=0 L3=0 L5=0 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 8105872776] L8[TABLE]: Config 0 → 1 regime=3 score=26214 L2=0 L3=0 L5=0 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 11991447116] L8[TABLE]: Config 1 → 2 regime=3 score=26214 L2=0 L3=0 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 15809258444] L8[TABLE]: Config 2 → 3 regime=3 score=26214 L2=0 L3=0 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 19520070646] L8[TABLE]: Config 3 → 4 regime=3 score=26214 L2=0 L3=0 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 23320381450] L8[TABLE]: Config 4 → 5 regime=3 score=26214 L2=0 L3=0 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 27459397752] L8[TABLE]: Config 5 → 6 regime=3 score=26214 L2=0 L3=0 L5=1 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 31460911896] L8[TABLE]: Config 6 → 7 regime=3 score=26214 L2=0 L3=0 L5=1 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 35522727640] L8[TABLE]: Config 7 → 8 regime=3 score=6553 L2=0 L3=0 L5=0 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 39300956830] L8[TABLE]: Config 8 → 9 regime=3 score=6553 L2=0 L3=0 L5=0 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 43203065752] L8[TABLE]: Config 9 → 10 regime=3 score=6553 L2=0 L3=0 L5=0 L6=1
+[Hera] ...[32m[HADES][INFO ] [0m[KRELTSC: 46970763452] L8[TABLE]: Config 10 → 11 regime=3 score=6553 L2=0 L3=0 L5=0 L6=1
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 50695840002] L8[TABLE]: Config 11 → 12 regime=3 score=6553 L2=0 L3=0 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 54376829594] L8[TABLE]: Config 12 → 13 regime=3 score=6553 L2=0 L3=0 L5=1 L6=0
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 58209739200] L8[TABLE]: Config 13 → 14 regime=3 score=6553 L2=0 L3=0 L5=1 L6=1
