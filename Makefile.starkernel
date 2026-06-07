@@ -45,9 +45,12 @@ STARFORTH_ENABLE_VM ?= 1
 # Monolithic build — loader + kernel compiled together (default: enabled)
 MONOLITHIC ?= 1
 
-# Parallel build — use all available cores
+# Parallel build — use all available cores when not cleaning
+# (adding -j when 'clean' is also a goal causes a race on include/version.h)
 NPROC := $(shell nproc 2>/dev/null || echo 4)
+ifeq ($(filter clean,$(MAKECMDGOALS)),)
 MAKEFLAGS += -j$(NPROC)
+endif
 
 # Version
 # Roadmap:
