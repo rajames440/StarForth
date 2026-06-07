@@ -24,7 +24,7 @@ Block 2050
 
 Block 2051
 : WAVES-OF-DOOM
-  0 63 DO
+  64 0 DO
     I 8 MOD 0= IF
       100 0 DO
         I J + DROP
@@ -53,7 +53,7 @@ Block 2052
 
 Block 2053
 : TIDAL-WORK
-  0 16 DO
+  16 0 DO
     I 4 MOD 0= IF
       512 0 DO
         I J + DROP
@@ -134,7 +134,7 @@ Block 2060
 
 Block 2061
 : ROLLING-CASCADE
-  1 8 DO
+  9 1 DO
     I 0 DO
       STABLE-WORK
     LOOP
