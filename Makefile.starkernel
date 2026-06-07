@@ -69,7 +69,7 @@ KERNEL_SRC         := src/starkernel
 KERNEL_INC         := include/starkernel
 STARFORTH_CONFIG_HEADER := include/starforth_config.h
 
-QEMU_LOG_DIR       := logs
+QEMU_LOG_DIR       := logs2
 QEMU_ISO           := $(BUILD_DIR)/starkernel.iso
 
 CAPSULES_DIR       ?= capsules
@@ -612,8 +612,10 @@ ifeq ($(ARCH),amd64)
 	@if [ ! -f $(OVMF_CODE) ];    then echo "Error: $(OVMF_CODE) not found";    exit 1; fi
 	@if [ ! -f $(OVMF_VARS_RO) ]; then echo "Error: $(OVMF_VARS_RO) not found"; exit 1; fi
 	@cp $(OVMF_VARS_RO) $(BUILD_DIR)/OVMF_VARS.fd
-	@mkdir -p $(QEMU_LOG_DIR)
-	@LOG=$(QEMU_LOG_DIR)/qemu-amd64-$$(date +%Y%m%d-%H%M%S).log; \
+	@mkdir -p $(QEMU_LOG_DIR) doe
+	@TS=$$(date +%Y%m%d-%H%M%S); \
+	LOG=$(QEMU_LOG_DIR)/qemu-amd64-$$TS.log; \
+	CSV=doe/doe-amd64-$$TS.csv; \
 	echo "=== Launching QEMU (amd64) ==="; \
 	echo "  Serial log: $$LOG"; \
 	echo "  (Ctrl-C to stop)"; \
@@ -630,7 +632,10 @@ ifeq ($(ARCH),amd64)
 		-no-reboot || true; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
-	cat $$LOG
+	cat $$LOG; \
+	echo ""; \
+	echo "=== Extracting DOE CSV ==="; \
+	bash scripts/extract_doe.sh $$LOG $$CSV || true
 	@echo ""
 	@echo "=== Framebuffer screendump (amd64 acceptance) ==="
 	@bash scripts/qemu_screenshot.sh \
@@ -654,7 +659,7 @@ else ifeq ($(ARCH),aarch64)
 	@xorriso -as mkisofs -r -J \
 		-e efi.img -no-emul-boot \
 		-o $(QEMU_ISO) $(BUILD_DIR)/iso 2>&1
-	@mkdir -p $(QEMU_LOG_DIR)
+	@mkdir -p $(QEMU_LOG_DIR) doe
 	@if [ -f /usr/share/AAVMF/AAVMF_CODE.fd ]; then \
 		AAVMF_CODE=/usr/share/AAVMF/AAVMF_CODE.fd; \
 	elif [ -f /usr/share/qemu-efi-aarch64/QEMU_EFI.fd ]; then \
@@ -665,7 +670,9 @@ else ifeq ($(ARCH),aarch64)
 		echo "Error: aarch64 UEFI firmware not found. Install qemu-efi-aarch64."; \
 		exit 1; \
 	fi; \
-	LOG=$(QEMU_LOG_DIR)/qemu-aarch64-$$(date +%Y%m%d-%H%M%S).log; \
+	TS=$$(date +%Y%m%d-%H%M%S); \
+	LOG=$(QEMU_LOG_DIR)/qemu-aarch64-$$TS.log; \
+	CSV=doe/doe-aarch64-$$TS.csv; \
 	echo "=== Launching QEMU (aarch64) ==="; \
 	echo "  ISO: $(QEMU_ISO)"; \
 	echo "  Serial log: $$LOG"; \
@@ -683,7 +690,10 @@ else ifeq ($(ARCH),aarch64)
 		-d guest_errors || true; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
-	cat $$LOG
+	cat $$LOG; \
+	echo ""; \
+	echo "=== Extracting DOE CSV ==="; \
+	bash scripts/extract_doe.sh $$LOG $$CSV || true
 
 else ifeq ($(ARCH),riscv64)
 	@echo "=== Building GPT disk image (riscv64) ==="
@@ -721,7 +731,9 @@ else ifeq ($(ARCH),riscv64)
 	if [ -n "$$EDK2_RISCV_VARS" ]; then \
 		PFLASH_VARS_ARG="-drive if=pflash,format=raw,unit=1,file=$$EDK2_RISCV_VARS"; \
 	fi; \
-	LOG=$(QEMU_LOG_DIR)/qemu-riscv64-$$(date +%Y%m%d-%H%M%S).log; \
+	TS=$$(date +%Y%m%d-%H%M%S); \
+	LOG=$(QEMU_LOG_DIR)/qemu-riscv64-$$TS.log; \
+	CSV=doe/doe-riscv64-$$TS.csv; \
 	echo "=== Launching QEMU (riscv64) ==="; \
 	echo "  Serial log: $$LOG"; \
 	echo "  (Ctrl-C to stop)"; \
@@ -740,7 +752,10 @@ else ifeq ($(ARCH),riscv64)
 		-d guest_errors || true; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
-	cat $$LOG
+	cat $$LOG; \
+	echo ""; \
+	echo "=== Extracting DOE CSV ==="; \
+	bash scripts/extract_doe.sh $$LOG $$CSV || true
 endif
 
 # qemu-esp — quick iteration: boot from FAT directory (no disk image rebuild)
@@ -917,7 +932,7 @@ help:
 	@echo "  rpi4-image    — Raspberry Pi 4B SD image (aarch64)"
 	@echo ""
 	@echo "QEMU goals:"
-	@echo "  qemu          — clean boot, serial → logs/ (all arches)"
+	@echo "  qemu          — clean boot, serial → logs2/ + DOE CSV → doe/ (all arches)"
 	@echo "  qemu-esp      — quick boot from FAT directory (amd64, aarch64)"
 	@echo "  qemu-gdb      — boot with GDB stub on :1234"
 	@echo ""
