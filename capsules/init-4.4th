@@ -7,7 +7,6 @@ VARIABLE SIGN
 : FLIP-SIGN
   SIGN @ 0< IF 1 SIGN ! ELSE -1 SIGN ! THEN
 ;
-." 4:blk2130 ok" CR
 Block 2131
 : PI-STEP ( n -- )
   2 * 1 +
@@ -19,7 +18,6 @@ Block 2131
     I PI-STEP
   LOOP
 ;
-." 4:blk2131 ok" CR
 Block 2132
 : DO-PI
   RESET-PI
@@ -27,11 +25,12 @@ Block 2132
     PI-CHUNK
   LOOP
 ;
-: RUN-PI
-  8 0 DO
-    DO-PI 46 EMIT
-  LOOP
-;
-." 4:blk2132 ok" CR
-RUN-PI
-." 4:done" CR
+." 4:words-defined" CR
+RESET-PI
+." 4:reset-ok" CR
+1 PI-STEP
+." 4:pistep-ok" CR
+PI-CHUNK
+." 4:chunk-ok" CR
+DO-PI
+." 4:dopi-ok" CR
