@@ -627,9 +627,9 @@ ifeq ($(ARCH),amd64)
 	CSV=$(DOE_RUNS_DIR)/doe-amd64-$$TS.csv; \
 	echo "=== Launching QEMU (amd64) ==="; \
 	echo "  Serial log: $$LOG"; \
-	echo "  (Ctrl-C to stop)"; \
+	echo "  (exits automatically when ok> prompt appears)"; \
 	echo ""; \
-	timeout 1800 qemu-system-x86_64 \
+	qemu-system-x86_64 \
 		-machine q35,accel=tcg \
 		-cpu qemu64 \
 		-m 1024 \
@@ -638,7 +638,14 @@ ifeq ($(ARCH),amd64)
 		-cdrom $(QEMU_ISO) -boot d \
 		-serial file:$$LOG \
 		-display none \
-		-no-reboot || true; \
+		-no-reboot & QPID=$$!; \
+	DEADLINE=$$(( $$(date +%s) + 1800 )); \
+	echo "  Waiting for [Hera] ok> ..."; \
+	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
+		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT" && break; \
+		sleep 1; \
+	done; \
+	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG; \
@@ -686,9 +693,9 @@ else ifeq ($(ARCH),aarch64)
 	echo "=== Launching QEMU (aarch64) ==="; \
 	echo "  ISO: $(QEMU_ISO)"; \
 	echo "  Serial log: $$LOG"; \
-	echo "  (Ctrl-C to stop)"; \
+	echo "  (exits automatically when ok> prompt appears)"; \
 	echo ""; \
-	timeout 1800 qemu-system-aarch64 \
+	qemu-system-aarch64 \
 		-machine virt \
 		-cpu cortex-a57 \
 		-bios $$AAVMF_CODE \
@@ -697,7 +704,14 @@ else ifeq ($(ARCH),aarch64)
 		-display none \
 		-m 2048 \
 		-no-reboot \
-		-d guest_errors || true; \
+		-d guest_errors & QPID=$$!; \
+	DEADLINE=$$(( $$(date +%s) + 1800 )); \
+	echo "  Waiting for [Hera] ok> ..."; \
+	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
+		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT" && break; \
+		sleep 1; \
+	done; \
+	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG; \
@@ -747,9 +761,9 @@ else ifeq ($(ARCH),riscv64)
 	CSV=$(DOE_RUNS_DIR)/doe-riscv64-$$TS.csv; \
 	echo "=== Launching QEMU (riscv64) ==="; \
 	echo "  Serial log: $$LOG"; \
-	echo "  (Ctrl-C to stop)"; \
+	echo "  (exits automatically when ok> prompt appears)"; \
 	echo ""; \
-	timeout 1800 qemu-system-riscv64 \
+	qemu-system-riscv64 \
 		-machine virt \
 		-cpu rv64 \
 		-m 1024 \
@@ -760,7 +774,14 @@ else ifeq ($(ARCH),riscv64)
 		-serial file:$$LOG \
 		-display none \
 		-no-reboot \
-		-d guest_errors || true; \
+		-d guest_errors & QPID=$$!; \
+	DEADLINE=$$(( $$(date +%s) + 1800 )); \
+	echo "  Waiting for [Hera] ok> ..."; \
+	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
+		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT" && break; \
+		sleep 1; \
+	done; \
+	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG; \
