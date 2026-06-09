@@ -625,9 +625,10 @@ ifeq ($(ARCH),amd64)
 	@TS=$$(date +%Y%m%d-%H%M%S); \
 	LOG=$(QEMU_LOG_DIR)/qemu-amd64-$$TS.log; \
 	CSV=$(DOE_RUNS_DIR)/doe-amd64-$$TS.csv; \
+	SERIAL_SOCK=$(BUILD_DIR)/qemu-serial-amd64-$$TS.sock; \
 	echo "=== Launching QEMU (amd64) ==="; \
 	echo "  Serial log: $$LOG"; \
-	echo "  (exits automatically when ok> prompt appears)"; \
+	echo "  (exits when EXEC-DOE completes)"; \
 	echo ""; \
 	qemu-system-x86_64 \
 		-machine q35,accel=tcg \
@@ -636,16 +637,29 @@ ifeq ($(ARCH),amd64)
 		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_CODE) \
 		-drive if=pflash,format=raw,file=$(BUILD_DIR)/OVMF_VARS.fd \
 		-cdrom $(QEMU_ISO) -boot d \
-		-serial file:$$LOG \
+		-chardev socket,id=cserial,path=$$SERIAL_SOCK,server=on,wait=off,logfile=$$LOG \
+		-serial chardev:cserial \
 		-display none \
 		-no-reboot & QPID=$$!; \
 	DEADLINE=$$(( $$(date +%s) + 1800 )); \
-	echo "  Waiting for [Hera] ok> ..."; \
+	echo "  Waiting for ok> prompt..."; \
 	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
-		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT" && break; \
+		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
 		sleep 1; \
 	done; \
+	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
+		echo "  ok> detected — injecting EXEC-DOE..."; \
+		sleep 0.5; \
+		printf 'EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		echo "  Waiting for DoE to complete..."; \
+		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
+		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
+			sleep 1; \
+		done; \
+	fi; \
 	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
+	rm -f $$SERIAL_SOCK; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG; \
@@ -690,28 +704,42 @@ else ifeq ($(ARCH),aarch64)
 	TS=$$(date +%Y%m%d-%H%M%S); \
 	LOG=$(QEMU_LOG_DIR)/qemu-aarch64-$$TS.log; \
 	CSV=$(DOE_RUNS_DIR)/doe-aarch64-$$TS.csv; \
+	SERIAL_SOCK=$(BUILD_DIR)/qemu-serial-aarch64-$$TS.sock; \
 	echo "=== Launching QEMU (aarch64) ==="; \
 	echo "  ISO: $(QEMU_ISO)"; \
 	echo "  Serial log: $$LOG"; \
-	echo "  (exits automatically when ok> prompt appears)"; \
+	echo "  (exits when EXEC-DOE completes)"; \
 	echo ""; \
 	qemu-system-aarch64 \
 		-machine virt \
 		-cpu cortex-a57 \
 		-bios $$AAVMF_CODE \
 		-drive if=virtio,format=raw,file=$(QEMU_ISO),media=cdrom \
-		-serial file:$$LOG \
+		-chardev socket,id=cserial,path=$$SERIAL_SOCK,server=on,wait=off,logfile=$$LOG \
+		-serial chardev:cserial \
 		-display none \
 		-m 2048 \
 		-no-reboot \
 		-d guest_errors & QPID=$$!; \
 	DEADLINE=$$(( $$(date +%s) + 1800 )); \
-	echo "  Waiting for [Hera] ok> ..."; \
+	echo "  Waiting for ok> prompt..."; \
 	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
-		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT" && break; \
+		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
 		sleep 1; \
 	done; \
+	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
+		echo "  ok> detected — injecting EXEC-DOE..."; \
+		sleep 0.5; \
+		printf 'EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		echo "  Waiting for DoE to complete..."; \
+		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
+		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
+			sleep 1; \
+		done; \
+	fi; \
 	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
+	rm -f $$SERIAL_SOCK; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG; \
@@ -759,9 +787,10 @@ else ifeq ($(ARCH),riscv64)
 	TS=$$(date +%Y%m%d-%H%M%S); \
 	LOG=$(QEMU_LOG_DIR)/qemu-riscv64-$$TS.log; \
 	CSV=$(DOE_RUNS_DIR)/doe-riscv64-$$TS.csv; \
+	SERIAL_SOCK=$(BUILD_DIR)/qemu-serial-riscv64-$$TS.sock; \
 	echo "=== Launching QEMU (riscv64) ==="; \
 	echo "  Serial log: $$LOG"; \
-	echo "  (exits automatically when ok> prompt appears)"; \
+	echo "  (exits when EXEC-DOE completes)"; \
 	echo ""; \
 	qemu-system-riscv64 \
 		-machine virt \
@@ -771,17 +800,30 @@ else ifeq ($(ARCH),riscv64)
 		$$PFLASH_VARS_ARG \
 		-drive id=hd0,file=$$DISK,format=raw,if=none \
 		-device virtio-blk-pci,drive=hd0 \
-		-serial file:$$LOG \
+		-chardev socket,id=cserial,path=$$SERIAL_SOCK,server=on,wait=off,logfile=$$LOG \
+		-serial chardev:cserial \
 		-display none \
 		-no-reboot \
 		-d guest_errors & QPID=$$!; \
 	DEADLINE=$$(( $$(date +%s) + 1800 )); \
-	echo "  Waiting for [Hera] ok> ..."; \
+	echo "  Waiting for ok> prompt..."; \
 	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
-		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT" && break; \
+		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
 		sleep 1; \
 	done; \
+	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
+		echo "  ok> detected — injecting EXEC-DOE..."; \
+		sleep 0.5; \
+		printf 'EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		echo "  Waiting for DoE to complete..."; \
+		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
+		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
+			sleep 1; \
+		done; \
+	fi; \
 	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
+	rm -f $$SERIAL_SOCK; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
 	cat $$LOG; \
