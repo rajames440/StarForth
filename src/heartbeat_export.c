@@ -117,11 +117,17 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
         snapshot->avg_word_heat = 0.0;
     }
 
-    /* Rolling window size */
+    /* Rolling window size.
+     * window_width  = L8's inferred effective size (the target).
+     * actual_window_size = min(total_executions, effective_window_size):
+     *   how many entries are ACTUALLY being analysed right now — grows toward
+     *   window_width as data accumulates, then tracks it as L8 narrows/widens. */
     snapshot->window_width = vm->rolling_window.effective_window_size;
-    snapshot->actual_window_size = (uint32_t)(vm->rolling_window.total_executions < ROLLING_WINDOW_SIZE
-                                              ? vm->rolling_window.total_executions
-                                              : ROLLING_WINDOW_SIZE);
+    {
+        uint64_t fill = vm->rolling_window.total_executions;
+        uint32_t eff  = vm->rolling_window.effective_window_size;
+        snapshot->actual_window_size = (uint32_t)(fill < (uint64_t)eff ? fill : eff);
+    }
 
     /* Pipelining metrics */
     snapshot->predicted_label_hits = 0; /* TODO: Extract from pipelining metrics */
