@@ -8,7 +8,8 @@ Block 2049
 : F CR BAR BLIP BAR BLIP BLIP CR ;
 ( S" Hermes" BIRTH )
 ( S" Artemis" BIRTH )
-: EXEC-DOE S" doe.4th" EXEC 123456 3 L8-DOE ;
+S" doe.4th" EXEC
+: EXEC-DOE 123456 3 L8-DOE ;
 
 Block 2050
 : .DOE-TOP
@@ -25,7 +26,7 @@ Block 2051
 : .DOE-BOT
 ." |      <seed> <reps> L8-DOE  custom seed and rep count         |" CR
 ." |                                                              |" CR
-." |    EXEC-DOE loads doe.4th then calls  123456 3 L8-DOE        |" CR
+." |    doe.4th is loaded automatically; EXEC-DOE calls L8-DOE     |" CR
 ." |    Edit capsules/init.4th  to change the defaults.           |" CR
 ." |                                                              |" CR
 ." |    See experiments/bare_metal/README.md  for details.        |" CR
