@@ -291,18 +291,19 @@ int capsule_load_blocks(const uint8_t *payload, uint64_t length,
 /*===========================================================================
  * exec_block_with_retry — execute one block with forward-reference tolerance
  *
- * Executes the block line by line (max CAPSULE_BLOCK_LINES = 16 lines,
- * each clamped to CAPSULE_LINE_COLS = 64 characters — canonical FORTH
- * block geometry).
+ * Executes the block line by line.  Lines 0-15 (the canonical FORTH block
+ * geometry) can be deferred via a uint16_t bitmask; lines >= 16 execute
+ * unconditionally — an error there is non-deferrable and fails the block.
  *
- * On any error the offending line is recorded in a uint16_t bitmask
- * (one bit per line 0-15) and the entire block is retried from the top.
- * Deferred lines are skipped in O(1) on every subsequent pass.
+ * On any error in lines 0-15 the offending line is recorded in the bitmask
+ * and the entire block is retried from the top.  Deferred lines are skipped
+ * in O(1) on every subsequent pass.
  *
  * Terminates when:
  *   a) block executes without error → returns 0 (deferred lines are
  *      forward references to be resolved later; logged but not fatal)
- *   b) deferred_mask == 0xFFFF (all 16 line slots exhausted) → returns -1
+ *   b) deferred_mask == 0xFFFF (all 16 bitmask slots exhausted) → returns -1
+ *   c) an error occurs on line >= 16 (beyond defer window) → returns -1
  *
  * VM compile/interpret mode is reset to MODE_INTERPRET before each retry
  * so a half-compiled colon definition cannot corrupt the next attempt.
@@ -337,12 +338,15 @@ static int exec_block_with_retry(VM *vm, const uint8_t *block_start,
         const uint8_t *lend            = block_start + block_len;
         int            line_index      = 0;
 
-        while (lp < lend && line_index < CAPSULE_BLOCK_LINES) {
+        while (lp < lend) {
             const uint8_t *nl = lp;
             while (nl < lend && *nl != '\n') nl++;
 
-            /* O(1) skip check via bitmask */
-            if (!(deferred_mask & (1u << (unsigned)line_index))) {
+            /* Only lines 0-15 can be deferred via the bitmask */
+            int in_defer_range = (line_index < CAPSULE_BLOCK_LINES);
+
+            /* O(1) skip check via bitmask — skipped only if in range AND bit set */
+            if (!in_defer_range || !(deferred_mask & (1u << (unsigned)line_index))) {
                 char   line[CAPSULE_EXEC_LINE_MAX];
                 size_t line_len = (size_t)(nl - lp);
                 size_t i;
@@ -361,6 +365,22 @@ static int exec_block_with_retry(VM *vm, const uint8_t *block_start,
                         vm->mode      = MODE_INTERPRET;
                         vm->state_var = 0;
                         vm_store_cell(vm, vm->state_addr, 0);
+                        if (!in_defer_range) {
+                            /* Beyond bitmask window — cannot defer, block fails */
+#ifdef __STARKERNEL__
+                            {
+                                char nbuf[12], lbuf[4];
+                                u32_to_dec(block_num, nbuf, sizeof(nbuf));
+                                u32_to_dec((uint32_t)line_index, lbuf, sizeof(lbuf));
+                                console_puts("[CAPSULE][FAIL] block ");
+                                console_puts(nbuf);
+                                console_puts(" line ");
+                                console_puts(lbuf);
+                                console_puts(": error beyond defer window\r\n");
+                            }
+#endif
+                            return -1;
+                        }
                         error_this_pass = 1;
                         error_line      = line_index;
                         /* Save truncated text for diagnostics */
@@ -405,6 +425,14 @@ static int exec_block_with_retry(VM *vm, const uint8_t *block_start,
                 }
             }
 #endif
+            /* Always leave interpreter in interpret mode after a block completes.
+             * A deferred ';' in a nested capsule (e.g. doe.4th block 2056) can
+             * strand the VM in compile mode; resetting here prevents the caller's
+             * next ':' from seeing a spurious "nested colon" error. */
+            vm->error     = 0;
+            vm->mode      = MODE_INTERPRET;
+            vm->state_var = 0;
+            vm_store_cell(vm, vm->state_addr, 0);
             return 0;
         }
 
