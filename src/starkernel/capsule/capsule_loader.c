@@ -50,22 +50,36 @@
 #endif
 
 /* Ramdrive starts at this block number; dest = source - CAPSULE_RAM_OFFSET */
-#define CAPSULE_RAM_OFFSET  2048u
-#define LOADER_BLOCK_SIZE   1024u
+#define CAPSULE_RAM_OFFSET   2048u
+#define LOADER_BLOCK_SIZE    1024u
+
+/* FORTH block geometry: 16 lines × 64 characters = 1024 bytes */
+#define CAPSULE_BLOCK_LINES  16
+#define CAPSULE_LINE_COLS    64
+
+/*
+ * Execution line buffer — capsule text (the .4th source representation)
+ * may use lines longer than the canonical 64-column block storage limit.
+ * This buffer covers the execution path; CAPSULE_LINE_COLS covers storage
+ * and the 16-bit bitmask geometry.
+ */
+#define CAPSULE_EXEC_LINE_MAX 256
 
 /*
  * Forward-definition retry budget.
  *
  * When a block line triggers an error (typically UNKNOWN WORD for a
  * forward reference) the loader skips that line and retries the entire
- * block from the top.  Each retry adds one line to the skip set.
- * If the skip set reaches this limit the block is declared unloadable
- * and the loader panics with a named report of every skipped line.
+ * block from the top.  Each retry sets one bit in a uint16_t bitmask
+ * (one bit per line 0-15).  When the mask reaches 0xFFFF all 16 line
+ * slots are exhausted and the block is declared unloadable; the loader
+ * panics with a per-line report.
  *
- * 16 skipped lines per 1024-byte block is a generous budget — if more
- * than that are unresolvable the capsule is fundamentally broken.
+ * 16 skipped lines per 1024-byte block matches the FORTH block geometry
+ * exactly — if every line is unresolvable the capsule is fundamentally
+ * broken.
  */
-#define CAPSULE_MAX_DEFERRED 16
+#define CAPSULE_MAX_DEFERRED CAPSULE_BLOCK_LINES
 
 #ifdef __STARKERNEL__
 /*===========================================================================
@@ -277,167 +291,169 @@ int capsule_load_blocks(const uint8_t *payload, uint64_t length,
 /*===========================================================================
  * exec_block_with_retry — execute one block with forward-reference tolerance
  *
- * Executes the block line by line.  On any error the offending line is
- * added to a skip set and the entire block is retried from the top.
- * Lines in the skip set are silently omitted on subsequent passes.
+ * Executes the block line by line (max CAPSULE_BLOCK_LINES = 16 lines,
+ * each clamped to CAPSULE_LINE_COLS = 64 characters — canonical FORTH
+ * block geometry).
+ *
+ * On any error the offending line is recorded in a uint16_t bitmask
+ * (one bit per line 0-15) and the entire block is retried from the top.
+ * Deferred lines are skipped in O(1) on every subsequent pass.
  *
  * Terminates when:
- *   a) the block executes without error → returns 0 (success, may be partial)
- *   b) the skip set reaches CAPSULE_MAX_DEFERRED → returns -1 (panic)
+ *   a) block executes without error → returns 0 (deferred lines are
+ *      forward references to be resolved later; logged but not fatal)
+ *   b) deferred_mask == 0xFFFF (all 16 line slots exhausted) → returns -1
  *
- * The VM's compile/interpret mode is reset to MODE_INTERPRET before each
- * retry so that a half-compiled colon definition does not corrupt the next
- * attempt.
+ * VM compile/interpret mode is reset to MODE_INTERPRET before each retry
+ * so a half-compiled colon definition cannot corrupt the next attempt.
  *===========================================================================*/
 
-typedef struct {
-    uint32_t offset;       /* byte offset of line start within block buffer */
-    char     text[48];     /* truncated copy of line content for diagnostics */
-} DeferredLine;
+static int popcount16(uint16_t v)
+{
+    int c = 0;
+    while (v) { c += (int)(v & 1u); v >>= 1; }
+    return c;
+}
 
 static int exec_block_with_retry(VM *vm, const uint8_t *block_start,
                                   size_t block_len, uint32_t block_num)
 {
-    DeferredLine deferred[CAPSULE_MAX_DEFERRED];
-    int          n_deferred = 0;
-    int          j;
+    uint16_t deferred_mask = 0u;
+    char     deferred_text[CAPSULE_BLOCK_LINES][CAPSULE_LINE_COLS + 1];
+    int      j;
+
+    for (j = 0; j < CAPSULE_BLOCK_LINES; j++) deferred_text[j][0] = '\0';
 
     for (;;) {
         /* Reset interpret/compile state before each attempt */
-        vm->error      = 0;
-        vm->mode       = MODE_INTERPRET;
-        vm->state_var  = 0;
+        vm->error     = 0;
+        vm->mode      = MODE_INTERPRET;
+        vm->state_var = 0;
         vm_store_cell(vm, vm->state_addr, 0);
 
         int            error_this_pass = 0;
-        uint32_t       error_offset    = 0;
+        int            error_line      = 0;   /* set before use; init silences compiler */
         const uint8_t *lp              = block_start;
         const uint8_t *lend            = block_start + block_len;
+        int            line_index      = 0;
 
-        while (lp < lend) {
-            uint32_t       line_offset = (uint32_t)(lp - block_start);
-            const uint8_t *nl          = lp;
-            size_t         line_len;
-            char           line[256];
-            size_t         i;
-            int            skip        = 0;
-
-            /* Find end of line */
+        while (lp < lend && line_index < CAPSULE_BLOCK_LINES) {
+            const uint8_t *nl = lp;
             while (nl < lend && *nl != '\n') nl++;
 
-            /* Check skip set */
-            for (j = 0; j < n_deferred; j++) {
-                if (deferred[j].offset == line_offset) { skip = 1; break; }
-            }
+            /* O(1) skip check via bitmask */
+            if (!(deferred_mask & (1u << (unsigned)line_index))) {
+                char   line[CAPSULE_EXEC_LINE_MAX];
+                size_t line_len = (size_t)(nl - lp);
+                size_t i;
 
-            if (!skip) {
-                line_len = (size_t)(nl - lp);
-                if (line_len >= sizeof(line)) line_len = sizeof(line) - 1u;
+                /* Clamp only for the execution buffer; block geometry enforced
+                   at storage time, not here */
+                if (line_len >= CAPSULE_EXEC_LINE_MAX)
+                    line_len = CAPSULE_EXEC_LINE_MAX - 1u;
                 for (i = 0; i < line_len; i++) line[i] = (char)lp[i];
                 line[line_len] = '\0';
 
                 if (line_len > 0) {
                     vm_interpret(vm, line);
                     if (vm->error) {
-                        vm->error       = 0;
-                        vm->mode        = MODE_INTERPRET;
-                        vm->state_var   = 0;
+                        vm->error     = 0;
+                        vm->mode      = MODE_INTERPRET;
+                        vm->state_var = 0;
                         vm_store_cell(vm, vm->state_addr, 0);
                         error_this_pass = 1;
-                        error_offset    = line_offset;
+                        error_line      = line_index;
+                        /* Save truncated text for diagnostics */
+                        if (deferred_text[line_index][0] == '\0') {
+                            size_t tlen = line_len < CAPSULE_LINE_COLS
+                                          ? line_len : CAPSULE_LINE_COLS;
+                            for (i = 0; i < tlen; i++)
+                                deferred_text[line_index][i] = line[i];
+                            deferred_text[line_index][tlen] = '\0';
+                        }
                         break;
                     }
                 }
             }
 
             lp = (nl < lend) ? nl + 1 : lend;
+            line_index++;
         }
 
         if (!error_this_pass) {
             /* Block passed — log any deferred lines as unresolved forward refs */
 #ifdef __STARKERNEL__
-            if (n_deferred > 0) {
-                char nbuf[12];
-                char dbuf[4];
+            if (deferred_mask != 0u) {
+                char nbuf[12], dbuf[4];
                 u32_to_dec(block_num, nbuf, sizeof(nbuf));
-                u32_to_dec((uint32_t)n_deferred, dbuf, sizeof(dbuf));
+                u32_to_dec((uint32_t)popcount16(deferred_mask), dbuf, sizeof(dbuf));
                 console_puts("[CAPSULE][DEFER] block ");
                 console_puts(nbuf);
                 console_puts(": ");
                 console_puts(dbuf);
                 console_puts(" forward ref(s) unresolved at load time:\r\n");
-                for (j = 0; j < n_deferred; j++) {
-                    char obuf[12];
-                    u32_to_dec(deferred[j].offset, obuf, sizeof(obuf));
-                    console_puts("  +");
-                    console_puts(obuf);
-                    console_puts(": ");
-                    console_puts(deferred[j].text);
-                    console_puts("\r\n");
+                for (j = 0; j < CAPSULE_BLOCK_LINES; j++) {
+                    if (deferred_mask & (1u << (unsigned)j)) {
+                        char lbuf[4];
+                        u32_to_dec((uint32_t)j, lbuf, sizeof(lbuf));
+                        console_puts("  line ");
+                        console_puts(lbuf);
+                        console_puts(": ");
+                        console_puts(deferred_text[j]);
+                        console_puts("\r\n");
+                    }
                 }
             }
 #endif
             return 0;
         }
 
-        /* Error — check budget before adding another deferred line */
-        if (n_deferred >= CAPSULE_MAX_DEFERRED) {
+        /* Budget exhaustion: all 16 line slots are deferred */
+        if (deferred_mask == 0xFFFFu) {
 #ifdef __STARKERNEL__
             {
                 char nbuf[12];
                 u32_to_dec(block_num, nbuf, sizeof(nbuf));
                 console_puts("[CAPSULE][PANIC] block ");
                 console_puts(nbuf);
-                console_puts(": exceeded ");
-                console_puts("16");
-                console_puts(" deferred lines — capsule cannot load\r\n");
-                for (j = 0; j < n_deferred; j++) {
-                    char obuf[12];
-                    u32_to_dec(deferred[j].offset, obuf, sizeof(obuf));
-                    console_puts("  deferred[");
-                    console_puts(obuf);
-                    console_puts("]: ");
-                    console_puts(deferred[j].text);
-                    console_puts("\r\n");
+                console_puts(": exceeded 16 deferred lines — capsule cannot load\r\n");
+                for (j = 0; j < CAPSULE_BLOCK_LINES; j++) {
+                    if (deferred_text[j][0] != '\0') {
+                        char lbuf[4];
+                        u32_to_dec((uint32_t)j, lbuf, sizeof(lbuf));
+                        console_puts("  line ");
+                        console_puts(lbuf);
+                        console_puts(": ");
+                        console_puts(deferred_text[j]);
+                        console_puts("\r\n");
+                    }
                 }
             }
 #endif
             return -1;
         }
 
-        /* Record the deferred line */
-        deferred[n_deferred].offset = error_offset;
-        {
-            const uint8_t *ls  = block_start + error_offset;
-            const uint8_t *le  = ls;
-            const uint8_t *blk_end = block_start + block_len;
-            size_t         tlen;
-            size_t         k;
-            while (le < blk_end && *le != '\n') le++;
-            tlen = (size_t)(le - ls);
-            if (tlen >= sizeof(deferred[0].text)) tlen = sizeof(deferred[0].text) - 1u;
-            for (k = 0; k < tlen; k++) deferred[n_deferred].text[k] = (char)ls[k];
-            deferred[n_deferred].text[tlen] = '\0';
-        }
+        /* Defer the errored line — set its bit */
+        deferred_mask |= (1u << (unsigned)error_line);
 
 #ifdef __STARKERNEL__
         {
-            char nbuf[12];
-            char obuf[4];
+            char nbuf[12], lbuf[4], dbuf[4];
             u32_to_dec(block_num, nbuf, sizeof(nbuf));
-            u32_to_dec((uint32_t)(n_deferred + 1), obuf, sizeof(obuf));
+            u32_to_dec((uint32_t)error_line, lbuf, sizeof(lbuf));
+            u32_to_dec((uint32_t)popcount16(deferred_mask), dbuf, sizeof(dbuf));
             console_puts("[CAPSULE][DEFER] block ");
             console_puts(nbuf);
             console_puts(" (");
-            console_puts(obuf);
-            console_puts("/16): ");
-            console_puts(deferred[n_deferred].text);
+            console_puts(dbuf);
+            console_puts("/16) line ");
+            console_puts(lbuf);
+            console_puts(": ");
+            console_puts(deferred_text[error_line]);
             console_puts("\r\n");
         }
 #endif
-
-        n_deferred++;
-        /* Loop: retry the block with this line now in the skip set */
+        /* Retry the block with this line now in the skip bitmask */
     }
 }
 
