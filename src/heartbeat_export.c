@@ -135,8 +135,19 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
         snapshot->actual_window_size = (uint32_t)(fill < (uint64_t)eff ? fill : eff);
     }
 
-    /* Pipelining metrics */
-    snapshot->predicted_label_hits = 0; /* TODO: Extract from pipelining metrics */
+    /* predicted_label_hits: ANOVA early-exit confirmations per tick.
+     * Each early exit means the inference engine validated the current L8 config
+     * as stable — the selector's choice correlated with subsequent execution patterns.
+     * High rate = selector chose well and the system settled.
+     * Low rate  = selector is still searching. */
+    {
+        static uint64_t last_early_exit_count = 0;
+        uint64_t cur = hb->early_exit_count;
+        snapshot->predicted_label_hits = (uint32_t)(cur >= last_early_exit_count
+                                                     ? cur - last_early_exit_count
+                                                     : cur);
+        last_early_exit_count = cur;
+    }
 
     /* Jitter: tick-based timing has no wall-clock deviation to measure.
      * Encode delta_ticks as a deviation: 0 means exactly on schedule (1 tick/call). */
