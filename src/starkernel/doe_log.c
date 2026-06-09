@@ -26,7 +26,7 @@
  *   7.  hot_word_count         uint64  — words with heat >= threshold
  *   8.  avg_word_heat_q48      uint64  — mean execution heat as raw Q48.16 integer
  *   9.  window_width           uint32  — rolling window effective size
- *   10. actual_window_size     uint32  — ring buffer fill level
+ *   10. actual_window_size     uint32  — true analysis width: min(total_executions, effective_window_size)
  *   11. predicted_label_hits   uint32  — context prediction hits (TODO: 0)
  *   12. jitter_bits            uint64  — estimated_jitter_ns IEEE 754 raw bits (union-punned)
  *   13. apic_ticks             uint64  — APIC timer monotonic tick count
