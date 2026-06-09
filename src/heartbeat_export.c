@@ -75,17 +75,23 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
     snapshot->tick_interval_ns = delta_ticks * (uint64_t)HEARTBEAT_TICK_NS;
     last_tick_count = hb->tick_count;
 
-    /* Delta metrics - compute from VM counters
-     * NOTE: These require tracking "last tick" values to compute deltas.
-     * For now, we'll use placeholder logic - the actual delta tracking
-     * should be added to vm_tick() or similar. */
+    /* Delta metrics — computed from per-VM counters using static last-value tracking.
+     * On VM reset (current < last), treat current value as the full delta. */
 
     /* Cache metrics from hotwords cache */
-    snapshot->cache_hits_delta = 0;  /* TODO: Track delta in vm_tick() */
-    snapshot->bucket_hits_delta = 0; /* TODO: Track delta in vm_tick() */
+    snapshot->cache_hits_delta = 0;  /* TODO: wire hotwords cache hit counter */
+    snapshot->bucket_hits_delta = 0; /* TODO: wire bucket hit counter */
 
-    /* Word execution delta */
-    snapshot->word_executions_delta = 0; /* TODO: Track delta in vm_tick() */
+    /* Word execution delta — words executed since the previous heartbeat tick.
+     * vm->heartbeat.words_executed is incremented by vm_core.c on every dispatch. */
+    {
+        static uint64_t last_words_executed = 0;
+        uint64_t cur = hb->words_executed;
+        snapshot->word_executions_delta = (uint32_t)(cur >= last_words_executed
+                                                     ? cur - last_words_executed
+                                                     : cur);
+        last_words_executed = cur;
+    }
 
     /* Hot word count - walk dictionary and count words above threshold */
     snapshot->hot_word_count = 0;
