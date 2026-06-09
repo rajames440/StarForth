@@ -22,6 +22,7 @@ These documents are project law. Violations produce invalid output.
 - Wait for the current process to fully complete (task notification received, exit code checked) before starting the next one.
 - Concurrent builds corrupt shared state (`build/`, `logs2/`, `experiments/`) and produce invalid results.
 
+
 ## Next Feature: Word-Level ACL System
 
 **Design doc:** `docs/03-architecture/word-acl/DESIGN.md`
@@ -53,6 +54,7 @@ LithosAnanke (this branch) — UEFI kernel + StarForth VM
     ↓
 StarshipOS (future) — full OS with storage, networking, process model
 ```
+
 
 ## Project Overview
 
