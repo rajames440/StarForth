@@ -229,15 +229,36 @@ ever born without an ACL entry.
 - [ ] Verify child cannot modify pinned entries (inherited mode only)
 - [ ] Test: compromised child cannot escalate to Mama's pinned ACLs
 
-### Phase 5 — Test Coverage (`master`)
+### Phase 5 — POST Tests and Formal Verification (`master`)
 
-- [ ] Unit tests for each ACL field accessor word
-- [ ] Test pin is one-way: mode cannot change after `ACL-PIN`
-- [ ] Test inheritance: child gets mode, pin is always clear
-- [ ] Test emergency console bypass: `emergency_console=1` skips all ACL
-- [ ] Test TTL hot path: STRICT vs TTL throughput difference measurable
-- [ ] Test adaptive accumulator: heat increase → TTL increase
-- [ ] Add ACL test module to `src/test_runner/` suite
+POST tests — new module `src/test_runner/modules/acl_words_test.c`,
+registered in `src/test_runner/test_runner.c`, exercised at boot in POST
+order alongside all other word categories:
+
+- [ ] POST test: `ACL-PIN` is one-way — mode cannot change after pin set
+- [ ] POST test: inheritance — child entry has mode copied, pin cleared,
+  ttl and decision reset
+- [ ] POST test: emergency console bypass — `emergency_console=1` skips
+  ACL check entirely
+- [ ] POST test: STRICT mode — ACL re-evaluated on every execution
+- [ ] POST test: TTL hot path — TTL > 0 bypasses re-evaluation
+- [ ] POST test: adaptive accumulator — heat increase produces TTL increase
+- [ ] POST test: privileged words pinned at boot remain pinned after
+  `ACL-INIT-PRIMITIVES`
+
+Isabelle HOL formal verification — `.thy` files alongside existing VM
+proofs:
+
+- [ ] `ACL_Pin_Monotone.thy` — pin bit is set-only; no operation clears it
+  once set
+- [ ] `ACL_Inherit_Clears_Pin.thy` — `ACL-INHERIT` always produces an entry
+  with `acl_pinned = 0` regardless of source entry state
+- [ ] `ACL_TTL_Bounded.thy` — TTL counter is bounded above by
+  `ACL-TTL-COMPUTE` output; cannot grow unboundedly
+- [ ] `ACL_Emergency_Bypass.thy` — when `emergency_console = 1` the
+  allow/deny decision is never consulted
+- [ ] `ACL_No_Escalation.thy` — a child VM cannot produce a pinned entry
+  with higher privilege than its inherited mode
 
 ### Phase 6 — LithosAnanke Parity
 
