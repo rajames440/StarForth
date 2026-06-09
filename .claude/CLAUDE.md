@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Next Feature: Word-Level ACL System
+
+**Design doc:** `docs/03-architecture/word-acl/DESIGN.md`
+
+The next major feature is a word-level ACL system implemented entirely in
+FORTH (`capsules/ACL.4th`). Read the design doc before touching any
+ACL-related code. Key constraints:
+
+- All policy logic in `ACL.4th` — no new C primitives for policy
+- Two C fields only: `acl_ttl` (counter) + `acl_allow` (bit) in `DictEntry`
+- Emergency console (`vm->emergency_console`) always bypasses ACL — 100%
+- TTL is statistically adaptive (heat + rolling window + decay + inference)
+- Pin (`ACL-PIN`) is one-way; inheritance clears pin, copies mode
+
 ## Project Overview
 
 StarForth is a FORTH-79 compliant virtual machine written in strict ANSI C99, featuring a physics-driven adaptive runtime. It serves as the primary userland execution engine for StarshipOS and can run standalone on Linux, L4Re/Fiasco.OC, and bare-metal targets.
