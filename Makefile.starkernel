@@ -78,6 +78,8 @@ STARFORTH_CONFIG_HEADER := include/starforth_config.h
 
 QEMU_LOG_DIR       := logs2
 QEMU_ISO           := $(BUILD_DIR)/starkernel.iso
+DOE_RUNS_DIR       := experiments/bare_metal/runs
+DOE_LATEST_DIR     := experiments/bare_metal/latest
 
 CAPSULES_DIR       ?= capsules
 MKCAPSULE_SRC       = tools/mkcapsule.c
@@ -619,10 +621,10 @@ ifeq ($(ARCH),amd64)
 	@if [ ! -f $(OVMF_CODE) ];    then echo "Error: $(OVMF_CODE) not found";    exit 1; fi
 	@if [ ! -f $(OVMF_VARS_RO) ]; then echo "Error: $(OVMF_VARS_RO) not found"; exit 1; fi
 	@cp $(OVMF_VARS_RO) $(BUILD_DIR)/OVMF_VARS.fd
-	@mkdir -p $(QEMU_LOG_DIR) doe
+	@mkdir -p $(QEMU_LOG_DIR) $(DOE_RUNS_DIR) $(DOE_LATEST_DIR)
 	@TS=$$(date +%Y%m%d-%H%M%S); \
 	LOG=$(QEMU_LOG_DIR)/qemu-amd64-$$TS.log; \
-	CSV=doe/doe-amd64-$$TS.csv; \
+	CSV=$(DOE_RUNS_DIR)/doe-amd64-$$TS.csv; \
 	echo "=== Launching QEMU (amd64) ==="; \
 	echo "  Serial log: $$LOG"; \
 	echo "  (Ctrl-C to stop)"; \
@@ -642,7 +644,8 @@ ifeq ($(ARCH),amd64)
 	cat $$LOG; \
 	echo ""; \
 	echo "=== Extracting DOE CSV ==="; \
-	bash scripts/extract_doe.sh $$LOG $$CSV || true
+	bash scripts/extract_doe.sh $$LOG $$CSV || true; \
+	cp $$CSV $(DOE_LATEST_DIR)/amd64.csv 2>/dev/null || true
 	@echo ""
 	@echo "=== Framebuffer screendump (amd64 acceptance) ==="
 	@bash scripts/qemu_screenshot.sh \
@@ -666,7 +669,7 @@ else ifeq ($(ARCH),aarch64)
 	@xorriso -as mkisofs -r -J \
 		-e efi.img -no-emul-boot \
 		-o $(QEMU_ISO) $(BUILD_DIR)/iso 2>&1
-	@mkdir -p $(QEMU_LOG_DIR) doe
+	@mkdir -p $(QEMU_LOG_DIR) $(DOE_RUNS_DIR) $(DOE_LATEST_DIR)
 	@if [ -f /usr/share/AAVMF/AAVMF_CODE.fd ]; then \
 		AAVMF_CODE=/usr/share/AAVMF/AAVMF_CODE.fd; \
 	elif [ -f /usr/share/qemu-efi-aarch64/QEMU_EFI.fd ]; then \
@@ -679,7 +682,7 @@ else ifeq ($(ARCH),aarch64)
 	fi; \
 	TS=$$(date +%Y%m%d-%H%M%S); \
 	LOG=$(QEMU_LOG_DIR)/qemu-aarch64-$$TS.log; \
-	CSV=doe/doe-aarch64-$$TS.csv; \
+	CSV=$(DOE_RUNS_DIR)/doe-aarch64-$$TS.csv; \
 	echo "=== Launching QEMU (aarch64) ==="; \
 	echo "  ISO: $(QEMU_ISO)"; \
 	echo "  Serial log: $$LOG"; \
@@ -700,13 +703,14 @@ else ifeq ($(ARCH),aarch64)
 	cat $$LOG; \
 	echo ""; \
 	echo "=== Extracting DOE CSV ==="; \
-	bash scripts/extract_doe.sh $$LOG $$CSV || true
+	bash scripts/extract_doe.sh $$LOG $$CSV || true; \
+	cp $$CSV $(DOE_LATEST_DIR)/aarch64.csv 2>/dev/null || true
 
 else ifeq ($(ARCH),riscv64)
 	@echo "=== Building GPT disk image (riscv64) ==="
 	@# riscv64 QEMU virt: pflash firmware + virtio-blk-pci GPT disk.
 	@# El Torito ISO and -bios mode do NOT work on riscv64 virt.
-	@mkdir -p $(QEMU_LOG_DIR)
+	@mkdir -p $(QEMU_LOG_DIR) $(DOE_RUNS_DIR) $(DOE_LATEST_DIR)
 	@if [ -f /usr/share/qemu-efi-riscv64/RISCV_VIRT_CODE.fd ]; then \
 		EDK2_RISCV_CODE=/usr/share/qemu-efi-riscv64/RISCV_VIRT_CODE.fd; \
 	elif [ -f /usr/share/qemu/edk2-riscv64-code.fd ]; then \
@@ -740,7 +744,7 @@ else ifeq ($(ARCH),riscv64)
 	fi; \
 	TS=$$(date +%Y%m%d-%H%M%S); \
 	LOG=$(QEMU_LOG_DIR)/qemu-riscv64-$$TS.log; \
-	CSV=doe/doe-riscv64-$$TS.csv; \
+	CSV=$(DOE_RUNS_DIR)/doe-riscv64-$$TS.csv; \
 	echo "=== Launching QEMU (riscv64) ==="; \
 	echo "  Serial log: $$LOG"; \
 	echo "  (Ctrl-C to stop)"; \
@@ -762,7 +766,8 @@ else ifeq ($(ARCH),riscv64)
 	cat $$LOG; \
 	echo ""; \
 	echo "=== Extracting DOE CSV ==="; \
-	bash scripts/extract_doe.sh $$LOG $$CSV || true
+	bash scripts/extract_doe.sh $$LOG $$CSV || true; \
+	cp $$CSV $(DOE_LATEST_DIR)/riscv64.csv 2>/dev/null || true
 endif
 
 # qemu-esp — quick iteration: boot from FAT directory (no disk image rebuild)
