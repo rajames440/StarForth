@@ -26,3 +26,11 @@ experiments/**/results/*.log
 .DS_Store
 Thumbs.db
 qemu.log
+
+# Serial acceptance logs — large LFS files; add explicitly with git add -f after each run
+logs/*.log
+logs2/*.log
+
+# Retired data directories (replaced by experiments/bare_metal/)
+doe/
+csv/
