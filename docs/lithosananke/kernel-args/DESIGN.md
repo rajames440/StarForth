@@ -248,16 +248,37 @@ static void word_reboot(VM *vm) {
 When `REBOOT` executes it:
 
 1. Pops `addr` / `len` from the data stack.
-2. Converts the string to UCS-2.
-3. Calls `RuntimeServices->SetVariable("StarForthBootArgs", STARFORTH_VENDOR_GUID, ...)`.
-   `EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS`.
-4. Calls `RuntimeServices->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL)`.
+2. Validates length (`0 < len < KERNEL_ARGS_CMDLINE_MAX`); throws `-11` on
+   out-of-range.
+3. Converts the string to UCS-2.
+4. Reads `StarForthRebootTries` from NVRAM (default 0 if absent).
+5. If `tries >= REBOOT_MAX_TRIES` (default **3**):
+   - Clears both `StarForthBootArgs` and `StarForthRebootTries` variables.
+   - Prints warning to serial: `REBOOT: max tries reached — dropping to REPL`.
+   - Returns normally (does **not** reset); execution continues at the REPL.
+6. Otherwise: writes `StarForthBootArgs` and increments `StarForthRebootTries`,
+   then calls `RuntimeServices->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL)`.
    This call does not return.
 
-On the next boot, `cmdline_parse()` checks for `StarForthBootArgs` before
-reading `LoadOptions`.  If found it copies the value, **immediately clears
-the variable** (one-shot semantics — it does not persist across further
-reboots), and uses that string for parsing.
+On the next boot, the loader checks for `StarForthBootArgs`:
+- If found: copies value, **clears `StarForthBootArgs`** (one-shot), uses it
+  for parsing.  `StarForthRebootTries` is left untouched by the loader — it
+  is only cleared by a successful REPL session (see below) or by the
+  max-tries guard above.
+
+On reaching the REPL successfully, `kernel_main` clears `StarForthRebootTries`
+to zero, resetting the counter for the next `REBOOT` invocation.  This means
+a clean interactive boot always resets the escape-hatch state.
+
+### `SetVariable` failure path
+
+If any `SetVariable` call returns a non-`EFI_SUCCESS` status:
+
+- Print warning: `REBOOT: NVRAM write failed (<status>) — dropping to REPL`.
+- Do **not** attempt `ResetSystem`.
+- Return normally; execution continues at the REPL.
+
+No infinite retry loop.  One attempt, one warning, one escape to REPL.
 
 ### Hosted-VM stub
 
