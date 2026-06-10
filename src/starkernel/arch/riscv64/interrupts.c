@@ -8,6 +8,8 @@
 #include "arch.h"
 #include "console.h"
 
+volatile const char *g_sk_fault_word = (void *)0;
+
 extern void riscv64_install_vectors(void);
 
 static void print_hex(uint64_t val)
