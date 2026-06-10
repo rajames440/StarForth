@@ -230,7 +230,7 @@ static WordTestSuite control_word_suites[] = {
     {
         "AGAIN", {
             {"basic",    ": TAG 0 BEGIN 1+ DUP 3 = IF EXIT THEN AGAIN ; TAG . CR",     "Should print: 3",  TEST_NORMAL, 0, 1},
-            {"countdown","10 BEGIN 1- DUP 0= IF EXIT THEN AGAIN . CR",                 "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"countdown",": CD 10 BEGIN 1- DUP 0= IF EXIT THEN AGAIN ; CD . CR",     "Should print: 0",  TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         2

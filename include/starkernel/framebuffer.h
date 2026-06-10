@@ -36,7 +36,7 @@ typedef enum {
 #define FB_B(c) ( (uint32_t)(c)        & 0xFFu)
 
 /* Standard ANSI 16-color palette (indices 0–15) */
-extern const uint32_t FB_ANSI_PALETTE[16];
+extern const uint32_t FB_ANSI_PALETTE[16] __attribute__((visibility("hidden")));
 
 /* -----------------------------------------------------------------------
  * Lifecycle

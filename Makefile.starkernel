@@ -45,6 +45,13 @@ STARFORTH_ENABLE_VM ?= 1
 # Monolithic build — loader + kernel compiled together (default: enabled)
 MONOLITHIC ?= 1
 
+# Parallel build — use all available cores when not cleaning
+# (adding -j when 'clean' is also a goal causes a race on include/version.h)
+NPROC := $(shell nproc 2>/dev/null || echo 4)
+ifeq ($(filter clean,$(MAKECMDGOALS)),)
+MAKEFLAGS += -j$(NPROC)
+endif
+
 # Version
 # Roadmap:
 #   v1.0.x — serial-only production
@@ -69,8 +76,10 @@ KERNEL_SRC         := src/starkernel
 KERNEL_INC         := include/starkernel
 STARFORTH_CONFIG_HEADER := include/starforth_config.h
 
-QEMU_LOG_DIR       := logs
+QEMU_LOG_DIR       := logs2
 QEMU_ISO           := $(BUILD_DIR)/starkernel.iso
+DOE_RUNS_DIR       := experiments/bare_metal/runs
+DOE_LATEST_DIR     := experiments/bare_metal/latest
 
 CAPSULES_DIR       ?= capsules
 MKCAPSULE_SRC       = tools/mkcapsule.c
@@ -182,7 +191,7 @@ else
 LOADER_BASE_CFLAGS := $(COMMON_CFLAGS)
 endif
 
-HEARTBEAT_DOE_LOG ?= 0
+HEARTBEAT_DOE_LOG ?= 1
 LOADER_CFLAGS := $(LOADER_BASE_CFLAGS) -I$(KERNEL_SRC)/vm -DHEARTBEAT_DOE_LOG=$(HEARTBEAT_DOE_LOG)
 KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm -DHEARTBEAT_DOE_LOG=$(HEARTBEAT_DOE_LOG)
 
@@ -285,6 +294,10 @@ LOADER_SRCS_BASE := \
 LOADER_ASM := \
     $(KERNEL_SRC)/arch/$(ARCH)/boot.S \
     $(KERNEL_SRC)/arch/$(ARCH)/isr.S
+
+ifeq ($(ARCH),amd64)
+LOADER_ASM += $(KERNEL_SRC)/arch/$(ARCH)/kernel_entry.S
+endif
 
 LOADER_ARCH_SRCS := \
     $(KERNEL_SRC)/arch/$(ARCH)/arch.c \
@@ -612,25 +625,52 @@ ifeq ($(ARCH),amd64)
 	@if [ ! -f $(OVMF_CODE) ];    then echo "Error: $(OVMF_CODE) not found";    exit 1; fi
 	@if [ ! -f $(OVMF_VARS_RO) ]; then echo "Error: $(OVMF_VARS_RO) not found"; exit 1; fi
 	@cp $(OVMF_VARS_RO) $(BUILD_DIR)/OVMF_VARS.fd
-	@mkdir -p $(QEMU_LOG_DIR)
-	@LOG=$(QEMU_LOG_DIR)/qemu-amd64-$$(date +%Y%m%d-%H%M%S).log; \
+	@mkdir -p $(QEMU_LOG_DIR) $(DOE_RUNS_DIR) $(DOE_LATEST_DIR)
+	@TS=$$(date +%Y%m%d-%H%M%S); \
+	LOG=$(QEMU_LOG_DIR)/qemu-amd64-$$TS.log; \
+	CSV=$(DOE_RUNS_DIR)/doe-amd64-$$TS.csv; \
+	SERIAL_SOCK=$(BUILD_DIR)/qemu-serial-amd64-$$TS.sock; \
 	echo "=== Launching QEMU (amd64) ==="; \
 	echo "  Serial log: $$LOG"; \
-	echo "  (Ctrl-C to stop)"; \
+	echo "  (exits when EXEC-DOE completes)"; \
 	echo ""; \
-	timeout 600 qemu-system-x86_64 \
+	qemu-system-x86_64 \
 		-machine q35,accel=tcg \
 		-cpu qemu64 \
 		-m 1024 \
 		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_CODE) \
 		-drive if=pflash,format=raw,file=$(BUILD_DIR)/OVMF_VARS.fd \
 		-cdrom $(QEMU_ISO) -boot d \
-		-serial file:$$LOG \
+		-chardev socket,id=cserial,path=$$SERIAL_SOCK,server=on,wait=off,logfile=$$LOG \
+		-serial chardev:cserial \
 		-display none \
-		-no-reboot || true; \
+		-no-reboot & QPID=$$!; \
+	DEADLINE=$$(( $$(date +%s) + 1800 )); \
+	echo "  Waiting for ok> prompt..."; \
+	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
+		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
+		sleep 1; \
+	done; \
+	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
+		echo "  ok> detected — injecting EXEC-DOE..."; \
+		sleep 0.5; \
+		printf 'EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		echo "  Waiting for DoE to complete..."; \
+		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
+		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
+			sleep 1; \
+		done; \
+	fi; \
+	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
+	rm -f $$SERIAL_SOCK; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
-	cat $$LOG
+	cat $$LOG; \
+	echo ""; \
+	echo "=== Extracting DOE CSV ==="; \
+	bash scripts/extract_doe.sh $$LOG $$CSV || true; \
+	cp $$CSV $(DOE_LATEST_DIR)/amd64.csv 2>/dev/null || true
 	@echo ""
 	@echo "=== Framebuffer screendump (amd64 acceptance) ==="
 	@bash scripts/qemu_screenshot.sh \
@@ -654,7 +694,7 @@ else ifeq ($(ARCH),aarch64)
 	@xorriso -as mkisofs -r -J \
 		-e efi.img -no-emul-boot \
 		-o $(QEMU_ISO) $(BUILD_DIR)/iso 2>&1
-	@mkdir -p $(QEMU_LOG_DIR)
+	@mkdir -p $(QEMU_LOG_DIR) $(DOE_RUNS_DIR) $(DOE_LATEST_DIR)
 	@if [ -f /usr/share/AAVMF/AAVMF_CODE.fd ]; then \
 		AAVMF_CODE=/usr/share/AAVMF/AAVMF_CODE.fd; \
 	elif [ -f /usr/share/qemu-efi-aarch64/QEMU_EFI.fd ]; then \
@@ -665,31 +705,58 @@ else ifeq ($(ARCH),aarch64)
 		echo "Error: aarch64 UEFI firmware not found. Install qemu-efi-aarch64."; \
 		exit 1; \
 	fi; \
-	LOG=$(QEMU_LOG_DIR)/qemu-aarch64-$$(date +%Y%m%d-%H%M%S).log; \
+	TS=$$(date +%Y%m%d-%H%M%S); \
+	LOG=$(QEMU_LOG_DIR)/qemu-aarch64-$$TS.log; \
+	CSV=$(DOE_RUNS_DIR)/doe-aarch64-$$TS.csv; \
+	SERIAL_SOCK=$(BUILD_DIR)/qemu-serial-aarch64-$$TS.sock; \
 	echo "=== Launching QEMU (aarch64) ==="; \
 	echo "  ISO: $(QEMU_ISO)"; \
 	echo "  Serial log: $$LOG"; \
-	echo "  (Ctrl-C to stop)"; \
+	echo "  (exits when EXEC-DOE completes)"; \
 	echo ""; \
-	timeout 600 qemu-system-aarch64 \
+	qemu-system-aarch64 \
 		-machine virt \
 		-cpu cortex-a57 \
 		-bios $$AAVMF_CODE \
 		-drive if=virtio,format=raw,file=$(QEMU_ISO),media=cdrom \
-		-serial file:$$LOG \
+		-chardev socket,id=cserial,path=$$SERIAL_SOCK,server=on,wait=off,logfile=$$LOG \
+		-serial chardev:cserial \
 		-display none \
 		-m 2048 \
 		-no-reboot \
-		-d guest_errors || true; \
+		-d guest_errors & QPID=$$!; \
+	DEADLINE=$$(( $$(date +%s) + 1800 )); \
+	echo "  Waiting for ok> prompt..."; \
+	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
+		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
+		sleep 1; \
+	done; \
+	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
+		echo "  ok> detected — injecting EXEC-DOE..."; \
+		sleep 0.5; \
+		printf 'EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		echo "  Waiting for DoE to complete..."; \
+		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
+		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
+			sleep 1; \
+		done; \
+	fi; \
+	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
+	rm -f $$SERIAL_SOCK; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
-	cat $$LOG
+	cat $$LOG; \
+	echo ""; \
+	echo "=== Extracting DOE CSV ==="; \
+	bash scripts/extract_doe.sh $$LOG $$CSV || true; \
+	cp $$CSV $(DOE_LATEST_DIR)/aarch64.csv 2>/dev/null || true
 
 else ifeq ($(ARCH),riscv64)
 	@echo "=== Building GPT disk image (riscv64) ==="
 	@# riscv64 QEMU virt: pflash firmware + virtio-blk-pci GPT disk.
 	@# El Torito ISO and -bios mode do NOT work on riscv64 virt.
-	@mkdir -p $(QEMU_LOG_DIR)
+	@mkdir -p $(QEMU_LOG_DIR) $(DOE_RUNS_DIR) $(DOE_LATEST_DIR)
 	@if [ -f /usr/share/qemu-efi-riscv64/RISCV_VIRT_CODE.fd ]; then \
 		EDK2_RISCV_CODE=/usr/share/qemu-efi-riscv64/RISCV_VIRT_CODE.fd; \
 	elif [ -f /usr/share/qemu/edk2-riscv64-code.fd ]; then \
@@ -721,12 +788,15 @@ else ifeq ($(ARCH),riscv64)
 	if [ -n "$$EDK2_RISCV_VARS" ]; then \
 		PFLASH_VARS_ARG="-drive if=pflash,format=raw,unit=1,file=$$EDK2_RISCV_VARS"; \
 	fi; \
-	LOG=$(QEMU_LOG_DIR)/qemu-riscv64-$$(date +%Y%m%d-%H%M%S).log; \
+	TS=$$(date +%Y%m%d-%H%M%S); \
+	LOG=$(QEMU_LOG_DIR)/qemu-riscv64-$$TS.log; \
+	CSV=$(DOE_RUNS_DIR)/doe-riscv64-$$TS.csv; \
+	SERIAL_SOCK=$(BUILD_DIR)/qemu-serial-riscv64-$$TS.sock; \
 	echo "=== Launching QEMU (riscv64) ==="; \
 	echo "  Serial log: $$LOG"; \
-	echo "  (Ctrl-C to stop)"; \
+	echo "  (exits when EXEC-DOE completes)"; \
 	echo ""; \
-	timeout 600 qemu-system-riscv64 \
+	qemu-system-riscv64 \
 		-machine virt \
 		-cpu rv64 \
 		-m 1024 \
@@ -734,13 +804,37 @@ else ifeq ($(ARCH),riscv64)
 		$$PFLASH_VARS_ARG \
 		-drive id=hd0,file=$$DISK,format=raw,if=none \
 		-device virtio-blk-pci,drive=hd0 \
-		-serial file:$$LOG \
+		-chardev socket,id=cserial,path=$$SERIAL_SOCK,server=on,wait=off,logfile=$$LOG \
+		-serial chardev:cserial \
 		-display none \
 		-no-reboot \
-		-d guest_errors || true; \
+		-d guest_errors & QPID=$$!; \
+	DEADLINE=$$(( $$(date +%s) + 1800 )); \
+	echo "  Waiting for ok> prompt..."; \
+	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
+		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
+		sleep 1; \
+	done; \
+	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
+		echo "  ok> detected — injecting EXEC-DOE..."; \
+		sleep 0.5; \
+		printf 'EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		echo "  Waiting for DoE to complete..."; \
+		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
+		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
+			sleep 1; \
+		done; \
+	fi; \
+	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
+	rm -f $$SERIAL_SOCK; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
-	cat $$LOG
+	cat $$LOG; \
+	echo ""; \
+	echo "=== Extracting DOE CSV ==="; \
+	bash scripts/extract_doe.sh $$LOG $$CSV || true; \
+	cp $$CSV $(DOE_LATEST_DIR)/riscv64.csv 2>/dev/null || true
 endif
 
 # qemu-esp — quick iteration: boot from FAT directory (no disk image rebuild)
@@ -917,7 +1011,7 @@ help:
 	@echo "  rpi4-image    — Raspberry Pi 4B SD image (aarch64)"
 	@echo ""
 	@echo "QEMU goals:"
-	@echo "  qemu          — clean boot, serial → logs/ (all arches)"
+	@echo "  qemu          — clean boot, serial → logs2/ + DOE CSV → doe/ (all arches)"
 	@echo "  qemu-esp      — quick boot from FAT directory (amd64, aarch64)"
 	@echo "  qemu-gdb      — boot with GDB stub on :1234"
 	@echo ""

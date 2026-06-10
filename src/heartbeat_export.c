@@ -62,32 +62,36 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
 
     HeartbeatState* hb = &vm->heartbeat;
 
-    /* Monotonic tick counter */
-    snapshot->tick_number = (uint32_t)hb->tick_count_total;
+    /* Monotonic tick counter — use the real heartbeat counter, not tick_count_total */
+    snapshot->tick_number = (uint32_t)hb->tick_count;
 
-    /* Timing metrics */
-    uint64_t now_ns = sf_monotonic_ns();
-    snapshot->elapsed_ns = now_ns - hb->run_start_ns;
+    /* Timing: heartbeats ARE the clock ("we count heartbeats not timer ticks").
+     * sf_monotonic_ns() is unreliable in freestanding kernel (returns 0 on amd64,
+     * raw counter on riscv64). Use nominal tick period instead. */
+    snapshot->elapsed_ns = hb->tick_count * (uint64_t)HEARTBEAT_TICK_NS;
 
-    /* Calculate actual tick interval from previous tick */
-    static uint64_t last_tick_ns = 0;
-    if (last_tick_ns == 0) {
-        last_tick_ns = hb->run_start_ns;
-    }
-    snapshot->tick_interval_ns = now_ns - last_tick_ns;
-    last_tick_ns = now_ns;
+    static uint64_t last_tick_count = 0;
+    uint64_t delta_ticks = hb->tick_count - last_tick_count;
+    snapshot->tick_interval_ns = delta_ticks * (uint64_t)HEARTBEAT_TICK_NS;
+    last_tick_count = hb->tick_count;
 
-    /* Delta metrics - compute from VM counters
-     * NOTE: These require tracking "last tick" values to compute deltas.
-     * For now, we'll use placeholder logic - the actual delta tracking
-     * should be added to vm_tick() or similar. */
+    /* Delta metrics — computed from per-VM counters using static last-value tracking.
+     * On VM reset (current < last), treat current value as the full delta. */
 
     /* Cache metrics from hotwords cache */
-    snapshot->cache_hits_delta = 0;  /* TODO: Track delta in vm_tick() */
-    snapshot->bucket_hits_delta = 0; /* TODO: Track delta in vm_tick() */
+    snapshot->cache_hits_delta = 0;  /* TODO: wire hotwords cache hit counter */
+    snapshot->bucket_hits_delta = 0; /* TODO: wire bucket hit counter */
 
-    /* Word execution delta */
-    snapshot->word_executions_delta = 0; /* TODO: Track delta in vm_tick() */
+    /* Word execution delta — words executed since the previous heartbeat tick.
+     * vm->heartbeat.words_executed is incremented by vm_core.c on every dispatch. */
+    {
+        static uint64_t last_words_executed = 0;
+        uint64_t cur = hb->words_executed;
+        snapshot->word_executions_delta = (uint32_t)(cur >= last_words_executed
+                                                     ? cur - last_words_executed
+                                                     : cur);
+        last_words_executed = cur;
+    }
 
     /* Hot word count - walk dictionary and count words above threshold */
     snapshot->hot_word_count = 0;
@@ -119,25 +123,37 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
         snapshot->avg_word_heat = 0.0;
     }
 
-    /* Rolling window size */
+    /* Rolling window size.
+     * window_width  = L8's inferred effective size (the target).
+     * actual_window_size = min(total_executions, effective_window_size):
+     *   how many entries are ACTUALLY being analysed right now — grows toward
+     *   window_width as data accumulates, then tracks it as L8 narrows/widens. */
     snapshot->window_width = vm->rolling_window.effective_window_size;
-    snapshot->actual_window_size = (uint32_t)(vm->rolling_window.total_executions < ROLLING_WINDOW_SIZE
-                                              ? vm->rolling_window.total_executions
-                                              : ROLLING_WINDOW_SIZE);
-
-    /* Pipelining metrics */
-    snapshot->predicted_label_hits = 0; /* TODO: Extract from pipelining metrics */
-
-    /* Jitter estimation - deviation from nominal tick interval */
-    uint64_t nominal_tick_ns = hb->tick_target_ns ? hb->tick_target_ns : HEARTBEAT_TICK_NS;
-    if (snapshot->tick_interval_ns > nominal_tick_ns)
     {
-        snapshot->estimated_jitter_ns = (double)(snapshot->tick_interval_ns - nominal_tick_ns);
+        uint64_t fill = vm->rolling_window.total_executions;
+        uint32_t eff  = vm->rolling_window.effective_window_size;
+        snapshot->actual_window_size = (uint32_t)(fill < (uint64_t)eff ? fill : eff);
     }
-    else
+
+    /* predicted_label_hits: ANOVA early-exit confirmations per tick.
+     * Each early exit means the inference engine validated the current L8 config
+     * as stable — the selector's choice correlated with subsequent execution patterns.
+     * High rate = selector chose well and the system settled.
+     * Low rate  = selector is still searching. */
     {
-        snapshot->estimated_jitter_ns = (double)(nominal_tick_ns - snapshot->tick_interval_ns);
+        static uint64_t last_early_exit_count = 0;
+        uint64_t cur = hb->early_exit_count;
+        snapshot->predicted_label_hits = (uint32_t)(cur >= last_early_exit_count
+                                                     ? cur - last_early_exit_count
+                                                     : cur);
+        last_early_exit_count = cur;
     }
+
+    /* Jitter: tick-based timing has no wall-clock deviation to measure.
+     * Encode delta_ticks as a deviation: 0 means exactly on schedule (1 tick/call). */
+    snapshot->estimated_jitter_ns = (delta_ticks > 1)
+        ? (double)((delta_ticks - 1) * (uint64_t)HEARTBEAT_TICK_NS)
+        : 0.0;
 }
 
 /**

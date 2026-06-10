@@ -27,7 +27,7 @@
 extern const uint8_t *font_8x16_glyph(uint8_t ch);
 
 /* ANSI 16-color palette (indices 0–15, packed 0x00RRGGBB) */
-const uint32_t FB_ANSI_PALETTE[16] = {
+const uint32_t FB_ANSI_PALETTE[16] __attribute__((visibility("hidden"))) = {
     /* 0  Black   */ FB_RGB(0x00, 0x00, 0x00),
     /* 1  Red     */ FB_RGB(0xAA, 0x00, 0x00),
     /* 2  Green   */ FB_RGB(0x00, 0xAA, 0x00),
