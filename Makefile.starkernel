@@ -295,6 +295,10 @@ LOADER_ASM := \
     $(KERNEL_SRC)/arch/$(ARCH)/boot.S \
     $(KERNEL_SRC)/arch/$(ARCH)/isr.S
 
+ifeq ($(ARCH),amd64)
+LOADER_ASM += $(KERNEL_SRC)/arch/$(ARCH)/kernel_entry.S
+endif
+
 LOADER_ARCH_SRCS := \
     $(KERNEL_SRC)/arch/$(ARCH)/arch.c \
     $(KERNEL_SRC)/arch/$(ARCH)/interrupts.c \
