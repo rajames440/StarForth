@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. `docs/AI_AGENT_MANDATORY_README.md` — Non-negotiable rules for all AI assistants
 2. `docs/TASK_LIST.md` — Task scope, hard rules, and working protocol
+3. `docs/NEXT_SESSION.md` — Current task queue and next-session plan (read this first to orient)
 
 These documents are project law. Violations produce invalid output.
 
