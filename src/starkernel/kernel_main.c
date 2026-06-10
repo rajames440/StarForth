@@ -184,12 +184,17 @@ static void print_banner(void) {
 }
 
 /**
- * kernel_main - Main entry point after UEFI handoff
+ * kernel_main / kernel_main_impl - Main kernel entry after UEFI handoff.
  *
- * This is called by uefi_loader.c after ExitBootServices().
- * At this point we own the machine - no UEFI services available.
+ * On amd64, kernel_entry.S switches to a 2 MiB BSS stack and tail-calls this
+ * function as kernel_main_impl.  On other arches the C function IS kernel_main
+ * (the assembly trampoline does not exist there yet).
  */
+#if defined(__x86_64__)
+void kernel_main_impl(BootInfo *boot_info) {
+#else
 void kernel_main(BootInfo *boot_info) {
+#endif
     /*
      * Establish our own GDT before anything else.  UEFI hands us CS=0x38
      * (OVMF's 64-bit segment at GDT[7]).  Our IDT entries use selector 0x08,
