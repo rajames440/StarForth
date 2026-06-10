@@ -1,7 +1,7 @@
 # Next Session Plan
 
 Generated at end of session `cdcb1844` (2026-06-10).
-Branch at close: `claude/starforth-fb-terrm-ukdFL`
+Branch at close: `lithosananke` (merged and pushed; all three arches boot to `ok>`)
 
 ---
 
@@ -20,9 +20,29 @@ Branch at close: `claude/starforth-fb-terrm-ukdFL`
 
 ---
 
+## Task 0 — Fix doe.4th EXEC regression (do first)
+
+All three architectures boot to `ok>` but `S" doe.4th" EXEC` fails at
+runtime with "EXEC: failed: doe.4th" on every arch.  Root cause: merge
+conflict resolution took the remote's self-executing `doe.4th` (480 runs)
+and `init.4th` (calls `S" doe.4th" EXEC`), but the capsule fails at runtime.
+`EXEC-DOE` word is also absent (removed from `init.4th` by the remote).
+
+Investigation starting point:
+- Check `capsule_exec_init` return path — add diagnostic to distinguish
+  NOT_FOUND vs HASH_MISMATCH vs runtime error
+- Verify new `doe.4th` block structure (correct block numbers, no undefined words)
+- Consider restoring `EXEC-DOE` as an alias once doe.4th runs correctly
+
+---
+
 ## Task 1 — Carry-over acceptance tests (do first, one at a time)
 
-amd64 is green.  These two are still pending:
+All three architectures now confirmed on `lithosananke`:
+  amd64   ✓  aarch64  ✓  riscv64  ✓
+
+These were completed at end of session.  No action needed unless a new
+change is made — then re-run all three before merging.
 
 ```bash
 make -f Makefile.starkernel ARCH=aarch64 clean qemu
