@@ -12,6 +12,8 @@
 #include "arch.h"
 #include "console.h"
 
+volatile const char *g_sk_fault_word = (void *)0;
+
 /* Defined in isr.S */
 extern void aarch64_install_vectors(void);
 
