@@ -107,7 +107,7 @@ static const char *sk_bootstrap_region_name(uint64_t addr) {
     return "unknown";
 }
 
-static void sk_bootstrap_debug_log_xt(const char *label, const DictEntry *entry) {
+static void __attribute__((unused)) sk_bootstrap_debug_log_xt(const char *label, const DictEntry *entry) {
     console_puts("[SK_BOOTDBG] ");
     console_puts(label ? label : "(word)");
     console_puts(" entry=");

@@ -190,7 +190,7 @@ static WordTestSuite string_word_suites[] = {
     {
         ">IN", {
             {"initial",    ">IN @ . CR",                   "Should return input offset",    TEST_NORMAL, 0, 1},
-            {"advances",   ": TWIN >IN @ DROP >IN @ SWAP - . CR ; TWIN", "Should advance >IN", TEST_NORMAL, 0, 1},
+            {"advances",   ": TWIN >IN @ >IN @ - . CR ; TWIN",           "Should print: 0 (no advance inside compiled word)", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         2

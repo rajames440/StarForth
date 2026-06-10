@@ -412,7 +412,7 @@ uint32_t find_variance_inflection(
         }
 
         for (uint32_t i = 0; i < num_chunks; i++) {
-            uint64_t chunk_start = i * size;
+            uint64_t chunk_start = (uint64_t)i * (uint64_t)size;
             chunk_vars[i] = compute_variance_q48(
                 &heat_data[chunk_start],
                 size

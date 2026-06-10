@@ -8,8 +8,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. `docs/AI_AGENT_MANDATORY_README.md` — Non-negotiable rules for all AI assistants
 2. `docs/TASK_LIST.md` — Task scope, hard rules, and working protocol
+3. `docs/NEXT_SESSION.md` — Current task queue and next-session plan (read this first to orient)
 
 These documents are project law. Violations produce invalid output.
+
+## Build and Process Rules — NON-NEGOTIABLE
+
+**One process at a time. Always.**
+
+- Never run more than one `make`, `qemu-system`, or build process simultaneously in this workspace.
+- Never use `run_in_background: true` for builds or QEMU runs while another build or QEMU process is active.
+- Never launch parallel Agent tasks that each spawn builds.
+- Wait for the current process to fully complete (task notification received, exit code checked) before starting the next one.
+- Concurrent builds corrupt shared state (`build/`, `logs2/`, `experiments/`) and produce invalid results.
+
+## Next Feature: Word-Level ACL System
+
+**Design doc:** `docs/03-architecture/word-acl/DESIGN.md`
+
+The next major feature is a word-level ACL system implemented entirely in
+FORTH (`capsules/ACL.4th`). Work begins on `master`; `lithosananke` is
+brought to parity after. Read the design doc before touching any ACL-related
+code. Key constraints:
+
+- All policy logic in `ACL.4th` — no new C primitives for policy
+- Two C fields only: `acl_ttl` (counter) + `acl_allow` (bit) in `DictEntry`
+- Emergency console (`vm->emergency_console`) always bypasses ACL — 100%
+- TTL is statistically adaptive (heat + rolling window + decay + inference)
+- Pin (`ACL-PIN`) is one-way; inheritance clears pin, copies mode
 
 ## What This Branch Is
 

@@ -40,6 +40,11 @@
 #include "version.h"
 #endif
 
+/* Forward declaration — kernel_main_deep contains everything from heartbeat
+ * init onward.  The 2 MB BSS stack is set up by kernel_entry.S before
+ * kernel_main_impl is called, so no further stack switch is needed. */
+static void kernel_main_deep(BootInfo *boot_info);
+
 /* Helper: check if memory type is RAM */
 static int is_ram_type(uint32_t type) {
     return type == EfiConventionalMemory ||
@@ -184,12 +189,17 @@ static void print_banner(void) {
 }
 
 /**
- * kernel_main - Main entry point after UEFI handoff
+ * kernel_main / kernel_main_impl - Main kernel entry after UEFI handoff.
  *
- * This is called by uefi_loader.c after ExitBootServices().
- * At this point we own the machine - no UEFI services available.
+ * On amd64, kernel_entry.S switches to a 2 MiB BSS stack and tail-calls this
+ * function as kernel_main_impl.  On other arches the C function IS kernel_main
+ * (the assembly trampoline does not exist there yet).
  */
+#if defined(__x86_64__)
+void kernel_main_impl(BootInfo *boot_info) {
+#else
 void kernel_main(BootInfo *boot_info) {
+#endif
     /*
      * Establish our own GDT before anything else.  UEFI hands us CS=0x38
      * (OVMF's 64-bit segment at GDT[7]).  Our IDT entries use selector 0x08,
@@ -236,6 +246,15 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Kernel heap initialized.");
     print_heap_stats();
 
+    /* Hand off to the deep initialization path.  The 2 MiB BSS stack was
+     * already set up by kernel_entry.S (amd64) before this function was
+     * called, so no further stack switch is needed here. */
+    kernel_main_deep(boot_info);
+}
+
+/* Everything below runs on the 2 MiB BSS stack (amd64, set up by
+ * kernel_entry.S) or the UEFI-provided stack (aarch64/riscv64). */
+static void kernel_main_deep(BootInfo *boot_info) {
     /* M5: Initialize heartbeat subsystem */
     console_println("Heartbeat: init...");
     uint64_t tsc_hz = timer_tsc_hz();

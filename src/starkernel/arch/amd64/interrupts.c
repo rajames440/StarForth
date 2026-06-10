@@ -50,6 +50,10 @@
 #include "apic.h"
 #include "timer.h"
 
+/* Set by the FORTH dispatcher just before calling entry->func(vm).
+ * Printed on fault to identify which word was executing. */
+volatile const char *g_sk_fault_word = (void *)0;
+
 #define IDT_ENTRIES 256
 #define INTERRUPT_GATE 0x8E
 
@@ -214,6 +218,10 @@ void isr_common_handler(uint64_t vector,
             break;
         case 13:
             console_println("Fault: General Protection (#GP)");
+            if (g_sk_fault_word) {
+                console_puts("Word   : ");
+                console_println((const char *)g_sk_fault_word);
+            }
             break;
         case 14:
             console_println("Fault: Page Fault (#PF)");

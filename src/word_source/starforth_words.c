@@ -58,18 +58,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef __unix__
-#include <time.h>
-#endif
-
 #ifdef __STARKERNEL__
-struct timespec { long tv_sec; long tv_nsec; };
-static int nanosleep(const struct timespec *req, struct timespec *rem)
-{
-    (void)req;
-    (void)rem;
-    return 0;
-}
 #define STARFORTH_CHECK_ARENA(tag) sk_vm_arena_assert_guards(tag)
 #else
 #define STARFORTH_CHECK_ARENA(tag) ((void)0)
@@ -748,12 +737,13 @@ void starforth_word_random(VM* vm)
 }
 
 /**
- * @brief Wait/sleep for specified milliseconds
+ * @brief Wait for specified number of heartbeat ticks
  *
  * Stack effect: ( n -- )
- * Pauses execution for n milliseconds. Useful for:
- * - Allowing VM/system to cool between benchmark phases
- * - General-purpose timing in FORTH programs
+ * Counts n heartbeat ticks by calling vm_tick() n times.
+ * Time is relative — we count heartbeats, not wall-clock milliseconds.
+ * This is architecture-independent: works on amd64, aarch64, riscv64
+ * without depending on any platform timer.
  * @param vm Pointer to the VM instance
  */
 void starforth_word_wait(VM* vm)
@@ -761,43 +751,18 @@ void starforth_word_wait(VM* vm)
     if (vm->dsp < 0)
     {
         vm->error = 1;
-        log_message(LOG_ERROR, "WAIT: data stack underflow");
+        log_message(LOG_ERROR, "WAIT: stack underflow");
         return;
     }
 
-    cell_t ms = vm_pop(vm);
+    cell_t ticks = vm_pop(vm);
+    cell_t i;
 
-    if (ms <= 0)
-    {
-        log_message(LOG_DEBUG, "WAIT: zero or negative ms (%ld), no delay", (long)ms);
+    if (ticks <= 0)
         return;
-    }
 
-    log_message(LOG_DEBUG, "WAIT: sleeping for %ld ms", (long)ms);
-
-#ifdef __unix__
-    /* POSIX nanosleep for precise, interruptible sleep */
-    struct timespec req, rem;
-    req.tv_sec = (time_t)(ms / 1000);
-    req.tv_nsec = (long)((ms % 1000) * 1000000);
-
-    while (nanosleep(&req, &rem) == -1)
-    {
-        /* Interrupted by signal, continue sleeping */
-        req = rem;
-    }
-#else
-    /* Fallback: busy-wait using platform time (less efficient but portable) */
-    sf_time_ns_t start = sf_monotonic_ns();
-    sf_time_ns_t target = start + (sf_time_ns_t)ms * 1000000ULL;
-
-    while (sf_monotonic_ns() < target)
-    {
-        /* Busy wait - could add yield() on platforms that support it */
-    }
-#endif
-
-    log_message(LOG_DEBUG, "WAIT: sleep complete");
+    for (i = 0; i < ticks; i++)
+        vm_tick(vm);
 }
 
 /**
