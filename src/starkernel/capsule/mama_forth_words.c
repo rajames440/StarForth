@@ -38,6 +38,7 @@
 
 #include "starkernel/capsule.h"
 #include "starkernel/capsule_birth.h"
+#include "starkernel/capsule_loader.h"
 #include "starkernel/capsule_run.h"
 #include "starkernel/capsule_loader.h"
 #include "starkernel/repl.h"
@@ -577,6 +578,60 @@ void mama_word_capsule_test(VM *vm)
 }
 
 /* ============================================================================
+ * EXEC Word
+ * ============================================================================ */
+
+/**
+ * @brief EXEC ( c-addr u -- )
+ * Execute a named capsule's payload in the current VM.
+ * All FORTH words defined by the capsule become available in the calling
+ * VM's dictionary.  The capsule is located by exact name match.
+ */
+void mama_word_exec(VM *vm)
+{
+    char             name_buf[VM_NAME_MAX];
+    uint32_t         i;
+    cell_t           u, caddr;
+    const char      *src;
+    CapsuleRunResult result;
+
+    if (vm->dsp < 1) {
+        vm->error = 1;
+        return;
+    }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("EXEC: name too long or empty");
+        return;
+    }
+
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    result = capsule_exec_init(
+        vm,
+        name_buf,
+        capsule_get_directory(),
+        capsule_get_descriptors(),
+        capsule_get_names(),
+        capsule_get_arena());
+
+    if (result != CAPSULE_RUN_OK) {
+        console_puts("EXEC: failed: ");
+        console_println(name_buf);
+    }
+    /* Stack clean on exit */
+}
+
+/* ============================================================================
  * Vocabulary Registration
  * ============================================================================ */
 
@@ -655,6 +710,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "START", mama_word_start);
     register_word(vm, "STOP", mama_word_stop);
     register_word(vm, "USE", mama_word_use);
+    register_word(vm, "EXEC", mama_word_exec);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);
@@ -676,6 +732,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "START", mama_word_start);
     register_word(vm, "STOP", mama_word_stop);
     register_word(vm, "USE", mama_word_use);
+    register_word(vm, "EXEC", mama_word_exec);
     register_word(vm, "CAPSULE-COUNT", mama_word_capsule_count);
     register_word(vm, "CAPSULE@", mama_word_capsule_fetch);
     register_word(vm, "CAPSULE-HASH@", mama_word_capsule_hash_fetch);
