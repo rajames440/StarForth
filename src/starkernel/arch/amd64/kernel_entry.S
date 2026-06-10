@@ -34,7 +34,8 @@ g_kernel_stack_top:          /* label at the high end; stack grows downward */
     .global kernel_main
 kernel_main:
     lea  rax, [rip + g_kernel_stack_top]
-    and  rax, -16            /* guarantee 16-byte RSP alignment per SysV ABI */
+    and  rax, -16            /* align to 16-byte boundary */
+    sub  rax, 8              /* SysV ABI: RSP must be 8 mod 16 at C function entry */
     mov  rsp, rax
     xor  rbp, rbp            /* terminate the frame chain */
     jmp  kernel_main_impl    /* rdi (boot_info) already correct */
