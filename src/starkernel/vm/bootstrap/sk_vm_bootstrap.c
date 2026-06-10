@@ -206,6 +206,9 @@ int sk_vm_bootstrap_parity(ParityPacket *out) {
     }
     sk_hal_freeze_exec_range();
 
+    /* Raise to LOG_DEBUG after POST so word-dispatch traces appear for EXEC-DOE */
+    log_set_level(LOG_DEBUG);
+
     return (pkt->bootstrap_result == SK_BOOTSTRAP_OK) ? 0 : -1;
 }
 
