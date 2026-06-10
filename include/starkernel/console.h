@@ -105,4 +105,8 @@ int console_poll(void);
 void console_set_vm_name(const char *name);
 const char *console_get_vm_name(void);
 
+/* Last FORTH word name set by the dispatcher before entry->func(vm).
+ * Printed by the #GP fault handler to identify the faulting word. */
+extern volatile const char *g_sk_fault_word;
+
 #endif /* STARKERNEL_CONSOLE_H */

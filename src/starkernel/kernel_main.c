@@ -40,6 +40,11 @@
 #include "version.h"
 #endif
 
+/* Forward declaration — kernel_main transfers control here after switching
+ * to a 2 MB heap-backed stack.  The UEFI stack is ~128 KB which is too
+ * small for the DoE FORTH word recursion depth. */
+static void kernel_main_deep(BootInfo *boot_info);
+
 /* Helper: check if memory type is RAM */
 static int is_ram_type(uint32_t type) {
     return type == EfiConventionalMemory ||
@@ -241,6 +246,39 @@ void kernel_main(BootInfo *boot_info) {
     console_println("Kernel heap initialized.");
     print_heap_stats();
 
+    /* Switch to a 2 MB kernel heap stack.
+     * UEFI hands us ~128 KB which is too small for DoE FORTH word recursion. */
+#ifdef ARCH_AMD64
+#   define KERNEL_STACK_SIZE (2UL * 1024UL * 1024UL)
+    {
+        void *new_stack = kmalloc(KERNEL_STACK_SIZE);
+        if (!new_stack) {
+            console_println("FATAL: kernel stack alloc failed");
+            for (;;) arch_halt();
+        }
+        uintptr_t new_sp = ((uintptr_t)new_stack + KERNEL_STACK_SIZE - 16u)
+                           & ~(uintptr_t)15u;
+        /* Load boot_info into rdi (first arg), new_sp into a scratch reg,
+         * switch RSP, clear RBP, then jump.  The callee sees boot_info in rdi
+         * as required by the System V AMD64 ABI. */
+        __asm__ volatile (
+            "mov %0, %%rsp\n\t"
+            "xor %%rbp, %%rbp\n\t"
+            "jmp *%1\n\t"
+            : : "r"(new_sp), "r"(kernel_main_deep), "D"(boot_info) : "memory"
+        );
+        __builtin_unreachable();
+    }
+#else
+    /* aarch64 / riscv64: UEFI stack is adequate; call directly. */
+    kernel_main_deep(boot_info);
+#endif
+}
+
+/* Everything below runs on the 2 MB heap stack (amd64) or UEFI stack
+ * (aarch64/riscv64).  Keep kernel_main above lean so the stack switch
+ * happens as early as possible after heap init. */
+static void kernel_main_deep(BootInfo *boot_info) {
     /* M5: Initialize heartbeat subsystem */
     console_println("Heartbeat: init...");
     uint64_t tsc_hz = timer_tsc_hz();

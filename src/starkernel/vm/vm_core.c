@@ -56,6 +56,7 @@
 #include "../include/vm_host.h"
 #ifdef __STARKERNEL__
 #include "starkernel/vm/arena.h"
+#include "starkernel/console.h"  /* g_sk_fault_word */
 #endif
 #include "word_source/include/vocabulary_words.h"
 #include "vm_internal.h"
@@ -689,6 +690,9 @@ void execute_colon_word(VM* vm)
 
         if (w && w->func)
         {
+#ifdef __STARKERNEL__
+            g_sk_fault_word = (w->name_len > 0) ? w->name : "?";
+#endif
             profiler_word_enter(w);
             w->func(vm);
             physics_metadata_touch(w, w->execution_heat, vm_monotonic_ns(vm));
@@ -822,6 +826,9 @@ void vm_interpret_word(VM* vm, const char* word_str, size_t len)
 
         if (entry->func)
         {
+#ifdef __STARKERNEL__
+            g_sk_fault_word = (entry->name_len > 0) ? entry->name : "?";
+#endif
             profiler_word_enter(entry);
             entry->func(vm);
             physics_metadata_touch(entry, entry->execution_heat, vm_monotonic_ns(vm));
