@@ -11,6 +11,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 These documents are project law. Violations produce invalid output.
 
+## Build and Process Rules — NON-NEGOTIABLE
+
+**One process at a time. Always.**
+
+- Never run more than one `make`, `qemu-system`, or build process simultaneously in this workspace.
+- Never use `run_in_background: true` for builds or QEMU runs while another build or QEMU process is active.
+- Never launch parallel Agent tasks that each spawn builds.
+- Wait for the current process to fully complete (task notification received, exit code checked) before starting the next one.
+- Concurrent builds corrupt shared state (`build/`, `logs2/`, `experiments/`) and produce invalid results.
+
 ## Next Feature: Word-Level ACL System
 
 **Design doc:** `docs/03-architecture/word-acl/DESIGN.md`
