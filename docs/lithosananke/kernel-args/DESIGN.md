@@ -202,6 +202,87 @@ write the boot entry with the desired args into `OVMF_VARS.fd` before
 launching QEMU.  Alternatively, `efibootmgr` syntax baked into the ISO's
 `startup.nsh` script works with the OVMF shell.
 
+## `REBOOT` FORTH Word
+
+### Purpose
+
+Allows a running kernel to set new boot flags and immediately cold-reset.
+The canonical use case:
+
+```forth
+S" --doe --log-level=debug" REBOOT
+```
+
+On the next boot the loader finds the one-shot NVRAM variable, uses it
+instead of `LoadOptions`, and clears it so subsequent boots revert to
+normal.
+
+### Stack effect
+
+```
+REBOOT  ( addr len -- )
+```
+
+Takes a counted string (same convention as `S"`) containing the new
+argument line.
+
+### Interpret-only guard
+
+`REBOOT` is a normal (non-immediate) word that checks compilation state at
+the top of its body.  Attempting to include it in a `:` definition produces
+a `-14` throw (`interpretation semantics only`) **at definition time**, not
+at run time — which is the correct FORTH-standard behaviour.
+
+```c
+static void word_reboot(VM *vm) {
+    if (vm->compiling) {
+        vm_throw(vm, -14);   /* interpretation semantics only */
+        return;
+    }
+    ...
+}
+```
+
+### NVRAM one-shot mechanism
+
+When `REBOOT` executes it:
+
+1. Pops `addr` / `len` from the data stack.
+2. Converts the string to UCS-2.
+3. Calls `RuntimeServices->SetVariable("StarForthBootArgs", STARFORTH_VENDOR_GUID, ...)`.
+   `EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS`.
+4. Calls `RuntimeServices->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL)`.
+   This call does not return.
+
+On the next boot, `cmdline_parse()` checks for `StarForthBootArgs` before
+reading `LoadOptions`.  If found it copies the value, **immediately clears
+the variable** (one-shot semantics — it does not persist across further
+reboots), and uses that string for parsing.
+
+### Hosted-VM stub
+
+On the Linux-hosted build `RuntimeServices` is unavailable.  The stub logs
+the would-be args and sets `vm->halted = 1`:
+
+```c
+#ifndef STARFORTH_KERNEL
+    hal_console_puts("[REBOOT] hosted stub — would reboot with: ");
+    hal_console_write((const char *)VM_ADDR(vm, addr), (size_t)len);
+    hal_console_puts("\n");
+    vm->halted = 1;
+#endif
+```
+
+### Registration
+
+Registered alongside `BYE` / `WARM` / `COLD` in `system_words.c`:
+
+```c
+REGISTER_WORD("REBOOT", word_reboot, WORD_NORMAL);
+```
+
+---
+
 ## Extension Points
 
 Adding a new switch requires:
