@@ -253,6 +253,13 @@ KERNEL_CFLAGS += -DSK_STARTUP_FORTH='"$(SK_CMD)"'
 LOADER_CFLAGS += -DSK_STARTUP_FORTH='"$(SK_CMD)"'
 endif
 
+# KERNEL_ARGS — runtime boot flags written into starforth.cfg on the ESP image.
+# The loader reads this file from the EFI partition and parses it at boot.
+# Supported flags: --doe  --log-level=<debug|info|warn|error>
+#                  --stack=<N>[MG]  --heap=<N>[MG]
+# Usage: make -f Makefile.starkernel qemu KERNEL_ARGS="--doe --log-level=info"
+KERNEL_ARGS ?=
+
 # Self-test flags (div-by-zero, page fault, timer validation)
 ifdef DIV0_SELF_TEST
 KERNEL_CFLAGS += -DDIV0_SELF_TEST=$(DIV0_SELF_TEST)
@@ -620,6 +627,9 @@ ifeq ($(ARCH),amd64)
 	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI
 	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI/BOOT
 	@mcopy   -i $(BUILD_DIR)/iso/efi.img $(LOADER_EFI) ::/EFI/BOOT/BOOTX64.EFI
+	$(if $(KERNEL_ARGS),\
+		@printf '$(KERNEL_ARGS)\n' > $(BUILD_DIR)/iso/starforth.cfg && \
+		mcopy -i $(BUILD_DIR)/iso/efi.img $(BUILD_DIR)/iso/starforth.cfg ::/starforth.cfg,)
 	@xorriso -as mkisofs -r -J \
 		-e efi.img -no-emul-boot \
 		-o $(QEMU_ISO) $(BUILD_DIR)/iso 2>&1
