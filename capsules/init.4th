@@ -7,7 +7,7 @@ Block 2057
   .SEP
   ." ok> prompt ready." CR
   CR
-  ." To load DoE: S\" doe.4th\" EXEC" CR
+  ." To load DoE: EXEC-FILE doe.4th" CR
   ." Then run:   12345 3 EXEC-DOE" CR
   CR
   ." Docs: experiments/bare_metal/README.md" CR
