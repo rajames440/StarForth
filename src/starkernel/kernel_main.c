@@ -430,7 +430,7 @@ static void kernel_main_deep(BootInfo *boot_info) {
 #endif
 
     /* Idle loop (reached if sk_repl exits via BYE or vm->halted) */
-#ifdef SK_STARTUP_FORTH
+#ifdef STARFORTH_ENABLE_VM
 idle:
 #endif
     for (;;) {

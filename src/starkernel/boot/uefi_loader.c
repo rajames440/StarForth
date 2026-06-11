@@ -134,6 +134,62 @@ static int guid_equals(const EFI_GUID* a, const EFI_GUID* b)
            a->Data4[7] == b->Data4[7];
 }
 
+/*
+ * Try to read /starforth.cfg from the ESP.
+ * Returns 1 on success (buf contains a NUL-terminated ASCII cmdline), 0 otherwise.
+ * buf must be at least buflen bytes; buflen should equal KERNEL_ARGS_CMDLINE_MAX.
+ * Trailing CR/LF stripped.  Available in both MONOLITHIC and split builds.
+ */
+static int load_cfg_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES *BS,
+                              char *buf, UINTN buflen)
+{
+    EFI_LOADED_IMAGE_PROTOCOL        *loaded_image = NULL;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL  *fs           = NULL;
+    EFI_FILE_PROTOCOL                *root         = NULL;
+    EFI_FILE_PROTOCOL                *cfg_file     = NULL;
+    EFI_STATUS status;
+    UINTN read_size;
+
+    buf[0] = '\0';
+
+    status = BS->HandleProtocol(ImageHandle,
+                                (EFI_GUID *)&EFI_LOADED_IMAGE_PROTOCOL_GUID,
+                                (void **)&loaded_image);
+    if (status != EFI_SUCCESS || !loaded_image) return 0;
+
+    status = BS->HandleProtocol(loaded_image->DeviceHandle,
+                                (EFI_GUID *)&EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID,
+                                (void **)&fs);
+    if (status != EFI_SUCCESS || !fs) return 0;
+
+    status = fs->OpenVolume(fs, &root);
+    if (status != EFI_SUCCESS || !root) return 0;
+
+    status = root->Open(root, &cfg_file, L"starforth.cfg", EFI_FILE_MODE_READ, 0);
+    if (status != EFI_SUCCESS) {
+        root->Close(root);
+        return 0;
+    }
+
+    read_size = buflen - 1;
+    status = cfg_file->Read(cfg_file, &read_size, buf);
+    cfg_file->Close(cfg_file);
+    root->Close(root);
+
+    if (status != EFI_SUCCESS) {
+        buf[0] = '\0';
+        return 0;
+    }
+
+    buf[read_size] = '\0';
+    /* Strip trailing CR/LF */
+    while (read_size > 0 &&
+           (buf[read_size - 1] == '\n' || buf[read_size - 1] == '\r'))
+        buf[--read_size] = '\0';
+
+    return read_size > 0;
+}
+
 #ifndef MONOLITHIC_BUILD
 /* Kernel entry point signature */
 typedef void (*KernelEntry)(BootInfo *boot_info);
@@ -292,10 +348,11 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     {
         char cmdline_buf[KERNEL_ARGS_CMDLINE_MAX];
         int  used_nvram = 0;
+        int  used_cfg   = 0;
 
         cmdline_buf[0] = '\0';
 
-        /* Check one-shot NVRAM variable first */
+        /* Priority 1: one-shot NVRAM variable (set by REBOOT word) */
         {
             EFI_GUID vendor_guid = STARFORTH_VENDOR_GUID;
             EFI_GET_VARIABLE GetVariable =
@@ -328,8 +385,17 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
             }
         }
 
-        /* Fall back to LoadOptions if NVRAM was empty */
+        /* Priority 2: /starforth.cfg on the ESP (build-time / installer config) */
         if (!used_nvram) {
+            if (load_cfg_from_esp(ImageHandle, BS,
+                                  cmdline_buf, sizeof(cmdline_buf))) {
+                used_cfg = 1;
+                RAW_LOG("CmdLine: from starforth.cfg\n");
+            }
+        }
+
+        /* Priority 3: LoadOptions from firmware / boot manager */
+        if (!used_nvram && !used_cfg) {
             EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
             EFI_STATUS li_status = BS->HandleProtocol(
                 ImageHandle,

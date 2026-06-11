@@ -702,6 +702,9 @@ else ifeq ($(ARCH),aarch64)
 	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI
 	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI/BOOT
 	@mcopy   -i $(BUILD_DIR)/iso/efi.img $(LOADER_EFI) ::/EFI/BOOT/BOOTAA64.EFI
+	$(if $(KERNEL_ARGS),\
+		@printf '$(KERNEL_ARGS)\n' > $(BUILD_DIR)/iso/starforth.cfg && \
+		mcopy -i $(BUILD_DIR)/iso/efi.img $(BUILD_DIR)/iso/starforth.cfg ::/starforth.cfg,)
 	@xorriso -as mkisofs -r -J \
 		-e efi.img -no-emul-boot \
 		-o $(QEMU_ISO) $(BUILD_DIR)/iso 2>&1
@@ -792,6 +795,10 @@ else ifeq ($(ARCH),riscv64)
 	mcopy -i $(BUILD_DIR)/esp_rv64.img $(KERNEL_ELF) ::/kernel.elf; \
 	printf 'FS0:\\EFI\\BOOT\\BOOTRISCV64.EFI\r\n' > $(BUILD_DIR)/startup.nsh; \
 	mcopy -i $(BUILD_DIR)/esp_rv64.img $(BUILD_DIR)/startup.nsh ::/startup.nsh; \
+	if [ -n "$(KERNEL_ARGS)" ]; then \
+		printf '$(KERNEL_ARGS)\n' > $(BUILD_DIR)/starforth.cfg; \
+		mcopy -i $(BUILD_DIR)/esp_rv64.img $(BUILD_DIR)/starforth.cfg ::/starforth.cfg; \
+	fi; \
 	dd if=$(BUILD_DIR)/esp_rv64.img of=$$DISK bs=512 seek=2048 conv=notrunc 2>/dev/null; \
 	echo "  Disk: $$DISK"; \
 	echo ""; \
