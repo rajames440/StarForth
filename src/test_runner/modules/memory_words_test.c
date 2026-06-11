@@ -126,7 +126,7 @@ static WordTestSuite memory_word_suites[] = {
     {
         "HERE", {
             {"basic", "HERE HERE = . CR", "Should print: -1", TEST_NORMAL, 0, 1},
-            {"after_comma", "HERE 42 , HERE SWAP - . CR", "Should print: 4", TEST_NORMAL, 0, 1},
+            {"after_comma", "HERE 42 , HERE SWAP - 1 CELLS = 0 SWAP /", "Asserts HERE advances by exactly 1 CELLS (8 bytes on 64-bit)", TEST_NORMAL, 0, 1},
             {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
         },
         2
