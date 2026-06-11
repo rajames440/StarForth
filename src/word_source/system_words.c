@@ -53,6 +53,7 @@
 #ifdef __STARKERNEL__
 #include "starkernel/uefi.h"
 #include "starkernel/kernel_args.h"
+#include "starkernel/console.h"
 extern EFI_RUNTIME_SERVICES *g_sk_runtime_services;
 #endif
 
