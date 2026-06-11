@@ -282,6 +282,7 @@ LOADER_SRCS_BASE := \
     $(KERNEL_SRC)/boot/uefi_loader.c \
     $(KERNEL_SRC)/boot/elf_loader.c \
     $(KERNEL_SRC)/boot/reloc_stub.c \
+    $(KERNEL_SRC)/boot/cmdline.c \
     $(KERNEL_SRC)/kernel_main.c \
     $(wildcard $(KERNEL_SRC)/hal/*.c) \
     $(wildcard $(KERNEL_SRC)/memory/*.c) \
