@@ -1,0 +1,7 @@
+ANOVA: tick_interval_us ~ architecture
+══════════════════════════════════════
+                Df    Sum Sq  Mean Sq F value Pr(>F)
+arch             2 0.000e+00 1.51e-21       1  0.368
+Residuals   157328 2.375e-16 1.51e-21               
+
+Kruskal-Wallis: H=NaN  df=2  p=NaN
