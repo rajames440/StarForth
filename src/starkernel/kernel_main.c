@@ -29,6 +29,15 @@
 #include "apic.h"
 #include "timer.h"
 #include "kmalloc.h"
+#include "starkernel/kernel_args.h"
+
+/*
+ * Runtime services pointer — set once from boot_info before REPL starts.
+ * Accessible to kernel FORTH words (e.g. REBOOT) via extern declaration.
+ * Valid after ExitBootServices on OVMF; on real hardware depends on
+ * SetVirtualAddressMap — this kernel does not call it, so physical-mode RS.
+ */
+EFI_RUNTIME_SERVICES *g_sk_runtime_services = NULL;
 
 #ifdef STARFORTH_ENABLE_VM
 #include "starkernel/vm/bootstrap/sk_vm_bootstrap.h"
@@ -240,9 +249,16 @@ void kernel_main(BootInfo *boot_info) {
     timer_init(boot_info);
     console_println("Timer: init done\n");
 
-    /* M6: Kernel heap */
-    #define KERNEL_HEAP_SIZE (2ULL * 1024ULL * 1024ULL * 1024ULL)  /* 2 GiB — floor for 256+ baby VMs */
-    kmalloc_init(KERNEL_HEAP_SIZE);
+    /* Stash runtime services for REBOOT word and other kernel FORTH words */
+    g_sk_runtime_services = boot_info->runtime_services;
+
+    /* M6: Kernel heap — sized from --heap= flag, default 2 GiB */
+    {
+        uint64_t heap_sz = boot_info->args.heap_size
+                         ? boot_info->args.heap_size
+                         : KARGS_DEFAULT_HEAP_SIZE;
+        kmalloc_init(heap_sz);
+    }
     console_println("Kernel heap initialized.");
     print_heap_stats();
 
@@ -357,11 +373,22 @@ static void kernel_main_deep(BootInfo *boot_info) {
     VM *mama = (VM *)sk_get_mama_vm();
 
     /*
-     * SK_STARTUP_FORTH — optional compile-time FORTH script injected before
-     * the interactive REPL.  Useful for automated testing from the Makefile:
-     *   make -f Makefile.starkernel qemu SK_CMD="TIME-TICKS . BYE"
-     * The kernel executes the string, then either exits (if BYE is included)
-     * or falls through to the interactive REPL.
+     * Runtime --doe flag: inject "EXEC-DOE BYE" if requested via boot args.
+     * Checked before SK_STARTUP_FORTH so a runtime --doe takes precedence.
+     */
+    if (boot_info->args.run_doe) {
+        console_println("Startup: --doe flag set — running EXEC-DOE");
+        vm_interpret(mama, "EXEC-DOE BYE");
+        if (mama->error) {
+            console_println("Startup: EXEC-DOE ERROR");
+            mama->error = 0;
+        }
+        if (mama->halted) goto idle;
+    }
+
+    /*
+     * SK_STARTUP_FORTH — compile-time script injection (lowest priority).
+     * Usage: make -f Makefile.starkernel qemu SK_CMD="TIME-TICKS . BYE"
      */
 #ifdef SK_STARTUP_FORTH
     console_puts("Startup: ");
@@ -383,6 +410,20 @@ static void kernel_main_deep(BootInfo *boot_info) {
             default: fb_fmt = FB_PIXEL_BGRX32; break;
         }
         console_fb_init(&boot_info->framebuffer, fb_fmt);
+    }
+
+    /* Clear reboot-tries counter: we reached the REPL cleanly */
+    if (g_sk_runtime_services) {
+        EFI_GUID vendor_guid = STARFORTH_VENDOR_GUID;
+        EFI_SET_VARIABLE SetVariable =
+            (EFI_SET_VARIABLE)g_sk_runtime_services->SetVariable;
+        SetVariable(
+            (CHAR16 *)SF_VAR_REBOOT_TRIES,
+            &vendor_guid,
+            EFI_VARIABLE_NON_VOLATILE |
+            EFI_VARIABLE_BOOTSERVICE_ACCESS |
+            EFI_VARIABLE_RUNTIME_ACCESS,
+            0, NULL);
     }
 
     sk_repl(mama);
