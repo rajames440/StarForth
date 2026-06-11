@@ -202,6 +202,108 @@ write the boot entry with the desired args into `OVMF_VARS.fd` before
 launching QEMU.  Alternatively, `efibootmgr` syntax baked into the ISO's
 `startup.nsh` script works with the OVMF shell.
 
+## `REBOOT` FORTH Word
+
+### Purpose
+
+Allows a running kernel to set new boot flags and immediately cold-reset.
+The canonical use case:
+
+```forth
+S" --doe --log-level=debug" REBOOT
+```
+
+On the next boot the loader finds the one-shot NVRAM variable, uses it
+instead of `LoadOptions`, and clears it so subsequent boots revert to
+normal.
+
+### Stack effect
+
+```
+REBOOT  ( addr len -- )
+```
+
+Takes a counted string (same convention as `S"`) containing the new
+argument line.
+
+### Interpret-only guard
+
+`REBOOT` is a normal (non-immediate) word that checks compilation state at
+the top of its body.  Attempting to include it in a `:` definition produces
+a `-14` throw (`interpretation semantics only`) **at definition time**, not
+at run time — which is the correct FORTH-standard behaviour.
+
+```c
+static void word_reboot(VM *vm) {
+    if (vm->compiling) {
+        vm_throw(vm, -14);   /* interpretation semantics only */
+        return;
+    }
+    ...
+}
+```
+
+### NVRAM one-shot mechanism
+
+When `REBOOT` executes it:
+
+1. Pops `addr` / `len` from the data stack.
+2. Validates length (`0 < len < KERNEL_ARGS_CMDLINE_MAX`); throws `-11` on
+   out-of-range.
+3. Converts the string to UCS-2.
+4. Reads `StarForthRebootTries` from NVRAM (default 0 if absent).
+5. If `tries >= REBOOT_MAX_TRIES` (default **3**):
+   - Clears both `StarForthBootArgs` and `StarForthRebootTries` variables.
+   - Prints warning to serial: `REBOOT: max tries reached — dropping to REPL`.
+   - Returns normally (does **not** reset); execution continues at the REPL.
+6. Otherwise: writes `StarForthBootArgs` and increments `StarForthRebootTries`,
+   then calls `RuntimeServices->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL)`.
+   This call does not return.
+
+On the next boot, the loader checks for `StarForthBootArgs`:
+- If found: copies value, **clears `StarForthBootArgs`** (one-shot), uses it
+  for parsing.  `StarForthRebootTries` is left untouched by the loader — it
+  is only cleared by a successful REPL session (see below) or by the
+  max-tries guard above.
+
+On reaching the REPL successfully, `kernel_main` clears `StarForthRebootTries`
+to zero, resetting the counter for the next `REBOOT` invocation.  This means
+a clean interactive boot always resets the escape-hatch state.
+
+### `SetVariable` failure path
+
+If any `SetVariable` call returns a non-`EFI_SUCCESS` status:
+
+- Print warning: `REBOOT: NVRAM write failed (<status>) — dropping to REPL`.
+- Do **not** attempt `ResetSystem`.
+- Return normally; execution continues at the REPL.
+
+No infinite retry loop.  One attempt, one warning, one escape to REPL.
+
+### Hosted-VM stub
+
+On the Linux-hosted build `RuntimeServices` is unavailable.  The stub logs
+the would-be args and sets `vm->halted = 1`:
+
+```c
+#ifndef STARFORTH_KERNEL
+    hal_console_puts("[REBOOT] hosted stub — would reboot with: ");
+    hal_console_write((const char *)VM_ADDR(vm, addr), (size_t)len);
+    hal_console_puts("\n");
+    vm->halted = 1;
+#endif
+```
+
+### Registration
+
+Registered alongside `BYE` / `WARM` / `COLD` in `system_words.c`:
+
+```c
+REGISTER_WORD("REBOOT", word_reboot, WORD_NORMAL);
+```
+
+---
+
 ## Extension Points
 
 Adding a new switch requires:

@@ -50,6 +50,14 @@
 #include <string.h>
 #include <signal.h>
 
+#include "starkernel/kernel_args.h"
+
+#ifdef __STARKERNEL__
+#include "starkernel/uefi.h"
+#include "starkernel/console.h"
+extern EFI_RUNTIME_SERVICES *g_sk_runtime_services;
+#endif
+
 /* ───────────────────────── Global system state ───────────────────────── */
 /** @brief Flag indicating if the Forth system is currently running */
 static int system_running = 1;
@@ -106,6 +114,15 @@ static void forth_paren(VM *vm) {
 
     if (paren_depth > 0) {
         log_message(LOG_WARN, "( Unterminated comment");
+    }
+}
+
+/* \  ( -- ) : Line comment; skip from current position to end of line — IMMEDIATE */
+static void forth_backslash(VM *vm) {
+    if (!vm) return;
+    while (vm->input_pos < vm->input_length) {
+        char c = vm->input_buffer[vm->input_pos++];
+        if (c == '\n') break;
     }
 }
 
@@ -434,6 +451,119 @@ static void system_word_see(VM *vm) {
     printf(";\n");
 }
 
+/* REBOOT ( addr len -- ) : set boot args and cold-reset.  Interpret-only. */
+static void system_word_reboot(VM *vm) {
+    cell_t  len;
+    cell_t  addr;
+    const char *str;
+
+    /* Interpret-only guard: -14 = "interpretation semantics only" */
+    if (vm->mode == MODE_COMPILE) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "REBOOT: interpretation semantics only");
+        return;
+    }
+
+    if (vm->dsp < 1) { vm->error = 1; return; }
+    len  = vm_pop(vm);
+    addr = vm_pop(vm);
+
+    if (len <= 0 || len >= KERNEL_ARGS_CMDLINE_MAX) {
+        vm->error = 1;
+        log_message(LOG_ERROR, "REBOOT: arg length out of range");
+        return;
+    }
+
+    if (!vm_addr_ok(vm, (vaddr_t)addr, (size_t)len)) {
+        vm->error = 1;
+        return;
+    }
+
+    str = (const char *)vm_ptr(vm, (vaddr_t)addr);
+
+#ifdef __STARKERNEL__
+    {
+        EFI_RUNTIME_SERVICES *rt = g_sk_runtime_services;
+        EFI_GUID vendor_guid = STARFORTH_VENDOR_GUID;
+        EFI_GET_VARIABLE GetVariable;
+        EFI_SET_VARIABLE SetVariable;
+        EFI_RESET_SYSTEM ResetSystem;
+        uint32_t tries = 0;
+        UINTN tries_size = sizeof(tries);
+        EFI_STATUS sv;
+
+        if (!rt) {
+            console_puts("REBOOT: runtime services unavailable\n");
+            return;
+        }
+
+        GetVariable = (EFI_GET_VARIABLE)rt->GetVariable;
+        SetVariable = (EFI_SET_VARIABLE)rt->SetVariable;
+        ResetSystem = (EFI_RESET_SYSTEM)rt->ResetSystem;
+
+        /* Read escape-hatch counter */
+        GetVariable(
+            (CHAR16 *)SF_VAR_REBOOT_TRIES,
+            &vendor_guid, NULL,
+            &tries_size, &tries);
+
+        if (tries >= (uint32_t)REBOOT_MAX_TRIES) {
+            /* Escape hatch: clear both vars, warn, return to REPL */
+            SetVariable(
+                (CHAR16 *)SF_VAR_BOOT_ARGS, &vendor_guid,
+                EFI_VARIABLE_NON_VOLATILE |
+                EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                EFI_VARIABLE_RUNTIME_ACCESS,
+                0, NULL);
+            SetVariable(
+                (CHAR16 *)SF_VAR_REBOOT_TRIES, &vendor_guid,
+                EFI_VARIABLE_NON_VOLATILE |
+                EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                EFI_VARIABLE_RUNTIME_ACCESS,
+                0, NULL);
+            console_puts("REBOOT: max tries reached — dropping to REPL\n");
+            return;
+        }
+
+        /* Write new boot args */
+        sv = SetVariable(
+            (CHAR16 *)SF_VAR_BOOT_ARGS,
+            &vendor_guid,
+            EFI_VARIABLE_NON_VOLATILE |
+            EFI_VARIABLE_BOOTSERVICE_ACCESS |
+            EFI_VARIABLE_RUNTIME_ACCESS,
+            (UINTN)len, (void *)str);
+
+        if (sv != EFI_SUCCESS) {
+            console_puts("REBOOT: NVRAM write failed — dropping to REPL\n");
+            return;
+        }
+
+        /* Increment tries counter */
+        tries++;
+        SetVariable(
+            (CHAR16 *)SF_VAR_REBOOT_TRIES,
+            &vendor_guid,
+            EFI_VARIABLE_NON_VOLATILE |
+            EFI_VARIABLE_BOOTSERVICE_ACCESS |
+            EFI_VARIABLE_RUNTIME_ACCESS,
+            sizeof(tries), &tries);
+
+        /* Cold reset — does not return */
+        ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
+
+        /* Unreachable, but keep the compiler happy */
+        console_puts("REBOOT: ResetSystem returned unexpectedly\n");
+    }
+#else
+    /* Hosted VM: no reset capability */
+    fputs("[REBOOT] hosted stub — would reboot with: ", stdout);
+    fwrite(str, 1, (size_t)len, stdout);
+    fputc('\n', stdout);
+    vm->halted = 1;
+#endif
+}
+
 /* ───────────────────────────── API helpers ─────────────────────────── */
 int system_is_running(void) { return system_running; }
 void set_forth_79_compliance(int enabled) { forth_79_standard = enabled; }
@@ -443,11 +573,14 @@ void register_system_words(VM *vm) {
     /* Comments */
     register_word(vm, "(", forth_paren);
     vm_make_immediate(vm); /* '(' is IMMEDIATE */
+    register_word(vm, "\\", forth_backslash);
+    vm_make_immediate(vm); /* '\' is IMMEDIATE */
 
     /* Environment/system */
     register_word(vm, "COLD", system_word_cold);
     register_word(vm, "WARM", system_word_warm);
     register_word(vm, "BYE", system_word_bye);
+    register_word(vm, "REBOOT", system_word_reboot);
     register_word(vm, "SAVE-SYSTEM", system_word_save_system);
     register_word(vm, "WORDS", system_word_words);
     register_word(vm, "VLIST", system_word_vlist);

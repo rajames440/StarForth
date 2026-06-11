@@ -15,27 +15,49 @@
 
     .intel_syntax noprefix
 
-    /* 2 MiB kernel stack in BSS (zero-initialised by the PE/ELF loader) */
+#include "starkernel/boot_info_offsets.h"
+
+    /* 2 MiB kernel stack in BSS — fallback when no dynamic stack requested */
     .section .bss
     .align 16
     .global g_kernel_stack
 g_kernel_stack:
-    .space 0x200000          /* 2 MiB */
-g_kernel_stack_top:          /* label at the high end; stack grows downward */
+    .space 0x200000
+g_kernel_stack_top:
     .global g_kernel_stack_top
 
     .section .text
     .extern kernel_main_impl
 
     /*
-     * kernel_main — trampoline: switch to g_kernel_stack and tail-call impl.
-     * Never returns (kernel_main_impl runs the REPL forever or panics).
+     * kernel_main — stack-switch trampoline, then tail-call kernel_main_impl.
+     *
+     * rdi = BootInfo*  (SysV AMD64 ABI — first argument register)
+     *
+     * Stack selection (checked in order):
+     *   1. boot_info->kernel_stack_base != 0  →  use loader-allocated stack
+     *      (top = base + size, aligned down to 16, minus 8 for ABI)
+     *   2. Otherwise  →  fall back to g_kernel_stack (2 MiB BSS)
+     *
+     * Never returns; kernel_main_impl runs the REPL forever or panics.
      */
     .global kernel_main
 kernel_main:
+    mov  rax, [rdi + BOOT_INFO_KERNEL_STACK_BASE_OFFSET]
+    test rax, rax
+    jnz  .Ldynamic_stack
+
+    /* BSS fallback */
     lea  rax, [rip + g_kernel_stack_top]
-    and  rax, -16            /* align to 16-byte boundary */
-    sub  rax, 8              /* SysV ABI: RSP must be 8 mod 16 at C function entry */
+    jmp  .Lstack_ready
+
+.Ldynamic_stack:
+    mov  rcx, [rdi + BOOT_INFO_KERNEL_STACK_SIZE_OFFSET]
+    add  rax, rcx           /* top = base + size (stack grows down) */
+
+.Lstack_ready:
+    and  rax, -16           /* 16-byte alignment */
+    sub  rax, 8             /* SysV ABI: RSP ≡ 8 mod 16 at C call boundary */
     mov  rsp, rax
-    xor  rbp, rbp            /* terminate the frame chain */
-    jmp  kernel_main_impl    /* rdi (boot_info) already correct */
+    xor  rbp, rbp           /* terminate frame chain */
+    jmp  kernel_main_impl   /* rdi (boot_info) already in place */

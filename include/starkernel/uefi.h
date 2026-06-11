@@ -447,17 +447,6 @@ typedef struct {
     UINT32  pixel_format;          /* EFI_GRAPHICS_PIXEL_FORMAT value */
 } FramebufferInfo;
 
-/* Boot Info Structure (passed to kernel) */
-typedef struct {
-    EFI_MEMORY_DESCRIPTOR *memory_map;
-    UINTN memory_map_size;
-    UINTN memory_map_descriptor_size;
-    EFI_RUNTIME_SERVICES *runtime_services;
-    void *acpi_table;
-    FramebufferInfo framebuffer;
-    UINT8 uefi_boot_services_exited;
-} BootInfo;
-
 /* File System Protocols (needed for loader) */
 static const EFI_GUID EFI_LOADED_IMAGE_PROTOCOL_GUID =
     {0x5B1B31A1,0x9562,0x11d2, {0x8E,0x3F,0x00,0xA0,0xC9,0x69,0x72,0x3B}};
@@ -547,17 +536,102 @@ typedef struct {
     CHAR16 FileName[256];
 } EFI_FILE_INFO;
 
+/* EFI_LOADED_IMAGE_PROTOCOL — spec-compliant layout (UEFI 2.x §8.1)
+ * Offsets (64-bit):
+ *   0:  Revision (4)  + 4 pad
+ *   8:  ParentHandle (8)
+ *  16:  SystemTable (8)
+ *  24:  DeviceHandle (8)
+ *  32:  FilePath (8)
+ *  40:  Reserved (8)
+ *  48:  LoadOptionsSize (4)  + 4 pad
+ *  56:  LoadOptions (8)
+ *  64:  ImageBase (8)
+ *  72:  ImageSize (8)
+ *  80:  ImageCodeType (4)
+ *  84:  ImageDataType (4)
+ *  88:  Unload (8)
+ */
 typedef struct {
-    EFI_HANDLE DeviceHandle;
-    VOID *FilePath;
-    VOID *Reserved;
-    UINT32 LoadOptionsSize;
-    VOID *LoadOptions;
-    VOID *ImageBase;
-    UINT64 ImageSize;
-    EFI_MEMORY_TYPE ImageCodeType;
-    EFI_MEMORY_TYPE ImageDataType;
-    VOID *Unload;
+    UINT32           Revision;
+    EFI_HANDLE       ParentHandle;
+    void            *SystemTable;
+    EFI_HANDLE       DeviceHandle;
+    VOID            *FilePath;
+    VOID            *Reserved;
+    UINT32           LoadOptionsSize;
+    VOID            *LoadOptions;
+    VOID            *ImageBase;
+    UINT64           ImageSize;
+    EFI_MEMORY_TYPE  ImageCodeType;
+    EFI_MEMORY_TYPE  ImageDataType;
+    VOID            *Unload;
 } EFI_LOADED_IMAGE_PROTOCOL;
+
+/* ---- UEFI Variable Services typedefs ----------------------------------- */
+
+#define EFI_VARIABLE_NON_VOLATILE        0x00000001U
+#define EFI_VARIABLE_BOOTSERVICE_ACCESS  0x00000002U
+#define EFI_VARIABLE_RUNTIME_ACCESS      0x00000004U
+
+typedef EFI_STATUS (EFIAPI *EFI_GET_VARIABLE)(
+    CHAR16   *VariableName,
+    EFI_GUID *VendorGuid,
+    UINT32   *Attributes,
+    UINTN    *DataSize,
+    void     *Data
+);
+
+typedef EFI_STATUS (EFIAPI *EFI_SET_VARIABLE)(
+    CHAR16   *VariableName,
+    EFI_GUID *VendorGuid,
+    UINT32    Attributes,
+    UINTN     DataSize,
+    void     *Data
+);
+
+typedef enum {
+    EfiResetCold,
+    EfiResetWarm,
+    EfiResetShutdown
+} EFI_RESET_TYPE;
+
+typedef void (EFIAPI *EFI_RESET_SYSTEM)(
+    EFI_RESET_TYPE  ResetType,
+    EFI_STATUS      ResetStatus,
+    UINTN           DataSize,
+    void           *ResetData
+);
+
+/* ---- StarForth vendor GUID (for NVRAM variables) ----------------------- */
+/* {b7e42c1a-4f3d-4e8b-9c5a-1d2f6a8b3e70} */
+#define STARFORTH_VENDOR_GUID \
+    {0xb7e42c1aU, 0x4f3dU, 0x4e8bU, \
+     {0x9cU, 0x5aU, 0x1dU, 0x2fU, 0x6aU, 0x8bU, 0x3eU, 0x70U}}
+
+/* NVRAM variable names (UCS-2 string literals) */
+#define SF_VAR_BOOT_ARGS   L"StarForthBootArgs"
+#define SF_VAR_REBOOT_TRIES L"StarForthRebootTries"
+
+/* ---- BootInfo extension ------------------------------------------------ */
+#include "kernel_args.h"
+
+/* Boot Info Structure (passed to kernel) */
+typedef struct {
+    EFI_MEMORY_DESCRIPTOR *memory_map;
+    UINTN memory_map_size;
+    UINTN memory_map_descriptor_size;
+    EFI_RUNTIME_SERVICES *runtime_services;
+    void *acpi_table;
+    FramebufferInfo framebuffer;
+    UINT8 uefi_boot_services_exited;
+
+    /* Loader-allocated kernel stack (zero = fall back to 2 MiB BSS stack) */
+    void     *kernel_stack_base;
+    uint64_t  kernel_stack_size;
+
+    /* Parsed boot command-line arguments */
+    KernelArgs args;
+} BootInfo;
 
 #endif /* STARKERNEL_UEFI_H */
