@@ -108,13 +108,13 @@ Block 2055
 
 Block 2056
 ( DOE entry point — self-executing on capsule load )
-: DOE ( -- )
-  12345 SEED
+: EXEC-DOE ( seed n-runs -- )
+  SWAP SEED
   INIT-MATRIX
   SHUFFLE-MATRIX
   CSV-HEADER
   0 RUN-ID !
-  N-RUNS 0 DO
+  0 DO
     I MATRIX@
     DUP N-REPS / CURR-CFG !
     N-REPS MOD CURR-REP !
@@ -123,6 +123,6 @@ Block 2056
     EMIT-ROW
     RUN-ID @ 1 + RUN-ID !
   LOOP
-  ." DOE: 480 runs complete" CRLF ;
-: EXEC-DOE DOE ;
+  ." DOE: complete" CRLF ;
+: DOE ( -- ) 12345 3 EXEC-DOE ;
 DOE
