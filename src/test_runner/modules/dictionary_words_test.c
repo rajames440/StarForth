@@ -48,7 +48,7 @@ static WordTestSuite dictionary_word_suites[] = {
     {
         "HERE", {
             {"basic", "HERE HERE = . CR", "Should print: -1", TEST_NORMAL, 0, 1},
-            {"after_comma", "HERE 42 , HERE SWAP - . CR", "Should print: 8 (1 cell = sizeof(cell_t) on 64-bit)", TEST_NORMAL, 0, 1},
+            {"after_comma", "HERE 42 , HERE SWAP - 1 CELLS = 0 SWAP /", "Asserts HERE advances by exactly 1 CELLS (8 bytes on 64-bit)", TEST_NORMAL, 0, 1},
             {"after_c_comma", "HERE 65 C, HERE SWAP - . CR", "Should print: 1", TEST_NORMAL, 0, 1},
             {"after_allot", "HERE 10 ALLOT HERE SWAP - . CR", "Should print: 10", TEST_NORMAL, 0, 1},
             {"stability", "HERE DUP HERE = . CR", "Should be stable", TEST_NORMAL, 0, 1},
