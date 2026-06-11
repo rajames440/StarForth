@@ -518,11 +518,18 @@ it is not a property of the attractor.
   \item The DoE matrix is $2^4 = 16$ configurations; the hosted experiment
     used $2^7 = 128$.  The compressed design suffices for cross-ISA comparison
     but does not sweep the full SSM parameter space.
-  \item The acceptance logs contain a legacy 32-bit expectation comment in
-    the \texttt{HERE.after\_comma} test case (\texttt{Expected: Should print:
-    4}).  The kernel correctly outputs 8 on 64-bit targets and the test
-    passes; the comment is a documentation artefact inherited from a prior
-    32-bit FORTH test suite and does not indicate a defect.
+  \item The acceptance logs record \texttt{Expected: Should print: 4} for
+    the \texttt{HERE.after\_comma} test case.  This was a genuine defect:
+    two duplicate test entries (in \texttt{dictionary\_words\_test.c} and
+    \texttt{memory\_words\_test.c}) used a print-and-inspect pattern that
+    passed silently regardless of output value.  The entry in
+    \texttt{memory\_words\_test.c} still carried the 32-bit legacy
+    description \texttt{"Should print: 4"}.  Both entries have been
+    replaced with an assertion form,
+    \texttt{HERE 42 , HERE SWAP - 1 CELLS = 0 SWAP /},
+    which forces a division-by-zero and sets \texttt{vm->error} if the
+    cell advance is not exactly \texttt{1 CELLS} (8 bytes on 64-bit).
+    All 981 tests pass after the repair.
 \end{enumerate}
 
 %% ═════════════════════════════════════════════════════════════════════════════
