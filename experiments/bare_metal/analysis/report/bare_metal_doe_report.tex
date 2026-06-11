@@ -363,7 +363,10 @@ architecture-specific timer behaviour first appears.  aarch64 and riscv64
 concentrate their entire probability mass at trust\,$= 1.0$ with zero
 variance, indicating that the ARMv8 Generic Timer and RISC-V CLINT both
 deliver their 10\,\(\mu\)s ticks with zero measured deviation under QEMU
-TCG.  amd64's APIC emulation introduces a small calibration residual
+TCG.  Note that aarch64 and riscv64 are absent from the variance panel
+of Figure~\ref{fig:trust_variance} because their measured variance is
+identically zero --- there is no density to plot, not missing data.
+amd64's APIC emulation introduces a small calibration residual
 ($\bar{t} = 0.9972$, $\bar{\sigma}^2 = 5.7 \times 10^{-3}$), consistent
 with x86 APIC emulation overhead in TCG.  Critically, this timer-quality
 difference does not propagate to the attractor: window width, execution
@@ -553,7 +556,7 @@ across three instruction-set architectures.  Key findings:
     variance ($H=74\,460$, $p<10^{-15}$) without affecting the attractor.
 
   \item \textbf{LithosAnanke boots successfully on all three ISAs.}  All
-    three QEMU acceptance runs completed POST (936+ tests), reached the
+    three QEMU acceptance runs completed POST (981 tests), reached the
     \texttt{ok>} REPL prompt, and emitted valid DoE CSV data.
 \end{enumerate}
 
