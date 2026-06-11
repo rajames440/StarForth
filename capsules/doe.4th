@@ -124,4 +124,5 @@ Block 2056
     RUN-ID @ 1 + RUN-ID !
   LOOP
   ." DOE: 480 runs complete" CRLF ;
+: EXEC-DOE DOE ;
 DOE
