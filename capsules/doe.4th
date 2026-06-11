@@ -124,5 +124,5 @@ Block 2056
     RUN-ID @ 1 + RUN-ID !
   LOOP
   ." DOE: complete" CRLF ;
-: DOE ( -- ) 12345 3 EXEC-DOE ;
+: DOE ( -- ) 12345 3 EXEC-DOE ;  ( 3 full replicates, seed 12345 )
 DOE
