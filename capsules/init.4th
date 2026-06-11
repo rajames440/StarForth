@@ -3,12 +3,14 @@ Block 2057
 : .SEP ." ================================================" CR ;
 : BOOT-BANNER
   CR .SEP
-  ." LithosAnanke bare-metal  (FORTH-79 microkernel)" CR
+  ." LithosAnanke bare-metal DoE  (FORTH-79 microkernel)" CR
   .SEP
-  ." ok> prompt ready." CR
+  ." DoE words loaded. ok> prompt ready." CR
   CR
-  ." To load DoE: EXEC-FILE doe.4th" CR
-  ." Then run:   12345 3 EXEC-DOE" CR
+  ."   12345 3 EXEC-DOE   ( standard 3-rep run        )" CR
+  ."   DOE                ( same, convenience wrapper  )" CR
+  ."   12345 30 EXEC-DOE  ( full 30-rep study          )" CR
+  ."   42    1 EXEC-DOE   ( quick 1-rep smoke check    )" CR
   CR
   ." Docs: experiments/bare_metal/README.md" CR
   .SEP CR ;
@@ -23,5 +25,5 @@ Block 2049
 \ S" Hermes" BIRTH
 \ S" Artemis" BIRTH
 
-\ S" doe.4th" EXEC
+S" doe.4th" EXEC
 BOOT-BANNER

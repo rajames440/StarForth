@@ -193,6 +193,7 @@ endif
 
 HEARTBEAT_DOE_LOG ?= 1
 DOE_INJECT        ?= 1
+DOE_REPS          ?= 3
 LOADER_CFLAGS := $(LOADER_BASE_CFLAGS) -I$(KERNEL_SRC)/vm -DHEARTBEAT_DOE_LOG=$(HEARTBEAT_DOE_LOG)
 KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm -DHEARTBEAT_DOE_LOG=$(HEARTBEAT_DOE_LOG)
 
@@ -667,7 +668,7 @@ ifeq ($(ARCH),amd64)
 		if [ "$(DOE_INJECT)" = "1" ]; then \
 			echo "  ok> detected — injecting EXEC-DOE..."; \
 			sleep 0.5; \
-			printf '12345 3 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+			printf '12345 $(DOE_REPS) EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 			echo "  Waiting for DoE to complete..."; \
 			DEADLINE2=$$(( $$(date +%s) + 3600 )); \
 			while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
@@ -754,7 +755,7 @@ else ifeq ($(ARCH),aarch64)
 		if [ "$(DOE_INJECT)" = "1" ]; then \
 			echo "  ok> detected — injecting EXEC-DOE..."; \
 			sleep 0.5; \
-			printf '12345 3 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+			printf '12345 $(DOE_REPS) EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 			echo "  Waiting for DoE to complete..."; \
 			DEADLINE2=$$(( $$(date +%s) + 3600 )); \
 			while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
@@ -846,7 +847,7 @@ else ifeq ($(ARCH),riscv64)
 		if [ "$(DOE_INJECT)" = "1" ]; then \
 			echo "  ok> detected — injecting EXEC-DOE..."; \
 			sleep 0.5; \
-			printf '12345 3 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+			printf '12345 $(DOE_REPS) EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 			echo "  Waiting for DoE to complete..."; \
 			DEADLINE2=$$(( $$(date +%s) + 3600 )); \
 			while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
