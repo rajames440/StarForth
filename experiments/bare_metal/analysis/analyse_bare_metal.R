@@ -103,25 +103,60 @@ cat("  Saved: arch_summary.csv\n")
 print(as.data.frame(summary_tbl))
 
 # Statistical tests on the divergent region (rows after ~26251)
-# Use time_trust and variance which differ per arch
+# Use time_trust and variance which differ per arch.
+# If run length == 26251 (3-rep standard sweep) df_tail will be empty;
+# fall back to the last 10% of each arch's data.
 df_tail <- df_all %>%
   group_by(arch) %>%
   filter(row_number() > 26251) %>%
   ungroup()
 
-cat("\nKruskal-Wallis: time_trust_q48 ~ architecture (divergent region)\n")
-kw_trust <- kruskal.test(time_trust ~ arch, data = df_tail)
-cat(sprintf("  H=%.4f  df=%d  p=%.4e\n", kw_trust$statistic, kw_trust$parameter, kw_trust$p.value))
+if (nrow(df_tail) == 0) {
+  cat("  NOTE: No rows beyond 26251 — using last 10% per arch as divergent region\n")
+  df_tail <- df_all %>%
+    group_by(arch) %>%
+    slice_tail(prop = 0.10) %>%
+    ungroup()
+}
 
-cat("Kruskal-Wallis: variance_q48 ~ architecture (divergent region)\n")
-kw_var <- kruskal.test(variance ~ arch, data = df_tail)
-cat(sprintf("  H=%.4f  df=%d  p=%.4e\n\n", kw_var$statistic, kw_var$parameter, kw_var$p.value))
+n_groups_trust <- df_tail %>% pull(time_trust) %>% unique() %>% length()
+n_groups_var   <- df_tail %>% pull(variance)   %>% unique() %>% length()
+
+kw_note <- ""
+if (n_groups_trust < 2) {
+  kw_note <- "SKIP — all time_trust values identical across architectures (algorithmic variance = 0)"
+  cat(sprintf("\nKruskal-Wallis: time_trust_q48 ~ architecture: %s\n", kw_note))
+  kw_trust <- list(statistic = 0, parameter = 0, p.value = 1)
+} else {
+  cat("\nKruskal-Wallis: time_trust_q48 ~ architecture (divergent region)\n")
+  kw_trust <- kruskal.test(time_trust ~ arch, data = df_tail)
+  cat(sprintf("  H=%.4f  df=%d  p=%.4e\n", kw_trust$statistic, kw_trust$parameter, kw_trust$p.value))
+}
+
+if (n_groups_var < 2) {
+  kw_var_note <- "SKIP — all variance values identical across architectures (algorithmic variance = 0)"
+  cat(sprintf("Kruskal-Wallis: variance_q48 ~ architecture: %s\n\n", kw_var_note))
+  kw_var <- list(statistic = 0, parameter = 0, p.value = 1)
+} else {
+  cat("Kruskal-Wallis: variance_q48 ~ architecture (divergent region)\n")
+  kw_var <- kruskal.test(variance ~ arch, data = df_tail)
+  cat(sprintf("  H=%.4f  df=%d  p=%.4e\n\n", kw_var$statistic, kw_var$parameter, kw_var$p.value))
+}
 
 sink(file.path(OUT_TABLES, "kw_results.txt"))
-cat("Kruskal-Wallis tests (divergent region, row > 26251)\n")
-cat("═══════════════════════════════════════════════════\n\n")
-cat("time_trust_q48 ~ architecture\n"); print(kw_trust)
-cat("\nvariance_q48 ~ architecture\n");  print(kw_var)
+cat("Kruskal-Wallis tests (divergent region)\n")
+cat("════════════════════════════════════════\n\n")
+if (nzchar(kw_note)) {
+  cat(sprintf("time_trust_q48 ~ architecture: %s\n", kw_note))
+} else {
+  cat("time_trust_q48 ~ architecture\n"); print(kw_trust)
+}
+cat("\n")
+if (nzchar(kw_note)) {
+  cat(sprintf("variance_q48 ~ architecture: %s\n", kw_note))
+} else {
+  cat("variance_q48 ~ architecture\n"); print(kw_var)
+}
 sink()
 cat("  Saved: kw_results.txt\n\n")
 
