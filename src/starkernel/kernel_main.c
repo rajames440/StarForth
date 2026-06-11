@@ -378,7 +378,7 @@ static void kernel_main_deep(BootInfo *boot_info) {
      */
     if (boot_info->args.run_doe) {
         console_println("Startup: --doe flag set — running EXEC-DOE");
-        vm_interpret(mama, "12345 30 EXEC-DOE BYE");
+        vm_interpret(mama, "12345 3 EXEC-DOE BYE");
         if (mama->error) {
             console_println("Startup: EXEC-DOE ERROR");
             mama->error = 0;

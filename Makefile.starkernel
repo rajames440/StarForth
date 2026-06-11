@@ -665,7 +665,7 @@ ifeq ($(ARCH),amd64)
 	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
 		echo "  ok> detected — injecting EXEC-DOE..."; \
 		sleep 0.5; \
-		printf '12345 30 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		printf '12345 3 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 		echo "  Waiting for DoE to complete..."; \
 		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
 		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
@@ -748,7 +748,7 @@ else ifeq ($(ARCH),aarch64)
 	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
 		echo "  ok> detected — injecting EXEC-DOE..."; \
 		sleep 0.5; \
-		printf '12345 30 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		printf '12345 3 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 		echo "  Waiting for DoE to complete..."; \
 		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
 		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
@@ -836,7 +836,7 @@ else ifeq ($(ARCH),riscv64)
 	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
 		echo "  ok> detected — injecting EXEC-DOE..."; \
 		sleep 0.5; \
-		printf '12345 30 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		printf '12345 3 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 		echo "  Waiting for DoE to complete..."; \
 		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
 		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
