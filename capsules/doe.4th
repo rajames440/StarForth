@@ -107,7 +107,7 @@ Block 2055
   INFER-FIT@        CSV-LAST ( fit_q         ) ;
 
 Block 2056
-( DOE entry point — self-executing on capsule load )
+( DOE entry point — type: 12345 3 EXEC-DOE )
 : EXEC-DOE ( seed n-reps -- )
   SWAP SEED
   INIT-MATRIX
@@ -125,4 +125,4 @@ Block 2056
   LOOP
   ." DOE: complete" CRLF ;
 : DOE ( -- ) 12345 3 EXEC-DOE ;  ( 3 full replicates, seed 12345 )
-DOE
+\ DOE

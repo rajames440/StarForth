@@ -1,17 +1,16 @@
 Block 2057
-( BOOT-BANNER - post-DoE REPL greeting )
+( BOOT-BANNER - LithosAnanke REPL greeting )
 : .SEP ." ================================================" CR ;
 : BOOT-BANNER
   CR .SEP
   ." LithosAnanke bare-metal DoE  (FORTH-79 microkernel)" CR
   .SEP
-  ." DoE ran: 12345 3 EXEC-DOE" CR
-  ." 48 runs: 16 configs x 3 reps, seed 12345" CR
+  ." DoE words loaded. To run from ok> prompt:" CR
   CR
-  ." Re-run from ok> prompt:" CR
-  ."   DOE                ( standard 3-rep run       )" CR
-  ."   12345 30 EXEC-DOE  ( full 30-rep study         )" CR
-  ."   42    1 EXEC-DOE   ( quick 1-rep smoke check   )" CR
+  ."   12345 3 EXEC-DOE   ( standard 3-rep run        )" CR
+  ."   DOE                ( same, convenience wrapper  )" CR
+  ."   12345 30 EXEC-DOE  ( full 30-rep study          )" CR
+  ."   42    1 EXEC-DOE   ( quick 1-rep smoke check    )" CR
   CR
   ." Docs: experiments/bare_metal/README.md" CR
   .SEP CR ;
