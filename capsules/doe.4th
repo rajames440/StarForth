@@ -54,7 +54,7 @@ Block 2052
     I 13 * 7 +
     I 11 MOD +
     I 3 AND CASE
-      0 OF DUP * DROP ENDOF
+      0 OF DUP *      ENDOF
       1 OF NEGATE      ENDOF
       2 OF 1 +         ENDOF
       3 OF DROP 0      ENDOF
