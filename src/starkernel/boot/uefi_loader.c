@@ -51,6 +51,15 @@
 #include "arch.h"
 #include "elf_loader.h"
 #include "elf64.h"
+#include "starkernel/cmdline.h"
+#include "starkernel/boot_info_offsets.h"
+#include <stddef.h>
+
+/* Verify BootInfo field offsets match boot_info_offsets.h (BOOT_INFO_OFFSETS) */
+_Static_assert(offsetof(BootInfo, kernel_stack_base) == BOOT_INFO_KERNEL_STACK_BASE_OFFSET,
+    "BOOT_INFO_KERNEL_STACK_BASE_OFFSET mismatch — update boot_info_offsets.h");
+_Static_assert(offsetof(BootInfo, kernel_stack_size) == BOOT_INFO_KERNEL_STACK_SIZE_OFFSET,
+    "BOOT_INFO_KERNEL_STACK_SIZE_OFFSET mismatch — update boot_info_offsets.h");
 
 /* For monolithic build: kernel_main is linked directly */
 #ifdef MONOLITHIC_BUILD
@@ -271,6 +280,103 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 #endif
 
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Collecting boot information...\r\n");
+
+    /* ------------------------------------------------------------------ */
+    /* Phase A-1: Parse kernel command line                                */
+    /*                                                                     */
+    /* Priority (highest first):                                           */
+    /*   1. StarForthBootArgs NVRAM variable (one-shot, set by REBOOT)    */
+    /*   2. EFI_LOADED_IMAGE_PROTOCOL->LoadOptions (firmware/boot mgr)    */
+    /*   3. Empty string → all KernelArgs defaults                        */
+    /* ------------------------------------------------------------------ */
+    {
+        char cmdline_buf[KERNEL_ARGS_CMDLINE_MAX];
+        int  used_nvram = 0;
+
+        cmdline_buf[0] = '\0';
+
+        /* Check one-shot NVRAM variable first */
+        {
+            EFI_GUID vendor_guid = STARFORTH_VENDOR_GUID;
+            EFI_GET_VARIABLE GetVariable =
+                (EFI_GET_VARIABLE)SystemTable->RuntimeServices->GetVariable;
+            UINTN data_size = (UINTN)(KERNEL_ARGS_CMDLINE_MAX - 1);
+            UINT32 attrs = 0;
+
+            EFI_STATUS vs = GetVariable(
+                (CHAR16 *)SF_VAR_BOOT_ARGS,
+                &vendor_guid,
+                &attrs,
+                &data_size,
+                cmdline_buf);
+
+            if (vs == EFI_SUCCESS && data_size > 0) {
+                cmdline_buf[data_size] = '\0';
+                used_nvram = 1;
+                RAW_LOG("CmdLine: from NVRAM StarForthBootArgs\n");
+
+                /* One-shot: clear the variable immediately */
+                EFI_SET_VARIABLE SetVariable =
+                    (EFI_SET_VARIABLE)SystemTable->RuntimeServices->SetVariable;
+                SetVariable(
+                    (CHAR16 *)SF_VAR_BOOT_ARGS,
+                    &vendor_guid,
+                    EFI_VARIABLE_NON_VOLATILE |
+                    EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                    EFI_VARIABLE_RUNTIME_ACCESS,
+                    0, NULL);
+            }
+        }
+
+        /* Fall back to LoadOptions if NVRAM was empty */
+        if (!used_nvram) {
+            EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
+            EFI_STATUS li_status = BS->HandleProtocol(
+                ImageHandle,
+                (EFI_GUID *)&EFI_LOADED_IMAGE_PROTOCOL_GUID,
+                (void **)&loaded_image);
+
+            if (li_status == EFI_SUCCESS && loaded_image &&
+                loaded_image->LoadOptionsSize > 0 && loaded_image->LoadOptions) {
+                CHAR16 *opts = (CHAR16 *)loaded_image->LoadOptions;
+                UINTN   n    = loaded_image->LoadOptionsSize / sizeof(CHAR16);
+                UINTN   i;
+                for (i = 0; i + 1 < (UINTN)(KERNEL_ARGS_CMDLINE_MAX) && i < n && opts[i]; i++)
+                    cmdline_buf[i] = (char)(opts[i] & 0xFFu);
+                cmdline_buf[i] = '\0';
+                RAW_LOG("CmdLine: from LoadOptions\n");
+            }
+        }
+
+        cmdline_parse_ascii(cmdline_buf, &g_boot_info.args);
+        RAW_LOG("CmdLine: parsed OK\n");
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Phase A-2: Allocate dynamic kernel stack if --stack= was given     */
+    /* ------------------------------------------------------------------ */
+    {
+        uint64_t stack_sz = g_boot_info.args.stack_size
+                          ? g_boot_info.args.stack_size
+                          : (uint64_t)0;
+
+        g_boot_info.kernel_stack_base = NULL;
+        g_boot_info.kernel_stack_size = 0;
+
+        if (stack_sz > 0) {
+            UINTN pages = (UINTN)((stack_sz + 4095u) / 4096u);
+            EFI_PHYSICAL_ADDRESS stack_addr = 0;
+            EFI_STATUS sa = BS->AllocatePages(
+                AllocateAnyPages, EfiLoaderData, pages, &stack_addr);
+            if (sa == EFI_SUCCESS) {
+                g_boot_info.kernel_stack_base = (void *)(uintptr_t)stack_addr;
+                g_boot_info.kernel_stack_size = (uint64_t)(pages * 4096u);
+                RAW_LOG("Stack: dynamic stack allocated\n");
+            } else {
+                RAW_LOG("Stack: dynamic alloc failed — using BSS fallback\n");
+            }
+        }
+    }
 
     /* Fill BootInfo fields that do NOT require EBS first */
     g_boot_info.runtime_services = SystemTable->RuntimeServices;
