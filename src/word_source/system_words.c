@@ -117,6 +117,15 @@ static void forth_paren(VM *vm) {
     }
 }
 
+/* \  ( -- ) : Line comment; skip from current position to end of line — IMMEDIATE */
+static void forth_backslash(VM *vm) {
+    if (!vm) return;
+    while (vm->input_pos < vm->input_length) {
+        char c = vm->input_buffer[vm->input_pos++];
+        if (c == '\n') break;
+    }
+}
+
 /* COLD ( -- ) */
 void system_word_cold(VM *vm) {
     puts("FORTH-79 Cold Start");
@@ -564,6 +573,8 @@ void register_system_words(VM *vm) {
     /* Comments */
     register_word(vm, "(", forth_paren);
     vm_make_immediate(vm); /* '(' is IMMEDIATE */
+    register_word(vm, "\\", forth_backslash);
+    vm_make_immediate(vm); /* '\' is IMMEDIATE */
 
     /* Environment/system */
     register_word(vm, "COLD", system_word_cold);
