@@ -253,6 +253,13 @@ KERNEL_CFLAGS += -DSK_STARTUP_FORTH='"$(SK_CMD)"'
 LOADER_CFLAGS += -DSK_STARTUP_FORTH='"$(SK_CMD)"'
 endif
 
+# KERNEL_ARGS — runtime boot flags written into starforth.cfg on the ESP image.
+# The loader reads this file from the EFI partition and parses it at boot.
+# Supported flags: --doe  --log-level=<debug|info|warn|error>
+#                  --stack=<N>[MG]  --heap=<N>[MG]
+# Usage: make -f Makefile.starkernel qemu KERNEL_ARGS="--doe --log-level=info"
+KERNEL_ARGS ?=
+
 # Self-test flags (div-by-zero, page fault, timer validation)
 ifdef DIV0_SELF_TEST
 KERNEL_CFLAGS += -DDIV0_SELF_TEST=$(DIV0_SELF_TEST)
@@ -282,6 +289,7 @@ LOADER_SRCS_BASE := \
     $(KERNEL_SRC)/boot/uefi_loader.c \
     $(KERNEL_SRC)/boot/elf_loader.c \
     $(KERNEL_SRC)/boot/reloc_stub.c \
+    $(KERNEL_SRC)/boot/cmdline.c \
     $(KERNEL_SRC)/kernel_main.c \
     $(wildcard $(KERNEL_SRC)/hal/*.c) \
     $(wildcard $(KERNEL_SRC)/memory/*.c) \
@@ -619,6 +627,9 @@ ifeq ($(ARCH),amd64)
 	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI
 	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI/BOOT
 	@mcopy   -i $(BUILD_DIR)/iso/efi.img $(LOADER_EFI) ::/EFI/BOOT/BOOTX64.EFI
+	$(if $(KERNEL_ARGS),\
+		@printf '$(KERNEL_ARGS)\n' > $(BUILD_DIR)/iso/starforth.cfg && \
+		mcopy -i $(BUILD_DIR)/iso/efi.img $(BUILD_DIR)/iso/starforth.cfg ::/starforth.cfg,)
 	@xorriso -as mkisofs -r -J \
 		-e efi.img -no-emul-boot \
 		-o $(QEMU_ISO) $(BUILD_DIR)/iso 2>&1
@@ -654,7 +665,7 @@ ifeq ($(ARCH),amd64)
 	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
 		echo "  ok> detected — injecting EXEC-DOE..."; \
 		sleep 0.5; \
-		printf 'EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		printf '12345 3 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 		echo "  Waiting for DoE to complete..."; \
 		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
 		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
@@ -691,6 +702,9 @@ else ifeq ($(ARCH),aarch64)
 	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI
 	@mmd     -i $(BUILD_DIR)/iso/efi.img ::/EFI/BOOT
 	@mcopy   -i $(BUILD_DIR)/iso/efi.img $(LOADER_EFI) ::/EFI/BOOT/BOOTAA64.EFI
+	$(if $(KERNEL_ARGS),\
+		@printf '$(KERNEL_ARGS)\n' > $(BUILD_DIR)/iso/starforth.cfg && \
+		mcopy -i $(BUILD_DIR)/iso/efi.img $(BUILD_DIR)/iso/starforth.cfg ::/starforth.cfg,)
 	@xorriso -as mkisofs -r -J \
 		-e efi.img -no-emul-boot \
 		-o $(QEMU_ISO) $(BUILD_DIR)/iso 2>&1
@@ -734,7 +748,7 @@ else ifeq ($(ARCH),aarch64)
 	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
 		echo "  ok> detected — injecting EXEC-DOE..."; \
 		sleep 0.5; \
-		printf 'EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		printf '12345 3 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 		echo "  Waiting for DoE to complete..."; \
 		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
 		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
@@ -781,6 +795,10 @@ else ifeq ($(ARCH),riscv64)
 	mcopy -i $(BUILD_DIR)/esp_rv64.img $(KERNEL_ELF) ::/kernel.elf; \
 	printf 'FS0:\\EFI\\BOOT\\BOOTRISCV64.EFI\r\n' > $(BUILD_DIR)/startup.nsh; \
 	mcopy -i $(BUILD_DIR)/esp_rv64.img $(BUILD_DIR)/startup.nsh ::/startup.nsh; \
+	if [ -n "$(KERNEL_ARGS)" ]; then \
+		printf '$(KERNEL_ARGS)\n' > $(BUILD_DIR)/starforth.cfg; \
+		mcopy -i $(BUILD_DIR)/esp_rv64.img $(BUILD_DIR)/starforth.cfg ::/starforth.cfg; \
+	fi; \
 	dd if=$(BUILD_DIR)/esp_rv64.img of=$$DISK bs=512 seek=2048 conv=notrunc 2>/dev/null; \
 	echo "  Disk: $$DISK"; \
 	echo ""; \
@@ -818,7 +836,7 @@ else ifeq ($(ARCH),riscv64)
 	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
 		echo "  ok> detected — injecting EXEC-DOE..."; \
 		sleep 0.5; \
-		printf 'EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
+		printf '12345 3 EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 		echo "  Waiting for DoE to complete..."; \
 		DEADLINE2=$$(( $$(date +%s) + 3600 )); \
 		while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
