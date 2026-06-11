@@ -27,9 +27,9 @@ experiments/**/results/*.log
 Thumbs.db
 qemu.log
 
-# Serial acceptance logs — large LFS files; add explicitly with git add -f after each run
+# Serial acceptance logs tracked normally
 logs/*.log
-logs2/*.log
+# logs2/*.log — tracked; do not ignore
 
 # Retired data directories (replaced by experiments/bare_metal/)
 doe/
