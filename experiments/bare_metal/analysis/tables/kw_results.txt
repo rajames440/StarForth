@@ -1,12 +1,12 @@
-Kruskal-Wallis tests (divergent region, row > 26251)
-═══════════════════════════════════════════════════
+Kruskal-Wallis tests (divergent region)
+════════════════════════════════════════
 
 time_trust_q48 ~ architecture
 
 	Kruskal-Wallis rank sum test
 
 data:  time_trust by arch
-Kruskal-Wallis chi-squared = 74460, df = 2, p-value < 2.2e-16
+Kruskal-Wallis chi-squared = 7464.6, df = 2, p-value < 2.2e-16
 
 
 variance_q48 ~ architecture
@@ -14,5 +14,5 @@ variance_q48 ~ architecture
 	Kruskal-Wallis rank sum test
 
 data:  variance by arch
-Kruskal-Wallis chi-squared = 74460, df = 2, p-value < 2.2e-16
+Kruskal-Wallis chi-squared = 7464.6, df = 2, p-value < 2.2e-16
 
