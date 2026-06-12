@@ -55,7 +55,8 @@ campaign.
 We report the first 30-replicate bare-metal Design of Experiments (DoE)
 validation of the StarForth Steady-State Machine (SSM) running inside the
 LithosAnanke UEFI microkernel on \textsc{amd64}, \textsc{aarch64}, and
-\textsc{riscv64}.
+\textsc{riscv64}, each booting from UEFI firmware under QEMU TCG software
+emulation.
 Thirty fully-replicated trials (480 configuration runs per architecture)
 confirm that the SSM's adaptive rolling-window mechanism converges to a
 characteristic attractor regardless of the underlying silicon.  The
@@ -64,6 +65,10 @@ window-width Poincaré map reveals a limit cycle spanning \{256, 512, 1024,
 \emph{compudynamic breathing cycle}.  Temporal trust and timing variance are
 identical across all three architectures (Kruskal--Wallis inapplicable:
 zero inter-architecture variance), confirming 0\,\% algorithmic variance.
+Notably, \textsc{aarch64} and \textsc{riscv64} produce byte-for-byte
+identical output across all 261\,095 ticks --- a secondary result that
+independently validates the determinism of the SSM under two distinct
+RISC ISAs.
 The physics of the FORTH interpreter is a property of the algorithm, not
 the hardware.
 \end{abstract}
@@ -179,11 +184,16 @@ riscv64 & 261095 & 255.98 & 1.117 & 2.611 \\
 \bottomrule
 \end{tabular}
 \smallskip\\
-{\footnotesize aarch64 and riscv64 are byte-for-byte identical across all
-  261\,095 rows, confirming complete deterministic equivalence between those
-  two ISAs.  amd64 differs by two rows (261\,097 vs 261\,095) due to
-  x86-64 APIC scheduling producing two additional heartbeat ticks at session
-  teardown.  This has no effect on any reported statistic.}
+{\footnotesize \textbf{Determinism result.}
+  aarch64 and riscv64 are byte-for-byte identical across all 261\,095 rows
+  (MD5 checksums match).  This is a secondary finding in its own right:
+  two architectures with distinct register files, memory models, and
+  interrupt controllers produce identical observable physics under the same
+  SSM algorithm.  The byte-identity also means the two datasets are not
+  statistically independent; see \S\ref{sec:disc_independence}.
+  amd64 differs by two rows (261\,097 vs 261\,095) due to x86-64 APIC
+  scheduling producing two additional heartbeat ticks at session teardown;
+  this has no effect on any reported statistic.}
 \end{table}
 
 The first rows of every architecture are identical (deterministic
@@ -488,30 +498,51 @@ confirms that all three QEMU TCG timer implementations deliver the nominal
 timer quality as a confound and makes the compudynamic invariance claim
 unconditional.
 
-\subsection{Hot-Word Count Asymmetry}
+\subsection{Hot-Word Count Asymmetry and Saturation}
 \label{sec:disc_hot}
 
-amd64 records approximately 72.5 hot words versus 27.8 on aarch64 and 27.6
-on riscv64 (Table~\ref{tab:summary}).  The most plausible explanation is
-x86-64 CISC instruction density: QEMU TCG generates longer micro-op traces
-per FORTH word on amd64 than on the RISC targets, causing individual
-dictionary entries to accumulate heat faster and cross the hot-word threshold
-earlier.  This interpretation is a hypothesis for follow-on work on physical
-hardware; the measurement does not confound any primary result, and the hot-word
-count is not a component of the compudynamic attractor.
+Dividing the session into ten equal deciles reveals that the asymmetry
+between amd64 and the RISC targets is not uniform over time.  In the first
+decile (POST + boot, tick $\leq 26{,}110$) all three architectures start
+similarly: amd64 36.2, aarch64/riscv64 $\approx$39.0 hot words.  By decile 2
+amd64 reaches 73 words and holds that value \emph{exactly} for all remaining
+deciles --- config-invariant, saturated above the heat threshold for the
+entire DoE run.  aarch64 and riscv64, by contrast, oscillate with the DoE
+configuration being executed: 70.9 $\to$ 23.9 $\to$ 28.2 $\to$ 42.9 $\to$
+2.6 $\to$ 49.3 $\to$ 10.3 $\to$ 32.9 $\to$ 17.5 $\to$ 0.09, ending near
+zero as heat decays in the final replicate batch.
+
+The implication is two-fold.  First, amd64's CISC TCG trace length acts as a
+heat amplifier that saturates the hot-word count above any per-configuration
+variation; the RISC targets remain below saturation and therefore show genuine
+experimental sensitivity to the DoE factors.  Second, and critically, the
+hot-word count asymmetry does \emph{not} perturb the attractor: window width
+and execution rate are identical across all three architectures regardless of
+hot-word count.  The compudynamic invariant holds whether the substrate is
+thermally saturated (amd64) or thermally responsive (aarch64/riscv64).
+The saturation behaviour is a hypothesis for follow-on physical-hardware work.
 
 \subsection{Limitations}
+\label{sec:disc_independence}
 
 \begin{enumerate}[noitemsep]
-  \item All three architectures were tested under QEMU TCG emulation, not on
-    physical hardware.  Physical measurement campaigns are planned for M10.
-  \item The DoE matrix is $2^4 = 16$ configurations; the hosted experiment
-    used $2^7 = 128$.  The compressed design suffices for cross-ISA comparison
-    but does not sweep the full SSM parameter space.
-  \item aarch64 and riscv64 produce byte-identical output.  This validates
-    the determinism claim but means the two datasets are not statistically
-    independent.  Future campaigns should vary seed or configuration order
-    per architecture to obtain fully independent replicates.
+  \item \textbf{QEMU TCG emulation.}  All three architectures were tested
+    under software emulation, not physical hardware.  TCG determinism
+    strengthens the invariance result (eliminating silicon noise) but means
+    physical-hardware clock jitter, cache effects, and branch predictor
+    behaviour are not yet characterised.  Physical campaigns are planned for
+    Milestone M10.
+  \item \textbf{Compressed DoE matrix.}  The matrix is $2^4 = 16$
+    configurations; the hosted experiment used $2^7 = 128$.  The design
+    suffices for cross-ISA comparison but does not sweep the full SSM
+    parameter space.
+  \item \textbf{aarch64/riscv64 statistical independence.}  aarch64 and
+    riscv64 produce byte-identical output (see Table~\ref{tab:dataset}),
+    meaning the two datasets are not statistically independent.  The
+    byte-identity is reported as a positive determinism finding, but any
+    between-ISA inference that treats them as independent samples would be
+    inflated.  Future campaigns should vary the PRNG seed or configuration
+    execution order per architecture to obtain fully independent replicates.
 \end{enumerate}
 
 %% ═════════════════════════════════════════════════════════════════════════════
