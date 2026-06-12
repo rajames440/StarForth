@@ -552,6 +552,49 @@ aarch64 and riscv64 record perfect trust ($\bar{t}=1.0000$) in every
 replication.  The heat asymmetry between amd64 and the RISC targets
 is discussed in \S\ref{sec:disc_hot}.
 
+\subsection{Attractor Invariance Across All 9 Cells}
+
+Figures~\ref{fig:attractor_grid} and~\ref{fig:poincare_grid} present the
+complete 3\,$\times$\,3 attractor portrait across all 9 outer DoE cells.
+Each panel is an independent run under a distinct seed permutation of the
+inner DoE; no two panels share the same Fisher-Yates shuffle.
+
+\begin{figure}[p]
+\centering
+\begin{subfigure}[b]{0.49\textwidth}
+  \includegraphics[width=\textwidth]{attractor_grid_light}
+  \caption{Light theme}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\textwidth}
+  \includegraphics[width=\textwidth]{attractor_grid_dark}
+  \caption{Dark theme}
+\end{subfigure}
+\caption{Thermal phase portrait ($h_n$ vs $\Delta h_n$) for all 9 outer DoE
+  cells.  Columns: x86-64, ARMv8-A, RISC-V.  Rows: Rep~1 (seed 12345),
+  Rep~2 (seed 67890), Rep~3 (seed 13579).  The dense attractor cluster at
+  $\Delta h \approx 0$ appears at the same heat coordinate in every cell.
+  amd64 cells are displaced rightward along the heat axis (APIC residual);
+  all nine panels share identical topology.}
+\label{fig:attractor_grid}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\begin{subfigure}[b]{0.49\textwidth}
+  \includegraphics[width=\textwidth]{poincare_grid_light}
+  \caption{Light theme}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\textwidth}
+  \includegraphics[width=\textwidth]{poincare_grid_dark}
+  \caption{Dark theme}
+\end{subfigure}
+\caption{Window Poincaré map ($W_n$ vs $W_{n+1}$, $\log_2$ scale) for all
+  9 outer DoE cells.  The breathing-cycle ridge spanning
+  $\{256, 512, 1024, 2048, 4096\}$ is present and identical in every panel.
+  The limit-cycle orbit is invariant to ISA, seed, and inner-DoE permutation.}
+\label{fig:poincare_grid}
+\end{figure}
+
 %% ═════════════════════════════════════════════════════════════════════════════
 \section{Discussion}
 \label{sec:discussion}
