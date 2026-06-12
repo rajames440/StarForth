@@ -48,9 +48,9 @@
 \begin{abstract}
 \noindent
 Execution rate is statistically indistinguishable across three 64-bit
-instruction-set architectures (\(F_{2,783284}=0.0013\), \(p=0.999\)) ---
+instruction-set architectures (\(F_{2,783285}\approx 0\), \(p=1.000\)) ---
 the strongest empirical statement of cross-ISA compudynamic invariance yet
-recorded, backed by 783\,287 heartbeat ticks across a full 30-replicate
+recorded, backed by 783\,288 heartbeat ticks across a full 30-replicate
 campaign.
 We report the first 30-replicate bare-metal Design of Experiments (DoE)
 validation of the StarForth Steady-State Machine (SSM) running inside the
@@ -62,9 +62,13 @@ confirm that the SSM's adaptive rolling-window mechanism converges to a
 characteristic attractor regardless of the underlying silicon.  The
 window-width Poincaré map reveals a limit cycle spanning \{256, 512, 1024,
 2048, 4096\} cells --- a five-point discrete orbit we term the
-\emph{compudynamic breathing cycle}.  Temporal trust and timing variance are
-identical across all three architectures (Kruskal--Wallis inapplicable:
-zero inter-architecture variance), confirming 0\,\% algorithmic variance.
+\emph{compudynamic breathing cycle}.
+Architecture-specific timer hardware introduces a quantifiable but
+attractor-neutral divergence in temporal trust and variance
+(\(H=667\,664\), \(p < 2.2 \times 10^{-16}\)): the x86-64 APIC emulation
+leaves a small calibration residual ($\bar{t}=0.9947$,
+$\bar{\sigma}^2=9.5\times10^{-3}$) absent from the ARMv8 Generic Timer and
+RISC-V CLINT.  This divergence does not disturb the attractor.
 Notably, \textsc{aarch64} and \textsc{riscv64} produce byte-for-byte
 identical output across all 261\,095 ticks --- a secondary result that
 independently validates the determinism of the SSM under two distinct
@@ -178,7 +182,7 @@ are divided by 65\,536 during analysis to obtain floating-point equivalents.
 \toprule
 Architecture & {Ticks} & {Mean exec/tick} & {Mean $\sigma$(exec)} & {Elapsed (s)} \\
 \midrule
-amd64   & 261097 & 255.98 & 1.107 & 2.611 \\
+amd64   & 261098 & 255.98 & 1.107 & 2.611 \\
 aarch64 & 261095 & 255.98 & 1.117 & 2.611 \\
 riscv64 & 261095 & 255.98 & 1.117 & 2.611 \\
 \bottomrule
@@ -191,8 +195,8 @@ riscv64 & 261095 & 255.98 & 1.117 & 2.611 \\
   interrupt controllers produce identical observable physics under the same
   SSM algorithm.  The byte-identity also means the two datasets are not
   statistically independent; see \S\ref{sec:disc_independence}.
-  amd64 differs by two rows (261\,097 vs 261\,095) due to x86-64 APIC
-  scheduling producing two additional heartbeat ticks at session teardown;
+  amd64 differs by three rows (261\,098 vs 261\,095) due to x86-64 APIC
+  scheduling producing three additional heartbeat ticks at session teardown;
   this has no effect on any reported statistic.}
 \end{table}
 
@@ -223,7 +227,7 @@ discrete-time Poincaré map --- reveals the attractor structure.
   \caption{Dark theme}
 \end{subfigure}
 \caption{Window-width Poincaré map ($\log_2$ scale, all architectures combined,
-  783\,287 ticks).
+  783\,288 ticks).
   Each pixel encodes tick density.  The dominant off-diagonal ridge corresponds
   to the breathing cycle $256 \to 512 \to 1024 \to 2048 \to 4096 \to 2048 \to
   1024 \to 512 \to 256$; the diagonal cluster near $(256, 256)$ is the
@@ -281,7 +285,7 @@ accumulates over the run.
   \caption{Dark theme}
 \end{subfigure}
 \caption{Average word heat over the run, sampled at every 5th tick.
-  amd64 shows elevated mean heat (4.72) versus aarch64 (0.50) and riscv64
+  amd64 shows elevated mean heat (4.63) versus aarch64 (0.50) and riscv64
   (0.35); all three reach a peak of approximately 9.3--9.4 before the decay
   loop intervenes.  The amd64 thermal offset is consistent with x86-64 CISC
   instruction density: longer TCG traces per FORTH word produce greater
@@ -306,7 +310,7 @@ attractor HR vs $\Delta$HR portrait from the hosted-VM experiment.
   \caption{Dark theme}
 \end{subfigure}
 \caption{Thermal phase portrait: heat $h_n$ vs $\Delta h_n$ per architecture
-  (log-density scale, 783\,287 ticks).  The accumulation arm at positive
+  (log-density scale, 783\,288 ticks).  The accumulation arm at positive
   $\Delta h$ and the sharp reflection trace the thermal charge/discharge
   cycle.  amd64's rightward displacement along the heat axis reflects
   elevated steady-state heat due to CISC trace length, not a difference
@@ -331,7 +335,7 @@ attractor HR vs $\Delta$HR portrait from the hosted-VM experiment.
   \caption{Dark theme}
 \end{subfigure}
 \caption{Number of ``hot'' dictionary words (execution heat $>$ threshold)
-  per tick, sampled at every 5th tick.  amd64 stabilises near 72.5~words;
+  per tick, sampled at every 5th tick.  amd64 stabilises near 75.5~words;
   aarch64 near 27.8~words; riscv64 near 27.6~words.  The amd64 offset
   reflects higher per-word heat accumulation under x86-64 TCG (see
   \S\ref{sec:thermal}), not a difference in the attractor.}
@@ -341,7 +345,7 @@ attractor HR vs $\Delta$HR portrait from the hosted-VM experiment.
 \subsection{Execution-Rate Distribution}
 
 Figure~\ref{fig:exec_rate} presents the per-architecture execution-rate
-distribution drawn from all 783\,287 ticks.  Every architecture achieves a
+distribution drawn from all 783\,288 ticks.  Every architecture achieves a
 grand mean of \(255.98 \pm 1.11\)--\(1.12\) (SD) FORTH word executions per
 heartbeat tick.  The inter-architecture spread is indistinguishable from the
 intra-architecture noise floor.  The SSM's window-width feedback loop
@@ -360,28 +364,34 @@ the window shrinks.  The null result in \S\ref{sec:stats} confirms this formally
   \caption{Dark theme}
 \end{subfigure}
 \caption{Distribution of executions per tick by architecture
-  (all 783\,287 ticks).  Grand mean 255.98, SD $\approx$1.11, across all
+  (all 783\,288 ticks).  Grand mean 255.98, SD $\approx$1.11, across all
   three ISAs.  The distributions are statistically indistinguishable
-  (\(F_{2,783284}=0.0013\), \(p=0.999\)).}
+  (\(F_{2,783285}\approx 0\), \(p=1.000\)).}
 \label{fig:exec_rate}
 \end{figure}
 
 \subsection{Time-Trust and Variance}
 
-All three architectures record \texttt{time\_trust\_q48} = 65\,536 (decoded:
-$1.0000$) and \texttt{variance\_q48} = 0 across every tick of the 30-replicate
-campaign.  The APIC (amd64), ARMv8 Generic Timer (aarch64), and RISC-V CLINT
-(riscv64) all deliver their 10\,\(\mu\)s heartbeat ticks with zero measured
-deviation under QEMU TCG at 30 replicates.  The inter-architecture Kruskal--Wallis
-test is inapplicable: with all observations sharing the same value there are no
-groups to compare.  This is the definitive statement of \textbf{0\,\% algorithmic
-variance}: no metric --- execution rate, window width, thermal state, or timer
-quality --- differs between architectures.
+The ARMv8 Generic Timer (aarch64) and RISC-V CLINT (riscv64) deliver their
+10\,\(\mu\)s heartbeat ticks with \texttt{time\_trust\_q48} = 65\,536 (decoded:
+$\bar{t}=1.0000$) and \texttt{variance\_q48} = 0 across every tick of the
+30-replicate campaign.  The x86-64 APIC emulation, however, introduces a small
+but statistically significant calibration residual in the post-boot region
+(ticks $> 26\,251$, $n = 234\,847$): $\bar{t} = 0.9947$,
+$\bar{\sigma}^2 = 9.5 \times 10^{-3}$.  This residual is absent from the RISC
+targets, which record perfect trust and zero variance throughout.
 
-Figure~\ref{fig:trust_variance} is retained for completeness; it shows the
-kernel density estimates on the last 10\,\% of each run (the divergent-region
-proxy used by the analysis script).  The flat mass at trust\,$=1.0$ with zero
-variance is the intended result.
+The inter-architecture Kruskal--Wallis test confirms the divergence is
+real and substantial (\(H = 667\,664\), $df = 2$, $p < 2.2 \times 10^{-16}$)
+for both \texttt{time\_trust} and \texttt{variance}.  Critically, this divergence
+is \textbf{attractor-neutral}: window width and execution rate are identical across
+all three ISAs regardless of timer quality.  The APIC residual is a property of
+the x86-64 TCG timer implementation, not of the SSM algorithm.
+
+Figure~\ref{fig:trust_variance} shows kernel density estimates on the
+post-boot region ($> 26\,251$ ticks per architecture).  The aarch64 and riscv64
+densities collapse to a point mass at trust $= 1.0$; the amd64 density is
+displaced leftward to $\approx 0.9947$ with a small spread.
 
 \begin{figure}[ht]
 \centering
@@ -394,10 +404,10 @@ variance is the intended result.
   \caption{Dark theme}
 \end{subfigure}
 \caption{Kernel density of temporal trust (upper) and Q48.16 variance (lower)
-  in the final 10\,\% of each run.  All three architectures record perfect
-  trust ($= 1.0$) and zero variance throughout --- the density panels
-  collapse to a point mass.  No inter-architecture divergence exists to
-  test.}
+  in the post-boot region ($>26\,251$ ticks).  aarch64 and riscv64 record
+  perfect trust ($= 1.0$) and zero variance; amd64 shows the x86-64 APIC
+  calibration residual ($\bar{t}=0.9947$, $\bar{\sigma}^2=9.5\times10^{-3}$).
+  The residual does not perturb the attractor.}
 \label{fig:trust_variance}
 \end{figure}
 
@@ -408,34 +418,56 @@ variance is the intended result.
 \subsection{Execution Rate: Null Result}
 
 We tested whether mean executions per tick differs by architecture using
-one-way ANOVA on the full 783\,287-row dataset:
+one-way ANOVA on the full 783\,288-row dataset:
 
 \[
-  F_{2,\,783284} = 0.0013, \quad p = 0.999
+  F_{2,\,783285} \approx 0, \quad p = 1.000
 \]
 
-This near-zero F-statistic is the strongest finding in the paper:
+This zero F-statistic is the strongest finding in the paper:
 \textbf{the FORTH interpreter executes at statistically identical rates
 across three radically different ISAs.}  The between-group variance is
-effectively zero --- the SSM's compudynamic invariant holds across silicon.
+indistinguishable from zero --- the SSM's compudynamic invariant holds
+absolutely across silicon.
 
-\subsection{Algorithmic Variance: Zero}
+\subsection{Timer Quality: Architecture-Specific Residual}
 
-In a conventional multi-architecture benchmark one would apply Kruskal--Wallis
-rank tests to detect between-architecture differences in temporal trust and
-timing variance.  In the present 30-replicate campaign those tests are
-inapplicable: \texttt{time\_trust\_q48} and \texttt{variance\_q48} are
-\emph{identical} across all three architectures for every one of the
-783\,287 ticks.  There are no groups to rank.
+Kruskal--Wallis rank tests on the post-boot region (ticks $> 26\,251$,
+$n = 234\,847$ per architecture) detect a significant between-architecture
+difference in both temporal trust and timing variance:
 
-This is the empirical definition of 0\,\% algorithmic variance: the SSM
-produces the same observable physics regardless of which silicon executes it.
+\begin{table}[h!]
+\centering
+\caption{Kruskal--Wallis tests --- post-boot divergent region}
+\label{tab:kw}
+\begin{tabular}{llSl}
+\toprule
+Metric & {$H$} & {$df$} & {$p$-value} \\
+\midrule
+\texttt{time\_trust}  & 667\,664 & 2 & $< 2.2 \times 10^{-16}$ \\
+\texttt{variance}     & 667\,664 & 2 & $< 2.2 \times 10^{-16}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The large $H$ statistic arises because aarch64 and riscv64 produce
+\emph{identical} trust and variance values (point masses at $1.0$ and $0$,
+respectively), while amd64 produces a distinct distribution centred at
+$\bar{t}=0.9947$ with $\bar{\sigma}^2=9.5\times10^{-3}$ --- the x86-64 APIC
+calibration residual.  This divergence is real and statistically unambiguous, and
+\textbf{attractor-neutral}: execution rate and window width are identical across
+all three architectures regardless.
+
+The SSM's \emph{compudynamic} invariant (execution rate, window width, attractor
+topology) holds at 0\,\% variance.  Timer quality is a property of the hardware
+timer implementation, not of the algorithm, and does not propagate to the
+attractor.
 
 \subsection{Architecture Summary}
 
 \begin{table}[h!]
 \centering
-\caption{Per-architecture summary statistics (30 replicates, 261\,095--261\,097 ticks)}
+\caption{Per-architecture summary statistics (30 replicates, 261\,095--261\,098 ticks)}
 \label{tab:summary}
 \sisetup{round-mode=places, round-precision=3}
 \begin{tabular}{lSSSSS}
@@ -446,16 +478,18 @@ produces the same observable physics regardless of which silicon executes it.
   {Mean trust} &
   {Hot words} \\
 \midrule
-amd64   & 4.720 & 9.442 & 256.7 & 1.0000 & 72.5 \\
+amd64   & 4.634 & 9.270 & 256.7 & 0.9946 & 75.5 \\
 aarch64 & 0.504 & 9.311 & 256.7 & 1.0000 & 27.8 \\
 riscv64 & 0.349 & 9.303 & 256.7 & 1.0000 & 27.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Mean window width (256.7 cells) and temporal trust (1.0000) are identical
-across all three architectures.  The heat asymmetry between amd64 and the
-RISC targets is discussed in \S\ref{sec:disc_hot}.
+Mean window width (256.7 cells) is identical across all three architectures.
+Temporal trust differs: amd64 records $\bar{t}=0.9946$ due to the x86-64
+APIC calibration residual; aarch64 and riscv64 record perfect trust
+($\bar{t}=1.0000$).  The heat asymmetry between amd64 and the RISC targets
+is discussed in \S\ref{sec:disc_hot}.
 
 %% ═════════════════════════════════════════════════════════════════════════════
 \section{Discussion}
@@ -477,26 +511,32 @@ channels.
 
 \subsection{The Null Result on Execution Rate}
 
-The ANOVA null result ($F = 0.0013$, $p = 0.999$) deserves emphasis.  In
-ordinary benchmarking, one would expect different ISAs to produce different
+The ANOVA null result ($F_{2,783285}\approx 0$, $p = 1.000$) deserves emphasis.
+In ordinary benchmarking, one would expect different ISAs to produce different
 instruction throughputs.  Here, the \emph{executions per heartbeat tick} is
 held equal not by throttling but by the SSM's feedback mechanism: when the
 system is running faster than expected the window grows (increasing work per
 tick) and when it is running slower the window shrinks (reducing work per
-tick).  The near-zero F-statistic reflects a between-group variance that is
-indistinguishable from zero over 783\,287 observations.  The null result is
+tick).  The zero F-statistic reflects a between-group variance that is
+indistinguishable from zero over 783\,288 observations.  The null result is
 the SSM working correctly.
 
-\subsection{Zero Timer Variance Across Architectures}
+\subsection{APIC Residual: Hardware Divergence Without Algorithmic Consequence}
 
-A prior 3-replicate run recorded a small APIC calibration residual on amd64
-($\bar{t} = 0.9972$).  The 30-replicate campaign finds perfect trust
-($\bar{t} = 1.0000$) on all three architectures.  The earlier residual was a
-statistical artefact of the small sample; the definitive 30-replicate result
-confirms that all three QEMU TCG timer implementations deliver the nominal
-10\,\(\mu\)s interval without measurable deviation.  This eliminates
-timer quality as a confound and makes the compudynamic invariance claim
-unconditional.
+The 30-replicate clean campaign resolves the timer-quality question definitively.
+The ARMv8 Generic Timer (aarch64) and RISC-V CLINT (riscv64) deliver perfect
+trust ($\bar{t}=1.0000$, $\bar{\sigma}^2=0$) throughout.  The x86-64 APIC
+emulation introduces a small calibration residual in the post-boot region:
+$\bar{t}=0.9947$, $\bar{\sigma}^2=9.5\times10^{-3}$ --- a 0.53\,\%
+trust deficit relative to the nominal value.
+
+Critically, this residual is \emph{attractor-neutral}.  The Poincaré map
+(Figure~\ref{fig:poincare}), the breathing cycle period, and the execution rate
+are identical across all three ISAs (see §\ref{sec:stats}) despite the APIC
+deficit.  The SSM absorbs the APIC timing imperfection via the L7 adaptive
+heartrate and L8 Jacquard mode controls without perturbing the attractor.  This
+robustness is itself a positive result: the compudynamic invariant is insensitive
+to sub-percent timer noise.
 
 \subsection{Hot-Word Count Asymmetry and Saturation}
 \label{sec:disc_hot}
@@ -505,7 +545,7 @@ Dividing the session into ten equal deciles reveals that the asymmetry
 between amd64 and the RISC targets is not uniform over time.  In the first
 decile (POST + boot, tick $\leq 26{,}110$) all three architectures start
 similarly: amd64 36.2, aarch64/riscv64 $\approx$39.0 hot words.  By decile 2
-amd64 reaches 73 words and holds that value \emph{exactly} for all remaining
+amd64 reaches $\approx$75.5 words and holds near that value for all remaining
 deciles --- config-invariant, saturated above the heat threshold for the
 entire DoE run.  aarch64 and riscv64, by contrast, oscillate with the DoE
 configuration being executed: 70.9 $\to$ 23.9 $\to$ 28.2 $\to$ 42.9 $\to$
@@ -559,13 +599,15 @@ StarForth SSM across three instruction-set architectures.  Key findings:
     riscv64 at 256.7 cells.
 
   \item \textbf{Execution rate is architecture-neutral.}  One-way ANOVA over
-    783\,287 ticks finds no significant difference ($F_{2,783284}=0.0013$,
-    $p=0.999$).
+    783\,288 ticks finds no significant difference ($F_{2,783285}\approx 0$,
+    $p=1.000$) --- the strongest possible null result.
 
-  \item \textbf{Algorithmic variance is zero.}  Temporal trust and timing
-    variance are identical across all three architectures for every tick of
-    the 30-replicate campaign.  No inter-architecture statistical test is
-    applicable: there are no groups to distinguish.
+  \item \textbf{Compudynamic variance is zero; timer variance is not.}
+    Execution rate, window width, and attractor topology are identical across
+    all three ISAs.  Timer quality diverges: the x86-64 APIC emulation leaves
+    a 0.53\,\% trust residual ($\bar{t}=0.9947$) absent from aarch64 and
+    riscv64 (KW $H=667\,664$, $p<2.2\times10^{-16}$).  The residual is
+    attractor-neutral.
 
   \item \textbf{LithosAnanke boots successfully on all three ISAs.}  All
     three QEMU acceptance runs completed POST (936+ tests), reached the
@@ -611,8 +653,8 @@ System dependency: \texttt{librsvg2-bin} (provides \texttt{rsvg-convert}).
 \subsection{Data Files}
 
 \begin{itemize}[noitemsep]
-  \item \texttt{experiments/bare\_metal/runs/doe-amd64-20260611-012412.csv}
-    \quad (261\,097 rows)
+  \item \texttt{experiments/bare\_metal/runs/doe-amd64-20260612-110212.csv}
+    \quad (261\,098 rows)
   \item \texttt{experiments/bare\_metal/runs/doe-aarch64-20260611-190822.csv}
     \quad (261\,095 rows)
   \item \texttt{experiments/bare\_metal/runs/doe-riscv64-20260611-191335.csv}
@@ -624,7 +666,7 @@ All three files are tracked in Git LFS.
 \subsection{Acceptance Logs}
 
 \begin{itemize}[noitemsep]
-  \item \texttt{logs2/qemu-amd64-20260611-201951.log}
+  \item \texttt{logs2/qemu-amd64-20260612-110212.log}
   \item \texttt{logs2/qemu-aarch64-20260611-202955.log}
   \item \texttt{logs2/qemu-riscv64-20260611-203104.log}
 \end{itemize}
