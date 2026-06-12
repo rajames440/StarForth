@@ -62,19 +62,21 @@ Run order: riscv64 → aarch64 → amd64
 |---------|---------------------------------|---------|------------|----------------------------------|-----------|
 | riscv64 | doe-riscv64-20260612-141129.csv | 261,095 |  5m 21s    | qemu-riscv64-20260612-141129.log | CANONICAL |
 | aarch64 | doe-aarch64-20260612-141722.csv | 261,095 |  5m 10s    | qemu-aarch64-20260612-141722.log | CANONICAL |
-| amd64   | doe-amd64-20260612-142323.csv   | TBD     |    ~51m    | qemu-amd64-20260612-142323.log   | RUNNING   |
+| amd64   | doe-amd64-20260612-142323.csv   | 261,098 |    ~51m    | qemu-amd64-20260612-142323.log   | CANONICAL |
 
 ---
 
-## Replication 3 — Seed 13579  (planned)
+## Replication 3 — Seed 13579  (2026-06-12)
 
 Run order: aarch64 → amd64 → riscv64
 
-| Arch    | CSV filename | Rows | Wall clock | Log filename | Status  |
-|---------|-------------|------|------------|--------------|---------|
-| aarch64 | TBD         | TBD  | ~5m        | TBD          | PENDING |
-| amd64   | TBD         | TBD  | ~51m       | TBD          | PENDING |
-| riscv64 | TBD         | TBD  | ~5m        | TBD          | PENDING |
+| Arch    | CSV filename                    | Rows    | Wall clock | Log filename                      | Status    |
+|---------|---------------------------------|---------|------------|-----------------------------------|-----------|
+| aarch64 | doe-aarch64-20260612-160132.csv | 261,095 |  ~5m       | qemu-aarch64-20260612-160132.log  | CANONICAL |
+| amd64   | doe-amd64-20260612-160656.csv   | 261,098 |  ~51m      | qemu-amd64-20260612-160656.log    | CANONICAL |
+| riscv64 | doe-riscv64-20260612-174414.csv | 261,095 |  ~5m       | qemu-riscv64-20260612-174414.log  | CANONICAL |
+
+All 9 outer DoE cells complete. Campaign closed 2026-06-12.
 
 ---
 
@@ -102,13 +104,13 @@ for git history, excluded from all analysis.
 
 ## `latest/` Contents (current canonical data)
 
-Points to Rep 1 until multi-replication analysis is implemented.
+Points to Rep 3 (most recent complete replication, seed 13579).
 
-| File                 | Points to                              |
-|----------------------|----------------------------------------|
-| `latest/amd64.csv`   | runs/doe-amd64-20260612-110212.csv     |
-| `latest/aarch64.csv` | runs/doe-aarch64-20260612-141722.csv   |
-| `latest/riscv64.csv` | runs/doe-riscv64-20260612-141129.csv   |
+| File                 | Points to                                   |
+|----------------------|---------------------------------------------|
+| `latest/amd64.csv`   | runs/doe-amd64-20260612-160656.csv (Rep 3)  |
+| `latest/aarch64.csv` | runs/doe-aarch64-20260612-160132.csv (Rep 3)|
+| `latest/riscv64.csv` | runs/doe-riscv64-20260612-174414.csv (Rep 3)|
 
-Note: latest/ currently holds a mix of Rep 1 (amd64) and Rep 2 (aarch64, riscv64).
-Update all three to a consistent replication once multi-rep analysis is ready.
+All three files now consistently represent Rep 3 (seed 13579).
+Multi-replication analysis will pool all 9 CSVs across all three seeds.
