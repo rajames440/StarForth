@@ -1,0 +1,4 @@
+"arch","rep_mean_of_means","rep_sd_of_means","cv_across_reps"
+"amd64",255.984488582831,0,0
+"aarch64",255.984488404604,0,0
+"riscv64",255.984488404604,0,0
