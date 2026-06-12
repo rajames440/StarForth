@@ -1,6 +1,18 @@
 Kruskal-Wallis tests (divergent region)
 ════════════════════════════════════════
 
-time_trust_q48 ~ architecture: SKIP — all time_trust values identical across architectures (algorithmic variance = 0)
+time_trust_q48 ~ architecture
 
-variance_q48 ~ architecture: SKIP — all time_trust values identical across architectures (algorithmic variance = 0)
+	Kruskal-Wallis rank sum test
+
+data:  time_trust by arch
+Kruskal-Wallis chi-squared = 667664, df = 2, p-value < 2.2e-16
+
+
+variance_q48 ~ architecture
+
+	Kruskal-Wallis rank sum test
+
+data:  variance by arch
+Kruskal-Wallis chi-squared = 667664, df = 2, p-value < 2.2e-16
+
