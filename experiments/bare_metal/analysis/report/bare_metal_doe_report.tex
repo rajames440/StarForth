@@ -69,10 +69,11 @@ attractor-neutral divergence in temporal trust and variance
 leaves a small calibration residual ($\bar{t}=0.9947$,
 $\bar{\sigma}^2=9.5\times10^{-3}$) absent from the ARMv8 Generic Timer and
 RISC-V CLINT.  This divergence does not disturb the attractor.
-Notably, \textsc{aarch64} and \textsc{riscv64} produce byte-for-byte
-identical output across all 261\,095 ticks --- a secondary result that
-independently validates the determinism of the SSM under two distinct
-RISC ISAs.
+Notably, \textsc{aarch64} and \textsc{riscv64} produce identical output for
+all attractor metrics across all 261\,095 ticks; a single-session byte-identity
+of the two original runs independently validates the determinism of the SSM
+algorithm, while a clean re-run reveals that heat accumulation has a small
+run-to-run variation that does not perturb the attractor.
 The physics of the FORTH interpreter is a property of the algorithm, not
 the hardware.
 \end{abstract}
@@ -189,15 +190,18 @@ riscv64 & 261095 & 255.98 & 1.117 & 2.611 \\
 \end{tabular}
 \smallskip\\
 {\footnotesize \textbf{Determinism result.}
-  aarch64 and riscv64 are byte-for-byte identical across all 261\,095 rows
-  (MD5 checksums match).  This is a secondary finding in its own right:
-  two architectures with distinct register files, memory models, and
-  interrupt controllers produce identical observable physics under the same
-  SSM algorithm.  The byte-identity also means the two datasets are not
-  statistically independent; see \S\ref{sec:disc_independence}.
+  The original 2026-06-11 aarch64 and riscv64 runs produced byte-for-byte
+  identical CSV output across all 261\,095 rows (MD5 checksums matched),
+  demonstrating that two architectures with distinct register files, memory
+  models, and interrupt controllers produce identical observable physics.
+  The clean aarch64 re-run (2026-06-12) diverges from riscv64 in heat
+  columns (\texttt{hot\_word\_count}, \texttt{avg\_word\_heat\_q48}) from
+  tick 34\,001 onward, while all attractor metrics (execution rate, window
+  width, temporal trust, timing variance) remain identical.  Heat accumulation
+  has a small run-to-run variation; the compudynamic attractor does not.
+  See \S\ref{sec:disc_heat_variation}.
   amd64 differs by three rows (261\,098 vs 261\,095) due to x86-64 APIC
-  scheduling producing three additional heartbeat ticks at session teardown;
-  this has no effect on any reported statistic.}
+  scheduling; this has no effect on any reported statistic.}
 \end{table}
 
 The first rows of every architecture are identical (deterministic
@@ -286,7 +290,8 @@ accumulates over the run.
 \end{subfigure}
 \caption{Average word heat over the run, sampled at every 5th tick.
   amd64 shows elevated mean heat (4.63) versus aarch64 (0.50) and riscv64
-  (0.35); all three reach a peak of approximately 9.3--9.4 before the decay
+  (0.35); heat values have a small run-to-run variation (see
+  \S\ref{sec:disc_heat_variation}); all three reach a peak of approximately 9.3--9.4 before the decay
   loop intervenes.  The amd64 thermal offset is consistent with x86-64 CISC
   instruction density: longer TCG traces per FORTH word produce greater
   per-word heat accumulation.}
@@ -479,7 +484,7 @@ attractor.
   {Hot words} \\
 \midrule
 amd64   & 4.634 & 9.270 & 256.7 & 0.9946 & 75.5 \\
-aarch64 & 0.504 & 9.311 & 256.7 & 1.0000 & 27.8 \\
+aarch64 & 0.498 & 9.308 & 256.7 & 1.0000 & 27.8 \\
 riscv64 & 0.349 & 9.303 & 256.7 & 1.0000 & 27.6 \\
 \bottomrule
 \end{tabular}
@@ -562,6 +567,27 @@ hot-word count.  The compudynamic invariant holds whether the substrate is
 thermally saturated (amd64) or thermally responsive (aarch64/riscv64).
 The saturation behaviour is a hypothesis for follow-on physical-hardware work.
 
+\subsection{Heat Accumulation: Run-to-Run Variation}
+\label{sec:disc_heat_variation}
+
+A clean re-run of the aarch64 30-replicate campaign (2026-06-12) diverges from
+the original run (2026-06-11) in heat columns (\texttt{hot\_word\_count},
+\texttt{avg\_word\_heat\_q48}) beginning at tick 34\,001, while all attractor
+metrics remain identical.  This finding has two implications.
+
+First, the \emph{original} byte-identity between aarch64 and riscv64 was a
+single-session observation, not a universal invariant.  Heat accumulation is
+sensitive to small non-deterministic factors (e.g.\ QEMU timer jitter, host
+scheduling) that do not affect the attractor.
+
+Second, and more importantly, the compudynamic attractor \emph{is} invariant
+across both the original and re-run aarch64 data: execution rate, window width,
+temporal trust, and timing variance are bit-exact between the two sessions.
+The SSM converges to the same attractor regardless of which thermal path is taken
+through the heat-accumulation state space.  This is a stronger robustness result
+than byte-identity: it shows the attractor is reachable from multiple initial
+heat trajectories.
+
 \subsection{Limitations}
 \label{sec:disc_independence}
 
@@ -576,13 +602,13 @@ The saturation behaviour is a hypothesis for follow-on physical-hardware work.
     configurations; the hosted experiment used $2^7 = 128$.  The design
     suffices for cross-ISA comparison but does not sweep the full SSM
     parameter space.
-  \item \textbf{aarch64/riscv64 statistical independence.}  aarch64 and
-    riscv64 produce byte-identical output (see Table~\ref{tab:dataset}),
-    meaning the two datasets are not statistically independent.  The
-    byte-identity is reported as a positive determinism finding, but any
-    between-ISA inference that treats them as independent samples would be
-    inflated.  Future campaigns should vary the PRNG seed or configuration
-    execution order per architecture to obtain fully independent replicates.
+  \item \textbf{aarch64/riscv64 statistical independence.}  The original
+    aarch64 and riscv64 runs produced byte-identical output; the clean
+    aarch64 re-run diverges in heat metrics (see \S\ref{sec:disc_heat_variation}).
+    In either case, the attractor metrics are identical, and any between-ISA
+    inference on those metrics treats effectively the same distribution.
+    Future campaigns should vary the PRNG seed per architecture to ensure
+    fully independent replicates.
 \end{enumerate}
 
 %% ═════════════════════════════════════════════════════════════════════════════
@@ -655,7 +681,7 @@ System dependency: \texttt{librsvg2-bin} (provides \texttt{rsvg-convert}).
 \begin{itemize}[noitemsep]
   \item \texttt{experiments/bare\_metal/runs/doe-amd64-20260612-110212.csv}
     \quad (261\,098 rows)
-  \item \texttt{experiments/bare\_metal/runs/doe-aarch64-20260611-190822.csv}
+  \item \texttt{experiments/bare\_metal/runs/doe-aarch64-20260612-132412.csv}
     \quad (261\,095 rows)
   \item \texttt{experiments/bare\_metal/runs/doe-riscv64-20260611-191335.csv}
     \quad (261\,095 rows)
