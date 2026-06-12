@@ -1,0 +1,4 @@
+"rep","seed","H","df","p_value","decision"
+1,12345,667663.8,2,0,"REJECT H0 (arch divergence confirmed)"
+2,67890,667777.2,2,0,"REJECT H0 (arch divergence confirmed)"
+3,13579,667881.2,2,0,"REJECT H0 (arch divergence confirmed)"
