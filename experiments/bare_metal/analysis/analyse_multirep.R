@@ -293,6 +293,208 @@ p_poin_mr <- ggplot(df_poin,
 
 save_svg(p_poin_mr, "multirep_poincare", w = 14, h = 6)
 
+# ══════════════════════════════════════════════════════════════════════════════
+# CHART MR-6+7: 3×3 Thermal Phase Portrait — "the attractor grid"
+# Rows = replication (Rep 1/2/3), Columns = architecture
+# Styled after L8 capsule mode portraits: bold facet labels, dark + light
+# Shows: same attractor across ALL 9 outer DoE cells
+# ══════════════════════════════════════════════════════════════════════════════
+cat("[MR-6+7] 3×3 attractor grid — thermal portrait (light + dark)...\n")
+
+df_th9 <- df_all %>%
+  mutate(
+    delta_heat = ave(heat, interaction(rep, arch),
+                     FUN = function(x) c(diff(x), NA_real_))
+  ) %>%
+  filter(!is.na(delta_heat)) %>%
+  group_by(arch, rep) %>%
+  filter(abs(delta_heat) < quantile(abs(delta_heat), 0.995, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    arch_label = factor(
+      case_when(
+        arch == "amd64"   ~ "x86-64 (amd64)",
+        arch == "aarch64" ~ "ARMv8-A (aarch64)",
+        arch == "riscv64" ~ "RISC-V (riscv64)"
+      ),
+      levels = c("x86-64 (amd64)", "ARMv8-A (aarch64)", "RISC-V (riscv64)")
+    ),
+    rep_label = factor(
+      case_when(
+        rep == "1" ~ "REP 1  ·  seed 12345",
+        rep == "2" ~ "REP 2  ·  seed 67890",
+        rep == "3" ~ "REP 3  ·  seed 13579"
+      ),
+      levels = c("REP 1  ·  seed 12345",
+                 "REP 2  ·  seed 67890",
+                 "REP 3  ·  seed 13579")
+    )
+  )
+
+make_attractor_grid <- function(dark = FALSE) {
+  bg       <- if (dark) "#0d0d0d" else "white"
+  lo       <- if (dark) "#0d0d0d" else "white"
+  mid      <- if (dark) "#003366" else "#ffdd00"
+  hi       <- if (dark) "#00e5ff" else "#cc2200"
+  vhigh    <- if (dark) "white"   else "#1a0000"
+  grid_col <- if (dark) "#1a1a2e" else "grey88"
+  txt_col  <- if (dark) "#aaaaaa" else "grey25"
+  ttl_col  <- if (dark) "white"   else "black"
+  stl_col  <- if (dark) "#666666" else "grey45"
+
+  ggplot(df_th9, aes(x = heat, y = delta_heat)) +
+    stat_bin_2d(bins = 120, aes(fill = after_stat(count))) +
+    scale_fill_gradientn(
+      colours = c(lo, mid, hi, vhigh),
+      values  = scales::rescale(c(0, 0.05, 0.30, 1)),
+      name    = "Density",
+      trans   = "sqrt",
+      labels  = scales::comma
+    ) +
+    geom_hline(yintercept = 0,
+               colour = if (dark) "#2a3a4a" else "grey78",
+               linewidth = 0.4, linetype = "dashed") +
+    facet_grid(rep_label ~ arch_label) +
+    labs(
+      title    = "Compudynamic Attractor — Thermal Phase Space (All 9 Cells)",
+      subtitle = expression(paste("Heat"[n], " vs ", Delta, "Heat"[n],
+                  " · 3 replications × 3 architectures · attractor topology invariant")),
+      x        = "Avg word heat (Q48.16 decoded)",
+      y        = expression(Delta * "Heat per tick")
+    ) +
+    theme_minimal(base_size = 10) %+replace%
+    theme(
+      panel.background  = element_rect(fill = bg, colour = NA),
+      plot.background   = element_rect(fill = bg, colour = NA),
+      panel.grid.major  = element_line(colour = grid_col),
+      panel.grid.minor  = element_blank(),
+      axis.text         = element_text(colour = txt_col, size = 7),
+      axis.title        = element_text(colour = txt_col, size = 9),
+      # Column labels (architecture) — bold, prominent like the reference
+      strip.text.x      = element_text(colour = ttl_col, face = "bold",
+                                       size = 10, margin = margin(b = 4)),
+      # Row labels (replication)
+      strip.text.y      = element_text(colour = ttl_col, face = "bold",
+                                       size = 8, angle = 270,
+                                       margin = margin(l = 4)),
+      strip.background  = element_rect(fill = if(dark) "#1a1a2e" else "grey95",
+                                       colour = NA),
+      plot.title        = element_text(colour = ttl_col, face = "bold",
+                                       size = 12, margin = margin(b = 4)),
+      plot.subtitle     = element_text(colour = stl_col, size = 8,
+                                       margin = margin(b = 8)),
+      legend.position   = "right",
+      legend.background = element_rect(fill = bg, colour = NA),
+      legend.text       = element_text(colour = txt_col, size = 7),
+      legend.title      = element_text(colour = txt_col, size = 8),
+      panel.spacing     = unit(0.6, "lines")
+    )
+}
+
+save_svg(make_attractor_grid(FALSE), "attractor_grid_light", w = 14, h = 10)
+save_svg(make_attractor_grid(TRUE),  "attractor_grid_dark",  w = 14, h = 10)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CHART MR-8+9: 3×3 Poincaré Map Grid — window attractor, all 9 cells
+# ══════════════════════════════════════════════════════════════════════════════
+cat("[MR-8+9] 3×3 attractor grid — Poincaré map (light + dark)...\n")
+
+df_po9 <- df_all %>%
+  mutate(
+    win_next = ave(window_width, interaction(rep, arch),
+                   FUN = function(x) c(x[-1], NA_real_))
+  ) %>%
+  filter(!is.na(win_next), window_width > 0, win_next > 0) %>%
+  mutate(
+    arch_label = factor(
+      case_when(
+        arch == "amd64"   ~ "x86-64 (amd64)",
+        arch == "aarch64" ~ "ARMv8-A (aarch64)",
+        arch == "riscv64" ~ "RISC-V (riscv64)"
+      ),
+      levels = c("x86-64 (amd64)", "ARMv8-A (aarch64)", "RISC-V (riscv64)")
+    ),
+    rep_label = factor(
+      case_when(
+        rep == "1" ~ "REP 1  ·  seed 12345",
+        rep == "2" ~ "REP 2  ·  seed 67890",
+        rep == "3" ~ "REP 3  ·  seed 13579"
+      ),
+      levels = c("REP 1  ·  seed 12345",
+                 "REP 2  ·  seed 67890",
+                 "REP 3  ·  seed 13579")
+    )
+  )
+
+make_poincare_grid <- function(dark = FALSE) {
+  bg       <- if (dark) "#0d0d0d" else "white"
+  lo       <- if (dark) "#0d0d0d" else "white"
+  mid      <- if (dark) "#003366" else "#ffdd00"
+  hi       <- if (dark) "#00e5ff" else "#cc2200"
+  vhigh    <- if (dark) "white"   else "#1a0000"
+  grid_col <- if (dark) "#1a1a2e" else "grey88"
+  txt_col  <- if (dark) "#aaaaaa" else "grey25"
+  ttl_col  <- if (dark) "white"   else "black"
+  stl_col  <- if (dark) "#666666" else "grey45"
+
+  ggplot(df_po9, aes(x = log2(window_width), y = log2(win_next))) +
+    stat_bin_2d(bins = 40, aes(fill = after_stat(count))) +
+    scale_fill_gradientn(
+      colours = c(lo, mid, hi, vhigh),
+      values  = scales::rescale(c(0, 0.05, 0.30, 1)),
+      name    = "Density",
+      trans   = "sqrt",
+      labels  = scales::comma
+    ) +
+    geom_abline(slope = 1, intercept = 0,
+                colour = if (dark) "#2a3a4a" else "grey78",
+                linewidth = 0.4, linetype = "dashed") +
+    scale_x_continuous(
+      breaks = log2(c(256, 512, 1024, 2048, 4096)),
+      labels = c("256","512","1024","2048","4096")
+    ) +
+    scale_y_continuous(
+      breaks = log2(c(256, 512, 1024, 2048, 4096)),
+      labels = c("256","512","1024","2048","4096")
+    ) +
+    facet_grid(rep_label ~ arch_label) +
+    labs(
+      title    = "Compudynamic Attractor — Window Poincaré Map (All 9 Cells)",
+      subtitle = expression(paste(W[n], " vs ", W[n+1],
+                  " (log"[2], " scale) · breathing cycle 256 ↔ 4096 preserved across all cells")),
+      x        = expression(W[n]~"(words, log"[2]*" scale)"),
+      y        = expression(W[n+1]~"(words, log"[2]*" scale)")
+    ) +
+    theme_minimal(base_size = 10) %+replace%
+    theme(
+      panel.background  = element_rect(fill = bg, colour = NA),
+      plot.background   = element_rect(fill = bg, colour = NA),
+      panel.grid.major  = element_line(colour = grid_col),
+      panel.grid.minor  = element_blank(),
+      axis.text         = element_text(colour = txt_col, size = 6),
+      axis.title        = element_text(colour = txt_col, size = 9),
+      strip.text.x      = element_text(colour = ttl_col, face = "bold",
+                                       size = 10, margin = margin(b = 4)),
+      strip.text.y      = element_text(colour = ttl_col, face = "bold",
+                                       size = 8, angle = 270,
+                                       margin = margin(l = 4)),
+      strip.background  = element_rect(fill = if(dark) "#1a1a2e" else "grey95",
+                                       colour = NA),
+      plot.title        = element_text(colour = ttl_col, face = "bold",
+                                       size = 12, margin = margin(b = 4)),
+      plot.subtitle     = element_text(colour = stl_col, size = 8,
+                                       margin = margin(b = 8)),
+      legend.position   = "right",
+      legend.background = element_rect(fill = bg, colour = NA),
+      legend.text       = element_text(colour = txt_col, size = 7),
+      legend.title      = element_text(colour = txt_col, size = 8),
+      panel.spacing     = unit(0.6, "lines")
+    )
+}
+
+save_svg(make_poincare_grid(FALSE), "poincare_grid_light", w = 14, h = 10)
+save_svg(make_poincare_grid(TRUE),  "poincare_grid_dark",  w = 14, h = 10)
+
 # ── summary ───────────────────────────────────────────────────────────────────
 svg_new <- list.files(OUT_CHARTS, pattern = "^multirep.*\\.svg$")
 cat(sprintf("\n══════════════════════════════════════════════════════════════════\n"))
