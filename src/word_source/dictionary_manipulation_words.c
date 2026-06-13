@@ -498,4 +498,5 @@ void register_dictionary_manipulation_words(VM *vm) {
     register_word(vm, "INTERPRET", dictionary_m_word_interpret);
     register_word(vm, "FIND", dictionary_m_word_find);
     register_word(vm, "'", dictionary_m_word_tick);
+    vm_make_immediate(vm); /* ' is IMMEDIATE: compiles literal XT inside defs */
 }
