@@ -355,6 +355,7 @@ typedef struct VM
     int rsp; /**< Return stack pointer */
     int exit_colon; /**< Exit flag for colon definitions */
     int abort_requested; /**< ABORT flag for immediate termination */
+    int ecw_nesting; /**< Depth of execute_colon_word call stack; >0 means inside a colon word */
     /** @} */
 
     /** @name Dictionary Management 

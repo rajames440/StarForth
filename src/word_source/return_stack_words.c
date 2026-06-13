@@ -69,13 +69,22 @@ static void return_stack_word_to_r(VM *vm) {
         log_message(LOG_ERROR, ">R: DSP underflow");
         return;
     }
-    if (vm->rsp + 1 >= STACK_SIZE) {
+    if (vm->rsp + 2 >= STACK_SIZE) {
         vm->error = 1;
         log_message(LOG_ERROR, ">R: RSP overflow");
         return;
     }
     cell_t x = vm_pop(vm);
-    vm_rpush(vm, x);
+    if (vm->ecw_nesting > 0) {
+        /* Inside execute_colon_word: rstack[rsp] holds the saved IP.
+         * Insert x below it so the IP save/restore loop is undisturbed. */
+        cell_t saved_ip = vm->return_stack[vm->rsp];
+        vm->return_stack[vm->rsp + 1] = saved_ip;
+        vm->return_stack[vm->rsp + 0] = x;
+        vm->rsp++;
+    } else {
+        vm_rpush(vm, x);
+    }
 }
 
 /**
@@ -84,18 +93,32 @@ static void return_stack_word_to_r(VM *vm) {
  * @details Stack effect: ( -- x )
  */
 static void return_stack_word_r_from(VM *vm) {
-    if (vm->rsp < 0) {
-        vm->error = 1;
-        log_message(LOG_ERROR, "R>: RSP underflow");
-        return;
-    }
     if (vm->dsp + 1 >= STACK_SIZE) {
         vm->error = 1;
         log_message(LOG_ERROR, "R>: DSP overflow");
         return;
     }
-    cell_t x = vm_rpop(vm);
-    vm_push(vm, x);
+    if (vm->ecw_nesting > 0) {
+        /* Inside execute_colon_word: rstack[rsp] is the saved IP; x is below it. */
+        if (vm->rsp < 1) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "R>: RSP underflow");
+            return;
+        }
+        cell_t saved_ip = vm->return_stack[vm->rsp];
+        cell_t x = vm->return_stack[vm->rsp - 1];
+        vm->return_stack[vm->rsp - 1] = saved_ip;
+        vm->rsp--;
+        vm_push(vm, x);
+    } else {
+        if (vm->rsp < 0) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "R>: RSP underflow");
+            return;
+        }
+        cell_t x = vm_rpop(vm);
+        vm_push(vm, x);
+    }
 }
 
 /**
@@ -104,18 +127,29 @@ static void return_stack_word_r_from(VM *vm) {
  * @details Stack effect: ( -- x )
  */
 static void return_stack_word_r_fetch(VM *vm) {
-    if (vm->rsp < 0) {
-        vm->error = 1;
-        log_message(LOG_ERROR, "R@: RSP underflow");
-        return;
-    }
     if (vm->dsp + 1 >= STACK_SIZE) {
         vm->error = 1;
         log_message(LOG_ERROR, "R@: DSP overflow");
         return;
     }
-    cell_t x = vm->return_stack[vm->rsp];
-    vm_push(vm, x);
+    if (vm->ecw_nesting > 0) {
+        /* Inside execute_colon_word: rstack[rsp] is the saved IP; x is below it. */
+        if (vm->rsp < 1) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "R@: RSP underflow");
+            return;
+        }
+        cell_t x = vm->return_stack[vm->rsp - 1];
+        vm_push(vm, x);
+    } else {
+        if (vm->rsp < 0) {
+            vm->error = 1;
+            log_message(LOG_ERROR, "R@: RSP underflow");
+            return;
+        }
+        cell_t x = vm->return_stack[vm->rsp];
+        vm_push(vm, x);
+    }
 }
 
 /**

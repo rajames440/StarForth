@@ -151,4 +151,9 @@
 #define HEARTBEAT_SLOPE_VALIDATION_FREQUENCY STARFORTH_CONFIG_HEARTBEAT_SLOPE_VALIDATION_FREQUENCY_DEFAULT
 #endif
 
+/* Capsule workspace directory (overridable via -DCAPSULES_DIR=\"path\") */
+#ifndef CAPSULES_DIR
+#define CAPSULES_DIR "./capsules"
+#endif
+
 #endif /* STARFORTH_CONFIG_H */

@@ -328,41 +328,64 @@ void double_word_2rot(VM *vm) {
 
 /* 2>R ( d -- ) ( R: -- d ) */
 void double_word_2to_r(VM *vm) {
-    if (vm->dsp < 1 || vm->rsp >= STACK_SIZE - 2) {
+    if (vm->dsp < 1 || vm->rsp >= STACK_SIZE - 3) {
         vm->error = 1;
         return;
     }
 
     cell_t dhigh = vm_pop(vm);
-    cell_t dlow = vm_pop(vm);
-    vm->return_stack[++vm->rsp] = dlow;
-    vm->return_stack[++vm->rsp] = dhigh;
+    cell_t dlow  = vm_pop(vm);
+
+    if (vm->ecw_nesting > 0) {
+        /* Inside ECW: rstack[rsp] = saved IP; insert d pair below it. */
+        cell_t saved_ip = vm->return_stack[vm->rsp];
+        vm->return_stack[vm->rsp + 2] = saved_ip;
+        vm->return_stack[vm->rsp + 1] = dhigh;
+        vm->return_stack[vm->rsp + 0] = dlow;
+        vm->rsp += 2;
+    } else {
+        vm->return_stack[++vm->rsp] = dlow;
+        vm->return_stack[++vm->rsp] = dhigh;
+    }
 }
 
 /* 2R> ( -- d ) ( R: d -- ) */
 void double_word_2r_from(VM *vm) {
-    if (vm->rsp < 1) {
-        vm->error = 1;
-        return;
+    if (vm->ecw_nesting > 0) {
+        /* Inside ECW: rstack[rsp] = saved IP; d pair is below it. */
+        if (vm->rsp < 2) { vm->error = 1; return; }
+        cell_t saved_ip = vm->return_stack[vm->rsp];
+        cell_t dhigh    = vm->return_stack[vm->rsp - 1];
+        cell_t dlow     = vm->return_stack[vm->rsp - 2];
+        vm->return_stack[vm->rsp - 2] = saved_ip;
+        vm->rsp -= 2;
+        vm_push(vm, dlow);
+        vm_push(vm, dhigh);
+    } else {
+        if (vm->rsp < 1) { vm->error = 1; return; }
+        cell_t dhigh = vm->return_stack[vm->rsp--];
+        cell_t dlow  = vm->return_stack[vm->rsp--];
+        vm_push(vm, dlow);
+        vm_push(vm, dhigh);
     }
-
-    cell_t dhigh = vm->return_stack[vm->rsp--];
-    cell_t dlow = vm->return_stack[vm->rsp--];
-    vm_push(vm, dlow);
-    vm_push(vm, dhigh);
 }
 
 /* 2R@ ( -- d ) ( R: d -- d ) */
 void double_word_2r_fetch(VM *vm) {
-    if (vm->rsp < 1) {
-        vm->error = 1;
-        return;
+    if (vm->ecw_nesting > 0) {
+        /* Inside ECW: rstack[rsp] = saved IP; d pair is below it. */
+        if (vm->rsp < 2) { vm->error = 1; return; }
+        cell_t dhigh = vm->return_stack[vm->rsp - 1];
+        cell_t dlow  = vm->return_stack[vm->rsp - 2];
+        vm_push(vm, dlow);
+        vm_push(vm, dhigh);
+    } else {
+        if (vm->rsp < 1) { vm->error = 1; return; }
+        cell_t dhigh = vm->return_stack[vm->rsp];
+        cell_t dlow  = vm->return_stack[vm->rsp - 1];
+        vm_push(vm, dlow);
+        vm_push(vm, dhigh);
     }
-
-    cell_t dhigh = vm->return_stack[vm->rsp];
-    cell_t dlow = vm->return_stack[vm->rsp - 1];
-    vm_push(vm, dlow);
-    vm_push(vm, dhigh);
 }
 
 /* D0= ( d -- flag ) */

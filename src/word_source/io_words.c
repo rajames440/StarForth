@@ -45,6 +45,7 @@
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 #include <stdio.h>
+#include <string.h>
 
 
 /**
@@ -172,6 +173,79 @@ static void io_word_spaces(VM *vm) {
     fflush(stdout);
 }
 
+/* ." ( "ccc<quote>" -- )   IMMEDIATE
+ *
+ * Interpretation: parse string until closing " and print it immediately.
+ * Compilation:   compile (s") + inline [len][chars][pad], then compile TYPE.
+ *
+ * This is FORTH-79 required.  It was missing from the original word set.
+ */
+static void io_word_dot_quote(VM *vm)
+{
+    const char *src = vm->input_buffer;
+    size_t pos = vm->input_pos;
+    size_t end = vm->input_length;
+
+    if (!src || pos > end) {
+        vm->error = 1;
+        log_message(LOG_ERROR, ".\": input buffer not ready");
+        return;
+    }
+
+    /* Skip single leading space after ." */
+    if (pos < end && src[pos] == ' ') pos++;
+
+    size_t start = pos;
+    while (pos < end && src[pos] != '"') pos++;
+
+    if (pos >= end) {
+        vm->error = 1;
+        log_message(LOG_ERROR, ".\": missing closing quote");
+        return;
+    }
+
+    size_t n = pos - start;
+    if (n > 255) {
+        vm->error = 1;
+        log_message(LOG_ERROR, ".\": string too long (%zu bytes)", n);
+        return;
+    }
+
+    vm->input_pos = pos + 1; /* consume closing quote */
+
+    if (vm->mode == MODE_COMPILE) {
+        /* Compile (s") + inline string block */
+        DictEntry *s_rt = vm_find_word(vm, "(s\")", 4);
+        if (!s_rt) {
+            vm->error = 1;
+            log_message(LOG_ERROR, ".\": (s\") not found");
+            return;
+        }
+        vm_compile_word(vm, s_rt);
+
+        size_t padded = (1 + n + (sizeof(cell_t) - 1)) & ~(sizeof(cell_t) - 1);
+        uint8_t *raw = (uint8_t *)vm_allot(vm, padded);
+        if (!raw) { vm->error = 1; return; }
+        raw[0] = (uint8_t)n;
+        for (size_t i = 0; i < n; i++) raw[1 + i] = (uint8_t)src[start + i];
+        for (size_t i = 1 + n; i < padded; i++) raw[i] = 0;
+
+        /* Compile TYPE to print the string at run-time */
+        DictEntry *type_w = vm_find_word(vm, "TYPE", 4);
+        if (!type_w) {
+            vm->error = 1;
+            log_message(LOG_ERROR, ".\": TYPE not found");
+            return;
+        }
+        vm_compile_word(vm, type_w);
+        return;
+    }
+
+    /* Interpret mode: print immediately */
+    fwrite(src + start, 1, n, stdout);
+    fflush(stdout);
+}
+
 /**
  * @brief Register all I/O words with the VM
  * @param vm Pointer to the VM structure
@@ -185,4 +259,8 @@ void register_io_words(VM *vm) {
     register_word(vm, "TYPE", io_word_type);
     register_word(vm, "SPACE", io_word_space);
     register_word(vm, "SPACES", io_word_spaces);
+
+    /* ." is FORTH-79 required; IMMEDIATE so it parses at compile time */
+    register_word(vm, ".\"", io_word_dot_quote);
+    vm_make_immediate(vm);
 }

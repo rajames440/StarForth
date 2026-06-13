@@ -353,7 +353,7 @@ void vm_exit_compile_mode(VM* vm)
  *
  * Clean execution loop. Physics is abstracted behind hooks.
  */
-void execute_colon_word(VM* vm)
+static void execute_colon_word_body(VM* vm)
 {
     if (!vm || !vm->current_executing_entry) return;
 
@@ -413,6 +413,13 @@ void execute_colon_word(VM* vm)
         ip = (cell_t*)(uintptr_t)vm_rpop(vm);
         if (vm->error) return;
     }
+}
+
+void execute_colon_word(VM* vm)
+{
+    vm->ecw_nesting++;
+    execute_colon_word_body(vm);
+    vm->ecw_nesting--;
 }
 
 

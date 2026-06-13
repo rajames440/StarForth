@@ -246,14 +246,37 @@ void block_word_load(VM *vm) {
 
     set_scr(vm, blk);
 
-    /* Interpret the block content as Forth source */
-    /* Block is 1024 bytes, null-terminate it for interpretation */
-    char block_text[1025];
-    memcpy(block_text, buf, 1024);
-    block_text[1024] = '\0';
+    /* Process the 1024-byte block line by line.
+     * vm_interpret() caps input at INPUT_BUFFER_SIZE-1 (255) bytes.
+     * Standard Forth block lines are 64 chars wide; processing line by line
+     * guarantees each call stays within that limit and preserves VM compile
+     * state across lines so multi-line colon definitions assemble correctly. */
+    char linebuf[256];
+    const char *p   = (const char *)buf;
+    const char *end = p + 1024;
 
-    /* Interpret the block content */
-    vm_interpret(vm, block_text);
+    while (p < end && !vm->error && !vm->halted) {
+        /* Skip null padding (block tail filled with 0 or space) */
+        if (*p == '\0') break;
+
+        /* Find end of this line */
+        const char *eol = p;
+        while (eol < end && *eol != '\n' && *eol != '\0') eol++;
+
+        /* Strip trailing spaces/CR */
+        const char *tail = eol;
+        while (tail > p && (*(tail - 1) == ' ' || *(tail - 1) == '\r')) tail--;
+
+        size_t len = (size_t)(tail - p);
+        if (len > 0) {
+            if (len > sizeof(linebuf) - 1) len = sizeof(linebuf) - 1;
+            memcpy(linebuf, p, len);
+            linebuf[len] = '\0';
+            vm_interpret(vm, linebuf);
+        }
+
+        p = eol + 1;
+    }
 }
 
 /* LIST ( u -- ) : set SCR and (optionally) print the block */
