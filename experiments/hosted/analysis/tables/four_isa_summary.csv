@@ -1,0 +1,13 @@
+isa,seed,rep,mean_win,mean_heat,mean_trust,l8_attractor
+amd64,12345,1,256.6918,4.6340,0.994570,mode_7_dom
+aarch64,12345,1,256.6918,0.4984,1.000000,mode_7_dom
+riscv64,12345,1,256.6918,0.3487,1.000000,mode_7_dom
+amd64,67890,2,256.6918,4.6340,0.990904,mode_7_dom
+aarch64,67890,2,256.6918,0.6704,1.000000,mode_7_dom
+riscv64,67890,2,256.6918,0.5040,1.000000,mode_7_dom
+amd64,13579,3,256.6918,4.6340,0.992923,mode_7_dom
+aarch64,13579,3,256.6918,0.5489,1.000000,mode_7_dom
+riscv64,13579,3,256.6918,0.3793,1.000000,mode_7_dom
+hosted,12345,1,256.0000,NA,NA,mode_7_all
+hosted,67890,2,256.0000,NA,NA,mode_7_all
+hosted,13579,3,256.0000,NA,NA,mode_7_all
