@@ -7,21 +7,25 @@ Same seeds, same doe.4th, same shuffle — directly comparable to bare-metal out
 
 ---
 
-## Outer Design — Latin Square (3 × 3, arch × position)
+## Outer Design — 4×4 Latin Square (arch × seed position)
 
-The LithosAnanke campaign used this correct 3×3 Latin square across 3 ISAs:
+Treating hosted as a 4th ISA extends the original 3×3 bare-metal design to a
+4×4 cyclic Latin square.  Each ISA sees each seed in a different session slot,
+blocking out the position effect (adaptive session-level memory accumulation).
 
-| Position | Rep 1 (seed 12345) | Rep 2 (seed 67890) | Rep 3 (seed 13579) |
-|----------|--------------------|--------------------|---|
-| 1st      | amd64              | aarch64            | riscv64            |
-| 2nd      | riscv64            | amd64              | aarch64            |
-| 3rd      | aarch64            | riscv64            | amd64              |
+| ISA      | P1 (seed A) | P2 (seed B) | P3 (seed C) | P4 (seed D) |
+|----------|-------------|-------------|-------------|-------------|
+| amd64    | 12345       | 67890       | 13579       | **54321**   |
+| aarch64  | 54321       | 12345       | 67890       | 13579       |
+| riscv64  | 13579       | 54321       | 12345       | 67890       |
+| **hosted** | **67890** | **13579**   | **54321**   | **12345**   |
 
-Each arch appears exactly once in each position and each rep — fully balanced.
-On the hosted platform there is only one execution environment, so the outer
-Latin square collapses to a single column.  The three seeds are run in the
-order 12345 → 67890 → 13579, matching the column-1 (amd64) position ordering
-from the bare-metal design.
+Each seed appears exactly once per ISA and once per position — fully balanced.
+
+**Status:** The hosted row is complete (all 4 seeds run).  The bare-metal seed D
+(54321) column is **deferred** — see Preliminary Decision below.
+
+**Inner DoE factors** (2⁴ = 16 configurations, Fisher-Yates shuffled by seed):
 
 **Inner DoE factors** (2⁴ = 16 configurations, Fisher-Yates shuffled by seed):
 
@@ -34,6 +38,29 @@ from the bare-metal design.
 
 Same seed → same shuffle as bare-metal (Fisher-Yates in doe.4th Block 2054 is
 deterministic, independent of host ISA).
+
+---
+
+## Preliminary Decision — bare-metal seed D not warranted
+
+Seed D (54321) was run on hosted as a pilot before committing to ~61 minutes of
+bare-metal QEMU time (amd64 ≈51 min TCG + aarch64 + riscv64 ≈10 min).
+
+| Seed  | mean win_div | min   | max   | L8 mode=7 | early_exit=1 |
+|-------|-------------|-------|-------|-----------|--------------|
+| 12345 | 64502.9     | 63232 | 64768 | 100%      | —            |
+| 67890 | 64493.3     | 63232 | 64768 | 100%      | —            |
+| 13579 | 64513.1     | 63232 | 64768 | 100%      | —            |
+| 54321 | 64507.7     | 64000 | 64768 | 100%      | 99.8%        |
+
+Seed D is statistically indistinguishable from seeds A/B/C: same L8 mode-7
+universal attractor, same window floor (~64500/65536 ≈ 0.984), same factor
+invariance (KW p > 0.20 for all 4 factors on seeds A/B/C).  Running the
+bare-metal column would add no new information.
+
+**Decision:** bare-metal seed D deferred.  Campaign remains valid as a 3×3
+bare-metal design + 4-seed hosted auxiliary.  Revisit if a specific hypothesis
+requires bare-metal seed-position cross-over for one of the three ISAs.
 
 ---
 
@@ -76,7 +103,7 @@ deterministic, independent of host ISA).
 |---------------------------------------------|-----------|--------------|-----------|
 | runs/doe-hosted-20260613-144350-seed13579.csv | 480       | yes          | CANONICAL |
 
-All 3 hosted DoE runs complete. Campaign closed 2026-06-13.
+All 4 hosted DoE runs complete. Campaign closed 2026-06-13.
 
 ---
 
@@ -84,9 +111,10 @@ All 3 hosted DoE runs complete. Campaign closed 2026-06-13.
 
 | File                 | Source run                                         |
 |----------------------|----------------------------------------------------|
-| `latest/seed12345.csv` | runs/doe-hosted-20260613-144350-seed12345.csv    |
-| `latest/seed67890.csv` | runs/doe-hosted-20260613-144350-seed67890.csv    |
-| `latest/seed13579.csv` | runs/doe-hosted-20260613-144350-seed13579.csv    |
+| `latest/seed12345.csv` | runs/doe-hosted-20260613-144350-seed12345.csv      |
+| `latest/seed67890.csv` | runs/doe-hosted-20260613-144350-seed67890.csv      |
+| `latest/seed13579.csv` | runs/doe-hosted-20260613-144350-seed13579.csv      |
+| `latest/seed54321.csv` | runs/doe-hosted-20260613-155809-seed54321.csv      |
 
 ---
 
