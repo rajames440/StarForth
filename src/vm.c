@@ -349,6 +349,44 @@ void vm_exit_compile_mode(VM* vm)
 */
 
 /*
+ * acl_recheck — cold-path ACL enforcement.
+ *
+ * Called only when entry->acl_ttl hits 0.  Looks up the FORTH word
+ * ACL-RECHECK; if it exists, calls it with emergency_console=1 so the
+ * check itself bypasses ACL.  If ACL-RECHECK is not yet loaded (early
+ * boot), fails open: sets acl_allow=1 and acl_ttl=ACL_TTL_OPEN.
+ */
+static void acl_recheck(VM *vm, DictEntry *entry)
+{
+    DictEntry *recheck = vm_find_word(vm, "ACL-RECHECK", 11);
+    if (!recheck || !recheck->func) {
+        /* ACL.4th not yet loaded — fail open */
+        entry->acl_allow = 1;
+        entry->acl_ttl   = ACL_TTL_OPEN;
+        return;
+    }
+
+    /* Push XT, call ACL-RECHECK with emergency bypass so it cannot deny itself */
+    uint8_t saved_ec = vm->emergency_console;
+    vm->emergency_console = 1;
+    vm_push(vm, (cell_t)(uintptr_t)entry);
+    DictEntry *saved_ce = vm->current_executing_entry;
+    vm->current_executing_entry = recheck;
+    recheck->func(vm);
+    vm->current_executing_entry = saved_ce;
+    vm->emergency_console = saved_ec;
+
+    /* If ACL-RECHECK itself errored, fail open and clear the error */
+    if (vm->error) {
+        vm->error = 0;
+        entry->acl_allow = 1;
+        entry->acl_ttl   = ACL_TTL_OPEN;
+        log_message(LOG_WARN, "acl_recheck: ACL-RECHECK errored for '%.*s'; failing open",
+                    (int)entry->name_len, entry->name);
+    }
+}
+
+/*
  * execute_colon_word - Inner interpreter for threaded code
  *
  * Clean execution loop. Physics is abstracted behind hooks.
@@ -376,6 +414,21 @@ void execute_colon_word(VM* vm)
         /* Physics: pre-execution hooks (decay, heat, pipelining) */
         physics_pre_execute(vm, w, prev);
         profiler_word_count(w);
+
+        /* ACL two-level check (hot path: decrement TTL; cold path: recheck) */
+        if (w && !vm->emergency_console) {
+            if (w->acl_ttl == 0)
+                acl_recheck(vm, w);
+            else
+                w->acl_ttl--;
+            if (!w->acl_allow) {
+                log_message(LOG_WARN, "ACL: denied '%.*s'", (int)w->name_len, w->name);
+                vm->dsp = -1;
+                vm->rsp = -1;
+                vm->error = 1;
+                return;
+            }
+        }
 
         /* Advance IP and save resume point */
         ip++;
@@ -459,6 +512,22 @@ void vm_interpret_word(VM* vm, const char* word_str, size_t len)
         log_message(LOG_DEBUG, "EXECUTE: '%.*s'", (int)len, word_str);
         vm->current_executing_entry = entry;
         profiler_word_count(entry);
+
+        /* ACL check on outer-interpreter path */
+        if (!vm->emergency_console) {
+            if (entry->acl_ttl == 0)
+                acl_recheck(vm, entry);
+            else
+                entry->acl_ttl--;
+            if (!entry->acl_allow) {
+                log_message(LOG_WARN, "ACL: denied '%.*s'", (int)len, word_str);
+                vm->dsp = -1;
+                vm->rsp = -1;
+                vm->error = 1;
+                vm->current_executing_entry = NULL;
+                return;
+            }
+        }
 
         if (entry->func)
         {

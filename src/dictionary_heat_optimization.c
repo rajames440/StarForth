@@ -60,13 +60,7 @@
 #include "log.h"
 #include "platform_time.h"
 
-/* External dictionary bucket structures (from dictionary_management.c) */
-#ifndef SF_FC_BUCKETS
-#define SF_FC_BUCKETS 256
-#endif
-extern DictEntry** sf_fc_list[SF_FC_BUCKETS];
-extern size_t sf_fc_count[SF_FC_BUCKETS];
-extern size_t sf_fc_cap[SF_FC_BUCKETS];  /* ASan fix: capacity check (2025-12-09) */
+/* sf_fc_list/sf_fc_count/sf_fc_cap are declared in dictionary_heat_optimization.h */
 
 /* ============================================================================
  * Heat Percentile Calculation
