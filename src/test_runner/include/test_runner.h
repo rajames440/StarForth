@@ -94,6 +94,7 @@ void run_system_words_tests(VM * vm);
 void run_defining_words_tests(VM * vm);
 void run_control_words_tests(VM * vm);
 void run_starforth_words_tests(VM * vm);
+void run_acl_words_tests(VM * vm);
 
 /**
  * @brief Run tests for Mama FORTH vocabulary (capsule system M7.1)
