@@ -177,6 +177,11 @@ static inline cell_t CELL(vaddr_t a) { return (cell_t)(int64_t)a; }
 /* ACL (Access Control List) defaults - stub implementation */
 #define ACL_USER_DEFAULT 0x01   /* Default access: users can execute and compile */
 
+/* ACL mode constants */
+#define ACL_MODE_TTL    0       /* Adaptive TTL countdown; 0 → calls ACL-RECHECK */
+#define ACL_MODE_STRICT 1       /* Re-check every execution (STRICT mode) */
+#define ACL_TTL_OPEN    UINT32_MAX  /* Permissive TTL before ACL.4th loads */
+
 /* Physics model constants - execution heat drives optimization decisions */
 #define SPIN_IDLE        0      /* Particle spin state: idle */
 #define CHARGE_NEUTRAL   0      /* Particle charge state: neutral (execution heat acts as charge) */
@@ -324,6 +329,10 @@ typedef struct DictEntry
     uint8_t name_len; /* Length of name */
     cell_t execution_heat; /* Execution frequency counter */
     uint8_t acl_default; /* Access control list default permissions */
+    uint32_t acl_ttl;    /* countdown; 0 → ACL-RECHECK; default 0 */
+    uint8_t  acl_allow;  /* cached decision: 1=allow 0=deny; default 1 */
+    uint8_t  acl_mode;   /* ACL_MODE_TTL=0, ACL_MODE_STRICT=1; default TTL */
+    uint8_t  acl_pinned; /* 1=immutable forever; default 0 */
     uint32_t word_id; /* Stable dictionary identifier */
     DictPhysics physics; /* Physics properties */
     WordTransitionMetrics* transition_metrics; /* Absolute pointer to metrics */
@@ -357,6 +366,7 @@ typedef struct VM
     int abort_requested; /**< ABORT flag for immediate termination */
     int ecw_nesting; /**< Depth of execute_colon_word call stack; >0 means inside a colon word */
     volatile int doe_row_printing; /**< Non-zero while EMIT-ROW assembles a row; heartbeat output must defer */
+    uint8_t emergency_console; /**< 1 = physical ok> REPL active; bypasses all ACL checks */
     /** @} */
 
     /** @name Dictionary Management 
