@@ -6,8 +6,8 @@ Block 2060
 (               ACL-HEAT@ ACL-WORD-ID ACL-INHERIT ACL-INIT-PRIMITIVES   )
 ( Policy words (this file): ACL-STRICT ACL-TTL-MODE ACL-TTL-COMPUTE     )
 (                            ACL-RECHECK ACL-ENTRY ACL-BOOT             )
-0 CONSTANT ACL-STRICT-MODE   ( acl_mode value: re-check every execution )
-1 CONSTANT ACL-TTL-MODE-VAL  ( acl_mode value: adaptive TTL countdown   )
+1 CONSTANT ACL-STRICT-MODE   ( acl_mode value: re-check every execution )
+0 CONSTANT ACL-TTL-MODE-VAL  ( acl_mode value: adaptive TTL countdown   )
 16 CONSTANT ACL-BASE-TTL     ( minimum TTL after first recheck          )
 65535 CONSTANT ACL-MAX-TTL   ( upper cap on TTL                         )
 
@@ -59,13 +59,13 @@ Block 2064
 Block 2065
 ( ACL-BOOT ( -- )                                                       )
 ( Called from init.4th after loading ACL.4th. Stamps default ACL on    )
-( all existing dictionary words, then pins the privileged kernel words  )
-( and the ACL words themselves so they cannot be denied or re-pinned.   )
+( all existing dictionary words, then pins privileged words and the ACL )
+( words themselves so they cannot be denied or re-pinned.               )
+( BIRTH is omitted: it is a kernel-only word not present in hosted VM.  )
 : ACL-BOOT ( -- )
   ACL-INIT-PRIMITIVES
-  ' BIRTH  ACL-STRICT  ' BIRTH  ACL-PIN
   ' EXEC   ACL-STRICT  ' EXEC   ACL-PIN
   ' BYE    ACL-STRICT  ' BYE    ACL-PIN
-  ' ACL-RECHECK      ACL-PIN
+  ' ACL-RECHECK        ACL-PIN
   ' ACL-INIT-PRIMITIVES ACL-PIN
-  ' ACL-BOOT         ACL-PIN ;
+  ' ACL-BOOT           ACL-PIN ;
