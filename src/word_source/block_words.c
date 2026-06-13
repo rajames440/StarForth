@@ -352,13 +352,25 @@ void block_word_next_block(VM *vm) {
     /* Update SCR to next block */
     set_scr(vm, next_blk);
 
-    /* Interpret the next block's content inline */
+    /* Interpret the next block's content line-by-line (same as LOAD) */
     char block_text[1025];
     memcpy(block_text, buf, 1024);
     block_text[1024] = '\0';
 
-    /* Recursively interpret - this allows definitions to span blocks */
-    vm_interpret(vm, block_text);
+    char *p = block_text;
+    while (!vm->error && *p != '\0') {
+        char *nl = (char *)memchr(p, '\n', (size_t)(block_text + 1024 - p));
+        if (nl) {
+            *nl = '\0';
+            if (p != nl)
+                vm_interpret(vm, p);
+            p = nl + 1;
+        } else {
+            if (*p != '\0')
+                vm_interpret(vm, p);
+            break;
+        }
+    }
 }
 
 /* --- Registration ----------------------------------------------------- */

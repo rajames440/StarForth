@@ -349,6 +349,10 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     entry->name_len = (uint8_t) len;
     entry->execution_heat = 0; /* Initialize execution heat counter */
     entry->acl_default = ACL_USER_DEFAULT;
+    entry->acl_ttl    = 0;              /* first execution always rechecks */
+    entry->acl_allow  = 1;              /* permissive until ACL.4th loads  */
+    entry->acl_mode   = ACL_MODE_TTL;
+    entry->acl_pinned = 0;
     entry->word_id = WORD_ID_INVALID;
 
     uint32_t header_bytes = (total > UINT32_MAX) ? UINT32_MAX : (uint32_t) total;
