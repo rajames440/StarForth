@@ -160,6 +160,11 @@ void heartbeat_emit_tick_row(VM* vm, HeartbeatTickSnapshot* snapshot)
     if (!snapshot)
         return;
 
+    /* Defer if EMIT-ROW is mid-assembly (shared UART on bare-metal; also
+     * guards the hosted stderr stream for consistency). */
+    if (vm && vm->doe_row_printing)
+        return;
+
     /* Emit CSV row to stderr - no header, just data */
     fprintf(stderr, "%u,%lu,%lu,%u,%u,%u,%lu,%.6f,%u,%u,%u,%.2f\n",
             snapshot->tick_number,

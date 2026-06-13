@@ -356,6 +356,7 @@ typedef struct VM
     int exit_colon; /**< Exit flag for colon definitions */
     int abort_requested; /**< ABORT flag for immediate termination */
     int ecw_nesting; /**< Depth of execute_colon_word call stack; >0 means inside a colon word */
+    volatile int doe_row_printing; /**< Non-zero while EMIT-ROW assembles a row; heartbeat output must defer */
     /** @} */
 
     /** @name Dictionary Management 

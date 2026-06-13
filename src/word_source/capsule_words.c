@@ -362,6 +362,29 @@ static void forth_bayes_bucket_mean(VM *vm)
 }
 
 /* ------------------------------------------------------------------
+ * ROW-LOCK ( -- )   ROW-UNLOCK ( -- )
+ *
+ * Set / clear vm->doe_row_printing so the heartbeat output path can
+ * defer its UART write while EMIT-ROW is assembling a row.
+ * On hosted the heartbeat goes to stderr (separate fd) so this is a
+ * no-op for correctness, but it is harmless and keeps both platforms
+ * using the same doe.4th source without ifdefs.
+ * On LithosAnanke the heartbeat ISR must check this flag before
+ * writing to the shared UART.
+ * ------------------------------------------------------------------ */
+static void forth_row_lock(VM *vm)
+{
+    if (!vm) return;
+    vm->doe_row_printing = 1;
+}
+
+static void forth_row_unlock(VM *vm)
+{
+    if (!vm) return;
+    vm->doe_row_printing = 0;
+}
+
+/* ------------------------------------------------------------------
  * register_capsule_words
  * ------------------------------------------------------------------ */
 void register_capsule_words(VM *vm)
@@ -386,4 +409,8 @@ void register_capsule_words(VM *vm)
     /* Hot-words cache Bayesian latency means */
     register_word(vm, "BAYES-CACHE-MEAN",  forth_bayes_cache_mean);
     register_word(vm, "BAYES-BUCKET-MEAN", forth_bayes_bucket_mean);
+
+    /* Row-print guard — heartbeat defers UART output while flag is set */
+    register_word(vm, "ROW-LOCK",   forth_row_lock);
+    register_word(vm, "ROW-UNLOCK", forth_row_unlock);
 }

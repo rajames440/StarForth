@@ -15,18 +15,35 @@ Block 2049
   480 CONSTANT N-RUNS
 
 Block 2050
-( serial output primitives )
+( serial output primitives — used by CSV-HEADER and DOE: complete     )
 : N. ( n -- )
   DUP 0 < IF 45 EMIT ABS THEN
   0 SWAP <# #S #> TYPE ;
 : COMMA    44 EMIT ;
 : CRLF     13 EMIT 10 EMIT ;
-: CSV-COL  ( n -- ) N. COMMA ;
-: CSV-LAST ( n -- ) N. CRLF ;
 : CSV-HEADER ( -- )
   ." run_id,cfg,rep,ent_in,cv_in,tmp_in,stb_in," CRLF
   ." l8_mode,win_div,infer_win,infer_dec_q," CRLF
   ." infer_var_q,early_exit,bc_mean_q,bb_mean_q,fit_q" CRLF ;
+
+Block 2057
+( atomic row buffer — prevents heartbeat interleaving mid-row          )
+( ROW-LOCK / ROW-UNLOCK are C primitives that set vm->doe_row_printing )
+( The heartbeat output path defers its UART write while the flag is 1. )
+( On hosted the heartbeat goes to stderr so the flag is a no-op, but   )
+( both platforms use the same doe.4th source without ifdefs.           )
+CREATE ROW-BUF 256 ALLOT
+VARIABLE ROW-END
+: ROW-INIT   ROW-BUF ROW-END ! ;
+: ROW-BYTE ( c -- )  ROW-END @ C!  ROW-END @ 1+ ROW-END ! ;
+: ROW-NUM  ( n -- )
+  DUP 0 < IF 45 ROW-BYTE ABS THEN
+  0 SWAP <# #S #>
+  OVER + SWAP DO I C@ ROW-BYTE LOOP ;
+: ROW-COL  ( n -- )  ROW-NUM  44 ROW-BYTE ;
+: ROW-LAST ( n -- )  ROW-NUM  13 ROW-BYTE  10 ROW-BYTE ;
+: ROW-FLUSH ( -- )
+  ROW-BUF  ROW-END @ ROW-BUF -  TYPE ;
 
 Block 2051
 ( factor extraction: cfg is 4 bits b3=entropy b2=cv b1=tmp b0=stb )
@@ -86,28 +103,32 @@ Block 2054
   LOOP ;
 
 Block 2055
-( CSV row emitter )
+( CSV row emitter — atomic via ROW-BUF; heartbeat defers during lock  )
 : EMIT-ROW ( -- )
   INFER-RUN
-  RUN-ID @        CSV-COL    ( run_id        )
-  CURR-CFG @      CSV-COL    ( cfg           )
-  CURR-REP @      CSV-COL    ( rep           )
-  CURR-CFG @ CFG-ENT CSV-COL ( ent_in        )
-  CURR-CFG @ CFG-CV  CSV-COL ( cv_in         )
-  CURR-CFG @ CFG-TMP CSV-COL ( tmp_in        )
-  CURR-CFG @ CFG-STB CSV-COL ( stb_in        )
-  L8-MODE           CSV-COL  ( l8_mode       )
-  WINDOW-DIVERSITY  CSV-COL  ( win_div       )
-  INFER-WINDOW@     CSV-COL  ( infer_win     )
-  INFER-DECAY@      CSV-COL  ( infer_dec_q   )
-  INFER-VARIANCE@   CSV-COL  ( infer_var_q   )
-  INFER-EARLY-EXIT@ CSV-COL  ( early_exit    )
-  BAYES-CACHE-MEAN  CSV-COL  ( bc_mean_q     )
-  BAYES-BUCKET-MEAN CSV-COL  ( bb_mean_q     )
-  INFER-FIT@        CSV-LAST ( fit_q         ) ;
+  ROW-LOCK
+  ROW-INIT
+  RUN-ID @          ROW-COL    ( run_id        )
+  CURR-CFG @        ROW-COL    ( cfg           )
+  CURR-REP @        ROW-COL    ( rep           )
+  CURR-CFG @ CFG-ENT ROW-COL  ( ent_in        )
+  CURR-CFG @ CFG-CV  ROW-COL  ( cv_in         )
+  CURR-CFG @ CFG-TMP ROW-COL  ( tmp_in        )
+  CURR-CFG @ CFG-STB ROW-COL  ( stb_in        )
+  L8-MODE            ROW-COL  ( l8_mode       )
+  WINDOW-DIVERSITY   ROW-COL  ( win_div       )
+  INFER-WINDOW@      ROW-COL  ( infer_win     )
+  INFER-DECAY@       ROW-COL  ( infer_dec_q   )
+  INFER-VARIANCE@    ROW-COL  ( infer_var_q   )
+  INFER-EARLY-EXIT@  ROW-COL  ( early_exit    )
+  BAYES-CACHE-MEAN   ROW-COL  ( bc_mean_q     )
+  BAYES-BUCKET-MEAN  ROW-COL  ( bb_mean_q     )
+  INFER-FIT@         ROW-LAST ( fit_q         )
+  ROW-FLUSH
+  ROW-UNLOCK ;
 
 Block 2056
-( DOE entry point — type: 12345 3 EXEC-DOE )
+( DOE entry point — type: 12345 30 EXEC-DOE )
 : EXEC-DOE ( seed n-reps -- )
   SWAP SEED
   INIT-MATRIX
