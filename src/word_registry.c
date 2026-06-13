@@ -44,7 +44,8 @@
 #include "../include/log.h"
 #include <string.h>
 
-/* Include all 18 FORTH-79 word module headers */
+/* Include all FORTH-79 word module headers + extensions */
+#include "word_source/include/acl_words.h"
 #include "word_source/include/stack_words.h"
 #include "word_source/include/return_stack_words.h"
 #include "word_source/include/memory_words.h"
@@ -117,7 +118,8 @@ void register_forth79_words(VM *vm) {
     register_defining_words(vm); /* Module 17: Defining Words */
     register_control_words(vm); /* Module 18: Control Flow */
     register_starforth_words(vm); /* Module 19: StarForth Implementation Extensions */
-    register_physics_benchmark_words(vm); /* Module 20: Physics Benchmark Words */
+    register_acl_words(vm); /* Module 20: Word-Level ACL System */
+    register_physics_benchmark_words(vm); /* Module 21: Physics Benchmark Words */
     register_physics_pipelining_diagnostic_words(vm); /* Module 21: Pipelining Diagnostics */
     register_physics_freeze_words(vm); /* Module 22: Phase 2 Freeze/Decay Control Words */
     register_dictionary_heat_diagnostic_words(vm); /* Module 23: Dictionary Heat Optimization */

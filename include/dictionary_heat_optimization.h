@@ -92,5 +92,15 @@ DictEntry *dict_find_word_heat_aware(VM *vm, const char *name, size_t len);
  */
 void dict_adaptive_optimization_pass(VM *vm);
 
+/* Frequency-class (fc) buckets — shared between dictionary_management.c and
+   dictionary_heat_optimization.c.  Declared here once to give LTO a single
+   canonical type definition and avoid -Werror=lto-type-mismatch. */
+#ifndef SF_FC_BUCKETS
+#define SF_FC_BUCKETS 256
+#endif
+extern DictEntry **sf_fc_list[SF_FC_BUCKETS];
+extern size_t sf_fc_count[SF_FC_BUCKETS];
+extern size_t sf_fc_cap[SF_FC_BUCKETS];
+
 #endif /* DICTIONARY_HEAT_OPTIMIZATION_H */
 
