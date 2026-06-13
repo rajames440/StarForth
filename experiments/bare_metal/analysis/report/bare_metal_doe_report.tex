@@ -223,15 +223,15 @@ occupies each position exactly once across the three replications:
 
 \begin{table}[h!]
 \centering
-\caption{Outer DoE run-order matrix (balanced Latin square)}
+\caption{Outer DoE run-order matrix (3$\times$3 cyclic Latin square)}
 \label{tab:outer_doe}
 \begin{tabular}{lccc}
 \toprule
 Position & Rep~1 (seed 12345) & Rep~2 (seed 67890) & Rep~3 (seed 13579) \\
 \midrule
-1st & amd64   & riscv64 & aarch64 \\
-2nd & aarch64 & aarch64 & amd64   \\
-3rd & riscv64 & amd64   & riscv64 \\
+1st & amd64   & aarch64 & riscv64 \\
+2nd & riscv64 & amd64   & aarch64 \\
+3rd & aarch64 & riscv64 & amd64   \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -241,6 +241,63 @@ The resulting nested/hierarchical DoE has 9~outer cells, each containing
 4\,320~inner runs and \textbf{2\,349\,864~heartbeat ticks} across the full
 campaign.  The \texttt{DOE\_SEED} Makefile variable allows the seed to be
 specified per invocation without modifying the capsule source.
+
+\subsection{4$\times$4 Extension: Hosted Platform as Fourth ISA}
+\label{sec:outer_4x4}
+
+The hosted StarForth VM (native x86-64 Linux, no QEMU emulation layer) was
+subsequently treated as a fourth ISA alongside the three bare-metal targets.
+This extends the design to a $4\times4$ cyclic Latin square requiring a fourth
+seed (D\,=\,54321) so that every ISA--seed pairing occupies a unique session
+position:
+
+\begin{table}[h!]
+\centering
+\caption{Extended $4\times4$ Latin square --- hosted ISA row and pilot decision}
+\label{tab:outer_4x4}
+\begin{tabular}{lcccc}
+\toprule
+ISA      & P1 (12345) & P2 (67890) & P3 (13579) & P4 (54321) \\
+\midrule
+amd64    & \checkmark & \checkmark & \checkmark & deferred   \\
+aarch64  & \checkmark & \checkmark & \checkmark & deferred   \\
+riscv64  & \checkmark & \checkmark & \checkmark & deferred   \\
+hosted   & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Before committing $\approx$61~minutes of QEMU time (amd64 TCG\,$\approx$51~min,
+aarch64\,+\,riscv64\,$\approx$10~min), seed~D was run on hosted as a pilot
+($\approx$5~s, native speed).  The pilot result closes the question of whether
+a full bare-metal fourth column is warranted:
+
+\begin{table}[h!]
+\centering
+\caption{Seed~D pilot --- hosted platform only (480 inner runs)}
+\label{tab:seed_d_pilot}
+\begin{tabular}{lSSScc}
+\toprule
+Seed  & {Mean win\_div} & {Min} & {Max} & L8 mode\,=\,7 & early\_exit\,=\,1 \\
+\midrule
+12345 & 64502.9 & 63232 & 64768 & 100\,\% & $\approx$99\,\% \\
+67890 & 64493.3 & 63232 & 64768 & 100\,\% & $\approx$99\,\% \\
+13579 & 64513.1 & 63232 & 64768 & 100\,\% & $\approx$99\,\% \\
+\textbf{54321} & \textbf{64507.7} & \textbf{64000} & \textbf{64768}
+               & \textbf{100\,\%} & \textbf{99.8\,\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Seed~D falls squarely within the band already established by seeds A--C:
+the same L8~mode-7 universal attractor, the same window-floor concentration
+($\approx$64\,500/65\,536 $\approx$0.984), and the same factor invariance
+(Kruskal--Wallis $p>0.20$ for all four inner-DoE factors on seeds A--C).
+\textbf{The bare-metal seed~D column is therefore deferred}: it would add
+no new statistical information and is not required to support any finding
+in this report.  Should a future hypothesis require ISA$\times$seed
+cross-over evidence at the fourth position, the campaign can be extended
+from this decision point.
 
 %% ═════════════════════════════════════════════════════════════════════════════
 \section{The Adaptive Window Attractor}
@@ -715,6 +772,15 @@ confirmed under three independent shuffle seeds.
     aarch64 and riscv64 share the same Fisher-Yates shuffle (same seed), but
     heat diverges from tick~34\,001 onward, confirming non-trivial between-ISA
     independence at the run level even for matched seeds.
+  \item \textbf{Bare-metal seed~D column deliberately omitted.}  Extending
+    the design to a $4\times4$ Latin square (§\ref{sec:outer_4x4}) requires
+    a fourth seed (54321) on all four ISAs.  The hosted pilot
+    (Table~\ref{tab:seed_d_pilot}) shows seed~D is statistically
+    indistinguishable from seeds A--C on every attractor metric.
+    Running the three bare-metal cells ($\approx$61~min QEMU time) is
+    therefore not warranted by any finding in this report and has been
+    deferred.  This is not a gap in the $3\times3$ bare-metal design, which
+    is fully balanced; it is a deliberate decision not to extend that design.
 \end{enumerate}
 
 %% ═════════════════════════════════════════════════════════════════════════════
