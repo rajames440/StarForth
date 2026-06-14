@@ -6,27 +6,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## Next Feature: Word-Level ACL System
+## Word-Level ACL System — Implemented
 
 **Design doc:** `docs/03-architecture/word-acl/DESIGN.md`
 
-The next major feature is a word-level ACL system implemented entirely in
-FORTH (`capsules/ACL.4th`). Read the design doc before touching any
-ACL-related code. Key constraints:
+The word-level ACL system is implemented through Phase 6. Read the design
+doc before touching any ACL-related code. Key constraints:
 
 - All policy logic in `ACL.4th` — no new C primitives for policy
-- Four C fields only: `acl_ttl` + `acl_allow` + `acl_mode` + `acl_pinned` in `DictEntry`
-- `vm->emergency_console` always bypasses ACL — 100%
-- TTL is statistically adaptive (heat + rolling window + decay + inference)
+- Four C fields: `acl_ttl` + `acl_allow` + `acl_mode` + `acl_pinned` in `DictEntry`
+- Two VM flags: `emergency_console` (fault handler active) + `zuse_session` (superuser authenticated)
+- `ACL.4th` is self-activating — `init.4th` only needs `S" ACL.4th" EXEC` (commented out by default)
 - Pin (`ACL-PIN`) is one-way; inheritance clears pin, copies mode
+- Two permanent console layers: emergency (`ok>`) and zuse (`zuse)ok>`)
+- Superuser `zuse` defined by `capsules/zuse.4th`, loaded by `ACL.4th` at boot
 
 **Implementation phases:**
-1. C Infrastructure — `DictEntry` fields + interpreter hook + `acl_recheck()` stub
-2. `ACL.4th` — pure FORTH policy words + `ACL-TABLE` + `ACL-INIT-PRIMITIVES`
-3. Adaptive TTL accumulator — heat + heartbeat decay + L5/L6 stabilization
-4. Inheritance at birth — `ACL-INHERIT` wired into `BIRTH`
-5. POST tests + Isabelle/HOL proofs (`ACL_Pin_Monotone.thy` etc.)
-6. LithosAnanke parity — port to kernel context, three-arch acceptance
+1. ✅ C Infrastructure — `DictEntry` fields + interpreter hook + `acl_recheck()`
+2. ✅ `ACL.4th` — FORTH policy words + `ACL-INIT-PRIMITIVES` + self-activation
+3. ✅ `capsules/zuse.4th` — bootstrap superuser skeleton; CA root placeholder in `ACL.4th`
+4. ✅ `init.4th` opt-in toggle — `\ S" ACL.4th" EXEC` (comment out = no security)
+5. ✅ POST tests (800/800) + Isabelle/HOL proofs (5 theory files)
+6. ✅ `EMERGENCY_CONSOLE_ENABLED` build flag + `vm_fault_handler` extension point
+7. ⬜ LithosAnanke parity — port to kernel context, three-arch acceptance
+8. ⬜ PKI / thumbdrive — Ed25519 challenge-response; user minting by zuse
 
 ---
 
@@ -127,6 +130,7 @@ Output: `build/amd64/kernel/starkernel_loader.efi` (UEFI PE32+ executable)
 - `HEARTBEAT_THREAD_ENABLED=1` - Background heartbeat thread for adaptive tuning (default on)
 - `STARFORTH_ENABLE_VM=1` - Enable VM integration in StarKernel (M7)
 - `PARITY_MODE=1` - Deterministic parity harness mode
+- `EMERGENCY_CONSOLE_ENABLED=1` - Interactive fault handler / error recovery REPL (default on; set 0 for production or embedded builds to strip interactive fallthrough surface)
 
 ### Important: Linker Configuration
 
@@ -308,7 +312,9 @@ execute IDENTITY (capsule code) → execute PERSONALITY (block 1 from ramdrive)
 Tool `tools/mkcapsule.c` assembles `.4th` files into the binary capsule directory
 format (`capsule_generated.c`) baked into the kernel image.
 
-**Planned:** `capsules/ACL.4th` — word-level ACL system (see Next Feature above)
+**ACL capsules (implemented):**
+- `capsules/ACL.4th` — word-level ACL system; self-activating; contains CA root placeholder
+- `capsules/zuse.4th` — bootstrap superuser; loaded by `ACL.4th` at boot
 
 ### Physics-Driven Adaptive Runtime
 
@@ -402,8 +408,8 @@ proof/
 To check proofs: `isabelle build -D proof/` (requires Isabelle installation,
 see `docs/01-getting-started/DEVELOPER.md`).
 
-ACL proofs planned in Phase 5: `ACL_Pin_Monotone.thy`, `ACL_Inherit_Clears_Pin.thy`,
-`ACL_TTL_Bounded.thy`, `ACL_Emergency_Bypass.thy`, `ACL_No_Escalation.thy`.
+ACL proofs complete (Phase 6): `ACL_Pin_Monotone.thy`, `ACL_Inherit_Clears_Pin.thy`,
+`ACL_TTL_Bounded.thy`, `ACL_Emergency_Bypass.thy`, `ACL_No_Escalation.thy`. Total: 24 theory files.
 
 ---
 
