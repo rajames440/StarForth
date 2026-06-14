@@ -340,6 +340,18 @@ DictEntry *vm_create_word(VM *vm, const char *name, size_t len, word_func_t func
     sf_mutex_lock(&vm->dict_lock);
     lock_held = 1;
 
+    /* Pin is permanent: no word may shadow a pinned entry — ever, by anyone */
+    for (DictEntry *scan = vm->latest; scan; scan = scan->link) {
+        if (scan->acl_pinned && scan->name_len == (uint8_t)len &&
+            memcmp(scan->name, name, len) == 0) {
+            vm->error = 1;
+            log_message(LOG_WARN, "vm_create_word: cannot shadow pinned word '%.*s'",
+                        (int)len, name);
+            entry = NULL;
+            goto create_cleanup;
+        }
+    }
+
     size_t base = offsetof(DictEntry, name);
     size_t name_bytes = len + 1;
     size_t align = sizeof(cell_t);
