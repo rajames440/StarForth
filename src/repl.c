@@ -45,6 +45,21 @@
 #include "../include/vm.h"
 #include <stdio.h>
 
+/*
+ * vm_fault_handler — extension point for non-recoverable VM errors.
+ *
+ * Called when EMERGENCY_CONSOLE_ENABLED=0 and the REPL encounters an error.
+ * The default implementation logs the fault and returns; the REPL loop then
+ * exits because vm->error is not reset.
+ *
+ * Override by providing a non-weak definition in a platform-specific file
+ * (e.g., starkernel/hal/fault.c) for reset, watchdog, or debug-probe hooks.
+ */
+__attribute__((weak)) void vm_fault_handler(VM *vm) {
+    log_message(LOG_ERROR, "VM fault — emergency console disabled; halting");
+    vm->halted = 1;
+}
+
 /**
  * @brief Starts the Forth REPL (Read-Eval-Print Loop)
  *
@@ -101,12 +116,19 @@ void vm_repl(VM *vm, int script_mode) {
                 printf(" ok\n");
             } else {
                 printf(" ERROR\n");
-                vm->error = 0; /* Reset error for next input */
+#if EMERGENCY_CONSOLE_ENABLED
+                vm->error = 0; /* recover: allow next input */
+#else
+                vm_fault_handler(vm); /* non-recoverable: extension point */
+#endif
             }
         } else {
-            /* In script mode, still reset error flag but don't print */
             if (vm->error) {
+#if EMERGENCY_CONSOLE_ENABLED
                 vm->error = 0;
+#else
+                vm_fault_handler(vm);
+#endif
             }
         }
     }
