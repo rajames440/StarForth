@@ -778,6 +778,12 @@ void starforth_word_version(VM* vm)
     printf("%s\n", STARFORTH_VERSION_FULL);
 }
 
+/* ZUSE-AUTHENTICATE ( -- )  Sets zuse_session=1; C-only write; god-mode bypass */
+static void starforth_word_zuse_authenticate(VM *vm)
+{
+    vm->zuse_session = 1;
+}
+
 /**
  * @brief Register StarForth vocabulary words with the VM
  *
@@ -796,6 +802,7 @@ void register_starforth_words(VM* vm)
     register_word(vm, "SEED", starforth_word_seed);
     register_word(vm, "RANDOM", starforth_word_random);
     register_word(vm, "WAIT", starforth_word_wait);
+    register_word(vm, "ZUSE-AUTHENTICATE", starforth_word_zuse_authenticate);
 
     vm_bootstrap_root_vocabulary(vm, "STARFORTH");
     STARFORTH_CHECK_ARENA("register_starforth_words:post-root");
@@ -812,6 +819,7 @@ void register_starforth_words(VM* vm)
     register_word(vm, "SEED", starforth_word_seed);
     register_word(vm, "RANDOM", starforth_word_random);
     register_word(vm, "WAIT", starforth_word_wait);
+    register_word(vm, "ZUSE-AUTHENTICATE", starforth_word_zuse_authenticate);
 
     vocabulary_word_forth(vm);
     vocabulary_word_definitions(vm);
