@@ -116,7 +116,7 @@ COMMON_CFLAGS := -std=c99 -Wall -Werror -Wextra \
                  $(ARCH_CFLAGS) \
                  -I$(KERNEL_INC) -Iinclude -Isrc -include $(STARFORTH_CONFIG_HEADER) \
                  -DPARITY_MODE=$(PARITY_MODE)
-VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Isrc/test_runner/include -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare -Wno-error=missing-field-initializers
+VMCORE_CFLAGS_COMMON := $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) -Iinclude -I. -Isrc/word_source -Isrc/test_runner/include -Wno-error=unused-parameter -Wno-error=shift-negative-value -Wno-error=sign-compare -Wno-error=missing-field-initializers
 
 # Loader-specific flags
 LOADER_CFLAGS := $(COMMON_CFLAGS) -I$(KERNEL_SRC)/vm
@@ -139,7 +139,8 @@ VM_FEATURE_FLAG_VARS := STRICT_PTR ENABLE_HOTWORDS_CACHE ENABLE_PIPELINING ROLLI
                         HEARTBEAT_TICK_NS HEARTBEAT_INFERENCE_FREQUENCY HEARTBEAT_CHECK_FREQUENCY \
                         HEARTBEAT_WINDOW_TUNING_FREQUENCY HEARTBEAT_SLOPE_VALIDATION_FREQUENCY \
                         SK_PARITY_DEBUG \
-                        HEARTBEAT_DOE_LOG
+                        HEARTBEAT_DOE_LOG \
+                        EMERGENCY_CONSOLE_ENABLED
 
 define add_kernel_vm_flag_if_set
 ifneq ($$(origin $1),undefined)
@@ -203,6 +204,7 @@ LOADER_SRCS_BASE := $(KERNEL_SRC)/boot/uefi_loader.c \
                     $(KERNEL_SRC)/boot/elf_loader.c \
                     $(KERNEL_SRC)/boot/reloc_stub.c \
                     $(KERNEL_SRC)/kernel_main.c \
+                    $(KERNEL_SRC)/repl.c \
                     $(wildcard $(KERNEL_SRC)/hal/*.c) \
                     $(wildcard $(KERNEL_SRC)/memory/*.c) \
                     $(wildcard $(KERNEL_SRC)/math/*.c) \
@@ -229,6 +231,7 @@ endif
 
 # Kernel source files (everything except loader boot files)
 KERNEL_SRCS_BASE := $(KERNEL_SRC)/kernel_main.c \
+                    $(KERNEL_SRC)/repl.c \
                     $(wildcard $(KERNEL_SRC)/hal/*.c) \
                     $(wildcard $(KERNEL_SRC)/memory/*.c) \
                     $(wildcard $(KERNEL_SRC)/math/*.c) \

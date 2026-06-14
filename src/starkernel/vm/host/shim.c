@@ -304,6 +304,15 @@ int memcmp(const void *a, const void *b, size_t n) {
     return 0;
 }
 
+void *memchr(const void *s, int c, size_t n) {
+    const unsigned char *p = s;
+    while (n--) {
+        if (*p == (unsigned char)c) return (void *)p;
+        p++;
+    }
+    return NULL;
+}
+
 size_t strlen(const char *s) {
     size_t n = 0;
     while (s && *s++) n++;
@@ -507,6 +516,7 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) { (void)ptr; (v
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) { (void)ptr; (void)size; (void)nmemb; (void)stream; return 0; }
 int fseek(FILE *stream, long offset, int whence) { (void)stream; (void)offset; (void)whence; return -1; }
 long ftell(FILE *stream) { (void)stream; return 0; }
+void rewind(FILE *stream) { (void)stream; }
 char *fgets(char *s, int size, FILE *stream) { (void)s; (void)size; (void)stream; return NULL; }
 int fputc(int c, FILE *stream) { (void)stream; console_putc((char)c); return c; }
 int fgetc(FILE *stream) { (void)stream; return -1; }
