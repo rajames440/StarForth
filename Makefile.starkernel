@@ -693,13 +693,16 @@ ifeq ($(ARCH),amd64)
 	cp $$CSV $(DOE_LATEST_DIR)/amd64.csv 2>/dev/null || true
 	@echo ""
 	@echo "=== Framebuffer screendump (amd64 acceptance) ==="
-	@bash scripts/qemu_screenshot.sh \
-		"$(LOADER_EFI)" \
-		"$(OVMF_CODE)" \
-		"$(OVMF_VARS_RO)" \
-		"$(BUILD_DIR)" \
-		"$(QEMU_LOG_DIR)" \
-		"$(QEMU_ISO)"
+	@echo "  (screendump disabled — set SCREENSHOT=1 to enable)"
+	@if [ "$(SCREENSHOT)" = "1" ]; then \
+		bash scripts/qemu_screenshot.sh \
+			"$(LOADER_EFI)" \
+			"$(OVMF_CODE)" \
+			"$(OVMF_VARS_RO)" \
+			"$(BUILD_DIR)" \
+			"$(QEMU_LOG_DIR)" \
+			"$(QEMU_ISO)"; \
+	fi
 
 else ifeq ($(ARCH),aarch64)
 	@echo "=== Building ISO (aarch64) ==="
