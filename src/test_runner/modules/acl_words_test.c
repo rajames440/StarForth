@@ -266,6 +266,23 @@ static void test_acl_adaptive_ttl(VM *vm)
     vm->error = 0;
 }
 
+/* Test 8: Pin blocks shadowing — pinned word cannot be redefined by anyone */
+static void test_acl_pin_blocks_shadow(VM *vm)
+{
+    DictEntry *orig = vm_create_word(vm, "__acl_shadow_target__", 21, NULL);
+    if (!orig) { tests_failed++; return; }
+    orig->acl_pinned = 1;
+
+    DictEntry *shadow = vm_create_word(vm, "__acl_shadow_target__", 21, NULL);
+
+    ACL_ASSERT(shadow == NULL,  "vm_create_word returns NULL for pinned name");
+    ACL_ASSERT(vm->error != 0,  "vm->error set when shadow blocked");
+    vm->error = 0;
+
+    DictEntry *found = vm_find_word(vm, "__acl_shadow_target__", 21);
+    ACL_ASSERT(found == orig,   "original pinned entry still found after blocked shadow");
+}
+
 /* ------------------------------------------------------------------ */
 
 void run_acl_words_tests(VM *vm)
@@ -300,6 +317,9 @@ void run_acl_words_tests(VM *vm)
     restore_vm_state(vm, saved_dsp, saved_rsp, 0, saved_mode);
 
     test_acl_adaptive_ttl(vm);
+    restore_vm_state(vm, saved_dsp, saved_rsp, 0, saved_mode);
+
+    test_acl_pin_blocks_shadow(vm);
     restore_vm_state(vm, saved_dsp, saved_rsp, 0, saved_mode);
 
     vm->emergency_console = saved_ec;
