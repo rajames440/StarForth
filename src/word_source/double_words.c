@@ -331,7 +331,7 @@ void double_word_2to_r(VM *vm) {
     if (vm->dsp < 1) { vm->error = 1; return; }
     cell_t dhigh = vm_pop(vm);
     cell_t dlow = vm_pop(vm);
-    if (vm->colon_depth > 0) {
+    if (vm->ecw_nesting > 0) {
         /* Inside execute_colon_word: RS[rsp]=resume_ip; insert dlow,dhigh below it. */
         if (vm->rsp + 2 >= STACK_SIZE) { vm->error = 1; return; }
         cell_t resume_ip = vm->return_stack[vm->rsp];
@@ -348,7 +348,7 @@ void double_word_2to_r(VM *vm) {
 
 /* 2R> ( -- d ) ( R: d -- ) */
 void double_word_2r_from(VM *vm) {
-    if (vm->colon_depth > 0) {
+    if (vm->ecw_nesting > 0) {
         /* Inside execute_colon_word: RS[rsp]=resume_ip, [rsp-1]=dhigh, [rsp-2]=dlow. */
         if (vm->rsp < 2) { vm->error = 1; return; }
         cell_t resume_ip = vm->return_stack[vm->rsp];
@@ -369,7 +369,7 @@ void double_word_2r_from(VM *vm) {
 
 /* 2R@ ( -- d ) ( R: d -- d ) */
 void double_word_2r_fetch(VM *vm) {
-    if (vm->colon_depth > 0) {
+    if (vm->ecw_nesting > 0) {
         /* Inside execute_colon_word: RS[rsp]=resume_ip, [rsp-1]=dhigh, [rsp-2]=dlow. */
         if (vm->rsp < 2) { vm->error = 1; return; }
         vm_push(vm, vm->return_stack[vm->rsp - 2]);

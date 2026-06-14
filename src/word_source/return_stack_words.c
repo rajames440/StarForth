@@ -75,7 +75,7 @@ static void return_stack_word_to_r(VM *vm) {
         return;
     }
     cell_t x = vm_pop(vm);
-    if (vm->colon_depth > 0) {
+    if (vm->ecw_nesting > 0) {
         /* Inside execute_colon_word: RS[rsp] holds the interpreter's resume IP.
          * Insert x below the resume IP so the interpreter sees the correct IP. */
         cell_t resume_ip = vm->return_stack[vm->rsp];
@@ -93,7 +93,7 @@ static void return_stack_word_to_r(VM *vm) {
  * @details Stack effect: ( -- x )
  */
 static void return_stack_word_r_from(VM *vm) {
-    if (vm->colon_depth > 0) {
+    if (vm->ecw_nesting > 0) {
         /* Inside execute_colon_word: RS[rsp]=resume_ip, RS[rsp-1]=user value. */
         if (vm->rsp < 1) {
             vm->error = 1;
@@ -131,7 +131,7 @@ static void return_stack_word_r_from(VM *vm) {
  * @details Stack effect: ( -- x )
  */
 static void return_stack_word_r_fetch(VM *vm) {
-    if (vm->colon_depth > 0) {
+    if (vm->ecw_nesting > 0) {
         /* Inside execute_colon_word: RS[rsp]=resume_ip, RS[rsp-1]=user value. */
         if (vm->rsp < 1) {
             vm->error = 1;
