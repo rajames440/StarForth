@@ -13,5 +13,4 @@ Block 2048
 
 F H
 
-S" ACL.4th" EXEC
-ACL-BOOT
+\ S" ACL.4th" EXEC
