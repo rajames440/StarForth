@@ -19,3 +19,8 @@ session "StarForth" = "HOL-Library" +
     StarForth_Loop7_Heartrate
     StarForth_Concurrent
     StarForth_Correctness
+    ACL_Pin_Monotone
+    ACL_Inherit_Clears_Pin
+    ACL_TTL_Bounded
+    ACL_Emergency_Bypass
+    ACL_No_Escalation
