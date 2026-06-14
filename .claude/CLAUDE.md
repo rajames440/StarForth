@@ -171,6 +171,11 @@ make -f Makefile.starkernel ARCH=aarch64 clean qemu
 make -f Makefile.starkernel ARCH=riscv64 clean qemu
 ```
 
+**QEMU rule — non-negotiable:** Only ONE QEMU instance may run at a time, always in the
+foreground (never backgrounded). All three instances use `accel=tcg` (software emulation);
+concurrent runs compete for host CPU and corrupt the timing signal the DoE measures.
+Run each architecture to completion before starting the next.
+
 Always pass `clean` before `qemu` — never build-only without clean.
 Serial output is automatically captured to:
 ```
