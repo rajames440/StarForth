@@ -414,7 +414,7 @@ static void execute_colon_word_body(VM* vm)
         profiler_word_count(w);
 
         /* ACL two-level check (hot path: decrement TTL; cold path: recheck) */
-        if (w && !vm->emergency_console) {
+        if (w && !vm->emergency_console && !vm->zuse_session) {
             if (w->acl_ttl == 0)
                 acl_recheck(vm, w);
             else
@@ -512,7 +512,7 @@ void vm_interpret_word(VM* vm, const char* word_str, size_t len)
         profiler_word_count(entry);
 
         /* ACL check on outer-interpreter path */
-        if (!vm->emergency_console) {
+        if (!vm->emergency_console && !vm->zuse_session) {
             if (entry->acl_ttl == 0)
                 acl_recheck(vm, entry);
             else
