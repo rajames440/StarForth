@@ -191,10 +191,11 @@ else
 LOADER_BASE_CFLAGS := $(COMMON_CFLAGS)
 endif
 
-HEARTBEAT_DOE_LOG ?= 1
-DOE_INJECT        ?= 1
-DOE_REPS          ?= 3
-DOE_SEED          ?= 12345
+HEARTBEAT_DOE_LOG         ?= 1
+DOE_INJECT                ?= 1
+DOE_REPS                  ?= 3
+DOE_SEED                  ?= 12345
+EMERGENCY_CONSOLE_ENABLED ?= 1
 LOADER_CFLAGS := $(LOADER_BASE_CFLAGS) -I$(KERNEL_SRC)/vm -DHEARTBEAT_DOE_LOG=$(HEARTBEAT_DOE_LOG)
 KERNEL_CFLAGS := $(COMMON_CFLAGS) -D__STARKERNEL__ -I$(KERNEL_SRC)/vm -DHEARTBEAT_DOE_LOG=$(HEARTBEAT_DOE_LOG)
 
@@ -661,24 +662,24 @@ ifeq ($(ARCH),amd64)
 		-display none \
 		-no-reboot & QPID=$$!; \
 	DEADLINE=$$(( $$(date +%s) + 1800 )); \
-	echo "  Waiting for ok> prompt..."; \
-	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
+	echo "  Waiting for ok> / zuse)ok> prompt..."; \
+	while ! grep -qE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null; do \
 		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
 		sleep 1; \
 	done; \
-	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
+	if grep -qE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null; then \
 		if [ "$(DOE_INJECT)" = "1" ]; then \
-			echo "  ok> detected — injecting EXEC-DOE..."; \
+			echo "  ok>/zuse)ok> detected — injecting EXEC-DOE..."; \
 			sleep 0.5; \
 			printf '$(DOE_SEED) $(DOE_REPS) EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 			echo "  Waiting for DoE to complete..."; \
 			DEADLINE2=$$(( $$(date +%s) + 14400 )); \
-			while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			while [ "$$(grep -cE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
 				[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
 				sleep 1; \
 			done; \
 		else \
-			echo "  ok> detected — DOE_INJECT=0, skipping EXEC-DOE injection."; \
+			echo "  ok>/zuse)ok> detected — DOE_INJECT=0, skipping EXEC-DOE injection."; \
 		fi; \
 	fi; \
 	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
@@ -748,24 +749,24 @@ else ifeq ($(ARCH),aarch64)
 		-no-reboot \
 		-d guest_errors & QPID=$$!; \
 	DEADLINE=$$(( $$(date +%s) + 1800 )); \
-	echo "  Waiting for ok> prompt..."; \
-	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
+	echo "  Waiting for ok> / zuse)ok> prompt..."; \
+	while ! grep -qE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null; do \
 		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
 		sleep 1; \
 	done; \
-	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
+	if grep -qE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null; then \
 		if [ "$(DOE_INJECT)" = "1" ]; then \
-			echo "  ok> detected — injecting EXEC-DOE..."; \
+			echo "  ok>/zuse)ok> detected — injecting EXEC-DOE..."; \
 			sleep 0.5; \
 			printf '$(DOE_SEED) $(DOE_REPS) EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 			echo "  Waiting for DoE to complete..."; \
 			DEADLINE2=$$(( $$(date +%s) + 14400 )); \
-			while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			while [ "$$(grep -cE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
 				[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
 				sleep 1; \
 			done; \
 		else \
-			echo "  ok> detected — DOE_INJECT=0, skipping EXEC-DOE injection."; \
+			echo "  ok>/zuse)ok> detected — DOE_INJECT=0, skipping EXEC-DOE injection."; \
 		fi; \
 	fi; \
 	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
@@ -840,24 +841,24 @@ else ifeq ($(ARCH),riscv64)
 		-no-reboot \
 		-d guest_errors & QPID=$$!; \
 	DEADLINE=$$(( $$(date +%s) + 1800 )); \
-	echo "  Waiting for ok> prompt..."; \
-	while ! grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; do \
+	echo "  Waiting for ok> / zuse)ok> prompt..."; \
+	while ! grep -qE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null; do \
 		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
 		sleep 1; \
 	done; \
-	if grep -q '\[Hera\] ok>' $$LOG 2>/dev/null; then \
+	if grep -qE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null; then \
 		if [ "$(DOE_INJECT)" = "1" ]; then \
-			echo "  ok> detected — injecting EXEC-DOE..."; \
+			echo "  ok>/zuse)ok> detected — injecting EXEC-DOE..."; \
 			sleep 0.5; \
 			printf '$(DOE_SEED) $(DOE_REPS) EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 			echo "  Waiting for DoE to complete..."; \
 			DEADLINE2=$$(( $$(date +%s) + 14400 )); \
-			while [ "$$(grep -c '\[Hera\] ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			while [ "$$(grep -cE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
 				[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
 				sleep 1; \
 			done; \
 		else \
-			echo "  ok> detected — DOE_INJECT=0, skipping EXEC-DOE injection."; \
+			echo "  ok>/zuse)ok> detected — DOE_INJECT=0, skipping EXEC-DOE injection."; \
 		fi; \
 	fi; \
 	kill $$QPID 2>/dev/null; wait $$QPID 2>/dev/null || true; \
