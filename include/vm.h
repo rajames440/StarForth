@@ -369,6 +369,7 @@ typedef struct VM
     int ecw_nesting; /**< Depth of execute_colon_word call stack; >0 means inside a colon word */
     volatile int doe_row_printing; /**< Non-zero while EMIT-ROW assembles a row; heartbeat output must defer */
     uint8_t emergency_console; /**< 1 = fault handler active; bypasses all ACL checks (C-only write) */
+    uint8_t zuse_session;      /**< 1 = zuse authenticated at console; shows zuse)ok> prompt */
     /** @} */
 
     /** @name Dictionary Management 

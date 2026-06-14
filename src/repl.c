@@ -73,7 +73,10 @@ void vm_repl(VM *vm, int script_mode) {
     while (!vm->halted && !vm->error) {
         /* Print prompt only in interactive mode */
         if (!script_mode) {
-            printf("\033[36mok>\033[0m \033[92m");
+            if (vm->zuse_session)
+                printf("\033[36mzuse)ok>\033[0m \033[92m");
+            else
+                printf("\033[36mok>\033[0m \033[92m");
             fflush(stdout);
         }
 
