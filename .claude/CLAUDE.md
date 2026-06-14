@@ -352,6 +352,17 @@ format (`capsule_generated.c`) baked into the kernel image.
 - `capsules/ACL.4th` — word-level ACL system; self-activating; contains CA root placeholder
 - `capsules/zuse.4th` — bootstrap superuser; loaded by `ACL.4th` at boot
 
+**MANDATORY: Read before writing capsules.**
+Before writing or modifying any `.4th` capsule file, read `experiments/bare_metal/README.md`
+in full. The block namespace is shared across all loaded capsules; violations cause silent
+word-definition collisions and corrupt the DoE. Block ranges are:
+- `2048–2099` — `init.4th` only
+- `2100–2199` — `doe.4th` only
+- `3000–3999` — workload capsules
+- `4000+` — user-defined capsules (ACL.4th, zuse.4th, etc.)
+Each block header line counts against the 1024-byte limit. Any block exceeding 1024 bytes
+is truncated silently at load time — verify with `wc -c` before committing.
+
 ### Physics-Driven Adaptive Runtime
 
 Uses thermodynamic metaphors as modeling language (see `ONTOLOGY.md`):
