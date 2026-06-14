@@ -88,6 +88,13 @@ ENABLE_HOTWORDS_CACHE ?= 0
 #   NOTE: As of 2025-11-19, all future experiments use both cache and pipelining enabled
 ENABLE_PIPELINING ?= 0
 
+# EMERGENCY_CONSOLE_ENABLED: 1 = REPL recovers from errors and continues (interactive fallthrough)
+#   0 = errors are non-recoverable; REPL exits and vm_fault_handler() is called instead
+#   Default: 1 (dev/recovery builds)
+#   Set EMERGENCY_CONSOLE_ENABLED=0 for production, embedded, or high-security builds
+#   where no interactive fallthrough surface should exist.
+EMERGENCY_CONSOLE_ENABLED ?= 1
+
 # Heartbeat configuration
 # HEARTBEAT_THREAD_ENABLED: 1 = run vm_tick() in background thread (OPTIMAL), 0 = inline (legacy)
 #   Default: 1 (experiments show threaded heartbeat is optimal for adaptive tuning)
@@ -220,7 +227,8 @@ BASE_CFLAGS = -std=c99 -Wall -Werror -Iinclude -Isrc/word_source -Isrc/test_runn
               -DDECAY_RATE_PER_US_Q16=$(DECAY_RATE_PER_US_Q16) \
               -DHEARTBEAT_THREAD_ENABLED=$(HEARTBEAT_THREAD_ENABLED) \
               -DHEARTBEAT_TICK_NS=$(HEARTBEAT_TICK_NS) \
-              -DHEARTBEAT_INFERENCE_FREQUENCY=$(HEARTBEAT_INFERENCE_FREQUENCY)
+              -DHEARTBEAT_INFERENCE_FREQUENCY=$(HEARTBEAT_INFERENCE_FREQUENCY) \
+              -DEMERGENCY_CONSOLE_ENABLED=$(EMERGENCY_CONSOLE_ENABLED)
 
 ifeq ($(HEARTBEAT_THREAD_ENABLED),1)
 ifeq ($(L4RE),1)
