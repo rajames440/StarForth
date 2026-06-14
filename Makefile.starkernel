@@ -674,7 +674,7 @@ ifeq ($(ARCH),amd64)
 			printf '$(DOE_SEED) $(DOE_REPS) EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 			echo "  Waiting for DoE to complete..."; \
 			DEADLINE2=$$(( $$(date +%s) + 14400 )); \
-			while [ "$$(grep -cE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			while [ "$$(grep -cE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null)" -lt 3 ]; do \
 				[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
 				sleep 1; \
 			done; \
@@ -764,7 +764,7 @@ else ifeq ($(ARCH),aarch64)
 			printf '$(DOE_SEED) $(DOE_REPS) EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 			echo "  Waiting for DoE to complete..."; \
 			DEADLINE2=$$(( $$(date +%s) + 14400 )); \
-			while [ "$$(grep -cE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			while [ "$$(grep -cE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null)" -lt 3 ]; do \
 				[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
 				sleep 1; \
 			done; \
@@ -856,7 +856,7 @@ else ifeq ($(ARCH),riscv64)
 			printf '$(DOE_SEED) $(DOE_REPS) EXEC-DOE\n' | socat - UNIX-CONNECT:$$SERIAL_SOCK 2>/dev/null || true; \
 			echo "  Waiting for DoE to complete..."; \
 			DEADLINE2=$$(( $$(date +%s) + 14400 )); \
-			while [ "$$(grep -cE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null)" -lt 2 ]; do \
+			while [ "$$(grep -cE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null)" -lt 3 ]; do \
 				[ $$(date +%s) -ge $$DEADLINE2 ] && echo "  TIMEOUT waiting for DoE" && break; \
 				sleep 1; \
 			done; \
