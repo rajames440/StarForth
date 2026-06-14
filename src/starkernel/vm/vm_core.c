@@ -610,7 +610,7 @@ void execute_colon_word(VM* vm)
     /* L8 FINAL INTEGRATION: Loop always-on */
     DictEntry* prev_word = NULL;
 
-    vm->colon_depth++;
+    vm->ecw_nesting++;
 
     for (;;)
     {
@@ -680,7 +680,7 @@ void execute_colon_word(VM* vm)
         /* Advance IP to next cell and save resume IP on return stack */
         ip = ip + 1;
         vm_rpush(vm, (cell_t)(uintptr_t)ip);
-        if (vm->error) { vm->colon_depth--; return; }
+        if (vm->error) { vm->ecw_nesting--; return; }
 
         /* Execute the word */
         vm->current_executing_entry = w;
@@ -734,13 +734,13 @@ void execute_colon_word(VM* vm)
             vm->heartbeat.check_counter = 0;
         }
 
-        if (vm->error) { vm->colon_depth--; return; }
+        if (vm->error) { vm->ecw_nesting--; return; }
 
         /* Check for ABORT request (clears both stacks, immediate termination) */
         if (vm->abort_requested)
         {
             vm->abort_requested = 0;
-            vm->colon_depth--;
+            vm->ecw_nesting--;
             return;
         }
 
@@ -752,13 +752,13 @@ void execute_colon_word(VM* vm)
             /* CRITICAL: discard the per-step resume IP */
             (void)vm_rpop(vm);
 
-            vm->colon_depth--;
+            vm->ecw_nesting--;
             return;
         }
 
         /* Normal path: resume at IP popped from RS (possibly patched by runtime) */
         ip = (cell_t*)(uintptr_t)vm_rpop(vm);
-        if (vm->error) { vm->colon_depth--; return; }
+        if (vm->error) { vm->ecw_nesting--; return; }
     }
 }
 

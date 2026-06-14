@@ -405,7 +405,7 @@ void execute_colon_word(VM* vm)
 
     DictEntry* prev = NULL;
 
-    vm->colon_depth++;
+    vm->ecw_nesting++;
 
     for (;;)
     {
@@ -433,7 +433,7 @@ void execute_colon_word(VM* vm)
         /* Advance IP and save resume point */
         ip++;
         vm_rpush(vm, (cell_t)(uintptr_t)ip);
-        if (vm->error) { vm->colon_depth--; return; }
+        if (vm->error) { vm->ecw_nesting--; return; }
 
         /* Execute the word */
         vm->current_executing_entry = w;
@@ -457,23 +457,23 @@ void execute_colon_word(VM* vm)
         vm->current_executing_entry = entry;
         prev = w;
 
-        if (vm->error) { vm->colon_depth--; return; }
+        if (vm->error) { vm->ecw_nesting--; return; }
 
         /* ABORT clears stacks and returns immediately */
-        if (vm->abort_requested) { vm->abort_requested = 0; vm->colon_depth--; return; }
+        if (vm->abort_requested) { vm->abort_requested = 0; vm->ecw_nesting--; return; }
 
         /* EXIT discards saved IP and returns */
         if (vm->exit_colon)
         {
             vm->exit_colon = 0;
             (void)vm_rpop(vm);
-            vm->colon_depth--;
+            vm->ecw_nesting--;
             return;
         }
 
         /* Resume at (possibly modified) IP from return stack */
         ip = (cell_t*)(uintptr_t)vm_rpop(vm);
-        if (vm->error) { vm->colon_depth--; return; }
+        if (vm->error) { vm->ecw_nesting--; return; }
     }
 }
 
