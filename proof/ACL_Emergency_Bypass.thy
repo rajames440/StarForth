@@ -3,35 +3,37 @@ theory ACL_Emergency_Bypass
 begin
 
 (* =========================================================================
-   ACL_Emergency_Bypass — emergency_console=True bypasses ALL ACL checks
+   ACL_Emergency_Bypass — emergency_console=True OR zuse_session=True
+                          bypasses ALL ACL checks
 
-   Mirrors: include/vm.h       (VM.emergency_console)
+   Mirrors: include/vm.h       (VM.emergency_console, VM.zuse_session)
             src/vm.c           (execute_colon_word, vm_interpret_word ACL guards)
             src/vm.c           (acl_recheck — sets emergency_console=1 on entry)
+            src/word_source/starforth_words.c (ZUSE-AUTHENTICATE sets zuse_session=1)
+            capsules/zuse.4th  (ACL-ZUSE-BOOT calls ZUSE-AUTHENTICATE)
 
-   When vm->emergency_console = 1, the interpreter skips the ACL check
-   entirely and executes the word unconditionally.  This is used:
-     (a) by acl_recheck() itself to prevent re-entrant ACL calls, and
-     (b) by the physical ok> REPL to allow recovery even if all words
-         are denied.
+   Two bypass conditions exist:
+     (a) emergency_console=1: fault handler / acl_recheck re-entrancy guard;
+         written only by C (acl_recheck, sk_repl); active during error recovery.
+     (b) zuse_session=1: superuser authenticated; written only by the
+         ZUSE-AUTHENTICATE C primitive; grants god-mode — all ACL checks skipped.
 
    ○ CODE-MUST-MATCH: src/vm.c execute_colon_word:
-       if (w && !vm->emergency_console) {
+       if (w && !vm->emergency_console && !vm->zuse_session) {
            if (w->acl_ttl == 0) acl_recheck(vm, w);
            else w->acl_ttl--;
            if (!w->acl_allow) { ... vm->error = 1; return; }
        }
-     When emergency_console is True the entire block is skipped.
 
    ○ CODE-MUST-MATCH: src/vm.c vm_interpret_word:
-       if (!vm->emergency_console) { ... ACL check ... }
+       if (!vm->emergency_console && !vm->zuse_session) { ... ACL check ... }
 
    ○ CODE-MUST-MATCH: src/vm.c acl_recheck():
        uint8_t saved_ec = vm->emergency_console;
        vm->emergency_console = 1;
        ... call ACL-RECHECK ...
        vm->emergency_console = saved_ec;
-     Restores emergency_console on exit to avoid leaking bypass state.
+     Restores emergency_console on exit; does NOT touch zuse_session.
 
    ⚠ HUMAN-REVIEW: Verify that acl_recheck() always restores emergency_console
      to saved_ec even when ACL-RECHECK itself errors (the error-recovery path
@@ -43,10 +45,11 @@ begin
    ======================================================================== *)
 
 (* Model of the two-level ACL check that guards each word execution.
-   Returns True iff execution is permitted.                                *)
+   Returns True iff execution is permitted.
+   Both emergency_console and zuse_session independently bypass all checks. *)
 definition acl_check_permits :: "vm_state \<Rightarrow> dict_entry \<Rightarrow> bool" where
   "acl_check_permits vm e \<longleftrightarrow>
-     emergency_console vm \<or> de_acl_allow e"
+     emergency_console vm \<or> zuse_session vm \<or> de_acl_allow e"
 
 (* =========================================================================
    Section 2: Emergency bypass lemmas
@@ -66,9 +69,41 @@ lemma denied_word_permitted_under_emergency:
    acl_check_permits vm e = True"
   by (simp add: acl_check_permits_def)
 
-(* Without emergency_console, the word's own acl_allow is definitive.      *)
+(* =========================================================================
+   Section 2b: Zuse session bypass lemmas
+   ======================================================================== *)
+
+(* Core guarantee: when zuse_session is True, every word is permitted
+   regardless of its acl_allow field (god-mode).                          *)
+lemma zuse_bypass_unconditional:
+  "zuse_session vm = True \<Longrightarrow>
+   acl_check_permits vm e = True"
+  by (simp add: acl_check_permits_def)
+
+(* Denied word becomes permitted under zuse_session.                       *)
+lemma denied_word_permitted_under_zuse:
+  "zuse_session vm = True \<Longrightarrow>
+   de_acl_allow e = False \<Longrightarrow>
+   acl_check_permits vm e = True"
+  by (simp add: acl_check_permits_def)
+
+(* Either bypass condition alone is sufficient for full permission.        *)
+lemma either_bypass_sufficient:
+  "(emergency_console vm = True \<or> zuse_session vm = True) \<Longrightarrow>
+   acl_check_permits vm e = True"
+  by (simp add: acl_check_permits_def)
+
+(* Without either bypass, the word's own acl_allow is definitive.         *)
+lemma no_bypass_check_follows_allow:
+  "emergency_console vm = False \<Longrightarrow>
+   zuse_session vm = False \<Longrightarrow>
+   acl_check_permits vm e = de_acl_allow e"
+  by (simp add: acl_check_permits_def)
+
+(* Legacy alias kept for backward compatibility with existing proof scripts *)
 lemma no_emergency_check_follows_allow:
   "emergency_console vm = False \<Longrightarrow>
+   zuse_session vm = False \<Longrightarrow>
    acl_check_permits vm e = de_acl_allow e"
   by (simp add: acl_check_permits_def)
 

@@ -323,7 +323,8 @@ record vm_state =
      interpreter loop before each word dispatch.                             *)
   exit_colon    :: bool
   abort_req     :: bool
-  emergency_console :: bool  \<comment> \<open>True = physical ok> REPL; bypasses all ACL checks\<close>
+  emergency_console :: bool  \<comment> \<open>True = physical ok> REPL; bypasses all ACL checks (C-only write)\<close>
+  zuse_session      :: bool  \<comment> \<open>True = zuse authenticated; god-mode bypass (C-only write via ZUSE-AUTHENTICATE)\<close>
 
   (* ── Memory ──────────────────────────────────────────────────────────── *)
   (* ○ CODE-MUST-MATCH: C: uint8_t vm_memory[VM_MEMORY_SIZE]

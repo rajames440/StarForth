@@ -28,9 +28,12 @@ Block 2071
 
 Block 2072
 ( ACL-ZUSE-BOOT ( -- )                                                  )
-( Pins zuse's own capsule words so they cannot be denied or mutated.   )
-( Called at end of this capsule.                                        )
+( Authenticates the zuse session (sets vm->zuse_session=1 via C        )
+( primitive) and pins zuse's own capsule words.  Called at end of      )
+( this capsule.  ZUSE-AUTHENTICATE is a C-only write — no FORTH word   )
+( grants god-mode except through this boot sequence.                   )
 : ACL-ZUSE-BOOT ( -- )
+  ZUSE-AUTHENTICATE
   ' ZUSE-CERT-LO  ACL-PIN
   ' ZUSE-CERT-HI  ACL-PIN
   ' ACL-ZUSE-BOOT ACL-PIN ;
