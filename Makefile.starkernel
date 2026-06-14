@@ -167,7 +167,7 @@ COMMON_CFLAGS := \
 
 VMCORE_CFLAGS_COMMON := \
     $(filter-out -I$(KERNEL_INC),$(COMMON_CFLAGS)) \
-    -Iinclude -I. -Isrc/test_runner/include \
+    -Iinclude -I. -Isrc/word_source -Isrc/test_runner/include \
     -Wno-error=unused-parameter -Wno-error=shift-negative-value \
     -Wno-error=sign-compare -Wno-error=missing-field-initializers
 
@@ -234,7 +234,8 @@ VM_FEATURE_FLAG_VARS := \
     DECAY_RATE_PER_US_Q16 HEARTBEAT_THREAD_ENABLED \
     HEARTBEAT_TICK_NS HEARTBEAT_INFERENCE_FREQUENCY \
     HEARTBEAT_CHECK_FREQUENCY HEARTBEAT_WINDOW_TUNING_FREQUENCY \
-    HEARTBEAT_SLOPE_VALIDATION_FREQUENCY SK_PARITY_DEBUG
+    HEARTBEAT_SLOPE_VALIDATION_FREQUENCY SK_PARITY_DEBUG \
+    EMERGENCY_CONSOLE_ENABLED
 
 VM_FEATURE_OVERRIDES :=
 define add_vm_flag
