@@ -146,6 +146,10 @@ record dict_entry =
   de_heat     :: cell        \<comment> \<open>execution_heat — drives Loop #1 optimization\<close>
   de_word_id  :: nat
   de_physics  :: dict_physics
+  de_acl_ttl     :: nat     \<comment> \<open>acl_ttl: countdown; 0 → ACL-RECHECK\<close>
+  de_acl_allow   :: bool    \<comment> \<open>acl_allow: cached decision (True=allow, False=deny)\<close>
+  de_acl_mode    :: nat     \<comment> \<open>acl_mode: 0=TTL, 1=STRICT\<close>
+  de_acl_pinned  :: bool    \<comment> \<open>acl_pinned: one-way ratchet; True = immutable\<close>
 
 (* ── Word transition metrics ─────────────────────────────────────────────── *)
 (* ○ CODE-MUST-MATCH: struct WordTransitionMetrics in include/physics_pipelining_metrics.h
@@ -319,6 +323,7 @@ record vm_state =
      interpreter loop before each word dispatch.                             *)
   exit_colon    :: bool
   abort_req     :: bool
+  emergency_console :: bool  \<comment> \<open>True = physical ok> REPL; bypasses all ACL checks\<close>
 
   (* ── Memory ──────────────────────────────────────────────────────────── *)
   (* ○ CODE-MUST-MATCH: C: uint8_t vm_memory[VM_MEMORY_SIZE]
