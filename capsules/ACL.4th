@@ -6,6 +6,8 @@ Block 2060
 (               ACL-HEAT@ ACL-WORD-ID ACL-INHERIT ACL-INIT-PRIMITIVES   )
 ( Policy words (this file): ACL-STRICT ACL-TTL-MODE ACL-TTL-COMPUTE     )
 (                            ACL-RECHECK ACL-ENTRY ACL-BOOT             )
+( Self-activating: ACL-BOOT is called at end of capsule; init.4th only  )
+(   needs: S" ACL.4th" EXEC    ← comment out for no-security mode       )
 1 CONSTANT ACL-STRICT-MODE   ( acl_mode value: re-check every execution )
 0 CONSTANT ACL-TTL-MODE-VAL  ( acl_mode value: adaptive TTL countdown   )
 16 CONSTANT ACL-BASE-TTL     ( minimum TTL after first recheck          )
@@ -58,9 +60,9 @@ Block 2064
 
 Block 2065
 ( ACL-BOOT ( -- )                                                       )
-( Called from init.4th after loading ACL.4th. Stamps default ACL on    )
-( all existing dictionary words, then pins privileged words and the ACL )
-( words themselves so they cannot be denied or re-pinned.               )
+( Stamps default ACL on all existing dictionary words, then pins        )
+( privileged words and the ACL words themselves so they cannot be       )
+( denied or re-pinned. Called at capsule load time (Block 2067).        )
 ( BIRTH is omitted: it is a kernel-only word not present in hosted VM.  )
 : ACL-BOOT ( -- )
   ACL-INIT-PRIMITIVES
@@ -69,3 +71,22 @@ Block 2065
   ' ACL-RECHECK        ACL-PIN
   ' ACL-INIT-PRIMITIVES ACL-PIN
   ' ACL-BOOT           ACL-PIN ;
+
+Block 2066
+( CA ROOT — Ed25519 public key of the system certificate authority.     )
+( Embedded here so the capsule hash IS the root-of-trust fingerprint:  )
+( any change to the CA changes the capsule hash and birth-protocol      )
+( rejects the tampered image.                                           )
+( ○ FUTURE: Replace these placeholders with the real 32-byte key at    )
+(   build time via tools/mkcapsule. Format: two 16-bit halves as FORTH  )
+(   constants for portability across cell widths.                       )
+( ⚠ HUMAN-REVIEW: Verify CA key matches build manifest before deploy.  )
+0 CONSTANT ACL-CA-KEY-LO   ( low half of CA Ed25519 public key  )
+0 CONSTANT ACL-CA-KEY-HI   ( high half — placeholder until mkcapsule )
+
+Block 2067
+( Self-activation — runs at capsule load time, not word-definition time )
+( init.4th only needs:  S" ACL.4th" EXEC                               )
+( No-security mode:  comment that line out in init.4th                  )
+ACL-BOOT
+S" zuse.4th" EXEC
