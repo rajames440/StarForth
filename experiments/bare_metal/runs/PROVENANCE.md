@@ -80,6 +80,27 @@ All 9 outer DoE cells complete. Campaign closed 2026-06-12.
 
 ---
 
+## Latin Square Seed D — Seed 54321  (2026-06-14)
+
+Run order: amd64 → riscv64 → aarch64
+
+**Context:** This is the first run using the corrected QEMU termination condition
+(`-lt 3` instead of `-lt 2`). Prior to this fix, the REPL command echo
+(`[Hera] zuse)ok> 54321 30 EXEC-DOE`) bumped the grep count to 2,
+killing QEMU before EXEC-DOE ran. All three arches now produce full 261k-tick runs.
+
+| Arch    | CSV filename                     | Rows    | Wall clock | Log filename                      | Status    |
+|---------|----------------------------------|---------|------------|-----------------------------------|-----------|
+| amd64   | doe-amd64-20260614-212929.csv    | 261,099 | ~43m       | qemu-amd64-20260614-212929.log    | CANONICAL |
+| riscv64 | doe-riscv64-20260614-230220.csv  | 261,096 | ~5m        | qemu-riscv64-20260614-230220.log  | CANONICAL |
+| aarch64 | doe-aarch64-20260614-230803.csv  | 261,096 | ~5m        | qemu-aarch64-20260614-230803.log  | CANONICAL |
+
+All three arches agree at 261,096–261,099 ticks (within 3 ticks of boot-phase
+variation). APIC timer active on amd64 (apic_ticks advancing); riscv64 and
+aarch64 show apic_ticks=0 (APIC not wired for those ISAs in current kernel).
+
+---
+
 ## Superseded Runs (kept for audit trail, NOT used in analysis)
 
 | Arch    | CSV filename                    | Rows    | Date       | Reason superseded                                          |
@@ -104,13 +125,13 @@ for git history, excluded from all analysis.
 
 ## `latest/` Contents (current canonical data)
 
-Points to Rep 3 (most recent complete replication, seed 13579).
+Points to Latin Square Seed D (most recent complete replication, seed 54321).
 
-| File                 | Points to                                   |
-|----------------------|---------------------------------------------|
-| `latest/amd64.csv`   | runs/doe-amd64-20260612-160656.csv (Rep 3)  |
-| `latest/aarch64.csv` | runs/doe-aarch64-20260612-160132.csv (Rep 3)|
-| `latest/riscv64.csv` | runs/doe-riscv64-20260612-174414.csv (Rep 3)|
+| File                 | Points to                                         |
+|----------------------|---------------------------------------------------|
+| `latest/amd64.csv`   | runs/doe-amd64-20260614-212929.csv  (Seed D)      |
+| `latest/aarch64.csv` | runs/doe-aarch64-20260614-230803.csv (Seed D)     |
+| `latest/riscv64.csv` | runs/doe-riscv64-20260614-230220.csv (Seed D)     |
 
-All three files now consistently represent Rep 3 (seed 13579).
-Multi-replication analysis will pool all 9 CSVs across all three seeds.
+All three files represent Latin Square Seed D (seed 54321, 2026-06-14).
+Multi-replication analysis pools all CSVs across seeds 12345, 67890, 13579, 54321.
