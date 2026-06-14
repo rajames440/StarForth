@@ -28,7 +28,7 @@ doc before touching any ACL-related code. Key constraints:
 4. ✅ `init.4th` opt-in toggle — `\ S" ACL.4th" EXEC` (comment out = no security)
 5. ✅ POST tests (800/800) + Isabelle/HOL proofs (5 theory files)
 6. ✅ `EMERGENCY_CONSOLE_ENABLED` build flag + `vm_fault_handler` extension point
-7. ⬜ LithosAnanke parity — port to kernel context, three-arch acceptance
+7. ✅ LithosAnanke parity — port to kernel context, three-arch acceptance (amd64/aarch64/riscv64 boot to `zuse)ok>` with ACL active; 2026-06-14)
 8. ⬜ PKI / thumbdrive — Ed25519 challenge-response; user minting by zuse
 
 ---
@@ -156,6 +156,32 @@ The `fastest` target uses `-flto=auto -fuse-linker-plugin` instead of plain `-fl
 The `--doe` flag runs the full test harness. The CSV metrics row has been **suppressed**
 as of 2025-12-08 (redundant with internal VM metrics). See `src/main.c:390-396`.
 To re-enable, add a `--csv-export` flag or write to a file.
+
+### Kernel via QEMU
+
+**ACCEPTANCE CRITERIA — non-negotiable:**
+The ONLY valid acceptance test for any kernel change is booting all three
+architectures in QEMU and capturing the serial log. There is no other test.
+`make test` (hosted VM) is NEVER used to validate kernel changes.
+
+```bash
+# Run in this exact order for every kernel change:
+make -f Makefile.starkernel ARCH=amd64   clean qemu
+make -f Makefile.starkernel ARCH=aarch64 clean qemu
+make -f Makefile.starkernel ARCH=riscv64 clean qemu
+```
+
+Always pass `clean` before `qemu` — never build-only without clean.
+Serial output is automatically captured to:
+```
+logs2/qemu-amd64-YYYYMMDD-HHMMSS.log
+logs2/qemu-aarch64-YYYYMMDD-HHMMSS.log
+logs2/qemu-riscv64-YYYYMMDD-HHMMSS.log
+```
+These logs are for Captain Bob's manual inspection. Do not delete them.
+`logs2/` is gitignored — logs are local artifacts, not committed to the repo.
+Do not claim a change is accepted until all three architectures have booted
+to `zuse)ok>` and their logs are present in `logs2/`.
 
 ---
 
