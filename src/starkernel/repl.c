@@ -133,25 +133,39 @@ static int sk_readline(char *buf, int size)
  * sk_repl - Emergency FORTH REPL
  *
  * Mirrors vm_repl() from src/repl.c:
- *   - Prints "ok> " prompt
+ *   - Sets vm->emergency_console = 1 for the duration (this IS the emergency
+ *     console; bypasses ACL so zuse authentication is not required to recover)
+ *   - Prints "zuse)ok> " when zuse_session=1, else "ok> "
  *   - Reads a line via sk_readline (non-blocking, heartbeat-serviced)
  *   - Calls vm_interpret
- *   - Prints " ok" or " ERROR" depending on vm->error
- *   - Resets vm->error and loops
+ *   - Prints " ok" or " ERROR"
+ *   - When EMERGENCY_CONSOLE_ENABLED=1: resets vm->error and loops (recovery)
+ *   - When EMERGENCY_CONSOLE_ENABLED=0: halts VM on error (no fallthrough surface)
  *===========================================================================*/
+
+#if !EMERGENCY_CONSOLE_ENABLED
+static void sk_fault_handler(VM *vm) {
+    console_println("VM fault — emergency console disabled; halting");
+    vm->halted = 1;
+}
+#endif
 
 void sk_repl_run(VM *vm)
 {
     char input[256];
     VM  *active;
 
+    vm->emergency_console = 1;  /* this IS the emergency console; bypasses ACL */
     vm->halted = 0;
 
     while (!vm->halted) {
         /* USE may redirect input to a different VM each iteration */
         active = g_repl_active_vm ? g_repl_active_vm : vm;
 
-        console_puts("ok> ");
+        if (active->zuse_session)
+            console_puts("zuse)ok> ");
+        else
+            console_puts("ok> ");
 
         sk_readline(input, sizeof(input));
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "../../include/vm.h"
+#include "vm.h"
 
 /* Register all ACL C primitive words into the VM dictionary */
 void register_acl_words(VM *vm);
