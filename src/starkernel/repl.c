@@ -69,23 +69,38 @@ static int sk_readline(char *buf, int size)
  * sk_repl - Emergency FORTH REPL
  *
  * Mirrors vm_repl() from src/repl.c:
- *   - Prints "ok> " prompt
+ *   - Sets vm->emergency_console = 1 for the duration (this IS the emergency
+ *     console; bypasses ACL so zuse authentication is not required to recover)
+ *   - Prints "zuse)ok> " when zuse_session=1, else "ok> "
  *   - Reads a line via sk_readline
  *   - Calls vm_interpret
- *   - Prints " ok" or " ERROR" depending on vm->error
- *   - Resets vm->error and loops
+ *   - Prints " ok" or " ERROR"
+ *   - When EMERGENCY_CONSOLE_ENABLED=1: resets vm->error and loops (recovery)
+ *   - When EMERGENCY_CONSOLE_ENABLED=0: halts VM on error (no fallthrough surface)
  *===========================================================================*/
+
+#if !EMERGENCY_CONSOLE_ENABLED
+static void sk_fault_handler(VM *vm) {
+    console_println("VM fault — emergency console disabled; halting");
+    vm->halted = 1;
+}
+#endif
 
 void sk_repl(VM *vm)
 {
     char input[256];
+
+    vm->emergency_console = 1;  /* this IS the emergency console */
 
     console_println("StarForth Emergency CLI");
     console_println("FORTH-79 interpreter — type BYE or power off to exit");
     console_println("");
 
     while (!vm->halted) {
-        console_puts("ok> ");
+        if (vm->zuse_session)
+            console_puts("zuse)ok> ");
+        else
+            console_puts("ok> ");
 
         sk_readline(input, sizeof(input));
 
@@ -98,7 +113,11 @@ void sk_repl(VM *vm)
 
         if (vm->error) {
             console_puts(" ERROR\n");
+#if EMERGENCY_CONSOLE_ENABLED
             vm->error = 0;
+#else
+            sk_fault_handler(vm);
+#endif
         } else {
             console_puts(" ok\n");
         }

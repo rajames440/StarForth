@@ -37,6 +37,7 @@
 #include "starkernel/capsule_loader.h"
 #include "starkernel/kmalloc.h"
 #include "starkernel/repl.h"
+#include "vm.h"          /* DictEntry, vm_find_word, ACL_MODE_STRICT */
 #endif
 
 /* Helper: check if memory type is RAM */
@@ -298,6 +299,17 @@ void kernel_main(BootInfo *boot_info) {
                 console_println("Init: init.4th OK");
             } else {
                 console_println("Init: init.4th FAILED");
+            }
+
+            /* Pin kernel-only privileged words that ACL.4th cannot reach
+             * portably (CAPSULE-BIRTH does not exist in the hosted VM).
+             * Done in C after capsule load so ACL.4th stays host-portable. */
+            VM *mama_vm_ptr = (VM *)sk_get_mama_vm();
+            DictEntry *capsule_birth = vm_find_word(mama_vm_ptr, "CAPSULE-BIRTH", 13);
+            if (capsule_birth) {
+                capsule_birth->acl_mode   = ACL_MODE_STRICT;
+                capsule_birth->acl_pinned = 1;
+                console_println("ACL: CAPSULE-BIRTH pinned STRICT");
             }
         }
     }
