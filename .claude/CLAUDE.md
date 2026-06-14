@@ -176,6 +176,11 @@ foreground (never backgrounded). All three instances use `accel=tcg` (software e
 concurrent runs compete for host CPU and corrupt the timing signal the DoE measures.
 Run each architecture to completion before starting the next.
 
+**Session keep-alive:** When running from a mobile device, ping the session every 15–20
+minutes during a QEMU run or the session will idle out. amd64 is particularly slow under
+TCG and is the most likely to outlast a silent interval. Captain Bob must stay engaged
+during long runs (30-rep DoE ≈ 25–30 min per ISA).
+
 Always pass `clean` before `qemu` — never build-only without clean.
 Serial output is automatically captured to:
 ```
