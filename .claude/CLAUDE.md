@@ -28,8 +28,46 @@ doc before touching any ACL-related code. Key constraints:
 4. ✅ `init.4th` opt-in toggle — `\ S" ACL.4th" EXEC` (comment out = no security)
 5. ✅ POST tests (800/800) + Isabelle/HOL proofs (5 theory files)
 6. ✅ `EMERGENCY_CONSOLE_ENABLED` build flag + `vm_fault_handler` extension point
-7. ✅ LithosAnanke parity — port to kernel context, three-arch acceptance (amd64/aarch64/riscv64 boot to `zuse)ok>` with ACL active; 2026-06-14)
+7. ⚠️  LithosAnanke parity — INCOMPLETE. See bugs below.
 8. ⬜ PKI / thumbdrive — Ed25519 challenge-response; user minting by zuse
+
+**BUGS FOUND 2026-06-15 — fix before any further DoE runs:**
+
+### Bug 1 (PRIMARY): Kernel VM has no ACL interpreter hook
+`src/starkernel/vm/vm_core.c` — the `execute_colon_word` loop and primitive
+dispatch have NO ACL check. The fields exist, the capsules load, but the
+hot-path check was never ported from `src/vm.c` (~line 419 colon words,
+~line 517 primitives). All kernel DoE data collected to date ran without
+any ACL enforcement.
+
+**Fix:** Port the ACL check from `src/vm.c` to `src/starkernel/vm/vm_core.c`.
+The bypass condition in the kernel should be `emergency_console` ONLY —
+NOT `zuse_session`. Zuse is an authenticated user; ACL applies to zuse
+(pinned words pass trivially, policy words still run). Only the bare `ok>`
+fault-recovery REPL bypasses ACL.
+
+### Bug 2 (SECONDARY, committed): REPL set emergency_console unconditionally
+`src/starkernel/repl.c:158` — `sk_repl_run()` set `emergency_console=1`
+unconditionally, bypassing ACL even at `zuse)ok>`. Fixed in commit `103a555`:
+`emergency_console` is now set per-iteration as `zuse_session ? 0 : 1`.
+
+### Bug 3 (HOSTED VM): zuse_session also bypasses ACL in src/vm.c
+`src/vm.c:419` and `:517` — hosted VM ACL check is
+`!vm->emergency_console && !vm->zuse_session`. Zuse sessions bypass ACL
+in the hosted VM too. Same fix needed: zuse should be subject to ACL.
+
+**DoE data status:**
+- Old 3×3 (June 12, seeds 12345/67890/13579): no kernel ACL (never wired)
+- Validation run (June 14, seed 54321): no kernel ACL
+- New 3×3 (June 15, seeds 12345/67890/13579): no kernel ACL (Bug 1 not yet fixed)
+- All data is valid as "ACL-fields-present, enforcement-off" baseline
+- A fresh 3×3 is needed after Bug 1 is fixed to get true ACL-active data
+
+**Pick up here next session:**
+1. Fix Bug 1: add ACL check to `src/starkernel/vm/vm_core.c` (mirror `src/vm.c` lines 419, 517)
+2. Fix Bug 3: remove `!vm->zuse_session` bypass from `src/vm.c` ACL checks
+3. Three-arch QEMU boot acceptance (all three must reach `zuse)ok>` without ACL denying capsule load)
+4. Re-run the 3×3 (seeds 12345, 67890, 13579, 30 reps, same run orders) — this will be the first true ACL-active campaign
 
 ---
 
