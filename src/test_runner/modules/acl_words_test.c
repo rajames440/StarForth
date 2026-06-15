@@ -69,9 +69,10 @@ static void test_acl_pin_immutable(VM *vm)
 
     ACL_ASSERT(e->acl_pinned == 1, "ACL-PIN sets acl_pinned=1");
 
-    /* Attempt to change mode — should be ignored */
+    /* Attempt to change mode via ACL-MODE! (C primitive) — should be no-op when pinned */
+    vm_push(vm, (cell_t)ACL_MODE_STRICT);
     vm_push(vm, (cell_t)(uintptr_t)e);
-    vm_interpret(vm, "ACL-STRICT");
+    vm_interpret(vm, "ACL-MODE!");
     vm->error = 0;
 
     ACL_ASSERT(e->acl_mode == ACL_MODE_TTL, "ACL-STRICT is no-op when pinned");
