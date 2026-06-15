@@ -82,7 +82,7 @@ Block 4006
 Block 4007
 ( Self-activation - runs at capsule load time )
 ( init.4th only needs: S" ACL.4th" EXEC      )
-ACL-BOOT
+ACL-BOOT-RW
 S" zuse.4th" EXEC
 
 Block 4010
