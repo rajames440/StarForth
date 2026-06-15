@@ -583,6 +583,38 @@ void vm_exit_compile_mode(VM* vm)
  * the (possibly modified) IP. If a word sets vm->exit_colon, we discard the
  * saved resume IP and return to the caller (one-shot).
  */
+
+/*
+ * acl_recheck — cold-path ACL policy call (TTL expired).
+ * Looks up ACL-RECHECK in the dictionary; if loaded, calls it with
+ * emergency_console=1 so the check itself is never denied.
+ * Fails open if ACL.4th is not yet loaded (early boot).
+ */
+static void acl_recheck(VM *vm, DictEntry *entry)
+{
+    DictEntry *recheck = vm_find_word(vm, "ACL-RECHECK", 11);
+    if (!recheck || !recheck->func) {
+        entry->acl_allow = 1;
+        entry->acl_ttl   = ACL_TTL_OPEN;
+        return;
+    }
+    uint8_t saved_ec = vm->emergency_console;
+    vm->emergency_console = 1;
+    vm_push(vm, (cell_t)(uintptr_t)entry);
+    DictEntry *saved_ce = vm->current_executing_entry;
+    vm->current_executing_entry = recheck;
+    recheck->func(vm);
+    vm->current_executing_entry = saved_ce;
+    vm->emergency_console = saved_ec;
+    if (vm->error) {
+        vm->error = 0;
+        entry->acl_allow = 1;
+        entry->acl_ttl   = ACL_TTL_OPEN;
+        log_message(LOG_WARN, "acl_recheck: ACL-RECHECK errored for '%.*s'; failing open",
+                    (int)entry->name_len, entry->name);
+    }
+}
+
 void execute_colon_word(VM* vm)
 {
     if (!vm || !vm->current_executing_entry) return;
@@ -687,6 +719,23 @@ void execute_colon_word(VM* vm)
 
         /* Track word execution for profiling */
         profiler_word_count(w);
+
+        /* ACL two-level check: hot path decrements TTL; cold path calls ACL-RECHECK.
+         * Bypass only for emergency fault-recovery REPL (bare ok> prompt). */
+        if (w && !vm->emergency_console) {
+            if (w->acl_ttl == 0)
+                acl_recheck(vm, w);
+            else
+                w->acl_ttl--;
+            if (!w->acl_allow) {
+                log_message(LOG_WARN, "ACL: denied '%.*s'", (int)w->name_len, w->name);
+                vm->dsp = -1;
+                vm->rsp = -1;
+                vm->error = 1;
+                vm->ecw_nesting--;
+                return;
+            }
+        }
 
         if (w && w->func)
         {
@@ -823,6 +872,21 @@ void vm_interpret_word(VM* vm, const char* word_str, size_t len)
 
         /* Track word execution for profiling */
         profiler_word_count(entry);
+
+        /* ACL check on outer-interpreter path — bypass only at bare ok> prompt */
+        if (!vm->emergency_console) {
+            if (entry->acl_ttl == 0)
+                acl_recheck(vm, entry);
+            else
+                entry->acl_ttl--;
+            if (!entry->acl_allow) {
+                log_message(LOG_WARN, "ACL: denied '%.*s'", (int)entry->name_len, entry->name);
+                vm->dsp = -1;
+                vm->rsp = -1;
+                vm->error = 1;
+                return;
+            }
+        }
 
         if (entry->func)
         {
