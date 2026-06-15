@@ -155,12 +155,15 @@ void sk_repl_run(VM *vm)
     char input[256];
     VM  *active;
 
-    vm->emergency_console = 1;  /* this IS the emergency console; bypasses ACL */
     vm->halted = 0;
 
     while (!vm->halted) {
         /* USE may redirect input to a different VM each iteration */
         active = g_repl_active_vm ? g_repl_active_vm : vm;
+
+        /* emergency_console bypasses ACL — only active at the bare ok> prompt.
+         * zuse)ok> is authenticated, not emergency: ACL applies normally. */
+        active->emergency_console = active->zuse_session ? 0 : 1;
 
         if (active->zuse_session)
             console_puts("zuse)ok> ");
