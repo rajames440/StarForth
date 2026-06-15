@@ -254,8 +254,8 @@ static void test_acl_adaptive_ttl(VM *vm)
         vm->error = 0;
         if (vm->dsp >= 0) {
             cell_t ttl = vm_pop(vm);
-            /* heat=2560, ttl = 2560/4 + 16 = 640+16 = 656 */
-            ACL_ASSERT(ttl == 656, "ACL-TTL-COMPUTE: heat=2560 → ttl=656");
+            /* heat=2560, ttl = 2560/4 + 256 = 640+256 = 896 */
+            ACL_ASSERT(ttl == 896, "ACL-TTL-COMPUTE: heat=2560 → ttl=896");
         } else {
             tests_failed++;
             log_message(LOG_ERROR, "  FAIL: ACL-TTL-COMPUTE left empty stack");
