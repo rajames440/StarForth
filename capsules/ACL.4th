@@ -10,7 +10,7 @@ Block 4000
 ( Comment out that line in init.4th for no-security mode. )
 1 CONSTANT ACL-STRICT-MODE
 0 CONSTANT ACL-TTL-MODE-VAL
-16 CONSTANT ACL-BASE-TTL
+256 CONSTANT ACL-BASE-TTL
 65535 CONSTANT ACL-MAX-TTL
 
 Block 4001
@@ -33,7 +33,7 @@ Block 4003
 ( ACL-TTL-COMPUTE ( xt -- ttl )                       )
 ( Adaptive TTL from execution heat. Hotter words earn )
 ( a longer TTL so recheck cost is amortised.          )
-( Formula: heat / 4 + ACL-BASE-TTL, cap ACL-MAX-TTL. )
+( Formula: heat/4 + ACL-BASE-TTL (256), cap ACL-MAX-TTL. )
 : ACL-TTL-COMPUTE ( xt -- ttl )
   ACL-HEAT@
   4 /
