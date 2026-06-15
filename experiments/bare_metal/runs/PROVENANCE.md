@@ -123,15 +123,49 @@ for git history, excluded from all analysis.
 
 ---
 
+## New 3×3 Campaign — ACL-Corrected Build  (2026-06-15)
+
+Identical design to the original 3×3 (same seeds, same run orders, 30 reps),
+re-run after two correctness fixes:
+1. ACL.4th and zuse.4th moved to correct block range (4000+)
+2. QEMU termination condition fixed (`-lt 2` → `-lt 3`) so EXEC-DOE runs to completion
+
+### Rep 1 — Seed 12345  (run order: amd64 → aarch64 → riscv64)
+
+| Arch    | CSV filename                     | Rows    | Log filename                      | Status    |
+|---------|----------------------------------|---------|-----------------------------------|-----------|
+| amd64   | doe-amd64-20260614-233623.csv    | 261,099 | qemu-amd64-20260614-233623.log    | CANONICAL |
+| aarch64 | doe-aarch64-20260615-003908.csv  | 261,097 | qemu-aarch64-20260615-003908.log  | CANONICAL |
+| riscv64 | doe-riscv64-20260615-004335.csv  | 261,096 | qemu-riscv64-20260615-004335.log  | CANONICAL |
+
+### Rep 2 — Seed 67890  (run order: riscv64 → aarch64 → amd64)
+
+| Arch    | CSV filename                     | Rows    | Log filename                      | Status    |
+|---------|----------------------------------|---------|-----------------------------------|-----------|
+| riscv64 | doe-riscv64-20260615-004822.csv  | 261,096 | qemu-riscv64-20260615-004822.log  | CANONICAL |
+| aarch64 | doe-aarch64-20260615-005301.csv  | 261,097 | qemu-aarch64-20260615-005301.log  | CANONICAL |
+| amd64   | doe-amd64-20260615-005725.csv    | 261,099 | qemu-amd64-20260615-005725.log    | CANONICAL |
+
+### Rep 3 — Seed 13579  (run order: aarch64 → amd64 → riscv64)
+
+| Arch    | CSV filename                     | Rows    | Log filename                      | Status    |
+|---------|----------------------------------|---------|-----------------------------------|-----------|
+| aarch64 | doe-aarch64-20260615-020020.csv  | 261,097 | qemu-aarch64-20260615-020020.log  | CANONICAL |
+| amd64   | doe-amd64-20260615-020446.csv    | 261,099 | qemu-amd64-20260615-020446.log    | CANONICAL |
+| riscv64 | doe-riscv64-20260615-031059.csv  | 261,096 | qemu-riscv64-20260615-031059.log  | CANONICAL |
+
+All 9 cells complete. New 3×3 campaign closed 2026-06-15.
+
+---
+
 ## `latest/` Contents (current canonical data)
 
-Points to Latin Square Seed D (most recent complete replication, seed 54321).
+Points to new 3×3 Rep 3 (most recent complete replication, seed 13579, ACL-corrected build).
 
-| File                 | Points to                                         |
-|----------------------|---------------------------------------------------|
-| `latest/amd64.csv`   | runs/doe-amd64-20260614-212929.csv  (Seed D)      |
-| `latest/aarch64.csv` | runs/doe-aarch64-20260614-230803.csv (Seed D)     |
-| `latest/riscv64.csv` | runs/doe-riscv64-20260614-230220.csv (Seed D)     |
+| File                 | Points to                                              |
+|----------------------|--------------------------------------------------------|
+| `latest/amd64.csv`   | runs/doe-amd64-20260615-020446.csv   (new 3×3 Rep 3)  |
+| `latest/aarch64.csv` | runs/doe-aarch64-20260615-020020.csv (new 3×3 Rep 3)  |
+| `latest/riscv64.csv` | runs/doe-riscv64-20260615-031059.csv (new 3×3 Rep 3)  |
 
-All three files represent Latin Square Seed D (seed 54321, 2026-06-14).
-Multi-replication analysis pools all CSVs across seeds 12345, 67890, 13579, 54321.
+All three files represent new 3×3 Rep 3 (seed 13579, ACL-corrected build, 2026-06-15).
