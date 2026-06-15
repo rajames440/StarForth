@@ -335,6 +335,11 @@ typedef struct DictEntry
     uint8_t  acl_allow;  /* cached decision: 1=allow 0=deny; default 1 */
     uint8_t  acl_mode;   /* ACL_MODE_TTL=0, ACL_MODE_STRICT=1; default TTL */
     uint8_t  acl_pinned; /* 1=immutable forever; default 0 */
+    /* ACL rolling window — mirrors Loop #2+#3+#6 topology; independent of main RWT */
+    uint32_t acl_rwt[8];      /* ring buffer: heartbeat tick stamps at each ACL-RECHECK */
+    uint8_t  acl_rwt_head;    /* next write slot (0..7) */
+    uint8_t  acl_rwt_count;   /* valid entries filled so far (0..8) */
+    int32_t  acl_rwt_slope;   /* Q8 fixed-point interval slope (positive=heating,negative=cooling) */
     uint32_t word_id; /* Stable dictionary identifier */
     DictPhysics physics; /* Physics properties */
     WordTransitionMetrics* transition_metrics; /* Absolute pointer to metrics */
