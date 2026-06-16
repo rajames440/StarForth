@@ -1160,6 +1160,23 @@ The compudynamic principle --- that adaptive feedback driven by observed
 behaviour converges to a correct attractor regardless of substrate ---
 applies equally to word execution scheduling and to security enforcement.
 
+This reframing extends naturally to an energetic interpretation of the TTL
+itself. If each enforcement check is treated as a discrete quantum of work
+drawn against a per-word budget, then TTL is not merely a counter but a
+measurement of how much budget a word has earned through demonstrated
+behaviour: hot words, having proven low-risk over many calls, settle into a
+low-energy configuration that requires little further expenditure to
+maintain, while cold or newly-introduced words sit high in the potential and
+are checked --- spend energy --- on nearly every call until their behaviour
+is established. The progressive widening of the TTL distribution toward each
+word's natural calling interval (item~3 above) is then the security layer
+settling toward the floor of that potential, the same way the breathing-cycle
+attractor (Section~\ref{sec:discussion}) settles the window width toward the
+work available per tick. Security enforcement, in this view, is not a tax
+levied on top of the substrate's physics; it is one more degree of freedom
+the same compudynamic process drives toward its minimum-energy
+configuration.
+
 %% ═════════════════════════════════════════════════════════════════════════════
 \section{Conclusion}
 \label{sec:conclusion}
