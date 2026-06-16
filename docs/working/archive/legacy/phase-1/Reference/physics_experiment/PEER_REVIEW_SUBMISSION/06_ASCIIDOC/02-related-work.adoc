@@ -1,0 +1,25 @@
+// Moved from docs/archive/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/02-related-work.adoc to docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/02-related-work.adoc on 2026-06-16 (docs reorg Phase 2)
+[[related-work]]
+== Related Work
+
+[TODO: Survey existing literature]
+
+=== Formal Verification of VMs
+
+[TODO: Isabelle/HOL, seL4, etc.]
+
+=== Adaptive Runtime Systems
+
+[TODO: DVFS, JIT, dynamic optimization]
+
+=== FORTH Implementations
+
+[TODO: StarForth, existing FORTH research]
+
+=== Physics-Based Models in Computing
+
+[TODO: Thermal models, execution profiling]
+
+=== Distinguishing Our Contribution
+
+[TODO: What's novel compared to prior work]
