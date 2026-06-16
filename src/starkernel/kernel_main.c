@@ -356,7 +356,7 @@ static void kernel_main_deep(BootInfo *boot_info) {
             }
 
             /* Pin kernel-only privileged words that ACL.4th cannot reach
-             * portably (CAPSULE-BIRTH does not exist in the hosted VM).
+             * portably (BIRTH/CAPSULE-BIRTH do not exist in the hosted VM).
              * Done in C after capsule load so ACL.4th stays host-portable. */
             VM *mama_vm_ptr = (VM *)sk_get_mama_vm();
             DictEntry *capsule_birth = vm_find_word(mama_vm_ptr, "CAPSULE-BIRTH", 13);
@@ -364,6 +364,12 @@ static void kernel_main_deep(BootInfo *boot_info) {
                 capsule_birth->acl_mode   = ACL_MODE_STRICT;
                 capsule_birth->acl_pinned = 1;
                 console_println("ACL: CAPSULE-BIRTH pinned STRICT");
+            }
+            DictEntry *birth = vm_find_word(mama_vm_ptr, "BIRTH", 5);
+            if (birth) {
+                birth->acl_mode   = ACL_MODE_STRICT;
+                birth->acl_pinned = 1;
+                console_println("ACL: BIRTH pinned STRICT");
             }
         }
     }
