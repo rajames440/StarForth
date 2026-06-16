@@ -1,0 +1,11 @@
+// Moved from docs/archive/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/04-results.adoc to docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/04-results.adoc on 2026-06-16 (docs reorg Phase 2)
+[[results]]
+== Results
+
+include::02-formal-theorems.adoc[leveloffset=+1]
+
+include::05-convergence-proof.adoc[leveloffset=+1]
+
+include::06-stability-proof.adoc[leveloffset=+1]
+
+include::07-predictability-bounds.adoc[leveloffset=+1]
