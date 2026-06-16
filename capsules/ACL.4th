@@ -59,7 +59,9 @@ Block 4005
 ( ACL-BOOT ( -- )                                     )
 ( Stamps default ACL on all existing dict words, then )
 ( pins privileged words and ACL words themselves.     )
-( BIRTH is omitted: kernel-only, not in hosted VM.    )
+( BIRTH/CAPSULE-BIRTH are omitted: kernel-only, not in )
+( hosted VM. Pinned in C (kernel_main.c) after capsule )
+( load instead, so this file stays host-portable.      )
 : ACL-BOOT ( -- )
   ACL-INIT-PRIMITIVES
   ' EXEC   ACL-STRICT  ' EXEC   ACL-PIN
