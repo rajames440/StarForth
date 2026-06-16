@@ -824,7 +824,7 @@ confirmed under three independent shuffle seeds.
 
 Following the baseline campaign, a word-level access control system was added
 to LithosAnanke via the \texttt{capsules/ACL.4th} capsule.  The design
-principle mirrors the rest of the \SF\ architecture: \emph{all policy logic
+principle mirrors the rest of the StarForth architecture: \emph{all policy logic
 lives in FORTH; the C layer provides only the hot-path counter and field
 accessors.}  Four fields are added to each dictionary entry
 (\texttt{DictEntry}): a 32-bit TTL countdown (\texttt{acl\_ttl}), a cached
@@ -910,6 +910,24 @@ $16\times$ to $\approx\!4$\,\% (Table~\ref{tab:acl_floor256}), confirming the
 model, but a static floor cannot close the gap without prior knowledge of each
 word's call rate.
 
+\begin{figure}[ht]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_isa_gap_light}
+  \caption{Light theme}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_isa_gap_dark}
+  \caption{Dark theme}
+\end{subfigure}
+\caption{ISA gap at Floor~=~16: per-seed tick counts per architecture.
+  All three amd64 seeds cluster near the 261\,307 baseline.
+  Both RISC ISAs reach 422\,000--439\,000~ticks: a $62$--$68$\,\% overhead.
+  The scatter confirms the gap is reproducible across seeds and is a
+  structural property of the static-floor policy under TCG emulation.}
+\label{fig:acl_isa_gap}
+\end{figure}
+
 \begin{table}[h!]
 \centering
 \caption{ACL-active campaign: ACL-BASE-TTL~=~256 (partial data, 2 seeds each ISA).}
@@ -928,6 +946,24 @@ riscv64 & 12345 & 272725 & $+11\,630$ & $+4.45\,\%$  \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[ht]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_overhead_reduction_light}
+  \caption{Light theme}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_overhead_reduction_dark}
+  \caption{Dark theme}
+\end{subfigure}
+\caption{Overhead reduction trajectory across TTL policies.
+  Each point is the mean overhead across available seeds for that ISA and policy.
+  Raising the floor from 16 to 256 reduces RISC overhead by $\approx\!16\times$.
+  ACL-RWT eliminates the remaining gap: all three ISAs converge to
+  $< 0.01$\,\%, three orders of magnitude below Floor~=~16.}
+\label{fig:acl_overhead_reduction}
+\end{figure}
 
 \subsection{The ACL Rolling Window of Truth}
 \label{sec:acl_rwt}
@@ -1022,63 +1058,71 @@ relative to the no-ACL baseline.  The coefficient of variation across
 all nine cells is 0.000\,\% for execution rate (the SSM absorbs the
 ACL cost into its normal feedback), matching the baseline result.
 
+\begin{figure}[ht]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_latin_square_light}
+  \caption{Light theme}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_latin_square_dark}
+  \caption{Dark theme}
+\end{subfigure}
+\caption{$3\times3$ Latin-square heatmap of ACL-RWT tick counts.
+  Cell colour encodes measured ticks (colour scale spanning the full 261\,112--261\,118
+  range).  The tight clustering confirms that neither seed nor ISA introduces
+  systematic variation: all nine cells are effectively identical at the tick scale.}
+\label{fig:acl_latin_square}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_tick_comparison_light}
+  \caption{Light theme}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_tick_comparison_dark}
+  \caption{Dark theme}
+\end{subfigure}
+\caption{Baseline vs.\ ACL-RWT tick counts per ISA and seed (zoomed Y axis).
+  Baseline tick counts (open symbols) and ACL-RWT tick counts (filled symbols)
+  are plotted on a narrow Y range.  The gap between baseline and ACL-RWT is
+  $\leq 23$~ticks regardless of ISA or seed: a $+0.009$\,\% upper bound.}
+\label{fig:acl_tick_comparison}
+\end{figure}
+
 \subsection{Overhead Comparison Chart}
 \label{sec:acl_chart}
 
 Figure~\ref{fig:acl_overhead} presents the mean overhead per ISA across
 the three campaigns on a $\log_{10}$ scale, demonstrating three orders of
 magnitude of overhead reduction from Floor~=~16 to ACL-RWT.
-
-\definecolor{col16}{RGB}{214,39,40}
-\definecolor{col256}{RGB}{255,127,14}
-\definecolor{colrwt}{RGB}{44,160,44}
+Figures~\ref{fig:acl_isa_gap}--\ref{fig:acl_tick_comparison} provide
+complementary views: the per-seed scatter at Floor~=~16 (Figure~\ref{fig:acl_isa_gap}),
+the reduction trajectory across all three policies
+(Figure~\ref{fig:acl_overhead_reduction}), and the $3\times3$ Latin-square
+heatmap and baseline comparison for the ACL-RWT campaign
+(Figures~\ref{fig:acl_latin_square}--\ref{fig:acl_tick_comparison}).
 
 \begin{figure}[ht]
 \centering
-\begin{tikzpicture}
-\begin{axis}[
-    ybar,
-    bar width=0.22cm,
-    width=0.88\textwidth,
-    height=7.5cm,
-    ymode=log,
-    log basis y=10,
-    ymin=0.001, ymax=200,
-    ytick={0.001,0.01,0.1,1,10,100},
-    yticklabels={$0.001\,\%$,$0.01\,\%$,$0.1\,\%$,$1\,\%$,$10\,\%$,$100\,\%$},
-    ylabel={Overhead (\%, log scale)},
-    symbolic x coords={amd64,aarch64,riscv64},
-    xtick=data,
-    x tick label style={font=\small},
-    legend style={at={(0.5,-0.18)},anchor=north,legend columns=3,
-                  font=\small, draw=none},
-    enlarge x limits=0.25,
-    grid=major,
-    grid style={dotted,gray!40},
-    title={ACL Enforcement Overhead by ISA and TTL Policy},
-    title style={font=\small\bfseries},
-]
-% Floor = 16
-\addplot[fill=col16,draw=col16!80!black]
-    coordinates {(amd64,0.080) (aarch64,64.3) (riscv64,67.0)};
-% Floor = 256
-\addplot[fill=col256,draw=col256!80!black]
-    coordinates {(amd64,0.031) (aarch64,3.96) (riscv64,4.45)};
-% ACL-RWT
-\addplot[fill=colrwt,draw=colrwt!80!black]
-    coordinates {(amd64,0.0055) (aarch64,0.0087) (riscv64,0.0085)};
-\legend{Floor\,=\,16 (mean of 3 seeds),
-        Floor\,=\,256 (partial data),
-        ACL-RWT (mean of 3 seeds)}
-\end{axis}
-\end{tikzpicture}
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_overhead_bar_light}
+  \caption{Light theme}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \includegraphics[width=\textwidth]{acl_overhead_bar_dark}
+  \caption{Dark theme}
+\end{subfigure}
 \caption{Mean ACL enforcement overhead (\%, $\log_{10}$ scale) per ISA and
   policy.  Floor~=~16 exposes a dramatic ISA gap ($800\times$ between
   \textsc{amd64} and \textsc{aarch64}/\textsc{riscv64}) caused by
   architecture-specific cold-word heat profiles under TCG emulation.
   Raising the floor to 256 reduces RISC overhead by $16\times$~($\approx\!4$\,\%).
   ACL-RWT closes the gap entirely: all three architectures converge to
-  $+0.005$--$+0.009$\,\%, a reduction of three orders of magnitude vs.\ Floor~=~16.}
+  $+0.005$--$+0.009$\,\%, a reduction of three orders of magnitude vs.\ Floor~=~16.
+  Data from confirmed measured tick counts; no extrapolation.}
 \label{fig:acl_overhead}
 \end{figure}
 

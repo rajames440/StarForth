@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' width='864.00pt' height='504.00pt' viewBox='0 0 864.00 504.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw4NjQuMDB8MC4wMHw1MDQuMDA='>
+    <rect x='0.00' y='0.00' width='864.00' height='504.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw4NjQuMDB8MC4wMHw1MDQuMDA=)'>
+<rect x='0.00' y='0.00' width='864.00' height='504.00' style='stroke-width: 1.07; stroke: none; fill: #0D0D0D;' />
+</g>
+<defs>
+  <clipPath id='cpNTguNDF8NzUyLjE2fDU0LjMyfDQ3MC4yMw=='>
+    <rect x='58.41' y='54.32' width='693.75' height='415.91' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNTguNDF8NzUyLjE2fDU0LjMyfDQ3MC4yMw==)'>
+<rect x='58.41' y='54.32' width='693.75' height='415.91' style='stroke-width: 1.07; stroke: none; fill: #0D0D0D;' />
+<polyline points='58.41,428.09 752.16,428.09 ' style='stroke-width: 1.07; stroke: #1E1E1E; stroke-linecap: butt;' />
+<polyline points='58.41,335.34 752.16,335.34 ' style='stroke-width: 1.07; stroke: #1E1E1E; stroke-linecap: butt;' />
+<polyline points='58.41,242.60 752.16,242.60 ' style='stroke-width: 1.07; stroke: #1E1E1E; stroke-linecap: butt;' />
+<polyline points='58.41,149.85 752.16,149.85 ' style='stroke-width: 1.07; stroke: #1E1E1E; stroke-linecap: butt;' />
+<polyline points='58.41,57.10 752.16,57.10 ' style='stroke-width: 1.07; stroke: #1E1E1E; stroke-linecap: butt;' />
+<polyline points='188.49,470.23 188.49,54.32 ' style='stroke-width: 1.07; stroke: #1E1E1E; stroke-linecap: butt;' />
+<polyline points='405.28,470.23 405.28,54.32 ' style='stroke-width: 1.07; stroke: #1E1E1E; stroke-linecap: butt;' />
+<polyline points='622.08,470.23 622.08,54.32 ' style='stroke-width: 1.07; stroke: #1E1E1E; stroke-linecap: butt;' />
+<polyline points='188.49,344.31 405.28,382.00 622.08,451.32 ' style='stroke-width: 2.35; stroke: #E07B39; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<polyline points='188.49,74.89 405.28,187.13 622.08,433.79 ' style='stroke-width: 2.35; stroke: #4A90D9; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<polyline points='188.49,73.22 405.28,182.42 622.08,434.39 ' style='stroke-width: 2.35; stroke: #50C878; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<circle cx='188.49' cy='344.31' r='5.33' style='stroke-width: 2.13; stroke: none; fill: #E07B39;' />
+<circle cx='188.49' cy='74.89' r='5.33' style='stroke-width: 2.13; stroke: none; fill: #4A90D9;' />
+<circle cx='188.49' cy='73.22' r='5.33' style='stroke-width: 2.13; stroke: none; fill: #50C878;' />
+<circle cx='405.28' cy='382.00' r='5.33' style='stroke-width: 2.13; stroke: #E07B39;' />
+<circle cx='405.28' cy='187.13' r='5.33' style='stroke-width: 2.13; stroke: #4A90D9;' />
+<circle cx='405.28' cy='182.42' r='5.33' style='stroke-width: 2.13; stroke: #50C878;' />
+<circle cx='622.08' cy='451.32' r='5.33' style='stroke-width: 2.13; stroke: none; fill: #E07B39;' />
+<circle cx='622.08' cy='433.79' r='5.33' style='stroke-width: 2.13; stroke: none; fill: #4A90D9;' />
+<circle cx='622.08' cy='434.39' r='5.33' style='stroke-width: 2.13; stroke: none; fill: #50C878;' />
+<text x='188.49' y='338.51' text-anchor='middle' style='font-size: 7.97px; font-weight: bold;fill: #E07B39; font-family: "Liberation Sans";' textLength='38.68px' lengthAdjust='spacingAndGlyphs'>0.0800%</text>
+<text x='188.49' y='69.08' text-anchor='middle' style='font-size: 7.97px; font-weight: bold;fill: #4A90D9; font-family: "Liberation Sans";' textLength='27.60px' lengthAdjust='spacingAndGlyphs'>64.3%</text>
+<text x='188.49' y='67.42' text-anchor='middle' style='font-size: 7.97px; font-weight: bold;fill: #50C878; font-family: "Liberation Sans";' textLength='27.60px' lengthAdjust='spacingAndGlyphs'>67.0%</text>
+<text x='405.28' y='376.19' text-anchor='middle' style='font-size: 7.97px; font-weight: bold;fill: #E07B39; font-family: "Liberation Sans";' textLength='38.68px' lengthAdjust='spacingAndGlyphs'>0.0314%</text>
+<text x='405.28' y='181.32' text-anchor='middle' style='font-size: 7.97px; font-weight: bold;fill: #4A90D9; font-family: "Liberation Sans";' textLength='22.07px' lengthAdjust='spacingAndGlyphs'>4.0%</text>
+<text x='405.28' y='176.62' text-anchor='middle' style='font-size: 7.97px; font-weight: bold;fill: #50C878; font-family: "Liberation Sans";' textLength='22.07px' lengthAdjust='spacingAndGlyphs'>4.5%</text>
+<text x='622.08' y='445.52' text-anchor='middle' style='font-size: 7.97px; font-weight: bold;fill: #E07B39; font-family: "Liberation Sans";' textLength='38.68px' lengthAdjust='spacingAndGlyphs'>0.0056%</text>
+<text x='622.08' y='427.99' text-anchor='middle' style='font-size: 7.97px; font-weight: bold;fill: #4A90D9; font-family: "Liberation Sans";' textLength='38.68px' lengthAdjust='spacingAndGlyphs'>0.0087%</text>
+<text x='622.08' y='428.58' text-anchor='middle' style='font-size: 7.97px; font-weight: bold;fill: #50C878; font-family: "Liberation Sans";' textLength='38.68px' lengthAdjust='spacingAndGlyphs'>0.0086%</text>
+</g>
+<g clip-path='url(#cpMC4wMHw4NjQuMDB8MC4wMHw1MDQuMDA=)'>
+<text x='53.48' y='432.10' text-anchor='end' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='34.95px' lengthAdjust='spacingAndGlyphs'>0.01%</text>
+<text x='53.48' y='339.35' text-anchor='end' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='27.95px' lengthAdjust='spacingAndGlyphs'>0.1%</text>
+<text x='53.48' y='246.61' text-anchor='end' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='17.45px' lengthAdjust='spacingAndGlyphs'>1%</text>
+<text x='53.48' y='153.86' text-anchor='end' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='24.45px' lengthAdjust='spacingAndGlyphs'>10%</text>
+<text x='53.48' y='61.11' text-anchor='end' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='31.45px' lengthAdjust='spacingAndGlyphs'>100%</text>
+<text x='188.49' y='483.18' text-anchor='middle' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='57.59px' lengthAdjust='spacingAndGlyphs'>Floor = 16</text>
+<text x='405.28' y='483.18' text-anchor='middle' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='64.58px' lengthAdjust='spacingAndGlyphs'>Floor = 256</text>
+<text x='622.08' y='483.18' text-anchor='middle' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='49.71px' lengthAdjust='spacingAndGlyphs'>ACL-RWT</text>
+<text x='405.28' y='496.23' text-anchor='middle' style='font-size: 11.00px;fill: #CCCCCC; font-family: "Liberation Sans";' textLength='54.52px' lengthAdjust='spacingAndGlyphs'>TTL Policy</text>
+<text transform='translate(13.50,262.27) rotate(-90)' text-anchor='middle' style='font-size: 11.00px;fill: #CCCCCC; font-family: "Liberation Sans";' textLength='221.39px' lengthAdjust='spacingAndGlyphs'>Mean overhead vs. baseline (%, log......)</text>
+<rect x='763.12' y='194.61' width='75.38' height='69.27' style='stroke-width: 1.07; stroke: none; fill: #0D0D0D;' />
+<text x='800.81' y='209.26' text-anchor='middle' style='font-size: 11.00px;fill: #CCCCCC; font-family: "Liberation Sans";' textLength='17.96px' lengthAdjust='spacingAndGlyphs'>ISA</text>
+<line x1='770.01' y1='222.97' x2='781.35' y2='222.97' style='stroke-width: 2.35; stroke: #E07B39; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<circle cx='775.68' cy='222.97' r='5.33' style='stroke-width: 2.13; stroke: #E07B39; fill: #E07B39;' />
+<line x1='770.01' y1='237.14' x2='781.35' y2='237.14' style='stroke-width: 2.35; stroke: #4A90D9; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<circle cx='775.68' cy='237.14' r='5.33' style='stroke-width: 2.13; stroke: #4A90D9; fill: #4A90D9;' />
+<line x1='770.01' y1='251.31' x2='781.35' y2='251.31' style='stroke-width: 2.35; stroke: #50C878; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<circle cx='775.68' cy='251.31' r='5.33' style='stroke-width: 2.13; stroke: #50C878; fill: #50C878;' />
+<text x='788.25' y='226.98' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='38.43px' lengthAdjust='spacingAndGlyphs'>amd64</text>
+<text x='788.25' y='241.15' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='44.77px' lengthAdjust='spacingAndGlyphs'>aarch64</text>
+<text x='788.25' y='255.32' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='39.87px' lengthAdjust='spacingAndGlyphs'>riscv64</text>
+<rect x='763.12' y='274.84' width='95.40' height='55.10' style='stroke-width: 1.07; stroke: none; fill: #0D0D0D;' />
+<text x='810.82' y='289.48' text-anchor='middle' style='font-size: 11.00px;fill: #CCCCCC; font-family: "Liberation Sans";' textLength='80.83px' lengthAdjust='spacingAndGlyphs'>Data coverage</text>
+<circle cx='775.68' cy='303.19' r='5.33' style='stroke-width: 2.13; stroke: none; fill: #000000;' />
+<circle cx='775.68' cy='317.37' r='5.33' style='stroke-width: 2.13;' />
+<text x='788.25' y='307.21' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='64.79px' lengthAdjust='spacingAndGlyphs'>Full 3 seeds</text>
+<text x='788.25' y='321.38' style='font-size: 11.00px;fill: #AAAAAA; font-family: "Liberation Sans";' textLength='62.84px' lengthAdjust='spacingAndGlyphs'>Partial data</text>
+<text x='405.28' y='24.22' text-anchor='middle' style='font-size: 9.00px;fill: #666666; font-family: "Liberation Sans";' textLength='235.80px' lengthAdjust='spacingAndGlyphs'>Three ISAs .. three TTL policies. Y-axis: log...... scale.</text>
+<text x='405.28' y='33.94' text-anchor='middle' style='font-size: 9.00px;fill: #666666; font-family: "Liberation Sans";' textLength='336.69px' lengthAdjust='spacingAndGlyphs'>Open circles = partial data (fewer seeds). Lines connect measured means.</text>
+<text x='405.28' y='43.66' text-anchor='middle' style='font-size: 9.00px;fill: #666666; font-family: "Liberation Sans";' textLength='344.51px' lengthAdjust='spacingAndGlyphs'>Floor = 16 ... Floor = 256: 16.. reduction (theoretical: 12/(256+12) ... 4.5%).</text>
+<text x='405.28' y='53.38' text-anchor='middle' style='font-size: 9.00px;fill: #666666; font-family: "Liberation Sans";' textLength='310.95px' lengthAdjust='spacingAndGlyphs'>Floor = 256 ... ACL-RWT: &gt;400.. additional reduction. ISA gap closed.</text>
+<text x='405.28' y='15.48' text-anchor='middle' style='font-size: 12.00px; font-weight: bold;fill: #FFFFFF; font-family: "Liberation Sans";' textLength='423.21px' lengthAdjust='spacingAndGlyphs'>ACL Enforcement Overhead Reduction Across Mitigation Steps</text>
+</g>
+</svg>
