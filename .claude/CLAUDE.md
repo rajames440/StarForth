@@ -6,11 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## Word-Level ACL System — Implemented
+## Word-Level ACL System — Complete through Phase 7
 
 **Design doc:** `docs/03-architecture/word-acl/DESIGN.md`
 
-The word-level ACL system is implemented through Phase 6. Read the design
+The word-level ACL system is fully implemented and validated. Read the design
 doc before touching any ACL-related code. Key constraints:
 
 - All policy logic in `ACL.4th` — no new C primitives for policy
@@ -20,6 +20,7 @@ doc before touching any ACL-related code. Key constraints:
 - Pin (`ACL-PIN`) is one-way; inheritance clears pin, copies mode
 - Two permanent console layers: emergency (`ok>`) and zuse (`zuse)ok>`)
 - Superuser `zuse` defined by `capsules/zuse.4th`, loaded by `ACL.4th` at boot
+- `emergency_console` bypass applies ONLY to bare `ok>` REPL — zuse sessions are subject to ACL
 
 **Implementation phases:**
 1. ✅ C Infrastructure — `DictEntry` fields + interpreter hook + `acl_recheck()`
@@ -28,46 +29,26 @@ doc before touching any ACL-related code. Key constraints:
 4. ✅ `init.4th` opt-in toggle — `\ S" ACL.4th" EXEC` (comment out = no security)
 5. ✅ POST tests (800/800) + Isabelle/HOL proofs (5 theory files)
 6. ✅ `EMERGENCY_CONSOLE_ENABLED` build flag + `vm_fault_handler` extension point
-7. ⚠️  LithosAnanke parity — INCOMPLETE. See bugs below.
+7. ✅ LithosAnanke parity — kernel ACL hook wired; all three ISAs boot to `zuse)ok>` (confirmed in log)
 8. ⬜ PKI / thumbdrive — Ed25519 challenge-response; user minting by zuse
 
-**BUGS FOUND 2026-06-15 — fix before any further DoE runs:**
+**Bug resolutions (all fixed, branch `feature/acl-rwt`):**
+- Bug 1 ✅: Kernel ACL interpreter hook ported to `src/starkernel/vm/vm_core.c`
+- Bug 2 ✅: `emergency_console` set per-iteration in `src/starkernel/repl.c` (`zuse_session ? 0 : 1`)
+- Bug 3 ✅: `!vm->zuse_session` bypass removed from `src/vm.c` ACL checks
 
-### Bug 1 (PRIMARY): Kernel VM has no ACL interpreter hook
-`src/starkernel/vm/vm_core.c` — the `execute_colon_word` loop and primitive
-dispatch have NO ACL check. The fields exist, the capsules load, but the
-hot-path check was never ported from `src/vm.c` (~line 419 colon words,
-~line 517 primitives). All kernel DoE data collected to date ran without
-any ACL enforcement.
-
-**Fix:** Port the ACL check from `src/vm.c` to `src/starkernel/vm/vm_core.c`.
-The bypass condition in the kernel should be `emergency_console` ONLY —
-NOT `zuse_session`. Zuse is an authenticated user; ACL applies to zuse
-(pinned words pass trivially, policy words still run). Only the bare `ok>`
-fault-recovery REPL bypasses ACL.
-
-### Bug 2 (SECONDARY, committed): REPL set emergency_console unconditionally
-`src/starkernel/repl.c:158` — `sk_repl_run()` set `emergency_console=1`
-unconditionally, bypassing ACL even at `zuse)ok>`. Fixed in commit `103a555`:
-`emergency_console` is now set per-iteration as `zuse_session ? 0 : 1`.
-
-### Bug 3 (HOSTED VM): zuse_session also bypasses ACL in src/vm.c
-`src/vm.c:419` and `:517` — hosted VM ACL check is
-`!vm->emergency_console && !vm->zuse_session`. Zuse sessions bypass ACL
-in the hosted VM too. Same fix needed: zuse should be subject to ACL.
-
-**DoE data status:**
-- Old 3×3 (June 12, seeds 12345/67890/13579): no kernel ACL (never wired)
-- Validation run (June 14, seed 54321): no kernel ACL
-- New 3×3 (June 15, seeds 12345/67890/13579): no kernel ACL (Bug 1 not yet fixed)
-- All data is valid as "ACL-fields-present, enforcement-off" baseline
-- A fresh 3×3 is needed after Bug 1 is fixed to get true ACL-active data
+**ACL-RWT DoE campaign (branch `feature/acl-rwt`, June 15–16 2026):**
+- 3×3 Latin square: seeds 12345/67890/13579 × amd64/aarch64/riscv64, 30 reps each
+- This IS the first true ACL-active campaign (Bug 1 fixed before runs)
+- Results: +0.0054%–+0.0088% overhead across all 9 cells; CV = 0.000%
+- ISA gap closed: ACL-RWT vs Floor=16 is three orders of magnitude improvement
+- Baseline (no ACL): amd64=261,098 ticks; aarch64/riscv64=261,095 ticks
+- Report: `experiments/bare_metal/analysis/report/bare_metal_doe_report.pdf` (19 pages)
+  - 5 R-generated vector figure pairs (10 SVGs via ggplot2/svglite)
+  - All data from confirmed measured tick counts — patent support material
 
 **Pick up here next session:**
-1. Fix Bug 1: add ACL check to `src/starkernel/vm/vm_core.c` (mirror `src/vm.c` lines 419, 517)
-2. Fix Bug 3: remove `!vm->zuse_session` bypass from `src/vm.c` ACL checks
-3. Three-arch QEMU boot acceptance (all three must reach `zuse)ok>` without ACL denying capsule load)
-4. Re-run the 3×3 (seeds 12345, 67890, 13579, 30 reps, same run orders) — this will be the first true ACL-active campaign
+1. Phase 8 — PKI / Ed25519 thumbdrive (challenge-response; user minting by zuse)
 
 ---
 
