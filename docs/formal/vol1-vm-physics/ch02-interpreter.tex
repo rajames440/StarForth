@@ -1,0 +1,79 @@
+%% Vol I, Chapter 2 — FORTH-79 Interpreter
+%% SOURCE: .claude/CLAUDE.md (Architecture → Source Tree, Memory Model, Key Data Structures)
+%%         docs/working/scratch/src/architecture-internals/INIT_SYSTEM.adoc
+%%         docs/working/scratch/src/build-and-tooling/BUILD_OPTIONS.adoc
+
+\chapter{FORTH-79 Interpreter}
+\label{vol1:chap:interpreter}
+
+%% TODO(bob): introductory paragraph — StarForth implements FORTH-79 with
+%% explicit extensions for the adaptive runtime; all extensions are backwards-
+%% compatible with standard FORTH-79.
+
+\section{Memory Model}
+\label{vol1:sec:interp:memory}
+
+%% TODO(bob): describe the VM address space and the canonical accessors.
+%% Key facts from .claude/CLAUDE.md (Memory Model):
+%%   - vaddr_t — VM addresses are byte offsets, not C pointers
+%%   - vm_load_cell() / vm_store_cell() — canonical accessors
+%%   - VM_ADDR(cell) / CELL(vaddr) — stack↔offset conversions
+%%   - Dictionary: first 2MB (DICTIONARY_BLOCKS=2048)
+%%   - User blocks start at 2048; total VM memory 5MB
+%%   - Log blocks: 3072–5120 (2MB, 32768 max lines at 64 bytes/line)
+
+\section{Dictionary Structure}
+\label{vol1:sec:interp:dictionary}
+
+%% TODO(bob): describe DictEntry fields from include/vm.h.
+%% Key fields: execution_heat, physics (DictPhysics), transition_metrics,
+%%             word_id, acl_default
+%% Note WORD_IMMEDIATE, WORD_PINNED, WORD_FROZEN flag semantics.
+
+\section{FORTH-79 Word Categories}
+\label{vol1:sec:interp:words}
+
+%% TODO(bob): table of the 25 word-implementation files (from CLAUDE.md source
+%% tree listing) with one-line summary of each category's scope.
+
+\begin{table}[ht]
+  \centering
+  \caption{StarForth word implementation files}
+  \label{tab:words}
+  \begin{tabular}{ll}
+    \toprule
+    File & Scope \\
+    \midrule
+    \texttt{arithmetic\_words.c}       & \texttt{+ - * / MOD ABS MIN MAX} \\
+    \texttt{stack\_words.c}            & \texttt{DUP DROP SWAP ROT OVER NIP TUCK} \\
+    \texttt{control\_words.c}          & \texttt{IF ELSE THEN DO LOOP BEGIN UNTIL WHILE} \\
+    \texttt{defining\_words.c}         & \texttt{: ; CREATE DOES> VARIABLE CONSTANT} \\
+    \texttt{memory\_words.c}           & \texttt{@ ! C@ C! MOVE FILL} \\
+    \texttt{return\_stack\_words.c}    & \texttt{>R R> R@ RDROP 2>R 2R@ 2R>} \\
+    \texttt{double\_words.c}           & \texttt{2DUP 2DROP 2SWAP 2@ 2! D+ D-} \\
+    \texttt{logical\_words.c}          & \texttt{AND OR XOR NOT INVERT LSHIFT RSHIFT} \\
+    \texttt{io\_words.c}               & \texttt{EMIT KEY TYPE CR TAB SPACE ACCEPT} \\
+    \texttt{string\_words.c}           & \texttt{S" SLITERAL} and string operations \\
+    \texttt{block\_words.c}            & \texttt{BLOCK BUFFER LOAD THRU FLUSH} \\
+    \texttt{format\_words.c}           & \texttt{.( .R .S HEX DECIMAL BASE} \\
+    \texttt{system\_words.c}           & \texttt{BYE ABORT INCLUDE STATE} \\
+    \texttt{dictionary\_words.c}       & \texttt{FIND SEARCH-WORDLIST WORDS} \\
+    \texttt{vocabulary\_words.c}       & \texttt{VOCABULARY DEFINITIONS FORTH-WORDLIST} \\
+    \texttt{q48\_16\_words.c}          & $\Qtype$ fixed-point word definitions \\
+    \texttt{starforth\_words.c}        & StarForth-specific extensions \\
+    %% TODO(bob): add remaining 8 files from the physics word set
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Initialization and Boot}
+\label{vol1:sec:interp:boot}
+
+%% TODO(bob): describe init.4th, the INIT word, and the dictionary fence
+%% mechanism. Source: docs/working/scratch/src/architecture-internals/INIT_SYSTEM.adoc
+
+\section{Q48.16 Fixed-Point Arithmetic}
+\label{vol1:sec:interp:q4816}
+
+%% TODO(bob): describe the Q48.16 format, its rationale for the physics engine,
+%% and the formal proof in proof/StarForth_Q48_16.thy.

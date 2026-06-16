@@ -1,0 +1,60 @@
+%% Vol II, Chapter 5 — L8 Jacquard Mode Selector
+%% SOURCE: src/ssm_jacquard.c
+%%         docs/working/architecture/03-architecture/physics-engine/ssm-raw-data-analysis.md
+%%         docs/working/experiments/campaigns/l8_attractor_map/ (analysis reports)
+%%         capsules/init-l8-{stable,volatile,diverse,temporal,transition,omni}.4th
+
+\chapter{L8 Jacquard Mode Selector}
+\label{vol2:chap:jacquard}
+
+%% TODO(bob): opening paragraph — the L8 Jacquard Mode Selector is an additional
+%% steady-state machine layer above the 7 feedback loops. It switches between
+%% named mode configurations based on attractor-bucket statistics.
+%% Distinguish from SSM — Jacquard is the mode coordinator; SSM is the theoretical
+%% framework.
+
+\section{Six Operating Modes}
+\label{vol2:sec:jacquard:modes}
+
+%% SOURCE: .claude/CLAUDE.md (L8 Jacquard Mode Selector)
+%%         capsules/init-l8-*.4th (6 capsule files)
+
+\begin{table}[ht]
+  \centering
+  \caption{L8 Jacquard operating modes}
+  \label{tab:jacquard-modes}
+  \begin{tabular}{ll}
+    \toprule
+    Mode & Characteristics \\
+    \midrule
+    \texttt{stable}     & %% TODO(bob): describe stable mode attractor profile \\
+    \texttt{volatile}   & %% TODO(bob): describe volatile mode \\
+    \texttt{diverse}    & %% TODO(bob): describe diverse mode \\
+    \texttt{temporal}   & %% TODO(bob): describe temporal mode \\
+    \texttt{transition} & %% TODO(bob): describe transition mode \\
+    \texttt{omni}       & %% TODO(bob): describe omni mode \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Attractor Bucket Mechanism}
+\label{vol2:sec:jacquard:attractors}
+
+%% SOURCE: HeartbeatState (include/vm.h) — L8 bucket stats field
+%%         docs/working/experiments/campaigns/l8_attractor_map/
+%% TODO(bob): describe how L8 bucket statistics trigger mode transitions.
+%% Reference the 180-run L8 attractor map experiment (2025-12-09 dataset).
+
+\section{ssm\_jacquard.c Implementation}
+\label{vol2:sec:jacquard:impl}
+
+%% SOURCE: src/ssm_jacquard.c
+%% TODO(bob): describe vm->ssm_l8_state and the mode-switch logic.
+
+\section{Jacquard Capsule Variants}
+\label{vol2:sec:jacquard:capsules}
+
+%% SOURCE: capsules/init-l8-*.4th (6 files, from .claude/CLAUDE.md)
+%% TODO(bob): describe how the six Jacquard capsule variants (stable, volatile,
+%% diverse, temporal, transition, omni) configure the initial mode and
+%% attractor thresholds at VM birth.

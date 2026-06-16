@@ -1,0 +1,59 @@
+%% Vol II, Chapter 4 — Platform Support
+%% SOURCE: docs/working/scratch/src/platform-integration/ (multiple .adoc files)
+%%         docs/working/architecture/03-architecture/hal/ (HAL design — aspirational)
+%%         .claude/CLAUDE.md (Platform abstraction, build targets)
+
+\chapter{Platform Support}
+\label{vol2:chap:platforms}
+
+%% TODO(bob): intro paragraph listing the three supported execution contexts:
+%%   1. Hosted (Linux, POSIX)
+%%   2. L4Re / Fiasco.OC microkernel
+%%   3. Bare metal via LithosAnanke (amd64, aarch64, riscv64)
+
+\section{Linux / Hosted}
+\label{vol2:sec:platforms:linux}
+
+%% SOURCE: src/platform/linux/time.c, .claude/CLAUDE.md
+%% TODO(bob): describe POSIX timing, standard build, and the hosted execution path.
+
+\section{L4Re / Fiasco.OC}
+\label{vol2:sec:platforms:l4re}
+
+%% SOURCE: docs/working/scratch/src/platform-integration/L4RE_INTEGRATION.adoc
+%%         docs/working/scratch/src/platform-integration/l_4_re_blkio_endpoints.adoc
+%% TODO(bob): describe the L4Re integration: IPC, dataspaces, package structure,
+%% and the blkio vtable API. Note that the malloc/free → L4Re-native allocator
+%% migration (dictionary_management.c) is still pending.
+
+\section{Bare Metal: amd64}
+\label{vol2:sec:platforms:amd64}
+
+%% SOURCE: .claude/CLAUDE.md (src/starkernel/arch/amd64/)
+%% TODO(bob): describe the amd64 kernel path: arch.c, apic.c, timer.c,
+%% interrupts.c, boot.S, isr.S.
+
+\section{Bare Metal: aarch64 and riscv64}
+\label{vol2:sec:platforms:arm-riscv}
+
+%% SOURCE: docs/working/scratch/src/platform-integration/RASPBERRY_PI_BUILD.adoc
+%% TODO(bob): describe aarch64 (Raspberry Pi 4) and riscv64 targets.
+%% QEMU-based validation for all three arches.
+
+\section{Platform Abstraction Layer (HAL Target)}
+\label{vol2:sec:platforms:hal}
+
+%% SOURCE: docs/working/architecture/03-architecture/hal/overview.md
+%% IMPORTANT: the hal_* API described in the hal/ doc family is the TARGET
+%% design, not the current codebase. Current code uses sf_time_backend_t-style
+%% naming. This section describes the planned migration.
+%% TODO(bob): review hal/migration-plan.md and decide whether to describe
+%% the current state, the target, or both (with clear labeling).
+
+\section{Raspberry Pi Build}
+\label{vol2:sec:platforms:rpi}
+
+%% SOURCE: docs/working/scratch/src/performance-profiling/ARM64_OPTIMIZATIONS.adoc
+\begin{lstlisting}[language=bash, caption={Raspberry Pi cross-compilation}]
+make rpi4-cross    # Cross-compile for Raspberry Pi 4 (ARM64)
+\end{lstlisting}

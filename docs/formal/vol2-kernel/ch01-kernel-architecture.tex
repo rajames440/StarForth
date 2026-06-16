@@ -1,0 +1,102 @@
+%% Vol II, Chapter 1 — Kernel Architecture
+%% SOURCE: .claude/CLAUDE.md (LithosAnanke / StarKernel section)
+%%         docs/working/architecture/03-architecture/OVERVIEW.md
+%%         src/starkernel/ (37 files per CLAUDE.md)
+
+\chapter{LithosAnanke Kernel Architecture}
+\label{vol2:chap:kernel}
+
+%% TODO(bob): opening paragraph. LithosAnanke ("stone inevitability") is the
+%% bare-metal UEFI kernel that boots StarForth directly on hardware.
+%% Version 1.0.8, monolithic UEFI PE32+ executable. Cite james:2025:lithos.
+
+\section{Design Philosophy}
+\label{vol2:sec:kernel:philosophy}
+
+%% TODO(bob): describe the "stone inevitability" naming rationale and the
+%% monolithic UEFI PE32+ design decision (vs. split ELF build).
+
+\section{Boot Sequence}
+\label{vol2:sec:kernel:boot}
+
+%% SOURCE: .claude/CLAUDE.md (Boot sequence diagram)
+%% TODO(bob): expand the boot sequence from the CLAUDE.md diagram into prose
+%% with one paragraph per milestone.
+
+The boot sequence from firmware to FORTH REPL:
+
+\begin{enumerate}
+  \item UEFI Firmware → \texttt{uefi\_loader.c} (\texttt{BOOTX64.EFI})
+  \item \texttt{ExitBootServices()} — kernel owns hardware; receives
+        \texttt{BootInfo\{memory map, ACPI, framebuffer\}}
+  \item \texttt{kernel\_main()} — M1 through M7 milestone initialization:
+    \begin{enumerate}
+      \item[M1] Console init (UART 16550 + framebuffer)
+      \item[M2] PMM — physical memory manager, bitmap allocator
+      \item[M3] VMM — 4-level x86\_64 paging
+      \item[M4] IDT + APIC interrupts
+      \item[M5] TSC + HPET + APIC timer (100~Hz heartbeat)
+      \item[M6] \texttt{kmalloc} heap (16~MB)
+      \item[M7] StarForth VM bootstrap + capsule loading → \texttt{ok} REPL
+    \end{enumerate}
+\end{enumerate}
+
+\section{Milestone Status}
+\label{vol2:sec:kernel:milestones}
+
+%% SOURCE: .claude/CLAUDE.md (Milestone status as of v1.0.8)
+
+\begin{table}[ht]
+  \centering
+  \caption{LithosAnanke v1.0.8 milestone status}
+  \label{tab:milestones}
+  \begin{tabular}{lll}
+    \toprule
+    Milestone & Description & Status \\
+    \midrule
+    M0--M5 & Boot, console, PMM, VMM, IDT/APIC, timer & Complete \\
+    M6 & \texttt{kmalloc} infrastructure & Present (full validation deferred) \\
+    M7 & StarForth VM bootstrap + capsule execution pipeline & In progress \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Memory Layout}
+\label{vol2:sec:kernel:memory}
+
+%% SOURCE: .claude/CLAUDE.md (Kernel memory layout)
+
+\begin{table}[ht]
+  \centering
+  \caption{Kernel memory layout}
+  \label{tab:kernel-memory}
+  \begin{tabular}{ll}
+    \toprule
+    Region & Description \\
+    \midrule
+    Kernel heap & 16~MB (\texttt{kmalloc}) \\
+    Block RAM LBN 0--991 & 1~MB dedicated RAM blocks \\
+    Kernel ramdrive LBN 2048--3071 & 1~MB for capsule loading \\
+    LBN 2048 & Entry point for \texttt{init.4th} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Source Tree}
+\label{vol2:sec:kernel:source}
+
+%% SOURCE: .claude/CLAUDE.md (src/starkernel/ listing, 37 files)
+%% TODO(bob): reproduce the source-tree listing from CLAUDE.md as a
+%% structured description (not a raw ls output).
+
+\section{Multi-Architecture Support}
+\label{vol2:sec:kernel:arch}
+
+%% TODO(bob): describe amd64, aarch64, riscv64 build targets and
+%% the QEMU/OVMF test strategy.
+\begin{lstlisting}[language=bash, caption={StarKernel build targets}]
+make -f Makefile.starkernel              # Build for amd64
+make -f Makefile.starkernel ARCH=aarch64
+make -f Makefile.starkernel ARCH=riscv64
+make -f Makefile.starkernel qemu        # Run in QEMU with OVMF
+\end{lstlisting}
