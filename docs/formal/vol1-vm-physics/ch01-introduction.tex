@@ -1,0 +1,57 @@
+%% Vol I, Chapter 1 — Introduction and Architecture Overview
+%% SOURCE: docs/working/architecture/03-architecture/OVERVIEW.md
+%%         .claude/CLAUDE.md (Project Overview section)
+%%         ONTOLOGY.md (thermodynamic lexicon)
+%%         docs/working/papers/EXECUTIVE_SUMMARY.md
+
+\chapter{Introduction}
+\label{vol1:chap:intro}
+
+%% TODO(bob): write the motivating paragraph — why a physics-grounded adaptive
+%% runtime? What problem does this solve for StarshipOS?
+
+\section{What StarForth Is}
+\label{vol1:sec:intro:what}
+
+%% TODO(bob): 2–3 paragraphs from EXECUTIVE_SUMMARY.md, calibrated for
+%% a technical but non-FORTH audience. Key facts to include:
+%%   - FORTH-79 compliant VM, strict ANSI C99, no GNU extensions
+%%   - Primary execution engine for StarshipOS
+%%   - Patent-pending adaptive runtime (cite james:2025:patent)
+%%   - Published SSRN results (cite james:2025:ssrn)
+
+\section{Technology Stack}
+\label{vol1:sec:intro:stack}
+
+%% TODO(bob): reproduce the three-layer diagram from OVERVIEW.md in TikZ or as
+%% a table:
+%%   StarshipOS (future) | LithosAnanke v1.0.8 | StarForth v3.0.3 | Linux/L4Re/bare metal
+
+\begin{table}[ht]
+  \centering
+  \caption{StarshipOS technology stack}
+  \label{tab:stack}
+  \begin{tabular}{ll}
+    \toprule
+    Layer & Component \\
+    \midrule
+    Future OS       & StarshipOS (self-hosting) \\
+    Kernel          & LithosAnanke v1.0.8 / StarKernel (bare-metal UEFI) \\
+    VM              & StarForth v3.0.3 (FORTH-79, physics-driven adaptive RT) \\
+    Host platform   & Linux, L4Re/Fiasco.OC, bare metal (amd64, aarch64, riscv64) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Thermodynamic Modeling Language}
+\label{vol1:sec:intro:ontology}
+
+%% TODO(bob): one paragraph explaining that the runtime uses thermodynamic
+%% concepts as a modeling language, not as physics claims. Cite ONTOLOGY.md.
+%% The key calibration sentence is in ACADEMIC_WORDING_GUIDELINES.md.
+
+\section{Document Scope and Organization}
+\label{vol1:sec:intro:scope}
+
+%% TODO(bob): paragraph describing what each chapter covers (interpreter,
+%% physics runtime, formal verification, experimental results, build, ACL).

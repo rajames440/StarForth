@@ -1,0 +1,55 @@
+%% common/preamble.tex — shared preamble for all three formal volumes
+%% SOURCE: docs/formal/CLAUDE.md (authoring conventions)
+%% Do NOT include this file directly. Each volume's main.tex does:
+%%   \input{../common/preamble}
+
+\documentclass[11pt,a4paper,twoside]{book}
+
+%% --- Packages ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{natbib}
+
+\geometry{a4paper, top=25mm, bottom=25mm, inner=30mm, outer=20mm}
+
+%% --- Theorem environments ---
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{claim}{Claim}[chapter]
+
+%% --- Code listings ---
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  xleftmargin=2em
+}
+
+%% --- Notation ---
+% Q48.16 fixed-point type
+\newcommand{\Qtype}{\mathbb{Q}_{48.16}}
+% Thermodynamic proxy label
+\newcommand{\heat}{\mathit{heat}}
+% Feedback loop reference
+\newcommand{\loop}[1]{\textsf{Loop~\##1}}
+
+%% --- Hyperref setup ---
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  citecolor=green!50!black,
+  urlcolor=blue!60!black
+}

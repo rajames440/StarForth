@@ -1,6 +1,6 @@
-# docs/INDEX.md — Phase 1 Documentation Triage
+# docs/INDEX.md — Documentation Triage
 
-**Generated:** 2026-06-16  
+**Phase 1 triage:** 2026-06-16 · **Phase 2 reorg:** 2026-06-16 · **Phase 3 stubs:** 2026-06-16
 **Total files inventoried:** 328  
 **Status tags:** CURRENT · WORKING · HISTORICAL · SUPERSEDED · OBSOLETE · DELETE
 

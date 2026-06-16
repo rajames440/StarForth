@@ -1,0 +1,94 @@
+%% Vol I, Chapter 3 — Physics-Driven Adaptive Runtime
+%% SOURCE: docs/working/architecture/03-architecture/physics-engine/feedback-loops.md
+%%         ONTOLOGY.md
+%%         docs/working/architecture/03-architecture/adaptive-systems/window-inference-redesign.md
+%%         docs/working/architecture/03-architecture/pipelining/wired-not-utilized.md
+%%         docs/working/architecture/03-architecture/heartbeat-system/instrumentation-plan.md
+
+\chapter{Physics-Driven Adaptive Runtime}
+\label{vol1:chap:physics}
+
+%% TODO(bob): opening paragraph explaining the thermodynamic-modeling-language
+%% framing per ONTOLOGY.md. Key calibration: "thermodynamic" is the modeling
+%% language, not a physics claim.
+
+\section{Overview: Seven Feedback Loops}
+\label{vol1:sec:physics:overview}
+
+%% TODO(bob): promote the loop-summary table from feedback-loops.md into a
+%% formal \begin{table}...\end{table} here. Seven rows, one per loop.
+
+\section{Loop \#1 — Execution Heat}
+\label{vol1:sec:physics:loop1}
+
+%% SOURCE: docs/working/architecture/03-architecture/physics-engine/feedback-loops.md
+%%         src/dictionary_heat_optimization.c
+%% TODO(bob): describe the frequency counter per word, the WORD_FROZEN and
+%% WORD_PINNED flags, and the hot-words cache (ENABLE_HOTWORDS_CACHE=1).
+%% Cite proof/StarForth_Loop1_Heat.thy.
+
+\section{Loop \#2 — Rolling Window of Truth}
+\label{vol1:sec:physics:loop2}
+
+%% SOURCE: src/rolling_window_of_truth.c, feedback-loops.md
+%% TODO(bob): describe the circular buffer, double-buffered snapshots, and
+%% adaptive sizing. Key struct: RollingWindowOfTruth.
+
+\section{Loop \#3 — Linear Decay}
+\label{vol1:sec:physics:loop3}
+
+%% SOURCE: feedback-loops.md, docs/working/scratch/src/internal/PHASE_2A_COMPLETION_REPORT.adoc
+%% TODO(bob): describe quiescent word heat decay over time; WORD_FROZEN
+%% semantics (does not decay at all).
+
+\section{Loop \#4 — Word Transition Prediction (Pipelining)}
+\label{vol1:sec:physics:loop4}
+
+%% SOURCE: src/physics_pipelining_metrics.c
+%%         docs/working/architecture/03-architecture/pipelining/wired-not-utilized.md
+%% TODO(bob): describe the word-to-word transition matrix and prefetch
+%% mechanism. IMPORTANT FLAG: per wired-not-utilized.md, the
+%% decision/speculation logic is currently wired but not called.
+%% Describe the implemented state accurately, and note what remains pending.
+
+\section{Loop \#5 — Window Width Inference}
+\label{vol1:sec:physics:loop5}
+
+%% SOURCE: src/inference_engine.c
+%%         docs/working/architecture/03-architecture/adaptive-systems/window-inference-redesign.md
+%% TODO(bob): describe Levene's test on disjoint chunks + binary-chop
+%% mechanism from the approved redesign doc.
+
+\section{Loop \#6 — Decay Slope Inference}
+\label{vol1:sec:physics:loop6}
+
+%% SOURCE: src/inference_engine.c, feedback-loops.md
+%% TODO(bob): describe the exponential-regression mechanism for tuning
+%% the Loop \#3 decay slope.
+
+\section{Loop \#7 — Adaptive Heartrate}
+\label{vol1:sec:physics:loop7}
+
+%% SOURCE: HeartbeatState in include/vm.h, feedback-loops.md
+%%         docs/working/architecture/03-architecture/heartbeat-system/instrumentation-plan.md
+%% TODO(bob): describe the HeartbeatState tick coordinator, DoE observation
+%% counters, L8 bucket stats, and M5 time trust. Note that HeartbeatTickSnapshot
+%% and tick_buffer are declared in include/vm.h, but heartbeat_export_csv()
+%% is not yet implemented.
+
+\section{L8 Jacquard Mode Selector}
+\label{vol1:sec:physics:l8}
+
+%% SOURCE: src/ssm_jacquard.c
+%%         docs/working/architecture/03-architecture/physics-engine/ssm-raw-data-analysis.md
+%% TODO(bob): describe the six L8 Jacquard modes (stable, volatile, diverse,
+%% temporal, transition, omni), the attractor-bucket mechanism, and the
+%% vm->ssm_l8_state field. Distinguish L8 from the seven loops (L8 is a
+%% meta-coordinator, not a loop).
+
+\section{Determinism and Formal Properties}
+\label{vol1:sec:physics:determinism}
+
+%% TODO(bob): 0\% algorithmic variance claim from the 90-run DoE.
+%% Cite james:2025:ssrn and the relevant Isabelle proofs.
+%% Source: docs/working/papers/NULL_HYPOTHESIS.md for falsification framing.

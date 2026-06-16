@@ -1,0 +1,55 @@
+%% Vol I, Appendix A — Build and Deployment
+%% SOURCE: .claude/CLAUDE.md (Build Commands, Running sections)
+%%         docs/working/scratch/src/build-and-tooling/BUILD_OPTIONS.adoc
+%%         docs/working/architecture/getting-started/DEVELOPER.md
+
+\chapter{Build and Deployment}
+\label{vol1:app:build}
+
+\section{Prerequisites}
+\label{vol1:sec:build:prereqs}
+
+%% TODO(bob): list build prerequisites (GCC, make, pdflatex, Isabelle).
+%% Source: DEVELOPER.md in docs/working/architecture/getting-started/
+
+\section{Build Targets}
+\label{vol1:sec:build:targets}
+
+%% SOURCE: .claude/CLAUDE.md (Build Commands)
+%% The primary build targets are:
+
+\begin{lstlisting}[language=bash, caption={StarForth build targets}]
+make               # Standard optimized build (auto-detects architecture)
+make fastest       # Maximum performance (ASM + LTO + direct threading)
+make pgo           # Profile-guided optimization
+make debug         # Debug build with symbols
+make test          # Full test suite (936+ tests)
+make bench         # Quick benchmark
+make clean         # Remove build artifacts
+\end{lstlisting}
+
+\section{Build Flags}
+\label{vol1:sec:build:flags}
+
+%% SOURCE: docs/working/scratch/src/build-and-tooling/BUILD_OPTIONS.adoc
+%% TODO(bob): reproduce the key build flags table from BUILD_OPTIONS.adoc.
+%% Key flags from .claude/CLAUDE.md:
+%%   STRICT_PTR=1, USE_ASM_OPT=1, ENABLE_HOTWORDS_CACHE=1,
+%%   ENABLE_PIPELINING=1, HEARTBEAT_THREAD_ENABLED=1,
+%%   STARFORTH_ENABLE_VM=1, PARITY_MODE=1, EMERGENCY_CONSOLE_ENABLED=1
+
+\section{Running}
+\label{vol1:sec:build:run}
+
+\begin{lstlisting}[language=bash, caption={Running StarForth}]
+./build/amd64/standard/starforth              # Interactive REPL
+./build/amd64/standard/starforth --run-tests  # Tests then REPL
+./build/amd64/standard/starforth -c "1 2 + . BYE"  # Inline code
+./build/amd64/fastest/starforth --doe         # DoE mode
+\end{lstlisting}
+
+\section{Test Suite}
+\label{vol1:sec:build:tests}
+
+%% TODO(bob): describe the 936+ test structure (POST order, 22 categories,
+%% unit/integration/stress/adversarial). Reference make test and FAIL_FAST=1.
