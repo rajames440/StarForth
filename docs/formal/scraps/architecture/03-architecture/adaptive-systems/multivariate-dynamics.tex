@@ -1,0 +1,119 @@
+%% SCRAP: architecture/03-architecture/adaptive-systems/multivariate-dynamics
+%% SOURCE: docs/working/architecture/03-architecture/adaptive-systems/multivariate-dynamics.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Multivariate Coupled Dynamics: Golden-Configuration Discovery}
+
+This section describes the experimental framework, dated 2025-11-20 and in
+design at the time of writing, for discovering a golden runtime configuration by
+stability fingerprinting. It is deliberately not a factorial design of
+experiments. The premise is that the adaptive runtime is a coupled dynamical
+system in which every metric is at once a measurable signal, a feedback variable
+that shapes future state, and a coordinate in a high-dimensional attractor
+landscape. The analysis therefore measures the shape of each configuration's
+trajectory through metric space rather than isolated main effects.
+
+The dynamical-systems vocabulary --- attractors, basins, eigenmodes, coupling
+--- is modeling language for the runtime's tick-by-tick behavior, applied to the
+domain of configuration selection; it is not a claim of literal physics.
+
+\subsection{The Coupling Web}
+
+Within a single tick the metrics form a feedback web. Cache and bucket hit rates
+feed bucket load, which feeds heat, which feeds decay, which feeds window width,
+which feeds prediction accuracy; prediction accuracy and load feed back into the
+next tick's cache behavior and into the adaptive heartbeat interval. Load
+intensity shapes the word-access pattern, which shapes the heat distribution,
+which governs decay effectiveness and the jitter envelope. Each configuration
+traces a distinct path through this web.
+
+\subsection{Three Levels of Measurement}
+
+The framework records state at three nested scopes. \emph{Per tick}, at roughly
+one-millisecond cadence, it captures a snapshot of the coupled system: a temporal
+anchor, the cache and bucket wave functions $\psi_{\text{cache}}(t)$ and
+$\psi_{\text{bucket}}(t)$, the feedback signals (hot-word count, mean heat,
+inferred decay, window width), the load response (executions, prediction
+attempts, prefetch hits), and the stability measures (tick jitter and a composite
+smoothness index). \emph{Per run}, over roughly a hundred thousand ticks, it
+distills a stability fingerprint: convergence time and coefficients of variation,
+steady-state means, dynamics (rise time, settling time, overshoot), coupling
+strengths including a full cross-correlation matrix, spectral properties
+(dominant frequency, spectral entropy, dominant eigenvalue), and an overall
+stability score. \emph{Per configuration}, over 150 or more runs, it aggregates
+those fingerprints into between-run statistics: the mean and spread of the
+stability score, convergence reliability, coupling stability, an attractor-basin
+depth estimate, the jitter envelope and its whiteness, and noise-propagation
+measures.
+
+\begin{equation}
+\textit{overall\_stability\_score} =
+  \tfrac{1}{3}\,\textit{jitter\_score}
++ \tfrac{1}{3}\,\textit{convergence\_score}
++ \tfrac{1}{3}\,\textit{coupling\_score}
+\end{equation}
+
+\subsection{Experimental Design}
+
+The design holds five elite configurations carried forward from an earlier stage,
+runs each 150 to 200 times for statistical power, and runs each for roughly a
+hundred thousand ticks to capture both convergence and steady state --- on the
+order of seventy-five million ticks in total, some six to eight hours of
+wall-clock time. Run order is randomized and configurations are interleaved to
+avoid temporal and thermal confounds, background tasks are minimized, and every
+tick is captured without subsampling to preserve time-series fidelity.
+
+\subsection{Analysis Pipeline}
+
+Analysis proceeds in three phases. Per-run fingerprinting detects convergence
+(when the cache hit-rate coefficient of variation falls below five percent),
+computes steady-state statistics, extracts the transient dynamics, measures
+coupling with lag search and a full correlation matrix, performs spectral
+analysis to find dominant modes, and reduces all of it to a stability index.
+Per-configuration fingerprinting aggregates the run fingerprints into robustness,
+convergence reliability, coupling strength, basin depth, and noise
+characteristics. Golden-configuration selection then scores the five candidates
+on weighted dimensions and takes the argmax.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Dimension & Weight & Ideal behavior \\
+\midrule
+Stability score          & 30\% & highest mean, lowest spread \\
+Convergence reliability  & 25\% & full convergence, low variability \\
+Coupling strength        & 20\% & strong ($0.8+$), stable load-to-heartbeat \\
+Attractor basin depth    & 15\% & fast eigenmode decay, noise-resilient \\
+Jitter smoothness        & 10\% & low variation, white noise \\
+\bottomrule
+\end{tabular}
+\caption{Weighted dimensions for golden-configuration selection.}
+\end{table}
+
+\subsection{Interpretation}
+
+A strong configuration fingerprint shows a high mean stability score with low
+spread (reproducibility), full convergence across runs, tight load-to-heartbeat
+coupling, a low jitter coefficient of variation, and a large dominant eigenvalue
+indicating a deep attractor basin. A weak fingerprint inverts each of these: a low
+and widely scattered stability score, incomplete convergence, loose and noisy
+coupling, high jitter variation, and a shallow, noise-prone basin.
+
+\subsection{Implementation Roadmap}
+
+The build sequence instruments the heartbeat loop with a per-tick circular
+buffer, implements per-run fingerprinting (convergence detection, coefficients of
+variation, correlations, eigenvalues, spectral properties), aggregates run
+fingerprints into per-configuration fingerprints, scores and selects the golden
+configuration, and finally produces the visual reporting suite --- time-series
+plots, correlation heatmaps, a principal-component projection of runs, and
+stability-score distributions.
+
+%% PATENT: stability fingerprinting and golden-configuration selection over the
+%%   coupled adaptive runtime are patent-adjacent; no claims drafted here.
+
+%% TODO(bob): confirm whether the harness was built and whether a golden
+%%   configuration was selected, for a results subsection.
