@@ -1,0 +1,112 @@
+%% SSRN Publication Set — main.tex
+%% SOURCE: docs/working/papers/published/James_Steady-State_Convergence_Adaptive_Runtime.pdf
+%%         docs/working/papers/SSRN_companion/Math_Companion_SSRN.tex
+%%         docs/working/papers/FORMAL_CLAIM_TABLE.md
+%%         docs/working/papers/ONTOLOGY.md
+%% NOTE: The SSRN paper itself is a published PDF — it is NOT re-typeset here.
+%%       This volume collects the companion material: Math Companion (full LaTeX),
+%%       formal claim tables, ontology, and academic wording guidelines.
+%% TODO(bob): set SSRN paper ID and DOI when assigned
+
+\input{../common/preamble}
+
+\title{StarForth SSM Research Companion\\[0.4em]
+       \large Mathematical Companion, Formal Claims, and Ontology\\[0.2em]
+       \normalsize Companion to: ``Steady-State Convergence in an Adaptive Runtime''\\
+       SSRN Working Paper, Robert A.\ James, 2025}
+\author{Robert A.\ James}
+\date{%% TODO(bob): set companion edition date
+}
+
+\begin{document}
+\frontmatter
+\maketitle
+
+\chapter*{About This Volume}
+
+The SSRN working paper ``Steady-State Convergence in an Adaptive Runtime''
+\cite{james:2025:ssrn} is published separately. This companion volume collects
+material that supports and extends the paper: the full Mathematical Companion
+(typeset from source), the formal claim table, the ontology of thermodynamic
+metaphors, and the academic wording guidelines used in the paper's preparation.
+
+The canonical paper PDF is at:
+\begin{center}
+  \texttt{docs/working/papers/published/James\_Steady-State\_Convergence\_Adaptive\_Runtime.pdf}
+\end{center}
+
+\tableofcontents
+
+\mainmatter
+
+%%────────────────────────────────────────────────
+%% Part I — Mathematical Companion
+%%────────────────────────────────────────────────
+\part{Mathematical Companion}
+
+%% SOURCE: docs/working/papers/SSRN_companion/Math_Companion_SSRN.tex
+%% NOTE: Include the Math Companion LaTeX source directly.
+%%       Figures are in docs/working/papers/SSRN_companion/figures/
+%%       Copy needed figures to ssrn/figures/ before building.
+%% TODO(bob): verify figure paths resolve before enabling \input below.
+%% \input{../../working/papers/SSRN_companion/Math_Companion_SSRN}
+
+%% Stub until figure paths are verified:
+\chapter{Mathematical Framework}
+%% TODO(bob): enable \input above after verifying figure paths.
+%% The Math Companion covers: Q48.16 fixed-point formalism, the 7-loop
+%% differential equations, Levene's test derivation, ANOVA tables.
+
+%%────────────────────────────────────────────────
+%% Part II — Formal Claim Table
+%%────────────────────────────────────────────────
+\part{Formal Claims and Anti-Claims}
+
+\chapter{Formal Claim Table}
+%% SOURCE: docs/working/papers/FORMAL_CLAIM_TABLE.md
+%% TODO(bob): promote the formal claim table — what is claimed, what is not,
+%% evidence pointer for each claim.
+
+\chapter{Anti-Claims}
+%% SOURCE: docs/working/papers/ANTI_CLAIMS.md
+%% TODO(bob): promote the anti-claims list — what the paper explicitly does NOT claim.
+
+\chapter{Executive Summary}
+%% SOURCE: docs/working/papers/EXECUTIVE_SUMMARY.md
+%% TODO(bob): promote the executive summary for non-specialist readers.
+
+%%────────────────────────────────────────────────
+%% Part III — Ontology
+%%────────────────────────────────────────────────
+\part{Ontology of Terms}
+
+\chapter{Thermodynamic Metaphor Ontology}
+%% SOURCE: docs/working/papers/ONTOLOGY.md
+%% NOTE: Thermodynamic terms are modeling tools, not physics claims.
+%% Always introduce with domain qualifier: "using X as a proxy for Y, …"
+%% TODO(bob): promote the full ontology — canonical term definitions,
+%% domain of use, what each metaphor maps to in implementation.
+
+\chapter{Academic Wording Guidelines}
+%% SOURCE: docs/working/papers/ACADEMIC_WORDING_GUIDELINES.md
+%% TODO(bob): promote the wording guidelines used during paper preparation.
+%% Useful reference for future submissions.
+
+%%────────────────────────────────────────────────
+%% Appendices
+%%────────────────────────────────────────────────
+\appendix
+
+\chapter{Scientific Defense Checklist}
+%% SOURCE: docs/working/papers/SCIENTIFIC_DEFENSE_CHECKLIST.md
+%% TODO(bob): promote the defense checklist — attack vectors and responses.
+
+\chapter{Replication Invitation}
+%% SOURCE: docs/working/papers/REPLICATION_INVITE.md
+%% TODO(bob): promote the open invitation for independent replication.
+
+\backmatter
+\bibliographystyle{plainnat}
+\bibliography{../common/starship}
+
+\end{document}

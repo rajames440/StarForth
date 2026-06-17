@@ -3,16 +3,28 @@
 PDFLATEX := pdflatex -interaction=nonstopmode -halt-on-error
 OUTDIR    := build
 
-VOLS   := vol1-vm-physics vol2-kernel vol3-research
-PUBS   := dev-guide user-guide cookbook
+# Three research volumes
+VOLS := vol1-vm-physics vol2-kernel vol3-research
 
-.PHONY: all vols pubs vol1 vol2 vol3 dev-guide user-guide cookbook clean
+# Three practitioner books
+BOOKS := dev-guide user-guide cookbook
 
-all: vols pubs
+# Four standalone publications
+STANDALONE := experiments proofs ssrn patent
+
+.PHONY: all vols books standalone \
+        vol1 vol2 vol3 \
+        dev-guide user-guide cookbook \
+        experiments proofs ssrn patent \
+        clean
+
+all: vols books standalone
 
 vols: vol1 vol2 vol3
 
-pubs: dev-guide user-guide cookbook
+books: dev-guide user-guide cookbook
+
+standalone: experiments proofs ssrn patent
 
 vol1:
 	@mkdir -p $(OUTDIR)/vol1
@@ -43,6 +55,26 @@ cookbook:
 	@mkdir -p $(OUTDIR)/cookbook
 	cd cookbook && $(PDFLATEX) -output-directory=../$(OUTDIR)/cookbook main.tex
 	cd cookbook && $(PDFLATEX) -output-directory=../$(OUTDIR)/cookbook main.tex
+
+experiments:
+	@mkdir -p $(OUTDIR)/experiments
+	cd experiments && $(PDFLATEX) -output-directory=../$(OUTDIR)/experiments main.tex
+	cd experiments && $(PDFLATEX) -output-directory=../$(OUTDIR)/experiments main.tex
+
+proofs:
+	@mkdir -p $(OUTDIR)/proofs
+	cd proofs && $(PDFLATEX) -output-directory=../$(OUTDIR)/proofs main.tex
+	cd proofs && $(PDFLATEX) -output-directory=../$(OUTDIR)/proofs main.tex
+
+ssrn:
+	@mkdir -p $(OUTDIR)/ssrn
+	cd ssrn && $(PDFLATEX) -output-directory=../$(OUTDIR)/ssrn main.tex
+	cd ssrn && $(PDFLATEX) -output-directory=../$(OUTDIR)/ssrn main.tex
+
+patent:
+	@mkdir -p $(OUTDIR)/patent
+	cd patent && $(PDFLATEX) -output-directory=../$(OUTDIR)/patent main.tex
+	cd patent && $(PDFLATEX) -output-directory=../$(OUTDIR)/patent main.tex
 
 clean:
 	rm -rf $(OUTDIR)

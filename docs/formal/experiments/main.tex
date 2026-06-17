@@ -1,0 +1,177 @@
+%% Experiments Report — main.tex
+%% SOURCE: docs/working/experiments/campaigns/
+%%         docs/working/experiments/02-experiments/
+%% NOTE: R scripts generate figures/tables; include generated outputs from
+%%       experiments/build/figures/ and experiments/build/tables/.
+%%       Manual analysis and narrative are in docs/working/experiments/.
+%%       DO NOT edit R scripts here — run them in docs/working/experiments/campaigns/.
+%% TODO(bob): set version and date
+
+\input{../common/preamble}
+
+\title{StarForth Experimental Results\\[0.4em]
+       \large Design of Experiments Campaigns and Analysis Reports}
+\author{Robert A.\ James}
+\date{%% TODO(bob): set report date — use campaign closure date
+}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+
+\mainmatter
+
+%%────────────────────────────────────────────────
+%% Part I — Design of Experiments Framework
+%%────────────────────────────────────────────────
+\part{Design of Experiments Framework}
+
+\chapter{Experimental Design Overview}
+%% SOURCE: docs/working/experiments/02-experiments/README.md
+%% TODO(bob): intro — scope of DoE program, null hypothesis, what
+%% 0% CV means and why it matters.
+
+\chapter{Null Hypothesis and Falsification Criteria}
+%% SOURCE: docs/working/papers/NULL_HYPOTHESIS.md
+%% TODO(bob): promote null hypothesis statement and falsification protocol.
+
+\chapter{Negative Results and Sensitivity Analysis}
+%% SOURCE: docs/working/papers/NEGATIVE_RESULTS.md
+%%         docs/working/papers/SENSITIVITY_ANALYSIS.md
+%% TODO(bob): promote negative results and sensitivity analysis.
+%% All claims checked against ANTI_CLAIMS.md before promotion.
+
+%%────────────────────────────────────────────────
+%% Part II — 2\textsuperscript{7} Factorial Campaign
+%%────────────────────────────────────────────────
+\part{$2^7$ Factorial Campaign}
+
+\chapter{Campaign Design}
+%% SOURCE: docs/working/experiments/02-experiments/factorial-doe/guide.md
+%%         docs/working/experiments/campaigns/doe_2x7/README.md
+%% TODO(bob): promote the 7-factor design table, factor levels, response variable.
+
+\chapter{Incompatible Configurations}
+%% SOURCE: docs/working/experiments/02-experiments/factorial-doe/incompatible-configs.md
+%% TODO(bob): promote the incompatible configuration exclusion list.
+
+\chapter{Campaign Results — 90 Runs}
+%% SOURCE: docs/working/experiments/campaigns/doe_2x7/results_30reps_RAJ_2025.11.22_1700hrs/
+%%         R script: doe_full_report.R
+%% TODO(bob): include R-generated tables and figures.
+%% FIGURES: place generated PDFs/PNGs in experiments/figures/doe_2x7_90rep/
+\begin{figure}[ht]
+  \centering
+  %% \includegraphics[width=\linewidth]{figures/doe_2x7_90rep_main_effects.pdf}
+  \caption{%% TODO(bob): caption for main effects plot}
+  \label{fig:doe:90rep:main-effects}
+\end{figure}
+
+\chapter{Campaign Results — 300 Runs}
+%% SOURCE: docs/working/experiments/campaigns/doe_2x7/results_300_reps_RAJ_2025.11.26.10:30hrs/
+%%         R script: doe_full_report.R
+%% TODO(bob): include R-generated tables and figures.
+%% FIGURES: place generated PDFs/PNGs in experiments/figures/doe_2x7_300rep/
+\begin{figure}[ht]
+  \centering
+  %% \includegraphics[width=\linewidth]{figures/doe_2x7_300rep_main_effects.pdf}
+  \caption{%% TODO(bob): caption for 300-run main effects plot}
+  \label{fig:doe:300rep:main-effects}
+\end{figure}
+
+%%────────────────────────────────────────────────
+%% Part III — L8 Attractor Map Campaign
+%%────────────────────────────────────────────────
+\part{L8 Attractor Map Campaign}
+
+\chapter{Campaign Design and Execution}
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/SESSION_REPORT_2025-12-10.md
+%% TODO(bob): promote the attractor map campaign design.
+
+\chapter{Mathematical Framework}
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/mathematical_framework.md
+%% TODO(bob): promote the mathematical framework for the attractor map.
+
+\chapter{Heartbeat Analysis}
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/heartbeat_analysis.md
+%%         R scripts: l8_analysis.R, l8_analysis_fixed.R
+%% TODO(bob): include R-generated heartbeat analysis figures.
+
+\chapter{Comprehensive Results}
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/comprehensive_report.md
+%% TODO(bob): promote the comprehensive results narrative.
+
+\chapter{Binary 2-Cycle Analysis}
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/binary_2cycle_analysis_report.md
+%% TODO(bob): promote the 2-cycle analysis.
+
+%%────────────────────────────────────────────────
+%% Part IV — Window Scaling Campaign
+%%────────────────────────────────────────────────
+\part{Window Scaling Campaign}
+
+\chapter{Campaign Design}
+%% SOURCE: docs/working/experiments/campaigns/window_scaling/README.md
+%%         docs/working/experiments/campaigns/window_scaling/QUICK_START.md
+%% TODO(bob): promote the window scaling design.
+
+\chapter{Results and Analysis}
+%% SOURCE: R scripts: analyze_results.R, generate_run_matrix.R
+%% TODO(bob): include R-generated window scaling figures and tables.
+
+%%────────────────────────────────────────────────
+%% Part V — James Law Protocol
+%%────────────────────────────────────────────────
+\part{James Law Protocol}
+
+\chapter{Protocol Definition}
+%% SOURCE: docs/working/experiments/02-experiments/james-law/protocol.md
+%% TODO(bob): promote the James Law experimental protocol.
+%% NOTE: "James Law" is a registered proper noun — do not rename.
+
+%%────────────────────────────────────────────────
+%% Part VI — Heartbeat and Physics Optimization Campaigns
+%%────────────────────────────────────────────────
+\part{Supplementary Campaigns}
+
+\chapter{Heartbeat DoE}
+%% SOURCE: docs/working/experiments/02-experiments/heartbeat-doe/design.md
+%%         docs/working/experiments/02-experiments/heartbeat-doe/corrected-design.md
+%% TODO(bob): promote heartbeat DoE design and results.
+
+\chapter{Physics Optimization DoE}
+%% SOURCE: docs/working/experiments/02-experiments/physics-optimization/doe-guide.md
+%%         docs/working/experiments/02-experiments/physics-optimization/reproduce.md
+%% TODO(bob): promote physics optimization results.
+
+\chapter{L8 Validation}
+%% SOURCE: docs/working/experiments/campaigns/l8_validation/README.md
+%% TODO(bob): promote L8 validation results.
+
+\chapter{Shape Validation}
+%% SOURCE: docs/working/experiments/campaigns/shape_validation/README.md
+%% TODO(bob): promote shape validation results.
+
+%%────────────────────────────────────────────────
+%% Appendices
+%%────────────────────────────────────────────────
+\appendix
+
+\chapter{Reproducibility Protocol}
+%% SOURCE: docs/working/papers/REPRODUCIBILITY.md
+%% TODO(bob): promote one-command reproduction protocol.
+
+\chapter{Replication Invitation}
+%% SOURCE: docs/working/papers/REPLICATION_INVITE.md
+%% TODO(bob): promote open invitation to independent replication.
+
+\chapter{R Script Inventory}
+%% TODO(bob): table of all R scripts, their inputs, outputs, and campaign association.
+%% Scripts live in docs/working/experiments/campaigns/*/scripts/ and campaigns/*/R files.
+
+\backmatter
+\bibliographystyle{plainnat}
+\bibliography{../common/starship}
+
+\end{document}
