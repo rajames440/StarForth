@@ -1,0 +1,137 @@
+%% SCRAP: architecture/doxygen/DOXYGEN_QUICK_REFERENCE
+%% SOURCE: docs/working/architecture/doxygen/DOXYGEN_QUICK_REFERENCE.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-docs
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Doxygen Quick Reference}
+
+A one-page cheat sheet for annotating StarForth code. The full conventions live
+in the Doxygen Style Guide; this card is the working reference.
+
+\subsection{Essential Commands}
+
+\begin{lstlisting}[language=bash]
+make docs          # all formats (HTML, PDF, AsciiDoc, MD, man)
+make docs-html     # HTML only (fastest)
+make docs-open     # generate and open in browser
+make docs-clean    # remove generated docs
+\end{lstlisting}
+
+\subsection{Comment Skeletons}
+
+A file header carries \texttt{@file}, \texttt{@brief}, \texttt{@author}, and
+\texttt{@date}. A function carries \texttt{@brief}, one \texttt{@param} per
+argument, and \texttt{@return}. A struct uses \texttt{@struct} with inline
+member comments (\texttt{/**< ... */}); an enum uses \texttt{@enum} likewise; a
+macro uses \texttt{@def}; a typedef uses \texttt{@typedef}.
+
+\begin{lstlisting}[language=C]
+/**
+ * @brief One-line description
+ * @param name Parameter description
+ * @return Return value description
+ */
+type function(type name);
+\end{lstlisting}
+
+\subsection{Common Tags}
+
+\begin{tabular}{lll}
+\toprule
+Tag & Purpose & Example \\
+\midrule
+\texttt{@brief} & Short description & \texttt{@brief Initialize VM} \\
+\texttt{@details} & Detailed description & \texttt{@details Allocates memory...} \\
+\texttt{@param name} & Parameter & \texttt{@param vm VM instance pointer} \\
+\texttt{@return} & Return value & \texttt{@return 0 on success} \\
+\texttt{@retval value} & Specific return & \texttt{@retval 0 Success} \\
+\texttt{@see} & Cross-reference & \texttt{@see vm\_cleanup()} \\
+\texttt{@note} & Important note & \texttt{@note Thread-safe} \\
+\texttt{@warning} & Warning & \texttt{@warning May block} \\
+\texttt{@bug} & Known bug & \texttt{@bug Issue \#42} \\
+\texttt{@todo} & Future work & \texttt{@todo Add optimization} \\
+\texttt{@deprecated} & Deprecated & \texttt{@deprecated Use foo() instead} \\
+\bottomrule
+\end{tabular}
+
+\subsection{Conditions, Examples, and Grouping}
+
+Invariants use \texttt{@pre}, \texttt{@post}, and \texttt{@invariant}. Examples
+sit inside \texttt{@code} / \texttt{@endcode} under a \texttt{@par Example:}.
+Related functions are bracketed by \texttt{@defgroup ... @\{} and \texttt{@\}}.
+Within comments, Markdown-style formatting works: hyphen bullets and numbered
+lists for sequences, \texttt{\#\#} headings for sections, and
+\texttt{*italic*}, \texttt{**bold**}, and \texttt{`code`} for emphasis.
+
+\subsection{Two Templates}
+
+A simple function needs only brief, params, and return. A complex one earns the
+full treatment:
+
+\begin{lstlisting}[language=C]
+/**
+ * @brief Short description
+ *
+ * @details
+ * Detailed explanation of what this function does and why.
+ *
+ * @param vm VM instance pointer
+ * @param value Input value
+ *
+ * @return Result value
+ * @retval 0 Success
+ * @retval -1 Error
+ *
+ * @pre vm must be initialized
+ * @post vm->state is updated
+ *
+ * @warning Potential issue to be aware of
+ * @see related_function()
+ *
+ * @par Example:
+ * @code
+ * int result = my_func(&vm, 42);
+ * if (result < 0) handle_error();
+ * @endcode
+ */
+int my_func(VM *vm, int value);
+\end{lstlisting}
+
+\subsection{Best Practices}
+
+Document every public function, keep the brief to one line, push depth into
+\texttt{@details}, supply examples for complex functions, cross-reference with
+\texttt{@see}, document all parameters and return values, and flag hazards with
+\texttt{@warning} and \texttt{@note}. Do not document the obvious, restate the
+function name, omit parameter or return descriptions, write vague prose, use
+opaque names in examples, or let documentation rot when the code changes.
+
+\subsection{Checking Your Work}
+
+Generate, inspect the warning log, then view:
+
+\begin{lstlisting}[language=bash]
+make docs-html
+cat docs/api/doxygen_warnings.log
+make docs-open
+\end{lstlisting}
+
+\begin{tabular}{ll}
+\toprule
+Warning & Fix \\
+\midrule
+``Member X is not documented'' & Add \texttt{@param X description} \\
+``No documentation for function'' & Add \texttt{@brief} comment \\
+``Return value not documented'' & Add \texttt{@return description} \\
+``Invalid cross-reference'' & Check the \texttt{@see} target exists \\
+\bottomrule
+\end{tabular}
+
+\subsection{Effort Estimates}
+
+A simple function takes 2--5 minutes; a complex function with an example,
+10--15; a struct with ten fields, 10--15; and a complete 20-function header,
+one to two hours. IDE template generators are available for VS Code (the
+``Doxygen Documentation Generator'' extension), CLion (built in), and Vim (the
+DoxygenToolkit plugin with \texttt{:Dox}).

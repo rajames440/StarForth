@@ -1,0 +1,208 @@
+%% SCRAP: architecture/03-architecture/physics-engine/feedback-loops-analysis
+%% SOURCE: docs/working/architecture/03-architecture/physics-engine/feedback-loops-analysis.md
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Feedback Loop Wiring and Self-Optimization Audit}
+
+%% NOTE: This scrap records the implementation audit dated 2025-11-08, when six
+%% loops (the later seven-loop taxonomy supersedes this count) were classified by
+%% wiring and utilization state. Retained as an accurate-for-its-time record of
+%% which loops actively drove optimization decisions.
+
+This audit classifies the self-optimization machinery by two independent axes:
+whether a loop is \emph{wired} into the execution path, and whether its output is
+actually \emph{utilized} to drive a decision. At the time of the audit the
+runtime carried six feedback loops, of which three were fully operational, one
+ran without validation, one was wired but dormant, and one served observability
+alone.
+
+\begin{itemize}
+  \item \textbf{Fully wired and operational.} Hot-words cache promotion
+        (1.78$\times$ measured speedup), rolling-window adaptive shrinking
+        (enforcement fixed 2025-11-08), and pipelining transition speculation
+        (speculative prefetch wired 2025-11-08).
+  \item \textbf{Wired and utilized but unvalidated.} Linear heat decay --- it
+        runs, but its slope is arbitrary and its function choice is unsupported
+        by measurement.
+  \item \textbf{Wired but dormant.} Context-aware window tuning --- a binary-chop
+        stub awaiting VM-level metric aggregation.
+  \item \textbf{Observability only.} Physics-metadata temperature tracking,
+        collected for formal verification rather than optimization.
+\end{itemize}
+
+\subsection{Hot-Words Cache Promotion}
+
+Each dictionary entry carries an \texttt{execution\_heat} counter incremented per
+execution. When heat exceeds \texttt{HOTWORDS\_EXECUTION\_HEAT\_THRESHOLD}
+(default 50), \texttt{hotwords\_cache\_promote()} moves the word into a 32-entry
+LRU cache, dropping subsequent lookups from 20--30\,ns in the bucket to 1--2\,ns
+in cache. Metric tracking lives at \texttt{src/dictionary\_management.c:170}, the
+threshold check at \texttt{src/physics\_hotwords\_cache.c:155}, and the promotion
+logic at \texttt{src/physics\_hotwords\_cache.c:420--450}. The measured 1.78$\times$
+speedup on cache-hit paths confirms the loop as fully operational.
+
+\subsection{Rolling Window Adaptive Shrinking}
+
+This loop measures pattern diversity --- the count of unique adjacent word
+transitions in the execution history. When the diversity growth rate falls below
+\texttt{ADAPTIVE\_GROWTH\_THRESHOLD} (1\%), checked every
+\texttt{ADAPTIVE\_CHECK\_FREQUENCY} (256) executions, the
+\texttt{effective\_window\_size} shrinks to \texttt{ADAPTIVE\_SHRINK\_RATE}
+(75\%) of its current value, stepping $4096 \rightarrow 3072 \rightarrow 2304
+\rightarrow 1728 \rightarrow \dots \rightarrow$
+\texttt{ADAPTIVE\_MIN\_WINDOW\_SIZE} (256).
+
+The loop was repaired on 2025-11-08. Previously the diversity measurement always
+scanned the full \texttt{ROLLING\_WINDOW\_SIZE} of 4096 entries, so the reported
+metric shrank but the enforced scan did not. The fix bounds the scan to the
+effective window when warm and uses circular indexing to scan only recent
+entries:
+
+\begin{lstlisting}[language=C]
+uint32_t scan_limit = (window->is_warm)
+    ? window->effective_window_size
+    : ROLLING_WINDOW_SIZE;
+
+for (uint32_t i = 0; i < scan_limit; i++)
+{
+    /* window_pos is the next write position */
+    uint32_t idx = (window->window_pos
+        + ROLLING_WINDOW_SIZE - scan_limit + i)
+        % ROLLING_WINDOW_SIZE;
+    uint32_t current = window->execution_history[idx];
+    /* Count unique transitions in recent entries only */
+}
+\end{lstlisting}
+
+New data now arrives each tick and stale data falls off after
+\texttt{effective\_window\_size} ticks rather than always 4096, satisfying the
+requirement that the window advance continuously.
+
+\subsection{Linear Heat Decay (Wired, Unvalidated)}
+
+Heat decays linearly:
+
+\begin{equation}
+H(t) = \max\!\bigl(0,\; H_0 - \mathrm{decay\_rate} \times \Delta t\bigr)
+\end{equation}
+
+with rate \texttt{DECAY\_RATE\_PER\_US\_Q16} (default 1, i.e. $1/65536$ heat per
+microsecond) yielding a roughly six-to-seven-second half-life for a 100-heat
+word. Stale words shed weight automatically, so only frequently executed words
+stay above the promotion threshold. The decay logic sits at
+\texttt{src/physics\_metadata.c:164--203}
+(\texttt{physics\_metadata\_apply\_linear\_decay()}) and is invoked before each
+execution from \texttt{src/vm.c:524}.
+
+A linear form was chosen over exponential for integer-only arithmetic, bounded
+and predictable convergence time, simplicity of formal verification, and a
+StarshipOS modeling rationale in which a task context switch forces a heat reset.
+It was explicitly designated a baseline: the team noted it could switch to a
+half-life model after validating the linear approach.
+
+The loop remains unvalidated, with several open gaps recorded at audit time:
+
+\begin{itemize}
+  \item No empirical evidence that decay improves any outcome.
+  \item The initial slope of $1\,\mu\mathrm{s}^{-1}$ is arbitrary, with no
+        evidence it is optimal.
+  \item The functional form is unverified --- exponential, logarithmic,
+        parabolic, or sinusoidal decay might perform better.
+  \item \texttt{DECAY\_RATE\_PER\_US\_Q16} has no knob in the DoE configurations,
+        so it cannot be tuned experimentally.
+  \item The loop is not closed: decay happens, but nothing measures whether it
+        helped.
+\end{itemize}
+
+%% TODO(bob): empirical decay validation and a DoE knob for DECAY_RATE_PER_US_Q16
+%% are open work items carried from this audit.
+
+\subsection{Pipelining Transition Speculation}
+
+This loop records transition frequencies $(\text{word}_A \rightarrow
+\text{word}_B)$ via \texttt{transition\_metrics\_record()}, computes conditional
+probabilities $P(B \mid A)$ in \Qtype{} format, and tracks prefetch accuracy.
+Speculation fires when confidence exceeds \texttt{SPECULATION\_THRESHOLD\_Q48}
+(50\%) with at least \texttt{MIN\_SAMPLES\_FOR\_SPECULATION} (10) observations:
+after recording a transition the runtime updates the probability cache, checks
+whether the predicted next word clears the threshold, and if so locates that
+word's dictionary entry and pre-promotes it to the hot-words cache so the next
+lookup is already warm. Metric collection is at
+\texttt{src/physics\_pipelining\_metrics.c:92--109}, probability calculation at
+lines 112--123, the decision at lines 164--186, and the action wiring at
+\texttt{src/vm.c:544--583}. The loop is fully closed: metrics collected,
+probability computed, confidence checked, speculative promotion performed, and
+the prefetch attempt recorded for feedback.
+
+\subsection{Context-Aware Window Tuning (Prototype)}
+
+A second-phase feature measures multi-word context patterns (sequences of two to
+four consecutive words) and intends to binary-search for the optimal
+\texttt{effective\_window\_size} via
+\texttt{transition\_metrics\_binary\_chop\_suggest\_window()} (lines 340--357).
+The function exists but has no integration point in the main execution path, and
+the algorithm is not yet validated.
+
+\subsection{Temperature Tracking (Observability Only)}
+
+The \texttt{temperature\_q8} field holds an exponential moving average of
+execution heat. It is used for profiling, debugging, and as the foundation for
+the Isabelle/HOL physics state-machine proofs --- it does not drive any
+optimization decision and works as intended in that observational role.
+
+\subsection{Bootstrap Seeding}
+
+Two routines run once at startup to prime feedback state.
+\texttt{rolling\_window\_seed\_hotwords\_cache()} (lines 258--329) replays POST
+execution and promotes high-heat words so the cache is warm before user workload
+begins. \texttt{rolling\_window\_seed\_pipelining\_context()} (lines 341--415)
+replays POST sequences to establish a transition baseline, giving the pipelining
+loop initial pattern knowledge.
+
+\subsection{Configuration}
+
+All loop knobs are tunable from the Makefile.
+
+\begin{lstlisting}[language=bash]
+# Hot-words cache promotion
+make HOTWORDS_EXECUTION_HEAT_THRESHOLD=75
+
+# Adaptive window shrinking
+make ADAPTIVE_SHRINK_RATE=75       # keep 75%, shrink by 25%
+make ADAPTIVE_MIN_WINDOW_SIZE=256  # never shrink below 256
+make ADAPTIVE_CHECK_FREQUENCY=256  # check every 256 executions
+make ADAPTIVE_GROWTH_THRESHOLD=1   # shrink when growth < 1%
+
+# Heat decay
+make DECAY_RATE_PER_US_Q16=16384   # decay rate (heat/us)
+make DECAY_MIN_INTERVAL=1000000    # min interval between decays (ns)
+
+# Pipelining (disabled by default)
+make ENABLE_PIPELINING=1
+make SPECULATION_THRESHOLD_Q48=$((50 << 16))  # 50% confidence
+make MIN_SAMPLES_FOR_SPECULATION=10
+\end{lstlisting}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+Loop & Measured & Threshold & Action & Status \\
+\midrule
+Hot-words promotion & \texttt{execution\_heat} & $>50$ & add to cache & validated \\
+Adaptive shrinking & pattern diversity & growth $<1\%$ & shrink window & fixed \\
+Heat decay & time since exec & $\sim$6--7\,s half-life & reduce heat & unvalidated \\
+Pipelining transitions & \texttt{transition\_heat[]} & $>50\%$ conf. & speculative prefetch & phase 2 \\
+Context window tuning & multi-word seqs & --- & binary chop & phase 2 \\
+Temperature tracking & \texttt{temperature\_q8} & --- & observability & working \\
+\bottomrule
+\end{tabular}
+\caption{Audit summary of the six feedback loops as of 2025-11-08.}
+\end{table}
+
+The audit closed with three active loops, two dormant loops, and one
+observability loop, plus the single rolling-window shrinking bug identified and
+fixed in the same pass.

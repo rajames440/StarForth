@@ -1,0 +1,117 @@
+%% SCRAP: hardware/PLATFORM_BUILD_GUIDE
+%% SOURCE: docs/working/hardware/PLATFORM_BUILD_GUIDE.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-build
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Platform Build Guide}
+
+StarForth builds for both POSIX hosts and the L4Re microkernel from a single
+codebase, selected by one Makefile switch. The POSIX path is the default; the
+L4Re path is enabled with \texttt{L4RE=1}.
+
+\begin{lstlisting}[language=bash]
+# POSIX build (Linux/macOS/BSD) -- default
+make
+make fastest
+make pgo
+
+# L4Re/StarshipOS build
+make L4RE=1
+
+# Clean switch between platforms
+make clean && make L4RE=1
+\end{lstlisting}
+
+\subsection{Platform Abstraction Files}
+
+The platform layer isolates timing and clock functionality behind a small set
+of files. The remainder of the VM is untouched by the platform choice.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+File & Purpose & Platform \\
+\midrule
+\texttt{include/platform\_time.h} & Abstraction API & All \\
+\texttt{src/platform/platform\_init.c} & Platform selector & All \\
+\texttt{src/platform/time\_posix.c} & POSIX implementation & POSIX \\
+\texttt{src/platform/time\_l4re.c} & L4Re implementation & L4Re \\
+\bottomrule
+\end{tabular}
+\caption{Platform abstraction source files.}
+\end{table}
+
+Only three core files consume the abstraction: \texttt{src/log.c} (timestamps
+via \texttt{sf\_realtime\_ns()} and \texttt{sf\_format\_timestamp()}),
+\texttt{src/profiler.c} (monotonic timing via \texttt{sf\_monotonic\_ns()}),
+and \texttt{src/main.c} (calls \texttt{sf\_time\_init()} at startup). All other
+VM core files, word implementations, and the block I/O system are unchanged.
+
+\subsection{L4Re Time Backend}
+
+The L4Re RTC server provides hardware RTC access (x86 I/O ports, ARM PL031,
+I2C chips), nanosecond precision via the CPU timestamp counter, an IPC
+interface for getting and setting time, and suspend/resume handling that
+refreshes the offset on wakeup. The C API lives in \texttt{librtc.a}:
+
+\begin{lstlisting}[language=C]
+l4_uint64_t l4rtc_get_timer(void);
+int l4rtc_get_offset_to_realtime(l4_cap_idx_t server, l4_uint64_t *ns);
+int l4rtc_set_offset_to_realtime(l4_cap_idx_t server, l4_uint64_t ns);
+\end{lstlisting}
+
+StarForth's L4Re backend behaves as follows. Initialization attempts to obtain
+the \texttt{"rtc"} capability from the L4Re environment, queries the RTC offset
+by IPC when found, and falls back to a zero offset (epoch time) otherwise.
+Monotonic time always works without an RTC, reading
+\texttt{l4\_kip\_clock\_ns(l4re\_kip())} directly from the Kernel Info Page.
+Real time returns the RTC offset plus the KIP clock, or zero when no RTC is
+available. Setting time computes a new offset from the desired time minus
+uptime and writes it via IPC, which requires write permission on the
+\texttt{"rtc"} capability.
+
+L4Re's libc already provides working \texttt{clock\_gettime},
+\texttt{time}, \texttt{localtime}, and \texttt{strftime}. The platform
+abstraction is retained anyway for direct control over the RTC capability,
+explicit handling of a missing RTC, a portable API across all platforms, and
+to avoid a libc dependency in minimal builds.
+
+\subsection{Testing}
+
+For the POSIX build, confirm timestamped log output and a non-zero RTC check:
+
+\begin{lstlisting}[language=bash]
+make clean && make
+./build/starforth --log-info
+\end{lstlisting}
+
+For the L4Re build inside the StarshipOS tree, \texttt{make l4} selects the
+L4Re backend automatically; running under \texttt{scripts/runos.sh} should
+show working profiler timing (always available via the KIP clock) and working
+timestamps, which may report 1970 if no RTC server is present. A
+syntax-checking script can validate both backends without a full L4Re tree by
+compiling \texttt{time\_l4re.c} with \texttt{-fsyntax-only} (a fatal error on
+missing L4Re headers is expected) and compiling the POSIX backend and selector
+cleanly.
+
+\subsection{Troubleshooting}
+
+\begin{itemize}
+  \item \emph{undefined reference to sf\_monotonic\_ns} --- ensure
+    \texttt{time\_posix.c} and \texttt{platform\_init.c} are compiled.
+  \item \emph{implicit declaration of sf\_time\_init} --- add
+    \texttt{\#include "platform\_time.h"}.
+  \item \emph{fatal error: l4/re/env.h: No such file or directory} ---
+    expected outside the L4Re tree; build through the StarshipOS build system.
+  \item \emph{RTC server not found} --- start the RTC server in the loader
+    script and provide the \texttt{rtc} capability.
+  \item \emph{Timestamps show 1970-01-01} --- the RTC server is not supplying
+    an offset; check the vbus configuration and hardware RTC.
+\end{itemize}
+
+The result is a complete platform abstraction layer that builds on POSIX and
+L4Re alike, with zero runtime overhead from inline functions and a clean
+vtable-style separation. Switching platforms requires only \texttt{make
+L4RE=1}; the core VM is unchanged.

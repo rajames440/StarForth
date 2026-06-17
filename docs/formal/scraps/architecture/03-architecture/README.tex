@@ -1,0 +1,29 @@
+%% SCRAP: architecture/03-architecture/README
+%% SOURCE: docs/working/architecture/03-architecture/README.md
+%% STATUS: SUPERSEDED
+%% FITS: dev-guide/ch-overview
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Architecture: Subsystem Index}
+
+%% This source is a directory-index README. Its substantive content — the
+%% three-layer model, core components, the physics innovation, and the
+%% roadmap — is fully covered by the Architecture Overview scrap, which
+%% supersedes it. Retained here as a brief subsystem signpost.
+
+StarForth's architecture documentation covers the core subsystems and the path
+toward StarKernel and StarshipOS. The subsystems are the Hardware Abstraction
+Layer (which enables the StarForth $\rightarrow$ StarKernel $\rightarrow$
+StarshipOS progression), the heartbeat system (the centralized time-based
+tuning coordinator), the physics engine (the physics-driven adaptive runtime),
+the pipelining subsystem (speculative execution via word-transition
+prediction), and the adaptive systems (window inference and decay algorithms).
+
+The architecture rests on three layers --- the platform-agnostic VM and physics
+subsystems, the HAL, and the platform implementation (Linux, L4Re, or kernel).
+Its defining feature is a physics-grounded, self-adaptive runtime with formally
+proven deterministic behavior: 0\% algorithmic variance across 90 experimental
+runs. The full treatment, including the four-phase roadmap, appears in the
+Architecture Overview chapter.
+
+%% TODO(bob): this index README duplicates OVERVIEW. Confirm it can be dropped from the formal set rather than carried as a standalone section, and redirect its subsystem links to the promoted formal chapters.

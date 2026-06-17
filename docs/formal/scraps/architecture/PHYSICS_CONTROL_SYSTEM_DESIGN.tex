@@ -1,0 +1,181 @@
+%% SCRAP: architecture/PHYSICS_CONTROL_SYSTEM_DESIGN
+%% SOURCE: docs/working/architecture/PHYSICS_CONTROL_SYSTEM_DESIGN.adoc
+%% STATUS: WORKING
+%% FITS: dev-guide/app-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% PATENT: This scrap describes adaptive scheduling and memory-management
+%% mechanisms driven by runtime physics observables. Several passages read as
+%% claim-like ("physics metrics drive cache-tier placement", "temperature-weighted
+%% eviction"). Flagged inline with %% PATENT: markers. No claims are drafted here;
+%% forward to patent counsel before any external release.
+
+\section{From Observability to Control}
+
+The physics engine answers the question of what the system is doing. Scheduling
+and memory management answer the question of what it should do differently. The
+physics engine supplies observability --- entropy slope, temperature trend, p99
+latency. Scheduling and memory management supply control: execution placement and
+data placement respectively, joined by feedback-control loops.
+
+Three subsystems consume physics signals. The scheduling system governs word
+priority, core affinity, preemption hints, latency SLOs, and throttling. The
+memory-management system governs cache tier, block placement, garbage-collection
+triggers, and eviction policy. Between them, feedback loops close observation onto
+action.
+
+\subsection{The Scheduling System}
+
+StarForth executes on top of a host scheduler (L4Re or Linux). The VM runs
+largely on a single thread, cannot directly reorder word execution within a
+definition, and influences the host only through priority hints
+(\texttt{setpriority}, \texttt{sched\_setparam}); the return stack dictates
+nesting order.
+
+%% PATENT: claim-like phrasing follows.
+Within these limits, physics can still control scheduling. At the OS level it sets
+per-word priority (hotter words receive lower nice values), CPU affinity (hot,
+cache-sensitive words pinned together; interfering words separated), and preemption
+hints (hot, rapidly growing words made non-preemptible for batching).
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    int os_priority;       // nice level or sched_priority
+    int scheduling_class;  // SCHED_OTHER, SCHED_FIFO, SCHED_RR
+    int cpu_affinity_mask; // which cores allowed
+} sched_hint_t;
+
+// hotter = lower nice = higher priority
+word->sched_hint.os_priority = (word->temperature_q8 > 0x8000) ? 5 : 10;
+\end{lstlisting}
+
+Even without host control, a VM-level scheduler can respect physics. Inside
+\texttt{execute\_colon\_word()}, hot words on a critical path can be executed with
+affinity or batched with related words, while cold words are deferred or batched
+for idle time. Adaptive batching groups words that physics observes always run
+together --- \texttt{IF}/\texttt{THEN}, for instance --- to minimize cache misses.
+
+A latency-SLO mechanism times each execution against a per-word limit and, on
+violation, adjusts knobs: it boosts priority, lowers the stack-depth limit, and
+shortens the batch timeout, logging the breach.
+
+\subsection{The Memory-Management System}
+
+StarForth uses a single 5~MB dictionary heap (statically allocated, no
+fragmentation), block storage of 1024 blocks of 1024 bytes, and two 1024-cell
+stacks. There is no explicit memory manager; allocation is implicit in the
+dictionary.
+
+%% PATENT: claim-like phrasing follows.
+Physics can drive placement across a logical memory hierarchy. A tier is chosen
+from word temperature and entropy slope:
+
+\begin{lstlisting}[language=C]
+typedef enum {
+    MEM_TIER_L1, MEM_TIER_L2, MEM_TIER_L3,
+    MEM_TIER_DRAM, MEM_TIER_BLOCK
+} mem_tier_t;
+
+mem_tier_t choose_tier(DictEntry *word) {
+    if (word->physics.temperature_q8 > 0xE000) return MEM_TIER_L1;
+    if (word->physics.temperature_q8 > 0x8000) return MEM_TIER_L2;
+    if (word->physics.temperature_q8 > 0x4000) return MEM_TIER_L3;
+    if (word->physics.entropy_slope > 0)       return MEM_TIER_DRAM;
+    return MEM_TIER_BLOCK;  // cold: evict to block storage
+}
+\end{lstlisting}
+
+Cache coloring uses the learned call graph: words that frequently co-execute are
+placed in different cache sets to avoid conflict. Garbage collection is triggered
+not by a simple capacity threshold but by memory pressure (drawn from the host PSI
+snapshot) combined with the presence of cold, stale words to reclaim. Eviction
+replaces pure LRU with a temperature-weighted score --- age multiplied by inverse
+temperature --- so a candidate is hot only when both old and cold:
+
+\begin{lstlisting}[language=C]
+uint64_t score = (age / 1000000) * ((0xFFFF - temperature_q8) + 1);
+// older + colder => higher score => evicted first
+\end{lstlisting}
+
+Block storage absorbs the coldest words. A word spills to disk when it is cold, has
+not run for several minutes, sits outside any SLO-critical path, and memory
+pressure is high; it is lazily reloaded on next use, with its physics re-touched on
+access.
+
+\subsection{Integration Points}
+
+Physics observes (entropy, temperature, recency, latency, call graph, stack depth,
+error rate, memory pressure) and feeds the scheduler, which decides priority,
+affinity, batch group, preemption, SLO, throttling, and stack limits. Execution
+respects those hints and generates new metrics, which feed the memory manager's
+decisions about cache tier, block placement, GC trigger, eviction, spilling, and
+prefetch. Placement then affects the next iteration's execution, closing the loop.
+
+Two narrow APIs connect the components. The physics-to-scheduling interface
+(\texttt{sched\_control\_t}) carries priority, affinity mask, batch group,
+preemptibility, latency limit, and stack limit; \texttt{sched\_update\_word()}
+applies adjustments and \texttt{sched\_report\_execution()} reports observed
+latency. The physics-to-memory interface (\texttt{mem\_control\_t}) carries
+preferred tier, cache-set preference, spill-age threshold, evictability, and
+eviction priority. Scheduler and memory manager also coordinate directly: a batch
+decision notifies the memory manager so it can cache-color the group, and an
+eviction of a critical-path word warns the scheduler before disabling that word's
+fast path.
+
+\subsection{Implementation Phases}
+
+\begin{itemize}
+  \item \textbf{Phase 1 --- Instrumentation (current).} Physics observes and
+        publishes metrics; scheduling and memory read them advisorily.
+  \item \textbf{Phase 2 --- Weak Control.} Scheduling adjusts OS priority hints;
+        memory becomes cache-tier aware; still advisory.
+  \item \textbf{Phase 3 --- Strong Control.} Scheduling enforces the latency SLO;
+        memory enforces GC and eviction; the feedback loop is closed.
+  \item \textbf{Phase 4 --- ML Integration.} A model predicts latency, memory, and
+        scheduling outcomes; governance approves knob adjustments.
+\end{itemize}
+
+\subsection{Worked Examples}
+
+\paragraph{Hot word going critical.} An I/O word heats during a file scan. Physics
+reports rising temperature and entropy slope and alerts both subsystems. Scheduling
+boosts the word's priority, enables I/O batching, caps recursion, and sets a 10~$\mu$s
+SLO. Memory promotes the word to L2, prefetches related words
+(\texttt{BLOCK\_WRITE}, \texttt{BUFFER}, \texttt{UPDATE}), and protects it from
+eviction. Execution then meets the SLO at p99~$\approx$~8.5~$\mu$s while the
+temperature stabilizes, after which both subsystems can act more aggressively on the
+now-learned pattern.
+
+\paragraph{Cold word emergency eviction.} Under 95\% dictionary use and 96\% cgroup
+memory, GC triggers. Physics scores eviction candidates by age times inverse
+temperature, selecting the coldest, oldest word first while protecting a recent hot
+word on the critical path. The chosen word spills to block storage, is marked
+\texttt{WORD\_SPILLED}, and reclaims space. Much later, when the user invokes it
+again, the executor detects the flag, reloads it from storage in roughly 50~$\mu$s,
+runs it, and lets physics re-learn its pattern.
+
+\subsection{Critical Design Decisions}
+
+\begin{itemize}
+  \item \textbf{Scheduling granularity} --- per-word priority, coarse word
+        batches, or a hybrid that starts fine-grained and learns optimal batches.
+        Recommendation: hybrid.
+  \item \textbf{Memory placement accuracy} --- static placement, dynamic
+        migration, OS-hint delegation, or logical tiers with no physical movement.
+        Recommendation: logical tiers as scheduling hints.
+  \item \textbf{GC versus spilling} --- always compact, always archive, or a
+        governance-driven per-word policy. Recommendation: governance-driven.
+\end{itemize}
+
+\subsection{Open Questions}
+
+The design leaves several questions for resolution: whether the VM should implement
+its own scheduler or defer entirely to the host; whether dictionary words can be
+physically relocated without breaking pointers, or only hinted logically; whether
+block storage serves persistence or active-memory overflow; how scheduling and
+memory decisions should interact with L4Re IPC deadlines and capability delegation;
+who owns eviction and spilling policy; and whether the added control overhead
+(roughly 100~ns atop the existing 200--300~ns per event) is acceptable for target
+latencies.
+
+%% TODO(bob): Confirm acceptable per-event control overhead budget against the
+%% current latency targets before committing to closed-loop enforcement in Phase 3.

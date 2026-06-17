@@ -1,0 +1,157 @@
+%% SCRAP: architecture/doxygen/DOXYGEN_STYLE_GUIDE
+%% SOURCE: docs/working/architecture/doxygen/DOXYGEN_STYLE_GUIDE.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-docs
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Doxygen Style Guide}
+
+StarForth generates its API documentation from Javadoc-style comments embedded
+in the source. This guide defines the house style for those comments. Doxygen
+renders them into HTML, PDF, AsciiDoc, Markdown, and Unix man pages; a single
+comment therefore feeds every audience, so it pays to write each one with care.
+Generate with \texttt{make docs} for all formats, \texttt{make docs-html} for a
+fast HTML-only pass, or \texttt{make docs-open} to build and open in a browser.
+
+\subsection{Comment Syntax by Construct}
+
+\subsubsection{File Headers}
+
+Every header and source file opens with an \texttt{@file} block carrying a
+brief, a detailed description, and provenance:
+
+\begin{lstlisting}[language=C]
+/**
+ * @file vm.h
+ * @brief StarForth Virtual Machine Core API
+ *
+ * @details
+ * Detailed description of what this file contains and its purpose.
+ *
+ * @author R. A. James (rajames)
+ * @date 2025-08-15
+ * @version 1.0.0
+ * @copyright CC0-1.0 (Public Domain)
+ */
+\end{lstlisting}
+
+\subsubsection{Functions}
+
+Functions carry \texttt{@brief}, \texttt{@param}, \texttt{@return}, and an
+optional \texttt{@details}. Substantial functions also document their
+contracts (\texttt{@pre}, \texttt{@post}), call out hazards with
+\texttt{@note} and \texttt{@warning}, cross-reference relatives with
+\texttt{@see}, and supply a runnable example:
+
+\begin{lstlisting}[language=C]
+/**
+ * @brief Initialize the StarForth virtual machine
+ *
+ * @details
+ * Allocates VM memory, initializes stacks, sets up the dictionary,
+ * and registers the FORTH-79 standard word set.
+ *
+ * @param vm Pointer to uninitialized VM structure
+ *
+ * @pre vm must point to valid memory
+ * @post vm->memory is allocated (VM_MEMORY_SIZE bytes)
+ * @post vm->error is 0 on success, 1 on failure
+ *
+ * @warning Do not use the VM if vm->error is non-zero after init
+ * @see vm_cleanup()
+ *
+ * @par Example:
+ * @code
+ * VM vm;
+ * vm_init(&vm);
+ * if (vm.error) return 1;
+ * vm_interpret(&vm, "42 . CR");
+ * vm_cleanup(&vm);
+ * @endcode
+ */
+void vm_init(VM *vm);
+\end{lstlisting}
+
+\subsubsection{Types, Structures, and Members}
+
+Typedefs and structures take \texttt{@typedef} or \texttt{@struct} with a brief
+and details; each member is documented inline. Note platform caveats and thread
+safety where relevant --- the \texttt{VM} structure, for instance, is documented
+as \emph{not} thread-safe, requiring one instance per thread or external
+locking.
+
+\begin{lstlisting}[language=C]
+/**
+ * @typedef cell_t
+ * @brief Forth cell type (signed 64-bit integer)
+ *
+ * @note Size is platform-dependent: sizeof(signed long)
+ */
+typedef signed long cell_t;
+
+typedef struct VM {
+    /** @brief Data stack (1024 cells) */
+    cell_t data_stack[STACK_SIZE];
+
+    /**
+     * @brief Data stack pointer (index of top element)
+     * @details dsp == -1 means empty; STACK_SIZE-1 means full
+     */
+    int dsp;
+} VM;
+\end{lstlisting}
+
+\subsubsection{Enums and Macros}
+
+Enumerations use \texttt{@enum} with inline member documentation; macros use
+\texttt{@def}. Document the meaning and any layout consequence --- for example,
+\texttt{VM\_MEMORY\_SIZE} is annotated with the 2~MB dictionary / 3~MB user
+block split.
+
+\subsection{Special Tags}
+
+Related functions are organized with \texttt{@defgroup} and \texttt{@ingroup},
+bracketed by \texttt{@\{} and \texttt{@\}}. Cross-references use \texttt{@see};
+examples use \texttt{@code} / \texttt{@endcode}. Contract and lifecycle tags ---
+\texttt{@pre}, \texttt{@post}, \texttt{@note}, \texttt{@warning},
+\texttt{@bug}, \texttt{@todo}, \texttt{@deprecated} --- carry the operational
+caveats a caller must know.
+
+\subsection{Quality Guidelines}
+
+Write documentation that earns its place:
+
+\begin{itemize}
+  \item Document every public API function; supply examples for the complex
+    ones; state pre- and post-conditions; flag dangerous operations with
+    \texttt{@warning}; cross-reference with \texttt{@see}; keep \texttt{@brief}
+    to a single line and push depth into \texttt{@details}.
+  \item Do not document private static functions unless they are genuinely
+    intricate, restate the function name, write obvious comments (``\texttt{@brief
+    Get value}'' for \texttt{getValue()}), use vague phrasing, or let the
+    comment drift out of sync with the code.
+\end{itemize}
+
+A complete worked header lives at \texttt{examples/doxygen\_example.h}.
+
+\subsection{Checking and Coverage}
+
+After annotating, rebuild and clear the warning log:
+
+\begin{lstlisting}[language=bash]
+make docs-html
+cat docs/api/doxygen_warnings.log
+\end{lstlisting}
+
+The frequent offenders are undocumented functions, missing \texttt{@param}
+entries, missing \texttt{@return} on non-void functions, and broken
+\texttt{@see} targets. The coverage goal is 100\% across the public headers in
+\texttt{include/}, the word-source headers in
+\texttt{src/word\_source/include/}, and the key implementation files in
+\texttt{src/}.
+
+\subsection{IDE Integration}
+
+VS Code generates templates through the ``Doxygen Documentation Generator''
+extension; CLion and IntelliJ have built-in support triggered by typing
+\texttt{/**} and Enter; Vim uses the DoxygenToolkit plugin.

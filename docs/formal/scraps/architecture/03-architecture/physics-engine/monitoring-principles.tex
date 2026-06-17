@@ -1,0 +1,134 @@
+%% SCRAP: architecture/03-architecture/physics-engine/monitoring-principles
+%% SOURCE: docs/working/architecture/03-architecture/physics-engine/monitoring-principles.md
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Monitoring Principles}
+
+The StarForth VM is built as a physics-driven organism rather than a
+conventional interpreter, and its monitoring subsystem is governed by a single
+overriding doctrine: observation must be non-perturbative. Sensors describe the
+runtime; they never shape it. These rules are canonical for every contributor
+and every automated tool that touches the physics runtime, the inference engine,
+or DoE integration.
+
+The runtime carries several continuous, interacting feedback loops --- heat
+accumulation and decay, the Rolling Window of Truth, hot-words cache dynamics,
+prefetch heuristics, transition-graph formation, adaptive decay-slope tuning,
+and adaptive heartbeat-interval control. All of these must exist and run before
+any monitoring can be safely attached, because a sensor that injects latency,
+allocations, reordering, or contention would corrupt the very signal it is meant
+to read.
+
+\subsection{Physiology Before Instrumentation}
+
+Instrumentation must never precede the runtime's physiology. The required order
+is strict: first build the core loops --- heat and decay, window updates,
+prefetch logic, inference heuristics, the tick/heartbeat loop, and transition
+metrics; then let the system run until it reaches first-cycle stability; only
+then attach sensors, DoE metrics, event-bus listeners, and observability points.
+Before the loops run there is no signal to observe, so premature metrics would
+either produce garbage or perturb the VM.
+
+\subsection{Monitoring Begins at $t \approx 0$}
+
+The Rolling Window of Truth begins empty at VM startup, and this is required
+rather than an error. The VM must operate with no history and adapt with
+whatever it has, allowing inference to form its earliest predictions from sparse
+data. No artificial seeding or fake signal insertion is permitted. Inference
+must detect missing history, treat the first values as a baseline, and adapt
+gradually as the window fills. Early fluctuations are normal and desired;
+decay-slope and window-size tuning must behave conservatively while history is
+thin; prefetch heuristics must never assume a non-empty window; and no subsystem
+may depend on a pre-populated window.
+
+This startup interval is the system's initial learning phase, analogous to the
+warm-up of a PID controller, the first samples of a strip-chart recorder, or the
+startup of a biological homeostasis loop. Monitoring begins at the earliest
+moment when all feedback loops have completed at least one internal cycle but
+before any long-term adaptation occurs. This is $t \approx 0$ --- not literal
+time zero, but the first physiologically meaningful moment, when the Rolling
+Window holds its first value, heat has been incremented at least once, cache
+promotion may have occurred, the decay slope has an initialized baseline,
+prefetch tracking exists, the transition graph has at least one edge, and the
+heartbeat loop has run once. From that point forward the VM has true physics to
+observe. Where seed values are required, they are supplied by the builder at
+build-configuration time.
+
+\subsection{Non-Perturbative Observation}
+
+Monitoring must never disturb dictionary ordering, bucket heat, window width,
+inference tuning, lookup strategy, word execution timing, tick interval, or
+cache hit and miss counts. The absolute rules are: no \texttt{malloc} or
+\texttt{free}; no locks (use read-only pointers); no dictionary traversal; no
+reordering; no I/O to stdout during VM operation; and no contact with any
+structure that the physics feedback loops mutate. Monitors observe. They never
+participate.
+
+\subsection{History Plus Present Yields Inference Yields Adjustment}
+
+This is the governing rule for every inference cycle. Every adaptive
+subsystem --- decay-slope tuning, window-width adjustment, prefetch ROI,
+hot-word promotion heuristics, and adaptive heartbeat pressure --- bases its
+decisions on three inputs and produces one output:
+
+\begin{itemize}
+  \item \textbf{History} (the integral component): the Rolling Window of Truth,
+        the previous decay slope, heat momentum, the prefetch hit/miss ratio,
+        transition-graph edges, and the long-term pressure average.
+  \item \textbf{Current value} (the proportional component): the current heat
+        spike, the current window entry, instantaneous tick-time pressure, the
+        current transition, and the current hit or miss event.
+  \item \textbf{Inference}: smoothing, numerical weighting, confidence scoring,
+        deterministic seeded stochastic biasing, bounded slope tuning, and
+        bounded window expansion or contraction.
+  \item \textbf{Adjustment} (the output): an updated decay slope, window width,
+        prefetch heuristic, heartbeat interval, or hot-word promotion threshold.
+\end{itemize}
+
+This mirrors a PID controller tuned for StarForth's information thermodynamics ---
+using execution statistics as a proxy for thermal state, the controller blends
+an integral term (history) and a proportional term (present) into a bounded
+adjustment.
+
+\subsection{Explicit, Side-Effect-Free Sampling Points}
+
+Every feedback loop exposes explicit, isolated sampling points --- heat updated,
+window updated, decay slope recalculated, inference cycle completed, prefetch
+stat updated, transition recorded, heartbeat tick completed. Each sampling point
+uses only a \texttt{const VM*}, takes read-only access to internal structures,
+never influences scheduling or ordering, never allocates, and never blocks the
+VM.
+
+\subsection{Monitoring Feeds DoE, Not the VM}
+
+All monitoring output goes to one of three sinks: an optional, listener-based,
+non-intrusive event bus; the DoE metrics collector, which emits a single
+deterministic CSV line with no stdout logging; or optional debug logging
+restricted to stderr, never present in CI/CD and never in DoE mode without an
+explicit flag. Monitoring informs experimentation; it does not control the VM.
+The VM's physiology controls itself.
+
+\subsection{Monitoring Must Not Create New Feedback Loops}
+
+The runtime already has its core loops --- heat accumulation and decay, hot-word
+promotion, inference-driven decay-slope tuning, and inference-driven
+window-width tuning. Monitoring must not introduce a new contaminating loop,
+logging-based slowdown, mechanical timing noise, heat changes from sampling, or
+cache busting from instrumentation. Monitoring describes; it does not shape.
+
+\subsection{Checklist}
+
+The mandatory invariants are that physiology is wired before instrumentation;
+that monitoring begins at the first stable cycle ($t \approx 0$); that monitors
+are non-perturbative; that metrics follow the history-plus-present-to-inference-
+to-adjustment pattern; that metrics never modify physics state; and that DoE
+output is isolated and side-effect-free. The forbidden actions are sampling
+inside locked dictionary regions, allocating memory during monitoring,
+reordering the dictionary because of instrumentation, logging to stdout during
+VM operation, and creating new feedback loops via metrics.
+
+StarForth is not a VM with some metrics bolted on; it is a self-regulating
+cybernetic organism with measurable behavior. These monitoring principles are
+doctrinal and apply without modification.

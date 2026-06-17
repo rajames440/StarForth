@@ -1,0 +1,121 @@
+%% SCRAP: architecture/03-architecture/hal/starkernel-integration
+%% SOURCE: docs/working/architecture/03-architecture/hal/starkernel-integration.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-platform
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{StarKernel HAL Integration}
+
+This section gives the kernel-specific detail for the HAL platform layer that
+becomes StarKernel: the UEFI boot sequence, the freestanding C environment,
+hardware bring-up, and the path to a working \texttt{ok} prompt.
+
+\subsection{Boot Architecture}
+
+The kernel boots in four handoffs. UEFI firmware initializes hardware, exposes
+boot services --- the memory map, the ACPI tables, and the graphics output
+protocol --- and loads the boot image. The StarKernel boot loader collects that
+information into a \texttt{BootInfo} structure, sets up initial page tables,
+exits boot services, and jumps to the kernel proper. The kernel HAL stage
+initializes the CPU structures, the memory subsystem, the time subsystem, and the
+console. Finally the StarForth VM is created, its physics subsystems are
+initialized, the REPL starts, and the \texttt{ok} prompt appears.
+
+\subsection{UEFI Loader}
+
+The loader is the UEFI entry point. It collects the memory map (over-allocating
+to leave room for the descriptor that \texttt{ExitBootServices} will add), locates
+the ACPI 2.0 RSDP among the configuration tables, queries the graphics output
+protocol for the framebuffer base and geometry, exits boot services, and transfers
+control to the kernel. It never returns.
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint64_t memory_map_addr;
+    uint64_t memory_map_size;
+    uint64_t memory_map_descriptor_size;
+    uint64_t acpi_rsdp_addr;
+    uint64_t framebuffer_addr;
+    uint32_t framebuffer_width;
+    uint32_t framebuffer_height;
+    uint32_t framebuffer_pitch;
+} BootInfo;
+\end{lstlisting}
+
+\subsection{Kernel Entry Point}
+
+The kernel entry point parses \texttt{BootInfo} and brings the machine up in
+order: it initializes the serial console first so that every later step can emit
+debug output, then the descriptor tables, then the physical and virtual memory
+managers, then the kernel heap, then the framebuffer, and finally the HAL
+subsystems. With the HAL ready it calls the standard \texttt{main()} to start the
+VM, and panics if \texttt{main()} ever returns.
+
+\subsection{HAL Implementation Notes}
+
+The kernel HAL rests on a handful of hardware facilities. Time calibrates the
+TSC against the HPET, checks for an invariant TSC, records a boot timestamp, and
+drives periodic interrupts from the local APIC timer.
+
+\begin{lstlisting}[language=C]
+uint64_t hal_time_now_ns(void) {
+    uint64_t tsc = rdtsc() - boot_tsc;
+    return (tsc * 1000000000ULL) / tsc_hz;
+}
+\end{lstlisting}
+
+Interrupts populate a 256-entry IDT, mask the legacy PIC in favor of the local
+APIC and IOAPIC, and track nesting depth so that \texttt{hal\_in\_interrupt\_context()}
+is exact. Memory layers a bitmap physical allocator over the parsed UEFI memory
+map, a four-level page-table virtual manager, and a \texttt{kmalloc} heap that
+zero-initializes to honor the contract. The console drives a 16550 UART at
+115200 baud in polling mode and, where present, a linear GOP framebuffer with
+software text rendering. CPU support reports the local APIC identity and exposes
+the relax and halt primitives.
+
+\subsection{Build System}
+
+The kernel is built with a freestanding toolchain: a C compiler invoked with
+\texttt{-ffreestanding} and floating point disabled, a linker driven by a custom
+script, and \texttt{objcopy} to emit a PE32+ executable for UEFI. The linker
+script loads the image at the one-megabyte mark and lays out text, read-only
+data, data, and BSS while discarding the exception-handling frame sections.
+
+\subsection{Testing on QEMU}
+
+The kernel is exercised under QEMU with OVMF as the UEFI firmware. The image is
+copied into an EFI system partition as \texttt{BOOTX64.EFI} and booted with a
+serial console routed to standard output. A healthy boot prints its progress
+through the memory, heap, and HAL initialization stages and ends at the VM banner
+and the \texttt{ok} prompt.
+
+\begin{lstlisting}[language=bash]
+qemu-system-x86_64 \
+    -bios /usr/share/ovmf/OVMF.fd \
+    -drive file=fat:rw:esp/,format=raw \
+    -serial stdio -m 512M -enable-kvm
+\end{lstlisting}
+
+\subsection{Debugging}
+
+Three techniques carry most of the load. Early serial output writes directly to
+the UART before any higher-level console exists. GDB attaches to QEMU's remote
+stub for source-level debugging from the entry point onward. The panic handler
+disables interrupts, prints its message to the console, and halts every CPU.
+
+\subsection{Roadmap to the \texttt{ok} Prompt}
+
+The bring-up advances through seven milestones: boot with serial output and no
+triple fault; working memory with a functioning physical manager, virtual
+mapping, and heap; a fully initialized HAL; a VM that creates and allocates its
+dictionary without crashing; a REPL that prints \texttt{ok}, echoes input, and
+executes simple words; operational physics subsystems with a firing heartbeat;
+and finally the full test suite passing on the kernel with zero algorithmic
+variance on bare metal.
+
+%% TODO(bob): reconcile milestone numbering here (M1--M7) with the LithosAnanke
+%%   M0--M7 milestones in the kernel overview; confirm current completion state.
+
+Beyond the prompt lies StarshipOS: storage drivers and a filesystem, networking,
+a Forth-task process model, a unified device model, and a capability- and
+ACL-based security model --- all built, as before, on the HAL.

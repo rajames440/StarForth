@@ -1,0 +1,98 @@
+%% SCRAP: architecture/03-architecture/heartbeat-system/critical-insight
+%% SOURCE: docs/working/architecture/03-architecture/heartbeat-system/critical-insight.md
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-heartbeat
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The Heartbeat Rate Is Variable, Not Fixed}
+
+A pivotal observation reframed the design of the Phase 2 Design of
+Experiments (DoE): the StarForth heartbeat is not a fixed one-millisecond
+tick. It is a \emph{variable} rate that the runtime modulates in response to
+load. The interval is held in the \lstinline{tick_ns} field of the heartbeat
+worker, defaulting to roughly $1{,}000{,}000$~ns (1~kHz) but adjustable by the
+inference engine at runtime.
+
+\begin{lstlisting}[language=C]
+/* HeartbeatWorker */
+uint64_t tick_ns;   /* default ~1,000,000 ns; modulated under load */
+
+/* heartbeat_thread_main() */
+uint64_t tick_ns = worker->tick_ns ? worker->tick_ns : HEARTBEAT_TICK_NS;
+\end{lstlisting}
+
+This rate modulation is the physics feedback mechanism itself, and the quality
+of that modulation is what differentiates one configuration from another.
+
+\subsection{Why the Earlier Baseline Was Incomplete}
+
+The Stage~1 baseline ran with the heartbeat thread disabled
+(\lstinline{HEARTBEAT_THREAD_ENABLED=0}). Without the thread there is no
+\lstinline{tick_ns} modulation, no adaptive response to load, and no physics
+in motion. The Stage~1 conclusion---that a handful of configurations were
+``stable''---measured only the absence of variation in a static tick. It could
+not speak to the responsiveness of heartrate modulation, because modulation was
+switched off.
+
+\subsection{The Intended Physics Story}
+
+Here the thermodynamic framing is used as a control-theory metaphor for runtime
+scheduling. When workload rises, the inference engine lengthens
+\lstinline{tick_ns}, slowing the heartbeat and yielding more CPU time to
+parameter tuning. Physics parameters then converge faster, and the system
+adapts.
+
+\begin{itemize}
+  \item A good configuration is \emph{responsive} (\lstinline{tick_ns} grows
+        under load), \emph{smooth} (no wild oscillation), and \emph{efficient}
+        (net performance improves).
+  \item A poor configuration is \emph{unresponsive} (rate stays fixed),
+        \emph{oscillating}, or \emph{inefficient} (adaptation makes matters
+        worse).
+\end{itemize}
+
+\subsection{What Phase 2 Should Measure}
+
+The primary metric is heartrate modulation quality, not jitter in a fixed tick.
+Per run, the harness should capture:
+
+\begin{itemize}
+  \item \textbf{Rate trajectory.} The sequence of \lstinline{tick_ns} values,
+        converted to frequency as $f_{\text{Hz}} = 10^{9} / \mathtt{tick\_ns}$.
+  \item \textbf{Load--heartrate correlation.} The correlation between
+        per-tick workload and heartrate. A negative correlation
+        (slower heartbeat under heavier load, hence more thinking time) is the
+        desired adaptive response; near-zero correlation indicates no
+        adaptation.
+  \item \textbf{Stability.} Whether the rate converges to a steady state, how
+        smoothly, and how quickly it settles.
+  \item \textbf{Performance impact.} Whether modulation actually shortens
+        execution time.
+\end{itemize}
+
+The golden configuration is not the one with the steadiest heartbeat but the
+one with the best adaptive response---ideally a strong load--heartrate coupling
+that settles within roughly one thousand ticks.
+
+\subsection{The Missing Instrumentation}
+
+At the time of this analysis the thread discarded \lstinline{tick_ns} after
+sleeping; the trajectory was never captured. The remedy is to log a rate sample
+per tick into a rolling buffer carried on the VM, recording the tick number,
+the interval in nanoseconds, the contemporaneous workload, and a timestamp.
+
+\begin{lstlisting}[language=C]
+struct HeartbeatRateSample {
+    uint64_t tick_number;
+    uint64_t tick_ns;        /* the heartbeat rate */
+    uint64_t workload_ops;   /* dictionary lookups this tick */
+    uint64_t timestamp_ns;
+};
+\end{lstlisting}
+
+Offline analysis then computes the load--heartrate correlation directly from
+the trajectory, identifying which configuration responds best to changing
+workload.
+
+%% PATENT: heartrate modulation as an adaptive-runtime feedback mechanism is
+%% patent-adjacent; no claim language is drafted here.

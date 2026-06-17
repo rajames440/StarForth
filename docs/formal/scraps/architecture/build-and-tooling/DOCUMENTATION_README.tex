@@ -1,0 +1,154 @@
+%% SCRAP: architecture/build-and-tooling/DOCUMENTATION_README
+%% SOURCE: docs/working/architecture/build-and-tooling/DOCUMENTATION_README.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-docs
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The Documentation System}
+
+StarForth generates its API documentation directly from source, driven by
+Doxygen and rendered into several formats. A single command builds everything:
+
+\begin{lstlisting}[language=bash]
+make docs
+\end{lstlisting}
+
+The build emits AsciiDoc API documentation under \texttt{docs/src/appendix/},
+one flat file per source module. These files are produced on demand by
+\texttt{./scripts/generate-doxygen-appendix.sh} and rebuilt periodically by the
+Jenkins pipeline. To inspect the result, run the generator and read the index:
+
+\begin{lstlisting}[language=bash]
+./scripts/generate-doxygen-appendix.sh
+cat docs/src/appendix/index.adoc
+\end{lstlisting}
+
+\subsection{Installation Requirements}
+
+Core functionality requires Doxygen and Graphviz. On the major distributions:
+
+\begin{lstlisting}[language=bash]
+sudo apt-get install doxygen graphviz   # Ubuntu/Debian
+brew install doxygen graphviz           # macOS
+sudo dnf install doxygen graphviz       # Fedora/RHEL
+\end{lstlisting}
+
+PDF output additionally requires a TeX Live installation
+(\texttt{texlive-latex-base} and \texttt{texlive-latex-extra} on Debian, or
+MacTeX/BasicTeX on macOS). AsciiDoc and Markdown conversion requires Pandoc,
+with Asciidoctor optional for HTML rendering. Verify the toolchain before
+building --- Doxygen should report version 1.9.0 or later:
+
+\begin{lstlisting}[language=bash]
+doxygen --version
+dot -V
+pandoc --version    # optional
+pdflatex --version  # optional
+\end{lstlisting}
+
+\subsection{Documentation Targets}
+
+\begin{tabular}{lll}
+\toprule
+Target & Description & Requirements \\
+\midrule
+\texttt{make docs} & Generate all formats & doxygen, graphviz (+ optional) \\
+\texttt{make docs-html} & HTML only (fast) & doxygen, graphviz \\
+\texttt{make docs-pdf} & PDF only & doxygen, graphviz, pdflatex \\
+\texttt{make docs-open} & Generate HTML and open browser & doxygen, graphviz \\
+\texttt{make docs-clean} & Remove generated docs & none \\
+\bottomrule
+\end{tabular}
+
+\subsection{Documenting Code}
+
+Documentation lives beside the code it describes. The workflow is short: read
+the style guide, copy the template at \texttt{examples/doxygen\_example.h}, then
+annotate. A typical function comment carries a brief, a detailed body,
+parameters, contracts, and an example:
+
+\begin{lstlisting}[language=C]
+/**
+ * @brief Push value onto data stack
+ *
+ * @details
+ * Adds a value to the top of the data stack. Stack overflow
+ * is checked and vm->error is set if stack is full.
+ *
+ * @param vm Pointer to VM instance
+ * @param value Value to push
+ *
+ * @pre vm must be initialized
+ * @pre vm->dsp < STACK_SIZE-1
+ * @post vm->dsp incremented by 1
+ * @post On error: vm->error is set
+ *
+ * @note This is a hot-path function - optimized for speed
+ * @warning Always check vm->error after calling
+ *
+ * @see vm_pop()
+ */
+void vm_push(VM *vm, cell_t value);
+\end{lstlisting}
+
+After annotating, rebuild and clear any warnings:
+
+\begin{lstlisting}[language=bash]
+make docs-html
+cat docs/src/appendix/doxygen_warnings.log
+\end{lstlisting}
+
+\subsection{Coverage Priorities}
+
+The target is 100\% coverage of the public API headers. Documentation effort is
+tiered by audience:
+
+\begin{itemize}
+  \item \textbf{High priority} --- user-facing API: \texttt{include/vm.h},
+    \texttt{include/word\_registry.h}, \texttt{include/log.h},
+    \texttt{include/io.h}.
+  \item \textbf{Medium priority} --- developer API: word implementation headers
+    under \texttt{src/word\_source/include/}, \texttt{include/profiler.h},
+    \texttt{include/vm\_debug.h}.
+  \item \textbf{Low priority} --- internal implementation files and test
+    infrastructure headers.
+\end{itemize}
+
+%% TODO(bob): current coverage percentage is unverified in source ("TBD"). Run `make docs` and record the real figure.
+
+\subsection{Continuous Integration}
+
+The documentation build is CI-friendly. A GitHub Actions job installs Doxygen
+and Graphviz, runs \texttt{make docs-html}, fails the build if
+\texttt{doxygen\_warnings.log} is non-empty, and deploys the generated HTML to
+GitHub Pages on the master branch.
+
+\subsection{Output Formats}
+
+Each format serves a distinct audience. HTML is best for interactive browsing
+and search; PDF for printing and offline reference; AsciiDoc for downstream
+conversion; Markdown for GitHub and wikis; and man pages for command-line
+reference, installable into the system man path.
+
+\subsection{Troubleshooting}
+
+The common failures are missing tools. A \texttt{command not found} for
+\texttt{doxygen}, \texttt{dot}, or \texttt{pdflatex} means the corresponding
+package is absent --- install it, or fall back to \texttt{make docs-html} since
+PDF and Pandoc-based outputs are optional. Missing graphs indicate Graphviz is
+not installed. Warnings about undocumented functions are resolved by annotating
+the offending code per the style guide. ``No such file or directory'' when
+opening docs means they have not been generated yet.
+
+\subsection{Customization}
+
+Edit \texttt{Doxyfile} to adjust the project name and version
+(\texttt{PROJECT\_NAME}, \texttt{PROJECT\_NUMBER}), input file set
+(\texttt{INPUT}, \texttt{FILE\_PATTERNS}), output formats, and diagram options
+(\texttt{CALL\_GRAPH}, \texttt{CALLER\_GRAPH}). Custom Markdown pages are added
+by appending them to \texttt{INPUT}. HTML appearance is themed through
+\texttt{HTML\_EXTRA\_STYLESHEET} and \texttt{HTML\_COLORSTYLE}.
+
+External projects can link against StarForth documentation by referencing the
+generated tag file \texttt{docs/src/appendix/starforth.tag} in their own
+Doxyfile via \texttt{TAGFILES}.

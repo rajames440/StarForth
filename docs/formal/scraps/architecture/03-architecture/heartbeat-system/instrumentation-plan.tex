@@ -1,0 +1,124 @@
+%% SCRAP: architecture/03-architecture/heartbeat-system/instrumentation-plan
+%% SOURCE: docs/working/architecture/03-architecture/heartbeat-system/instrumentation-plan.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-heartbeat
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Per-Tick Heartbeat Instrumentation}
+
+This plan captures seven metrics on every heartbeat tick (roughly a
+one-millisecond interval) without disturbing timing accuracy. The strategy is a
+lightweight circular buffer with minimal copying, decoupled from the core
+heartbeat logic.
+
+\subsection{The Tick Snapshot}
+
+Each tick records a fixed-size snapshot. The buffer is sized for one hundred
+thousand ticks---about one hundred seconds at 1~kHz.
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint32_t tick_number;           /* sequential counter */
+    uint64_t elapsed_ns;            /* since run start */
+    uint64_t tick_interval_ns;      /* interval from prior tick */
+
+    /* core metrics */
+    uint32_t cache_hits_delta;
+    uint32_t bucket_hits_delta;
+    uint32_t word_executions_delta;
+
+    /* feedback signals */
+    uint64_t hot_word_count;        /* words above heat threshold */
+    double   avg_word_heat;         /* mean heat, Q48.16 / 65536 */
+    uint32_t window_width;          /* rolling window size */
+
+    /* derived */
+    uint32_t predicted_label_hits;
+    double   estimated_jitter_ns;   /* deviation from nominal tick */
+} HeartbeatTickSnapshot;
+
+#define HEARTBEAT_TICK_BUFFER_SIZE 100000
+\end{lstlisting}
+
+The \lstinline{Heartbeat} context gains the buffer, its size, a wrapping write
+index, a monotonic total tick count, and the run-start reference time. The
+buffer is allocated in \lstinline{vm_init()} and freed in
+\lstinline{vm_cleanup()}.
+
+\subsection{Capture and Injection}
+
+A capture routine computes the elapsed time, derives the tick interval from the
+prior slot in the circular buffer, and copies state from the most recent
+heartbeat snapshot. The mean heat is converted from \Qtype{} fixed point by
+dividing by $65536$. The call is injected at the end of
+\lstinline{vm_heartbeat_run_cycle()}, after the tick, background decay, rolling
+window service, and snapshot publication.
+
+\begin{lstlisting}[language=C]
+static void vm_heartbeat_run_cycle(VM *vm)
+{
+    if (!vm || !vm->heartbeat.heartbeat_enabled) return;
+    vm_tick(vm);
+    vm_tick_apply_background_decay(vm, sf_monotonic_ns());
+    sf_mutex_lock(&vm->tuning_lock);
+    rolling_window_service(&vm->rolling_window);
+    sf_mutex_unlock(&vm->tuning_lock);
+    heartbeat_publish_snapshot(vm);
+    heartbeat_capture_tick_snapshot(vm);   /* NEW */
+}
+\end{lstlisting}
+
+\subsection{Delta Metrics}
+
+Accurate per-tick cache, bucket, and execution deltas require latching counter
+values at the start of \lstinline{vm_tick()} and differencing them at the end.
+This adds two or three counter fields to the VM struct---negligible memory.
+At authoring time these deltas are left as \lstinline{%% TODO} stubs in the
+capture routine pending that tracking.
+
+\subsection{Export and Storage}
+
+After a run, \lstinline{heartbeat_export_csv()} walks the circular buffer in
+order and emits one CSV row per tick. Storage is the binding constraint:
+
+\begin{itemize}
+  \item 750 runs $\times$ 100k ticks $\approx$ 75 million rows, roughly 75~GB at
+        about 1~KB per row.
+  \item \textbf{Option A}---first and last 10k ticks plus a random sample
+        ($\sim$10~GB, $\sim$500~MB compressed).
+  \item \textbf{Option B}---every tenth tick, 10k rows per run ($\sim$7.5~GB).
+  \item \textbf{Option C}---every tick in a binary format ($\sim$2--3~GB).
+\end{itemize}
+
+Option B is recommended for Phase 2 prototyping, with density increased later if
+warranted.
+
+\subsection{Overhead}
+
+The instrumentation cost is dominated by a single monotonic clock read.
+
+\begin{tabular}{lr}
+\toprule
+Operation & Cost \\
+\midrule
+Seven field assignments & $\sim$10~ns \\
+One modulo (circular index) & $\sim$5~ns \\
+One monotonic clock read & $\sim$100~ns \\
+\midrule
+Total per tick & $\sim$115~ns \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\noindent Against a nominal $1{,}000{,}000$~ns tick that is roughly
+$0.0115\%$---negligible, so the instrumentation does not perturb the timing it
+measures.
+
+\subsection{Status}
+
+The \lstinline{HeartbeatTickSnapshot} structure and tick buffer are declared in
+\lstinline{include/vm.h}, but \lstinline{heartbeat_export_csv()} is not yet
+implemented and the delta counters remain to be wired.
+
+%% TODO(bob): confirm current implementation status of heartbeat_export_csv()
+%% and the cache/bucket/execution delta tracking before promotion.
