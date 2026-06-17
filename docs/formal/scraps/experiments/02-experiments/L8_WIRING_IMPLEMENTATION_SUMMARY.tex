@@ -1,0 +1,106 @@
+%% SCRAP: experiments/02-experiments/L8_WIRING_IMPLEMENTATION_SUMMARY
+%% SOURCE: docs/working/experiments/02-experiments/L8_WIRING_IMPLEMENTATION_SUMMARY.md
+%% STATUS: HISTORICAL
+%% FITS: experiments/ch-l8
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L8 Control-Wiring Implementation Summary}
+\label{sec:l8-wiring-summary}
+
+The L8 Jacquard mode selector was 90\% complete before this implementation:
+the state machine computed a 4-bit mode and set Boolean flags in
+\texttt{vm->ssm\_config}, but the execution paths of the four target loops
+did not consult those flags. This work completed the final ``last mile'' by
+adding conditional gates at each loop's execution point.
+
+\subsection{Changes Made}
+
+Four source locations received new gates. The implementation order followed
+increasing complexity: L3 (single-function internal gate), L5 (medium
+complexity, preserve previous value), L6 (symmetric to L5), L2 (call-site
+gate in the hot execution path).
+
+\paragraph{L3 — Linear Decay} Gate added to
+\texttt{physics\_metadata\_apply\_linear\_decay()} in
+\texttt{src/physics\_metadata.c}~line~176, placed after the frozen-word and
+minimum-interval checks. When L3 is disabled, words retain heat without decay.
+
+\paragraph{L5 — Window Width Inference} Gate added to Phase~2C of
+\texttt{inference\_engine\_run()} in \texttt{src/inference\_engine.c}~line~538.
+Previous \texttt{adaptive\_window\_width} is preserved when L5 is off (static
+configuration).
+
+\paragraph{L6 — Decay Slope Inference} Gate added to Phase~2D of
+\texttt{inference\_engine\_run()} in \texttt{src/inference\_engine.c}~line~563.
+Previous \texttt{adaptive\_decay\_slope} is preserved when L6 is off.
+
+\paragraph{L2 — Rolling Window} Gate added at the call site in
+\texttt{execute\_colon\_word()} in \texttt{src/vm.c}~line~1648. No execution
+history is recorded when L2 is off.
+
+\subsection{Mode Mapping}
+
+The 16 valid L8 modes encode all combinations of the four controlled loops:
+
+\begin{center}
+\begin{tabular}{clccccl}
+\toprule
+Mode & L2 & L3 & L5 & L6 & Description \\
+\midrule
+C0  & -- & -- & -- & -- & Minimal overhead (startup default) \\
+C4  & -- & \checkmark & -- & -- & Decay only (top-5\% candidate) \\
+C7  & -- & \checkmark & \checkmark & \checkmark & Full inference without history \\
+C9  & \checkmark & -- & -- & \checkmark & History + slope (top-5\% candidate) \\
+C11 & \checkmark & -- & \checkmark & \checkmark & History + full inference \\
+C12 & \checkmark & \checkmark & -- & -- & DoE-optimal baseline \\
+C15 & \checkmark & \checkmark & \checkmark & \checkmark & All loops (maximum adaptivity) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Modes C1--C3, C5--C6, C8, C10, C13--C14 represent intermediate combinations not
+listed above.
+
+\subsection{Test Results}
+
+\begin{lstlisting}[language=bash]
+make clean && make fastest
+# Zero warnings, zero errors
+
+make test
+# Total: 782  Passed: 731  Failed: 0  Skipped: 49  Errors: 0
+\end{lstlisting}
+
+All 731 implemented tests pass with the default mode C0 (all loops off).
+
+\subsection{Heartbeat Control Cycle}
+
+Each heartbeat tick ($\sim$1~ms) executes in four steps:
+
+\begin{enumerate}
+  \item \textbf{Metrics collection} — entropy, CV, temporal decay, and stability
+        score are computed from the rolling window and inference engine outputs.
+  \item \textbf{Mode selection} — \texttt{ssm\_l8\_update()} evaluates the four
+        metrics against thresholds and computes a 4-bit mode with 5-tick
+        hysteresis to suppress rapid flapping.
+  \item \textbf{Configuration application} — \texttt{ssm\_apply\_mode()} decodes
+        the mode bits into the L2/L3/L5/L6 Boolean flags.
+  \item \textbf{Runtime enforcement} — the execution-path gates read the flags
+        at the next loop iteration.
+\end{enumerate}
+
+\subsection{Planned Extensions}
+
+Three enhancements are scoped but not yet implemented:
+
+\begin{itemize}
+  \item \textbf{FORTH API} — \texttt{L8-MODE!}, \texttt{L8-MODE@}, and
+        \texttt{L8-AUTO} words to support manual mode forcing for DoE validation
+        and benchmarking.
+  \item \textbf{Heartbeat CSV column} — add \texttt{l8\_mode} to the per-tick
+        export so R analysis can correlate mode transitions with performance
+        metrics.
+  \item \textbf{DoE re-validation} — run the full 128-configuration experiment
+        with L8 wiring active and confirm 0\% algorithmic variance is maintained
+        under dynamic mode switching.
+\end{itemize}

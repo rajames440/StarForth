@@ -1,0 +1,62 @@
+%% SCRAP: experiments/02-experiments/README
+%% SOURCE: docs/working/experiments/02-experiments/README.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-framework
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Experimental Framework Overview}
+
+StarForth's experimental programme applies rigorous design-of-experiments methodology
+to the physics-driven adaptive runtime, yielding a body of evidence that grounds
+every performance claim in reproducible, statistically validated data. Four
+experimental series structure the work.
+
+\begin{itemize}
+  \item \textbf{Factorial DoE} — Full $2^k$ factorial designs sweep all binary
+        combinations of feedback-loop configurations, revealing main effects and
+        interaction terms that single-factor studies cannot detect.
+  \item \textbf{Heartbeat DoE} — Focused experiments on the heartbeat subsystem
+        measure temporal stability, load-response coupling, and convergence
+        dynamics of the adaptive tick mechanism.
+  \item \textbf{James Law} — Window-scaling experiments validate the conservation
+        invariant $\Lambda \times (\mathrm{DoF}+1) = W$ across multiple window
+        sizes, degrees of freedom, and workload shapes.
+  \item \textbf{Physics Optimization} — Targeted parameter sweeps quantify the
+        marginal contribution of individual physics-engine parameters, establishing
+        a tuning baseline for production builds.
+\end{itemize}
+
+\subsection{Experiment Lifecycle}
+
+Every experiment follows a five-phase protocol:
+
+\begin{enumerate}
+  \item \textbf{Design} — state the hypothesis, identify factors, and specify
+        response variables before collecting any data.
+  \item \textbf{Protocol} — write a formal execution guide documenting methodology
+        and success criteria.
+  \item \textbf{Execute} — run the experiment and collect data without mid-course
+        adjustments.
+  \item \textbf{Analyse} — apply statistical methods (ANOVA, Levene's test,
+        credible-interval estimation) to the collected measurements.
+  \item \textbf{Document} — write a summary and promote publication-ready results
+        to the research archive.
+\end{enumerate}
+
+\subsection{Key Result: Deterministic Behaviour}
+
+Across 90 experimental runs in the physics-engine validation campaign, StarForth
+achieves \textbf{0\% algorithmic variance}, confirming formally proven deterministic
+behaviour of the physics-driven adaptive runtime. The $2^7$ factorial campaign
+extends this over 38{,}400 runs with consistent convergence to the lowest-CV
+steady state.
+
+\subsection{Statistical Methodology}
+
+Each campaign employs factorial designs for multi-factor analysis, heartbeat-driven
+data collection at millisecond resolution, and statistical validation via ANOVA and
+Levene's test. Experimental protocols are reproducible: run scripts, R analysis
+code, and raw CSV data are archived alongside results.
+
+%% TODO(bob): confirm canonical published path for the DoE metrics schema and
+%%   publication-results documents referenced in the source

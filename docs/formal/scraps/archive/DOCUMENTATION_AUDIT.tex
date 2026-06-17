@@ -1,0 +1,75 @@
+%% SCRAP: archive/DOCUMENTATION_AUDIT
+%% SOURCE: docs/working/archive/DOCUMENTATION_AUDIT.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Documentation Audit: December 2025}
+
+A full audit of the StarForth documentation directory conducted on 2025-12-14
+produced the following findings. The record is preserved here as a historical
+milestone; subsequent reorganisation phases have addressed the majority of
+issues identified.
+
+\subsection{Executive Summary}
+
+At the time of the audit, the documentation was well-organised into a
+numbered directory structure (\texttt{01}--\texttt{07}) with strong coverage
+of experiments, architecture, and quality processes. The newly added Hardware
+Abstraction Layer (HAL) documentation set the quality bar for the project.
+Six key issues were identified:
+
+\begin{itemize}
+  \item Missing \texttt{README.md} files in six of seven numbered directories.
+  \item Inconsistent metadata (no author, date, or status fields on older documents).
+  \item Top-level clutter: thirteen or more loose files in \texttt{docs/}.
+  \item Unclear articulation of the StarKernel and StarshipOS vision in existing documents.
+  \item The project \texttt{CLAUDE.md} did not yet reference the HAL architecture.
+  \item No single architecture overview tying all subsystems together.
+\end{itemize}
+
+\subsection{Prioritised Recommendations}
+
+The audit assigned priority as follows.
+
+\textbf{High priority:}
+\begin{itemize}
+  \item Add missing \texttt{README} files to all numbered directories.
+  \item Update \texttt{CLAUDE.md} to reflect HAL and StarKernel vision.
+  \item Create \texttt{docs/03-architecture/README.md} as a system overview.
+\end{itemize}
+
+\textbf{Medium priority:}
+\begin{itemize}
+  \item Create \texttt{docs/03-architecture/OVERVIEW.md}.
+  \item Consolidate and relocate top-level loose files.
+  \item Add \texttt{CONTRIBUTING.md}.
+  \item Add metadata headers to existing documents.
+\end{itemize}
+
+\textbf{Low priority:}
+\begin{itemize}
+  \item Create a project glossary.
+  \item Add architecture diagrams (PlantUML or Mermaid, exported to SVG).
+\end{itemize}
+
+\subsection{HAL Documentation Assessment}
+
+The HAL documentation set added in late 2025 was rated excellent: six
+documents totalling approximately twenty thousand words, covering overview,
+interface contracts, platform implementation, incremental migration strategy,
+and StarKernel-specific integration details. Its \texttt{README.md} navigation
+hub was recommended as the template for all other subsection indices.
+
+\subsection{Success Metrics}
+
+Documentation improvement is complete when:
+\begin{enumerate}
+  \item Every numbered directory contains a \texttt{README}.
+  \item The StarForth $\to$ StarKernel $\to$ StarshipOS vision is unambiguous in top-level documents.
+  \item New contributors can navigate the documentation without assistance.
+  \item All major subsystems have an overview document and detailed subdocuments.
+  \item The top-level \texttt{docs/} directory contains fewer than five loose files.
+  \item All cross-references resolve correctly.
+  \item Consistent style and metadata headers appear across all documents.
+\end{enumerate}
