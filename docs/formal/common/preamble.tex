@@ -38,13 +38,56 @@
   xleftmargin=2em
 }
 
+%% Custom language definitions (not built into listings)
+\lstdefinelanguage{Forth}{
+  morekeywords={IF,ELSE,THEN,DO,LOOP,BEGIN,UNTIL,WHILE,REPEAT,
+                DUP,DROP,SWAP,ROT,OVER,NIP,TUCK,
+                AND,OR,XOR,INVERT,LSHIFT,RSHIFT,
+                VARIABLE,CONSTANT,CREATE,DOES>,
+                EMIT,KEY,TYPE,CR,SPACE,ACCEPT,
+                INCLUDE,LOAD,THRU,FLUSH,
+                BYE,ABORT,S\",.\(,
+                WORD-ENTROPY,PHYSICS-FREEZE,PHYSICS-THAW,
+                ACL-GRANT,ACL-REVOKE,ACL-PIN,ACL-TTL,
+                EXEC,CAPSULE-LOAD},
+  morecomment=[l]{\ },
+  morecomment=[l]{(},
+  morestring=[b]",
+  sensitive=false
+}
+\lstalias{forth}{Forth}
+
+\lstdefinelanguage{R}{
+  morekeywords={function,if,else,for,while,return,library,require,
+                TRUE,FALSE,NULL,NA,Inf,NaN,
+                data.frame,list,vector,matrix,array,
+                read.csv,write.csv,ggplot,aov,lm,summary},
+  morecomment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]',
+  sensitive=true
+}
+
+\lstdefinelanguage{Isabelle}{
+  morekeywords={theory,begin,end,theorem,lemma,proof,qed,by,apply,
+                definition,fun,datatype,type_synonym,
+                fixes,assumes,shows,where,let,have,thus,hence,
+                moreover,ultimately,from,with,simp,auto,blast,
+                induction,case,next,sledgehammer},
+  morecomment=[l]{--},
+  morecomment=[s]{(*}{*)},
+  morestring=[b]",
+  sensitive=true
+}
+\lstalias{isabelle}{Isabelle}
+
 %% --- Notation ---
 % Q48.16 fixed-point type (usable in both text and math mode)
 \newcommand{\Qtype}{\ensuremath{\mathbb{Q}_{48.16}}}
 % Thermodynamic proxy label (usable in both text and math mode)
 \newcommand{\heat}{\ensuremath{\mathit{heat}}}
-% Feedback loop reference
-\newcommand{\loop}[1]{\textsf{Loop~\##1}}
+% Feedback loop reference (\loop is a LaTeX primitive — use \loopref)
+\newcommand{\loopref}[1]{\textsf{Loop~\##1}}
 
 %% --- Hyperref setup ---
 \hypersetup{
