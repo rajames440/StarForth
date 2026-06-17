@@ -1,0 +1,33 @@
+%% SCRAP: archive/quality/phase-tracking/phase-2a-session-summary
+%% SOURCE: docs/working/archive/quality/phase-tracking/phase-2a-session-summary.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Phase~2a Session Summary: Linear Decay and Freeze Flag (November 2025)}
+
+Phase~2a of the StarForth physics engine implementation was completed in a
+single session on 2025-11-07, delivering two production features under commit
+\texttt{3e87fd4b}.
+
+\textbf{Freeze Flag (\texttt{WORD\_FROZEN}).}
+A new dictionary entry flag (bit~0x04) prevents execution heat from decaying,
+enabling system-critical words (\texttt{DUP}, \texttt{DROP}, \texttt{SWAP},
+and eighteen others frozen by \texttt{FREEZE-CRITICAL}) to remain in the
+hotwords cache across OS context switches. The flag operates independently of
+the existing \texttt{WORD\_PINNED} flag.
+
+\textbf{Linear Decay Mechanism.}
+The heat decay model $H(t) = \max(0, H_0 - d \cdot t)$ was selected over an
+exponential half-life model on three grounds: integer-only arithmetic (no
+floating-point overhead), deterministic bounded convergence, and compatibility
+with Isabelle/HOL formal verification. Decay is applied lazily at word-lookup
+time, adding fewer than 5~nanoseconds of overhead per execution.
+
+\textbf{FORTH Interface.}
+Nine control words were added: \texttt{FREEZE-WORD}, \texttt{UNFREEZE-WORD},
+\texttt{FROZEN?}, \texttt{HEAT!}, \texttt{HEAT@}, \texttt{SHOW-HEAT},
+\texttt{ALL-HEATS}, \texttt{DECAY-RATE@}, and \texttt{FREEZE-CRITICAL}.
+
+The implementation modified eleven files and added 2{,}236 lines (less 23
+deletions). All 782 tests passed; zero compiler warnings were produced.

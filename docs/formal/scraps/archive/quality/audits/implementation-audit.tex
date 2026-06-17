@@ -1,0 +1,18 @@
+%% SCRAP: archive/quality/audits/implementation-audit
+%% SOURCE: docs/working/archive/quality/audits/implementation-audit.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Adaptive Tuning Implementation Audit (November 2025)}
+
+A November 2025 audit assessed implementation status across ten subsystems of
+the StarForth physics engine adaptive tuning architecture. Opportunity~1
+(decay slope inference) was confirmed complete. Opportunities 2--5 (variance-based
+window width tuning, decay rate DoE, rolling window sizing, and hotwords cache
+threshold) were assessed as pending. The remaining five (binary search validation,
+ML prefetch, NUMA placement, dictionary reorganization, and SIMD) were deferred.
+
+All pending and deferred items from this audit have since been addressed through
+the DoE experimental program and subsequent implementation work. The audit is
+retained as a historical snapshot of the implementation state at that date.

@@ -1,0 +1,141 @@
+%% SCRAP: scratch/src/internal/PHASE_2A_COMPLETION_REPORT
+%% SOURCE: docs/working/scratch/src/internal/PHASE_2A_COMPLETION_REPORT.adoc
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Phase~2a Completion Report: Freeze Flag and Linear Decay}
+\label{sec:phase2a-completion}
+
+\textbf{Status:} Complete and validated.
+\textbf{Date:} 2025-11-07.
+
+\subsection{Executive Summary}
+
+Phase~2a successfully implements the \texttt{WORD\_FROZEN} flag and a
+linear heat-decay mechanism for the physics-driven adaptive runtime.
+Together they transform the Phase~1 static ratchet model (heat accumulates
+monotonically) into a dynamic equilibrium model that reflects realistic
+multi-tasking behaviour.
+
+The implementation delivers:
+\begin{enumerate}
+  \item \texttt{WORD\_FROZEN} flag (\texttt{0x04}) — prevents
+    \texttt{execution\_heat} from decaying.
+  \item Linear decay $H(t) = \max(0,\, H_0 - d \cdot t)$ — applied lazily
+    at word-lookup time.
+  \item Nine FORTH-level control words for freeze/decay management.
+\end{enumerate}
+
+Validation: 782 tests, 731 passed, 0 failed, 49 skipped; zero compiler
+warnings under \texttt{-Wall -Werror}; clean builds across standard, fast,
+and fastest profiles.
+
+\subsection{Core Mechanism: Linear Decay}
+
+\textbf{Location:} \texttt{src/physics\_metadata.c} (lines~141--197).
+
+\textbf{Function:} \texttt{physics\_metadata\_apply\_linear\_decay(DictEntry *entry, uint64\_t elapsed\_ns)}.
+
+\textbf{Mathematical model:}
+\[
+  H(t) = \max\!\bigl(0,\; H_0 - d \cdot t\bigr)
+\]
+
+Frozen words (\texttt{WORD\_FROZEN} set) bypass the function entirely.
+Heat is clamped to $[0, \texttt{max\_cell\_t}]$.
+
+\textbf{Default configuration constants (Makefile-tunable):}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Constant & Default \\
+\midrule
+\texttt{DECAY\_RATE\_PER\_NS}          & 1 heat unit per nanosecond \\
+\texttt{DECAY\_MIN\_INTERVAL}          & 1,000\,ns (1\,\textmu{}s) \\
+\texttt{HEAT\_CACHE\_DEMOTION\_THRESHOLD} & 10 \\
+\texttt{HEAT\_THRESHOLD}               & 50 (cache promotion, from Phase~1) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Integration: Execution Hotpath}
+
+Decay is applied at two points in \texttt{src/vm.c}:
+
+\begin{lstlisting}[language=C]
+/* Direct-threaded interpreter loop (lines 515-525) */
+uint64_t now_ns = sf_monotonic_ns();
+uint64_t elapsed_ns = now_ns - w->physics.last_active_ns;
+physics_metadata_apply_linear_decay(w, elapsed_ns);
+w->physics.last_active_ns = now_ns;
+w->execution_heat++;
+\end{lstlisting}
+
+An identical pattern is applied in the word interpretation/compilation
+path (lines~625--640). Measured overhead: fewer than 10\,ns per word
+lookup.
+
+\subsection{FORTH Interface}
+
+Nine words registered in
+\texttt{src/word\_source/physics\_freeze\_words.c}:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Word & Stack & Purpose \\
+\midrule
+\texttt{FREEZE-WORD}    & \texttt{(caddr u --)}     & Freeze word by name \\
+\texttt{UNFREEZE-WORD}  & \texttt{(caddr u --)}     & Unfreeze word by name \\
+\texttt{FROZEN?}        & \texttt{(caddr u -- flag)} & Query freeze status \\
+\texttt{HEAT!}          & \texttt{(heat caddr u --)} & Set execution heat manually \\
+\texttt{HEAT@}          & \texttt{(caddr u -- heat)} & Read execution heat \\
+\texttt{SHOW-HEAT}      & \texttt{(caddr u --)}     & Display heat + flags \\
+\texttt{ALL-HEATS}      & \texttt{(--)}             & Display all words by heat \\
+\texttt{DECAY-RATE@}    & \texttt{(-- rate)}        & Read current decay rate \\
+\texttt{FREEZE-CRITICAL} & \texttt{(--)}            & Freeze 21 system-critical words \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Design Decisions}
+
+\begin{itemize}
+  \item \textbf{Linear over halflife decay.} Integer-only arithmetic;
+    deterministic, bounded convergence; simpler formal verification.
+  \item \textbf{Lazy decay.} Applied at word lookup time rather than by
+    periodic scan. Minimal overhead; natural integration with existing
+    hotpath.
+  \item \textbf{\texttt{WORD\_FROZEN} distinct from \texttt{WORD\_PINNED}.}
+    \texttt{WORD\_PINNED} locks heat at maximum; \texttt{WORD\_FROZEN}
+    prevents decay (different semantics, enabling complex freeze strategies
+    in subsequent phases).
+\end{itemize}
+
+\subsection{Formal Verification: Theorem Statements}
+
+Three theorems were codified for future Isabelle/HOL proof (Phase~2d):
+
+\textbf{Theorem~5 — Decay Monotonicity:}
+$\forall w,\, t_1 < t_2:\; \lnot\textit{frozen}(w) \Rightarrow H(w,t_2) \leq H(w,t_1)$
+
+\textbf{Theorem~6 — Freeze Preservation:}
+$\forall w,\, t:\; \textit{frozen}(w) \Rightarrow H(w,t) = H(w,0)$
+
+\textbf{Theorem~7 — Convergence to Zero:}
+$\forall w:\; \lnot\textit{frozen}(w) \land d > 0 \Rightarrow \exists\, t^*:\; \forall\, t > t^*.\; H(w,t) = 0$
+
+\subsection{Phase~2b Roadmap}
+
+\begin{enumerate}
+  \item Cache eviction respects \texttt{WORD\_FROZEN}
+    (\texttt{src/physics\_hotwords\_cache.c}).
+  \item Periodic decay scan for idle (uncalled) words.
+  \item Heat demotion: automatic removal of words below threshold from cache.
+\end{enumerate}
+
+Phase~2c targets real-world validation against StarshipOS workloads with
+OS context switches. Phase~2d delivers the Isabelle/HOL proofs for
+Theorems~5--7.

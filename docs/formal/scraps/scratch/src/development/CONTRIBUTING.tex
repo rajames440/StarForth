@@ -1,0 +1,76 @@
+%% SCRAP: scratch/src/development/CONTRIBUTING
+%% SOURCE: docs/working/scratch/src/development/CONTRIBUTING.adoc
+%% STATUS: WORKING
+%% FITS: dev-guide/ — contains the current contribution workflow; assess whether the
+%%   placeholder fields (project name, CoC contact) have been populated before promoting.
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Contributing to StarshipOS}
+
+Contributions are welcome. This section documents the workflow, standards, and
+conventions required for a pull request to be accepted.
+
+\subsection{Quick Summary}
+
+Fork the repository, create a focused branch, open small pull requests, follow
+Conventional Commits, run \texttt{make fmt lint test} before pushing, include
+reproduction steps, documentation, and tests, and treat collaborators with directness
+and respect.
+
+\subsection{Code of Conduct}
+
+The project follows the Contributor Covenant. Violations may result in removal from
+participation. %% TODO(bob): supply the incident-report contact address.
+
+\subsection{Getting Started}
+
+\paragraph{Prerequisites.}
+Linux, macOS, or WSL2; \texttt{git}, \texttt{make}; the C99 toolchain described in the
+developer guide; and \texttt{pre-commit} for hook management
+(\texttt{pipx install pre-commit \&\& pre-commit install}).
+
+\paragraph{Setup.}
+\begin{lstlisting}[language=bash]
+git clone https://github.com/<you>/StarForth.git
+cd StarForth
+make build
+make test
+\end{lstlisting}
+
+\paragraph{Local development loop.}
+\begin{lstlisting}[language=bash]
+make fmt      # auto-format
+make lint     # static analysis
+make test     # unit tests
+make itest    # integration tests (if available)
+\end{lstlisting}
+
+\subsection{Branching and Commit Style}
+
+Branch from \texttt{main}. Name branches \texttt{feat/<slug>}, \texttt{fix/<slug>},
+\texttt{docs/<slug>}, or \texttt{chore/<slug>}. Write commits in the Conventional
+Commits format with imperative mood, subject line at most 72 characters, and issue
+references (\texttt{Fixes \#123} or \texttt{Refs \#456}). Sign every commit with a
+Developer Certificate of Origin \texttt{Signed-off-by} trailer.
+
+Examples:
+\begin{lstlisting}
+feat(runtime): add cgroups v2 isolation flag
+fix(scheduler): prevent null deref on empty queue
+docs: clarify quickstart on macOS
+\end{lstlisting}
+
+\subsection{Pull Request Standards}
+
+Keep pull requests under approximately 300 lines changed. Each PR must: link to an
+issue or explain its rationale; add or update tests; update documentation; pass
+\texttt{make fmt lint test} locally; address backwards compatibility; and measure
+performance impact where relevant. Draft PRs are welcome early.
+
+Open an issue first for large or controversial changes.
+
+\subsection{Architecture Decision Records}
+
+Add an ADR (\texttt{docs/adrs/ADR-XXXX-title.md}) for any non-trivial design choice.
+
+%% TODO(bob): verify that the ADR directory exists and confirm the numbering convention.

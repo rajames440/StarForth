@@ -1,0 +1,260 @@
+%% SCRAP: papers/SCIENTIFIC_DEFENSE_CHECKLIST
+%% SOURCE: docs/working/papers/SCIENTIFIC_DEFENSE_CHECKLIST.md
+%% STATUS: CURRENT
+%% FITS: ssrn/app-defense, vol3-research/ch-repro
+%% EDITORIAL: lifted — prose rewritten to press voice; maturity matrix preserved
+
+\section{Scientific Defense Checklist}
+\label{sec:defense-checklist}
+
+This section maps each plausible attack vector against the work, assesses
+the strength of current defenses, identifies remaining gaps, and prescribes
+specific remediation actions. The maturity matrix at the end
+(\S\ref{sec:defense-matrix}) provides a one-table summary for submission
+review.
+
+\subsection{Attack Vector 1: Data Integrity}
+
+\paragraph{Potential challenges.}
+Fabricated data; cherry-picked runs; results too perfect; selective reporting.
+
+\paragraph{Current defenses.}
+Raw data for all 90 runs is committed to the repository under
+\texttt{docs/archive/phase-1/Reference/physics\_experiment/PEER\_REVIEW\_SUBMISSION/03\_EXPERIMENTAL\_DATA/}.
+Git history demonstrates iterative development rather than one-shot fabrication.
+All 90 runs carry timestamps in \texttt{experiment\_summary.txt}.
+
+\paragraph{Remaining gaps.}
+SHA256 checksums for raw data files are not yet generated; GPG commit signing
+for experimental data commits is pending; third-party verification by an
+external researcher has not yet occurred; Zenodo DOI for permanent archival
+is planned but not yet executed.
+
+\paragraph{Remediation.}
+\begin{lstlisting}[language=bash]
+find docs/archive/phase-1/Reference/physics_experiment/ \
+  -type f -exec sha256sum {} \; > EXPERIMENTAL_DATA_CHECKSUMS.txt
+gpg --clearsign EXPERIMENTAL_DATA_CHECKSUMS.txt
+# Then upload dataset to Zenodo for DOI
+\end{lstlisting}
+
+\subsection{Attack Vector 2: Statistical Validity}
+
+\paragraph{Potential challenges.}
+Misapplied ANOVA; insufficient sample size; $p$-hacking; multiple testing
+without correction; incorrect null hypothesis.
+
+\paragraph{Current defenses.}
+ANOVA and Levene's test are documented in the formal claim table. Effect
+sizes are reported alongside $p$-values (CV measurements, Cohen's $d$). The
+DoE methodology was documented before experiments were run.
+
+\paragraph{Remaining gaps.}
+A formal power analysis justifying $N = 30$ is not yet written as a
+standalone document. A reproducible R/Python statistical analysis script is
+not yet committed. Normality tests (Shapiro-Wilk) and assumption validation
+are not formally documented. Bootstrapped confidence intervals are not
+reported.
+
+\paragraph{Remediation (R script skeleton).}
+\begin{lstlisting}[language=R]
+library(tidyverse); library(car)
+data <- read_csv("experimental_data.csv")
+# Power analysis
+power.t.test(n=30, delta=0.254, sd=0.05, sig.level=0.05)
+# Normality
+shapiro.test(data$performance)
+# Variance homogeneity
+leveneTest(performance ~ configuration, data=data)
+# Effect size
+cohen.d(early_runs, late_runs)
+\end{lstlisting}
+
+\subsection{Attack Vector 3: Experimental Design}
+
+\paragraph{Potential challenges.}
+Flawed methodology; uncontrolled confounds; invalid baseline comparison;
+undocumented experimental conditions.
+
+\paragraph{Current defenses.}
+DoE methodology is documented. The baseline (C\_NONE: all loops off) is
+defined. Workload and hardware were held constant.
+
+\paragraph{Remaining gaps.}
+Hardware specification (exact CPU model, RAM, kernel version) needs to be
+formalized in a single canonical \texttt{EXPERIMENTAL\_PROTOCOL.md}. CPU
+governor, thermal throttling, and ASLR settings are documented in the
+reproducibility guide but not in a consolidated protocol document. Workload
+entropy ($H = 3.2$\,bits, Zipf $\alpha = 1.1$) should be cited with
+measurement provenance.
+
+\paragraph{Protocol template.}
+The experimental protocol should specify: CPU (Intel Xeon Gold 6154 @
+3.00\,GHz, 18 cores); RAM (128\,GB DDR4-2666 ECC); OS (Ubuntu 22.04.3 LTS,
+kernel 6.2.0-39-generic); GCC 11.4.0; CPU governor: performance; Turbo
+Boost: disabled; ASLR: disabled; process affinity: core 0; 10-second
+inter-run delay for thermal stabilization; timer source:
+\texttt{CLOCK\_MONOTONIC\_RAW}; workload: Fibonacci(20), 10{,}000 iterations,
+$\approx 2.1 \times 10^6$ word executions.
+
+\subsection{Attack Vector 4: Claims versus Evidence}
+
+\paragraph{Potential challenges.}
+Claimed value differs from data; ``25.4\% improvement'' is misleading;
+determinism claim is overstated; interpretation overreaches evidence.
+
+\paragraph{Current defenses.}
+Exact claims are enumerated in the formal claim table with data locations.
+The qualifier ``algorithmic variance'' (not ``total variance'') is used
+consistently.
+
+\paragraph{Remaining gaps.}
+Sensitivity analysis showing robustness of the 0\% claim across parameter
+variations is provided separately (\S\ref{sec:sensitivity-analysis}) but
+not yet wired into a single claim-to-evidence table. Limitations are not
+formally listed in every document.
+
+\subsection{Attack Vector 5: Reproducibility}
+
+\paragraph{Potential challenges.}
+Independent researcher cannot reproduce; build instructions incomplete;
+missing dependencies; environment not fully specified.
+
+\paragraph{Current defenses.}
+Build instructions are in \texttt{README.md}. Source code is public.
+780\raisebox{0.5ex}{+} tests validate correctness.
+
+\paragraph{Remaining gaps.}
+Docker container and one-command full experiment replay are planned but not
+yet committed. CI/CD validation for automated reproduction regression
+detection is planned (GitHub Actions workflow skeleton is documented in the
+source).
+
+\subsection{Attack Vector 6: Prior Art and Novelty}
+
+\paragraph{Potential challenges.}
+Work already done by JIT compilers; uncited important papers; incremental
+not novel; contribution overstated.
+
+\paragraph{Current defenses.}
+Claims are specific: ``0\% algorithmic variance'' is not the same as
+``adaptive JIT.'' The unique combination of determinism, adaptation, and
+formal verification potential is identified.
+
+\paragraph{Remaining gaps.}
+A comprehensive literature review and a comparison table (this work versus
+PyPy, HotSpot, LuaJIT, Chez Scheme, Ertl 1996) are missing. Key citations
+to add: Bolz et al.\ (2009), Ertl (1996), Garlan et al.\ (2004).
+
+\paragraph{Novelty statement.}
+What is novel: deterministic adaptation (0\% algorithmic CV); Levene's-test-
+driven variance-based window tuning; empirically validated steady-state
+convergence; explicit thermodynamic metaphor mapping. What is not novel:
+execution frequency tracking (standard profiler technique); exponential decay
+(standard caching algorithm); hot-code acceleration (standard JIT technique).
+The contribution is the \emph{combination}, not individual techniques.
+
+\subsection{Attack Vector 7: Implementation Correctness}
+
+\paragraph{Potential challenges.}
+Code has bugs; implementation diverges from description; performance claims
+from buggy code; tests miss critical paths.
+
+\paragraph{Current defenses.}
+780\raisebox{0.5ex}{+} tests pass; code compiles with \texttt{-Wall
+-Werror}; ANSI C99 strict mode with no undefined behavior.
+
+\paragraph{Remaining gaps.}
+Fuzzing (AFL\raisebox{0.5ex}{+}), code coverage (gcov/lcov), and memory
+sanitizer runs (AddressSanitizer) are not yet formally integrated into CI.
+
+\subsection{Attack Vector 8: Generalization}
+
+\paragraph{Potential challenges.}
+Works only for FORTH; results do not generalize; workload too simple;
+real-world applicability limited.
+
+\paragraph{Current defenses.}
+Workload variety (Fibonacci, Ackermann) and shape-invariance across Zipf
+exponents 0.8--1.5 are documented.
+
+\paragraph{Remaining gaps.}
+Cross-language validation (Lua, Python) is future work. Real-world benchmark
+suites (DaCapo-style) are not tested. Scalability to large programs is
+explicitly unvalidated.
+
+\subsection{Attack Vector 9: Conflict of Interest}
+
+\paragraph{Potential challenges.}
+Financial interest from patent; results serve IP claims; independent
+validation absent; author bias in interpretation.
+
+\paragraph{Current defenses.}
+Source code and data are fully public.
+
+\paragraph{Remaining gaps.}
+A formal conflict-of-interest statement must appear in all submitted papers.
+Template:
+
+\begin{quote}
+The author (R.A.\ James) is the named inventor on a provisional patent
+application (USPTO, December 2025) related to the adaptive runtime described
+herein. To mitigate bias: all data and code are publicly available; statistical
+analyses were pre-registered before data collection; independent reproduction
+is invited (see \S\ref{sec:replication-invite}). Reviewers may verify all
+claims using the provided datasets.
+\end{quote}
+
+% PATENT: do not expand or draft claim language beyond what appears here
+
+\subsection{Attack Vector 10: Over-Interpretation}
+
+\paragraph{Potential challenges.}
+Too much claimed from limited data; conclusions not supported; speculation
+presented as fact; causal claims without causation evidence.
+
+\paragraph{Current defenses.}
+Academic wording guidelines (\S\ref{sec:wording-guidelines}) and the ontology
+(\S\ref{sec:ontology}) maintain strict language discipline and explicitly
+label thermodynamic framing as metaphor.
+
+\paragraph{Remaining gaps.}
+Every paper should carry a formal Limitations section distinguishing what the
+work demonstrates from what it does not. Speculation must be clearly marked in
+running text.
+
+\subsection{Defense Maturity Matrix}
+\label{sec:defense-matrix}
+
+\begin{table}[h]
+\centering
+\caption{Defense readiness by attack vector. Priority: Critical (C),
+High (H), Medium (M).}
+\label{tab:defense-matrix}
+\begin{tabular}{lllll}
+\toprule
+\textbf{Attack vector} & \textbf{Current} & \textbf{Gap} & \textbf{Priority} \\
+\midrule
+1. Data integrity & Good & SHA256 + Zenodo & H \\
+2. Statistical validity & Partial & Power analysis, R script & C \\
+3. Experimental design & Partial & Protocol document & C \\
+4. Claims vs.\ evidence & Good & Sensitivity analysis integration & M \\
+5. Reproducibility & Partial & Docker + CI/CD & C \\
+6. Prior art & Weak & Literature review + table & C \\
+7. Implementation & Good & Fuzzing, coverage & M \\
+8. Generalization & Weak & Cross-language study & Low \\
+9. Conflict of interest & Partial & COI statement in all papers & H \\
+10. Over-interpretation & Good & Limitations section everywhere & M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Estimated readiness.}
+Current state: approximately 65/100. Target for submission: 90/100. After
+critical items (statistical R script, protocol document, Docker container,
+literature review): approximately 85/100.
+
+Critical bottlenecks are the literature review (time-intensive but essential
+for addressing novelty challenges) and independent replication (requires an
+external collaborator). Quick wins ($<$ 4 hours each): SHA256 checksums,
+conflict-of-interest statement, Docker container, statistical R script.
