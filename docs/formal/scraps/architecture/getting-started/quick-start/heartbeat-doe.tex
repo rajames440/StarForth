@@ -1,0 +1,107 @@
+%% SCRAP: architecture/getting-started/quick-start/heartbeat-doe
+%% SOURCE: docs/working/architecture/getting-started/quick-start/heartbeat-doe.md
+%% STATUS: CURRENT
+%% FITS: cookbook/ch-doe
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Quick Start: The Heartbeat DoE}
+
+The Heartbeat DoE is the second stage of StarForth's optimization campaign.
+Where the factorial sweep ranked configurations by final performance, this
+experiment measures the \emph{temporal stability} of the five best performers
+from that baseline. It runs roughly 250 iterations --- five elite
+configurations, fifty runs each --- and takes two to four hours plus about
+thirty minutes of analysis, all from a single command.
+
+\subsection{Running the Experiment}
+
+The launch script builds the five configurations, runs each fifty times while
+recording heartbeat metrics (jitter, convergence, and coupling), and writes
+\texttt{experiment\_results\_heartbeat.csv}.
+
+\begin{lstlisting}[language=bash]
+./scripts/run_factorial_doe_with_heartbeat.sh 2025_11_20_HEARTBEAT_TOP5
+\end{lstlisting}
+
+A short pre-flight check is worthwhile: confirm roughly 1\,GB of free disk,
+verify a clean \texttt{make fastest}, and smoke-test the binary with
+\texttt{starforth -c "1 2 + . BYE"} (which should print \texttt{3}). The script
+prompts for confirmation before starting and can be interrupted with Ctrl+C ---
+results are saved incrementally, so it resumes.
+
+\subsection{The Five Configurations}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Config & Loops & Character \\
+\midrule
+1 & \texttt{1\_0\_1\_1\_1\_0} & Minimal (heat + decay + pipelining + window inf.) \\
+2 & \texttt{1\_0\_1\_1\_1\_1} & Config 1 plus decay inference \\
+3 & \texttt{1\_1\_0\_1\_1\_1} & Alternative (skips the decay loop) \\
+4 & \texttt{1\_0\_1\_0\_1\_0} & Lean (heat + decay + window only) \\
+5 & \texttt{0\_1\_1\_0\_1\_1} & Contrast (no heat tracking) \\
+\bottomrule
+\end{tabular}
+\caption{The five elite configurations carried forward from the baseline.}
+\end{table}
+
+These five were the strongest performers from Stage 1, a 3{,}200-run baseline.
+The present stage re-examines them through the lens of stability rather than raw
+performance.
+
+\subsection{Analysis}
+
+The analysis script loads the CSV, ranks configurations by stability score,
+generates six visualizations, and identifies the golden configuration.
+
+\begin{lstlisting}[language=bash]
+Rscript scripts/analyze_heartbeat_stability.R
+\end{lstlisting}
+
+It emits a detailed metrics table (\texttt{stability\_rankings.csv}) and six
+PNG plots: overall stability scores, jitter control, convergence speed, load
+coupling, a metrics heatmap, and a jitter-versus-convergence trade-off.
+
+\subsection{Key Metrics}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Metric & Meaning & Target \\
+\midrule
+Stability score & Overall goodness (0--100) & $>$ 75 (gold), $>$ 70 (ok) \\
+Jitter (CV) & Steadiness of the heartbeat & $<$ 0.15 \\
+Convergence & Speed of self-tuning & Within 5000 ticks \\
+Load coupling & Heartbeat tracks workload & $>$ 0.75 correlation \\
+\bottomrule
+\end{tabular}
+\caption{Heartbeat stability metrics and their targets.}
+\end{table}
+
+The golden configuration is the one combining the lowest jitter, fastest
+convergence, and best load coupling.
+
+\subsection{Troubleshooting}
+
+\begin{itemize}
+  \item \emph{Build fails} --- inspect the per-config build log; fix and retry,
+    and the experiment resumes.
+  \item \emph{Analysis fails} --- install the R dependencies (\texttt{tidyverse},
+    \texttt{ggplot2}, \texttt{gridExtra}) and retry.
+  \item \emph{All configs look equal} --- confirm the heartbeat was compiled in
+    (\texttt{nm} on the binary should show heartbeat symbols) and that a run log
+    carries the expected $\sim$60 columns.
+\end{itemize}
+
+\subsection{Where This Fits}
+
+Stage 1 ran the $2^6$ factorial with fifty repetitions and selected the five
+best configurations. Stage 2, this experiment, adds heartbeat observability to
+those five and names the golden configuration by stability. Stage 3 adopts that
+golden configuration as the baseline for the MamaForth experiments and further
+optimization rounds.
+
+%% TODO(bob): source uses absolute developer paths (/home/rajames/...) and references DOE_HEARTBEAT_EXPERIMENT_DESIGN.md and HEARTBEAT_EXPERIMENT_EXECUTION_GUIDE.md. Confirm canonical paths for the published edition.
