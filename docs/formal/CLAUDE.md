@@ -7,10 +7,26 @@
 
 ## Purpose
 
-`docs/formal/` is the three-volume LaTeX documentation set for StarshipOS /
+`docs/formal/` is the press-ready LaTeX documentation set for StarshipOS /
 StarForth / LithosAnanke. Audience: patent counsel, SSRN reviewers, potential
 licensees, paying customers, hobbyist hackers with hardware in hand. Nothing
 goes here until it is ready to be cited.
+
+The set is ten publications in three groups, all built from the shared
+`common/preamble.tex` and `common/starship.bib` and assembled from `scraps/`:
+
+| Group | Publications |
+|-------|--------------|
+| Research volumes | `vol1-vm-physics`, `vol2-kernel`, `vol3-research` |
+| Practitioner books | `dev-guide`, `user-guide`, `cookbook` |
+| Standalone reports | `experiments`, `proofs`, `ssrn`, `patent` |
+
+The four standalone reports wrap material that lives elsewhere and may build
+independently: `experiments` links R-generated figures from
+`docs/working/experiments/`; `proofs` mirrors the Isabelle/HOL corpus in
+`proof/`; `ssrn` includes the Math Companion and references the published PDF;
+`patent` wraps the legal-hold source in `docs/patent/` (no claim language is
+drafted here — see "What NOT to do").
 
 ---
 
@@ -53,7 +69,10 @@ Use `none` if the scrap is archive/historical material kept for completeness.
 - `%% TODO(bob):` for anything that requires dictation or verification.
 - `%% PATENT:` flag on any section touching patent-adjacent claims.
 
-### Three publications
+### The practitioner books
+
+Scraps feed primarily the three practitioner books, each of which has its own
+`main.tex` that `\input{}`s scraps in chapter order:
 
 | Directory | Title | Audience |
 |-----------|-------|----------|
@@ -61,7 +80,9 @@ Use `none` if the scrap is archive/historical material kept for completeness.
 | `user-guide/` | StarForth User Guide | End users running StarForth interactively |
 | `cookbook/` | The StarForth Cookbook | FORTH programmers wanting patterns and recipes |
 
-Each publication has its own `main.tex` that `\input{}`s scraps in chapter order.
+A `FITS:` target may also name a research volume (`vol1`–`vol3`) or a
+standalone report (`experiments`, `proofs`, `ssrn`, `patent`) when a scrap
+suits one of those. A scrap can be `\input{}` into more than one publication.
 
 
 
