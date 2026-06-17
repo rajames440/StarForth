@@ -1,0 +1,184 @@
+%% SCRAP: hardware/PGO_GUIDE
+%% SOURCE: docs/working/hardware/PGO_GUIDE.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-profiling
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Profile-Guided Optimization}
+
+Profile-guided optimization (PGO) feeds runtime profiling data back into the
+compiler to direct code generation. StarForth's PGO pipeline exercises every
+major code path, producing a binary tuned to real-world execution patterns.
+For typical workloads PGO yields a \textbf{5--15\% improvement} over a
+standard \texttt{-O3} build by predicting hot paths correctly, packing hot
+code for instruction-cache locality, inlining frequently called functions more
+aggressively, and laying out code to match common execution order.
+
+\subsection{Quick Start}
+
+A complete PGO build runs from a single target:
+
+\begin{lstlisting}[language=bash]
+make pgo
+\end{lstlisting}
+
+The target executes a six-stage pipeline: clean the environment, build with
+instrumentation (\texttt{-fprofile-generate}), run the comprehensive
+profiling workload, collect the resulting \texttt{.gcda} files, rebuild with
+the profile data (\texttt{-fprofile-use}), and clean up temporary artifacts.
+Build time is roughly two to three minutes depending on hardware.
+
+\subsection{PGO Targets}
+
+\begin{itemize}
+  \item \texttt{make pgo} --- maximum performance for typical workloads.
+    Runs the full profiling workload and produces an optimized binary with
+    assembly optimizations and direct threading enabled, then removes profile
+    data automatically.
+  \item \texttt{make pgo-perf} --- everything in the standard build plus
+    \texttt{perf} capture during workload execution, retaining frame pointers
+    for accurate stack traces. Produces \texttt{pgo-perf.data} for call-graph
+    and hotspot analysis. Requires \texttt{sudo} and
+    \texttt{linux-tools-generic}.
+  \item \texttt{make pgo-valgrind} --- runs Callgrind during the benchmark
+    workload, collecting instruction counts, cache misses, and branch
+    mispredictions, and builds an optimized binary retaining debug symbols.
+    Produces \texttt{pgo-callgrind.out}. Callgrind imposes a 10--100$\times$
+    slowdown, so the workload is limited to 100 benchmark iterations.
+\end{itemize}
+
+\subsection{Benchmark Comparison}
+
+The \texttt{make bench-compare} target builds both a regular and a PGO binary,
+runs identical benchmarks, and reports the timing difference. A representative
+run shows the regular build at 0.45\,s elapsed and the PGO build at 0.38\,s ---
+roughly a 1.18$\times$ speedup.
+
+\subsection{The Profiling Workload}
+
+The workload script (\texttt{scripts/pgo-workload.sh}) drives seven major code
+paths: the full unit test suite (over 400 cases across all word categories),
+stress tests (deep call stacks, stack exhaustion, large definitions),
+integration tests (complete Forth programs and real-world usage), benchmarks
+(5000 iterations of hot-path operations), an interactive REPL workload, block
+I/O operations, and lightweight word-frequency profiling for hot-word
+identification. The workload can be run independently against any binary:
+
+\begin{lstlisting}[language=bash]
+./scripts/pgo-workload.sh ./build/starforth
+\end{lstlisting}
+
+\subsection{Profile Data}
+
+GCC emits two file types. The \texttt{.gcno} coverage notes are written at
+compile time and removed before the optimization build; the \texttt{.gcda}
+coverage data is written at runtime and consumed by \texttt{-fprofile-use}.
+Data lands in the directory where the instrumented binary runs; the build
+system searches \texttt{./}, \texttt{src/}, \texttt{src/*/}, and
+\texttt{build/}. A healthy run produces 100 or more \texttt{.gcda} files, one
+per source file that executed; substantially fewer indicates unexercised code
+paths.
+
+\subsection{Compiler Flags}
+
+The instrumentation stage uses moderate optimization to keep the profiling
+build fast:
+
+\begin{lstlisting}[language=bash]
+CFLAGS="-O2 -DUSE_ASM_OPT=1 -fprofile-generate"
+LDFLAGS="-fprofile-generate -lgcov"
+\end{lstlisting}
+
+The optimization stage applies maximum optimization, direct threading, and
+graceful handling of inconsistent profile data:
+
+\begin{lstlisting}[language=bash]
+CFLAGS="-O3 -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 \
+        -fprofile-use -fprofile-correction -Wno-error=coverage-mismatch"
+LDFLAGS="-fprofile-use"
+\end{lstlisting}
+
+For \texttt{perf} analysis, \texttt{-fno-omit-frame-pointer} preserves the
+frame-pointer register at a 2--3\% performance cost in exchange for accurate
+call graphs.
+
+\subsection{Troubleshooting}
+
+\begin{itemize}
+  \item \emph{No profile data found} --- the workload failed to exercise the
+    relevant code, the \texttt{.gcda} files are missing, or the source changed
+    between stages. Expand the workload and rebuild with \texttt{make pgo},
+    which cleans first.
+  \item \emph{Coverage mismatch} --- source was modified between
+    instrumentation and optimization. Run \texttt{make pgo} from scratch.
+  \item \emph{Permission denied writing .gcda} --- the working directory is
+    not writable; restore write permissions and rebuild.
+  \item \emph{PGO slower than the regular build} --- the profile does not match
+    real usage, or the workload was unrealistic. Customize the workload and
+    confirm with \texttt{make bench-compare}.
+\end{itemize}
+
+\subsection{Best Practices}
+
+Profile representative workloads that cover the bulk of real usage rather than
+trivial operations or rarely executed error paths. Re-run PGO after major code
+changes (more than roughly 10\% of the codebase) and always verify gains with
+\texttt{make bench-compare}. PGO composes well with \texttt{-march=native},
+link-time optimization, direct threading, and hand-written assembly ---
+\texttt{make pgo} enables all of these automatically.
+
+\subsection{How PGO Works}
+
+During instrumentation the compiler inserts counters at control-flow edges;
+the runtime increments them and writes \texttt{.gcda} files on exit. During
+optimization the compiler reads the profile, separates hot from cold paths,
+and makes informed decisions: inlining hot functions, packing hot code for
+I-cache locality, arranging branches for correct prediction, devirtualizing
+calls where the profile fixes the type, and unrolling hot loops. Hot code is
+laid out sequentially while cold code is outlined to a separate section.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Heuristic & Default & With PGO \\
+\midrule
+Inline threshold & 600 units & Adjusted per call site \\
+Loop unroll factor & 4 & Up to 8 for hot loops \\
+Branch prediction & Static (50/50) & Dynamic (from profile) \\
+Function outlining & Disabled & Cold code outlined \\
+Register allocation & Balanced & Favors hot paths \\
+\bottomrule
+\end{tabular}
+\caption{GCC optimization heuristics with and without profile data.}
+\end{table}
+
+\subsection{Build Target Comparison}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lllll}
+\toprule
+Target & Optimization & Speed & Build Time & Use Case \\
+\midrule
+\texttt{debug} & \texttt{-O0 -g} & 1.0$\times$ & 30\,s & Development \\
+\texttt{all} & \texttt{-O2} & 3.5$\times$ & 45\,s & Default, balanced \\
+\texttt{fast} & \texttt{-O3} + ASM & 5.2$\times$ & 60\,s & Production, no LTO \\
+\texttt{fastest} & \texttt{-O3} + ASM + DT + LTO & 6.8$\times$ & 90\,s & Maximum \\
+\texttt{pgo} & fastest + PGO & 7.5--8.0$\times$ & 3\,m & Absolute maximum \\
+\bottomrule
+\end{tabular}
+\caption{Relative performance and build cost across targets (ASM: assembly
+optimizations; DT: direct threading; LTO: link-time optimization).}
+\end{table}
+
+\subsection{Platform Notes}
+
+On x86\_64 all PGO features are available, with best results under
+\texttt{-march=native}; \texttt{perf} hardware counters and Valgrind are fully
+supported. On ARM64 (Raspberry Pi 4, Apple Silicon) PGO is fully supported ---
+use \texttt{-march=armv8-a+crc+simd -mtune=cortex-a72} on the Pi 4; \texttt{perf}
+support varies by kernel and Valgrind support is limited on some platforms.
+PGO requires native execution to profile, so cross-compilation must run the
+instrumented binary on target hardware, transfer the \texttt{.gcda} files
+back, and cross-compile the optimized binary with that data.

@@ -1,0 +1,130 @@
+%% SCRAP: architecture/03-architecture/physics-engine/metrics-and-knobs
+%% SOURCE: docs/working/architecture/03-architecture/physics-engine/metrics-and-knobs.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-physics, cookbook/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Instrumentation Gaps and Tuning Knobs}
+
+This section catalogs the metrics the runtime does \emph{not} yet collect ---
+the blind spots that currently prevent certain tuning knobs from being driven by
+data. It is a working punch list, organized by subsystem and prioritized for
+the instrumentation campaign internally nicknamed ``twisting the dragon's tail.''
+
+\subsection{Dead Code}
+
+One routine is defined but never reached.
+\texttt{hotwords\_bucket\_reorder()} at
+\texttt{physics\_hotwords\_cache.c:201--215} implements a bubble sort over
+\texttt{execution\_heat} but is never invoked from the lookup path, with no
+automatic trigger. Whether this is genuine dead code or a forgotten hook
+remains open. If it were enabled, it would need three metrics: reorder
+frequency, bubble-sort cost, and a measurement of whether reordering actually
+improves hit latency.
+%% TODO(bob): decide whether bucket reordering is dead code or an unhooked feature.
+
+\subsection{Stack Metrics (Zero Collection)}
+
+No stack instrumentation exists, leaving \texttt{STACK\_SIZE} tuning blind and
+tail-call optimization impossible to justify.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Metric & Location & Impact of absence \\
+\midrule
+Data stack peak depth & \texttt{stack\_management.c} & cannot size the stack to workload \\
+Return stack peak depth & \texttt{stack\_management.c} & cannot measure colon nesting \\
+Underflow attempts & \texttt{arithmetic\_words.c:59--62} & fragile paths invisible \\
+Overflow attempts & \texttt{arithmetic\_words.c} & no exhaustion early warning \\
+\bottomrule
+\end{tabular}
+\caption{Missing stack metrics.}
+\end{table}
+
+\subsection{Dictionary Metrics (Zero Visibility)}
+
+Dictionary behavior is opaque. First-character bucketing across 26 buckets may
+be unbalanced and would directly affect lookup latency, but no histogram exists
+to confirm. Dictionary growth velocity, \texttt{FORGET} usage, lookup failure
+rate, and word-name length distribution are likewise untracked, leaving
+fragmentation, ``dictionary full'' prediction, error-path frequency, and memory
+efficiency all unknown. Relevant sites include the dictionary lookup in
+\texttt{vm.c}, \texttt{memory\_management.c}, and \texttt{dictionary\_words.c}.
+
+\subsection{Block I/O Metrics (Completely Dark)}
+
+The block subsystem reports nothing. Read and write frequency, writeback
+frequency (\texttt{block\_subsystem.c:198--200}), RAM cache hit rate, and dirty
+block ratio are all DoE phase-1 targets; I/O latency and fragmentation ratio are
+phase-2 targets. Until these land, writeback behavior --- a plausible
+performance killer --- cannot be characterized.
+
+\subsection{Per-Word Execution Metrics}
+
+The inner loop in \texttt{vm.c} records no per-word execution frequency, latency
+distribution, word-category breakdown, or colon-versus-native ratio. These
+metrics are the validation evidence for the cache and window decisions and the
+basis for hotspot detection and performance-regression tracking.
+
+\subsection{Heat Dynamics (Phase 2)}
+
+Heat dynamics are largely a phase-2 placeholder in
+\texttt{physics\_metadata.c}. A heat decay trace is needed to confirm that decay
+does not destroy useful pattern information. The heat percentile distribution is
+stored but never dynamically recalculated, and heat concentration ratio
+(top-10-word heat over total heat), heat velocity, and heat plateau detection
+are not tracked at all.
+
+\subsection{Pipelining Metrics (Instrumented, Unused)}
+
+Phase-1 pipelining instrumentation exists but feeds nothing. Prediction accuracy
+by depth is not measured, context transition frequency is counted but not
+reported, speculation ROI is not aggregated, misprediction cost is measured but
+not validated, and pipeline stall reduction is not measured --- leaving the
+binary chop over \texttt{TRANSITION\_WINDOW\_SIZE} and the
+\texttt{SPECULATION\_THRESHOLD} tuning without inputs.
+
+\subsection{Cache Pollution and Cycles}
+
+The hot-words cache offers no view into its own churn. Eviction and
+re-promotion cycles (is the cache thrashing?), false negatives (words evicted
+before promotion, hinting the threshold is too high), eviction candidate value
+(was LRU the right policy?), bucket scan depth, and promotion wait time are all
+uncollected as of day one.
+
+\subsection{Priorities}
+
+The instrumentation work is ranked in four tiers:
+
+\begin{itemize}
+  \item \textbf{Critical.} Stack peak depth (minutes to add, large insight);
+        block I/O metrics (writeback behavior is a likely performance killer);
+        dictionary bucket load (imbalance drives the latency tail).
+  \item \textbf{High (phase-1 DoE).} Per-word execution frequency; heat decay
+        trace; block I/O hit rate.
+  \item \textbf{Medium (phase-2 DoE).} Pipelining accuracy by depth; colon
+        nesting depth; dictionary growth velocity.
+  \item \textbf{Nice to have (phase 3).} Heat concentration ratio; word-category
+        breakdown; speculation ROI histogram.
+\end{itemize}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+Category & Files & Est. LOC & Est. time \\
+\midrule
+Stack metrics & \texttt{stack\_management.c}, \texttt{vm.h} & $\sim$30 & 30 min \\
+Dictionary metrics & \texttt{vm.c}, \texttt{memory\_management.c}, \texttt{vm.h} & $\sim$50 & 45 min \\
+Block I/O metrics & \texttt{block\_subsystem.c}, \texttt{vm.h} & $\sim$80 & 1 hr \\
+Per-word metrics & \texttt{vm.c}, \texttt{physics\_metadata.c}, \texttt{vm.h} & $\sim$100 & 1.5 hr \\
+Heat dynamics & \texttt{physics\_metadata.c}, \texttt{vm.h} & $\sim$60 & 1 hr \\
+Pipelining accuracy & \texttt{physics\_pipelining\_metrics.c}, \texttt{vm.h} & $\sim$40 & 45 min \\
+\bottomrule
+\end{tabular}
+\caption{Implementation effort estimate per metric category.}
+\end{table}

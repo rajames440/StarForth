@@ -1,0 +1,88 @@
+%% SCRAP: architecture/03-architecture/adaptive-systems/adaptive-window-and-decay
+%% SOURCE: docs/working/architecture/03-architecture/adaptive-systems/adaptive-window-and-decay.md
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Adaptive Window Shrinking and Decay Slope: Root-Cause Analysis}
+
+This section records a root-cause analysis, dated 2025-11-08, of two questions
+about the adaptive runtime: whether the rolling window grows as well as shrinks,
+and whether a driving metric feeds an inference mechanism that tunes it. The
+finding, accurate for its time, is that the window was then unidirectional ---
+shrink-only --- with the growth mechanism deferred to the second phase as Loop
+\#5, and with no measurement-error (gauge) study in place.
+
+The thermodynamic and field metaphors used below are modeling language for the
+runtime's optimization behavior; they describe how the system tunes its rolling
+window, not a literal physical apparatus.
+
+\subsection{The Shrink-Only Feedback Loop}
+
+Shrinking was implemented and active. Every word execution is recorded into the
+rolling window. Every 256 executions the adaptive-shrink check runs: it measures
+pattern diversity as the count of unique adjacent word transitions
+($\textit{word}_a \rightarrow \textit{word}_b$), computes a growth rate against
+the previous measurement, and, when growth falls below one percent, multiplies
+the effective window size by seventy-five percent, never falling below a floor of
+256.
+
+\begin{equation}
+\textit{growth\_rate} =
+  \frac{\textit{diversity}_{\text{current}} - \textit{diversity}_{\text{last}}}
+       {\textit{diversity}_{\text{last}}}
+\end{equation}
+
+The complementary growth branch did not exist; it was carried as a commented
+Phase 2 placeholder. The consequence is structural: once shrunk, the window
+cannot recover, so a pattern that emerges after a contraction may exceed the
+window's reach.
+
+\subsection{Why the Window Read Static in Tests}
+
+Metrics consistently reported an effective window size of 4096. Three
+explanations were advanced: pattern diversity never plateaued below the one
+percent threshold because the harness kept introducing new transitions; the
+window never reached its warm state, since warming requires roughly 4096
+executions and short tests end first; or the metrics, extracted once at the end
+of a run, missed the dynamic behavior --- the window might already have settled
+at its floor, or shrinking might never have triggered. The recommended
+resolution was instrumentation: log each shrink decision to see whether the
+check was contracting the window or merely measuring it.
+
+\subsection{The Unimplemented Decay Slope}
+
+The exported \texttt{decay\_slope} metric was hardcoded to zero. The underlying
+linear-decay model nevertheless existed and ran per word: heat declines as
+$H(t) = \max(0,\, H_0 - d\,t)$, with the decay constant expressed in \Qtype{}
+fixed point as three units per 65536 per microsecond --- roughly
+$4.58\times10^{-5}$ heat per microsecond, giving a hundred-heat word a half-life
+near two seconds. What was missing was any aggregate: no total-heat trajectory
+was stored, no start-to-end slope computed, no heat budget tracked. Three
+candidate definitions were proposed --- the constant decay rate read from the
+fixed-point constant, the observed heat decline divided by runtime, or a per-word
+average decay --- none of which had been implemented.
+
+\subsection{Toward a Bidirectional Loop}
+
+The design question pointed at a bidirectional controller. In the envisioned
+Loop \#5, diversity-driven shrinking would be balanced by growth driven by
+prefetch-accuracy feedback from the pipelining loop, so the window oscillates
+toward an optimal size rather than ratcheting monotonically downward. Three
+components were missing: a growth trigger (falling prefetch accuracy, a sudden
+rise in diversity, or available memory), a gauge study to judge whether a given
+contraction helped or hurt (comparing prefetch accuracy and cache-hit rate before
+and after), and the wiring that lets the pipelining loop's accuracy metric feed
+the window-tuning loop --- a connection that did not then exist.
+
+\subsection{Disposition}
+
+The analysis concluded that the shrink-only behavior was not a defect but a
+Phase 1 boundary, with bidirectional tuning explicitly deferred. The shrinking
+that existed worked correctly; the test harness simply may not have exhibited
+enough diversity plateau to trigger it. The decay-slope export was a placeholder
+awaiting one of the three candidate definitions.
+
+%% PATENT: the bidirectional, accuracy-driven window controller and the
+%%   field-model framing of window tuning are patent-adjacent; no claims drafted
+%%   here.

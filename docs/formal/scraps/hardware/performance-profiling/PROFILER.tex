@@ -1,0 +1,140 @@
+%% SCRAP: hardware/performance-profiling/PROFILER
+%% SOURCE: docs/working/hardware/performance-profiling/PROFILER.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-profiling
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The Built-In Word Profiler}
+
+StarForth ships a lightweight word-execution profiler that tracks how often
+each word runs and turns that data into optimization guidance. Its purpose is
+to surface hot paths --- frequently executed words --- that are candidates for
+inline assembly. At its basic level the profiler adds well under 1\% overhead,
+making it suitable for always-on use.
+
+\subsection{Quick Start}
+
+Profiling is enabled with two flags: \texttt{--profile} sets the detail level
+and \texttt{--profile-report} prints the report on exit.
+
+\begin{lstlisting}[language=bash]
+./build/starforth --profile 1 --profile-report < script.fth
+\end{lstlisting}
+
+The report lists global statistics and the most frequently called words by
+execution count --- typically dominated by \texttt{LIT}, \texttt{EXIT},
+\texttt{(LOOP)}, \texttt{I}, and the core stack and arithmetic primitives.
+
+\subsection{Profiling Levels}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Level & Overhead & Adds \\
+\midrule
+0 --- \texttt{PROFILE\_DISABLED} & 0\% & Nothing (production default) \\
+1 --- \texttt{PROFILE\_BASIC} & $<$1\% & Frequency \& lookup counts \\
+2 --- \texttt{PROFILE\_DETAILED} & 5--10\% & Per-word timing (ns) \\
+3 --- \texttt{PROFILE\_VERBOSE} & 15--20\% & Stack \& memory access tracking \\
+\bottomrule
+\end{tabular}
+\caption{Profiling levels and their cost.}
+\end{table}
+
+Basic profiling tracks word frequency and dictionary lookups at negligible
+cost. Detailed profiling adds nanosecond-precision execution timing with
+average, minimum, and maximum per word. Verbose profiling further records stack
+operation counts and memory read/write volumes.
+
+\subsection{Reading the Report}
+
+High call counts mark hot paths. The detailed view reports total time per word
+in microseconds alongside average and maximum nanoseconds, exposing words that
+are individually slow as well as those that are merely frequent. A typical
+workload concentrates 80--95\% of all executions in its top ten words, so a
+small set of targeted optimizations affects nearly all runtime.
+
+\subsection{Hot-Word Analysis}
+
+The \texttt{profiler\_print\_hotspots()} routine ranks words by share of total
+executions and attaches a recommendation to each.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+Share of total & Recommendation \\
+\midrule
+$\geq$ 5.0\% & High priority --- inline-assembly candidate \\
+$\geq$ 2.0\% & Consider assembly optimization \\
+$\geq$ 1.0\% & Monitor for optimization \\
+$\geq$ 0.5\% & Defer to profile-guided optimization \\
+$<$ 0.5\% & Low priority \\
+\bottomrule
+\end{tabular}
+\caption{Optimization priority by execution share.}
+\end{table}
+
+\subsection{Development Workflow}
+
+The intended cycle is: profile a representative workload at the basic level,
+identify hot words, then optimize. Words above 5\% of executions warrant a
+hand-written assembly path under a \texttt{USE\_ASM\_OPT} guard; words in the
+0.5--5\% band are better left to profile-guided optimization, where the
+compiler inlines and arranges them from the same data. Gains are confirmed by
+benchmarking before and after with \texttt{--benchmark}.
+
+Best practice is to profile real programs rather than toy examples, run enough
+iterations for statistical significance (1000+ word executions), and start at
+the basic level. Profiling should avoid \texttt{LOG\_DEBUG} (logging overhead
+skews results), focus on normal rather than error paths, and treat a top-ten
+coverage below 80\% as a sign the workload is unrepresentative.
+
+\subsection{Implementation}
+
+The profiler instruments execution in two places: the outer interpreter
+(\texttt{vm\_interpret\_word()}), which sees words run directly from the REPL or
+scripts, and the inner interpreter (\texttt{execute\_colon\_word()}), which sees
+words run from compiled threaded code. Per-word statistics are held in a
+compact record:
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    const DictEntry *entry;    // dictionary entry
+    uint64_t call_count;       // executions
+    uint64_t total_time_ns;    // DETAILED+
+    uint64_t min_time_ns;      // DETAILED+
+    uint64_t max_time_ns;      // DETAILED+
+} WordStats;
+\end{lstlisting}
+
+Frequency tracking is a single counter increment with O(1) lookup for known
+entries and O($n$) only on a word's first call, with capacity for 256 unique
+words (expandable; primitive words are always tracked). It performs no timing
+calls, which is what keeps the basic level effectively free.
+
+\subsection{C API}
+
+\begin{lstlisting}[language=C]
+int  profiler_init(ProfileLevel level);
+void profiler_shutdown(void);
+void profiler_word_count(const DictEntry *entry);   // lightweight
+void profiler_word_enter(const DictEntry *entry);   // timing
+void profiler_word_exit(const DictEntry *entry);
+void profiler_generate_report(void);
+void profiler_print_hotspots(void);
+void profiler_reset(void);
+\end{lstlisting}
+
+\subsection{Integration with External Tools}
+
+The built-in profiler complements rather than replaces system profilers. It
+reports hot \emph{Forth} words; \texttt{perf} reports hot \emph{C} functions;
+Valgrind/Callgrind supplies exact instruction counts; and \texttt{gprof}
+provides function-level timing. The recommended combination runs the StarForth
+profiler at the basic level continuously and reaches for the detailed level or
+an external tool only for targeted investigation. Typical failures are simple:
+no data usually means one of the two flags is missing, all-zero counts mean no
+Forth code executed before \texttt{BYE}, excessive overhead means a level above
+basic is in use, and missing words mean the 256-entry capacity was reached.

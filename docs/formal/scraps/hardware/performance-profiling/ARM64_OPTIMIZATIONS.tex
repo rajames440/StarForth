@@ -1,0 +1,158 @@
+%% SCRAP: hardware/performance-profiling/ARM64_OPTIMIZATIONS
+%% SOURCE: docs/working/hardware/performance-profiling/ARM64_OPTIMIZATIONS.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-raspi
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{ARM64 Assembly Optimizations}
+
+StarForth's ARM64 optimizations target the AArch64 instruction set, validated
+primarily on the Cortex-A72 of the Raspberry Pi 4. The work spans four headers:
+\texttt{include/vm\_asm\_opt\_arm64.h} (core optimizations),
+\texttt{include/vm\_inner\_interp\_arm64.h} (direct-threaded interpreter), and
+\texttt{include/arch\_detect.h} (automatic architecture detection), with a full
+build guide in the Raspberry Pi chapter.
+
+\subsection{Architectural Advantages}
+
+ARM64 offers several structural wins over x86\_64 for a stack machine. With 31
+general-purpose registers against 16, the implementation keeps the VM pointer,
+instruction pointer, and both stack pointers in registers and still has room to
+cache the top of stack (TOS) in \texttt{x23} --- eliminating a memory access on
+every operation --- with \texttt{x24}--\texttt{x28} held in reserve. Most ARM64
+instructions carry conditional variants (\texttt{csel}, \texttt{cneg},
+\texttt{cinc}) where x86\_64 offers only \texttt{CMOV}, removing branches and the
+pipeline stalls they cause. Load and store with auto-increment fuse a memory
+access and a pointer bump into a single instruction, shrinking code and easing
+i-cache pressure. NEON SIMD compares sixteen bytes at once, accelerating string
+comparison and bulk memory work.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Feature & x86\_64 & ARM64 (Cortex-A72) \\
+\midrule
+General-purpose registers & 16 & 31 \\
+TOS caching & Limited & Excellent (\texttt{x23}) \\
+Conditional execution & \texttt{CMOV} only & Most instructions \\
+Load/store & Complex modes & Post-increment \\
+SIMD width & 256-bit (AVX2) & 128-bit (NEON) \\
+Power envelope & 15--25\,W TDP & 7--8\,W \\
+\bottomrule
+\end{tabular}
+\caption{Architectural comparison relevant to the StarForth inner loop.}
+\end{table}
+
+\subsection{Expected Gains}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Optimization & x86\_64 speedup & ARM64 speedup \\
+\midrule
+Stack operations & 2--3$\times$ & 2.5--4$\times$ \\
+Inner interpreter & 3--5$\times$ & 4--6$\times$ \\
+Arithmetic & 1.5--2$\times$ & 1.8--2.5$\times$ \\
+Dictionary lookup & 2--3$\times$ & 2--3$\times$ \\
+String operations & 2--3$\times$ & 2--3$\times$ (NEON) \\
+\bottomrule
+\end{tabular}
+\caption{Projected speedups by optimization class.}
+\end{table}
+
+\subsection{TOS Caching in Practice}
+
+Because the top of stack lives in \texttt{x23} and the data-stack pointer
+\texttt{x21} is a true pointer rather than an index, a push collapses to a
+single auto-incrementing store:
+
+\begin{lstlisting}[language=C]
+; TOS already in x23, no load needed
+str     x23, [x21, #8]!      ; store TOS, advance DSP in one instruction
+\end{lstlisting}
+
+Dictionary traversal benefits from prefetching the next entry while comparing
+the current one. Each entry carries roughly 100--200\,ns of latency; a prefetch
+hides 50--80\,ns of it, yielding a 30--50\% speedup on cold searches.
+
+\subsection{Raspberry Pi 4 Target}
+
+The Cortex-A72 runs four out-of-order cores at 1.5\,GHz with a 4096-entry
+branch-prediction buffer. Each core has 32\,KB of L1 instruction and 32\,KB of
+L1 data cache; 1\,MB of L2 is shared. Memory bandwidth on LPDDR4-3200 is
+roughly 12\,GB/s theoretical and 8--10\,GB/s measured. Practical guidance
+follows from the cache hierarchy: keep hot code under 32\,KB to fit L1I, align
+critical loops to cache lines, prefetch predictable access patterns, structure
+data on 64-byte boundaries, and minimize memory traffic by keeping working data
+in registers.
+
+\subsection{Build Configuration}
+
+Architecture detection selects flags from \texttt{uname -m}: \texttt{-march=native}
+on x86\_64, and \texttt{-march=armv8-a+crc+simd -mtune=cortex-a72} on AArch64,
+each with a matching \texttt{ARCH\_*} define. The optimized profile adds
+\texttt{-O3 -DUSE\_ASM\_OPT=1}; the performance profile adds
+\texttt{-DUSE\_DIRECT\_THREADING=1 -flto}. Cross-compilation uses
+\texttt{aarch64-linux-gnu-gcc} with static linking.
+
+\subsection{Benchmark Results}
+
+Measured on a Raspberry Pi 4 Model B (4\,GB) running 64-bit Raspberry Pi OS,
+kernel 6.1.21-v8+, GCC 12.2.0.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Implementation & Time & Speedup \\
+\midrule
+C baseline (\texttt{-O2}) & 285\,ms & 1.0$\times$ \\
+C optimized (\texttt{-O3}) & 198\,ms & 1.4$\times$ \\
+ARM64 ASM & 68\,ms & 4.2$\times$ \\
+ARM64 + direct threading & 42\,ms & 6.8$\times$ \\
+\bottomrule
+\end{tabular}
+\caption{One million stack operations.}
+\end{table}
+
+For recursive Fibonacci(30), direct threading eliminated roughly 1.7 billion
+branches (an 83\% reduction), cut instruction count by 60\%, and reduced cache
+misses by 75\%, bringing the C baseline of 1250\,ms down to 245\,ms. Dictionary
+lookup over 1000 words across 100k searches fell from 89\,ms (45k cache misses)
+to 41\,ms (25k misses) with combined prefetch and NEON \texttt{strcmp}.
+
+\subsection{Energy Efficiency}
+
+ARM64 optimizations raise instantaneous power slightly through higher
+utilization but complete work far faster, lowering energy per operation. One
+million stack operations cost roughly 1.2\,J on the C baseline
+(285\,ms $\times$ 4.2\,W) versus 0.19\,J optimized (42\,ms $\times$ 4.5\,W) ---
+a 6.3$\times$ improvement in energy efficiency. Sustained workloads warrant at
+least a passive heatsink; without cooling the Cortex-A72 throttles to 1.2\,GHz
+near 80\,\textdegree{}C.
+
+\subsection{Known Limitations}
+
+\begin{itemize}
+  \item The NEON string compare assumes alignment and may fault on unaligned
+    input; an alignment check or unaligned loads would resolve it.
+  \item \texttt{vm\_mul\_double} produces correct low and signed-high 64-bit
+    halves, but unsigned 128-bit division is unimplemented; \texttt{*/MOD}
+    falls back to software division.
+  \item Cache-line zeroing via \texttt{dc zva} requires an aligned address and
+    may be disabled by the hypervisor or kernel.
+  \item The assembly is validated on Cortex-A72; other ARM64 cores (A53, A76,
+    Apple M-series) may need retuning and should be benchmarked on the target.
+\end{itemize}
+
+\subsection{Portability and Future Work}
+
+The same ARM64 code runs on Apple M1/M2 (wider execution and a much larger L2,
+expected 2--3$\times$ over the Pi 4, built with \texttt{-mcpu=apple-m1}), AWS
+Graviton (\texttt{-mcpu=neoverse-n1}), and Android devices via the NDK
+toolchain. Future directions include NEON parallel stack operations, the
+Scalable Vector Extension on ARMv9, and the ARMv8.3+/8.5 security features
+Pointer Authentication and Branch Target Identification.
+%% PATENT: adaptive-runtime mechanisms referenced elsewhere are patent pending; no claims drafted here.
