@@ -1,0 +1,108 @@
+%% SCRAP: experiments/02-experiments/physics-optimization/doe-guide
+%% SOURCE: docs/working/experiments/02-experiments/physics-optimization/doe-guide.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-physics-opt, cookbook/ch-doe
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Physics Optimization DoE Guide}
+\label{sec:physics-opt-doe-guide}
+
+\subsection{Overview}
+
+Five optimisation opportunities in the StarForth physics engine are tested
+sequentially using progressive design-of-experiments: each opportunity
+explores 3--4 parameter variations at 60~samples per configuration (two
+iterations of 30~samples), and the winner is locked in before proceeding to
+the next opportunity.
+
+\subsection{Q48.16 Fixed-Point Format}
+
+All metrics are reported in Q48.16 fixed-point representation: 48 integer
+bits and 16 fractional bits. This format is deterministic, free of
+floating-point rounding, and formally verifiable.
+
+\begin{center}
+\begin{tabular}{lrl}
+\toprule
+Decimal value & Q48.16 integer & Conversion \\
+\midrule
+0.2  & 13107 & $0.2 \times 65536 = 13107.2$ \\
+0.33 & 21627 & $0.33 \times 65536 = 21626.9$ \\
+0.5  & 32768 & $0.5 \times 65536 = 32768$ \\
+0.7  & 45875 & $0.7 \times 65536 = 45875.2$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+To convert a Q48.16 CSV value to a decimal: divide by~65536. For example,
+\texttt{vm\_workload\_duration\_ns\_q48} = 315{,}797{,}667{,}840 corresponds
+to $315{,}797{,}667{,}840 / 65536 \approx 4{,}822{,}021$~nanoseconds.
+
+\subsection{Optimisation Opportunities}
+
+\paragraph{Opportunity~1 — Decay Slope Inference.}
+Four decay slope values in Q48.16 are tested: 13107 (0.2), 21627 (0.33,
+baseline), 32768 (0.5), 45875 (0.7). The decay slope controls how rapidly
+execution heat dissipates from the hot-words cache. Expected improvement:
+8--15\%. Decision criterion: highest cache hit rate combined with lowest
+workload duration.
+
+\paragraph{Opportunity~2 — Variance-Based Window Width Tuning.}
+Three rolling window sizes are tested: 2048, 4096 (baseline), 8192~bytes.
+Window size determines how many execution events are retained for adaptive
+decisions. Expected improvement: 6--12\%. Decision criterion: best balance
+of context prediction accuracy and workload duration.
+
+\paragraph{Opportunity~3 — Decay Rate Parameter Tuning.}
+Three combinations of decay interval (nanoseconds) and adaptive shrink rate
+are tested: fast/fast (500~ns, shrink~50), normal/normal (1000~ns, shrink~75,
+baseline), slow/slow (2000~ns, shrink~100). Expected improvement: 3--6\%.
+
+\paragraph{Opportunity~4 — Window $\times$ Decay Interaction.}
+A $2 \times 2$ factorial crossing two window sizes (2048, 8192) with two
+decay slopes (0.33, 0.5) reveals interaction effects between the two
+parameters. Expected improvement: 5--8\%.
+
+\paragraph{Opportunity~5 — Hot-Words Cache Threshold.}
+Four cache-promotion thresholds are tested: 5, 10 (baseline), 20, 50
+execution-count units. Lower thresholds promote more words to the cache;
+higher thresholds produce a leaner, higher-precision cache. Expected
+improvement: 2--4\%.
+
+\subsection{Execution}
+
+%% TODO(bob): confirm canonical path for run_optimization_doe.sh in published repo
+
+\begin{lstlisting}[language=bash]
+# Opportunity 1: Decay Slope (4 configs x 60 runs = 240 total)
+./scripts/run_optimization_doe.sh --opportunity 1 OPP_01_DECAY_SLOPE
+
+# Opportunity 2: Window Width (3 configs x 60 runs = 180 total)
+./scripts/run_optimization_doe.sh --opportunity 2 OPP_02_WINDOW_WIDTH
+
+# ... opportunities 3-5 follow the same pattern
+\end{lstlisting}
+
+All five opportunities complete in approximately 9~minutes at two iterations.
+To increase statistical power, add \texttt{--exp-iterations 4} (doubles
+samples per configuration).
+
+\subsection{Analysis}
+
+For each opportunity, sort the CSV by \texttt{vm\_workload\_duration\_ns\_q48}
+ascending to identify the fastest configuration:
+
+\begin{lstlisting}[language=bash]
+tail -n +2 experiment_results.csv | sort -t',' -k27 -n | head -5
+\end{lstlisting}
+
+The winner is then locked into the Makefile before proceeding to the next
+opportunity. After all five opportunities are completed, a validation run
+confirms the cumulative improvement over the pre-optimisation baseline.
+
+\subsection{Expected Cumulative Improvement}
+
+Sequential optimisation of all five opportunities is expected to yield a
+15--30\% cumulative reduction in \texttt{vm\_workload\_duration\_ns\_q48}
+compared to the untuned default configuration.
+

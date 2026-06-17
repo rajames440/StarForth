@@ -1,0 +1,121 @@
+%% SCRAP: experiments/02-experiments/heartbeat-doe/execution-guide
+%% SOURCE: docs/working/experiments/02-experiments/heartbeat-doe/execution-guide.md
+%% STATUS: WORKING
+%% FITS: experiments/ch-heartbeat, cookbook/ch-doe
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Heartbeat DoE Execution Guide}
+\label{sec:heartbeat-doe-execution}
+
+\subsection{Overview}
+
+The heartbeat DoE executes five elite configurations at 50 replicates each
+(250 total runs) with the heartbeat thread enabled. The experiment requires
+a clean build environment, approximately 600~MB of storage for run logs and
+CSV output, and 2--4~hours of uninterrupted machine time.
+
+\subsection{Pre-Execution Checklist}
+
+\begin{enumerate}
+  \item \textbf{Build system.} Verify the build completes without errors:
+\begin{lstlisting}[language=bash]
+make clean
+make fastest HEARTBEAT_THREAD_ENABLED=1
+./build/amd64/fastest/starforth -c "1 2 + . BYE"
+\end{lstlisting}
+
+  \item \textbf{Storage.} Confirm at least 1~GB is available in the experiment
+        output directory. The CSV file reaches approximately 50~MB; run logs
+        reach approximately 500~MB.
+
+  \item \textbf{System stability.} The experiment runs continuously for
+        2--4~hours. Background CPU load from compilation jobs, browser
+        processes, or automatic system updates biases heartbeat measurements.
+        Minimise competing load before launching.
+
+  \item \textbf{Heartbeat symbols.} Confirm the heartbeat thread is compiled
+        in:
+\begin{lstlisting}[language=bash]
+nm ./build/amd64/fastest/starforth | grep heartbeat
+\end{lstlisting}
+\end{enumerate}
+
+%% TODO(bob): confirm canonical path for run_factorial_doe_with_heartbeat.sh
+%%   in published repo; flag if script was never committed
+
+\subsection{Execution}
+
+\begin{lstlisting}[language=bash]
+# Standard run (50 replicates per configuration, ~2-4 hours)
+./scripts/run_factorial_doe_with_heartbeat.sh HEARTBEAT_TOP5
+
+# Extended run (100 replicates, ~6-8 hours)
+./scripts/run_factorial_doe_with_heartbeat.sh --runs-per-config 100 HEARTBEAT_EXTENDED
+\end{lstlisting}
+
+The script prints a configuration manifest and a preview of the randomised
+test matrix before execution begins, then prompts for confirmation. Each run
+takes approximately 10--15~seconds.
+
+\subsection{Output Verification}
+
+On completion, verify the output file:
+
+\begin{lstlisting}[language=bash]
+wc -l experiment_results_heartbeat.csv
+# Expected: 251 (header + 250 data rows)
+
+head -1 experiment_results_heartbeat.csv
+# Should include: total_heartbeat_ticks, tick_interval_mean_ns,
+#   tick_interval_cv, load_interval_correlation, overall_stability_score
+\end{lstlisting}
+
+\subsection{Analysis}
+
+\begin{lstlisting}[language=bash]
+Rscript scripts/analyze_heartbeat_stability.R \
+    /path/to/experiment_results_heartbeat.csv
+\end{lstlisting}
+
+The analysis script produces six visualisations and a \texttt{stability\_rankings.csv}
+summary. The golden configuration is the one with the highest composite
+stability score, subject to $\rho_{\text{load-heartrate}} \geq 0.75$.
+
+\subsection{Metric Interpretation}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Metric & Target & Interpretation \\
+\midrule
+Stability score & $\geq 75/100$ & Production-ready configuration \\
+Jitter CV & $< 0.15$ & Heartbeat variation within 15\% of mean \\
+Load correlation & $> 0.75$ & Heartrate responds strongly to workload \\
+Convergence & $< 5{,}000$ ticks & Adapts within the test window \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A configuration scoring below 65 on any primary axis was likely already
+excluded by Stage~1 analysis. The golden configuration emerges from clear
+statistical separation at the top of the stability ranking.
+
+\subsection{Troubleshooting}
+
+\paragraph{All configs score identically.}
+The heartbeat thread may have been compiled out. Verify
+\texttt{HEARTBEAT\_THREAD\_ENABLED=1} at build time and confirm non-zero
+values in the \texttt{tick\_interval\_*} columns.
+
+\paragraph{Runtime crashes for specific configurations.}
+Examine the per-run log for the failing configuration. Common causes are
+thread-safety issues in heartbeat metrics collection or unguarded rolling-window
+access. See Section~\ref{sec:factorial-incompatible-configs} for the incompatibility
+handling framework.
+
+\paragraph{R package errors.}
+Install required packages before running the analysis script:
+\begin{lstlisting}[language=R]
+install.packages(c("tidyverse", "ggplot2", "gridExtra"))
+\end{lstlisting}
+

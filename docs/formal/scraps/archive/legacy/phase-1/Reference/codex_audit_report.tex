@@ -1,0 +1,46 @@
+%% SCRAP: archive/legacy/phase-1/Reference/codex_audit_report
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/codex_audit_report.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Governance Audit Report --- Phase 1 (2025)}
+
+An independent audit of the \texttt{StarForth-Governance} repository identified
+42~nonconformities spanning validation evidence, coverage metrics, platform testing
+records, process signatures, and CI/CD artefact retention. The audit returned a verdict
+of \textbf{not audit-ready}. All major release gates were unsatisfied at the time of
+the audit.
+
+\subsection{Finding Categories}
+
+\begin{itemize}
+  \item \textbf{Missing validation artefacts (F-01 to F-09, F-18).}
+        Required documents absent: ANSI~C99 compliance matrix, complete FORTH-79 word
+        compliance matrix (65 of 70 words missing), ARM64 test logs,
+        embedded platform evidence, and the referenced HTML coverage report.
+  \item \textbf{Placeholder data in signed records (F-07, F-10 to F-13, F-19, F-20).}
+        Coverage metrics (\texttt{\_\_\%}), deficiency counts (\texttt{[N]}), and
+        timing variance tables (\texttt{X}) remained unfilled in documents that had
+        been marked complete or passed.
+  \item \textbf{Missing signatures (F-15 to F-17, F-22 to F-34).}
+        Validation engineer, review authority, and maintainer sign-offs absent from
+        Tier~I and Tier~II final reports, all governance foundation documents, and all
+        process chapters (ECR, ECO, CAPA, FMEA, theory justification guide).
+  \item \textbf{Governance self-conflicts (F-35 to F-42).}
+        Documents simultaneously asserted completion and contained unfilled placeholders;
+        the governance model prescribed continuous validation CI evidence that did not
+        exist; deficiency logs were cited as proof of zero deficiencies while containing
+        only a blank template.
+\end{itemize}
+
+\subsection{Remediation Register}
+
+The audit generated 42~CAPAs (CAPA-01 through CAPA-42) covering: authoring the missing
+compliance matrices, executing and archiving multi-platform tests, populating all
+placeholder fields, securing signatures across all policy and process documents,
+implementing continuous validation CI evidence export, and standing up static analysis
+(SonarQube or equivalent) to satisfy ISO~5055 quality gate requirements.
+
+%% TODO(bob): record the current remediation status --- which CAPAs were closed before
+%% the governance effort was paused or superseded.

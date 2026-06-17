@@ -1,0 +1,117 @@
+%% SCRAP: experiments/02-experiments/physics-optimization/proposals
+%% SOURCE: docs/working/experiments/02-experiments/physics-optimization/proposals.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-physics-opt, vol1-vm-physics/ch-loops
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Physics-Driven Optimisation Proposals}
+\label{sec:physics-opt-proposals}
+
+\subsection{Strategic Direction}
+
+The hot-words cache experiment (1.78$\times$, 95\% CI: [1.75$\times$,
+1.81$\times$]) validates the physics-driven optimisation methodology:
+collect execution-frequency metrics at runtime, make automatic promotion
+decisions, and measure impact with statistical rigour. Nine additional
+opportunities build on the same foundation.
+
+JIT compilation is explicitly excluded from consideration. JIT requires
+runtime code generation, violates L4Re microkernel policy, introduces
+floating-point overhead, and defeats formal verification. Physics-driven
+optimisation achieves measurable gains within StarForth's verification and
+portability constraints.
+
+\subsection{Opportunity Catalogue}
+
+\paragraph{Opportunity~1 — Return Stack Prediction and Colon Word Inlining.}
+Frequently called colon definitions with small bodies (fewer than 256~bytes)
+are candidates for compile-time inlining when \texttt{execution\_heat > 100}.
+Inlining eliminates dictionary lookup and return-stack overhead.
+Expected gain: 1.3--2.0$\times$ for call-heavy workloads. Verification:
+static (inlining correctness is provable via Isabelle/HOL).
+
+\paragraph{Opportunity~2 — Block I/O Prefetching.}
+A Markov-style transition matrix tracks which block LBN follows which.
+When a block is accessed and the next-block heat exceeds a threshold, that
+block is pre-fetched into the buffer cache. Expected gain: 1.5--3.0$\times$
+for block-sequential access patterns. Implementation: medium complexity.
+
+\paragraph{Opportunity~3 — Stack Operation Fusion.}
+Co-execution heat tracks consecutive word pairs (e.g., \texttt{DUP DROP},
+\texttt{SWAP ROT}, \texttt{OVER SWAP}). Pairs exceeding a heat threshold
+at compile time are fused into dedicated primitives, eliminating two lookups
+and one execution per pair. Expected gain: 1.2--1.5$\times$ for stack-heavy
+programs. Verification: static (composition of verified primitives).
+
+\paragraph{Opportunity~4 — Memory Allocation Pattern Prediction.}
+Allocation frequency by size is tracked in a heat vector. Sizes exceeding
+a threshold trigger pre-warmed pool maintenance. Repeating allocation
+sequences are detected and cached. Expected gain: 1.3--1.8$\times$ for
+allocation-heavy programs.
+
+\paragraph{Opportunity~5 — Control Flow Branch Prediction.}
+\texttt{IF}/\texttt{THEN}/\texttt{ELSE} outcomes are tracked per source
+location. Branches with greater than 90\% one-sided bias are annotated
+with a prediction hint that the inner interpreter can use to reorder code
+or emit x86 branch-hint prefixes. Expected gain: 1.1--1.3$\times$
+(architecture-dependent).
+
+\paragraph{Opportunity~6 — Vocabulary Search Path Reordering.}
+Per-vocabulary hit rates are tracked. The search order is sorted
+dynamically by hit rate, placing the most productive vocabulary first.
+Expected gain: 1.2--1.6$\times$ in multi-vocabulary programs.
+Implementation: low complexity.
+
+\paragraph{Opportunity~7 — String Operation Batching.}
+Consecutive string-output operations (\texttt{."}, \texttt{EMIT},
+\texttt{TYPE}) detected at compile time are fused into a single batch
+output, reducing interpreter loop iterations. Expected gain:
+1.1--1.4$\times$ for I/O-bound programs. Implementation: low complexity.
+
+\paragraph{Opportunity~8 — Arithmetic Operation Reordering.}
+For hot commutative operations at a given source location, operand sizes
+are compared and the smaller operand is loaded first to improve prefetch
+behaviour. Expected gain: 1.05--1.15$\times$ (architecture-dependent).
+
+\paragraph{Opportunity~9 — Word Placement Optimisation.}
+Co-execution heat between word pairs guides memory compaction: frequently
+co-executed words are relocated adjacent to each other in the dictionary
+to improve instruction-cache locality. Expected gain: 1.05--1.2$\times$.
+Implementation: high complexity (requires GC integration).
+
+\subsection{Implementation Roadmap}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Phase & Opportunities & Rationale \\
+\midrule
+1 (complete) & Hot-words cache & Proven; production-ready \\
+2 (recommended next) & \#3, \#6, \#1 & Highest ROI, lowest complexity \\
+3 (future) & \#2, \#7, \#4 & Medium complexity \\
+4 (advanced) & \#5, \#8, \#9 & CPU-specific or GC-dependent \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Expected Cumulative Gains}
+
+Conservative sequential composition of Phases~1--2:
+
+\[
+  1.78\times \;\times\; 1.2\;\times\; 1.2\;\times\; 1.3
+  \;\approx\; 3.3\times \text{ cumulative speedup}
+\]
+
+All nine opportunities together: 5--8$\times$ total improvement is
+plausible, subject to workload dependency and diminishing returns.
+
+\subsection{Unified Metrics Infrastructure}
+
+All nine opportunities require co-execution heat tracking and sequence
+pattern buffers not yet present in the VM. A one-time extension to the
+\texttt{PhysicsMetrics} per-word structure adds: a co-execution heat
+vector, timing accumulator, per-word cache-line counters, and a small
+recent-execution circular buffer. This single investment unlocks the
+infrastructure required for Opportunities~1--9.
+

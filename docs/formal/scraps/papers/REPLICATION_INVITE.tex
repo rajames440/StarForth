@@ -1,0 +1,188 @@
+%% SCRAP: papers/REPLICATION_INVITE
+%% SOURCE: docs/working/papers/REPLICATION_INVITE.md
+%% STATUS: CURRENT
+%% FITS: ssrn/app-repro, vol3-research/ch-repro, experiments/app-repro
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Invitation to Independent Replication}
+\label{sec:replication-invite}
+
+Independent replication is invited as a scientific obligation, not a courtesy.
+Complete source code, full experimental data, exact environment specifications,
+and step-by-step protocols are provided. A failure to reproduce the claimed
+0.00\% algorithmic coefficient of variation should be reported as a bug; it
+will be investigated and acknowledged.
+
+\subsection{Why Replicate}
+
+Replication serves different purposes depending on the replicator's starting
+position. Skeptics who believe the results are implausible can attempt to
+falsify them; either a bug or an environmental difference will emerge, and both
+outcomes advance understanding. Researchers who want to build on this work
+should validate it first: independent replication strengthens evidence,
+identifies edge cases, and establishes community trust. Researchers working on
+adaptive systems gain a validated baseline for comparison and a practical
+demonstration of statistical methods applied to VM tuning.
+
+\subsection{Replication Levels}
+
+Three tiers of replication are defined, from a 15-minute smoke test to a
+multi-day full reproduction.
+
+\subsubsection{Level 1: Smoke Test (15 minutes)}
+
+Verifies basic functionality and the core 0\% CV claim.
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/rajames440/StarForth.git
+cd StarForth
+make fastest
+./build/amd64/fastest/starforth --doe --config=C_FULL
+\end{lstlisting}
+
+Success criteria: build completes without errors; 780\raisebox{0.5ex}{+}
+tests pass; DoE run produces cache CV $\approx 0\%$.
+
+Failure threshold: cache CV $> 0.5\%$.
+
+\subsubsection{Level 2: Partial Replication (4 hours)}
+
+Reproduces the 25.4\% convergence claim across 30 trials.
+
+\begin{lstlisting}[language=bash]
+for i in {1..30}; do
+  ./build/amd64/fastest/starforth --doe --config=C_FULL \
+    > results/run_${i}.csv
+done
+python3 scripts/analyze_convergence.py results/
+\end{lstlisting}
+
+Success criteria: all 30 runs show cache CV = 0.00\%; late runs show
+statistically significant improvement ($p < 0.05$); improvement magnitude
+within $[20\%, 30\%]$.
+
+Failure thresholds: cache CV $> 0.1\%$ in any run; no convergence
+($p > 0.05$); improvement $< 10\%$.
+
+\subsubsection{Level 3: Full Replication (2--3 days)}
+
+Reproduces all five primary claims (C1--C5) across 90 trials.
+
+\begin{lstlisting}[language=bash]
+./scripts/full_replication.sh   # 3 configs x 30 runs = 90 runs
+Rscript scripts/statistical_validation.R
+\end{lstlisting}
+
+Success criteria: all five claims reproduce within stated error margins;
+checksums match expected values; statistical tests yield equivalent
+significance levels.
+
+\subsection{Exact Reproduction via Docker}
+
+A Docker container provides bit-for-bit exact reproduction against a pinned
+environment, eliminating environmental differences:
+
+\begin{lstlisting}[language=bash]
+docker build -t starforth-replication -f Dockerfile.replication .
+docker run --rm -v $(pwd)/results:/results starforth-replication
+cd results/ && sha256sum -c EXPECTED_CHECKSUMS.txt
+\end{lstlisting}
+
+If all SHA256 checksums match, the reproduction is bit-for-bit identical. If
+any checksum differs and Docker is used, the discrepancy is in the code rather
+than the environment.
+
+\subsection{Manual Environment Configuration}
+
+For manual replication outside Docker, the canonical environment is Ubuntu
+22.04.3 LTS (kernel 6.2.0-39-generic), GCC 11.4.0, Make 4.3, on an x86\_64
+system with AVX2 support and 16\,GB RAM. Critical configuration steps:
+
+\begin{lstlisting}[language=bash]
+# Set CPU governor
+sudo cpupower frequency-set -g performance
+
+# Disable Turbo Boost
+echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+
+# Disable ASLR
+echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
+
+# Pin to single core
+taskset -c 0 ./build/amd64/fastest/starforth --doe
+\end{lstlisting}
+
+Expected variability for correct replication: cache CV is 0.00\% (exact
+match); runtime may differ by $\pm 50\%$ (hardware-dependent); convergence
+magnitude may differ by $\pm 10\%$ (CPU-specific dictionary lookup cost).
+
+\subsection{Reporting Results}
+
+Successful replications and failures are both scientifically valuable.
+Report either via GitHub issue, using the tags \texttt{replication-success}
+or \texttt{replication-failure}. Include: replicator name and institution,
+date, replication level, git commit SHA, results summary (cache CV,
+convergence magnitude, $p$-value), and hardware and OS specifications.
+
+A response will follow within 48 hours: either an acknowledgment of a bug,
+diagnostic questions to identify environmental differences, or a request for
+additional data.
+
+\subsection{Common Issues and Resolutions}
+
+\paragraph{Cache CV = 0.05\%, expected 0.00\%.}
+The falsification threshold is 0.1\%; a CV of 0.05\% is within acceptable
+range. This constitutes a successful replication.
+
+\paragraph{Convergence = 18\%, expected 25.4\%.}
+The magnitude claim includes $\pm$ tolerance; 18\% is statistically
+significant and within range for different hardware. This is a successful
+replication.
+
+\paragraph{Cache CV = 70\%, expected 0.00\%.}
+This is a genuine failure. Check in order: clean rebuild (\texttt{make clean
+\&\& make fastest}); ASLR disabled; no \texttt{rand()} calls in source
+(\texttt{grep -r "rand(" src/}); valgrind for memory errors. Then file a
+GitHub issue immediately.
+
+\subsection{Acknowledgments for Falsification}
+
+The first replicator who falsifies Claim C1 (determinism, CV $> 0.1\%$ under
+controlled conditions) will receive co-authorship on any resulting erratum
+paper. The first replicator who falsifies Claim C2 (convergence, $p > 0.05$
+across 30 runs) will receive acknowledgment in future publications. Any
+replicator who identifies a bug invalidating core claims will receive named
+credit in the fix commit. Science advances through falsification, and
+productive falsification is recognized accordingly.
+
+\subsection{Cross-Institutional Collaboration}
+
+Academic laboratories, industry engineering teams, and skeptical researchers
+make the best replication partners. Technical support (email and video),
+access to original hardware if needed, and co-authorship on any replication
+study are available. Contact: \texttt{rajames440@gmail.com} (R.A.\ James).
+
+\subsection{Replication Checklist}
+
+Before beginning:
+\begin{itemize}
+  \item Read the executive summary (\S\ref{sec:executive-summary})
+  \item Read the formal claim table (\S\ref{sec:formal-claims})
+  \item Read the negative results (\S\ref{sec:negative-results})
+  \item Choose a replication level (1, 2, or 3)
+  \item Set up the environment (Docker recommended)
+\end{itemize}
+
+During replication:
+\begin{itemize}
+  \item Document all deviations from protocol
+  \item Save all logs and outputs
+  \item Record hardware and software specifications
+\end{itemize}
+
+After replication:
+\begin{itemize}
+  \item Compare results to expected values
+  \item Calculate deviations
+  \item File a report (success or failure)
+\end{itemize}

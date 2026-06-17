@@ -1,0 +1,322 @@
+%% SCRAP: papers/ONTOLOGY
+%% SOURCE: docs/working/papers/ONTOLOGY.md
+%% STATUS: CURRENT
+%% FITS: ssrn/ch-ontology, vol3-research/ch-ontology
+%% EDITORIAL: lifted — prose rewritten to press voice; thermodynamic-as-metaphor framing preserved throughout
+
+\section{Ontology, Taxonomy, and Lexicon}
+\label{sec:ontology}
+
+This section provides the formal conceptual framework for the StarForth
+adaptive runtime. Its purpose is to eliminate ambiguity, distinguish
+metaphorical from literal components, and enable precise academic discourse.
+Reviewers should read this section before evaluating any terminology appearing
+elsewhere in the work.
+
+\subsection{Conceptual Framework}
+
+\subsubsection{Core Concepts}
+
+The adaptive runtime system is organized around four conceptual domains:
+
+\begin{description}
+  \item[Execution metrics] Execution frequency (the primary measurable
+    quantity), temporal decay (derived), and transition probability (derived).
+  \item[Adaptive mechanisms] Frequency-based caching, window-based inference,
+    and decay-based pruning.
+  \item[Convergence properties] Deterministic behavior, steady-state
+    equilibrium, and variance reduction.
+  \item[Analysis frameworks] Dynamical systems view, statistical inference
+    view, and control theory view.
+\end{description}
+
+\subsubsection{The Thermodynamic Metaphor}
+
+Using execution frequency as a proxy for thermal energy, the system maps
+thermodynamic quantities to implementation quantities as follows:
+
+\begin{table}[h]
+\centering
+\caption{Metaphorical mapping. Column ``Thermodynamic'' lists the borrowed
+concept; column ``Implementation'' lists the literal quantity or function.
+The mapping is conceptual, not physical.}
+\begin{tabular}{ll}
+\toprule
+\textbf{Thermodynamic concept (metaphor)} & \textbf{Implementation (literal)} \\
+\midrule
+Thermal energy & Execution frequency (integer count) \\
+Heat dissipation & Exponential decay: $f(t) = f_0 e^{-\lambda t}$ \\
+Thermal equilibrium & Steady-state convergence (stable metrics) \\
+Temperature & Normalized frequency rank \\
+Cooling rate & Decay coefficient $\lambda$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The literal implementations do not depend on the metaphor: a frequency
+counter is an integer increment, and decay is a multiplication. The metaphor
+provides intuition; the mathematics stands independently.
+
+\subsection{Taxonomy}
+
+\subsubsection{Component Hierarchy}
+
+\begin{description}
+  \item[Measurement layer]
+    \begin{description}
+      \item[1.1 Execution frequency tracking] Per-word integer counter,
+        incremented on each execution.
+      \item[1.2 Temporal recording] Rolling Window of Truth---circular buffer
+        of execution events.
+      \item[1.3 Transition tracking] Word-to-word transition matrix.
+    \end{description}
+
+  \item[Transformation layer]
+    \begin{description}
+      \item[2.1 Linear decay (Loop~3)] $\Delta f = -k \cdot \Delta t$
+      \item[2.2 Exponential decay (Loop~6 inference)] $f(t) = f_0 e^{-\lambda t}$
+      \item[2.3 Frequency ranking] Sort by decayed count; assign ordinal rank.
+    \end{description}
+
+  \item[Inference layer]
+    \begin{description}
+      \item[3.1 Window width inference (Loop~5)] Levene's test; binary search
+        for variance inflection point.
+      \item[3.2 Decay slope inference (Loop~6)] Exponential regression;
+        least-squares fit on rolling window data.
+    \end{description}
+
+  \item[Actuation layer]
+    \begin{description}
+      \item[4.1 Hot-words cache (Loop~1)] Top-$K$ selection; O(1) fast-path
+        lookup.
+      \item[4.2 Speculative execution (Loop~4)] Transition probability
+        calculation; prefetch decision.
+    \end{description}
+
+  \item[Coordination layer]
+    \begin{description}
+      \item[5.1 Adaptive heartbeat (Loop~7)] Time-driven tick generation;
+        loop orchestration; adaptive tick rate.
+    \end{description}
+\end{description}
+
+\subsubsection{Feedback Loop Classification}
+
+\begin{description}
+  \item[Positive (amplifying)] Loop~1 (Execution Heat Tracking): more
+    executions $\to$ higher rank $\to$ more cache hits $\to$ more executions.
+    Loop~4 (Pipelining): more transitions $\to$ better prediction $\to$ more
+    prefetch hits.
+
+  \item[Negative (stabilizing)] Loop~3 (Linear Decay): high frequency
+    $\to$ faster decay $\to$ lower frequency. Loop~5 (Window Width
+    Inference): high variance $\to$ smaller window $\to$ lower variance.
+    Loop~6 (Decay Slope Inference): unstable metrics $\to$ steeper decay
+    $\to$ faster stabilization.
+
+  \item[Neutral (monitoring)] Loop~2 (Rolling Window): records execution
+    events; provides historical context for inference.
+
+  \item[Meta-loop (coordination)] Loop~7 (Adaptive Heartbeat): stable
+    system $\to$ slower ticks $\to$ less overhead.
+\end{description}
+
+\subsection{Lexicon}
+
+Terms are listed alphabetically. For each term, the formal definition is
+given first, followed by implementation details and category. Where a
+thermodynamic metaphor is in use, it is explicitly flagged.
+
+\paragraph{Adaptive Heartbeat.}
+Time-driven coordination mechanism executing \texttt{vm\_tick()} at
+dynamically-adjusted frequency $f_{\text{tick}} \in [f_{\min}, f_{\max}]$
+based on system stability. Implementation: background pthread.
+Category: coordination mechanism.
+
+\paragraph{Attractor.}
+Stable equilibrium point $\mathbf{x}^*$ in phase space where
+$F(\mathbf{x}^*) = \mathbf{x}^*$ for dynamical system
+$\mathbf{x}_{t+1} = F(\mathbf{x}_t)$. Measured in
+$(w, \lambda, \sigma^2)$ coordinates. Category: dynamical systems.
+
+\paragraph{Decay Coefficient ($\lambda$).}
+Rate parameter in $f(t) = f_0 e^{-\lambda t}$; units $[1/\text{time}]$.
+Derived via exponential regression; stored as \Qtype\ fixed-point.
+Category: transformation parameter.
+
+\paragraph{Deterministic Convergence.}
+Property: $\forall i, j\colon |\text{metric}_i - \text{metric}_j| / \sigma
+< \varepsilon$ as $t \to \infty$. Measured as CV $\to 0\%$.
+Category: convergence property.
+
+\paragraph{Execution Frequency.}
+Count of dictionary-entry executions since VM initialization, adjusted
+by decay: $f = \sum \text{executions} - \int \text{decay}(t)\,dt$.
+Stored as \texttt{uint64\_t execution\_heat}.
+\emph{Note}: ``heat'' is a metaphorical label; the quantity is a count.
+Category: primary measurable.
+
+\paragraph{Exponential Decay.}
+$f(t) = f_0 e^{-\lambda t}$, applied periodically by the heartbeat system.
+\emph{Metaphorical parallel}: similar to radioactive decay or thermal
+dissipation in mathematical form only. Category: transformation function.
+
+\paragraph{Hot-Words Cache.}
+Fixed-size array of pointers to the $K$ most frequently executed dictionary
+entries. Membership criterion: $e \in \text{Cache} \iff \text{rank}(e) \leq K$.
+Provides O(1) lookup. Category: frequency-based optimization.
+
+\paragraph{Levene's Test.}
+Non-parametric test for homogeneity of variance; $H_0\colon \sigma_1^2 =
+\cdots = \sigma_k^2$. Used in Loop~5 to detect variance changes as window
+size varies. Category: statistical inference.
+
+\paragraph{Phase Space.}
+$\mathcal{S} = \{(w, \lambda, \sigma^2) \mid w \in \mathbb{N},\;
+\lambda \in \mathbb{R}^+,\; \sigma^2 \in \mathbb{R}^+\}$.
+Execution trajectories in this space reveal attractor basins.
+Category: dynamical systems representation.
+
+\paragraph{Rolling Window of Truth.}
+Circular buffer $B[i] = \text{word\_id}$ at execution event $i \bmod |B|$.
+Default size: 4{,}096 entries. Ensures identical initial conditions for
+reproducibility. Category: temporal recording mechanism.
+
+\paragraph{Steady-State Equilibrium.}
+$\exists\, t_0\colon \forall t > t_0,\; |x(t) - x^*| < \delta$.
+Criterion: CV $< 0.1\%$ over a 1{,}000-tick window.
+\emph{Metaphorical parallel}: analogous to thermodynamic equilibrium
+in the sense that macroscopic properties cease changing.
+Category: convergence property.
+
+\paragraph{Thermodynamic Metaphor.}
+Conceptual mapping (Table~above). This is not a physics claim; it is a
+modeling tool. All academic writing must qualify thermodynamic language
+as metaphor. Category: conceptual framework.
+
+\paragraph{Transition Probability.}
+$P(B \mid A) = \text{count}(A \to B) / \text{count}(A)$. Stored as
+\Qtype\ in the transition matrix. Category: derived metric.
+
+\paragraph{Variance Inflection Point.}
+$w^* = \arg\min_{w \in [w_{\min},\, w_{\text{current}}]} \text{Var}(w)$,
+found via binary search with Levene's test. Optimal window size for stable
+metrics. Category: inference target.
+
+\subsection{Avoided and Deprecated Terms}
+
+\begin{table}[h]
+\centering
+\caption{Deprecated terms and their replacements.}
+\begin{tabular}{ll}
+\toprule
+\textbf{Avoid} & \textbf{Use instead} \\
+\midrule
+``Physics-based'' & ``Thermodynamically-inspired metaphor'' \\
+``Execution heat'' (formal writing) & ``Execution frequency with decay'' \\
+``Temperature'' & ``Normalized frequency rank'' \\
+``Quantum-inspired'' & N/A (no quantum mechanics involved) \\
+``AI-driven'' & ``Statistically-inferred'' \\
+``Learning'' & ``Adaptive inference'' \\
+``Training'' & ``Convergence to steady state'' \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Mathematical Formalism}
+
+\subsubsection{Execution Frequency Evolution}
+
+Continuous-time model:
+\begin{equation}
+  \frac{df}{dt} = r(t) - \lambda f(t)
+\end{equation}
+where $r(t)$ is the execution rate [executions/second] and $\lambda$ is
+the decay coefficient [1/second]. Solution:
+\begin{equation}
+  f(t) = e^{-\lambda t}\!\left[f_0 + \int_0^t r(\tau) e^{\lambda\tau}\,d\tau\right]
+\end{equation}
+
+\subsubsection{Hot-Words Cache Selection}
+
+Cache membership:
+\begin{equation}
+  e \in \text{Cache} \iff \text{rank}(e) \leq K, \quad
+  \text{rank}(e) = \bigl|\{e' \in D : f(e') > f(e)\}\bigr| + 1
+\end{equation}
+
+\subsubsection{Window Width Inference}
+
+\begin{equation}
+  w^* = \arg\min \bigl\{\text{Var}(w) : w \in [w_{\min}, w_{\text{current}}],\;
+        p_{\text{Levene}}(w) < \alpha\bigr\}
+\end{equation}
+
+\subsubsection{Decay Slope Inference}
+
+Given $\{(t_i, f_i)\}_{i=1}^N$ from the rolling window, log-transform
+$\ln f_i = \ln f_0 - \lambda t_i$ and fit by least squares:
+\begin{equation}
+  \lambda^* = \arg\min_\lambda \sum_{i=1}^N \bigl[\ln f_i - (\ln f_0 - \lambda t_i)\bigr]^2
+\end{equation}
+
+\subsubsection{Convergence Metric}
+
+\begin{equation}
+  \text{CV} = \frac{\sigma}{\mu}, \qquad
+  \text{convergence achieved when } \text{CV} \to 0
+\end{equation}
+
+\subsection{Ontological Commitments}
+
+\paragraph{Foundational assumptions.}
+
+\begin{enumerate}
+  \item \emph{Frequency as proxy for importance.} Frequently executed words
+    are most important to optimize. Justified empirically by Zipf-law
+    execution distributions (measured $\alpha \approx 1.1$).
+  \item \emph{Decay models temporal relevance.} Recent executions are more
+    informative than distant past. Justified by the temporal locality
+    principle.
+  \item \emph{Determinism through convergence.} Adaptive systems can converge
+    to deterministic steady states. Justified by fixed-point theorems for
+    contractive mappings.
+  \item \emph{Statistical inference validity.} Execution patterns are
+    statistically analyzable. Justified by the Central Limit Theorem for
+    $n \geq 30$ samples.
+\end{enumerate}
+
+\paragraph{Scope.}
+The ontology covers execution frequency measurement and decay, adaptive
+caching and inference, dynamical systems characterization, and statistical
+convergence properties. It does not cover actual thermodynamic processes,
+machine learning, quantum computing, or biological neural systems.
+
+\subsection{Usage Guidelines for Academic Writing}
+
+In abstracts and titles, use mathematical language:
+\emph{``thermodynamically-inspired adaptive runtime''} is acceptable;
+\emph{``physics-based virtual machine''} is not.
+
+In technical sections, use literal descriptions: \emph{``frequency counter
+incremented on execution,''} not \emph{``temperature increases when word heats
+up.''} In results sections, report statistics: \emph{``CV = 0.00\%
+($p < 10^{-30}$)''}, not \emph{``perfect thermodynamic equilibrium.''} In
+discussion sections, exploratory language is permitted with explicit
+qualification: \emph{``one interpretation is that\ldots however, causation
+is not established.''}
+
+\subsection{References}
+
+\begin{itemize}
+  \item Strogatz, S. (2015). \emph{Nonlinear Dynamics and Chaos}. Westview Press.
+  \item \r{A}str\"{o}m, K. \& Murray, R. (2008). \emph{Feedback Systems}.
+    Princeton University Press.
+  \item Casella, G. \& Berger, R. (2002). \emph{Statistical Inference}.
+    Duxbury Press.
+  \item Bolz, C.\ et al.\ (2009). ``Tracing the Meta-Level: PyPy's Tracing
+    JIT Compiler.'' \emph{ICOOOLPS}.
+  \item Ertl, M.A.\ (1996). ``Stack Caching for Interpreters.'' \emph{SIGPLAN
+    Notices}.
+\end{itemize}

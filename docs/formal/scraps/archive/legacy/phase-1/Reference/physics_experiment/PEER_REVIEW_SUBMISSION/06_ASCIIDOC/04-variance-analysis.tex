@@ -1,0 +1,62 @@
+%% SCRAP: archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/04-variance-analysis
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/04-variance-analysis.adoc
+%% STATUS: SUPERSEDED
+%% FITS: experiments/ — detailed variance tables and root-cause analysis may extend
+%%   what the SSRN paper presents; assess before promoting.
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% TODO(bob): compare against SSRN paper Section 4; promote to experiments/ if the
+%%   per-metric CV tables are not reproduced in the published version.
+
+\section{Variance Decomposition Analysis --- Pre-Publication Record}
+
+\subsection{Theoretical Foundation}
+
+Total variance decomposes as:
+\[
+\mathrm{Var}(X_{\text{total}}) = \mathrm{Var}(X_{\text{algo}}) + \mathrm{Var}(X_{\text{env}})
+\]
+The strategy is to measure a proxy for algorithmic decisions (cache-hit rate) and a proxy
+for output (runtime). Zero variance in cache-hit rate with non-zero variance in runtime
+implies that algorithmic decisions are deterministic while environmental noise drives all
+observed timing variability.
+
+\subsection{Per-Configuration Data}
+
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+Configuration & Metric & Mean & $\sigma$ & CV \\
+\midrule
+A\_BASELINE & RT\_AVG (ms) & 4.69 & 3.27 & 69.58\% \\
+            & CACHE\_HIT\_RATE & 17.39\% & 0.00\% & \textbf{0\%} \\
+            & EXECUTION\_HEAT\_MAX & 50.47 & 2.31 & 4.58\% \\
+\midrule
+B\_CACHE    & RT\_AVG (ms) & 7.80 & 2.52 & 32.35\% \\
+            & CACHE\_HIT\_RATE & 17.39\% & 0.00\% & \textbf{0\%} \\
+            & EXECUTION\_HEAT\_MAX & 51.23 & 2.19 & 4.27\% \\
+\midrule
+C\_FULL     & RT\_AVG (ms) & 8.91 & 5.36 & 60.23\% \\
+            & CACHE\_HIT\_RATE & 17.39\% & 0.00\% & \textbf{0\%} \\
+            & EXECUTION\_HEAT\_MAX & 63.84 & 12.11 & 18.96\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Cache-hit rate is identical (0\% CV) across all three configurations and all 90 runs,
+despite runtime varying between 32\% and 70\% CV.
+
+\subsection{Root Cause Analysis}
+
+Three hypotheses were ruled out: thermal throttling (CPU held constant at
+$27.00^\circ$C, 0\% variance); algorithmic chaos (cache decisions identical every run);
+and cache instability (hit rate 17.39\% $\pm$ 0\% in every run). The confirmed causes
+of runtime variance are OS context switching (primary, approximately 50--60\%) and
+memory latency jitter (secondary, approximately 10--20\%).
+
+\subsection{Deployment Implication}
+
+Because algorithmic decisions and environmental timing are decoupled, the algorithm
+can be formally verified in Isabelle/HOL without modelling the OS scheduler or memory
+system. Environmental load affects when the algorithm completes, not what it decides.
+This separation enables formal SLAs that guarantee algorithmic behaviour while
+acknowledging bounded timing uncertainty.

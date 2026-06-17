@@ -1,0 +1,18 @@
+%% SCRAP: archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/02_SUPPORTING_DOCS/VARIANCE_ANALYSIS_SUMMARY
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/02_SUPPORTING_DOCS/VARIANCE_ANALYSIS_SUMMARY.md
+%% STATUS: SUPERSEDED
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Variance Source Analysis (Superseded)}
+
+Analysis of execution-time variance in the StarForth physics engine validation
+experiment identified OS scheduling as the primary source (60--70\% coefficient
+of variation), with memory latency as a secondary contributor (54--103\%
+coefficient of variation). The thermal hypothesis was refuted: CPU temperature
+remained at 27\textdegree C throughout the 90-run trial. Mitigation strategies
+examined included CPU affinity pinning, real-time scheduling, and memory
+prefetching. The core finding---that algorithmic variance is 0\% while
+environmental variance originates in the OS scheduler---is reported in the
+published \textsc{ssrn} paper. This analysis document is superseded by that
+publication.

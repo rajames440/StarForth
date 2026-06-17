@@ -1,0 +1,31 @@
+%% SCRAP: archive/quality/audits/section-2-executive-summary
+%% SOURCE: docs/working/archive/quality/audits/section-2-executive-summary.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Section~2 Executive Summary: Physics Subsystem Safety (November 2025)}
+
+Section~2 of the StarForth quality program delivered 64 lines of safety
+hardening and documentation across four physics subsystem files, with zero
+architectural changes and zero runtime regressions when all features are
+enabled. Work completed on 2025-11-20:
+
+\begin{itemize}
+  \item \textbf{Clarifying comments (37 lines):} Feedback-loop annotations
+        (\textsc{fl1}, \textsc{fl3}) added to \texttt{physics\_metadata.h}
+        and \texttt{physics\_metadata.c}, documenting atomic operation
+        rationale and Q48.16 decay calculation intent.
+  \item \textbf{Safety fix (6 lines):} Explicit \texttt{NULL} check added to
+        \texttt{transition\_metrics\_get\_probability\_q48()} in
+        \texttt{physics\_pipelining\_metrics.c}; caller preconditions documented.
+  \item \textbf{Compile-time guards (18 lines):} \texttt{physics\_metadata.c/.h}
+        wrapped in \texttt{\#if ENABLE\_LOOP\_1\_HEAT\_TRACKING} with
+        zero-overhead inline stubs for disabled builds.
+  \item \textbf{DoE log fix (3 lines):} \texttt{LOG\_INFO} downgraded to
+        \texttt{LOG\_DEBUG} in \texttt{src/vm.c} to prevent stderr pollution
+        during \texttt{-{}-doe-experiment} mode.
+\end{itemize}
+
+All four modified files compiled with zero warnings. A pre-existing linker
+error (unrelated to Section~2 scope) was noted but not addressed.

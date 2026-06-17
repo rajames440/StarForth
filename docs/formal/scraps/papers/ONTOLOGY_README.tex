@@ -1,0 +1,31 @@
+%% SCRAP: papers/ONTOLOGY_README
+%% SOURCE: docs/working/papers/ONTOLOGY_README.md
+%% STATUS: SUPERSEDED
+%% FITS: ssrn/ch-ontology
+%% EDITORIAL: lifted — stub only; content fully superseded by ONTOLOGY.tex
+
+\section*{Note on Ontology Documentation}
+
+This stub records the provenance of the ontology documentation set.
+The content has been consolidated into the preceding ontology section
+(\S\ref{sec:ontology}), which is the authoritative reference.
+
+The source repository provides the following companion artifacts alongside
+\texttt{ONTOLOGY.md}:
+
+\begin{description}
+  \item[\texttt{ontology\_diagrams.dot}] Six GraphViz diagrams: main ontology
+    concept map, five-layer component taxonomy, feedback-loop interaction
+    graph, phase-space attractor basin, thermodynamic metaphor mapping, and
+    execution-event data-flow. Generate PDF for inclusion in LaTeX with
+    \texttt{dot -Tpdf ontology\_diagrams.dot -o ontology\_full.pdf}.
+
+  \item[\texttt{FINAL\_REPORT/appendix\_glossary.adoc}] AsciiDoc glossary
+    with full mathematical notation, Levene's test application notes, and
+    cross-references. Converted to LaTeX in \S\ref{app:glossary}.
+\end{description}
+
+Preferred terminology for academic writing is summarized in the deprecated-
+terms table in \S\ref{sec:ontology}. When in doubt, the golden rule is:
+describe the literal implementation; label the thermodynamic analogy
+explicitly as a conceptual metaphor.

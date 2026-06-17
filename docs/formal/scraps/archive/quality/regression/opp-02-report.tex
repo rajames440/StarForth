@@ -1,0 +1,47 @@
+%% SCRAP: archive/quality/regression/opp-02-report
+%% SOURCE: docs/working/archive/quality/regression/opp-02-report.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{OPP~\#2: Rolling Window Width Optimization Report (November 2025)}
+
+Optimization Opportunity~2 tested three rolling window width configurations
+(2048, 4096, and 8192 entries) to identify the statistically optimal window
+size for adaptive decay-slope inference. The experiment executed 180 runs
+(60 per configuration) using the deterministic FORTH-79 test workload and the
+regression detection framework established for the OPP series.
+
+\subsection*{Results}
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Configuration & Mean Time (ns) & vs.\ Baseline & Recommendation \\
+\midrule
+\texttt{WINDOW\_SIZE\_2048} & 5{,}432{,}109 & $-8.67\%$ & consider \\
+\texttt{WINDOW\_SIZE\_4096} & 5{,}456{,}664 & $-8.26\%$ & not recommended \\
+\texttt{WINDOW\_SIZE\_8192} & 5{,}310{,}504 & $-10.72\%$ & \textbf{lock} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The OPP~\#1 baseline was 5{,}947{,}974~ns (decay slope 0.2, default window).
+
+\subsection*{Regression Analysis}
+
+No Type~1, 2, 4, 5, or 6 regressions were detected. All three configurations
+produced Type~3 tail-latency warnings (P99 elevated 40--55\% above baseline);
+analysis attributed this to increased inference computation during heartbeat
+ticks at larger window sizes, not to a true regression in optimization quality.
+The mean improvements (8--11\%) were judged to outweigh the P99 degradation.
+\texttt{WINDOW\_SIZE\_4096} was Pareto-dominated and eliminated.
+
+\subsection*{Lock Decision}
+
+\texttt{ROLLING\_WINDOW\_SIZE = 8192} was locked for OPP~\#3 onward,
+combining with the OPP~\#1 lock (\texttt{DECAY\_SLOPE\_Q48} $\approx 0.2$)
+to form the parameter baseline for subsequent experiments. Cumulative
+improvement at this point: $-10.72\%$ over the original baseline.
+
+%% TODO(bob): Confirm whether OPP #3--5 results exist and where they are archived.

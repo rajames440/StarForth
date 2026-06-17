@@ -1,0 +1,98 @@
+%% SCRAP: archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/03-experimental-methodology
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/03-experimental-methodology.adoc
+%% STATUS: SUPERSEDED
+%% FITS: experiments/ — contains the most complete pre-publication methodology record;
+%%   assess whether the 33-metric list, run protocol, and reproducibility scripts differ
+%%   from what appears in the published SSRN paper appendix before promoting.
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% TODO(bob): compare Section 3 of the SSRN paper against this document; promote to
+%%   experiments/ if the scripts and metric table are not reproduced in the paper.
+
+\section{Experimental Methodology --- Pre-Publication Record}
+
+\subsection{Design}
+
+Three configurations of the StarForth FORTH-79 VM were tested across 90 experimental
+runs (30 per configuration). The configurations isolated the effect of the physics model
+by varying exactly one feature at a time:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Configuration & Mechanism & Purpose \\
+\midrule
+A\_BASELINE & No adaptation & Control group \\
+B\_CACHE & Static word cache & Baseline optimisation comparison \\
+C\_FULL & Dynamic physics cache via \texttt{execution\_heat} & Physics model under test \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The benchmark program computed Fibonacci F(20) for 500 iterations. This workload is
+CPU-bound, deterministic, exercises the dictionary lookup hot path, and accumulates
+sufficient \texttt{execution\_heat} to trigger cache promotion.
+
+\begin{lstlisting}[language=forth]
+: FIB ( n -- F(n) )
+  DUP 2 < IF DROP 1 ELSE
+    DUP 1- RECURSE
+    SWAP 2 - RECURSE +
+  THEN ;
+
+: BENCH 500 0 DO 20 FIB DROP LOOP ;
+
+BENCH BYE
+\end{lstlisting}
+
+\subsection{Run Protocol}
+
+Each run executed: VM initialisation ($\approx 0.1$~ms), five warmup iterations
+(not recorded), 30 measurement iterations (all 33 metrics captured), and teardown
+($\approx 0.1$~ms). Fresh VM state between runs; runs executed in sequential blocks
+(A then B then C) to simplify thermal and time-of-day analysis.
+
+\subsection{Metrics}
+
+Thirty-three metrics were captured per run, including: \texttt{RT\_AVG}, \texttt{RT\_MIN},
+\texttt{RT\_MAX}, \texttt{RT\_STDDEV}, \texttt{CACHE\_HIT\_COUNT}, \texttt{CACHE\_HIT\_RATE},
+\texttt{DICT\_SIZE\_FINAL}, \texttt{STACK\_PEAK\_HEIGHT}, \texttt{STACK\_UNDERFLOW\_COUNT},
+\texttt{THERMAL\_CPU\_TEMP}, \texttt{THERMAL\_CPU\_FREQ}, \texttt{EXECUTION\_HEAT\_MAX},
+\texttt{EXECUTION\_HEAT\_MEAN}, \texttt{EXECUTION\_HEAT\_STDDEV}, and 18 additional
+per-word counters, memory allocation, and block I/O statistics.
+Total data points: $33 \times 90 = 2{,}970$.
+
+\subsection{Data Quality}
+
+Pre-analysis validation confirmed 91 rows (1 header + 90 runs), zero missing fields,
+zero out-of-range values, and zero duplicate run IDs. Two minor runtime outliers were
+retained after IQR analysis confirmed them consistent with OS scheduling variance rather
+than data corruption. CPU temperature was constant at $27.00^\circ$C across all 90
+runs, eliminating thermal throttling as a variance source.
+
+\subsection{Statistical Methodology}
+
+Sample size $n = 30$ satisfies the Central Limit Theorem requirement. The 95\%
+confidence interval formula used the conservative approximation
+$\text{CI}_{0.95} \approx \mu \pm 2\sigma$ (wider than the strict
+$\mu \pm 1.96\sigma/\sqrt{n}$) to increase reviewer credibility. Shapiro--Wilk tests
+confirmed near-normal distribution ($p > 0.05$). Durbin--Watson tests showed low
+autocorrelation. Levene's test confirmed homoscedasticity across configurations.
+
+\subsection{Reproducibility}
+
+\begin{lstlisting}[language=bash]
+# Build all three configurations
+make                # A_BASELINE
+make fastest       # C_FULL
+
+# Run 90-run experiment
+bash scripts/run_comprehensive_physics_experiment.sh \
+  physics_experiment/reproduction_test 90
+
+# Analyse
+python3 physics_experiment/analyze_variance_sources.py \
+  physics_experiment/reproduction_test/experiment_results.csv
+\end{lstlisting}
+
+Hardware: x86-64, 8~GB RAM minimum. OS: Linux kernel 5.10+. Compiler: GCC 9+ or
+Clang 10+. Python 3.8+ for analysis scripts. Estimated runtime: 30~minutes.
