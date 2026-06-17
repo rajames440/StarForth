@@ -1,0 +1,238 @@
+%% SCRAP: architecture/architecture-internals/INIT_SYSTEM
+%% SOURCE: docs/working/architecture/architecture-internals/INIT_SYSTEM.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-interpreter
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The StarForth Initialization System}
+
+StarForth loads foundational Forth definitions from \texttt{./conf/init.4th}
+at startup. The system cleanly separates boot-time initialization from
+runtime operation, zeroing all initialization blocks once execution completes
+and protecting the resulting dictionary words from accidental removal.
+
+\subsection{Components}
+
+\begin{itemize}
+  \item \textbf{\texttt{./conf/init.4th}} — version-controlled initialization
+        file containing block-structured Forth source.
+  \item \textbf{\texttt{INIT} word} — core initialization primitive,
+        implemented in \texttt{src/word\_source/starforth\_words.c}.
+  \item \textbf{\texttt{(-} comment word} — dual-purpose: a standard Forth
+        comment at runtime and a tooling metadata marker.
+  \item \textbf{Dictionary fence} — prevents \texttt{FORGET} from removing
+        any word defined during initialization.
+  \item \textbf{Block subsystem} — provides transient block storage for
+        initialization code.
+\end{itemize}
+
+\subsection{Design Principles}
+
+\begin{itemize}
+  \item \textbf{Deterministic boot.} The same \texttt{init.4th} always
+        produces the same VM state.
+  \item \textbf{Transient initialization.} Blocks execute then vanish;
+        their storage is zeroed and returned to userspace.
+  \item \textbf{Protected dictionary.} Initialization words cannot be
+        removed with \texttt{FORGET}.
+  \item \textbf{No runtime dependencies.} After boot the VM has no file
+        system dependencies.
+  \item \textbf{Platform agnostic.} The same mechanism works with both
+        filesystem (Linux) and ROMFS (L4Re) backends.
+\end{itemize}
+
+\subsection{init.4th File Format}
+
+Each file consists of one or more numbered blocks. Each block opens with a
+\texttt{Block~<n>} header line and, conventionally, a \texttt{(-}~comment
+describing its purpose.
+
+\begin{lstlisting}[language=Forth]
+Block 2048
+(- Large Letter F )
+: STAR   42 EMIT ;
+: STARS  0 DO STAR LOOP ;
+: MARGIN CR 30 SPACES ;
+: BLIP   MARGIN STAR ;
+: BAR    MARGIN 5 STARS ;
+: F      BAR BLIP BAR BLIP BLIP ;
+
+Block 3000
+(- Add Me to init.4th )
+: E      BAR BLIP BAR BLIP BAR ;
+
+Block 3001
+(- Add Me to init.4th )
+E F CR
+\end{lstlisting}
+
+Format rules:
+
+\begin{itemize}
+  \item Each block starts with \texttt{Block~<number>}.
+  \item Blocks load in file order (1, 2, 3, \ldots) regardless of
+        original block numbers.
+  \item \texttt{LOAD} references such as \texttt{2048~LOAD} are
+        automatically remapped to sequential numbers.
+  \item Newlines within blocks are preserved for correct parsing.
+  \item The \texttt{-->} word must not appear in \texttt{init.4th};
+        use separate blocks instead to avoid double execution.
+\end{itemize}
+
+\subsection{INIT Execution Flow}
+
+\begin{enumerate}
+  \item Read \texttt{./conf/init.4th} (or ROMFS on L4Re).
+  \item Parse block headers and build a mapping table
+        (\texttt{Block~2048}~$\rightarrow$~sequential~1, etc.).
+  \item Copy block content sequentially, rewriting \texttt{LOAD}
+        references to their sequential equivalents.
+  \item Execute all blocks via \texttt{LOAD}.
+  \item Switch to the \texttt{FORTH} vocabulary context.
+  \item Zero all initialization blocks to reclaim them for userspace.
+  \item Return to \texttt{main.c}, which immediately sets the
+        dictionary fence.
+\end{enumerate}
+
+Stack effect: \texttt{INIT~(~-{}-~)}.
+
+\texttt{INIT} is fatal if \texttt{init.4th} cannot be opened, if a block
+allocation fails, or if a block fails to execute. The system cannot enter the
+REPL until initialization completes successfully.
+
+\subsection{Platform Support}
+
+On Linux, \texttt{INIT} opens the file with \texttt{fopen}:
+
+\begin{lstlisting}[language=C]
+FILE *fp = fopen("./conf/init.4th", "r");
+\end{lstlisting}
+
+On L4Re, the file will be read from a ROMFS dataspace declared in
+\texttt{modules.list}.
+%% TODO(bob): confirm L4Re ROMFS path once that integration lands
+
+\subsection{The (- Comment Word}
+
+The \texttt{(-} word consumes input from the opening marker to the first
+unmatched closing parenthesis, handling nested parentheses correctly. It has
+no stack effect and logs at \texttt{DEBUG} level. Tooling in
+\texttt{tools/} uses it as a metadata extraction marker; the runtime treats it
+as an ordinary comment.
+
+\subsection{Dictionary Fence Protection}
+
+After \texttt{INIT} returns, \texttt{main.c} sets the dictionary fence:
+
+\begin{lstlisting}[language=C]
+/* Set dictionary fence after INIT to protect foundational words
+   from FORGET */
+vm.dict_fence_latest = vm.latest;
+vm.dict_fence_here   = vm.here;
+log_message(LOG_INFO,
+    "Dictionary fence set - init words protected from FORGET");
+\end{lstlisting}
+
+Any subsequent \texttt{FORGET} that would reach below this fence silently
+fails, preventing users from destabilizing words that other definitions depend
+on.
+
+\subsection{Block Lifecycle}
+
+\textbf{During INIT:} Blocks 1--N hold the parsed content of
+\texttt{init.4th}.
+
+\textbf{After INIT:} Blocks 1--N are zeroed. The dictionary retains all
+defined words, all protected by the fence.
+
+\textbf{Runtime:} Blocks 1--992 are available to userspace programs as a
+clean slate with no initialization dependency.
+
+\subsection{Full Boot Sequence}
+
+\begin{enumerate}
+  \item Parse command-line arguments.
+  \item Open the block device (file or RAM backend).
+  \item Initialize the VM (\texttt{vm\_init}).
+  \item Initialize the block subsystem (1~MB RAM blocks 0--1023).
+  \item Register all FORTH-79 words.
+  \item Run the \texttt{INIT} word.
+  \item Set the dictionary fence.
+  \item Start the REPL.
+\end{enumerate}
+
+\subsection{Memory Layout}
+
+\begin{description}
+  \item[VM memory (5~MB)] Dictionary grows upward: system words, then
+        initialization words (all protected by the fence), then user words.
+  \item[Block RAM (1~MB)] Block~0 is reserved for volume metadata. Blocks
+        1--992 are user blocks, zeroed after \texttt{INIT}. Blocks 993--1023
+        are reserved.
+\end{description}
+
+\subsection{LOAD Rewriting Algorithm}
+
+The second pass of \texttt{INIT} walks the copied block content and rewrites
+any \texttt{NNNN~LOAD} pattern found in it:
+
+\begin{lstlisting}[language=C]
+/* First pass: build mapping table
+   Block 2048 -> Sequential 1
+   Block 3000 -> Sequential 2
+   Block 3001 -> Sequential 3 */
+
+/* Second pass: copy with rewriting */
+while (copying block content) {
+    if (found "NNNN LOAD" pattern) {
+        lookup NNNN in mapping;
+        replace with mapped number;
+        write "M LOAD" to block;
+    }
+}
+\end{lstlisting}
+
+\subsection{Performance Characteristics}
+
+Initialization completes in under 10~ms for a typical \texttt{init.4th}. The
+transient blocks are zeroed immediately after execution, so the memory
+overhead is zero at runtime. Dictionary size grows proportionally to the
+number of definitions in \texttt{init.4th}.
+
+\subsection{Code References}
+
+\begin{description}
+  \item[\texttt{src/word\_source/starforth\_words.c:214--495}]
+        \texttt{INIT} word implementation. File open (234--240), block
+        mapping (272--305), block copy with \texttt{LOAD} rewriting
+        (307--418), block execution (447--465), vocabulary switch
+        (468--481), block zeroing (484--493).
+  \item[\texttt{src/main.c:488--491}] Dictionary fence setting.
+  \item[\texttt{src/word\_source/defining\_words.c:530--612}]
+        \texttt{FORGET} implementation; fence check at lines 559--571.
+  \item[\texttt{src/word\_source/block\_words.c:191--213}]
+        \texttt{LOAD} implementation.
+  \item[\texttt{src/word\_source/block\_words.c:289--309}]
+        \texttt{-->} implementation (block continuation).
+\end{description}
+
+\subsection{Development Workflow}
+
+In IDE mode (Linux), edit \texttt{./conf/init.4th} directly and rebuild.
+The file is plain text; diffs are readable in code review.
+
+In the L4Re deployment path, \texttt{init.4th} is packed into a ROMFS image
+at build time and declared as a module in \texttt{modules.list}. The
+resulting binary carries no filesystem dependency at runtime.
+
+\subsection{Best Practices}
+
+\begin{itemize}
+  \item Keep \texttt{init.4th} minimal — only foundational definitions.
+  \item Always annotate blocks with \texttt{(-} comments.
+  \item Define dependencies before the words that use them; avoid forward
+        references.
+  \item Add blocks incrementally and test after each addition.
+  \item Avoid side effects in initialization blocks; the last block may
+        optionally invoke a self-test.
+\end{itemize}

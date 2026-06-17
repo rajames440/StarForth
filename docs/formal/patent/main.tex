@@ -1,0 +1,74 @@
+%% Patent Publication Wrapper — main.tex
+%% SOURCE: docs/patent/ (canonical, legal-hold — do not move)
+%% NOTE: The patent LaTeX source lives at docs/patent/ and is under legal hold.
+%%       This wrapper exists to include the patent in the formal publication set
+%%       and to track companion material (cover letter, changes summary, jargon log).
+%%       The canonical build is: cd docs/patent && pdflatex main.tex
+%%       DO NOT draft independent or dependent claim language here.
+%%       DO NOT edit claim sections without explicit instruction from Bob.
+%%       All patent-adjacent sections are marked: %% PATENT — do not draft
+
+\input{../common/preamble}
+
+\title{Steady-State Machine — Patent Application\\[0.4em]
+       \large Provisional and Non-Provisional Filings}
+\author{Robert A.\ James}
+\date{%% TODO(bob): set filing date / application number
+}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+
+\mainmatter
+
+\chapter*{About This Volume}
+
+The patent application documents are maintained under legal hold in
+\texttt{docs/patent/}. This wrapper provides a single entry point for
+the formal publication set. The canonical builds are:
+
+\begin{lstlisting}[language=bash]
+cd docs/patent
+pdflatex main.tex                            # non-provisional
+pdflatex ssm_RAJ_v1_patent_application.tex  # v1 application
+pdflatex ssm_provisional_patent.tex         # provisional
+\end{lstlisting}
+
+Produced PDFs:
+\begin{itemize}
+  \item \texttt{docs/patent/main.pdf} — primary non-provisional application
+  \item \texttt{docs/patent/ssm\_RAJ\_v1\_patent\_application.pdf} — v1 application
+  \item \texttt{docs/patent/ssm\_provisional\_patent.pdf} — provisional filing
+\end{itemize}
+
+\chapter{USPTO Cover Letter}
+%% SOURCE: docs/patent/USPTO_COVER_LETTER.md
+%% TODO(bob): promote the cover letter narrative (non-claim portions only).
+%% %% PATENT — do not draft claim language
+
+\chapter{Changes Summary}
+%% SOURCE: docs/patent/CHANGES_SUMMARY.md
+%% TODO(bob): promote the changes summary between provisional and non-provisional.
+%% %% PATENT — do not draft claim language
+
+\chapter{Jargon Alignment Log}
+%% SOURCE: docs/patent/JARGON_CHANGES.md
+%% TODO(bob): promote the jargon alignment table — maps working-doc terms to
+%% claim-precise terms. Useful for consistency across publications.
+
+%%────────────────────────────────────────────────
+%% Appendices
+%%────────────────────────────────────────────────
+\appendix
+
+\chapter{Filing Materials Inventory}
+%% TODO(bob): table of all filing materials: main.tex, sections/, figures/,
+%% tables/, bibliography/, macros/, USPTO forms (sb0015a.pdf, sb0016.pdf).
+
+\backmatter
+\bibliographystyle{plainnat}
+\bibliography{../common/starship}
+
+\end{document}

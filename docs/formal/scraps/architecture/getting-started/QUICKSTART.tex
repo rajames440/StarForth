@@ -1,0 +1,203 @@
+%% SCRAP: architecture/getting-started/QUICKSTART
+%% SOURCE: docs/working/architecture/getting-started/QUICKSTART.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-install, user-guide/ch-quickstart
+%% EDITORIAL: lifted — prose rewritten to press voice; emoji stripped
+
+\section{Quick Start}
+\label{sec:quickstart}
+
+Build the fastest binary for the current platform:
+
+\begin{lstlisting}[language=bash]
+make fastest
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+\subsection{Common Build Commands}
+\label{sec:quickstart-commands}
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    Command              & What it does              & When to use \\
+    \midrule
+    \texttt{make fastest}   & Maximum speed build    & Production, benchmarking \\
+    \texttt{make fast}      & Fast without LTO       & Development, debugging \\
+    \texttt{make debug}     & Debug build (-g -O0)   & Debugging with GDB \\
+    \texttt{make benchmark} & Run full benchmark suite & Performance testing \\
+    \texttt{make help}      & List all options       & Reference \\
+    \bottomrule
+  \end{tabular}
+  \caption{Common StarForth build commands.}
+  \label{tab:quickstart-commands}
+\end{table}
+
+% -----------------------------------------------------------------------
+\subsection{Platform-Specific Builds}
+\label{sec:quickstart-platforms}
+
+\subsubsection{x86\_64 Linux}
+
+\begin{lstlisting}[language=bash]
+make fastest              # Auto-detects x86_64; builds with ASM optimisations
+./build/starforth
+\end{lstlisting}
+
+\subsubsection{Raspberry~Pi~4 (native)}
+
+\begin{lstlisting}[language=bash]
+make fastest              # Auto-detects ARM64; optimised for Cortex-A72
+./build/starforth
+\end{lstlisting}
+
+\subsubsection{Raspberry~Pi~4 (cross-compile from x86\_64)}
+
+Requires \texttt{gcc-aarch64-linux-gnu}:
+
+\begin{lstlisting}[language=bash]
+make rpi4-cross          # Builds ARM64 binary with inline ASM
+scp build/starforth pi@raspberrypi.local:~/
+\end{lstlisting}
+
+The resulting binary is statically linked and requires no runtime dependencies
+on the target device.
+
+% -----------------------------------------------------------------------
+\subsection{Performance Modes}
+\label{sec:quickstart-perf}
+
+Build targets are ranked by output speed:
+
+\begin{enumerate}
+  \item \texttt{make pgo} — Profile-Guided Optimisation; 5--15\% faster than
+        \texttt{fastest}; requires two build passes (3--5 minutes).
+  \item \texttt{make fastest} — Recommended for production; ASM optimisations,
+        direct threading, LTO.
+  \item \texttt{make fast} — ASM + direct threading; no LTO; easier to
+        instrument.
+  \item \texttt{make turbo} — ASM optimisations only; no direct threading.
+  \item \texttt{make all} — Standard build (\texttt{-O2}).
+  \item \texttt{make debug} — No optimisations (\texttt{-O0}); full debug
+        symbols.
+\end{enumerate}
+
+% -----------------------------------------------------------------------
+\subsection{INIT System}
+\label{sec:quickstart-init}
+
+At startup StarForth automatically loads \texttt{./conf/init.4th}, which
+defines the foundational word set.  No configuration is required:
+
+\begin{lstlisting}[language=bash]
+./build/starforth
+ok>        # Words from init.4th are immediately available
+\end{lstlisting}
+
+\texttt{init.4th} defines words, installs a dictionary fence to protect them
+from \texttt{FORGET}, and zeros blocks for user use.
+
+% -----------------------------------------------------------------------
+\subsection{Testing and Benchmarking}
+\label{sec:quickstart-test}
+
+\begin{lstlisting}[language=bash]
+make bench          # Quick benchmark (1 million operations)
+make benchmark      # Full benchmark suite
+make test           # Run full test suite (936+ tests)
+\end{lstlisting}
+
+Typical performance for 1~million stack operations:
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    Build type  & x86\_64    & ARM64 (Raspberry~Pi~4) \\
+    \midrule
+    Debug       & $\sim$800\,ms   & $\sim$1200\,ms \\
+    Standard    & $\sim$250\,ms   & $\sim$380\,ms  \\
+    Fastest     & $\sim$60\,ms    & $\sim$95\,ms   \\
+    PGO         & $\sim$50\,ms    & $\sim$80\,ms   \\
+    \bottomrule
+  \end{tabular}
+  \caption{StarForth benchmark timings (1M stack operations).}
+  \label{tab:quickstart-bench}
+\end{table}
+
+% -----------------------------------------------------------------------
+\subsection{Flags Enabled by \texttt{make fastest}}
+\label{sec:quickstart-flags}
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{ll}
+    \toprule
+    Flag & Effect \\
+    \midrule
+    \texttt{-O3}                              & Maximum compiler optimisation \\
+    \texttt{-march=native} (x86\_64)          & Use all host CPU features \\
+    \texttt{-march=armv8-a+crc+simd} (ARM64) & ARMv8 with NEON \\
+    \texttt{-DUSE\_ASM\_OPT=1}               & Assembly optimisations \\
+    \texttt{-DUSE\_DIRECT\_THREADING=1}      & Direct-threaded interpreter \\
+    \texttt{-flto}                            & Link-Time Optimisation \\
+    \texttt{-funroll-loops}                   & Loop unrolling \\
+    \texttt{-finline-functions}               & Aggressive function inlining \\
+    \texttt{-fomit-frame-pointer}             & Free register for execution \\
+    \bottomrule
+  \end{tabular}
+  \caption{Compiler flags active in \texttt{make fastest}.}
+  \label{tab:quickstart-flags}
+\end{table}
+
+% -----------------------------------------------------------------------
+\subsection{Advanced Build Options}
+\label{sec:quickstart-advanced}
+
+Custom compiler flags:
+
+\begin{lstlisting}[language=bash]
+make fastest CFLAGS="$(make -s print-cflags) -DCUSTOM_FLAG"
+\end{lstlisting}
+
+Static binary:
+
+\begin{lstlisting}[language=bash]
+make fastest LDFLAGS="-static -s"
+\end{lstlisting}
+
+Alternate compiler:
+
+\begin{lstlisting}[language=bash]
+make fastest CC=clang
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+\subsection{Troubleshooting}
+\label{sec:quickstart-trouble}
+
+\paragraph{Illegal instruction error}
+The host CPU does not support a required optimisation.  Use a conservative
+baseline:
+
+\begin{lstlisting}[language=bash]
+make fastest CFLAGS="$(BASE_CFLAGS) -O3 -march=x86-64 -DUSE_ASM_OPT=1"
+\end{lstlisting}
+
+\paragraph{Build fails outright}
+Verify the standard build first, then re-enable optimisations incrementally:
+
+\begin{lstlisting}[language=bash]
+make clean && make all
+make clean && make fast
+make clean && make fastest
+\end{lstlisting}
+
+\paragraph{Slow performance}
+Confirm optimisation symbols are present in the binary:
+
+\begin{lstlisting}[language=bash]
+file build/starforth
+nm build/starforth | grep vm_push_asm
+\end{lstlisting}

@@ -1,0 +1,230 @@
+%% SCRAP: architecture/getting-started/INSTALL
+%% SOURCE: docs/working/architecture/getting-started/INSTALL.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-install, user-guide/ch-install
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Installation}
+\label{sec:install}
+
+StarForth builds from source on Linux~(x86\_64, ARM64) and experimentally on
+macOS and Windows~(WSL2).  No binary packages are distributed at this time.
+
+% -----------------------------------------------------------------------
+\subsection{Prerequisites}
+\label{sec:install-prereqs}
+
+\subsubsection*{Required}
+
+\begin{itemize}
+  \item GCC~$\geq$~7.0 or Clang~$\geq$~6.0
+  \item GNU~Make
+  \item glibc (standard builds)
+\end{itemize}
+
+\subsubsection*{Optional}
+
+\begin{itemize}
+  \item \texttt{texinfo} — GNU~info documentation
+        (\texttt{sudo apt-get install texinfo})
+  \item \texttt{dpkg-dev} — Debian package generation
+        (\texttt{sudo apt-get install dpkg-dev})
+  \item \texttt{rpm-build} — RPM package generation
+        (\texttt{sudo dnf install rpm-build})
+\end{itemize}
+
+% -----------------------------------------------------------------------
+\subsection{Building from Source}
+\label{sec:install-build}
+
+The standard optimized build:
+
+\begin{lstlisting}[language=bash]
+make fastest
+\end{lstlisting}
+
+This produces the maximum-performance binary with ASM optimisations, direct
+threading, and LTO enabled.  Table~\ref{tab:install-targets} lists all
+available build targets.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    Target            & Description                        & Performance tier \\
+    \midrule
+    \texttt{make fastest} & Maximum performance build      & Tier~5 (highest) \\
+    \texttt{make pgo}     & Profile-guided optimisation    & Tier~6 (5--15\% above fastest) \\
+    \texttt{make all}     & Standard optimised build       & Tier~4 \\
+    \texttt{make debug}   & Debug build with symbols       & Tier~1 \\
+    \texttt{make minimal} & Minimal/embedded build         & Tier~3 \\
+    \bottomrule
+  \end{tabular}
+  \caption{StarForth build targets.}
+  \label{tab:install-targets}
+\end{table}
+
+% -----------------------------------------------------------------------
+\subsection{Installation Methods}
+\label{sec:install-methods}
+
+\subsubsection{System-Wide Installation (Recommended)}
+
+\begin{lstlisting}[language=bash]
+make fastest
+sudo make install
+\end{lstlisting}
+
+Installs to the following paths:
+
+\begin{itemize}
+  \item Binary: \texttt{/usr/local/bin/starforth}
+  \item Config: \texttt{/usr/local/etc/starforth/init.4th}
+  \item Man page: \texttt{/usr/local/share/man/man1/starforth.1}
+  \item Documentation: \texttt{/usr/local/share/doc/starforth/}
+  \item Info: \texttt{/usr/local/share/info/starforth.info}
+\end{itemize}
+
+\subsubsection{Custom Prefix}
+
+\begin{lstlisting}[language=bash]
+make fastest
+make install PREFIX=$HOME/.local
+\end{lstlisting}
+
+\subsubsection{Debian Package}
+
+\begin{lstlisting}[language=bash]
+make deb
+sudo dpkg -i ../starforth_1.1.0-1_amd64.deb
+\end{lstlisting}
+
+\subsubsection{RPM Package}
+
+\begin{lstlisting}[language=bash]
+make rpm
+sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/starforth-1.1.0-1.x86_64.rpm
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+\subsection{Platform-Specific Notes}
+\label{sec:install-platforms}
+
+\subsubsection{x86\_64 Linux}
+
+Standard installation works without modification:
+
+\begin{lstlisting}[language=bash]
+make fastest
+sudo make install
+\end{lstlisting}
+
+\subsubsection{ARM64 (Raspberry~Pi~4 and compatible)}
+
+Native build on ARM64:
+
+\begin{lstlisting}[language=bash]
+make rpi4
+sudo make install
+\end{lstlisting}
+
+Cross-compile from x86\_64:
+
+\begin{lstlisting}[language=bash]
+sudo apt-get install gcc-aarch64-linux-gnu
+make rpi4-cross
+scp build/starforth user@arm64-device:~/
+\end{lstlisting}
+
+\subsubsection{macOS (Experimental)}
+
+\begin{lstlisting}[language=bash]
+xcode-select --install
+make fastest CC=clang
+sudo make install
+\end{lstlisting}
+
+\subsubsection{Windows (WSL2)}
+
+\begin{lstlisting}[language=bash]
+# Inside WSL2 (Ubuntu):
+make fastest
+make install PREFIX=$HOME/.local
+echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+\subsection{Verifying the Installation}
+\label{sec:install-verify}
+
+\begin{lstlisting}[language=bash]
+starforth --version
+starforth --run-tests
+starforth
+\end{lstlisting}
+
+Quick functional check:
+
+\begin{lstlisting}[language=bash]
+starforth -c ': HELLO ." Hello, World!" CR ; HELLO BYE'
+starforth --benchmark 10000
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+\subsection{Uninstallation}
+\label{sec:install-remove}
+
+\begin{lstlisting}[language=bash]
+# From source install:
+sudo make uninstall
+
+# From Debian package:
+sudo dpkg -r starforth
+
+# From RPM package:
+sudo rpm -e starforth
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+\subsection{Troubleshooting}
+\label{sec:install-trouble}
+
+\paragraph{gcc: command not found}
+
+\begin{lstlisting}[language=bash]
+# Debian/Ubuntu:
+sudo apt-get install build-essential
+
+# Fedora/RHEL:
+sudo dnf groupinstall "Development Tools"
+\end{lstlisting}
+
+\paragraph{starforth: command not found after installation}
+
+\begin{lstlisting}[language=bash]
+which starforth
+export PATH=$HOME/.local/bin:$PATH
+\end{lstlisting}
+
+\paragraph{Cannot find init.4th}
+
+\begin{lstlisting}[language=bash]
+export STARFORTH_INIT=/usr/local/etc/starforth/init.4th
+\end{lstlisting}
+
+% -----------------------------------------------------------------------
+\subsection{Building the Documentation}
+\label{sec:install-docs}
+
+Generate the PDF manual (LaTeX~$\to$~PDF):
+
+\begin{lstlisting}[language=bash]
+make book
+\end{lstlisting}
+
+Generate HTML documentation (single-page and multi-page):
+
+\begin{lstlisting}[language=bash]
+make book-html
+\end{lstlisting}
