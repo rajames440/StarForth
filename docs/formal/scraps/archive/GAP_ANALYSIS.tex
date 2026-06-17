@@ -1,0 +1,88 @@
+%% SCRAP: archive/GAP_ANALYSIS
+%% SOURCE: docs/working/archive/GAP_ANALYSIS.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Gap Analysis: Evolutionary Path to FPGA}
+
+Conducted on 2025-12-14, this gap analysis documents the thirty-seven
+critical components missing between the then-current StarForth VM and the
+four-stage evolutionary target: StarForth hosted VM $\to$ StarKernel
+(bare metal) $\to$ StarshipOS (self-hosting OS) $\to$ FPGA hardware
+processor. The record is preserved as a historical planning artefact;
+the majority of StarKernel gaps (Stages~1--2) have since been closed by
+LithosAnanke~v1.0.8.
+
+\subsection{State at Time of Analysis}
+
+StarForth was a working FORTH-79 VM with a physics-driven adaptive runtime,
+0\% algorithmic variance proven across ninety runs, and support for Linux
+and L4Re. Documentation was strong: formal ontology, nine scientific
+defence documents, HAL architecture documentation, and peer-review
+materials. Build tooling included forty-plus Makefile targets, PGO
+support, and a Design of Experiments framework.
+
+\subsection{Gaps by Evolutionary Stage}
+
+\subsubsection{Stage 1 — Hardware Abstraction Layer (Foundation)}
+
+Eight critical gaps were identified (H1--H8): HAL headers for time,
+interrupt, memory, console, CPU, and panic; a Linux HAL implementation;
+and migration of the VM core to the HAL. The analysis concluded that
+HAL implementation was the critical path: no progress toward StarKernel
+or FPGA was possible without it. Estimated effort: two to three weeks.
+
+\subsubsection{Stage 2 — StarKernel (Bare Metal Boot)}
+
+Eight critical gaps (K1--K8) and five important gaps (K9--K13) covered
+the UEFI boot loader, physical memory manager, virtual memory manager,
+kernel heap allocator, GDT/IDT setup, UART driver, TSC/HPET time
+sources, and APIC interrupt controller. Estimated source volume: eight
+to ten thousand lines of C and assembly; estimated elapsed time to a
+serial ``ok'' prompt: six to eight weeks.
+
+\subsubsection{Stage 3 — StarshipOS (Full OS)}
+
+Five critical gaps (OS1--OS5) addressed storage drivers, a filesystem,
+block device abstraction, TCP/IP stack, and network drivers. Seven
+important gaps (OS6--OS12) covered the process model, scheduler, IPC
+mechanism, device model, security/capabilities, system call interface,
+and userland tools. Estimated source volume: fifty thousand lines;
+estimated elapsed time: twelve to eighteen months.
+
+\subsubsection{Stage 4 — FPGA Implementation}
+
+Eight critical gaps (F1--F8) and eleven additional gaps (F9--F19) spanned
+feasibility study, HDL architecture, instruction set design, stack and
+dictionary memory, memory controller, I/O IP cores, HDL language and
+target FPGA selection, clock domain crossing, adaptive runtime in
+hardware, synthesis constraints, and toolchain setup. The FPGA path
+was described as entirely greenfield; estimated source volume: twenty to
+thirty thousand lines of Verilog or VHDL.
+
+\subsection{Critical Path}
+
+The dependency graph placed HAL implementation (H1--H8) as the sole
+gateway to all downstream work. Neither the StarKernel path nor the FPGA
+path could begin until platform independence was established.
+
+\subsection{Risk Assessment}
+
+The highest technical-uncertainty risks were FPGA feasibility (F1) and
+implementing the adaptive runtime in HDL (F12). The most resource-constrained
+risk was the aggregate project scope: approximately ninety-three thousand
+lines of new code representing twenty-eight to forty-two person-months of
+solo effort.
+
+\subsection{Total Gap Count}
+
+\begin{itemize}
+  \item Critical: 12
+  \item Important: 15
+  \item Nice-to-have: 10
+  \item \textbf{Total: 37}
+\end{itemize}
+
+The analysis recommended that the FPGA path receive a formal go/no-go
+feasibility decision (F1) before committing resources to HDL development.
