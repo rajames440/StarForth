@@ -1,0 +1,138 @@
+%% SCRAP: hardware/performance-profiling/ASM_OPTIMIZATIONS
+%% SOURCE: docs/working/hardware/performance-profiling/ASM_OPTIMIZATIONS.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-profiling
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{x86\_64 Assembly Optimizations}
+
+StarForth's x86\_64 assembly optimizations serve both standard Linux
+environments and L4Re microkernel deployments. They live in two headers:
+\texttt{include/vm\_asm\_opt.h} (basic stack and arithmetic primitives) and
+\texttt{include/vm\_inner\_interp\_asm.h} (the direct-threaded inner
+interpreter).
+
+\subsection{Performance Impact}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Optimization & Speedup & Use case \\
+\midrule
+Stack operations & 2--3$\times$ & Every word execution \\
+Inner interpreter & 3--5$\times$ & Colon definitions \\
+Arithmetic operations & 1.5--2$\times$ & Math-heavy code \\
+Dictionary lookup & 2--3$\times$ & Compilation/interpretation \\
+String operations & 1.5--2$\times$ & Text processing \\
+\bottomrule
+\end{tabular}
+\caption{Measured impact by optimization class.}
+\end{table}
+
+\subsection{Enabling the Optimizations}
+
+The optimizations are gated by preprocessor flags. A standard build enables
+both stack/arithmetic primitives and direct threading; an L4Re build typically
+targets a conservative microarchitecture level:
+
+\begin{lstlisting}[language=bash]
+# Standard
+CFLAGS += -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -O3 -march=native
+
+# L4Re/StarshipOS
+CFLAGS += -DUSE_ASM_OPT=1 -march=x86-64-v2 -O3
+\end{lstlisting}
+
+Each optimized word keeps both an assembly and a C path behind a
+\texttt{USE\_ASM\_OPT} guard, so a build with the flag disabled falls back to
+the portable implementation. Stack operations, arithmetic words, and dictionary
+lookup all follow this pattern --- the C path provides correctness and the
+assembly path provides speed.
+
+\subsection{Direct-Threaded Inner Interpreter}
+
+This is the highest-impact and most intricate optimization. A naive C
+interpreter dispatches each word through a function call:
+
+\begin{lstlisting}[language=C]
+void execute_colon_word(VM *vm) {
+    cell_t *ip = vm->ip;
+    while (*ip) {
+        DictEntry *word = (DictEntry*)*ip++;
+        word->func(vm);          // call/return overhead on every word
+        if (vm->exit_colon) break;
+    }
+}
+\end{lstlisting}
+
+The call and return per word are expensive, branch prediction suffers, and
+registers spill. The direct-threaded path instead loads the instruction
+pointer and stacks into registers once, lets each primitive do its work and
+jump straight to the next, and saves registers only on exit. Primitives are
+written as thin macro bodies followed by \texttt{NEXT\_ASM()}:
+
+\begin{lstlisting}[language=C]
+void forth_dup_fast(void)  { PRIM_DUP();  NEXT_ASM(); }
+void forth_plus_fast(void) { PRIM_PLUS(); NEXT_ASM(); }
+void forth_fetch_fast(void){ PRIM_FETCH();NEXT_ASM(); }
+\end{lstlisting}
+
+\subsection{Benchmarking}
+
+A small Forth harness exercises the hot paths --- \texttt{DUP}/\texttt{DROP},
+arithmetic, and multi-item stack churn --- over a million iterations each. The
+recommended methodology builds three binaries (baseline \texttt{-O2}, assembly
+\texttt{-O3}, and assembly plus direct threading), times each, and uses
+\texttt{perf record}/\texttt{perf report} and \texttt{perf stat -r 10} for
+detailed and repeated measurement.
+
+\subsection{L4Re / StarshipOS Integration}
+
+For the microkernel, the assembly optimizations build with
+\texttt{-march=x86-64-v2} and, in kernel context, \texttt{-fno-stack-protector}
+and \texttt{-mno-red-zone}, linking against \texttt{l4re-util} and
+\texttt{l4sys}. VM memory is allocated from an L4Re dataspace
+(\texttt{l4re\_ma\_alloc} plus \texttt{l4re\_rm\_attach}) rather than the host
+heap, and inter-VM communication packs stack data into IPC message registers
+via \texttt{l4\_ipc\_send}.
+
+\subsection{Debugging and Correctness}
+
+Assembly can be disabled wholesale with \texttt{-DUSE\_ASM\_OPT=0 -O0 -g} for
+debugging; under GDB the relevant state lives in \texttt{r12}--\texttt{r15}.
+Correctness is verified by running both the C and assembly paths on identical
+inputs and asserting equal results and stack pointers. The assembly sets
+\texttt{vm->error} on overflow or underflow but does not log, for performance;
+debug builds add logging through a macro that compiles away in release.
+
+\subsection{Platform Compatibility}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+Platform & Stack ops & Arithmetic & Direct threading \\
+\midrule
+Linux x86\_64 & Yes & Yes & Yes \\
+L4Re x86\_64 & Yes & Yes & Yes \\
+StarshipOS & Yes & Yes & Yes (kernel \& user) \\
+ARM64 & --- & --- & --- (separate path) \\
+RISC-V & --- & --- & --- (future work) \\
+\bottomrule
+\end{tabular}
+\caption{x86\_64 assembly optimization support by platform.}
+\end{table}
+
+\subsection{Safety and Tuning}
+
+Guard pages around the data and return stacks (\texttt{mprotect} with
+\texttt{PROT\_NONE}) provide hardware backstops beyond the in-line overflow
+checks. Further gains come from profile-guided optimization, cache-line
+alignment of the \texttt{VM} struct, dictionary-entry prefetching, and huge
+pages for VM memory. Common failures map to clear fixes: an illegal-instruction
+fault usually means \texttt{-march=native} exceeded the host's feature set
+(drop to \texttt{-march=x86-64-v2}); crashes in assembly typically trace to
+stack misalignment (the ABI requires 16-byte alignment) or incorrect clobber
+lists; and a lack of improvement calls for \texttt{perf} to locate the true
+bottleneck and a check that the optimizations are actually enabled.

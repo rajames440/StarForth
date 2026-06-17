@@ -1,0 +1,73 @@
+%% SCRAP: archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/05-convergence-proof
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/05-convergence-proof.adoc
+%% STATUS: SUPERSEDED
+%% FITS: proofs/ — the per-run-block timing trajectory and two-sample t-test detail
+%%   may extend what the SSRN paper reports; assess before promoting.
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% TODO(bob): compare the t-test results and run-block trajectory against the SSRN
+%%   paper; promote to proofs/ if the statistical detail is not reproduced there.
+
+\section{Convergence Analysis --- Pre-Publication Record}
+
+\subsection{Core Finding}
+
+Configuration C\_FULL demonstrates a $-25.4\%$ improvement from early runs (1--15) to
+late runs (16--30), while A\_BASELINE degrades by $+6.4\%$ and B\_CACHE remains stable
+at $+0.5\%$. Generic JIT warmup predicts equal improvement across all configurations;
+configuration-specific divergence proves that the physics model drives the observed
+convergence.
+
+\subsection{Causal Argument}
+
+All three configurations received identical five-iteration warmup and ran the same
+benchmark program on the same OS environment. Under the warmup-only hypothesis,
+improvement should be uniform. The observed asymmetry---baseline degradation, static
+cache stability, and physics-driven convergence---is explained only by the distinct
+optimisation mechanism in each configuration.
+
+\subsection{Mechanism}
+
+The physics model accumulates \texttt{execution\_heat} per word across runs. Words
+surpassing the promotion threshold (nominally 50 counts) enter the hot-word cache.
+As more words cross the threshold over successive runs, the effective cache benefit
+increases, reducing runtime even while the cache-hit \emph{rate} remains constant
+(17.39\% $\pm$ 0\%). The same proportion of lookups hit the cache, but the set of
+cached words grows, delivering greater speedup.
+
+\subsection{Per-Block Trajectory (C\_FULL)}
+
+\begin{center}
+\begin{tabular}{llrl}
+\toprule
+Run block & Mean (ms) & Change from previous & Interpretation \\
+\midrule
+Runs 6--10  & 10.67 & --- & Cache building \\
+Runs 11--15 & 9.73  & $-8.8\%$  & Cache partially effective \\
+Runs 16--20 & 7.84  & $-19.4\%$ & Rapid convergence \\
+Runs 21--25 & 7.45  & $-5.0\%$  & Hot set nearly complete \\
+Runs 26--30 & 7.54  & $+1.2\%$  & Converged (stable) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The sequence converges to a limit of approximately 7.54~ms. By runs 26--30 the
+block-to-block change is under 1\%, meeting the convergence criterion.
+
+\subsection{Statistical Significance}
+
+Two-sample t-test (early runs 1--15 vs.\ late runs 16--30):
+
+\begin{center}
+\begin{tabular}{lrrl}
+\toprule
+Configuration & $t$-statistic & $p$-value & Conclusion \\
+\midrule
+A\_BASELINE & --- & 0.654 & Not significant \\
+B\_CACHE    & --- & 0.917 & Not significant \\
+C\_FULL     & $-3.47$ & 0.002 & Significant ($p < 0.005$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Only C\_FULL shows statistically significant improvement, confirming that the physics
+model drives convergence.

@@ -1,0 +1,351 @@
+%% SCRAP: architecture/build-and-tooling/BUILD_OPTIONS
+%% SOURCE: docs/working/architecture/build-and-tooling/BUILD_OPTIONS.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-build, user-guide/app-flags, cookbook/app-flags
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Build Options Reference}
+\label{sec:build-options}
+
+StarForth exposes a comprehensive set of build-time configuration options
+controlling optimizations, feature selection, platform targeting, and
+debugging. All options are passed as preprocessor defines via \texttt{CFLAGS}
+or as Makefile variables. Architecture detection runs automatically at compile
+time through \texttt{arch\_detect.h}.
+
+% ----------------------------------------------------------------
+\subsection{Performance Optimization Options}
+\label{sec:build-perf}
+
+\subsubsection{\texttt{USE\_ASM\_OPT}}
+
+Enables hand-optimized, architecture-specific assembly implementations for
+performance-critical operations. Type: integer (0 or 1). Default: 0.
+
+Affected routines include:
+
+\begin{itemize}
+  \item \texttt{vm\_push} / \texttt{vm\_pop} — data stack operations
+  \item \texttt{vm\_rpush} / \texttt{vm\_rpop} — return stack operations
+  \item \texttt{vm\_add\_check\_overflow} / \texttt{vm\_sub\_check\_overflow} — arithmetic with overflow detection
+  \item \texttt{vm\_mul} / \texttt{vm\_div} — multiply and divide
+  \item \texttt{vm\_strcmp\_asm} / \texttt{vm\_memcpy\_asm} — string and memory operations
+  \item \texttt{vm\_min\_asm} / \texttt{vm\_max\_asm} — conditional-move optimizations
+  \item \texttt{vm\_abs\_asm} — absolute value (ARM64)
+  \item \texttt{vm\_clz} / \texttt{vm\_ctz} — count leading/trailing zeros (ARM64)
+  \item \texttt{vm\_prefetch} / \texttt{vm\_prefetch\_stream} — cache prefetching (ARM64)
+\end{itemize}
+
+Typical performance impact: \(\approx\)20--25\% on x86\_64; \(\approx\)15--20\% on ARM64.
+Enabled automatically by the \texttt{fastest}, \texttt{fast}, \texttt{turbo}, and \texttt{pgo} targets.
+
+% ----------------------------------------------------------------
+\subsubsection{\texttt{USE\_DIRECT\_THREADING}}
+
+Switches the inner interpreter from indirect threading (the FORTH-79 default)
+to direct threading using GCC computed-goto (\texttt{\&\&label} / \texttt{goto *ptr}).
+In direct-threaded mode each word's code field points directly to native code,
+eliminating one indirection level per dispatch. Type: integer (0 or 1).
+Default: 0.
+
+Requirements: GCC or Clang; must be combined with \texttt{USE\_ASM\_OPT=1}.
+Full support is provided for x86\_64 (\texttt{vm\_inner\_interp\_asm.h}) and
+ARM64 (\texttt{vm\_inner\_interp\_arm64.h}).
+
+Typical performance impact: \(\approx\)30--40\% over indirect threading when
+combined with \texttt{USE\_ASM\_OPT=1}. Enabled by \texttt{fastest}, \texttt{fast},
+and \texttt{pgo} targets.
+
+% ----------------------------------------------------------------
+\subsubsection{\texttt{NDEBUG}}
+
+Standard C99 macro. When defined, all \texttt{assert()} calls compile to
+nothing, and StarForth additionally suppresses debug logging in hot paths.
+Default: undefined (assertions active). Typical impact: \(\approx\)5--10\% speedup.
+
+% ----------------------------------------------------------------
+\subsubsection{\texttt{STARFORTH\_PERFORMANCE}}
+
+Experimental flag that trades safety for throughput. Reduces stack-bounds
+checking in hot paths (DUP, SWAP, etc.) and applies \texttt{UNLIKELY()} branch
+hints, assuming well-formed Forth input.
+
+\textbf{Caution:} stack overflows may go undetected. Use only on code that has
+been exhaustively tested. Typical additional gain: \(\approx\)5--8\% over
+standard \texttt{-O3}. Relevant sources: \texttt{src/word\_source/stack\_words.c:58}
+(DUP), \texttt{src/word\_source/stack\_words.c:117} (SWAP).
+
+% ----------------------------------------------------------------
+\subsection{Architecture Options}
+\label{sec:build-arch}
+
+Architecture detection is automatic via \texttt{arch\_detect.h}; manual
+overrides are available for cross-compilation scenarios.
+
+\subsubsection{\texttt{ARCH\_X86\_64}}
+
+Targets x86-64 (AMD64 / Intel 64). Auto-detected from compiler predefined
+macros (\texttt{\_\_x86\_64\_\_}, \texttt{\_M\_X64}, \texttt{\_\_amd64\_\_}).
+Enables x86\_64 assembly optimizations, SSE4.2 string instructions, and the
+x86\_64 direct-threading header.
+
+\subsubsection{\texttt{ARCH\_ARM64}}
+
+Targets AArch64 (ARMv8-A). Auto-detected from \texttt{\_\_aarch64\_\_},
+\texttt{\_M\_ARM64}, and \texttt{\_\_arm64\_\_}. Enables NEON SIMD instructions,
+ARM64-specific instructions (CLZ, CTZ, RBIT, REV), ARM64 assembly
+optimizations, and ARM64 direct threading.
+
+Native ARM64 build: \texttt{make rpi4}. Cross-compile from x86\_64:
+\texttt{make rpi4-cross}.
+
+\subsubsection{\texttt{ARCH\_NAME}}
+
+Human-readable string set automatically: \texttt{"x86\_64"}, \texttt{"ARM64"},
+or \texttt{"Unknown"}. Displayed by \texttt{make help}.
+
+On an unrecognized architecture the build emits a compiler warning and falls
+back to pure-C implementations; no assembly optimizations are loaded.
+
+% ----------------------------------------------------------------
+\subsection{Platform / Target Options}
+\label{sec:build-platform}
+
+\subsubsection{\texttt{STARFORTH\_MINIMAL}}
+
+Enables minimal/freestanding build suitable for bare-metal or microkernel
+environments. When defined: ANSI color codes are suppressed in logging; I/O
+is reduced to minimal output; the build links with \texttt{-nostdlib
+-ffreestanding}. Enabled by \texttt{make minimal} and \texttt{make l4re}.
+
+\subsubsection{\texttt{L4RE\_TARGET}}
+
+Targets the L4Re microkernel operating system. Enables the L4Re block-storage
+backend, ROMFS file access in place of POSIX, and implies
+\texttt{STARFORTH\_MINIMAL=1}. Status: partially implemented (ROMFS stub
+present). See \texttt{src/word\_source/starforth\_words.c:225} and
+\texttt{include/blkio\_factory.h}.
+
+% ----------------------------------------------------------------
+\subsection{Debugging and Profiling Options}
+\label{sec:build-debug}
+
+\subsubsection{\texttt{DEBUG}}
+
+Debug builds compile with \texttt{-O0 -g -DDEBUG}: no optimization, full
+debugging symbols, all assertions enabled, verbose logging throughout. Enabled
+by \texttt{make debug}.
+
+\subsubsection{\texttt{PROFILE\_ENABLED}}
+
+Activates StarForth's built-in profiler. Type: integer (0 or 1). Default: 0.
+The profiler tracks per-word execution counts, call-graph relationships
+(caller/callee), stack operation counts, and total instruction counts.
+Overhead: \(\approx\)10--15\%.
+
+\begin{lstlisting}[language=bash]
+./build/starforth --profile 2      # enable at depth 2
+./build/starforth --profile-report # print results
+\end{lstlisting}
+
+See \texttt{include/profiler.h}.
+
+\subsubsection{\texttt{STRICT\_PTR}}
+
+Controls the Forth address--to--C pointer mapping. Type: integer (0 or 1).
+Default: 1.
+
+\begin{itemize}
+  \item \texttt{STRICT\_PTR=1} — Forth addresses are real pointers (\texttt{cell\_t = uintptr\_t}).
+  \item \texttt{STRICT\_PTR=0} — Forth addresses are indices/offsets (segmented memory models).
+\end{itemize}
+
+Disable only for benchmarking or non-hosted targets. See
+\texttt{src/vm\_api.c:202} and \texttt{Makefile:37}.
+
+% ----------------------------------------------------------------
+\subsection{Block System Options}
+\label{sec:build-block}
+
+\begin{itemize}
+  \item \texttt{BLKCFG\_DEFAULT\_FBS} — default Forth block size in bytes (default: 1024). See \texttt{include/blkcfg.h}.
+  \item \texttt{BLKCFG\_PATH\_MAX} — maximum path length for block-storage files (default: 4096).
+  \item \texttt{BLK\_FORTH\_SYS\_RESERVED} — number of system-reserved RAM blocks, hidden from user access (default: 32, blocks 0--31).
+  \item \texttt{BLK\_DISK\_SYS\_RESERVED} — number of system-reserved disk blocks (default: 32, PBN 1024--1055).
+\end{itemize}
+
+% ----------------------------------------------------------------
+\subsection{Memory Configuration Options}
+\label{sec:build-memory}
+
+\begin{itemize}
+  \item \texttt{DATA\_STACK\_SIZE} — data stack depth in cells (default: 256). See \texttt{include/vm.h}.
+  \item \texttt{RETURN\_STACK\_SIZE} — return stack depth in cells (default: 256).
+  \item \texttt{STARFORTH\_STATE\_BYTES} — total state-buffer size for minimal builds (default: 8192). See \texttt{src/main.c:40--42}.
+  \item \texttt{SF\_FC\_BUCKETS} — number of forget-chain hash buckets; defined in \texttt{vm.h}.
+\end{itemize}
+
+% ----------------------------------------------------------------
+\subsection{Feature Flags}
+\label{sec:build-features}
+
+\subsubsection{\texttt{STARFORTH\_ANSI}}
+
+Enables ANSI escape sequences for terminal control in the block editor
+(LIST, EDIT): screen clear (\texttt{\textbackslash x1b[2J}), cursor
+positioning, and colored line numbers. See
+\texttt{src/word\_source/editor\_words.c:74,188,202}.
+
+\subsubsection{\texttt{VM\_HAS\_CURRENT\_ENTRY}}
+
+Enables the \texttt{vm->current\_entry} field, which tracks the
+currently-compiling word. Required for the SEE decompiler, recursive word
+definitions, and dictionary introspection. Default: defined (enabled).
+
+% ----------------------------------------------------------------
+\subsection{Build System Variables}
+\label{sec:build-vars}
+
+\begin{itemize}
+  \item \texttt{CC} — C compiler. Default: \texttt{gcc}. Also accepts \texttt{clang} and \texttt{aarch64-linux-gnu-gcc}.
+  \item \texttt{CFLAGS} — compiler flags. Extends Makefile \texttt{BASE\_CFLAGS}.
+  \item \texttt{LDFLAGS} — linker flags. Default includes \texttt{-Wl,--gc-sections -s -flto=auto -fuse-linker-plugin -static}.
+  \item \texttt{MINIMAL} — integer (0 or 1). Setting \texttt{MINIMAL=1} enables \texttt{STARFORTH\_MINIMAL} and adds \texttt{-nostdlib -ffreestanding}.
+  \item \texttt{ASM} — integer (0 or 1). When set to 1, the build emits \texttt{.s} assembly listings alongside \texttt{.o} object files.
+\end{itemize}
+
+% ----------------------------------------------------------------
+\subsection{Build Configuration Matrix}
+\label{sec:build-matrix}
+
+\begin{table}[h]
+\centering
+\caption{Common build configurations}
+\label{tab:build-matrix}
+\begin{tabular}{llllll}
+\toprule
+Target & USE\_ASM\_OPT & USE\_DIRECT\_THREADING & NDEBUG & Opt level & Use case \\
+\midrule
+\texttt{debug}   & 0 & 0 & No  & \texttt{-O0 -g}          & Development, debugging \\
+\texttt{all}     & 1 & 0 & No  & \texttt{-O2}             & Default build \\
+\texttt{turbo}   & 1 & 0 & Yes & \texttt{-O3 -flto}       & Fast, no direct threading \\
+\texttt{fast}    & 1 & 1 & Yes & \texttt{-O3}             & Fast, readable asm \\
+\texttt{fastest} & 1 & 1 & Yes & \texttt{-O3 -flto}       & Maximum performance \\
+\texttt{pgo}     & 1 & 1 & Yes & \texttt{-O3 -fprofile-use} & Absolute fastest \\
+\texttt{minimal} & 0 & 0 & No  & \texttt{-O2}             & Embedded / bare-metal \\
+\texttt{l4re}    & 0 & 0 & No  & \texttt{-O2}             & L4Re microkernel \\
+\texttt{profile} & 0 & 0 & No  & \texttt{-O1 -g}          & Profiling \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ----------------------------------------------------------------
+\subsection{Optimization Level Guidelines}
+\label{sec:build-optlevels}
+
+\begin{itemize}
+  \item \textbf{\texttt{-O0 -g} (development)} — fastest compile, slowest runtime (\(\approx\)10\(\times\) below optimized); full symbols, all assertions. Use for initial development and crash debugging.
+  \item \textbf{\texttt{-O2} (balanced)} — moderate compile overhead; 3--4\(\times\) runtime gain over \texttt{-O0}. Default production-test builds.
+  \item \textbf{\texttt{-O3} (high performance)} — aggressive inlining and vectorization; 5--6\(\times\) over \texttt{-O0}. Production releases.
+  \item \textbf{\texttt{-O3 -flto -march=native -fprofile-use} (maximum)} — multi-stage build; 7--8\(\times\) over \texttt{-O0}. Release and benchmark artifacts. Use \texttt{make pgo}.
+\end{itemize}
+
+% ----------------------------------------------------------------
+\subsection{Usage Examples}
+\label{sec:build-examples}
+
+\paragraph{Maximum performance native build}
+\begin{lstlisting}[language=bash]
+make clean && make pgo
+\end{lstlisting}
+Produces a PGO-optimized binary with assembly optimizations, direct threading,
+and link-time optimization.
+
+\paragraph{Debug build with profiler}
+\begin{lstlisting}[language=bash]
+make clean && make profile
+./build/starforth --profile 3 --profile-report
+\end{lstlisting}
+
+\paragraph{Cross-compile for Raspberry Pi 4}
+\begin{lstlisting}[language=bash]
+make rpi4-cross
+scp build/starforth pi@raspberrypi.local:~/
+\end{lstlisting}
+Produces a statically linked ARM64 binary optimized for Cortex-A72.
+
+\paragraph{Minimal embedded build}
+\begin{lstlisting}[language=bash]
+make minimal
+\end{lstlisting}
+Produces a freestanding binary with no libc dependencies.
+
+\paragraph{AMD Zen~3 custom build}
+\begin{lstlisting}[language=bash]
+make clean
+make CFLAGS="$(BASE_CFLAGS) -O3 -march=znver3 \
+     -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -DNDEBUG" \
+     LDFLAGS="-flto -s"
+\end{lstlisting}
+
+\paragraph{Generate assembly listings}
+\begin{lstlisting}[language=bash]
+make asm
+less build/stack_management.s
+\end{lstlisting}
+
+% ----------------------------------------------------------------
+\subsection{Compiler Support}
+\label{sec:build-compilers}
+
+\begin{itemize}
+  \item \textbf{GCC} — recommended. Minimum GCC~7.0; GCC~11.0+ preferred for improved PGO and ARM64 code generation.
+  \item \textbf{Clang} — minimum Clang~10.0; computed-goto and all assembly optimizations supported.
+  \item \textbf{ARM64 cross-compilation from x86\_64:}
+\end{itemize}
+
+\begin{lstlisting}[language=bash]
+sudo apt-get install gcc-aarch64-linux-gnu
+make CC=aarch64-linux-gnu-gcc rpi4-cross
+\end{lstlisting}
+
+Static linking (\texttt{-static}) is recommended for cross-compiled binaries.
+
+% ----------------------------------------------------------------
+\subsection{Performance Tuning Checklist}
+\label{sec:build-tuning}
+
+For maximum throughput:
+
+\begin{itemize}
+  \item Use \texttt{make pgo} (profile-guided optimization).
+  \item Enable \texttt{USE\_ASM\_OPT=1} and \texttt{USE\_DIRECT\_THREADING=1}.
+  \item Define \texttt{NDEBUG}.
+  \item Pass \texttt{-O3 -flto -march=native}.
+  \item Add \texttt{-fno-plt -fno-semantic-interposition} to reduce indirection.
+  \item Add \texttt{-funroll-loops -finline-functions} for code expansion.
+  \item Link statically (\texttt{-static}) to eliminate PLT overhead.
+  \item Strip symbols (\texttt{-s}) to reduce binary size.
+\end{itemize}
+
+Expected result: \(\approx\)7--8\(\times\) faster than a debug build;
+\(\approx\)1.2--1.5\(\times\) faster than a plain \texttt{-O3} build.
+
+% ----------------------------------------------------------------
+\subsection{Troubleshooting}
+\label{sec:build-trouble}
+
+\paragraph{``Unknown architecture'' warning}
+The build falls back automatically to pure-C implementations. Assembly
+optimizations are disabled. To add support for a new architecture, extend
+\texttt{arch\_detect.h}.
+
+\paragraph{Direct threading shows no performance gain}
+Verify that both \texttt{USE\_DIRECT\_THREADING=1} and \texttt{USE\_ASM\_OPT=1}
+are set, that the target is x86\_64 or ARM64, and that the compiler is GCC or
+Clang. At runtime, \texttt{WORDS-INFO} reports whether direct threading is
+active.
+
+\paragraph{PGO coverage mismatch warnings}
+Run \texttt{make clean \&\& make pgo} to force a full clean two-stage rebuild.
+Stale coverage data from a prior instrumentation pass causes these warnings.

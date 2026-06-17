@@ -1,0 +1,26 @@
+%% SCRAP: archive/operations/refinement/capa
+%% SOURCE: docs/working/archive/operations/refinement/capa.adoc
+%% STATUS: OBSOLETE
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice; adoc syntax translated
+
+\section*{C\,$\leftrightarrow$\,Isabelle Refinement Defect Tracking (Obsolete)}
+
+Three defects were logged against the planned C\,$\leftrightarrow$\,Isabelle
+refinement program as of 2025-10-30:
+
+\begin{itemize}
+  \item \textbf{DEFECT-001}: Stack push error handling---C implementation
+        allowed silent stack overflow; Isabelle model required explicit bounds
+        check with error propagation.
+  \item \textbf{DEFECT-002}: Return stack misalignment---C implementation used
+        a pointer-based return stack incompatible with the Isabelle inductive
+        model.
+  \item \textbf{DEFECT-003}: Instruction dispatch---C used a jump table;
+        Isabelle model defined dispatch as a mathematical function without
+        equivalent performance semantics.
+\end{itemize}
+
+All three defects were recorded as \textsc{open}. The refinement program that
+generated them was never executed; formal verification took a different
+architectural form. These defect records are obsolete.

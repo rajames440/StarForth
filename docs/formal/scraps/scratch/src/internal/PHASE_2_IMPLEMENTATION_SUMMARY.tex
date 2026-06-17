@@ -1,0 +1,108 @@
+%% SCRAP: scratch/src/internal/PHASE_2_IMPLEMENTATION_SUMMARY
+%% SOURCE: docs/working/scratch/src/internal/PHASE_2_IMPLEMENTATION_SUMMARY.adoc
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Phase~2 Implementation Summary and Action Items}
+\label{sec:phase2-impl-summary}
+
+\textbf{Status:} Specification complete; ready for code implementation.
+\textbf{Date:} 2025-11-07.
+
+This document summarises the deliverables produced at the close of the
+Phase~2 specification session and lists the four implementation tasks
+required for Phase~2a.
+
+\subsection{Deliverables Completed}
+
+The Phase~2 specification document (\texttt{PHASE\_2\_PHYSICS\_DECAY\_AND\_FREEZE.adoc})
+was completed, covering: problem statement, two technical designs (freeze flag
+and linear decay mechanism), mathematical comparison of halflife versus linear
+models, implementation recommendation, integration points, FORTH API, testing
+strategy, four-week deployment roadmap, and Isabelle/HOL targets for
+Theorems~5--7.
+
+\subsection{Implementation Checklist: Phase~2a}
+
+\textbf{Task~1 — Add \texttt{WORD\_FROZEN} flag to \texttt{include/vm.h}.}
+Estimated effort: 15 minutes.
+
+\begin{lstlisting}[language=C]
+#define WORD_FROZEN   0x04  /* heat does not decay */
+\end{lstlisting}
+
+\textbf{Task~2 — Implement linear decay function in
+\texttt{src/physics\_metadata.c}.}
+Estimated effort: 30 minutes.
+
+\begin{lstlisting}[language=C]
+void physics_metadata_apply_linear_decay(DictEntry *entry,
+                                         uint64_t elapsed_ns) {
+    if (!entry || (entry->flags & WORD_FROZEN)) return;
+    if (elapsed_ns < DECAY_MIN_INTERVAL) return;
+
+    cell_t decay = (cell_t)(elapsed_ns / NS_PER_UNIT * DECAY_RATE_PER_NS);
+    if (decay >= entry->execution_heat)
+        entry->execution_heat = 0;
+    else
+        entry->execution_heat -= decay;
+}
+\end{lstlisting}
+
+\textbf{Task~3 — Integrate decay into word-lookup hotpath in
+\texttt{src/vm.c}.}
+Estimated effort: 45 minutes. Insert after dictionary lookup and before
+heat accumulation.
+
+\textbf{Task~4 — Create FORTH interface words.}
+Estimated effort: 30 minutes. Words required: \texttt{FREEZE-WORD},
+\texttt{UNFREEZE-WORD}, \texttt{FROZEN?}.
+
+\textbf{Total estimated effort for Phase~2a:} 3--4 hours (including testing).
+
+\subsection{Files to Modify}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+File & Change & Purpose \\
+\midrule
+\texttt{include/vm.h}               & Add constant   & \texttt{WORD\_FROZEN} flag \\
+\texttt{src/physics\_metadata.c}    & Add function   & Implement decay \\
+\texttt{src/physics\_metadata.h}    & Add declaration & Declare decay function \\
+\texttt{src/vm.c}                   & Modify hotpath & Call decay before heat++ \\
+\texttt{src/word\_source/physics\_freeze\_words.c} & New file & Freeze control words \\
+\texttt{include/word\_registry.h}   & Add entries    & Register new words \\
+\texttt{src/test\_runner/modules/test\_physics\_decay.c} & New file & Unit tests \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Key Design Decisions}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Decision & Rationale & Status \\
+\midrule
+Linear decay (not halflife) & Integer arithmetic, deterministic & Chosen \\
+Lazy decay (on access)      & Minimal overhead, natural integration & Chosen \\
+\texttt{WORD\_FROZEN} distinct from \texttt{WORD\_PINNED} & Different semantics & Chosen \\
+Configuration via \texttt{\#define} + Makefile & Standard pattern & Chosen \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Success Criteria for Phase~2a}
+
+Must have: \texttt{WORD\_FROZEN} compiles cleanly; decay function passes
+unit tests; decay integrated in hotpath; \texttt{FREEZE-WORD} and
+\texttt{UNFREEZE-WORD} work interactively; no regression (all prior
+tests pass).
+
+Nice to have: performance regression under 10\%; integration test
+demonstrating frozen words retain heat; documentation complete.
+
+Explicitly excluded from Phase~2a: cache eviction logic changes;
+periodic decay scan; Isabelle/HOL proofs; StarshipOS real-world validation.

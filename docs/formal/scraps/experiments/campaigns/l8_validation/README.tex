@@ -1,0 +1,107 @@
+%% SCRAP: experiments/campaigns/l8_validation/README
+%% SOURCE: docs/working/experiments/campaigns/l8_validation/README.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-l8-map
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L8 Jacquard Mode Selector Validation Experiment}
+
+This experiment validates the L8 Jacquard mode selector by comparing
+dynamic adaptive mode switching against static optimal configurations across
+five workload types. Its empirical basis is the $2^7$ factorial DoE
+(38{,}400 runs), which identified L1 and L4 as harmful and established
+workload-specific optimal configurations for L2, L3, L5, and L6.
+
+%% PATENT: the L8 Jacquard dynamic mode selector is patent-adjacent.
+%% Do not draft claims here.
+
+\subsection{Experimental Design}
+
+\textbf{Type:} $8 \times 5$ factorial design.
+\textbf{Independent variables:} control strategy (8 levels) and workload
+type (5 levels). \textbf{Primary dependent variables:} \texttt{ns\_per\_word}
+and \texttt{cv}.
+
+\subsubsection{Control Strategies}
+
+\begin{center}
+\begin{tabular}{llrrrrrrrl}
+\toprule
+Strategy & L1 & L2 & L3 & L4 & L5 & L6 & L7 & Description \\
+\midrule
+L8\_ADAPTIVE       & 0 & rt & rt & 0 & rt & rt & 1 & Dynamic switching \\
+C0\_BASELINE       & 0 &  0 &  0 & 0 &  0 &  0 & 1 & Minimal \\
+C4\_TEMPORAL       & 0 &  0 &  1 & 0 &  0 &  0 & 1 & Decay only \\
+C7\_FULL\_INF      & 0 &  0 &  1 & 0 &  1 &  1 & 1 & Full inference \\
+C9\_DIVERSE\_DECAY & 0 &  1 &  0 & 0 &  0 &  1 & 1 & Window + decay\_inf \\
+C11\_DIVERSE\_INF  & 0 &  1 &  0 & 0 &  1 &  1 & 1 & Window + inference \\
+C12\_DIVERSE\_TEMP & 0 &  1 &  1 & 0 &  0 &  0 & 1 & Window + decay \\
+ALL\_ON            & 0 &  1 &  1 & 0 &  1 &  1 & 1 & All except L1/L4 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+(rt = runtime-selected by L8 mode selector)
+
+\subsubsection{Workload Types}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Workload    & Characteristics & Expected L8 Mode \\
+\midrule
+STABLE      & Predictable, repetitive            & C0 or C4 \\
+DIVERSE     & High entropy, mixed operations     & C9, C11, or C12 \\
+VOLATILE    & High CV, random branching          & C1 or C7 \\
+TEMPORAL    & Strong locality, nested loops      & C4 or C12 \\
+TRANSITION  & Phase shifts between workloads     & Adaptive \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Hypotheses}
+
+\begin{description}
+  \item[H1 (Performance).] L8\_ADAPTIVE matches or exceeds the best static
+        configuration per workload, within a 5\% margin.
+  \item[H2 (Stability).] L8\_ADAPTIVE shows lower overall CV than any
+        single static configuration across all workloads.
+  \item[H3 (Adaptation).] The L8 mode distribution correlates with
+        workload characteristics.
+  \item[H4 (Generalization).] L8\_ADAPTIVE outperforms all static
+        configurations on the TRANSITION workload.
+\end{description}
+
+\subsection{Running the Experiment}
+
+\begin{lstlisting}[language=bash]
+# Quick test (10 reps = 400 runs, ~8 minutes)
+cd experiments/l8_validation
+./run_l8_validation.sh 10
+
+# Standard validation (50 reps = 2,000 runs, ~40 minutes)
+./run_l8_validation.sh 50
+
+# High precision (100 reps = 4,000 runs, ~80 minutes)
+./run_l8_validation.sh 100
+\end{lstlisting}
+
+\subsection{Analysis}
+
+\begin{lstlisting}[language=bash]
+Rscript analyze_l8.R l8_validation_YYYYMMDD_HHMMSS
+\end{lstlisting}
+
+Expected plots: ANOVA interaction plot (strategy $\times$ workload), L8 mode
+distribution per workload, Pareto frontier (speed vs.\ stability), and
+convergence curves showing mode switches.
+
+\subsection{Success Criteria}
+
+\begin{enumerate}
+  \item L8\_ADAPTIVE is at most 5\% slower than the best static
+        configuration per workload.
+  \item L8\_ADAPTIVE exhibits the lowest CV across all workloads.
+  \item L8 mode selections align with expected workload-specific patterns.
+  \item L8\_ADAPTIVE dominates all static configurations on TRANSITION.
+\end{enumerate}

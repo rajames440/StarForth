@@ -1,0 +1,51 @@
+%% SCRAP: legal/README
+%% SOURCE: docs/working/legal/README.md
+%% STATUS: CURRENT
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Patent-Adjacent Material: Legal Hold}
+
+The \texttt{docs/working/legal/} directory is intentionally empty pending
+explicit instruction. The following items were not moved during the Phase 2
+documentation reorganization. They remain at their original locations in
+\texttt{docs/} until Bob provides explicit handling instructions.
+
+\subsection{Flagged — Awaiting Instruction}
+
+\begin{center}
+\begin{tabular}{lp{8cm}}
+\toprule
+Path & Description \\
+\midrule
+\texttt{docs/patent/} (entire tree) & USPTO provisional patent: \texttt{main.tex}, \texttt{sections/}, compiled PDFs, USPTO forms sb0015a and sb0016, \texttt{final\_provisional/}, revision logs. \\
+\texttt{docs/DARPA\_SSM\_Proposal\_James.docx} & DARPA SSM grant proposal (Word). \\
+\texttt{docs/DARPA\_SSM\_Proposal\_James.pdf} & DARPA SSM grant proposal (PDF). \\
+\texttt{docs/SSM\_DARPA\_Complete\_Proposal\_James\_FINAL.docx} & DARPA SSM complete/final proposal. \\
+\texttt{docs/SSM\_DARPA\_Summary\_Slide.pptx} & DARPA SSM summary slide deck. \\
+\texttt{docs/SYSTEM\_NARRATIVE.tex} & Technical narrative written for patent counsel and reviewers. \\
+\texttt{docs/SYSTEM\_NARRATIVE.pdf} & Compiled system narrative. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Deferred — Build-Path Safety}
+
+The following LaTeX sources were also left in place. Moving them blindly
+risks breaking \verb|\includegraphics| paths in their compiled forms.
+They are deferred to a later, build-verified pass.
+
+\begin{center}
+\begin{tabular}{lp{8cm}}
+\toprule
+Path & Description \\
+\midrule
+\texttt{docs/ontology.tex} / \texttt{.pdf} & Formal ontology source and compiled PDF; candidate for \texttt{formal/}. \\
+\texttt{docs/ontology\_diagrams.dot} & Graphviz source for ontology diagrams. \\
+\texttt{docs/fig\_*.png} / \texttt{.svg} & Shared figure assets referenced by ontology and system narrative LaTeX. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% PATENT: Do not draft any claim language in this scrap.
+%% Patent-adjacent material is under legal hold pending Bob's instruction.

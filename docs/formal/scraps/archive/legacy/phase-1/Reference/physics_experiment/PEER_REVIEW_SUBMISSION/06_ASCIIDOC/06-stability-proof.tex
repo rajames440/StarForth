@@ -1,0 +1,55 @@
+%% SCRAP: archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/06-stability-proof
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/06-stability-proof.adoc
+%% STATUS: SUPERSEDED
+%% FITS: proofs/ — the three-scenario deployment table and the formal verification
+%%   framework diagram may be unique relative to the SSRN paper; assess before promoting.
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% TODO(bob): compare deployment scenarios and formal verification scope against the
+%%   SSRN paper; promote to proofs/ if the structured scenario analysis is absent there.
+
+\section{Stability Analysis --- Pre-Publication Record}
+
+\subsection{Stability Metric}
+
+\[
+\text{Stability Margin} = \frac{\text{Environmental Variance}}{\text{Algorithmic Variance}}
+= \frac{70\%}{0\%} = \infty
+\]
+
+A system where algorithmic decisions carry 0\% variance and environmental timing
+carries 70\% variance possesses infinite stability margin: no amount of OS scheduling
+noise alters what the algorithm decides to do.
+
+\subsection{Evidence Summary}
+
+Across all 90 runs and all three configurations, cache-hit rate held at
+17.39\% $\pm$ 0.00\% (CV = 0\%) while runtime CV ranged from 32\% to 70\%.
+CPU temperature was frozen at 27.00$^\circ$C (CV = 0\%), ruling out thermal
+throttling. Algorithmic chaos and cache instability were likewise ruled out by the
+zero-variance cache-hit data. OS context switching and memory latency jitter account
+for the observed timing variance.
+
+\subsection{Deployment Scenarios}
+
+\begin{center}
+\begin{tabular}{p{4cm}ll}
+\toprule
+Scenario & Cache-hit CV & Runtime CV \\
+\midrule
+Isolated system (idle OS, $\approx 10\%$ load) & 0\% & $\approx 10\%$ \\
+Standard multi-tasking ($\approx 50\%$ OS load) & 0\% & $\approx 40\%$ \\
+Heavy load ($\approx 70\%$ OS load)             & 0\% & $\approx 70\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+In every scenario the algorithm makes identical cache-promotion decisions. Performance
+bounds widen under load, but algorithmic behaviour is guaranteed invariant.
+
+\subsection{Formal Verification Scope}
+
+The formal Isabelle/HOL model verifies the algorithm (cache-promotion logic, decision
+consistency, and independence from timing). It does not model the OS scheduler, memory
+system, or hardware specifics---nor does it need to. The theorem holds regardless of
+environmental variance because algorithmic decisions and environmental timing are
+provably decoupled.

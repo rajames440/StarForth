@@ -1,0 +1,106 @@
+%% SCRAP: architecture/03-architecture/hal/platform-implementations
+%% SOURCE: docs/working/architecture/03-architecture/hal/platform-implementations.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-platform
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{HAL Platform Implementation Guide}
+
+This section explains how to implement the Hardware Abstraction Layer for a new
+target. It walks through the hosted Linux reference and the freestanding
+StarKernel implementation, then sets out a testing strategy and the pitfalls
+that most often defeat a new platform.
+
+\subsection{Directory Layout and Build Integration}
+
+Each platform lives under its own directory and supplies one source file per
+subsystem --- time, interrupt, memory, console, CPU, and panic --- plus an
+optional initialization file. The build selects a platform and compiles only its
+sources. The freestanding kernel target additionally adds the flags that strip
+the hosted runtime.
+
+\begin{lstlisting}[language=bash]
+PLATFORM ?= linux    # linux | l4re | kernel
+
+PLATFORM_SOURCES = \
+    src/platform/$(PLATFORM)/hal_time.c \
+    src/platform/$(PLATFORM)/hal_interrupt.c \
+    src/platform/$(PLATFORM)/hal_memory.c \
+    src/platform/$(PLATFORM)/hal_console.c \
+    src/platform/$(PLATFORM)/hal_cpu.c \
+    src/platform/$(PLATFORM)/hal_panic.c
+
+ifeq ($(PLATFORM),kernel)
+    CFLAGS  += -ffreestanding -nostdlib -mno-red-zone
+    LDFLAGS += -nostdlib -static
+endif
+\end{lstlisting}
+
+\subsection{The Linux Reference Platform}
+
+Linux is the reference platform, chosen for its rich debugging environment. Its
+implementation is thin. Time maps onto \texttt{clock\_gettime(CLOCK\_MONOTONIC)},
+with the periodic timer built from a POSIX timer and a real-time signal whose
+handler dispatches the registered callback. Memory wraps \texttt{malloc} and
+\texttt{free}, zero-initializing every allocation to satisfy the contract, and
+treats page allocation as a heap allocation under an identity-mapping
+assumption. The console wraps standard I/O, flushing after each write and polling
+standard input for the non-blocking check. Interrupts are emulated: enable and
+disable are no-ops because signals cannot be masked through this path, and
+interrupt context is reported through a thread-local flag set inside the signal
+handler. CPU identity is fixed at zero for the single-threaded case, relax calls
+\texttt{sched\_yield()}, and panic prints to standard error and aborts.
+
+\begin{lstlisting}[language=C]
+uint64_t hal_time_now_ns(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+}
+\end{lstlisting}
+
+\subsection{The StarKernel Freestanding Platform}
+
+The kernel platform is freestanding: no C library, no operating system, direct
+hardware access. Time reads the TSC, calibrated against the HPET at
+initialization, validates monotonicity, and panics if calibration fails; the
+periodic timer programs the local APIC timer, and its ISR invokes the callback
+and issues an end-of-interrupt. Interrupts are real: enable and disable issue
+\texttt{sti} and \texttt{cli}, the disable path captures and returns the flags
+register for later restoration, ISR registration writes the dispatch table and
+routes the IRQ through the IOAPIC, and interrupt context is tracked by a nesting
+counter incremented and decremented around each dispatch. Memory binds to the
+physical memory manager, the virtual memory manager, and the \texttt{kmalloc}
+heap, translating the HAL mapping flags into page-table flags. The console drives
+a 16550 UART and a UEFI GOP framebuffer in parallel. CPU identity comes from the
+local APIC, relax issues \texttt{pause}, and halt issues \texttt{hlt}.
+
+\begin{lstlisting}[language=C]
+uint64_t hal_time_now_ns(void) {
+    uint64_t tsc = rdtsc();
+    return tsc_to_ns(tsc) - tsc_offset_ns;
+}
+\end{lstlisting}
+
+\subsection{Testing Strategy}
+
+A new platform is validated at three levels. First, per-platform unit tests
+exercise each HAL function in isolation --- confirming, for example, that
+\texttt{hal\_time\_now\_ns()} is monotonic and that a requested delay elapses.
+Second, the cross-platform VM test suite must pass identically on every target.
+Third, determinism is validated by running the design-of-experiments harness on
+each platform and confirming that the output is identical across them, which
+demonstrates zero algorithmic variance.
+
+\subsection{Common Pitfalls}
+
+Four failure modes recur. \emph{Non-monotonic time}: a TSC that runs backward
+under multi-core scheduling or frequency scaling corrupts the rolling window;
+the remedy is \texttt{rdtscp}, cross-core synchronization, or an HPET fallback.
+\emph{Timer jitter}: signal latency on Linux or interrupt latency on a kernel
+widens heartbeat intervals and inflates metric variance; minimize ISR work, use
+a high-priority interrupt, and disable frequency scaling. \emph{Memory leaks}:
+allocations without matching frees, often in error paths; track them with
+Valgrind on Linux and by hand on the kernel. \emph{Interrupt-context
+violations}: calling a blocking HAL function from an ISR; guard blocking
+functions with an assertion that the caller is not in interrupt context.

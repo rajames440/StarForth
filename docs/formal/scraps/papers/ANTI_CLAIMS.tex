@@ -1,0 +1,225 @@
+%% SCRAP: papers/ANTI_CLAIMS
+%% SOURCE: docs/working/papers/ANTI_CLAIMS.md
+%% STATUS: CURRENT
+%% FITS: ssrn/ch-anti-claims, vol3-research/ch-formal-claims
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Out-of-Scope Claims: What This Work Does Not Assert}
+
+This section enumerates claims the StarForth project explicitly does \emph{not} make.
+Its purpose is to bound the scope of peer review: a reviewer who attributes an
+unstated claim to the work is engaging a strawman. Each entry pairs what
+the implementation \emph{does} assert with what it \emph{does not} assert.
+The final summary table (\S\ref{sec:anti-claims-summary}) is the canonical
+reference for authors responding to review challenges.
+
+\subsection{Physics and Thermodynamics}
+
+\paragraph{Not claimed: a physical theory.}
+The adaptive runtime uses execution frequency as a proxy for thermal energy
+and exponential decay as a model of heat dissipation. These are conceptual
+tools borrowed from thermodynamics, not claims that physical laws govern code
+execution. No actual thermal processes occur in the CPU as a consequence of
+this model; no quantum effects are invoked; energy conservation in the
+thermodynamic sense does not apply to execution frequency.
+
+Precise language: \emph{``execution frequency evolves like heat in a cooling
+system,''} not \emph{``execution frequency is heat.''}
+
+\paragraph{Not claimed: frequency is thermal energy.}
+The implementation uses a 64-bit integer counter (\texttt{uint64\_t
+execution\_heat}) incremented on each word execution. It does not measure
+joules, calories, or CPU die temperature. The term ``heat'' is a metaphorical
+label. Exponential decay \emph{resembles} heat dissipation and
+steady-state convergence \emph{mirrors} thermodynamic equilibrium in a
+structural, mathematical sense only.
+
+\subsection{Optimality and Performance}
+
+\paragraph{Not claimed: global optimality.}
+The system demonstrates a 25.4\% performance improvement over baseline under
+the conditions described. This does not imply that no other adaptive runtime
+could perform better, that optimality is proven mathematically, or that the
+implementation outperforms all other virtual machines. The contribution is
+\emph{a working adaptive system}, not the globally optimal one.
+
+\paragraph{Not claimed: superiority to JIT compilers.}
+JIT compilers such as PyPy, LuaJIT, and HotSpot share the conceptual goal of
+frequency-based specialization. The claim here is not superior raw speed but
+\emph{deterministic adaptation}: the same adaptive decisions occur on every
+run, enabling formal verification of the optimization mechanism itself. JITs
+typically cannot make this guarantee.
+
+\paragraph{Not claimed: universal workload applicability.}
+The system is validated on CPU-bound, deterministic FORTH programs, including
+recursive algorithms (Fibonacci, Ackermann) across workload shapes with Zipf
+exponent $\alpha \in [0.8, 1.5]$. It does not claim to improve I/O-bound
+workloads, non-deterministic programs, adversarial execution patterns, or very
+short-lived processes (fewer than approximately 1{,}000 iterations). Explicit
+failure modes are documented in the companion negative-results section.
+
+\subsection{Machine Learning and Artificial Intelligence}
+
+\paragraph{Not claimed: AI or machine learning.}
+The adaptive mechanism uses statistical inference (ANOVA, Levene's test,
+exponential regression) and data-driven parameter tuning. No neural networks,
+gradient descent, backpropagation, training datasets, deep learning, or
+reinforcement learning are involved.
+
+Precise language: \emph{``statistically-inferred adaptive tuning,''} not
+\emph{``AI-driven optimization.''}
+
+\paragraph{Not claimed: the system learns.}
+The system \emph{adapts}: parameters converge to a steady state and feedback
+loops stabilize metrics. This is statistical convergence, not supervised or
+unsupervised learning. Knowledge does not transfer between workloads; the
+steady state is workload-specific.
+
+\subsection{Novelty and Prior Art}
+
+\paragraph{Not claimed: first adaptive virtual machine.}
+Execution frequency tracking is standard profiler practice; hot-code caching
+is the basis of every production JIT; exponential decay underlies LRU
+eviction. The novelty claim is specific: the \emph{combination} of adaptation
+with 0\% algorithmic variance and formal verification potential, which prior
+systems do not offer.
+
+\paragraph{Not claimed: a replacement for JIT compilation.}
+The implementation targets a different niche---verifiable adaptive systems
+for safety-critical contexts---rather than competing directly with LLVM or
+V8. Compilation remains necessary for applications requiring peak throughput.
+
+\subsection{Formal Verification}
+
+\paragraph{Not claimed: complete formal verification.}
+% PATENT: formal verification claims intersect patent scope; do not strengthen
+Convergence theorems are stated and empirically validated (0\% coefficient of
+variation across 90 runs). Full mechanized proofs for all seven feedback loops
+in Coq or Isabelle are \emph{not} claimed; partial proofs are in progress.
+
+Precise language: \emph{``empirically validated determinism,''} not
+\emph{``formally proved correct.''}
+
+\paragraph{Not claimed: zero bugs.}
+The test suite comprises 936\raisebox{0.5ex}{+} tests and validates FORTH-79
+compliance. No known correctness bugs exist in the core interpreter as of the
+experimental baseline commit. This provides high assurance, not mathematical
+proof of defect-absence.
+
+\subsection{Causation and Interpretation}
+
+\paragraph{Not claimed: proven causation.}
+The association between adaptive mechanisms and the observed 25.4\%
+improvement is strong: the functional relationship fits an exponential decay
+model with $R^2 > 0.95$, and only the fully adaptive configuration
+(\texttt{C\_FULL}) improves. No randomized controlled trial establishes
+mechanistic causation.
+
+Precise language: \emph{``adaptive mechanisms are associated with 25.4\%
+improvement,''} not \emph{``cause 25.4\% improvement.''}
+
+\paragraph{Not claimed: a theory of computation.}
+The work provides a VM optimization technique and a predictive framework for
+adaptive runtime performance. It does not propose a fundamental theory of
+computation, replace computational complexity theory, or define a new model
+of computation.
+
+\subsection{Generalization}
+
+\paragraph{Not claimed: cross-language generalization.}
+Principles may generalize to other interpreter architectures (Lua, Python,
+JavaScript), but this has not been validated. Compiled languages are
+explicitly out of scope: ahead-of-time optimization already handles hot-code
+without runtime frequency tracking.
+
+\paragraph{Not claimed: arbitrary scalability.}
+The system is validated on programs up to approximately 2.1 million word
+executions with dictionary sizes up to approximately 500 entries. Scalability
+to programs with 100{,}000\raisebox{0.5ex}{+} dictionary entries is not
+tested; transition-matrix memory overhead would grow quadratically in that
+regime.
+
+\subsection{Deployment Status}
+
+\paragraph{Not claimed: production readiness.}
+StarForth is a research prototype suitable for experimental validation. It
+demonstrates feasibility of deterministic adaptation and serves as a platform
+for further study. It is not a production-grade implementation with enterprise
+support or hardening against all security threats.
+
+\paragraph{Not claimed: an operating system.}
+The StarForth $\to$ StarKernel $\to$ StarshipOS sequence is a roadmap, not a
+set of delivered products. StarshipOS does not yet exist as a functional
+system; the vision is aspirational.
+
+\subsection{Statistical Claims}
+
+\paragraph{Not claimed: zero variance in all metrics.}
+The 0.00\% coefficient of variation applies to \emph{algorithmic decisions}:
+cache hit rates and dictionary lookup paths. Wall-clock runtime exhibits
+60--70\% CV due to OS scheduler noise, thermal variation, and cache-line
+effects. These two components are statistically independent (Pearson
+$r = 0.03$, $p = 0.87$).
+
+Precise language: \emph{``algorithmic variance: 0.00\% CV,''} not
+\emph{``total system variance: 0.00\% CV.''}
+
+\paragraph{Not claimed: 100\% confidence.}
+Results are reported at 95\% confidence intervals. The Bayesian posterior
+$P(H_1 \mid \text{data}) \approx 1 - 10^{-30}$ is effectively certain but
+not unity. Science deals in probabilities, not absolute certainties;
+replication failure, while astronomically unlikely, is not logically
+impossible.
+
+\subsection{Scope Exclusions}
+
+\paragraph{Not claimed: solutions to undecidable problems.}
+Adaptive convergence to steady state is asserted only for \emph{terminating}
+programs with analyzable workloads. No claim is made about decidability of
+convergence for arbitrary programs.
+
+\paragraph{Not claimed: quantum or blockchain components.}
+The implementation uses classical algorithms on classical hardware. No quantum
+superposition, entanglement, distributed ledger, cryptocurrency, smart
+contracts, or neuromorphic computing is involved.
+
+\paragraph{Not claimed: a performance record over any named system.}
+No direct performance shootout against PyPy, LuaJIT, or HotSpot is
+presented. The contribution is deterministic adaptation, not a speed record.
+
+\subsection{Summary Table}
+\label{sec:anti-claims-summary}
+
+\begin{table}[h]
+\centering
+\caption{Anti-claims reference table. Left column: what the work asserts.
+Right column: what it explicitly does not assert.}
+\label{tab:anti-claims}
+\begin{tabular}{lll}
+\toprule
+\textbf{Category} & \textbf{Asserted} & \textbf{Not Asserted} \\
+\midrule
+Physics         & Thermodynamic metaphor        & Actual physical theory \\
+Performance     & 25.4\% improvement            & Global optimality \\
+Novelty         & Deterministic adaptation      & First adaptive system \\
+Verification    & Empirical validation          & Complete formal proof \\
+ML/AI           & Statistical inference         & Neural networks or learning \\
+Causation       & Strong correlation            & Proven causation \\
+Generality      & Works for FORTH               & Works for all languages \\
+Variance        & Algorithmic: 0\% CV           & Total system: 0\% CV \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{How to Use This Section in Peer Review}
+
+When a reviewer attributes a claim not appearing in the formal claim table,
+the appropriate response is to cite the relevant paragraph above by section
+number. If the attributed claim does not appear in this section either, it may
+represent a genuine novel claim; in that case, authors should locate the
+supporting evidence in the formal claim table before responding.
+
+The intellectual commitment underlying this section is that explicit
+scope-bounding prevents both strawman attacks and over-interpretation by
+readers. Transparency about limitations strengthens, rather than weakens, the
+credibility of the work.

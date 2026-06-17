@@ -1,0 +1,224 @@
+%% SCRAP: architecture/PHYSICS_CONE_OF_INFLUENCE_DESIGN
+%% SOURCE: docs/working/architecture/PHYSICS_CONE_OF_INFLUENCE_DESIGN.adoc
+%% STATUS: WORKING
+%% FITS: dev-guide/app-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% PATENT: This scrap describes adaptive feedback-control mechanisms. Multiple
+%% passages below read as claim-like ("the system transforms async messaging
+%% into deterministic ordering", "a closed feedback loop that narrows the cone").
+%% Flagged inline with %% PATENT: markers. No claims are drafted here; forward to
+%% patent counsel before any external release.
+
+\section{The Cone of Influence}
+
+The cone of influence is a feedback-control architecture for the physics engine.
+It is named for a geometric metaphor used purely as a modeling device: the region
+of possible execution futures is treated as a cone that narrows over time. As the
+runtime accumulates observations, asynchronous and unpredictable publish/subscribe
+messaging is progressively constrained into deterministic, ordered information flow.
+
+%% PATENT: claim-like phrasing follows.
+The driving idea is a closed loop. Observables from the early phase inform
+statistical models. Those models adjust runtime knobs. The knobs change behavior.
+The changed behavior generates new observables. Iterated, the loop moves the
+system from high-uncertainty asynchronous communication toward low-uncertainty
+deterministic ordering.
+
+\subsection{The Model}
+
+The cone occupies a conceptual three-axis space: a time axis (past to future), a
+scope axis (narrow word-level interactions to wide global scope), and a
+determinism axis (asynchronous fire-and-forget, through semi-deterministic
+retry-with-hints, to deterministic causal ordering). The cone narrows along three
+dimensions simultaneously:
+
+\begin{itemize}
+  \item \textbf{Temporal} --- past observations constrain present behavior.
+  \item \textbf{Spatial} --- an initially global scope resolves to specific word
+        interactions.
+  \item \textbf{Modal} --- asynchronous uncertainty resolves to deterministic
+        guarantees.
+\end{itemize}
+
+\subsection{Three Operational Zones}
+
+\paragraph{Zone 1 --- Wide and Async (Discovery).} During the first $N$
+observations the system bootstraps. Many execution paths remain possible, entropy
+variance is high, latency is unpredictable, and scope is global. Publish events
+fire-and-forget into a ring buffer with no ordering guarantees. The goal is simply
+to discover which topics words publish to. Overhead is minimal, on the order of
+200~ns. Observables available: entropy changes, temperature jumps, host snapshots,
+error rates.
+
+\paragraph{Zone 2 --- Narrowing and Semi-Deterministic (Learning).} After $M$
+observations, entropy variance stabilizes, temperature reaches equilibrium, and
+the latency distribution narrows. Scope contracts to module level. Publish events
+now carry causal ordering hints: each message is tagged with a Lamport clock and a
+likely-destination set, and related messages are batched. The goal is to learn the
+dependency graph and subscriber patterns. Overhead rises to roughly 250~ns.
+New observables: entropy slope, temperature stability, latency percentiles (p95,
+p99), and the causal dependency graph.
+
+\paragraph{Zone 3 --- Narrow and Deterministic (Enforcement).} In steady state,
+entropy plateaus, temperature is bounded by throttling, and latency carries
+guarantees against a service-level objective (SLO). Scope is specific: a word sends
+only to known targets. Publish events are ordered deterministically --- buffered
+and sorted by causal order number --- and a batch deadline of at most $T$~ms is
+enforced. The p99 latency SLO is guaranteed, with backpressure applied on
+violation, and a subscriber whitelist eliminates surprises. Overhead settles at
+roughly 300~ns. The full observable set adds latency variance, thermal slope, and
+execution-pattern periodicity.
+
+\subsection{Metrics Inventory}
+
+The engine already captures a substantial baseline. Per-word metrics include
+\texttt{DictEntry.entropy} (raw execution count), and within
+\texttt{DictEntry.physics}: \texttt{temperature\_q8} (EMA hotness),
+\texttt{last\_active\_ns} (recency), \texttt{mass\_bytes} (footprint),
+\texttt{avg\_latency\_ns} (rolling average), and \texttt{state\_flags}. Two fields,
+\texttt{acl\_hint} and \texttt{pubsub\_mask}, are reserved stubs.
+
+Host-level snapshots feed the analytics heap from real POSIX and procfs sources:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Signal & Source & Status \\
+\midrule
+\texttt{monotonic\_time\_ns} & \texttt{clock\_gettime(CLOCK\_MONOTONIC)} & Real \\
+\texttt{cpu\_count} & \texttt{sysconf(\_SC\_NPROCESSORS\_ONLN)} & Real \\
+\texttt{scheduler\_policy} & \texttt{sched\_getscheduler(0)} & Real \\
+\texttt{scheduler\_quantum\_ns} & \texttt{sched\_rr\_get\_interval()} & Real \\
+\texttt{load\_avg\_milli} & \texttt{getloadavg()} & Real \\
+\texttt{psi\_cpu/io/mem\_*\_milli} & \texttt{/proc/pressure/*} & Real (4.20+) \\
+\texttt{cpu\_total/idle\_jiffies} & \texttt{/proc/stat} & Real \\
+\texttt{cgroup\_cpu\_usage\_us} & \texttt{/sys/fs/cgroup/cpu.stat} & Real (cgroup v2) \\
+\texttt{cgroup\_memory\_current} & \texttt{/sys/fs/cgroup/memory.current} & Real (cgroup v2) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Profiler data (call frequency, total time, latency distribution, memory
+read/write patterns) and test-infrastructure outcomes round out the current set.
+
+Several signals are not yet captured but are reachable: stack and return-stack
+depth at execution, dictionary lookup latency, block I/O queue depth, the data-flow
+graph of word-to-word calls, and the error rate. Useful ML features remain on the
+horizon: execution-pattern history, latency percentiles, entropy and thermal
+slopes, instruction-count estimates, and cache-miss rates where performance
+counters exist. Some quantities are out of reach by definition --- future execution
+patterns require prediction, optimal scheduling is NP-hard, and ground-truth
+causality runs into observer effects.
+
+\subsection{The Control Layer: Runtime Knobs}
+
+Per-word knobs include execution priority (tuned by temperature), cache affinity
+(by entropy slope), temperature target, entropy half-life (cooling rate), latency
+limit (the SLO), stack-depth limit (recursion guard), and ACL level. System-level
+knobs include sampling cadence, analytics-heap size, profiler mode, pub/sub batch
+size and timeout, temperature smoothing alpha, and entropy decay rate. Each knob is
+driven by a specific tuning signal --- for example, the latency limit responds to
+p99 measurements, and the sampling cadence responds to latency variance.
+
+\subsection{The Pub/Sub Gateway: Three Phases}
+
+The gateway is where words publish observations and where the control system acts.
+Its behavior tracks the three zones.
+
+In \textbf{Discovery}, a word calls
+\texttt{physics\_analytics\_publish\_event(topic, payload, size)} and the event is
+hash-inserted into the ring buffer; consumers poll when ready, with no ordering.
+
+\begin{lstlisting}[language=C]
+// Zone 1: fire-and-forget
+physics_analytics_publish_event(PUBSUB_TOPIC_X, payload, size);
+\end{lstlisting}
+
+In \textbf{Learning}, the gateway identifies topic dependencies, learns subscriber
+sets, stamps each message with a Lamport clock, and tags it with a subscriber hint.
+
+\begin{lstlisting}[language=C]
+// Zone 2: learning phase
+message.causal_order_num = ++g_causal_clock;
+message.subscriber_hint  = learned_targets;  // "probably {WordY, WordZ}"
+physics_analytics_publish_event(PUBSUB_TOPIC_X, message, sizeof(message));
+\end{lstlisting}
+
+In \textbf{Enforcement}, causal ordering is enforced by buffering and sorting on
+the order number; a batch deadline flushes pending messages; the p99 SLO is
+verified; delivery is restricted to a whitelist; and a full queue triggers
+backpressure on the publisher.
+
+\begin{lstlisting}[language=C]
+// Zone 3: enforcement phase
+message.causal_order_num   = ++g_causal_clock;
+message.subscriber_targets = learned_whitelist;   // exact set, no surprises
+message.deadline_ns        = now_ns + SLO_LIMIT_NS;
+\end{lstlisting}
+
+\subsection{The Feedback Loop}
+
+%% PATENT: claim-like phrasing follows.
+The control law maps observed state, through a detection rule, to a knob
+adjustment. A very hot word with rising entropy lowers execution priority, shortens
+the entropy half-life, tightens the stack limit, and raises the sampling cadence. A
+p99 latency that persistently exceeds the SLO tightens the stack-depth limit, the
+batch timeout, and the batch size. A reached entropy plateau --- low slope, low
+variance --- raises cache affinity, the temperature target, and execution priority.
+Excessive latency variance raises sampling cadence and profiler detail. An error-rate
+spike restricts the ACL level and lowers priority. Scheduler noise from core
+migration raises cadence and pins affinity.
+
+A hot-word emergency illustrates the loop end to end: a word saturates at
+\texttt{0xFFFF} with a climbing entropy slope; the controller lowers OS priority,
+accelerates cooling, caps recursion, raises sampling, and isolates the word via the
+ACL level; the next cycle checks whether the temperature stabilized, restoring
+normal priority on success or escalating to throttling and governance alert on
+failure; offline analysis later mines the event for better detection heuristics.
+
+\subsection{ML and Statistical Feedback (Future)}
+
+Once the three zones operate and history accumulates, the design anticipates four
+further phases: predictive models for latency, hotness, and optimal batch size;
+anomaly detection for execution-pattern shifts, phase changes, SLO violations, and
+early thermal runaway; optimization of core affinity, batching strategy, priority
+ordering, and profiler mode; and governance integration with machine-checked proofs
+in Isabelle --- observable invariants, a cone-narrowing convergence theorem,
+verified control loops, and proven SLO bounds.
+
+\subsection{Open Design Questions}
+
+The design records several unresolved choices, each with a working recommendation:
+
+\begin{itemize}
+  \item \textbf{Zone transition} --- time-based, confidence-based, or hybrid.
+        Recommendation: hybrid (start time-based, add confidence).
+  \item \textbf{Ordering strength} --- causal only, total, or causal-within-module
+        and total-globally. Recommendation: hybrid.
+  \item \textbf{SLO scope} --- global, per-word, or governance-derived per category.
+        Recommendation: derived.
+  \item \textbf{Loop style} --- open-loop, closed-loop, or hybrid. Recommendation:
+        hybrid, with closed-loop reserved for critical knobs.
+  \item \textbf{ML training} --- in-system, offline, or hybrid. Recommendation:
+        hybrid, with online anomaly response and offline refinement.
+\end{itemize}
+
+\subsection{Glossary}
+
+\begin{itemize}
+  \item \textbf{Causal ordering} --- messages ordered by dependency ($A \to B$ if
+        $A$ must precede $B$).
+  \item \textbf{Lamport clock} --- a scalar clock that respects causality.
+  \item \textbf{Cone of influence} --- the region of possible execution futures,
+        narrowing as confidence grows.
+  \item \textbf{Zone} --- an operating region (async discovery, semi-deterministic
+        learning, deterministic enforcement).
+  \item \textbf{Knob} --- a runtime-adjustable parameter affecting behavior.
+  \item \textbf{SLO} --- service-level objective (a latency guarantee).
+  \item \textbf{Backpressure} --- flow control that slows publishers when a queue
+        fills.
+  \item \textbf{Entropy} --- execution count per word, an implicit hotness measure.
+  \item \textbf{Temperature} --- the exponential moving average of entropy, an
+        explicit hotness measure.
+  \item \textbf{Half-life} --- the time for temperature to decay to half its peak.
+\end{itemize}

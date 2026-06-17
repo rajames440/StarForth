@@ -1,0 +1,119 @@
+%% SCRAP: architecture/03-architecture/physics-engine/steady-state-machine
+%% SOURCE: docs/working/architecture/03-architecture/physics-engine/steady-state-machine.md
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The Steady-State Machine}
+
+A Steady-State Machine (SSM) is a computational model whose operational state is
+defined not by discrete symbolic transitions but by convergence to an optimal
+runtime equilibrium. Where a Finite State Machine, pushdown automaton, or Turing
+Machine makes ``state'' explicit and symbolic, an SSM derives its behavior from
+continuous runtime variables. Using execution statistics as a proxy for
+thermodynamic quantities, the SSM tracks execution heat, entropy (workload
+diversity), pipeline readiness, heat decay, the steady-state slope, localized
+temperature gradients, and adaptive strategy selection. The machine observes
+itself, adapts, and settles into stable performance basins called steady states.
+In an SSM the attractor defines the machine, not the symbol.
+
+\subsection{Core Definition}
+
+An SSM is a computational system defined by a set of internal metrics, a set of
+adaptive policies, an attractor-based state space, and a governing dynamic. The
+metrics are execution heat $H$, entropy and diversity measures $E$, pipeline
+activation thresholds $P$, a heat-decay profile $\Theta$, and the sliding
+execution window $W$. The adaptive policies are lookup strategies, caching
+regimes, bucket reorganizations, pipeline decisions, and inference-based mode
+switches. The state space is composed of attractor basins --- steady,
+quasi-steady, transient, and chaotic --- rather than symbolic states. The
+governing dynamic is
+
+\begin{equation}
+M_{t+1} = f\bigl(M_t,\; \Delta H,\; \Delta W,\; \Delta E\bigr),
+\end{equation}
+
+where $f$ drives the machine toward a stable basin. The machine is defined by its
+convergence behavior, not by its instruction sequence.
+
+\subsection{The Fundamental Insight}
+
+In an SSM, performance \emph{is} the state. The system continuously measures how
+hot words are, how often patterns recur, how pipeline-able a sequence is, how
+diverse the window is, and how much the dictionary should reorganize. As these
+quantities stabilize, the machine settles into a self-maintaining optimal regime,
+preserved until the environment changes --- through new workloads or a diversity
+spike --- at which point the machine passes through a transient or chaotic regime
+before finding a new equilibrium.
+
+\subsection{Phases}
+
+An SSM moves through four phases:
+
+\begin{itemize}
+  \item \textbf{Transient.} The system warms up; execution patterns are
+        sporadic, heat gradients noisy, and the pipeline inactive or unstable.
+  \item \textbf{Quasi-steady.} Patterns emerge, lookups begin to bias, hot words
+        form local attractors, and dictionary reorders stabilize.
+  \item \textbf{True steady state.} The heat surface is smooth, the pipeline
+        active, the diversity window predictable, and lookups converge to
+        optimal; runtime exceeds the baseline VM and the system remains stable
+        unless perturbed.
+  \item \textbf{Chaotic/disruption.} Triggered by a major workload shift,
+        dictionary mutation, an extreme entropy spike, or a cold-cache shock, the
+        SSM falls out of equilibrium temporarily.
+\end{itemize}
+
+\subsection{Axioms}
+
+\begin{itemize}
+  \item \textbf{Axiom 1 --- Convergence.} Every sustained workload induces the
+        SSM to converge toward a stable attractor unless external entropy forces
+        divergence.
+  \item \textbf{Axiom 2 --- Locality of Heat.} Execution heat reflects both
+        locality and temporal relevance; locality produces stability.
+  \item \textbf{Axiom 3 --- Adaptive Reordering.} Reordering is not symbolic
+        mutation but thermodynamic self-optimization.
+  \item \textbf{Axiom 4 --- Stability Maximizes Throughput.} The steady state is
+        always faster than the cold state and usually faster than the naive
+        baseline VM.
+  \item \textbf{Axiom 5 --- Perturbation Response.} When disrupted, the SSM seeks
+        a new steady state; it does not thrash indefinitely.
+\end{itemize}
+
+\subsection{Relationship to Other Computational Models}
+
+The SSM is distinguished from established models by its emergent, non-symbolic
+state. A Finite State Machine occupies discrete symbolic states, whereas the SSM
+occupies emergent attractors in a metric space. A Turing Machine defines behavior
+through tape symbols and transitions; the SSM defines it through adaptation toward
+equilibrium. A Markov chain moves probabilistically between explicit states; the
+SSM drifts deterministically toward stable basins under observation. A neural
+network learns weights; the SSM reorganizes runtime structures rather than
+parameters.
+
+\subsection{Novelty}
+
+The SSM is presented as the first runtime model whose state is emergent rather
+than explicit: a runtime self-optimization model, an adaptive VM with convergence
+properties, a load-dependent reordering machine, a self-optimizing dictionary
+machine, and a phase-shifting execution system. It defines a new category of
+adaptive computation.
+
+\subsection{Canonical Example: StarForth}
+
+StarForth is the reference implementation of the SSM. It realizes execution heat,
+rolling diversity windows, phase-based lookup strategies, adaptive dictionary
+ordering, pipeline activation, a DoE-calibrated inference loop, and a background
+physics monitor.
+
+\subsection{Formal Summary}
+
+A Steady-State Machine is a computational system in which the operational state is
+defined by attractor convergence in a runtime metric space rather than by
+discrete symbolic transitions. An SSM continuously measures workload
+characteristics, adjusts its internal structures, and stabilizes into
+performance-optimized steady states; when perturbed, it transitions through
+transient or chaotic phases before reaching a new equilibrium. This model defines
+a class of adaptive computational systems with properties distinct from finite
+state machines, pushdown automata, and Turing Machines.

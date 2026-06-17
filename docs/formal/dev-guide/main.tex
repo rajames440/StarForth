@@ -1,0 +1,151 @@
+%% Developer Guide — main.tex
+%% SOURCE: docs/working/architecture/, docs/working/hardware/, docs/working/specifications/
+%% TODO(bob): set version, ISBN/DOI placeholder, cover design
+
+\input{../common/preamble}
+
+\title{StarForth Developer Guide\\[0.4em]
+       \large Building, Extending, and Porting the StarForth VM}
+\author{Robert A.\ James}
+\date{%% TODO(bob): set edition date
+}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+
+\mainmatter
+
+%%────────────────────────────────────────────────
+%% Part I — Getting Started
+%%────────────────────────────────────────────────
+\part{Getting Started}
+
+\chapter{Installation and Build}
+\input{../scraps/architecture/getting-started/INSTALL}
+\input{../scraps/architecture/getting-started/QUICKSTART}
+\input{../scraps/architecture/getting-started/DEVELOPER}
+\input{../scraps/architecture/getting-started/README}
+
+\chapter{Build System Reference}
+\input{../scraps/architecture/build-and-tooling/BUILD_OPTIONS}
+\input{../scraps/hardware/PLATFORM_BUILD_GUIDE}
+\input{../scraps/architecture/build-and-tooling/INIT_TOOLS}
+
+\chapter{Documentation and API Tooling}
+\input{../scraps/architecture/build-and-tooling/DOCUMENTATION_README}
+\input{../scraps/architecture/doxygen/DOXYGEN_STYLE_GUIDE}
+\input{../scraps/architecture/doxygen/DOXYGEN_QUICK_REFERENCE}
+
+%%────────────────────────────────────────────────
+%% Part II — VM Architecture
+%%────────────────────────────────────────────────
+\part{VM Architecture}
+
+\chapter{System Overview}
+\input{../scraps/architecture/03-architecture/OVERVIEW}
+\input{../scraps/architecture/03-architecture/README}
+
+\chapter{Interpreter and Memory Model}
+\input{../scraps/architecture/architecture-internals/INIT_SYSTEM}
+
+\chapter{Physics-Driven Adaptive Runtime}
+\input{../scraps/architecture/03-architecture/physics-engine/feedback-loops}
+\input{../scraps/architecture/03-architecture/physics-engine/feedback-loops-analysis}
+\input{../scraps/architecture/03-architecture/physics-engine/monitoring-principles}
+\input{../scraps/architecture/03-architecture/physics-engine/ssm-equations}
+\input{../scraps/architecture/03-architecture/physics-engine/ssm-raw-data-analysis}
+\input{../scraps/architecture/03-architecture/physics-engine/steady-state-machine}
+\input{../scraps/architecture/03-architecture/physics-engine/metrics-and-knobs}
+\input{../scraps/architecture/03-architecture/adaptive-systems/adaptive-window-and-decay}
+\input{../scraps/architecture/03-architecture/adaptive-systems/loop-5-sketch}
+\input{../scraps/architecture/03-architecture/adaptive-systems/multivariate-dynamics}
+\input{../scraps/architecture/03-architecture/adaptive-systems/window-inference-redesign}
+\input{../scraps/scratch/src/internal/PHYSICS_HOTWORDS_CACHE_INTEGRATION}
+\input{../scraps/scratch/src/internal/PHYSICS_IMPLEMENTATION_OPTIONS}
+\input{../scraps/scratch/src/internal/PHYSICS_IMPLEMENTATION_STATUS}
+\input{../scraps/scratch/src/internal/PHYSICS_SCHEDULING_PLAN}
+\input{../scraps/scratch/src/internal/PHASE_2_PHYSICS_DECAY_AND_FREEZE}
+
+\chapter{Pipelining and Speculative Execution}
+\input{../scraps/architecture/03-architecture/pipelining/design}
+\input{../scraps/architecture/03-architecture/pipelining/context-window-and-binary-chop}
+\input{../scraps/architecture/03-architecture/pipelining/phase-1-instrumentation}
+\input{../scraps/architecture/03-architecture/pipelining/wired-not-utilized}
+
+\chapter{Heartbeat System}
+\input{../scraps/architecture/03-architecture/heartbeat-system/architecture}
+\input{../scraps/architecture/03-architecture/heartbeat-system/critical-insight}
+\input{../scraps/architecture/03-architecture/heartbeat-system/implementation-plan}
+\input{../scraps/architecture/03-architecture/heartbeat-system/instrumentation-plan}
+\input{../scraps/architecture/03-architecture/heartbeat-system/segfault-analysis}
+\input{../scraps/architecture/heartbeat_csv_export}
+
+\chapter{Word-Level ACL}
+\input{../scraps/architecture/03-architecture/word-acl/DESIGN}
+
+\chapter{Capsule System and Mama Forth}
+\input{../scraps/architecture/MAMA_FORTH_SUPERVISOR_ARCHITECTURE}
+
+%%────────────────────────────────────────────────
+%% Part III — Platform and Hardware
+%%────────────────────────────────────────────────
+\part{Platform and Hardware}
+
+\chapter{Platform Abstraction}
+\input{../scraps/hardware/platform-integration/PLATFORM_ABSTRACTION}
+\input{../scraps/architecture/03-architecture/hal/README}
+\input{../scraps/architecture/03-architecture/hal/overview}
+\input{../scraps/architecture/03-architecture/hal/interfaces}
+\input{../scraps/architecture/03-architecture/hal/platform-implementations}
+\input{../scraps/architecture/03-architecture/hal/migration-plan}
+\input{../scraps/architecture/03-architecture/hal/starkernel-integration}
+
+\chapter{Linux and POSIX}
+%% TODO(bob): stub — no dedicated source doc; pull from BUILD_OPTIONS L4RE flag notes
+
+\chapter{L4Re / Fiasco.OC}
+\input{../scraps/hardware/platform-integration/L4RE_INTEGRATION}
+\input{../scraps/hardware/platform-integration/L4RE_DICTIONARY_ALLOCATION}
+\input{../scraps/hardware/platform-integration/l_4_re_blkio_endpoints}
+\input{../scraps/scratch/src/L4RE_INTEGRATION_TODO}
+
+\chapter{Raspberry Pi 4 / ARM64}
+\input{../scraps/hardware/platform-integration/RASPBERRY_PI_BUILD}
+\input{../scraps/hardware/performance-profiling/ARM64_OPTIMIZATIONS}
+
+\chapter{Performance Profiling}
+\input{../scraps/hardware/performance-profiling/PROFILER}
+\input{../scraps/hardware/performance-profiling/ASM_OPTIMIZATIONS}
+\input{../scraps/hardware/PGO_GUIDE}
+
+%%────────────────────────────────────────────────
+%% Part IV — Specifications and Protocols
+%%────────────────────────────────────────────────
+\part{Specifications}
+
+\chapter{HOLA Analytics Protocol}
+\input{../scraps/specifications/HOLA_PROTOCOL}
+
+\chapter{Formal Verification}
+\input{../scraps/architecture/VM_FORMALIZATION_PLAN}
+
+%%────────────────────────────────────────────────
+%% Appendices
+%%────────────────────────────────────────────────
+\appendix
+
+\chapter{Physics Design Notes}
+\input{../scraps/architecture/PHYSICS_CONE_OF_INFLUENCE_DESIGN}
+\input{../scraps/architecture/PHYSICS_CONTROL_SYSTEM_DESIGN}
+\input{../scraps/architecture/PHYSICS_SIGNAL_MAP}
+
+\chapter{Messaging Architecture}
+\input{../scraps/architecture/architecture-internals/MESSAGING}
+
+\backmatter
+\bibliographystyle{plainnat}
+\bibliography{../common/starship}
+
+\end{document}

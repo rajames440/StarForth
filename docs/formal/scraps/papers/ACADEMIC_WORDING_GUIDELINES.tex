@@ -1,0 +1,261 @@
+%% SCRAP: papers/ACADEMIC_WORDING_GUIDELINES
+%% SOURCE: docs/working/papers/ACADEMIC_WORDING_GUIDELINES.md
+%% STATUS: CURRENT
+%% FITS: ssrn/ch-wording
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Academic Wording Guidelines}
+
+Careful language discipline is essential when a system uses thermodynamic
+quantities as conceptual tools rather than as physical claims. This section
+codifies the approved vocabulary for all publications and documentation
+derived from the StarForth adaptive runtime research, and provides sentence
+patterns and review-response templates for common challenge scenarios.
+
+\subsection{The Core Rule: Similarity, Not Equivalence}
+
+Mathematical similarities between StarForth's empirical results and equations
+drawn from physics are described with language that asserts structural
+resemblance, not physical identity. The distinction is not cosmetic: a claim
+of equivalence invites physicists to evaluate the work as a physics paper
+(which it is not), while a claim of structural similarity accurately
+characterizes the mathematical relationship and places the analogy in the
+domain where it belongs---applied statistics and systems modeling.
+
+\subsection{Approved Phrases}
+
+\paragraph{Describing mathematical relationships.}
+The preferred formulation evaluates multiple candidate models before selecting
+one:
+
+\begin{quote}
+``Multiple candidate models were evaluated---linear, polynomial,
+exponential, and power-law---and the functional form $f(t) = f_0
+e^{-\lambda t}$ provided the best empirical fit with $R^2 = 0.96$.''
+\end{quote}
+
+This construction defends against cherry-picking accusations by establishing
+that alternatives were tested. Approved phrases for describing the selected
+fit include:
+
+\begin{itemize}
+  \item \emph{fits the functional form}
+  \item \emph{shares structural similarity with}
+  \item \emph{is mathematically isomorphic to}
+  \item \emph{exhibits the same mathematical structure as}
+  \item \emph{the empirical data conforms to}
+  \item \emph{matches the pattern of}
+\end{itemize}
+
+\paragraph{Describing observations.}
+Empirical statements should lead with the measurement, not the model:
+
+\begin{itemize}
+  \item \emph{The data reveals\ldots}
+  \item \emph{Measurements indicate\ldots}
+  \item \emph{The experimental results demonstrate\ldots}
+\end{itemize}
+
+\paragraph{Noting physics parallels.}
+When drawing a connection to a physics equation or law, use:
+
+\begin{itemize}
+  \item \emph{shares dimensional similarity with}
+  \item \emph{the functional form also appears in [physics context]}
+  \item \emph{this mathematical structure is also found in}
+  \item \emph{bears mathematical resemblance to}
+\end{itemize}
+
+\subsection{Forbidden Phrases}
+
+The following constructions imply equivalence or causation and must not
+appear outside explicitly labelled interpretation sections.
+
+\paragraph{Direct equivalence claims.}
+\begin{itemize}
+  \item ``is equivalent to'' --- use \emph{fits the functional form}
+  \item ``is the same as'' --- use \emph{shares structural similarity with}
+  \item ``proves that [physics concept] applies'' --- use \emph{the data is
+        consistent with}
+\end{itemize}
+
+\paragraph{Unqualified analogies.}
+\begin{itemize}
+  \item ``is analogous to'' (without the qualifier ``structurally'')
+  \item ``corresponds to'' (without ``structurally'' or similar)
+  \item ``behaves as'' (without qualification)
+  \item ``mirrors'' (implies direct correspondence)
+  \item ``exactly as predicted by'' (implies causal application of theory)
+\end{itemize}
+
+\paragraph{Causation implications.}
+\begin{itemize}
+  \item ``because of [physics principle]''
+  \item ``due to [physics concept]''
+  \item ``governed by [physics law]''
+  \item ``obeys [physics equation]''
+\end{itemize}
+
+\subsection{Before-and-After Examples}
+
+\paragraph{Example 1: performance scaling.}
+
+\noindent\textbf{Incorrect:}
+\begin{quote}
+``Performance scales exactly as predicted by special relativity's time
+dilation.''
+\end{quote}
+
+\noindent\textbf{Correct:}
+\begin{quote}
+``Multiple candidate performance models were evaluated. The empirical data
+fits the functional form $\tau = \tau_0 / \sqrt{1 - \beta^2}$, which shares
+structural similarity with the Lorentz transformation from special relativity.''
+\end{quote}
+
+The correct version (1) establishes that alternatives were evaluated,
+(2) uses ``fits the functional form'' as an empirical observation, and
+(3) uses ``shares structural similarity'' as a mathematical fact, not a
+causal claim.
+
+\paragraph{Example 2: window capacity.}
+
+\noindent\textbf{Incorrect:}
+\begin{quote}
+``The system obeys a cosmological constant law $\Lambda(\text{DoF}) =
+4096 / (\text{DoF}+1)$.''
+\end{quote}
+
+\noindent\textbf{Correct:}
+\begin{quote}
+``Empirical measurements reveal that window capacity follows the relationship
+$\Lambda(\text{DoF}) = 4096 / (\text{DoF}+1)$ with 0.00\% coefficient of
+variation. The symbol $\Lambda$ is borrowed from cosmology for mathematical
+convenience.''
+\end{quote}
+
+The correct version uses ``empirical measurements reveal'' and ``follows the
+relationship'' (descriptive, not normative), and explicitly labels $\Lambda$
+as notation borrowed for convenience.
+
+\paragraph{Example 3: geodesic convergence.}
+
+\noindent\textbf{Incorrect:}
+\begin{quote}
+``Workloads converge along geodesics analogous to general relativity.''
+\end{quote}
+
+\noindent\textbf{Correct:}
+\begin{quote}
+``All workload trajectories converge to the same attractor basin regardless of
+starting conditions. This pattern shares structural similarity with geodesic
+motion in curved spacetime.''
+\end{quote}
+
+The correct version states the empirical behavior first, then draws the
+mathematical comparison---without implying the physics explains the
+computation.
+
+\subsection{Defensive Language Patterns}
+
+Three reusable templates cover the most common situations.
+
+\paragraph{Pattern 1: model evaluation statement.}
+\begin{quote}
+``[N] candidate models were evaluated, including [list]. The functional form
+[equation] provided the best fit with $R^2 = \text{[value]}$.''
+\end{quote}
+
+\paragraph{Pattern 2: empirical observation plus mathematical note.}
+\begin{quote}
+``[Empirical observation]. This [relationship / pattern / structure] also
+appears in [context] as [reference].''
+\end{quote}
+
+\paragraph{Pattern 3: metaphor disclosure.}
+\begin{quote}
+``A thermodynamic metaphor is employed, where execution frequency decreases
+over time analogously to heat dissipation. The implementation uses exponential
+decay $f(t) = f_0 e^{-\lambda t}$ applied at each heartbeat tick.''
+\end{quote}
+
+This pattern explicitly labels the metaphor and immediately pairs it with a
+literal description of the implementation.
+
+\subsection{Section-Specific Guidelines}
+
+\begin{description}
+  \item[Abstracts and titles] Use mathematical or empirical language only.
+    \emph{``Frequency-Based Adaptive Runtime''} is acceptable;
+    \emph{``Physics-Driven Adaptive Runtime''} is not, in a strict academic context.
+
+  \item[Introductions] State empirical observations before drawing any
+    mathematical comparison. Never assert that physics explains computation.
+
+  \item[Methods and implementation sections] Use literal descriptions.
+    \emph{``Frequency counter incremented on execution''} is preferred over
+    \emph{``temperature increases when word heats up.''} The metaphorical
+    vocabulary is reserved for conceptual exposition, not implementation
+    description.
+
+  \item[Results sections] Use statistical language. Report
+    \emph{``CV = 0.00\% ($p < 10^{-30}$)''} rather than
+    \emph{``perfect thermodynamic equilibrium achieved.''}
+
+  \item[Discussion and interpretation sections] Exploratory language is
+    permitted with appropriate qualification: \emph{``One interpretation is
+    that\ldots however, causation is not established.''} The phrase
+    \emph{``this proves that computation follows physics laws''} is never
+    acceptable.
+\end{description}
+
+\subsection{Reviewer Challenge Responses}
+
+\paragraph{``You are claiming physics.''}
+The appropriate response cites the section where the thermodynamic framework
+is explicitly introduced as a conceptual metaphor, then points to the
+mathematical claim: the functional form $f(t) = f_0 e^{-\lambda t}$ fits
+performance data with $R^2 = \text{[value]}$. The fact that this functional
+form also appears in physics is noted as a mathematical similarity, not
+a physical claim.
+
+\paragraph{``You cherry-picked equations.''}
+Cite the model evaluation section documenting that linear, polynomial,
+exponential, and power-law candidates were all evaluated, and that the
+reported form was selected on empirical fit quality ($R^2$, AIC) rather than
+theoretical preference.
+
+\paragraph{``This is pseudoscience.''}
+All claims are empirically verifiable. The physics references describe
+mathematical similarities, documented explicitly as metaphorical framing
+in the ontology section. Point the reviewer to the formal claim table
+and the reproduction protocol.
+
+\subsection{Pre-Publication Checklist}
+
+Before submitting any paper, presentation, or externally visible documentation,
+verify the following substitutions have been applied throughout:
+
+\begin{itemize}
+  \item Replace \emph{``is equivalent to''} with \emph{``fits the functional form''}
+  \item Replace \emph{``is analogous to''} with \emph{``shares structural similarity with''}
+  \item Add the qualifier \emph{``structurally''} to any unqualified \emph{``corresponds to''}
+  \item Replace \emph{``mirrors''} with \emph{``matches the pattern of''}
+  \item Replace \emph{``exactly as''} with \emph{``according to the functional form''}
+  \item Replace \emph{``obeys''} with \emph{``follows the relationship''}
+  \item Replace \emph{``governed by''} with \emph{``characterized by''}
+  \item Verify that all metaphors are explicitly labelled in running text
+  \item Confirm that all empirical claims carry data references
+  \item Confirm that all physics parallels use similarity language
+\end{itemize}
+
+\subsection{The Golden Rule}
+
+Describe what was \emph{observed}; note where the observations
+\emph{mathematically resemble} known equations; do not claim the physics
+\emph{causes} the behavior.
+
+The defensible position is: ``Measurements in this system fit these
+mathematical forms. These forms also appear in physics. This similarity may
+provide useful modeling frameworks.'' The indefensible position is: ``Our
+system implements physics'' or ``physics laws govern our system.''

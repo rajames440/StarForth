@@ -1,0 +1,124 @@
+%% SCRAP: experiments/02-experiments/heartbeat-doe/phase2-corrected
+%% SOURCE: docs/working/experiments/02-experiments/heartbeat-doe/phase2-corrected.md
+%% STATUS: WORKING
+%% FITS: experiments/ch-heartbeat
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Heartbeat DoE Phase~2 — Corrected and Finalised}
+\label{sec:heartbeat-doe-phase2-corrected}
+
+\subsection{Executive Summary}
+
+The initial Phase~2 design measured jitter in a fixed heartbeat interval.
+The corrected design measures \emph{adaptive heartbeat rate modulation}: how
+well each configuration's heartbeat rate responds to workload changes. This
+section is the executive-level statement of the corrected design.
+
+\subsection{The Physics Story}
+
+The heartbeat is not a fixed timer; it is a feedback mechanism. The inference
+engine adjusts \texttt{tick\_ns} in response to workload intensity, slowing
+the heartbeat under high load to allocate more CPU time for physics-parameter
+tuning:
+
+\[
+  \text{high load} \;\Rightarrow\; \uparrow\texttt{tick\_ns}
+  \;\Rightarrow\; \text{longer physics tuning window}
+  \;\Rightarrow\; \text{convergence to optimal rate}
+\]
+
+The primary discriminating metric for configuration selection is therefore the
+Pearson correlation between per-tick workload intensity $W_t$ and per-tick
+heartrate $H_t = 10^9\,/\,\texttt{tick\_ns}_t$:
+
+\begin{equation}
+  \rho = \frac{\operatorname{Cov}(W, H)}
+              {\sqrt{\operatorname{Var}(W)\,\operatorname{Var}(H)}}
+\end{equation}
+
+Target: $\rho \geq 0.75$ for a configuration to qualify as a golden-configuration
+candidate.
+
+\subsection{How the Initial Design Was Wrong}
+
+\begin{center}
+\begin{tabular}{lp{5.5cm}p{5.5cm}}
+\toprule
+Aspect & Initial approach & Corrected approach \\
+\midrule
+Primary metric & Jitter in assumed-fixed 1~ms interval & Load-to-heartrate correlation \\
+Thread enabled & No (\texttt{HEARTBEAT\_THREAD\_ENABLED=0}) & Yes (adaptive behaviour active) \\
+Measures & Steady-state smoothness & Adaptive-response quality \\
+Golden criterion & Lowest CV & Highest $\rho$ + fastest convergence \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Expected Discrimination}
+
+The corrected design is expected to reveal clear ranking separation on
+$\rho$. A configuration with $\rho < 0.2$ does not adapt its heartrate to
+load; regardless of static performance, it is not the golden configuration.
+
+The expected ordering for the five elite configurations (subject to
+experimental validation):
+
+\begin{enumerate}
+  \item \texttt{1\_0\_1\_1\_1\_0} — balanced loops, expected strongest coupling
+  \item \texttt{1\_0\_1\_1\_1\_1} — adds decay inference, expected similar coupling
+  \item \texttt{1\_1\_0\_1\_1\_1} — skips linear decay, alternative adaptation path
+  \item \texttt{1\_0\_1\_0\_1\_0} — lean configuration, expected slower adaptation
+  \item \texttt{0\_1\_1\_0\_1\_1} — no heat tracking, expected weakest coupling
+\end{enumerate}
+
+\subsection{Implementation Checklist}
+
+The following code changes are required before the experiment can be executed:
+
+\begin{itemize}
+  \item Add \texttt{HeartbeatRateSample} struct to \texttt{include/vm.h}.
+  \item Add \texttt{heartbeat\_rate\_samples} buffer and sample count to the
+        \texttt{VM} struct.
+  \item Track \texttt{workload\_ops\_current\_tick} in the execution loop;
+        reset it each heartbeat cycle.
+  \item Call \texttt{capture\_heartbeat\_rate\_sample()} in
+        \texttt{heartbeat\_thread\_main()} before each sleep.
+  \item Extend \texttt{DoeMetrics} with heartrate fields.
+  \item Implement \texttt{analyze\_heartbeat\_rate\_trajectory()} in
+        \texttt{src/doe\_metrics.c}.
+  \item Update CSV header and row writers.
+\end{itemize}
+
+\subsection{Analysis Focus}
+
+The R analysis script for the corrected design ranks configurations
+primarily by \texttt{load\_to\_heartrate\_correlation}, secondarily by
+\texttt{heartrate\_responsiveness\_score}:
+
+\begin{lstlisting}[language=R]
+ranking <- doe_data %>%
+  group_by(configuration) %>%
+  summarize(
+    mean_correlation    = mean(load_to_heartrate_correlation),
+    mean_responsiveness = mean(heartrate_responsiveness_score)
+  ) %>%
+  mutate(
+    golden_score = (mean_correlation * 0.6) + (mean_responsiveness * 0.4)
+  ) %>%
+  arrange(-golden_score)
+\end{lstlisting}
+
+\subsection{Success Criteria}
+
+\begin{itemize}
+  \item Heartbeat rate samples captured per run (sample count $> 0$).
+  \item CSV contains \texttt{load\_to\_heartrate\_correlation} column with
+        non-zero values.
+  \item Correlation metrics span a range of at least 0.4 across the five
+        configurations (sufficient discrimination).
+  \item Golden configuration identified with $p < 0.05$ versus second-ranked.
+  \item Golden configuration achieves $\rho \geq 0.75$.
+\end{itemize}
+
+%% TODO(bob): update status to HISTORICAL once experiment is executed and results archived
+

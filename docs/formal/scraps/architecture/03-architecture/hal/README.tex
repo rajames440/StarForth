@@ -1,0 +1,72 @@
+%% SCRAP: architecture/03-architecture/hal/README
+%% SOURCE: docs/working/architecture/03-architecture/hal/README.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-platform
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The Hardware Abstraction Layer: Orientation}
+
+The Hardware Abstraction Layer (HAL) is the architectural seam that lets a
+single StarForth source base run as a hosted virtual machine, as a microkernel
+guest, and as the bare-metal StarKernel without forking the interpreter. This
+section orients the reader to the HAL document set and the roles it serves.
+
+\subsection{Reading Order}
+
+The HAL documentation is layered. Each document answers a distinct question and
+builds on the one before it.
+
+\begin{itemize}
+  \item \textbf{Overview} --- the problem the HAL solves and how it positions
+        StarForth within the StarForth $\rightarrow$ StarKernel $\rightarrow$
+        StarshipOS progression. It covers the three-layer model, the design
+        principles (VM purity, contract-first interfaces, testability), the HAL
+        subsystems, and the relationship between the HAL and the physics
+        subsystems.
+  \item \textbf{Interfaces} --- the contract. Precise function signatures,
+        guaranteed semantics, error handling, performance envelopes, and the
+        concurrency model (ISR-safe versus thread-safe) for each subsystem:
+        time and timers, interrupts, memory, console, CPU, and panic.
+  \item \textbf{Platform Implementations} --- how to satisfy the contract on a
+        concrete target, with complete worked examples for hosted Linux and
+        freestanding StarKernel, plus a platform testing strategy and common
+        pitfalls.
+  \item \textbf{Migration Plan} --- the staged refactor that moves the existing
+        code base onto the HAL with zero functional regressions.
+  \item \textbf{StarKernel Integration} --- kernel-specific detail: the UEFI
+        boot sequence, the freestanding C environment, hardware bring-up, and
+        the path to a working \texttt{ok} prompt.
+\end{itemize}
+
+\subsection{Roles}
+
+The document set serves four audiences. A VM developer reads the overview and
+the interfaces, then calls HAL functions and never touches a platform API
+directly. A platform author adds a new target reads through the implementation
+guide and satisfies every interface, validating against the full VM test suite.
+A core developer performing the migration follows the staged plan and tests
+after each step. A kernel developer reads everything, with emphasis on the
+integration guide, and builds incrementally from UEFI boot to the REPL prompt.
+
+\subsection{Governing Principles}
+
+The HAL rests on five principles. \emph{VM purity}: interpreter code is
+platform-agnostic and never learns which platform it runs on. \emph{Contract-first}:
+interfaces are contracts with precise semantics, not convenience wrappers.
+\emph{Testability}: kernel-bound code is developed and tested on Linux before it
+ships to bare metal. \emph{Zero overhead}: optimized builds inline HAL calls to
+direct hardware access. \emph{Fail-fast}: platform assumptions are validated at
+initialization, not during execution.
+
+\subsection{Success Criteria}
+
+The HAL is judged successful when the VM core carries zero platform-specific
+code, all of the more than nine hundred regression tests pass on every
+platform, the runtime's zero algorithmic variance is preserved across
+platforms, no measurable performance regression is introduced, StarKernel boots
+to its \texttt{ok} prompt, and the physics subsystems behave identically
+everywhere.
+
+%% TODO(bob): confirm exact regression-test count for the published edition
+%%   (source README cites "936+"; CLAUDE.md cites "800/800" for ACL POST and
+%%   "936+" for the full suite).

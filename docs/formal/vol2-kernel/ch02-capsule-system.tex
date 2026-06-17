@@ -1,0 +1,76 @@
+%% Vol II, Chapter 2 — Capsule System
+%% SOURCE: .claude/CLAUDE.md (Capsule System section)
+%%         docs/working/scratch/src/internal/MAMA_FORTH_SUPERVISOR_ARCHITECTURE.adoc
+%%         src/starkernel/capsule/ (6 files)
+
+\chapter{Capsule System}
+\label{vol2:chap:capsules}
+
+%% TODO(bob): opening paragraph. Capsules are immutable, content-addressed VM
+%% initialization payloads. Capsule ID = XXHash64 content hash — any mutation
+%% is detectable.
+
+\section{Capsule Types}
+\label{vol2:sec:capsules:types}
+
+%% SOURCE: .claude/CLAUDE.md (Capsule types)
+
+\begin{table}[ht]
+  \centering
+  \caption{Capsule types}
+  \label{tab:capsule-types}
+  \begin{tabular}{lll}
+    \toprule
+    Type code & Name & Purpose \\
+    \midrule
+    \texttt{(m)} & \texttt{MAMA\_INIT} & Exactly one Mama VM initialization capsule \\
+    \texttt{(p)} & \texttt{PRODUCTION} & Truth-bearing baby VM initializers \\
+    \texttt{(e)} & \texttt{EXPERIMENT} & DoE workload-only initializers \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Birth Protocol}
+\label{vol2:sec:capsules:birth}
+
+%% SOURCE: .claude/CLAUDE.md (Birth protocol section)
+
+The capsule birth protocol:
+
+\begin{enumerate}
+  \item Locate capsule by name
+  \item Validate content hash (XXHash64)
+  \item Allocate VM ID
+  \item Execute IDENTITY (capsule code)
+  \item Execute PERSONALITY (block 1 from ramdrive)
+  \item Log parity record: VM ID + capsule hash + dict hash
+\end{enumerate}
+
+\section{Content Addressing and Immutability}
+\label{vol2:sec:capsules:hash}
+
+%% TODO(bob): describe XXHash64 and why content addressing guarantees
+%% immutability. Reference src/starkernel/hash/xxhash64.c.
+
+\section{Parity Logging}
+\label{vol2:sec:capsules:parity}
+
+%% SOURCE: src/starkernel/vm/parity.c (.claude/CLAUDE.md StarKernel M7 Parity)
+%% TODO(bob): describe parity.c — logs every VM birth and execution with:
+%%   VM ID, capsule hash, dict hash.
+%% Enable offline determinism verification: independent system loads same
+%% capsule and compares dict hashes. Zero-deviation = 0% algorithmic variance.
+
+\section{Capsule Files}
+\label{vol2:sec:capsules:files}
+
+%% SOURCE: .claude/CLAUDE.md (Capsule files in capsules/)
+%% TODO(bob): table of the 17 .4th capsule files (init.4th, init-0..9, L8 variants).
+%% Also describe tools/mkcapsule.c and capsule_generated.c.
+
+\section{Mama Forth Supervisor}
+\label{vol2:sec:capsules:mama}
+
+%% SOURCE: docs/working/scratch/src/internal/MAMA_FORTH_SUPERVISOR_ARCHITECTURE.adoc
+%% TODO(bob): describe the Mama VM / Baby VM hierarchy and how it maps to
+%% the MAMA_INIT capsule type.

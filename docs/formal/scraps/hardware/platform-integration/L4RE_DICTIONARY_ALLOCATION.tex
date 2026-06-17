@@ -1,0 +1,87 @@
+%% SCRAP: hardware/platform-integration/L4RE_DICTIONARY_ALLOCATION
+%% SOURCE: docs/working/hardware/platform-integration/L4RE_DICTIONARY_ALLOCATION.adoc
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-l4re
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Dictionary Allocation on L4Re}
+
+StarForth currently allocates dictionary entries from the host C library. The
+\texttt{vm\_create\_word()} routine calls \texttt{malloc()} for each
+\texttt{DictEntry}, and \texttt{FORGET} releases them with \texttt{free()}.
+This is correct and well-tested on hosted systems, but it ties the dictionary
+to a full libc heap --- an awkward dependency in a microkernel context.
+
+\subsection{Why It Matters for L4Re}
+
+The libc-heap approach carries four liabilities under L4Re: it requires a
+complete \texttt{malloc} implementation in the microkernel environment; heap
+fragmentation makes allocation behavior non-deterministic; dictionary entries
+live outside the VM's own memory model in a separate address space; and the VM
+cannot be introspected or snapshotted as a single contiguous region.
+
+A VM-based allocator answers each point. It removes the external dependency, a
+simple bump allocator behaves deterministically, everything lives inside one
+5\,MB VM memory region, the entire VM state can be serialized at once, and the
+model aligns naturally with L4Re dataspaces.
+
+\subsection{Proposed Approach: Conditional Compilation}
+
+A compile-time flag selects between the two strategies, leaving the hosted path
+untouched:
+
+\begin{lstlisting}[language=C]
+#ifdef STARFORTH_VM_DICT_ALLOC
+    DictEntry *entry = dict_alloc_from_vm(vm, total);   /* L4Re/embedded */
+#else
+    DictEntry *entry = (DictEntry *) malloc(total);     /* hosted */
+#endif
+\end{lstlisting}
+
+In VM-based mode the 5\,MB region is laid out with a 256\,KB dictionary-header
+area at the base (growing upward as entries are allocated), then user data and
+compiled code (growing upward from \texttt{HERE}), with block storage filling
+the remainder. The allocator itself is a cell-aligned bump pointer:
+
+\begin{lstlisting}[language=C]
+static DictEntry *dict_alloc_from_vm(VM *vm, size_t total_bytes) {
+    size_t align = sizeof(cell_t);
+    total_bytes = (total_bytes + align - 1) & ~(align - 1);
+    if (vm->dict_headers_used + total_bytes > DICT_HEADERS_MAX) {
+        vm->error = 1;
+        return NULL;
+    }
+    DictEntry *entry = (DictEntry *)(vm->memory + vm->dict_headers_used);
+    vm->dict_headers_used += total_bytes;
+    return entry;
+}
+\end{lstlisting}
+
+Because allocation is a bump pointer, \texttt{FORGET} becomes a rewind rather
+than a loop of frees: it sets \texttt{dict\_headers\_used} back to the target
+entry's offset. VM initialization starts \texttt{dict\_headers\_used} at zero
+and offsets \texttt{HERE} to \texttt{DICT\_HEADERS\_MAX}. The fast-lookup cache
+is unaffected --- its bucket arrays may still use \texttt{malloc} while the
+entries themselves live in VM memory.
+
+\subsection{Scope of Change}
+
+The switch touches only three functions plus one new field. The new field is
+\texttt{size\_t dict\_headers\_used} in the \texttt{VM} struct. The functions
+are \texttt{vm\_create\_word()} (use the VM allocator), the \texttt{FORGET}
+implementation (rewind instead of freeing), and \texttt{vm\_init()} (initialize
+the offset and \texttt{HERE}). Estimated effort is roughly six hours: four to
+implement and two to test.
+
+\subsection{Current Status}
+
+The present decision is to retain \texttt{malloc()} and document the
+abstraction point clearly. The hosted implementation is stable and well-tested,
+the two approaches show no performance difference, and the abstraction is
+simple enough that the L4Re port can flip the switch when needed. The action
+items for that port are to define \texttt{STARFORTH\_VM\_DICT\_ALLOC} in the
+L4Re build, implement \texttt{dict\_alloc\_from\_vm()}, convert \texttt{FORGET}
+to a rewind, run the full test suite, and verify no leaks in the microkernel
+environment.
+
+%% TODO(bob): confirm whether the L4Re port has since adopted VM-based allocation; source dated 2025-10-01, implementation deferred.

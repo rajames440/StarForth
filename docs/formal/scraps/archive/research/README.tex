@@ -1,0 +1,54 @@
+%% SCRAP: archive/research/README
+%% SOURCE: docs/working/archive/research/README.md
+%% STATUS: HISTORICAL
+%% FITS: vol3-research/app if useful
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Research Directory Overview}
+
+This directory index was the navigation hub for the \texttt{docs/06-research/}
+subtree before the 2026-06-16 documentation reorganisation. It is preserved
+as a historical reference; canonical research content has been promoted into
+the formal volume.
+
+\subsection{Key Research Contributions}
+
+Three primary contributions are identified.
+
+\textbf{Physics-grounded self-adaptive runtime.}
+StarForth demonstrates a novel approach to VM optimisation: an execution
+heat model grounded in thermodynamic metaphor, a rolling window of truth
+for deterministic metric seeding, and an inference engine for adaptive
+parameter tuning.
+
+\textbf{Formally proven deterministic behaviour.}
+Zero percent algorithmic variance across ninety experimental runs.
+Determinism is established independently for heat decay (Loop~\#3),
+window-width inference (Loop~\#5), and pipelining metrics (Loop~\#4),
+and reproduces across platforms.
+
+\textbf{Design of Experiments methodology.}
+A rigorous factorial DoE framework drives all experimental work, including
+ANOVA and Levene's-test statistical validation, heartbeat-driven data
+collection, and reproducible protocols.
+
+\subsection{Publication Materials}
+
+A comprehensive peer-review submission package was assembled under
+\texttt{archive/phase-1/Reference/physics\_experiment/PEER\_REVIEW\_SUBMISSION/},
+including a main paper draft, formal verification interpretation, variance
+analysis summary, and supplementary materials.
+
+A DARPA SSM proposal and a provisional patent application were filed during
+this period.
+
+\subsection{Experimental Reproducibility}
+
+All experiments are reproducible via:
+
+\begin{lstlisting}[language=bash]
+make fastest
+./build/amd64/fastest/starforth --doe
+\end{lstlisting}
+
+Results should demonstrate 0\% algorithmic variance.

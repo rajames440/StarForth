@@ -1,0 +1,40 @@
+%% SCRAP: scratch/ci-cd/GITHUB_ISSUES_GOVERNANCE_FLOW
+%% SOURCE: docs/working/scratch/ci-cd/GITHUB_ISSUES_GOVERNANCE_FLOW.adoc
+%% STATUS: OBSOLETE
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{GitHub Issues and Governance Integration}
+
+This note records the architectural decision governing the relationship between GitHub
+issue types (CAPA, ECR, ECO) and the StarForth formal governance system.
+
+\subsection{Architecture Decision}
+
+GitHub Issues follow a development workflow and do not feed the \texttt{in\_basket}
+governance intake pathway directly. The project uses a two-path model.
+
+\paragraph{Development governance (GitHub Issues).}
+Users and developers submit issues using typed templates. Automation validates and
+labels each submission. A Kanban board tracks progress through the developer workflow.
+Resolution is a merged pull request.
+
+\paragraph{Operational governance (CI/CD artifacts).}
+CI/CD pipelines generate the artifacts that constitute governance evidence: test
+results, benchmark data, build manifests, and SBOM outputs. These artifacts flow
+automatically into \texttt{in\_basket/} for QA triage and eventual disposition to
+the Vault.
+
+The two paths are connected by links rather than duplication. A Vault record for a
+resolved CAPA includes the GitHub issue URL, the PR number, and a reference to the
+corresponding \texttt{in\_basket} test result, providing complete traceability without
+redundant data entry.
+
+\subsection{Exceptions}
+
+Direct export of GitHub Issues to \texttt{in\_basket} is reserved for specific
+circumstances: external compliance certification requirements, off-platform archival
+during a migration away from GitHub, or an auditor request for a consolidated
+point-in-time record.
+
+%% TODO(bob): assess whether any certification body has since required direct issue export.

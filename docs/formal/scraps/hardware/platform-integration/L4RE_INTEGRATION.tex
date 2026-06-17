@@ -1,0 +1,110 @@
+%% SCRAP: hardware/platform-integration/L4RE_INTEGRATION
+%% SOURCE: docs/working/hardware/platform-integration/L4RE_INTEGRATION.adoc
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-l4re
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L4Re Integration}
+
+This guide covers running StarForth on the L4Re runtime environment over the
+Fiasco.OC microkernel: building it as an L4Re package, managing memory through
+dataspaces, communicating between VMs by IPC, and the path toward StarshipOS
+integration.
+
+\subsection{L4Re Fundamentals}
+
+L4Re is a user-level infrastructure layered on the L4 microkernel. It supplies
+memory management, task and thread management, inter-process communication,
+device drivers, and runtime libraries. A handful of concepts recur throughout
+the integration: a \emph{task} is an address space plus its threads; a
+\emph{dataspace} is a memory object (file-like or anonymous); a
+\emph{capability} is a reference to a kernel object; an \emph{IPC gate} is a
+communication endpoint; the \emph{region manager} handles virtual memory; and
+the \emph{name server} provides service discovery.
+
+\subsection{Package Structure}
+
+StarForth installs into the L4Re source tree as \texttt{l4/pkg/starforth},
+holding a \texttt{Control} metadata file, a top-level \texttt{Makefile}, a
+\texttt{server/} directory with the L4Re entry point and VM wrapper, a
+\texttt{lib/} directory wrapping the existing \texttt{src/} files, the existing
+\texttt{include/}, and an \texttt{examples/} client. The \texttt{Control} file
+declares that the package provides \texttt{starforth} and requires
+\texttt{libc}, \texttt{libstdc++}, and \texttt{l4re-core}.
+
+\subsection{Build System}
+
+The top-level \texttt{Makefile} recurses into \texttt{lib}, \texttt{server},
+and \texttt{examples}. The library Makefile builds \texttt{libstarforth} from
+the full set of VM and word-source files plus an L4Re-specific C++ wrapper,
+selecting architecture flags from \texttt{ARCH} (\texttt{-march=x86-64-v2} for
+\texttt{amd64}, \texttt{-march=armv8-a+crc+simd} for \texttt{arm64}) and
+compiling C with \texttt{-std=c99 -O3 -DUSE\_ASM\_OPT=1
+-DUSE\_DIRECT\_THREADING=1 -DL4RE\_BUILD=1}. The server Makefile builds a
+static \texttt{starforth\_server} program requiring \texttt{libstarforth},
+\texttt{l4re\_c}, \texttt{l4re\_c-util}, \texttt{libstdc++}, and \texttt{libc}.
+
+\subsection{Memory Management via Dataspaces}
+
+Instead of \texttt{malloc}, the L4Re wrapper class \texttt{L4VM} backs VM
+memory with a dataspace. Initialization allocates a capability slot
+(\texttt{l4re\_util\_cap\_alloc}), allocates a dataspace of
+\texttt{VM\_MEMORY\_SIZE} (\texttt{l4re\_ma\_alloc}), and maps it into the
+address space (\texttt{l4re\_rm\_attach} with
+\texttt{L4RE\_RM\_F\_SEARCH\_ADDR | L4RE\_RM\_F\_RW}). The mapped region becomes
+\texttt{vm\_.memory}, after which the wrapper performs the usual VM setup ---
+zeroing stack pointers and allotting the \texttt{SCR}, \texttt{STATE}, and
+\texttt{BASE} cells. Cleanup detaches the region and frees the capability; the
+dataspace is reclaimed when its capability is released.
+
+\subsection{IPC Interface}
+
+The server exposes a small opcode protocol: \texttt{OP\_INTERPRET},
+\texttt{OP\_PUSH}, \texttt{OP\_POP}, \texttt{OP\_GET\_STATE}, and
+\texttt{OP\_RESET}. It is implemented as an \texttt{L4::Epiface\_t} whose
+\texttt{op\_dispatch} reads the opcode from the IPC stream and routes to a
+handler. \texttt{OP\_INTERPRET} copies an inbound code buffer, runs
+\texttt{vm\_interpret}, and returns the VM error status; \texttt{OP\_PUSH} and
+\texttt{OP\_POP} marshal a single cell; \texttt{OP\_GET\_STATE} returns the
+stack pointers and error/halt flags; \texttt{OP\_RESET} tears down and
+re-initializes the VM. A matching client wraps these calls behind a small C++
+class, and registration with the name server makes the server reachable under
+the \texttt{starforth} capability.
+
+\subsection{Multi-VM Architecture}
+
+A typical deployment runs several Forth VMs under a root task (Ned), which acts
+as name server and VM manager. Distinct VMs serve distinct roles --- one
+hosting Forth tasks, one a request/response server, one an interactive REPL.
+Ned's \texttt{modules.list} wires each VM's capabilities, granting a client the
+server's IPC channel and giving the server its own fresh channel.
+
+\subsection{Kernel-Context Forth}
+
+Running Forth inside the kernel is supported for narrow uses --- runtime
+tunables, device-driver hotpatching, and interactive kernel debugging --- and
+demands extreme care. Kernel-context VMs have no \texttt{malloc}/\texttt{free}
+(they use a static memory pool), no syscalls, limited stack, and must be
+interrupt-safe and non-blocking. The kernel module registers only a minimal,
+side-effect-free word set (arithmetic, logical, stack) and explicitly omits I/O
+and blocking words. An entry point executes trusted code through
+\texttt{vm\_interpret}, and a polling-serial REPL supports live debugging.
+
+\subsection{StarshipOS, Building, and Operations}
+
+On StarshipOS the natural integration points are a boot service that starts the
+StarForth server, system configuration expressed in Forth, runtime
+hot-patching, and an interactive debugging REPL; a boot script such as
+\texttt{/boot/init.fth} can register services and set kernel parameters during
+startup. Packages build per-architecture with \texttt{make ARCH=amd64} or
+\texttt{ARCH=arm64} (with \texttt{CROSS\_COMPILE=aarch64-linux-gnu-} for
+cross-builds), and boot images assemble through a \texttt{modules.list} and run
+under QEMU. Performance work centers on huge-page-aligned dataspaces, shared
+memory for large transfers in place of inline IPC, and CPU affinity for cache
+locality. Debugging spans GDB over QEMU's stub, the Fiasco JDB kernel
+debugger, and L4Re's \texttt{Dbg} logging. Security rests on L4Re's
+capability model: VMs receive only the capabilities they need and run sandboxed
+under Ned configuration, deliberately withholding scheduler and allocator
+access from untrusted code.
+
+%% TODO(bob): confirm current L4Re port status against StarKernel M7; this guide describes the L4Re-on-Fiasco path rather than the bare-metal LithosAnanke path.

@@ -1,0 +1,131 @@
+%% SCRAP: experiments/02-experiments/factorial-doe/guide
+%% SOURCE: docs/working/experiments/02-experiments/factorial-doe/guide.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-factorial, cookbook/ch-doe
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Complete $2^6$ Factorial Design of Experiments}
+\label{sec:factorial-doe-guide}
+
+\subsection{Design Rationale}
+
+Incremental tuning — enabling one feedback loop, measuring, then enabling a
+second — cannot reveal interaction effects. Two loops that each contribute
+a 3\% improvement in isolation may deliver 10\% when combined, or may cancel
+each other. The $2^6$ factorial design addresses this by testing \emph{all}
+64 binary combinations of the six feedback loops in a single randomised
+experiment, collecting a unified dataset for post-hoc analysis.
+
+\subsection{The Six Feedback Loops}
+
+\begin{center}
+\begin{tabular}{clp{7cm}}
+\toprule
+Loop & Makefile flag & Purpose \\
+\midrule
+L1 & \texttt{ENABLE\_LOOP\_1\_HEAT\_TRACKING}    & Count word execution frequency \\
+L2 & \texttt{ENABLE\_LOOP\_2\_ROLLING\_WINDOW}   & Capture execution history (circular buffer) \\
+L3 & \texttt{ENABLE\_LOOP\_3\_LINEAR\_DECAY}     & Age words by exponential decay over time \\
+L4 & \texttt{ENABLE\_LOOP\_4\_PIPELINING\_METRICS} & Track word-to-word transitions \\
+L5 & \texttt{ENABLE\_LOOP\_5\_WINDOW\_INFERENCE} & Infer optimal window width via Levene's test \\
+L6 & \texttt{ENABLE\_LOOP\_6\_DECAY\_INFERENCE}  & Infer decay slope via linear regression \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Configuration Naming}
+
+Each configuration is named by a six-digit binary string \texttt{L1\_L2\_L3\_L4\_L5\_L6}
+where each digit is 0 (off) or 1 (on). The baseline \texttt{000000} represents
+pure FORTH-79 with no adaptive physics; \texttt{111111} enables all loops.
+
+\subsection{Execution}
+
+Three run levels are available:
+
+\begin{lstlisting}[language=bash]
+# Minimal validation (~30-45 min, 64 builds x 1 run)
+./scripts/run_factorial_doe.sh --runs-per-config 1 TEST_RUN
+
+# Standard production (~2-4 hours, 64 x 30 = 1,920 runs)
+./scripts/run_factorial_doe.sh --runs-per-config 30 FULL_FACTORIAL
+
+# High-precision overnight (~6-12 hours, 64 x 100 = 6,400 runs)
+./scripts/run_factorial_doe.sh --runs-per-config 100 HIGH_PRECISION_DOE
+\end{lstlisting}
+
+%% TODO(bob): confirm canonical path for run_factorial_doe.sh in published repo
+
+Each configuration requires a clean \texttt{make} rebuild to prevent state
+contamination. All runs are randomised into a single execution matrix to
+eliminate thermal ramp, temporal, and ordering biases.
+
+\subsection{Output Structure}
+
+The experiment produces a CSV file with one row per run and a set of run logs:
+
+\begin{lstlisting}[language=bash]
+<experiment_label>/
+  experiment_results.csv        # All measurements (1,920+ rows)
+  experiment_summary.txt        # Timing, metadata, statistics
+  configuration_manifest.txt    # All 64 configs documented
+  test_matrix.txt               # Randomised execution order
+  run_logs/                     # Per-run logs
+\end{lstlisting}
+
+Each CSV row contains a timestamp, configuration identifier, run number,
+35+ performance metrics from the test harness, and the six loop-enable flags.
+This schema allows every metric to be correlated with every loop combination.
+
+\subsection{Analysis}
+
+\paragraph{Main effects.}
+The average change in a response metric when loop $k$ transitions from off to on,
+marginalised over all other loops:
+
+\begin{equation}
+  \hat{\beta}_k = \bar{y}_{(L_k=1)} - \bar{y}_{(L_k=0)}
+\end{equation}
+
+\paragraph{Two-way interactions.}
+The interaction effect for loops $a$ and $b$:
+
+\begin{equation}
+  \hat{\beta}_{ab} = \bar{y}_{(1,1)} - \bar{y}_{(1,0)} - \bar{y}_{(0,1)} + \bar{y}_{(0,0)}
+\end{equation}
+
+A positive $\hat{\beta}_{ab}$ indicates synergy; a negative value indicates
+suppression.
+
+\begin{lstlisting}[language=Python]
+import pandas as pd
+df = pd.read_csv("experiment_results.csv")
+
+factor_cols = ['enable_loop_1_heat_tracking',
+               'enable_loop_2_rolling_window',
+               'enable_loop_3_linear_decay',
+               'enable_loop_4_pipelining_metrics',
+               'enable_loop_5_window_inference',
+               'enable_loop_6_decay_inference']
+metric = 'vm_workload_duration_ns_q48'
+
+main_effects = {
+    col: df[df[col]==1][metric].mean() - df[df[col]==0][metric].mean()
+    for col in factor_cols
+}
+\end{lstlisting}
+
+%% TODO(bob): verify column names against actual CSV header from a completed run
+
+\subsection{Key Design Principles}
+
+\begin{itemize}
+  \item \textbf{Rebuild every configuration.} Ensures isolated, uncontaminated
+        measurements for each loop combination.
+  \item \textbf{Randomise all runs.} The 1{,}920 runs are interleaved in a
+        single randomised matrix, not grouped by configuration.
+  \item \textbf{Collect once, analyse separately.} Data collection and statistical
+        analysis are strictly separated to prevent confirmation bias.
+  \item \textbf{Full factorial, not fractional.} All $2^6 = 64$ combinations are
+        tested; fractional designs would alias higher-order interactions.
+\end{itemize}

@@ -1,0 +1,95 @@
+%% SCRAP: architecture/03-architecture/adaptive-systems/loop-5-sketch
+%% SOURCE: docs/working/architecture/03-architecture/adaptive-systems/loop-5-sketch.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Loop \#5: Context-Aware Window Tuning --- Design Sketch}
+
+This section presents a design sketch for Loop \#5, the context-aware window
+tuner. The motivating gap is that the rolling window shrinks on pattern diversity
+alone, with no evidence that shrinking helps or harms pipelining prediction. The
+sketch closes that gap by driving window size from the actual prefetch hit rate
+through a binary-chop search.
+
+\subsection{Intended Behavior}
+
+Loop \#5 measures, triggers, adapts, and records. It tracks global pipelining
+metrics across all words --- total speculative prefetch attempts, successful
+hits, and their ratio. Periodically, when the window is warm, it computes
+prediction accuracy at the current window size and asks the binary-chop routine
+for the next size to try. It then shrinks or grows the effective window according
+to the accuracy trend: if a smaller window improves accuracy it keeps shrinking;
+if accuracy degrades it grows back; and it converges on the size that maximizes
+prediction accuracy. Each size tried is recorded with its observed accuracy,
+building a history that accelerates convergence.
+
+\subsection{Required Metrics}
+
+A new aggregate structure carries the global pipelining state alongside the
+existing per-word transition metrics.
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint64_t prefetch_attempts;       /* total speculative prefetch calls */
+    uint64_t prefetch_hits;           /* word was actually looked up next */
+    uint64_t window_tuning_checks;    /* tuning checks performed */
+    uint32_t last_checked_window_size;
+    double   last_checked_accuracy;
+    uint32_t suggested_next_size;     /* binary-chop recommendation */
+} PipelineGlobalMetrics;
+\end{lstlisting}
+
+The prefetch counter increments when a speculative promotion fires; the hit
+counter increments when a subsequent lookup matches a word that was recently
+promoted speculatively. Accuracy is the ratio of hits to attempts.
+
+\subsection{The Binary-Chop Suggestion}
+
+The tuning routine proposes the next window size from the accuracy trend. With no
+data it holds. On the first check it shrinks by a quarter. Thereafter it compares
+current accuracy to the last recorded accuracy: an improvement above a one
+percent threshold continues shrinking, a degradation below minus one percent
+grows the window by roughly a third, and a plateau holds the current size --- all
+bounded by the configured minimum and maximum.
+
+\begin{equation}
+\textit{accuracy} = \frac{\textit{prefetch\_hits}}{\textit{prefetch\_attempts}},
+\qquad
+\Delta = \textit{accuracy}_{\text{current}} - \textit{accuracy}_{\text{last}}
+\end{equation}
+
+The suggestion is consulted from the adaptive-shrink check, which already runs on
+the execution path; when warm and with pipelining enabled, it polls the tuner
+every thousand executions and applies any change, logging the transition and the
+accuracy that drove it.
+
+\subsection{Design Decisions}
+
+Four choices shape the loop. \emph{Accuracy measurement} counts speculative
+promotions that were actually used, which requires distinguishing a predicted
+lookup from a natural one --- by flagging speculatively promoted entries, by
+matching predicted word identifiers against the next lookup, or by reusing the
+per-word prefetch metrics already collected. \emph{Tuning frequency} is every
+thousand warm executions, made configurable at build time. \emph{Search strategy}
+is greedy shrinking with backoff on degradation, converging by oscillating around
+the sweet spot. \emph{Build knobs} gate the loop behind the pipelining flag and
+expose the tuning frequency and accuracy threshold.
+
+\subsection{Validation and Risks}
+
+Validation would run the design-of-experiments harness across a baseline, a
+cache-only configuration, a window-tuning-with-pipelining configuration, and a
+combined configuration, collecting the converged window size, the final prefetch
+accuracy, and throughput against baseline. The known risks are the overhead of
+periodic accuracy checks, oscillation under noisy accuracy, workload-dependent
+optima, and the possibility that a speculative lookup does not actually
+correlate with a prediction. The sketch estimates roughly 150 lines of code
+across the VM struct, the interpreter, the pipelining-metrics module, and the
+rolling-window check.
+
+%% PATENT: the accuracy-driven binary-chop window controller is patent-adjacent;
+%%   no claims drafted here.
+
+%% TODO(bob): confirm whether Loop #5 has since been implemented; if so, promote
+%%   the converged metrics from the validation matrix into the chapter.

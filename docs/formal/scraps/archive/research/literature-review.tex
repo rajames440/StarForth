@@ -1,0 +1,172 @@
+%% SCRAP: archive/research/literature-review
+%% SOURCE: docs/working/archive/research/literature-review.md
+%% STATUS: WORKING
+%% FITS: vol3-research/ch-related-work, ssrn/
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Literature Review: Physics-Driven VM Optimisation}
+\label{sec:literature-review}
+
+The central finding of this review is that no prior work combines
+real-time metrics-driven optimisation, threshold-based automatic decisions,
+and formal-verification compatibility in a single implemented system.
+
+\subsection{VM Optimisation Techniques}
+
+\subsubsection{Offline Profiling and Profile-Guided Optimisation}
+
+Representative works include Calder et al.\ (``Continuous Profiling,''
+TOCS 1997), Knowles et al.\ (PASTE 2005), and GCC's \texttt{-fprofile-use}
+implementation. These approaches collect data in a separate profiling phase,
+analyse it offline, and recompile. They are portable and produce predictable
+results, but are reactive: they require re-profiling for different workloads
+and cannot adapt at runtime.
+
+StarForth's approach is online and adaptive; no separate profiling phase
+is required.
+
+\subsubsection{Adaptive Optimisation and Tiered Compilation}
+
+Representative works include Hölzle, Chambers, and Ungar
+(``Inline Caches,'' PLDI~1991), IBM's Jikes RVM adaptive optimisation
+system, and Oracle HotSpot's tiered compilation. These systems collect
+metrics during execution and dynamically recompile hot paths, achieving
+30--100$\times$ speedup on some workloads. However, they require an
+embedded compiler, are difficult to verify formally, and are incompatible
+with microkernel capability models.
+
+StarForth achieves a measured 1.78$\times$ speedup without code generation,
+representing a simpler alternative for systems where dynamic code generation
+is prohibited.
+
+\subsubsection{Just-In-Time Compilation}
+
+Representative works include Dynamo (Bala et al., PLDI~2000), HotSpot
+(Paleczny et al., JVM Performance Workshop~2001), and V8 (various). JIT
+compilation offers maximum performance but carries substantial complexity,
+hard formal-verification properties, memory overhead, and is incompatible
+with formal methods and microkernel isolation.
+
+\subsection{Real-Time Metrics-Driven Systems}
+
+\subsubsection{Hardware Performance Monitoring}
+
+Intel VTune, AMD CodeXL, and ARM Streamline use CPU performance counters
+for real-time feedback. These are accurate and low overhead, but
+platform-specific and frequently privileged.
+
+StarForth uses application-level execution frequency counters
+(\texttt{execution\_heat}), which are portable, require no privileged access,
+and carry clear semantic meaning.
+
+\subsubsection{Application-Level Instrumentation}
+
+Representative works include Valgrind (Nethercote and Seward, PLDI~2007)
+and DynamoRIO (Bruening et al., PLDI~2003). These frameworks are flexible
+but carry overhead and are designed for offline analysis.
+
+StarForth uses lightweight counters with negligible overhead and makes
+online decisions in real time.
+
+\subsection{Physics-Inspired and Biologically-Inspired Computing}
+
+\subsubsection{Swarm and Thermodynamic Models}
+
+Particle swarm optimisation (Kennedy and Eberhart, ICNN~1995), ant colony
+optimisation (Dorigo et al., 1996), and thermodynamic scheduling models
+(Karlin et al., ICCD~2002) borrow physical metaphors. Most are theoretical,
+probabilistic, or limited to specific domains.
+
+StarForth uses the physics analogy as a modelling language while relying on
+deterministic threshold logic. \texttt{execution\_heat} is a concrete metric,
+not merely an analogy: it is an exact execution frequency counter. The
+thermodynamic vocabulary motivates the mathematics without becoming the
+claim.
+
+\subsection{Formal Verification of VM Optimisation}
+
+\subsubsection{Verified Compilers and Virtual Machines}
+
+Representative works include CompCert (Leroy et al., POPL~2006) and CakeML
+(Kumar et al., ICFP~2014). Machine-checked correctness proofs provide maximum
+assurance but require substantial ongoing effort.
+
+StarForth is designed for verification from the outset: pure Q48.16
+fixed-point arithmetic throughout, no dynamic code generation, and
+deterministic logic. Isabelle/HOL proofs cover all seven feedback loops and
+five word categories. The physics-driven optimisations are performance-only
+(cache hit $=$ bucket hit $=$ same word found), requiring no semantic-change
+proofs.
+
+\subsection{Stack-Based and FORTH Virtual Machines}
+
+FORTH optimisation literature (Ting, Appel, Bell Labs technical reports)
+identifies direct threading, inline caching, and stack operation fusion as
+the classical techniques. StarForth implements direct threading and treats
+the physics-driven approach as orthogonal and additive. This is the first
+application of real-time metrics-driven optimisation to a FORTH VM.
+
+\subsection{Microkernel-Compatible Systems}
+
+seL4 (Klein et al., SOSP~2009) and L4 (Liedtke, ASPLOS~1996; Heiser and
+Elphinstone, SOSP~2016) require that VM optimisation respect the capability
+model. JIT compilation violates this constraint by generating arbitrary code.
+StarForth's physics-driven approach is explicitly designed for L4Re
+compatibility, enabling formal verification while maintaining microkernel
+isolation.
+
+\subsection{The Novelty Gap}
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+Approach & Performance & Verifiable & L4Re Compatible & Complexity \\
+\midrule
+Offline profiling  & $1.05\times$ & Yes & Yes & Medium \\
+JIT compilation    & $5\text{--}30\times$ & No  & No  & High \\
+\textbf{Physics-driven} & \textbf{1.78$\times$} & \textbf{Yes} & \textbf{Yes} & \textbf{Low} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+StarForth occupies a unique position: the only implemented system combining
+real-time metrics collection, automatic threshold-based decisions, and
+verifiable arithmetic at VM scale. JIT researchers accept complexity to
+maximise performance; verification researchers accept lower performance to
+maximise correctness; microkernel researchers prioritise isolation.
+StarForth integrates all four concerns.
+
+\subsection{Recommended Citations}
+
+\textbf{Core optimisation:} Hölzle et al.\ (PLDI~1991); Paleczny et al.\
+(2001); Lattner and Adve (ASPLOS~2004).
+
+\textbf{Metrics and profiling:} Nethercote and Seward (PLDI~2007); Berger
+et al.\ (PLDI~2001).
+
+\textbf{Formal verification:} Leroy et al.\ (POPL~2006); Klein et al.\
+(SOSP~2009).
+
+\textbf{Physics-inspired and statistical:} Kennedy and Eberhart (ICNN~1995);
+Gelman et al., \textit{Bayesian Data Analysis}, 3rd ed.
+
+\textbf{FORTH and stack machines:} Ierusalimschy et al.\
+(JUCS~2006); Appel, \textit{Compiling with Continuations} (1992).
+
+\textbf{Microkernels:} Liedtke (ASPLOS~1996); Heiser and Elphinstone
+(SOSP~2016).
+
+\subsection{Positioning Statement}
+
+Virtual machine optimisation has historically pursued two divergent paths:
+offline profiling (simple but reactive) and JIT compilation (responsive but
+complex and difficult to verify). StarForth presents a third approach:
+physics-inspired real-time metrics-driven optimisation. By tracking word
+execution frequency (\texttt{execution\_heat}) and promoting
+frequently-executed words to an LRU cache via threshold-based logic, the
+system achieves a 1.78$\times$ performance improvement without code
+generation, offline profiling, or manual tuning. The approach is compatible
+with formal verification (pure Q48.16 fixed-point arithmetic) and microkernel
+constraints (no dynamic code generation). Bayesian statistical inference
+validates the results, and the framework extends to nine additional
+optimisation opportunities, suggesting a cumulative improvement of 5--8$\times$.

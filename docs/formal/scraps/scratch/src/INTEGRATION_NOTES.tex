@@ -1,0 +1,86 @@
+%% SCRAP: scratch/src/INTEGRATION_NOTES
+%% SOURCE: docs/working/scratch/src/INTEGRATION_NOTES.adoc
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Integration Scripts: StarForth $\leftrightarrow$ StarshipOS Sync}
+
+This document describes two complementary sync scripts for bidirectional
+integration between StarForth and StarshipOS, and records the debug cycle
+that brought them to production status on 19 October 2025. The integration
+was superseded by the Phase 2 documentation reorganization; the scripts
+themselves remain in \texttt{maint/}.
+
+\subsection{Script Overview}
+
+\subsubsection{StarForth $\to$ StarshipOS (\texttt{StarForth/maint/integrator.sh})}
+
+Copies changed files from the StarForth root to
+\texttt{\$STARSHIPOS\_ROOT/l4/pkg/starforth/server}, stripping the
+\texttt{server/} prefix. If the destination path exists, the file is
+overwritten (green). If not, the file is quarantined for review (orange).
+
+\subsubsection{StarshipOS $\to$ StarForth (\texttt{StarshipOS/maint/integrator.sh})}
+
+The reverse direction: strips the \texttt{l4/pkg/starforth/server/} prefix
+from source paths and writes to \texttt{\$STARFORTH\_ROOT}. Generated on the
+same basis as the forward script; required one additional test cycle.
+
+\subsection{Operational Rules}
+
+\begin{enumerate}
+  \item Never \texttt{mkdir} into the target — both repos must already exist.
+  \item The blacklist is law — any file matching a blacklist pattern is
+        ignored unconditionally.
+  \item If the destination path exists at the same relative path, overwrite.
+  \item Otherwise, quarantine for manual review.
+\end{enumerate}
+
+\subsection{Bugs Found and Fixed (19 October 2025)}
+
+Three bugs were identified and corrected during the production-readiness
+test cycle:
+
+\begin{description}
+  \item[Bug 1 — Blacklist regex matching.]
+        \texttt{grep -Fqx} treated patterns as fixed strings, so regex
+        patterns in \texttt{blacklist.txt} (e.g.,
+        \texttt{(\textasciicircum|/)?Makefile(\$|[.].*)} )
+        were not matching. Fix: replace with \texttt{grep -Eq -f
+        <(sed '...' blacklist.txt)} to enable extended regex and filter
+        empty/comment lines.
+
+  \item[Bug 2 — Empty lines in blacklist.]
+        An empty line in \texttt{blacklist.txt} caused every file to match
+        and be blocked. Fix: filter empty lines and comments with
+        \texttt{sed '/\textasciicircum[\textbackslash{}s]*\$/d;
+        /\textasciicircum[\textbackslash{}s]*\#/d'} before passing to grep.
+
+  \item[Bug 3 — Case sensitivity in \texttt{mergefiles.txt}.]
+        \texttt{testing.md} was listed; the actual filename is
+        \texttt{TESTING.md}. Fix: corrected in \texttt{mergefiles.txt}.
+\end{description}
+
+\subsection{Test Results (Final)}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Test Category       & Status & Notes \\
+\midrule
+Basic Execution     & Pass & Script runs without errors \\
+Blacklist Enforcement & Pass & Regex patterns work, empty lines filtered \\
+Path Stripping      & Pass & \texttt{l4/pkg/starforth/server/} removed \\
+Overwrite Logic     & Pass & Existing files overwritten correctly \\
+Quarantine Logic    & Pass & New files quarantined \\
+Auto-generation     & Pass & Generates from \texttt{git diff HEAD\textasciitilde{}1} \\
+Git Index Refresh   & Pass & StarForth index updated \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Documentation path sync:} The \texttt{docs/} directory sync (StarForth
+\texttt{docs/} $\leftrightarrow$ StarshipOS
+\texttt{l4/pkg/starforth/docs/}) was deferred for a later pass requiring
+custom path-mapping logic.
