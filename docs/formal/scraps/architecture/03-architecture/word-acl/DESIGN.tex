@@ -56,7 +56,7 @@ word:
 \begin{lstlisting}[language=Forth]
 ' MY-WORD ACL-STRICT      \ check every execution
 ' MY-WORD ACL-TTL-MODE    \ use adaptive TTL
-' MY-WORD ACL-PIN         \ freeze — mode and decision immutable forever
+' MY-WORD ACL-PIN         \ freeze -- mode and decision immutable forever
 \end{lstlisting}
 
 \subsection{The Pin Ratchet}
@@ -79,7 +79,7 @@ When a child VM is born, ACL state propagates downward once:
 
 \begin{lstlisting}[language=Forth]
 acl_mode     = parent->acl_mode    \ policy propagates (STRICT or TTL)
-acl_pinned   = 0                   \ always clear — child owns its own lock
+acl_pinned   = 0                   \ always clear -- child owns its own lock
 acl_ttl      = default             \ reset; child has no execution history
 acl_decision = ALLOW               \ re-evaluated on first access
 \end{lstlisting}
@@ -96,8 +96,8 @@ pinned ACLs.
 The C interpreter reads only two fields per \texttt{DictEntry}:
 
 \begin{lstlisting}[language=C]
-if (vm->emergency_console) goto execute;   /* 100% bypass — physical access */
-if (entry->acl_ttl-- > 0) goto execute;    /* TTL good — single decrement   */
+if (vm->emergency_console) goto execute;   /* 100% bypass -- physical access */
+if (entry->acl_ttl-- > 0) goto execute;    /* TTL good -- single decrement   */
 acl_recheck(vm, entry);                    /* TTL=0: call FORTH ACL-RECHECK  */
 if (!entry->acl_allow) goto reject;
 \end{lstlisting}
@@ -218,7 +218,7 @@ A typical boot-time pin in \texttt{init.4th}:
 \subsection{Bootstrap Sequence}
 
 \begin{lstlisting}[language=Forth]
-\ In init.4th (one line, opt-in toggle — uncomment to enable):
+\ In init.4th (one line, opt-in toggle -- uncomment to enable):
 S" ACL.4th" EXEC       \ self-activating: ACL-BOOT then loads zuse.4th
 
 \ ACL.4th Block 2067 does internally:

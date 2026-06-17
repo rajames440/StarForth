@@ -29,18 +29,18 @@
 
 \chapter{Experimental Design Overview}
 %% SOURCE: docs/working/experiments/02-experiments/README.md
-%% TODO(bob): intro — scope of DoE program, null hypothesis, what
-%% 0% CV means and why it matters.
+\input{../scraps/experiments/02-experiments/README}
 
 \chapter{Null Hypothesis and Falsification Criteria}
 %% SOURCE: docs/working/papers/NULL_HYPOTHESIS.md
-%% TODO(bob): promote null hypothesis statement and falsification protocol.
+\input{../scraps/papers/NULL_HYPOTHESIS}
 
 \chapter{Negative Results and Sensitivity Analysis}
 %% SOURCE: docs/working/papers/NEGATIVE_RESULTS.md
 %%         docs/working/papers/SENSITIVITY_ANALYSIS.md
-%% TODO(bob): promote negative results and sensitivity analysis.
 %% All claims checked against ANTI_CLAIMS.md before promotion.
+\input{../scraps/papers/NEGATIVE_RESULTS}
+\input{../scraps/papers/SENSITIVITY_ANALYSIS}
 
 %%────────────────────────────────────────────────
 %% Part II — 2\textsuperscript{7} Factorial Campaign
@@ -50,11 +50,15 @@
 \chapter{Campaign Design}
 %% SOURCE: docs/working/experiments/02-experiments/factorial-doe/guide.md
 %%         docs/working/experiments/campaigns/doe_2x7/README.md
-%% TODO(bob): promote the 7-factor design table, factor levels, response variable.
+\input{../scraps/experiments/02-experiments/factorial-doe/guide}
+\input{../scraps/experiments/02-experiments/factorial-doe/workflow}
+\input{../scraps/experiments/02-experiments/factorial-doe/index}
+\input{../scraps/experiments/campaigns/doe_2x7/README}
+\input{../scraps/experiments/campaigns/shape_validation/README}
 
 \chapter{Incompatible Configurations}
 %% SOURCE: docs/working/experiments/02-experiments/factorial-doe/incompatible-configs.md
-%% TODO(bob): promote the incompatible configuration exclusion list.
+\input{../scraps/experiments/02-experiments/factorial-doe/incompatible-configs}
 
 \chapter{Campaign Results — 90 Runs}
 %% SOURCE: docs/working/experiments/campaigns/doe_2x7/results_30reps_RAJ_2025.11.22_1700hrs/
@@ -89,24 +93,27 @@
 
 \chapter{Campaign Design and Execution}
 %% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/SESSION_REPORT_2025-12-10.md
-%% TODO(bob): promote the attractor map campaign design.
+\input{../scraps/experiments/campaigns/l8_attractor_map/SESSION_REPORT_2025-12-10}
+\input{../scraps/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/TIDBITS}
+\input{../scraps/experiments/campaigns/l8_validation/README}
 
 \chapter{Mathematical Framework}
 %% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/mathematical_framework.md
-%% TODO(bob): promote the mathematical framework for the attractor map.
+\input{../scraps/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/mathematical_framework}
 
 \chapter{Heartbeat Analysis}
 %% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/heartbeat_analysis.md
 %%         R scripts: l8_analysis.R, l8_analysis_fixed.R
 %% TODO(bob): include R-generated heartbeat analysis figures.
+\input{../scraps/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/heartbeat_analysis}
 
 \chapter{Comprehensive Results}
 %% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/comprehensive_report.md
-%% TODO(bob): promote the comprehensive results narrative.
+\input{../scraps/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/comprehensive_report}
 
 \chapter{Binary 2-Cycle Analysis}
 %% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/binary_2cycle_analysis_report.md
-%% TODO(bob): promote the 2-cycle analysis.
+\input{../scraps/experiments/campaigns/l8_attractor_map/results_20251209_145907/binary_2cycle_analysis_report}
 
 %%────────────────────────────────────────────────
 %% Part IV — Window Scaling Campaign
@@ -116,7 +123,8 @@
 \chapter{Campaign Design}
 %% SOURCE: docs/working/experiments/campaigns/window_scaling/README.md
 %%         docs/working/experiments/campaigns/window_scaling/QUICK_START.md
-%% TODO(bob): promote the window scaling design.
+\input{../scraps/experiments/campaigns/window_scaling/README}
+\input{../scraps/experiments/campaigns/window_scaling/QUICK_START}
 
 \chapter{Results and Analysis}
 %% SOURCE: R scripts: analyze_results.R, generate_run_matrix.R
@@ -129,8 +137,8 @@
 
 \chapter{Protocol Definition}
 %% SOURCE: docs/working/experiments/02-experiments/james-law/protocol.md
-%% TODO(bob): promote the James Law experimental protocol.
 %% NOTE: "James Law" is a registered proper noun — do not rename.
+\input{../scraps/experiments/02-experiments/james-law/protocol}
 
 %%────────────────────────────────────────────────
 %% Part VI — Heartbeat and Physics Optimization Campaigns
@@ -140,20 +148,33 @@
 \chapter{Heartbeat DoE}
 %% SOURCE: docs/working/experiments/02-experiments/heartbeat-doe/design.md
 %%         docs/working/experiments/02-experiments/heartbeat-doe/corrected-design.md
-%% TODO(bob): promote heartbeat DoE design and results.
+\input{../scraps/experiments/02-experiments/heartbeat-doe/design}
+\input{../scraps/experiments/02-experiments/heartbeat-doe/corrected-design}
+\input{../scraps/experiments/02-experiments/heartbeat-doe/implementation-summary}
+\input{../scraps/experiments/02-experiments/heartbeat-doe/phase2-corrected}
+\input{../scraps/experiments/02-experiments/heartbeat-doe/execution-guide}
 
 \chapter{Physics Optimization DoE}
 %% SOURCE: docs/working/experiments/02-experiments/physics-optimization/doe-guide.md
 %%         docs/working/experiments/02-experiments/physics-optimization/reproduce.md
-%% TODO(bob): promote physics optimization results.
+\input{../scraps/experiments/02-experiments/physics-optimization/doe-guide}
+\input{../scraps/experiments/02-experiments/physics-optimization/execution-guide}
+\input{../scraps/experiments/02-experiments/physics-optimization/hotwords-cache}
+\input{../scraps/experiments/02-experiments/physics-optimization/proposals}
+\input{../scraps/experiments/02-experiments/physics-optimization/reproduce}
+
+\chapter{L8 Wiring}
+\input{../scraps/experiments/02-experiments/L8_WIRING_PLAN}
+\input{../scraps/experiments/02-experiments/L8_WIRING_IMPLEMENTATION_SUMMARY}
+\input{../scraps/experiments/02-experiments/L8_WIRING_CODE_REVIEW_GUIDE}
 
 \chapter{L8 Validation}
 %% SOURCE: docs/working/experiments/campaigns/l8_validation/README.md
-%% TODO(bob): promote L8 validation results.
+%% (already included in L8 Attractor Map chapter above)
 
 \chapter{Shape Validation}
 %% SOURCE: docs/working/experiments/campaigns/shape_validation/README.md
-%% TODO(bob): promote shape validation results.
+%% (already included in Campaign Design chapter above)
 
 %%────────────────────────────────────────────────
 %% Appendices
@@ -162,11 +183,22 @@
 
 \chapter{Reproducibility Protocol}
 %% SOURCE: docs/working/papers/REPRODUCIBILITY.md
-%% TODO(bob): promote one-command reproduction protocol.
+\input{../scraps/papers/REPRODUCIBILITY}
 
 \chapter{Replication Invitation}
 %% SOURCE: docs/working/papers/REPLICATION_INVITE.md
-%% TODO(bob): promote open invitation to independent replication.
+\input{../scraps/papers/REPLICATION_INVITE}
+
+\chapter{DoE Metrics Schema}
+\input{../scraps/archive/research/doe-metrics-schema}
+
+\chapter{Methodology Record}
+\input{../scraps/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/03-experimental-methodology}
+\input{../scraps/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/04-variance-analysis}
+
+\chapter{Session Logs}
+\input{../scraps/archive/session-logs/experimental-addendum}
+\input{../scraps/archive/session-logs/experimental-iteration-usage}
 
 \chapter{R Script Inventory}
 %% TODO(bob): table of all R scripts, their inputs, outputs, and campaign association.
