@@ -1,0 +1,90 @@
+%% SCRAP: hardware/platform-integration/PLATFORM_ABSTRACTION
+%% SOURCE: docs/working/hardware/platform-integration/PLATFORM_ABSTRACTION.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-platform
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The Platform Abstraction Layer}
+
+StarForth's platform abstraction layer provides portable timing and clock
+functionality across POSIX systems (Linux, macOS, BSD) and the L4Re/StarshipOS
+microkernel, selected by a single Makefile switch. Following the same vtable
+pattern as the block I/O subsystem, it achieves zero runtime overhead while
+keeping platform-specific code cleanly separated from the core VM.
+
+\subsection{Structure}
+
+The core VM is platform-agnostic and speaks only to
+\texttt{include/platform\_time.h}. Behind that header, compile-time selection
+routes to one of two backends: \texttt{src/platform/time\_posix.c} using
+\texttt{clock\_gettime}, or \texttt{src/platform/time\_l4re.c} using the RTC
+server and KIP clock. Builds choose the path explicitly:
+
+\begin{lstlisting}[language=bash]
+make            # POSIX (default)
+make L4RE=1     # L4Re/StarshipOS
+make MINIMAL=1  # minimal embedded, no platform layer
+\end{lstlisting}
+
+\subsection{API}
+
+All timing flows through \texttt{platform\_time.h}. The host calls
+\texttt{sf\_time\_init()} once at startup, then reads
+\texttt{sf\_monotonic\_ns()} for performance measurement (nanoseconds since
+boot) and \texttt{sf\_realtime\_ns()} for wall-clock time (nanoseconds since the
+Unix epoch). \texttt{sf\_set\_realtime\_ns()} sets the clock where privileges
+allow, \texttt{sf\_format\_timestamp()} renders a human-readable string, and
+\texttt{sf\_has\_rtc()} reports RTC availability. Helper conversions
+(\texttt{sf\_seconds\_to\_ns}, \texttt{sf\_ns\_to\_seconds},
+\texttt{sf\_ns\_to\_ms}, \texttt{sf\_ns\_to\_us}) round out the interface.
+
+\subsection{Backends}
+
+The POSIX backend uses \texttt{CLOCK\_MONOTONIC} for high-precision monotonic
+time, \texttt{CLOCK\_REALTIME} for wall-clock time, and
+\texttt{localtime}/\texttt{strftime} for formatting; it always reports an RTC
+as available. The L4Re backend draws monotonic time directly from the Kernel
+Info Page clock (\texttt{l4\_kip\_clock\_ns(l4re\_kip())}) and real time from
+the RTC server offset added to that clock. It obtains the \texttt{"rtc"}
+capability from the L4Re environment, queries the offset over RPC, and degrades
+gracefully to epoch time when no RTC server is present; setting time updates the
+offset over RPC and requires a write capability. The selector chooses at
+compile time on the \texttt{\_\_l4\_\_} define:
+
+\begin{lstlisting}[language=C]
+void sf_time_init(void) {
+#ifdef __l4__
+    sf_time_init_l4re();
+    sf_time_backend = &sf_time_backend_l4re;
+#else
+    sf_time_backend = &sf_time_backend_posix;
+#endif
+}
+\end{lstlisting}
+
+\subsection{Migration from Direct POSIX Calls}
+
+The abstraction replaces scattered platform calls in the core. Where the
+profiler once called \texttt{clock\_gettime(CLOCK\_MONOTONIC, ...)} directly, it
+now calls \texttt{sf\_monotonic\_ns()}; where the logger called \texttt{time},
+\texttt{localtime}, and \texttt{strftime}, it now calls
+\texttt{sf\_realtime\_ns()} and \texttt{sf\_format\_timestamp()}. The same
+source compiles unchanged on both platforms.
+
+\subsection{Benefits}
+
+The layer keeps the core free of \texttt{\#ifdef} clutter; inline functions
+compile to direct calls for zero overhead; the vtable gives strong typing; new
+platforms are easy to add; and the vtable can be swapped for mocks in testing.
+
+\subsection{StarshipOS Integration and Future Platforms}
+
+Copied into \texttt{StarshipOS/l4/pkg/starforth}, the build automatically
+selects the L4Re backend by compiling \texttt{time\_l4re.c} and
+\texttt{platform\_init.c}, linking \texttt{librtc}, and defining
+\texttt{\_\_l4\_\_=1}; the loader starts the RTC server first and grants the VM
+the \texttt{rtc} capability. The design anticipates further backends ---
+bare-metal hardware timers, WebAssembly via \texttt{performance.now()}, RTOSes
+such as FreeRTOS and Zephyr, and other microkernels such as seL4. Adding one
+requires a new \texttt{time\_<platform>.c}, its backend vtable, a detection
+branch in \texttt{platform\_init.c}, and a Makefile flag.

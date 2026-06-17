@@ -1,0 +1,84 @@
+%% SCRAP: experiments/02-experiments/factorial-doe/index
+%% SOURCE: docs/working/experiments/02-experiments/factorial-doe/index.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-factorial
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Complete $2^6$ Factorial DoE — Documentation Map}
+\label{sec:factorial-doe-index}
+
+The $2^6$ factorial experiment is documented across four artefacts: a quick-start
+reference, a full design guide, an analysis workflow, and the run script itself.
+
+\subsection{Document Overview}
+
+\begin{center}
+\begin{tabular}{lp{8cm}}
+\toprule
+Artefact & Purpose \\
+\midrule
+Quick-start reference & Three command options (validation, standard, high-precision),
+  time estimates, and basic troubleshooting. Read time: 5~minutes. \\
+Design guide & Full design rationale, six-loop definitions, configuration
+  naming, expected interaction patterns, and troubleshooting. Read time:
+  20--30~minutes. \\
+Analysis workflow & End-to-end pipeline: data collection, transfer, statistical
+  analysis (main effects, interactions), optimal-configuration search, and
+  reporting. Python code examples included. Read time: 15--20~minutes. \\
+Run script & Executable script generating all 64 configurations, rebuilding
+  for each, randomising 1{,}920+ runs, and writing metrics to CSV. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Key Concepts}
+
+\paragraph{64 configurations.}
+Each configuration is a unique binary string $L_1 L_2 L_3 L_4 L_5 L_6$ where
+each digit is 0 (off) or 1 (on). The space spans from \texttt{000000} (all loops
+off; pure FORTH-79 baseline) to \texttt{111111} (all loops enabled).
+
+\paragraph{Randomised execution.}
+All $64 \times 30 = 1{,}920$ scheduled runs are interleaved in a single randomised
+matrix before collection begins. Grouping runs by configuration would introduce
+thermal ramp and temporal ordering bias; randomisation eliminates both.
+
+\paragraph{Separation of collection and analysis.}
+Data collection and statistical analysis are strictly separated phases. No
+configuration adjustments are made mid-collection; doing so would introduce
+confirmation bias. The CSV is analysed only after all runs are complete.
+
+\subsection{Execution Timeline}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Phase & Activity & Duration \\
+\midrule
+Preparation & Choose option, launch script & 5--10~min \\
+Collection  & 64 builds + 1{,}920 randomised runs & 30~min -- 12~hr \\
+Transfer    & Copy CSV to analysis environment & 5~min \\
+Analysis    & Main effects, interactions, optimal search & 1--2~hr \\
+Reporting   & Summary, visualisations, recommendations & 1--2~hr \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Design Philosophy}
+
+The factorial design was chosen over three alternatives:
+
+\begin{itemize}
+  \item \textbf{Incremental tuning} (\texttt{000000} $\to$ \texttt{100000} $\to$
+        \texttt{110000} $\to \cdots$) misses interaction effects between loops.
+  \item \textbf{Dynamic toggle without rebuild} introduces state contamination
+        across configurations.
+  \item \textbf{Partial (fractional) factorial} aliases higher-order interaction
+        terms, obscuring synergies and suppressions.
+\end{itemize}
+
+The complete $2^6$ factorial is the minimal design that separates all main
+effects and all two-way interactions without aliasing.
+
+%% TODO(bob): confirm canonical script path run_factorial_doe.sh in published repo
+

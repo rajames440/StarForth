@@ -1,0 +1,149 @@
+%% SCRAP: experiments/campaigns/l8_attractor_map/SESSION_REPORT_2025-12-10
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/SESSION_REPORT_2025-12-10.md
+%% STATUS: HISTORICAL
+%% FITS: experiments/ch-l8-map
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L8 Attractor Map: Session Report, 10 December 2025}
+
+This session report documents a six-hour experimental session that began
+as a memory-safety debugging exercise and ended with the identification of
+potentially fundamental computational-physics behavior. The empirical
+findings are current; the theoretical interpretations remain under
+validation. The 38\,580-run empirical basis (38\,400 DoE + 180 attractor
+runs) is the established fact; broader theoretical claims await
+cross-platform replication.
+
+\subsection{Memory Safety Fixes}
+
+The L8 attractor experiment exhibited a 35--40\% non-deterministic crash
+rate. AddressSanitizer and UndefinedBehaviorSanitizer identified four
+bugs:
+
+\begin{description}
+  \item[Bug 1 — Heap-buffer-overflow in \texttt{dictionary\_heat\_optimization.c}.]
+        A race condition caused \texttt{sf\_fc\_count[bucket\_id]} to
+        exceed \texttt{sf\_fc\_cap[bucket\_id]}. Fix: exposed the capacity
+        array and added a bounds check with TOCTOU protection before the
+        \texttt{memcpy} in \texttt{dict\_reorganize\_buckets\_by\_heat}.
+  \item[Bug 2 — Use-after-free in \texttt{dictionary\_heat\_optimization.c}.]
+        The heartbeat thread sorted dictionary entry pointers while the
+        main thread freed entries. Fix: acquire \texttt{dict\_lock} for
+        the entire bucket reorganization pass.
+  \item[Bug 3 — UBSan left-shift of negative value in M/MOD.]
+        Left-shifting a negative signed value is undefined behavior in C99.
+        Fix: cast the dividend to \texttt{unsigned long long} before
+        shifting, then cast back.
+  \item[Bug 4 — UBSan left-shift in Q48.16 conversion.]
+        Fix: replace left-shift with multiplication for signed delta values
+        in \texttt{src/doe\_metrics.c}.
+\end{description}
+
+After fixes: 50 consecutive ASan runs, zero errors; 100 production runs,
+zero crashes; 180-run L8 experiment, 100\% success.
+
+\subsection{Experimental Infrastructure}
+
+\subsubsection{Workload Identification}
+
+Because runs were randomized (to eliminate temporal bias), the heartbeat
+CSV carried no workload metadata. The solution cross-referenced the run
+matrix against VM restart markers: heartbeat ticks with
+\texttt{tick\_interval\_ns} $> 10^9$ indicate VM startup. This yielded a
+\texttt{workload\_mapping.csv} cross-reference table without breaking
+randomization.
+
+\subsubsection{Analysis Pipeline}
+
+\begin{lstlisting}[language=bash]
+cd experiments/l8_attractor_map
+./scripts/setup.sh   # Create structure, CSV headers
+./scripts/run.sh     # Execute 180 runs, generate mapping
+Rscript l8_analysis_safe.R  # Statistics + 13 SVG charts
+\end{lstlisting}
+
+\subsection{Statistical Results}
+
+180 runs (6 workloads $\times$ 30 replicates), 4\,171 valid heartbeat
+ticks after filtering.
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Workload    & Mean ($\mu$s) & CV (\%) & Character \\
+\midrule
+STABLE      & 75.45 & 18.00 & Lowest variability \\
+VOLATILE    & 76.04 & 22.71 & Moderate \\
+OMNI        & 76.95 & 26.20 & 7$\times$ compute, comparable stability \\
+TEMPORAL    & 75.77 & 32.09 & Moderate \\
+DIVERSE     & 76.87 & 42.47 & High variability \\
+TRANSITION  & 81.72 & 69.13 & Highest variability (phase-change region) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+ANOVA on convergence time: $F(5,174) = 0.983$, $p = 0.43$ — convergence
+time is workload-independent, confirming deterministic behavior.
+ANOVA on tick intervals: $F(5,4165) = 3.890$, $p = 0.0016$ — workloads
+produce statistically distinct timing signatures.
+
+\subsection{Observed Phenomena}
+
+All six workloads converged to a ground-state oscillation frequency of
+approximately $\omega_0 \approx 13.5$\,Hz (CV 1.3\% across workloads).
+The damped harmonic oscillator equation $\omega(t) = \omega_0 +
+A e^{-\gamma t} \cos(\Omega t + \phi)$ fit the convergence trajectories.
+Each workload exhibited a distinct effective temperature $T_\text{eff}$
+under a Boltzmann-distribution model of frequency fluctuations
+(STABLE: $T_\text{eff} = 2.175$\,Hz; TRANSITION: $T_\text{eff} =
+2.691$\,Hz). Phase-space portraits revealed 45-degree diagonal
+relationships across variable pairs, suggesting conserved quantities.
+
+Probability assessments from the session:
+\begin{itemize}
+  \item $> 90\%$ confidence: deterministic convergence, workload-independent
+        convergence time, reproducible CV as a metric.
+  \item 70--85\% confidence: $\omega_0 \approx 13.5$\,Hz is a real pattern;
+        adaptive window finds equilibrium $W^*$; James Law $K \approx 1.0$;
+        workload spectral signatures are distinct and stable.
+  \item $< 30\%$ confidence: $\omega_0$ is a true universal constant;
+        hardware independence; general computational law.
+\end{itemize}
+
+The frequency likely synchronizes with the CPU clock and is therefore a
+hardware-dependent emergent property rather than a universal constant.
+
+\subsection{The Adaptive Window Revelation}
+
+A critical finding from this session: \texttt{effective\_window\_size} is
+\emph{not} logged in the heartbeat CSV. The adaptive window
+(\texttt{src/rolling\_window\_of\_truth.c}) shrinks to 75\% when pattern
+diversity growth falls below 1\%, and grows back toward
+\texttt{ROLLING\_WINDOW\_SIZE} otherwise. The system finds an equilibrium
+$W^*$ at which it ``flatlines.'' This equilibrium was empirically observed
+but not yet instrumented; adding \texttt{effective\_window\_size} to the
+heartbeat CSV was identified as Priority 1 for the next session.
+
+\subsection{James Law}
+
+Empirical observation from this session: $K = \Lambda \times (\text{DoF}+1)
+/ W \approx 1.0$, where $\Lambda$ is the effective smoothing factor,
+$W$ the window size, and DoF the number of active feedback loops. This
+relationship was named James Law and is under empirical validation in the
+window-scaling campaign.
+
+%% PATENT: James Law ($\Lambda = W / (\text{DoF}+1)$) and the
+%% spectroscopic workload-fingerprinting concept are patent-adjacent.
+%% Do not draft claims here.
+
+\subsection{Next Validation Steps}
+
+\begin{enumerate}
+  \item Add \texttt{effective\_window\_size} logging to heartbeat CSV
+        and re-run 180-run L8 experiment to observe $W^*$ trajectory.
+  \item Run the window-scaling experiment (2\,880 runs; see companion
+        README) to validate James Law across 8 DoF $\times$ 12 window
+        sizes.
+  \item Cross-platform validation on ARM to test whether $\omega_0$
+        varies with CPU architecture.
+\end{enumerate}

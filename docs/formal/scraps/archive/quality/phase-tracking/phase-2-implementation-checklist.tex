@@ -1,0 +1,28 @@
+%% SCRAP: archive/quality/phase-tracking/phase-2-implementation-checklist
+%% SOURCE: docs/working/archive/quality/phase-tracking/phase-2-implementation-checklist.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Phase~2 Heartbeat Instrumentation: Implementation Checklist (November 2025)}
+
+This checklist specified the ten-step implementation plan for adding per-tick
+heartbeat instrumentation to the StarForth VM, enabling time-series capture
+of seven physics metrics for the Phase~2 DoE experiment.
+
+The plan introduced the \texttt{HeartbeatTickSnapshot} struct (capturing tick
+number, elapsed time, tick interval, cache/bucket/execution deltas, hot-word
+count, average heat, window width, prediction hits, and jitter) alongside a
+100,000-slot circular buffer allocated at VM initialization. Implementation
+targets were \texttt{include/vm.h} (struct and field additions), \texttt{src/vm.c}
+(initialization, cleanup, per-tick capture injection, delta tracking, and CSV
+export), with DoE integration in \texttt{src/main.c}.
+
+The checklist estimated 90~minutes total implementation time across six phases.
+The \texttt{HeartbeatTickSnapshot} struct and \texttt{tick\_buffer} fields are
+declared in the production \texttt{include/vm.h}; \texttt{heartbeat\_export\_csv()}
+implementation status should be confirmed against current source.
+
+%% TODO(bob): Confirm whether heartbeat_export_csv() was implemented.
+%% The CLAUDE.md architecture note marks it as "not yet implemented"
+%% (see docs/03-architecture/heartbeat-system/instrumentation-plan.md).

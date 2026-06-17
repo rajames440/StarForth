@@ -1,0 +1,113 @@
+%% SCRAP: scratch/src/internal/PHYSICS_SCHEDULING_PLAN
+%% SOURCE: docs/working/scratch/src/internal/PHYSICS_SCHEDULING_PLAN.adoc
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Physics-Driven Scheduling Metadata Plan}
+
+This document records the planning context for extending \texttt{DictEntry}
+with physics-inspired metadata. It predates the current implementation and
+is HISTORICAL. The \texttt{DictPhysics} struct fields described here
+(temperature, last-active timestamp, mass, average latency, state flags,
+and ACL hint) are implemented in the codebase; the Phase 2 fields below
+remain prospective.
+
+\subsection{Current Dictionary Signals}
+
+The dictionary already provides these free signals for physics modeling:
+
+\begin{itemize}
+  \item \texttt{DictEntry.entropy} — global execution counter; coarse
+        temperature reading.
+  \item Profiler timers — per-word call counts and nanosecond timing when
+        profiling is enabled.
+  \item Word flags (\texttt{WORD\_IMMEDIATE}, \texttt{WORD\_COMPILED}, etc.)
+        — proxy indicators for control-flow roles.
+  \item VM memory layout — approximates bytecode footprint (\texttt{mass})
+        from the span of a word definition.
+\end{itemize}
+
+\subsection{Phase 1: Minimum Viable Physics Metadata (Macro Thermodynamics)}
+
+\begin{center}
+\begin{tabular}{llp{6.5cm}}
+\toprule
+Field & Type & Purpose \\
+\midrule
+\texttt{temperature\_q8}  & \texttt{uint16\_t} & Quantifies thermal state; derived from entropy delta over sliding window \\
+\texttt{last\_active\_ns} & \texttt{uint64\_t} & Supports decay models and idle detection \\
+\texttt{mass\_bytes}      & \texttt{uint32\_t} & Word footprint; represents resource inertia \\
+\texttt{avg\_latency\_ns} & \texttt{uint32\_t} & Rolling average execution cost when profiling is active \\
+\texttt{state\_flags}     & \texttt{uint8\_t}  & Bitfield (I/O, pure, control) derived from flags/registry \\
+\texttt{acl\_hint}        & \texttt{uint8\_t}  & Reserved for ACL controls per word \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+This MVP fits under 24 bytes. Only a lightweight monotonic timer and a
+rolling window accumulator are required.
+
+\subsection{Phase 2: Physics Scheduler Metadata (Prospective)}
+
+When the physics-driven scheduler is implemented, additional optional
+fields capture richer particle behavior. These fields are lazily maintained
+and incur no cost in baseline builds:
+
+\begin{center}
+\begin{tabular}{llp{5.5cm}}
+\toprule
+Field & Type & Benefit \\
+\midrule
+\texttt{momentum\_vec[3]}  & \texttt{int32\_t[3]} & Directional call rates (interpret, compile, test contexts) \\
+\texttt{acceleration\_q16} & \texttt{int32\_t}    & Derivative of call rate; detects surges \\
+\texttt{energy\_quanta}    & \texttt{uint32\_t}   & \texttt{avg\_latency\_ns} $\times$ \texttt{temperature\_q8}; supports energy-based priority \\
+\texttt{coherence\_band}   & \texttt{uint16\_t}   & Similarity grouping for locality-aware placement \\
+\texttt{charge\_enum}      & \texttt{uint8\_t}    & Categorical: neutral, I/O, memory, control, meta \\
+\texttt{spin\_state}       & \texttt{uint8\_t}    & Word type: scalar, colon, immediate, compile-only \\
+\texttt{entropy\_half\_life} & \texttt{uint16\_t} & Configurable decay constant per word \\
+\texttt{heat\_capacity}    & \texttt{uint16\_t}   & Upper bound on temperature rise per interval \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+This expanded footprint stays within 64 bytes, remaining cache-line friendly.
+
+\subsection{Instrumentation Strategy}
+
+\begin{itemize}
+  \item \textbf{Sampling cadence:} lazy updates on word execution; global
+        maintenance ticks for decay and half-life.
+  \item \textbf{Profiler integration:} reuse \texttt{profiler\_word\_enter/exit}
+        for \texttt{avg\_latency\_ns} and momentum when profiling is active;
+        skip otherwise.
+  \item \textbf{Mass:} computed once at definition time by diffing HERE;
+        avoid per-execution recomputation. Recomputed on redefinition.
+  \item \textbf{Decay:} exponential moving average with configurable
+        \texttt{entropy\_half\_life}; fallback to global constant.
+  \item \textbf{Pinned words:} \texttt{WORD\_PINNED} bypasses cooling and
+        heating adjustments. Temperature observational data is still tracked.
+\end{itemize}
+
+\subsection{Bayesian Inference Loop (Design Intent)}
+
+Each word ships with seeded priors (temperature floor, expected latency,
+side-effect flags). A rolling observation buffer accumulates execution events.
+Periodic Bayesian updates adjust word-specific distributions; the posterior
+feeds back into temperature and scheduling weights. An adaptive window
+(ANOVA/Levene's test) keeps inference both responsive and statistically
+reliable. Summary statistics persist in a fixed-size analytics heap for
+warm-boot initialization.
+
+\subsection{Open Questions (At Survey Time)}
+
+\begin{itemize}
+  \item Should physics metadata persist across VM restarts, or is it
+        runtime-only?
+  \item Should \texttt{state\_flags} derive from author annotations rather
+        than heuristics?
+  \item What minimum clock precision is guaranteed on L4Re for
+        \texttt{last\_active\_ns}?
+  \item How does physics scheduling interact with \texttt{STRICT\_PTR=1}
+        mode?
+\end{itemize}

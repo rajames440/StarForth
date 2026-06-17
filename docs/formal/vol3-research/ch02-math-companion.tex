@@ -1,0 +1,53 @@
+%% Vol III, Chapter 2 — Mathematical Companion
+%% SOURCE: docs/working/papers/SSRN_companion/Math_Companion_SSRN.tex (full LaTeX source)
+%%         docs/working/papers/SSRN_companion/figures/ (7 figure PDFs)
+
+\chapter{Mathematical Companion}
+\label{vol3:chap:math}
+
+%% TODO(bob): this chapter is a formal reference for the mathematical and
+%% engineering structures described in Math_Companion_SSRN.tex.
+%% The full source is available at:
+%%   docs/working/papers/SSRN_companion/Math_Companion_SSRN.tex
+%%
+%% Option A: include it directly:
+%%   \input{../../working/papers/SSRN_companion/Math_Companion_SSRN.tex}
+%%   (note: preamble collision likely — requires refactoring the companion source)
+%%
+%% Option B: promote key sections by hand.
+%%
+%% Recommend Option B for maintainability. Dictate which sections to promote.
+
+\section{Q48.16 Fixed-Point Arithmetic}
+\label{vol3:sec:math:q4816}
+
+%% SOURCE: Math_Companion_SSRN.tex (Q48.16 section)
+%% TODO(bob): promote the Q48.16 definition, operations, and precision analysis.
+
+\section{Feedback Loop Equations}
+\label{vol3:sec:math:loops}
+
+%% SOURCE: Math_Companion_SSRN.tex (feedback loop mathematical formulations)
+%% TODO(bob): promote the equations for all 7 loops.
+
+\section{Figures}
+\label{vol3:sec:math:figures}
+
+%% SOURCE: docs/working/papers/SSRN_companion/figures/ (7 PDFs)
+%% TODO(bob): decide which figures to include in this volume.
+%% Available figures:
+%%   fig1_snake_trajectory.pdf      — phase-space snake trajectory
+%%   fig2_K_vs_window.pdf           — K parameter vs window width
+%%   fig3_FFT_spectrum.pdf          — FFT spectrum of adaptation signal
+%%   fig4_golden_ratio_penalties.pdf — penalty function shape
+%%   fig5_bimodal_distributions.pdf — heat distribution bimodality
+%%   fig6_performance_vs_k.pdf      — performance vs K sweep
+%%   fig7_performance_by_regime.pdf — performance by operating regime
+
+\begin{figure}[ht]
+  \centering
+  %% TODO(bob): uncomment and adjust path when figures are accessible from build:
+  %% \includegraphics[width=0.8\linewidth]{../../working/papers/SSRN_companion/figures/fig1_snake_trajectory.pdf}
+  \caption{Phase-space trajectory (snake plot).}
+  \label{fig:snake}
+\end{figure}

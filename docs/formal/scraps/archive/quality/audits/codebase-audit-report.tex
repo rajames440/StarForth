@@ -1,0 +1,21 @@
+%% SCRAP: archive/quality/audits/codebase-audit-report
+%% SOURCE: docs/working/archive/quality/audits/codebase-audit-report.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Full Codebase Audit Report (December 2025)}
+
+A comprehensive audit of the StarForth codebase conducted in December 2025
+identified 48 issues across six categories. Critical findings included
+duplicate \texttt{profiler.h} definitions causing a \texttt{multiple
+definition} link error, a \texttt{LOG\_LINE\_MAX} constant defined
+inconsistently at 64 bytes in one translation unit and 256 bytes in another,
+and seven duplicate documentation files totalling 136~KB of redundant content.
+
+The audit assessed source files, header files, the build system, the test
+suite, and documentation. No security vulnerabilities were found. The complete
+findings, organized by severity and category, are recorded in the source
+document. All 48 issues were addressed in subsequent corrective actions (see
+\texttt{corrective-actions.md} in this archive). This report is retained as
+the historical baseline for the December 2025 quality remediation program.

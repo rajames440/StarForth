@@ -1,0 +1,117 @@
+%% User Guide — main.tex
+%% SOURCE: docs/working/architecture/getting-started/, docs/working/architecture/architecture-internals/
+%% TODO(bob): set version, ISBN/DOI placeholder, cover design
+
+\input{../common/preamble}
+
+\title{StarForth User Guide\\[0.4em]
+       \large Running, Scripting, and Exploring StarForth}
+\author{Robert A.\ James}
+\date{%% TODO(bob): set edition date
+}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+
+\mainmatter
+
+%%────────────────────────────────────────────────
+%% Part I — First Steps
+%%────────────────────────────────────────────────
+\part{First Steps}
+
+\chapter{Installation}
+\input{../scraps/architecture/getting-started/INSTALL}
+
+\chapter{Quick Start}
+\input{../scraps/architecture/getting-started/QUICKSTART}
+
+%%────────────────────────────────────────────────
+%% Part II — The StarForth REPL
+%%────────────────────────────────────────────────
+\part{The StarForth REPL}
+
+\chapter{Interactive Mode}
+%% TODO(bob): stub — describe REPL prompt, input loop, error recovery, BYE.
+
+\chapter{Running Files and Blocks}
+%% TODO(bob): stub — INCLUDE, LOAD, THRU, block file layout.
+
+\chapter{The Emergency Console}
+%% TODO(bob): stub — describe ok> emergency prompt, fault recovery, EMERGENCY_CONSOLE_ENABLED flag.
+
+%%────────────────────────────────────────────────
+%% Part III — FORTH-79 Word Reference
+%%────────────────────────────────────────────────
+\part{FORTH-79 Word Reference}
+
+\chapter{Stack Operations}
+%% TODO(bob): stub — DUP DROP SWAP ROT OVER NIP TUCK 2DUP 2DROP 2SWAP.
+
+\chapter{Arithmetic and Logic}
+%% TODO(bob): stub — + - * / MOD ABS MIN MAX AND OR XOR INVERT LSHIFT RSHIFT.
+
+\chapter{Memory and Variables}
+%% TODO(bob): stub — @ ! C@ C! VARIABLE CONSTANT CREATE DOES>.
+
+\chapter{Control Flow}
+%% TODO(bob): stub — IF ELSE THEN DO LOOP BEGIN UNTIL WHILE REPEAT.
+
+\chapter{String and I/O Words}
+%% TODO(bob): stub — EMIT KEY TYPE CR SPACE ACCEPT S" .(
+
+\chapter{Defining Words}
+%% TODO(bob): stub — : ; IMMEDIATE CONSTANT VARIABLE CREATE DOES> VOCABULARY.
+
+\chapter{Block Words}
+%% TODO(bob): stub — BLOCK BUFFER LOAD THRU FLUSH UPDATE.
+
+\chapter{Fixed-Point Arithmetic: Q48.16}
+%% TODO(bob): stub — Q48.16 word set, notation, conversion words.
+
+%%────────────────────────────────────────────────
+%% Part IV — StarForth Extensions
+%%────────────────────────────────────────────────
+\part{StarForth Extensions}
+
+\chapter{Physics Diagnostics}
+%% TODO(bob): stub — WORD-ENTROPY, PHYSICS-FREEZE / PHYSICS-THAW, heat display.
+
+\chapter{Heartbeat and Adaptive Tuning}
+\input{../scraps/architecture/heartbeat_csv_export}
+
+\chapter{Design of Experiments Mode}
+%% TODO(bob): stub — --doe flag, factorial 2^7 design, output interpretation.
+
+%%────────────────────────────────────────────────
+%% Part V — Running on Hardware
+%%────────────────────────────────────────────────
+\part{Running on Hardware}
+
+\chapter{Linux and POSIX Platforms}
+%% TODO(bob): stub — standard hosted build, no dependencies beyond libc.
+
+\chapter{Raspberry Pi 4}
+\input{../scraps/hardware/platform-integration/RASPBERRY_PI_BUILD}
+
+\chapter{LithosAnanke Bare-Metal Boot}
+%% TODO(bob): stub — UEFI boot flow, serial console, capsule loading on hardware.
+
+%%────────────────────────────────────────────────
+%% Appendices
+%%────────────────────────────────────────────────
+\appendix
+
+\chapter{Build Flags Reference}
+\input{../scraps/architecture/build-and-tooling/BUILD_OPTIONS}
+
+\chapter{Glossary}
+%% TODO(bob): stub — FORTH, Capsule, Heat, Rolling Window, Jacquard, Uberkernel, Hades, James Law, SSM.
+
+\backmatter
+\bibliographystyle{plainnat}
+\bibliography{../common/starship}
+
+\end{document}

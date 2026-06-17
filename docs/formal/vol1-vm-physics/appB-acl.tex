@@ -1,0 +1,83 @@
+%% Vol I, Appendix B — Word-Level ACL System
+%% SOURCE: docs/working/architecture/03-architecture/word-acl/DESIGN.md
+%%         .claude/CLAUDE.md (Word-Level ACL System section)
+%%         proof/ACL_*.thy (5 files)
+
+\chapter{Word-Level ACL System}
+\label{vol1:app:acl}
+
+%% TODO(bob): this appendix summarizes the word-level ACL system implemented
+%% through Phase 6. Full design spec is in word-acl/DESIGN.md.
+
+\section{Design Summary}
+\label{vol1:sec:acl:design}
+
+%% SOURCE: docs/working/architecture/03-architecture/word-acl/DESIGN.md
+%% TODO(bob): brief description of the ACL model: four C fields in DictEntry,
+%% two VM flags, all policy logic in ACL.4th (no new C primitives for policy).
+
+The word-level ACL system is implemented through Phase 6. Key constraints
+(cite the design doc for full details):
+
+\begin{itemize}
+  \item All policy logic in \texttt{ACL.4th} — no new C primitives for policy.
+  \item Four \texttt{DictEntry} C fields: \texttt{acl\_ttl}, \texttt{acl\_allow},
+        \texttt{acl\_mode}, \texttt{acl\_pinned}.
+  \item Two VM flags: \texttt{emergency\_console} (fault handler active) and
+        \texttt{zuse\_session} (superuser authenticated).
+  \item \texttt{ACL.4th} is self-activating; \texttt{init.4th} only needs
+        \texttt{S" ACL.4th" EXEC}.
+  \item \texttt{ACL-PIN} is one-way; inheritance clears pin, copies mode.
+\end{itemize}
+
+\section{Phase Status}
+\label{vol1:sec:acl:phases}
+
+\begin{table}[ht]
+  \centering
+  \caption{ACL implementation phase status}
+  \label{tab:acl-phases}
+  \begin{tabular}{lll}
+    \toprule
+    Phase & Description & Status \\
+    \midrule
+    1 & C Infrastructure (\texttt{DictEntry} fields, interpreter hook, \texttt{acl\_recheck()}) & Done \\
+    2 & \texttt{ACL.4th} FORTH policy words + \texttt{ACL-INIT-PRIMITIVES} + self-activation & Done \\
+    3 & \texttt{capsules/zuse.4th} bootstrap superuser skeleton; CA root placeholder & Done \\
+    4 & \texttt{init.4th} opt-in toggle & Done \\
+    5 & POST tests (800/800) + Isabelle/HOL proofs (5 theory files) & Done \\
+    6 & \texttt{EMERGENCY\_CONSOLE\_ENABLED} build flag + \texttt{vm\_fault\_handler} & Done \\
+    7 & LithosAnanke parity — port to kernel context, three-arch acceptance & Pending \\
+    8 & PKI / thumbdrive — Ed25519 challenge-response; user minting by zuse & Future \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{ACL Formal Proofs}
+\label{vol1:sec:acl:proofs}
+
+%% SOURCE: proof/ACL_Pin_Monotone.thy, ACL_Inherit_Clears_Pin.thy,
+%%         ACL_TTL_Bounded.thy, ACL_Emergency_Bypass.thy, ACL_No_Escalation.thy
+%% TODO(bob): one paragraph per theorem with statement and brief intuition.
+%% Cite james:2025:proof:acl.
+
+Five Isabelle/HOL theorems cover the ACL system's core safety properties:
+
+\begin{enumerate}
+  \item \textbf{Pin Monotonicity} (\texttt{ACL\_Pin\_Monotone.thy}) — once pinned,
+        a word remains pinned through the system's lifetime.
+        %% TODO(bob): state the theorem formally.
+  \item \textbf{Inheritance Clears Pin} (\texttt{ACL\_Inherit\_Clears\_Pin.thy}) — inherited words
+        carry mode but never carry pin status.
+        %% TODO(bob): state the theorem formally.
+  \item \textbf{TTL Bounded} (\texttt{ACL\_TTL\_Bounded.thy}) — all TTL values
+        remain within defined bounds; no overflow.
+        %% TODO(bob): state the theorem formally.
+  \item \textbf{Emergency Bypass Correct} (\texttt{ACL\_Emergency\_Bypass.thy}) —
+        the emergency console bypass does not escalate privileges.
+        %% TODO(bob): state the theorem formally.
+  \item \textbf{No Escalation} (\texttt{ACL\_No\_Escalation.thy}) —
+        no sequence of ACL operations allows a word to acquire permissions
+        it was not granted.
+        %% TODO(bob): state the theorem formally.
+\end{enumerate}

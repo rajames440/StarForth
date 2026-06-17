@@ -1,0 +1,90 @@
+%% SCRAP: experiments/02-experiments/L8_WIRING_PLAN
+%% SOURCE: docs/working/experiments/02-experiments/L8_WIRING_PLAN.md
+%% STATUS: HISTORICAL
+%% FITS: experiments/ch-l8
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L8 Control-Wiring Plan}
+\label{sec:l8-wiring-plan}
+
+Prior to the wiring implementation, the L8 Jacquard Steady State Machine
+(SSM) computed a 4-bit mode signal and set Boolean flags in
+\texttt{vm->ssm\_config}, but the feedback loops L2, L3, L5, and L6 ran
+unconditionally — the selector was, in the source's words, ``a supervisor
+without authority.'' This plan defined the four code locations requiring gates
+and specified the recommended implementation order.
+
+\subsection{Loop Status Before Wiring}
+
+\begin{center}
+\begin{tabular}{clll}
+\toprule
+Loop & Name & Pre-wiring status & Control signal \\
+\midrule
+L1 & Heat tracking     & Compile-time disabled & — (harmful in 86\% of configs) \\
+L2 & Rolling window    & Always on (needed gating) & L8 bit~3 (entropy-driven) \\
+L3 & Linear decay      & Always on (needed gating) & L8 bit~2 (temporal locality) \\
+L4 & Pipelining metrics & Compile-time disabled & — (harmful in 100\% of configs) \\
+L5 & Window inference  & Always on (needed gating) & L8 bit~1 (CV-driven) \\
+L6 & Decay inference   & Always on (needed gating) & L8 bit~0 (CV + temporal) \\
+L7 & Adaptive heartrate & Always on & — (beneficial in 71\% of configs) \\
+L8 & Jacquard selector & Implemented & 4-bit mode controller (C0--C15) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Required Code Changes}
+
+Four locations required modification, spanning three source files and
+approximately 40--60 lines of new conditional logic.
+
+\paragraph{L3 gate — \texttt{src/physics\_metadata.c}:176}
+Insert an early-return check after the frozen-word and minimum-interval
+guards in \texttt{physics\_metadata\_apply\_linear\_decay()}. The gate is
+internal to the function, keeping call sites unchanged.
+
+\paragraph{L5 gate — \texttt{src/inference\_engine.c}:538}
+Replace the unconditional call to \texttt{find\_variance\_inflection()} with a
+conditional block that preserves the previous \texttt{adaptive\_window\_width}
+when L5 is off. A fallback to legacy mode (no \texttt{ssm\_config}) ensures
+backward compatibility.
+
+\paragraph{L6 gate — \texttt{src/inference\_engine.c}:546}
+Symmetric to the L5 gate, guarding \texttt{infer\_decay\_slope\_q48()}.
+Previous \texttt{adaptive\_decay\_slope} is preserved when L6 is off.
+
+\paragraph{L2 gate — \texttt{src/vm.c}:1652}
+Call-site gate in the hot path of \texttt{execute\_colon\_word()}, wrapping
+\texttt{rolling\_window\_record\_execution()} in a null check on
+\texttt{vm->ssm\_config} and a Boolean read. This option (Option~A) was
+preferred over an internal gate inside the rolling-window subsystem for
+separation-of-concerns reasons.
+
+\subsection{Implementation Order}
+
+The plan recommended proceeding from simplest to most complex:
+
+\begin{enumerate}
+  \item L3 (linear decay) — internal gate, single function.
+  \item L5 (window inference) — preserve previous value, medium complexity.
+  \item L6 (decay inference) — symmetric to L5.
+  \item L2 (rolling window) — call-site gate in the hot execution path.
+\end{enumerate}
+
+\subsection{Validation}
+
+Success was defined as all four loops consulting \texttt{ssm\_config} flags
+before executing, mode transitions appearing in debug logs, the full test
+suite passing under the default mode, and the ability to reproduce any of the
+16 DoE configurations by forcing L8 to a specific mode.
+
+\subsection{Open Questions Resolved Post-Implementation}
+
+\begin{itemize}
+  \item \textbf{Default mode}: The VM initialises at C0 (minimal) and adapts
+        within $\sim$25~ms; C0 did not break any tests.
+  \item \textbf{L2 gate placement}: Option~A (call-site) was chosen.
+  \item \textbf{Mode override words}: Deferred to a future sprint; listed as
+        planned extensions (\texttt{L8-MODE!}, \texttt{L8-MODE@},
+        \texttt{L8-AUTO}).
+\end{itemize}

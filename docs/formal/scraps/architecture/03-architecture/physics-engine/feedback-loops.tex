@@ -1,0 +1,191 @@
+%% SCRAP: architecture/03-architecture/physics-engine/feedback-loops
+%% SOURCE: docs/working/architecture/03-architecture/physics-engine/feedback-loops.md
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The Seven Feedback Loops}
+
+StarForth's adaptive runtime is governed by seven configurable feedback loops.
+Each loop pairs a positive (accumulation) signal that drives the runtime toward
+optimization against a negative (stabilization) signal that prevents runaway
+growth and holds the system at equilibrium. Every loop can be toggled
+independently through a Makefile flag of the form \texttt{ENABLE\_LOOP\_N\_*},
+and the loops are designed to compose cumulatively so that Design of Experiments
+(DoE) campaigns can measure each increment in isolation.
+
+The loops borrow thermodynamic language as a modeling convenience. Using
+execution frequency as a proxy for thermal energy, the runtime tracks
+``heat'' per word, lets it ``decay'' over time, and reasons about ``stability''
+in statistical terms. These are descriptive tools, not claims of physical
+thermodynamics.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+Loop & Name & Accumulation signal & Stabilization signal \\
+\midrule
+\#1 & Execution Heat & word execution increments heat & Loop \#3 decay; cold words demoted \\
+\#2 & Rolling Window & every execution recorded to buffer & wrap overwrite; adaptive shrinking \\
+\#3 & Linear Decay & slope starts at $1/3$ & decay reduces heat; slope adjusts $\pm 5\%$ \\
+\#4 & Pipelining & word$\rightarrow$word transitions recorded & counts age out; miss-rate feedback \\
+\#5 & Window Inference & window grows with diversity & Levene's test shrinks to minimum \\
+\#6 & Decay Inference & regression extracts decay rate & ANOVA early-exit; fit-quality bound \\
+\#7 & Adaptive Heartrate & tick counter increments & inference cadence falls when stable \\
+\bottomrule
+\end{tabular}
+\caption{The seven feedback loops, with their accumulation and stabilization mechanisms.}
+\end{table}
+
+\subsection{Loop \#1 --- Execution Heat Tracking}
+
+Loop \#1 counts word usage to identify hot execution paths. Every execution
+increments \texttt{DictEntry.execution\_heat}, and words crossing the promotion
+threshold migrate into the \texttt{hotwords\_cache} for constant-time lookup.
+Stabilization comes from Loop \#3, which decays heat over time, and from cache
+demotion: words falling below \texttt{HEAT\_CACHE\_DEMOTION\_THRESHOLD}~(10)
+are evicted. The \texttt{PHYSICS-RESET-STATS} word clears all heat counters.
+Build flag: \texttt{ENABLE\_LOOP\_1\_HEAT\_TRACKING}.
+
+\subsection{Loop \#2 --- Rolling Window History}
+
+Loop \#2 captures the execution sequence in a circular buffer
+(\texttt{execution\_history}) to seed metrics deterministically. The window
+grows to \texttt{ROLLING\_WINDOW\_SIZE}~(default 4096) before wrapping and
+becomes ``warm'' after 1024 executions, the point at which it holds
+representative data. Stabilization is twofold: oldest entries are overwritten
+on wrap, and adaptive shrinking reduces \texttt{effective\_window\_size}
+whenever pattern-diversity growth falls below
+\texttt{ADAPTIVE\_GROWTH\_THRESHOLD}~(1\%). The check runs every
+\texttt{ADAPTIVE\_CHECK\_FREQUENCY}~(256) executions, retains
+\texttt{ADAPTIVE\_SHRINK\_RATE}~(75\%) of the window per cycle, and never
+shrinks below \texttt{ADAPTIVE\_MIN\_WINDOW\_SIZE}~(256). Build flag:
+\texttt{ENABLE\_LOOP\_2\_ROLLING\_WINDOW}.
+
+\subsection{Loop \#3 --- Linear Decay}
+
+Loop \#3 ages words to prevent unbounded heat accumulation; it is primarily a
+negative-feedback loop. Heat decays at \texttt{DECAY\_RATE\_PER\_US\_Q16}
+($1/65536$ heat per microsecond), giving a half-life of roughly six to seven
+seconds for a 100-heat word. The decay slope, stored as a \Qtype{} value
+(\texttt{decay\_slope\_q48}, initialized to $1/3$), self-adjusts by $\pm 5\%$
+against the hot-to-stale word ratio: an excess of hot words increases the slope,
+an excess of stale words decreases it. A minimum interval
+\texttt{DECAY\_MIN\_INTERVAL}~($1\,\mu$s) guards against over-decay. Build flag:
+\texttt{ENABLE\_LOOP\_3\_LINEAR\_DECAY}.
+
+\subsection{Loop \#4 --- Pipelining Metrics}
+
+Loop \#4 tracks word-to-word transitions to enable speculative prefetch.
+\texttt{WordTransitionMetrics} records transitions per word and builds context
+windows of depth \texttt{TRANSITION\_WINDOW\_SIZE}~(default 2) for prediction,
+while \texttt{prefetch\_attempts} and \texttt{prefetch\_hits} track accuracy.
+Transition counts age out over time, and a miss-rate signal drives a binary-chop
+search over window size through \texttt{PipelineGlobalMetrics.suggested\_next\_size}.
+Build flag: \texttt{ENABLE\_LOOP\_4\_PIPELINING\_METRICS}.
+
+\subsection{Loop \#5 --- Window Width Inference}
+
+Loop \#5 finds the optimal rolling-window size through statistical testing.
+The \texttt{effective\_window\_size} expands toward \texttt{ROLLING\_WINDOW\_SIZE}
+when pattern diversity rises above threshold. For stabilization it applies
+Levene's test for equality of variance: the heat trajectory is split into $K$
+disjoint chunks, each chunk's variance is computed independently, and the test
+statistic $W$ is compared against the critical value ($W \approx 6.5$ at
+$\alpha = 0.05$). When $W \le$ critical, the variances are stable and the window
+has reached its minimum sufficient size, preventing over-capture of redundant
+pattern data. Build flag: \texttt{ENABLE\_LOOP\_5\_WINDOW\_INFERENCE}.
+
+\subsection{Loop \#6 --- Decay Slope Inference}
+
+Loop \#6 extracts the optimal decay rate by exponential regression over the heat
+trajectory. Fitting the log-linear model
+
+\begin{equation}
+\ln(\mathrm{heat}[t]) = \ln(h_0) - \mathrm{slope} \cdot t
+\end{equation}
+
+yields a closed-form \texttt{adaptive\_decay\_slope}. An ANOVA early-exit guards
+the cost: if \texttt{has\_variance\_stabilized()} reports that variance changed
+by less than 5\% since the last inference, the computation is skipped and the
+cached result reused, saving an estimated 5--10k CPU cycles. The slope is
+bounded by fit quality (\texttt{slope\_fit\_quality\_q48}), and
+\texttt{inference\_outputs\_validate()} rejects invalid slopes (zero or greater
+than 100). Build flag: \texttt{ENABLE\_LOOP\_6\_DECAY\_INFERENCE}.
+
+\subsection{Loop \#7 --- Adaptive Heartrate}
+
+Loop \#7 adjusts tick frequency to balance responsiveness against inference cost.
+\texttt{tick\_count} increments every heartbeat; the heartbeat thread wakes at
+\texttt{HEARTBEAT\_TICK\_NS}~(1\,ms default) and samples hot-word count, total
+heat, and window width. When the system is stable, full inference runs less
+often, gated by \texttt{HEARTBEAT\_INFERENCE\_FREQUENCY}~(5000 ticks): expensive
+inference triggers a slower tick cadence. The background \texttt{HeartbeatWorker}
+thread can be disabled entirely with \texttt{HEARTBEAT\_THREAD\_ENABLED=0}.
+Build flag: \texttt{ENABLE\_LOOP\_7\_ADAPTIVE\_HEARTRATE}.
+
+\subsection{Principal Stabilizers}
+
+Five mechanisms carry the bulk of the system's negative feedback:
+
+\begin{itemize}
+  \item \textbf{Heat decay} (Loop \#3) --- the primary stabilizer, preventing
+        unbounded heat accumulation.
+  \item \textbf{Window shrinking} (Loops \#2 and \#5) --- a diversity plateau
+        triggers size reduction via Levene's test.
+  \item \textbf{ANOVA early-exit} (Loop \#6) --- variance stability below 5\%
+        change skips expensive inference.
+  \item \textbf{Cache demotion} (Loop \#1) --- words below the demotion
+        threshold leave the hot-words cache.
+  \item \textbf{Slope reversal} (Loop \#3) --- an inverted hot-to-stale ratio
+        adjusts the decay slope by $\pm 5\%$.
+\end{itemize}
+
+\subsection{Configuration}
+
+Any loop can be disabled at build time. Setting all seven flags to zero yields
+the baseline configuration used as the DoE reference point.
+
+\begin{lstlisting}[language=bash]
+# Disable a specific loop
+make ENABLE_LOOP_3_LINEAR_DECAY=0
+
+# Baseline build (all loops off)
+make ENABLE_LOOP_1_HEAT_TRACKING=0 \
+     ENABLE_LOOP_2_ROLLING_WINDOW=0 \
+     ENABLE_LOOP_3_LINEAR_DECAY=0 \
+     ENABLE_LOOP_4_PIPELINING_METRICS=0 \
+     ENABLE_LOOP_5_WINDOW_INFERENCE=0 \
+     ENABLE_LOOP_6_DECAY_INFERENCE=0 \
+     ENABLE_LOOP_7_ADAPTIVE_HEARTRATE=0
+\end{lstlisting}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Knob & Default & Description \\
+\midrule
+\texttt{ROLLING\_WINDOW\_SIZE} & 4096 & Initial/maximum window size \\
+\texttt{ADAPTIVE\_SHRINK\_RATE} & 75 & \% retained when shrinking \\
+\texttt{ADAPTIVE\_MIN\_WINDOW\_SIZE} & 256 & Floor for window shrinking \\
+\texttt{ADAPTIVE\_CHECK\_FREQUENCY} & 256 & Executions between diversity checks \\
+\texttt{ADAPTIVE\_GROWTH\_THRESHOLD} & 1 & Growth rate (\%) signalling saturation \\
+\texttt{DECAY\_RATE\_PER\_US\_Q16} & 1 & Heat decay per microsecond (\Qtype{}) \\
+\texttt{HEARTBEAT\_INFERENCE\_FREQUENCY} & 5000 & Ticks between full inference runs \\
+\texttt{TRANSITION\_WINDOW\_SIZE} & 2 & Context depth for pipelining prediction \\
+\bottomrule
+\end{tabular}
+\caption{Tuning knobs for the feedback loops.}
+\end{table}
+
+The implementation is distributed across
+\texttt{src/rolling\_window\_of\_truth.c} (Loop \#2),
+\texttt{src/dictionary\_heat\_optimization.c} (Loops \#1 and \#3),
+\texttt{src/inference\_engine.c} (unified Loops \#5 and \#6),
+\texttt{src/physics\_pipelining\_metrics.c} (Loop \#4), and the \texttt{vm\_tick()}
+heartbeat dispatcher in \texttt{src/vm.c} (Loop \#7). Knob definitions live in
+\texttt{include/rolling\_window\_knobs.h}.

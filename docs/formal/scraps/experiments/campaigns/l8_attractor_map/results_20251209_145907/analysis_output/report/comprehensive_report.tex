@@ -1,0 +1,74 @@
+%% SCRAP: experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/comprehensive_report
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/comprehensive_report.md
+%% STATUS: HISTORICAL
+%% FITS: experiments/ch-l8-map
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L8 Attractor Heartbeat Analysis: Comprehensive Statistical Report}
+
+\textbf{Analysis date:} 9 December 2025. \textbf{Dataset:} 180 experimental
+runs (6 workloads $\times$ 30 replicates). \textbf{Valid heartbeat ticks:}
+4{,}171.
+
+\subsection{Statistical Summary}
+
+The grand mean tick interval was $77.10\,\mu$s (median $73.18\,\mu$s),
+with an overall coefficient of variation of 39.91\%. Two significance tests
+both confirmed workload-dependent timing differences:
+
+\begin{itemize}
+  \item ANOVA: $F(5,\,4165) = 3.890$, $p = 0.0016$
+  \item Kruskal--Wallis: $H = 17.141$, $p = 0.0042$
+\end{itemize}
+
+Mean ticks to convergence: 23.3 (range 13--39, $\sigma = 2.61$ ticks).
+
+\subsection{Workload-Specific Performance}
+
+\begin{center}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Workload    & $n$ & Mean ($\mu$s) & Std & Min & 25\% & Median & CV (\%) \\
+\midrule
+STABLE      & 704 & 75.45 & 13.58 & 26.18 & 71.66 & 73.09 & 18.00 \\
+VOLATILE    & 694 & 76.04 & 17.27 & 23.91 & 71.79 & 73.17 & 22.71 \\
+OMNI        & 680 & 76.95 & 20.16 & 29.64 & 71.94 & 73.28 & 26.20 \\
+TEMPORAL    & 706 & 75.77 & 24.32 & 24.30 & 71.70 & 73.07 & 32.09 \\
+DIVERSE     & 716 & 76.87 & 32.65 & 21.82 & 71.87 & 73.06 & 42.47 \\
+TRANSITION  & 671 & 81.72 & 56.49 & 23.95 & 72.10 & 73.54 & 69.13 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Interpretation}
+
+\subsubsection{Deterministic Convergence}
+
+All six workloads converged to a ground-state oscillation, confirming that
+the L8 attractor mechanism is workload-independent in its convergence
+behavior. The coefficient of variation across convergence times was below
+5\%, indicating exceptional timing stability once steady state is reached.
+
+\subsubsection{Thermal Signatures}
+
+Each workload exhibits a characteristic average word heat at steady state,
+providing a potential fingerprint for workload classification without
+explicit runtime inspection. TRANSITION's 69\% CV distinguishes it from
+the other five workloads and is consistent with its role as a phase-change
+boundary rather than a stable operational regime.
+
+\subsubsection{Stress Test}
+
+OMNI (seven times the computational intensity of a standard workload)
+produced timing statistics comparable to STABLE, confirming that the
+adaptive heartbeat mechanism decouples timing from raw computational load.
+
+\subsection{Files Generated}
+
+\begin{itemize}
+  \item 13 SVG charts (distributions, boxplots, time series, heat
+        correlation, violin plots)
+  \item \texttt{tick\_interval\_summary.csv} — descriptive statistics by
+        workload
+  \item \texttt{convergence\_summary.csv} — tick count analysis by workload
+\end{itemize}

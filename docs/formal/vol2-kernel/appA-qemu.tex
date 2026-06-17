@@ -1,0 +1,31 @@
+%% Vol II, Appendix A — QEMU and Regression Baseline
+%% SOURCE: .claude/CLAUDE.md (QEMU_BASELINE.log reference)
+%%         QEMU_BASELINE.log (reference output)
+
+\chapter{QEMU Testing and Regression Baseline}
+\label{vol2:app:qemu}
+
+\section{Running the Kernel in QEMU}
+\label{vol2:sec:qemu:run}
+
+\begin{lstlisting}[language=bash, caption={Running LithosAnanke in QEMU}]
+make -f Makefile.starkernel qemu
+# Requires OVMF UEFI firmware in the OVMF_PATH (see Makefile.starkernel)
+\end{lstlisting}
+
+%% TODO(bob): document OVMF_PATH and any firmware prerequisites.
+
+\section{Regression Baseline}
+\label{vol2:sec:qemu:baseline}
+
+%% SOURCE: QEMU_BASELINE.log (project root)
+%% TODO(bob): describe the QEMU_BASELINE.log format and how to use it for
+%% regression detection. Key note: the log captures reference QEMU/OVMF
+%% output; deviations indicate regressions.
+
+The file \texttt{QEMU\_BASELINE.log} at the repository root captures the
+reference QEMU/OVMF output from a known-good LithosAnanke build. Any deviation
+in a new build's output from this baseline indicates a regression.
+
+%% TODO(bob): describe the expected baseline milestones that appear in the log
+%% (M1 through M6/M7 console output).

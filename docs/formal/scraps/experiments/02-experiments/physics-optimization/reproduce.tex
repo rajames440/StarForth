@@ -1,0 +1,127 @@
+%% SCRAP: experiments/02-experiments/physics-optimization/reproduce
+%% SOURCE: docs/working/experiments/02-experiments/physics-optimization/reproduce.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-physics-opt, vol3-research/ch-repro
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Reproducing the Hot-Words Cache Experiment}
+
+This guide explains how to reproduce the physics-driven hot-words cache
+optimization experiment, which demonstrated a $1.78\times$ speedup on
+dictionary lookups in StarForth. The experiment validates the core
+principle that execution-frequency metrics collected in real time
+drive automatic optimization decisions, with performance impact measured
+at statistical rigor using Bayesian inference over Q48.16 fixed-point
+arithmetic.
+
+\textbf{Expected results:} cache hit rate approximately 35\%, speedup
+factor $1.78\times$ (bucket search versus cache path), 95\% credible
+interval $[1.75\times, 1.81\times]$, mean time saved approximately
+348\,ns per lookup.
+
+\subsection{Prerequisites}
+
+\begin{itemize}
+  \item x86\_64 or ARM64 Linux host with GCC (C99) and \texttt{make}
+  \item 512\,MB RAM minimum (5\,MB VM memory required)
+  \item No external math libraries needed: the physics system uses pure
+        Q48.16 fixed-point arithmetic, making it L4Re-compatible and
+        formally verifiable
+\end{itemize}
+
+\subsection{Build}
+
+Build with the hot-words cache enabled (default):
+
+\begin{lstlisting}[language=bash]
+make clean && make
+\end{lstlisting}
+
+Build without the cache to establish a baseline:
+
+\begin{lstlisting}[language=bash]
+make clean && make ENABLE_HOTWORDS_CACHE=0
+\end{lstlisting}
+
+Verify the build configuration:
+
+\begin{lstlisting}[language=bash]
+./build/amd64/standard/starforth -c "PHYSICS-BUILD-INFO BYE"
+\end{lstlisting}
+
+\subsection{Running the Benchmark}
+
+A quick 100\,K-iteration run:
+
+\begin{lstlisting}[language=forth]
+PHYSICS-RESET-STATS
+100000 BENCH-DICT-LOOKUP
+PHYSICS-CACHE-STATS
+BYE
+\end{lstlisting}
+
+For tighter credible intervals, use 1\,M iterations (approximately 60
+seconds):
+
+\begin{lstlisting}[language=forth]
+PHYSICS-RESET-STATS
+1000000 BENCH-DICT-LOOKUP
+PHYSICS-CACHE-STATS
+BYE
+\end{lstlisting}
+
+\subsection{Interpreting Key Metrics}
+
+\begin{center}
+\begin{tabular}{lp{7cm}}
+\toprule
+Metric & Interpretation \\
+\midrule
+Cache hit rate $> 30\%$    & Hot-word identification is functioning \\
+Speedup $> 1.5\times$      & Meaningful dictionary acceleration \\
+Cache-path std\,dev $\approx 0$\,ns & Deterministic path, correct \\
+Bucket std\,dev $> 0$\,ns  & Normal: varied bucket depths \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The Bayesian credible intervals are computed over Q48.16 fixed-point
+arithmetic. A 95\% CI of $[1.75\times, 1.81\times]$ indicates tight,
+reproducible measurement. $P(\text{speedup} > 1.1\times) \approx 99.9\%$.
+
+\subsection{Q48.16 Fixed-Point Arithmetic}
+
+All timing computations use 64-bit signed Q48.16 fixed-point:
+48 integer bits and 16 fractional bits, giving a precision of
+$2^{-16} \approx 0.0000153$\,ns and a range of $\pm 140$ trillion
+nanoseconds. No floating-point arithmetic is used, preserving L4Re
+compatibility and formal verifiability.
+
+When the benchmark reports \texttt{31.543 ns}: the raw Q48.16 value is
+$31.543 \times 65536 = 2{,}067{,}029$; divide by 65536 to recover
+nanoseconds.
+
+\subsection{Diagnostic Checklist}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Symptom & Diagnosis & Remedy \\
+\midrule
+Hit rate $< 20\%$ & Dictionary under-exercised & Use \texttt{BENCH-DICT-LOOKUP} directly \\
+Speedup $< 1.2\times$ & Sample too small & Increase to 100\,K+ iterations \\
+High variance & System load & Run in isolation; pin CPU \\
+Cache never fills & Threshold too high & Check \texttt{HOTWORDS\_EXECUTION\_HEAT\_THRESHOLD} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{References}
+
+\begin{itemize}
+  \item Physics implementation: \texttt{src/physics\_hotwords\_cache.c},
+        \texttt{include/physics\_hotwords\_cache.h}
+  \item Benchmark word definitions:
+        \texttt{src/word\_source/physics\_benchmark\_words.c}
+  \item Metrics collection: \texttt{src/physics\_metadata.c}
+\end{itemize}

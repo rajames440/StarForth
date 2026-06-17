@@ -1,0 +1,150 @@
+%% SCRAP: specifications/HOLA_PROTOCOL
+%% SOURCE: docs/working/specifications/HOLA_PROTOCOL.adoc
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-hola, cookbook/app-hola
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The HOLA Shared-Memory Protocol (Phase 1)}
+
+Phase 1 establishes the Host Observation \& Logistics Adapter (HOLA) as the
+stable contract between the StarForth VM and external analyzers. The runtime
+exposes a fixed-size analytics heap --- 10\,MiB by default --- implemented in
+\texttt{physics\_runtime.c}. This section specifies the shared-memory schema and
+command flow that Phase 1 tooling expects.
+
+\subsection{Memory Layout}
+
+The analytics heap divides into four regions. The header carries
+single-producer/single-consumer metadata identified by
+\texttt{HOLA\_SHARED\_MAGIC}; the event ring is a lock-free buffer of physics
+events; the summary region holds aggregated statistics and Bayesian posteriors;
+and the scratch region is reserved for governance-approved features.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+Region & Offset & Size & Notes \\
+\midrule
+Header & \texttt{0} & \texttt{sizeof(header\_t)} & Producer/consumer metadata \\
+Event ring & \texttt{ring\_offset} & \texttt{ring\_bytes} & Lock-free event ring \\
+Summary & \texttt{summary\_offset} & \texttt{summary\_bytes} & Stats \& posteriors \\
+Scratch & \texttt{scratch\_offset} & \texttt{scratch\_bytes} & Reserved \\
+\bottomrule
+\end{tabular}
+\caption{HOLA analytics heap regions.}
+\end{table}
+
+The header mirrors the C structure in \texttt{include/physics\_runtime.h} and
+must remain packed and aligned exactly as defined. All multi-byte fields use the
+VM's native endianness. Consumers must validate \texttt{magic},
+\texttt{version\_major}, and \texttt{version\_minor} before touching the heap.
+
+\subsection{Event Records}
+
+Each ring entry begins with a fixed header:
+
+\begin{lstlisting}[language=C]
+struct physics_analytics_event_header {
+    uint32_t channel;        // logical stream id
+    uint16_t payload_bytes;  // raw payload size
+    uint16_t reserved;       // alignment padding (zero)
+    uint64_t timestamp_ns;   // producer timestamp (sf_monotonic_ns)
+};
+\end{lstlisting}
+
+Payloads are padded to eight bytes. The producer updates \texttt{produce\_seq}
+atomically after writing each record; consumers advance \texttt{read\_offset}
+and bump \texttt{consume\_seq} once an event is fully processed. Overflow is
+signalled by incrementing \texttt{dropped\_events} while leaving the ring
+untouched, and consumers must treat the next readable event as the
+resynchronization point.
+
+\subsection{Channels}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+Channel & Purpose \\
+\midrule
+\texttt{0x00000001} & Word execution samples (entropy, latency, dictionary id) \\
+\texttt{0x00000002} & Host snapshot deltas (\texttt{physics\_host\_snapshot\_t}) \\
+\texttt{0x0000FF00}--\texttt{0x0000FFFF} & Governance-reserved control/alert events \\
+\bottomrule
+\end{tabular}
+\caption{Recommended HOLA channels.}
+\end{table}
+
+Channel \texttt{0x00000002} carries a binary \texttt{physics\_host\_snapshot\_t}
+in native endianness. Phase 1 adds Pressure Stall Information averages
+(\texttt{avg10/60/300} scaled by 1000), \texttt{/proc/stat} totals
+(\texttt{cpu\_total\_jiffies}, \texttt{cpu\_idle\_jiffies}) for consumer-side
+delta calculation, cgroup v2 readings (\texttt{cgroup\_cpu\_usage\_us} from
+\texttt{cpu.stat}, \texttt{cgroup\_memory\_current\_bytes} from
+\texttt{memory.current}, each zero when unavailable), and a \texttt{flags}
+bitmask (\texttt{PHYSICS\_HOST\_FLAG\_*}) indicating which groups were
+populated. Consumers should honor the flag bits to distinguish kernels that
+expose PSI, cgroup v2, or \texttt{/proc/stat}.
+
+\subsection{Command Protocol}
+
+Commands travel through the summary region; its first 256 bytes form a simple
+request/response mailbox:
+
+\begin{lstlisting}[language=C]
+struct hola_command {
+    uint32_t opcode;      // see table
+    uint32_t arg0;        // optional argument / status
+    uint64_t arg1;        // optional payload offset from heap base
+};
+\end{lstlisting}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Opcode & Direction & Semantics \\
+\midrule
+\texttt{HOLA\_NOP} & Either & No-op; producer clears when idle \\
+\texttt{HOLA\_REQUEST\_SNAPSHOT} & Consumer $\rightarrow$ VM & Publish snapshot on channel \texttt{0x2} \\
+\texttt{HOLA\_RESET\_RING} & Consumer $\rightarrow$ VM & VM zeroes cursors when safe \\
+\texttt{HOLA\_STATUS\_OK} & VM $\rightarrow$ Consumer & Command completed \\
+\texttt{HOLA\_STATUS\_BUSY} & VM $\rightarrow$ Consumer & Deferred; retry next tick \\
+\texttt{HOLA\_STATUS\_UNSUPPORTED} & VM $\rightarrow$ Consumer & Opcode not understood \\
+\bottomrule
+\end{tabular}
+\caption{HOLA command opcodes.}
+\end{table}
+
+The VM polls the mailbox at the end of each observation-window hop and writes
+responses back into the same structure before the next poll. Phase 1 implements
+only \texttt{HOLA\_REQUEST\_SNAPSHOT}; the remaining opcodes are reserved.
+
+\subsection{Synchronization Rules}
+
+\begin{itemize}
+  \item \textbf{Single producer}: the VM is the sole writer to the ring;
+    multiple producers must funnel through the runtime shim.
+  \item \textbf{Single consumer}: Phase 1 assumes exactly one analyzer;
+    multi-consumer support will require an indirection table in the summary
+    region.
+  \item \textbf{Memory ordering}: producers write payload, then header, then
+    bump \texttt{produce\_seq}; consumers read \texttt{produce\_seq} before
+    pulling events and bump \texttt{consume\_seq} after advancing
+    \texttt{read\_offset}.
+  \item \textbf{Failure semantics}: when \texttt{dropped\_events} increases, the
+    consumer treats the last coherent boundary as unknown and resynchronizes
+    from the first complete record after the drop.
+\end{itemize}
+
+\subsection{Artefacts}
+
+The runtime implementation lives in \texttt{include/physics\_runtime.h} and
+\texttt{src/physics\_runtime.c} (\texttt{physics\_runtime\_init},
+\texttt{physics\_host\_snapshot},
+\texttt{physics\_analytics\_publish\_event}). The formal model linkage is in
+\texttt{Physics\_StateMachine.thy} and \texttt{Physics\_Observation.thy}, which
+capture the observation-window semantics this protocol assumes. Future revisions
+will document multi-node governance flows and captable wiring for L4Re tasks
+once Phase 2 moves the analyzer into a dedicated microkernel service.

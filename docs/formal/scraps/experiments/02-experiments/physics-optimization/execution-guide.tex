@@ -1,0 +1,103 @@
+%% SCRAP: experiments/02-experiments/physics-optimization/execution-guide
+%% SOURCE: docs/working/experiments/02-experiments/physics-optimization/execution-guide.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-physics-opt, cookbook/ch-doe
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Physics Engine Validation — Execution Guide}
+\label{sec:physics-opt-execution}
+
+\subsection{Overview}
+
+The comprehensive physics engine validation experiment runs 90 total
+measurements across three configurations at 30~replicates each. The
+benchmark executes 100{,}000 dictionary lookups per run; estimated wall-clock
+time is 2--3~hours including three separate clean builds.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Configuration & Flags & Purpose \\
+\midrule
+A\_BASELINE & \texttt{ENABLE\_HOTWORDS\_CACHE=0 ENABLE\_PIPELINING=0} & Control \\
+B\_CACHE    & \texttt{ENABLE\_HOTWORDS\_CACHE=1 ENABLE\_PIPELINING=0} & Cache only \\
+C\_FULL     & \texttt{ENABLE\_HOTWORDS\_CACHE=1 ENABLE\_PIPELINING=1} & Full physics \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Execution}
+
+%% TODO(bob): confirm canonical path for run_comprehensive_physics_experiment.sh
+
+\begin{lstlisting}[language=bash]
+# Run with default output directory
+./scripts/run_comprehensive_physics_experiment.sh
+
+# Run with explicit output path
+./scripts/run_comprehensive_physics_experiment.sh ./physics_results
+
+# Analyse results when complete
+python3 scripts/analyze_physics_experiment.py \
+    ./physics_results/experiment_results.csv \
+    --output analysis_report.md
+\end{lstlisting}
+
+Monitor progress while running:
+
+\begin{lstlisting}[language=bash]
+watch -n 5 'wc -l physics_results/experiment_results.csv'
+# Expected: 91 rows when complete (1 header + 90 data)
+\end{lstlisting}
+
+\subsection{Output Schema}
+
+The CSV contains one row per run. Key columns:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Column & Type & Notes \\
+\midrule
+\texttt{configuration} & string & A\_BASELINE, B\_CACHE, C\_FULL \\
+\texttt{cache\_hit\_percent} & float & Hit rate (0--100) \\
+\texttt{context\_accuracy\_percent} & float & Pipelining prediction accuracy \\
+\texttt{total\_runtime\_ms} & float & Wall-clock run time \\
+\texttt{speedup\_vs\_baseline} & float & Computed in analysis script \\
+\texttt{ci\_lower\_95} & float & Lower 95\% credible interval \\
+\texttt{ci\_upper\_95} & float & Upper 95\% credible interval \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Success Criteria}
+
+\begin{itemize}
+  \item \textbf{A\_BASELINE}: All 30 runs complete; consistent execution
+        times; coefficient of variation below 10\%.
+  \item \textbf{B\_CACHE}: Cache hit rate above 20\%; speedup 95\%
+        credible interval excludes 1.0; CV below 10\%.
+  \item \textbf{C\_FULL}: Prediction accuracy above 60\%; speedup exceeds
+        B\_CACHE; pattern diversity saturation above 90\%.
+\end{itemize}
+
+\subsection{System Stability}
+
+For reproducible measurements: stop background compilation jobs and file
+indexers before launching; use the \texttt{fastest} build profile (default
+in the script); run in a dedicated terminal with minimal competing I/O.
+
+\subsection{Publication Notes}
+
+Results should be reported as:
+
+\begin{itemize}
+  \item Point estimate (mean speedup).
+  \item 95\% credible interval.
+  \item Sample size ($n = 30$ per configuration).
+  \item Hardware description (CPU, RAM, OS, build profile).
+\end{itemize}
+
+Raw CSV and per-run logs should be archived alongside the analysis report
+for reproducibility.
+

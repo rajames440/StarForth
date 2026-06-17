@@ -1,0 +1,130 @@
+%% SCRAP: archive/research/research-outline
+%% SOURCE: docs/working/archive/research/research-outline.md
+%% STATUS: WORKING
+%% FITS: vol3-research/ if relevant
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Research Paper Outline: Physics-Driven VM Optimisation}
+\label{sec:research-outline}
+
+\subsection{Working Title}
+
+\textit{Physics-Inspired Threshold-Based Runtime Optimisation in Virtual Machines}
+
+Alternative titles under consideration:
+\begin{itemize}
+  \item ``Eliminating JIT: Automatic VM Optimisation Without Code Generation''
+  \item ``Real-Time Metrics-Driven Optimisation in Microkernel-Compatible VMs''
+  \item ``Bayesian Inference at Nanosecond Scale: Pure Fixed-Point Optimisation Decisions''
+\end{itemize}
+
+\subsection{Target Format and Scope}
+
+ACM SIGPLAN format; estimated 25--34 pages plus figures, tables, references,
+and optional appendix.
+
+\subsection{Section Structure}
+
+\subsubsection{1. Introduction (4 pages)}
+
+Opens with the observation that VM optimisation traditionally requires
+offline profiling, JIT compilation, or expert manual tuning, then presents
+the alternative: automatic, real-time, metrics-driven optimisation requiring
+neither code generation nor floating-point arithmetic.
+
+Four key questions are posed:
+\begin{enumerate}
+  \item How can meaningful VM performance improvement be achieved without JIT?
+  \item Can optimisation decisions be made automatically in real time?
+  \item Can a pure-integer statistical framework validate optimisation impact?
+  \item Can such a system remain compatible with formal verification?
+\end{enumerate}
+
+Five primary contributions are claimed: the physics-inspired framework,
+threshold-based automatic decision logic, real-time Bayesian inference in
+Q48.16 fixed-point, a proven 1.78$\times$ speedup with statistical
+validation, and nine additional optimisation opportunities using identical
+infrastructure.
+
+\subsubsection{2. Motivation and Problem Analysis (3 pages)}
+
+Surveys the three classical approaches: offline profiling (simple but
+reactive), JIT compilation (high performance but complex, hard to verify,
+and microkernel-incompatible), and manual tuning (verifiable but not
+scalable). Poses the research question: can a 1.5--2.0$\times$ improvement
+be achieved without any of those approaches while remaining verifiable and
+L4Re-compatible?
+
+\subsubsection{3. Related Work (4 pages)}
+
+Covers adaptive optimisation, metrics-driven systems, physics-inspired
+computing, fixed-point arithmetic and formal verification, FORTH and
+stack-based VMs, and microkernel-compatible systems. See
+Section~\ref{sec:literature-review} for full detail.
+
+\subsubsection{4. System Design and Architecture (5 pages)}
+
+Describes the four layers: metrics collection (\texttt{execution\_heat},
+\texttt{temperature\_q8}, nanosecond-precision latency in Q48.16), decision
+logic (threshold check: if \texttt{execution\_heat} $> 50$ then promote),
+the 32-entry LRU hot-words cache, and the Bayesian inference engine
+(Beta-Binomial posterior, 95\% and 99\% credible intervals, all arithmetic
+in Q48.16).
+
+\subsubsection{5. Experimental Methodology (4 pages)}
+
+Platform: x86\_64, 100\% assembly optimisations plus LTO. VM: StarForth
+FORTH-79 in strict ANSI~C99. Benchmark: dictionary lookup with 23 common
+FORTH words, 100,000 samples, \texttt{CLOCK\_MONOTONIC\_RAW}. Two
+build variants compared: \texttt{ENABLE\_HOTWORDS\_CACHE=1} versus
+\texttt{ENABLE\_HOTWORDS\_CACHE=0}. Three independent runs for
+reproducibility validation.
+
+\subsubsection{6. Results (5 pages)}
+
+Core result: 1.78$\times$ speedup (bucket mean 56.237\,ns vs cache mean
+31.543\,ns). 95\% credible interval [1.75$\times$, 1.81$\times$]. Cache
+hit rate 35.64\%. Ten words automatically promoted; zero manual tuning.
+Run-to-run standard deviation 0.0015$\times$. Memory overhead less than
+1\,KB; per-lookup overhead less than 2 CPU cycles.
+
+\subsubsection{7. Analysis and Discussion (4 pages)}
+
+Explains why the approach succeeds: execution frequency is predictable
+(Zipfian distribution), threshold logic is robust, and Q48.16 arithmetic
+is sufficient for nanosecond-precision timing without floating-point error
+accumulation. Compares against JIT. Identifies nine additional optimisation
+opportunities (stack fusion, vocabulary reordering, return-stack prediction,
+and six others) with a projected cumulative improvement of 5--8$\times$.
+
+\subsubsection{8. Limitations and Future Work (3 pages)}
+
+Current limitations: restricted to dictionary lookup, single-threaded VM,
+x86\_64 only, 100K sample workload. Future work: extended optimisations
+(Phase~2), adaptive thresholds (Phase~3), Isabelle/HOL proof of cache
+correctness (Phase~4), and ARM64 and L4Re validation (Phase~5).
+
+\subsubsection{9. Conclusion (2 pages)}
+
+Summarises five contributions and their broader impact: formal verification
+is compatible with performance; JIT is not necessary for measurable speedup;
+physics-inspired metrics represent a new research direction; the approach is
+practical for microkernel ecosystems.
+
+\subsection{Key Figures}
+
+\begin{enumerate}
+  \item System architecture: metrics $\to$ decision $\to$ cache.
+  \item Latency comparison histogram (cache vs bucket).
+  \item Speedup with credible intervals.
+  \item Cache contents and \texttt{execution\_heat} distribution.
+  \item Word promotion timeline (frequency vs time).
+\end{enumerate}
+
+\subsection{Key Tables}
+
+\begin{enumerate}
+  \item Lookup performance summary (cache vs bucket latency).
+  \item Bayesian posterior distributions.
+  \item Comparison with JIT and offline profiling approaches.
+\end{enumerate}

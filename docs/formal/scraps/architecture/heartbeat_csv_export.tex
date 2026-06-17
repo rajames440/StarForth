@@ -1,0 +1,139 @@
+%% SCRAP: architecture/heartbeat_csv_export
+%% SOURCE: docs/working/architecture/heartbeat_csv_export.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-heartbeat, user-guide/ch-heartbeat, cookbook/ch-heartbeat
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% TODO(bob): reconcile implementation status. This source describes
+%%   heartbeat_capture_tick_snapshot() / heartbeat_emit_tick_row() as live,
+%%   but .claude/CLAUDE.md records heartbeat_export_csv() as "not yet
+%%   implemented." Confirm which functions ship in the current tree before
+%%   promoting this to CURRENT.
+
+\section{Heartbeat CSV Export}
+\label{sec:heartbeat:csv}
+
+The heartbeat subsystem emits real-time multivariate VM metrics to
+\texttt{stderr} in CSV form, exposing StarForth's adaptive runtime to
+external analysis. Each row carries eleven performance indicators sampled
+once per heartbeat tick — nominally every millisecond — producing a
+continuous time series of the running system's internal state.
+
+The design favours streaming over buffering. Metrics are read directly from
+VM state with no intermediate copy, each row is flushed immediately so that
+downstream tools see data as it is produced, and the stream is confined to
+\texttt{stderr} to keep \texttt{stdout} reserved for test output. The
+emitting thread is a background \texttt{pthread} decoupled from the main
+interpreter, so capture does not perturb execution timing beyond a fixed,
+small cost per tick.
+
+\subsection{CSV Format}
+
+The VM emits raw rows only; column names are supplied separately by analysis
+tooling. The reference header is:
+
+\begin{lstlisting}[language=bash]
+tick_number,elapsed_ns,tick_interval_ns,cache_hits_delta,bucket_hits_delta,
+word_executions_delta,hot_word_count,avg_word_heat,window_width,
+predicted_label_hits,estimated_jitter_ns
+\end{lstlisting}
+
+The \emph{Status} column below reflects which fields carry live values and
+which currently emit a placeholder zero pending delta-tracking work.
+
+\begin{table}[ht]
+  \centering
+  \caption{Heartbeat CSV columns}
+  \label{tab:heartbeat:columns}
+  \begin{tabular}{lllp{5.4cm}l}
+    \toprule
+    Column & Type & Unit & Description & Status \\
+    \midrule
+    \texttt{tick\_number}           & \texttt{uint32} & count & Monotonic tick counter since VM start & live \\
+    \texttt{elapsed\_ns}            & \texttt{uint64} & ns    & Time since VM initialization & live \\
+    \texttt{tick\_interval\_ns}     & \texttt{uint64} & ns    & Time since previous tick (actual vs.\ nominal 1\,ms) & live \\
+    \texttt{cache\_hits\_delta}     & \texttt{uint32} & count & Hotwords cache hits since last tick & TODO \\
+    \texttt{bucket\_hits\_delta}    & \texttt{uint32} & count & Bucket-level cache hits since last tick & TODO \\
+    \texttt{word\_executions\_delta}& \texttt{uint32} & count & FORTH word executions since last tick & TODO \\
+    \texttt{hot\_word\_count}       & \texttt{uint64} & count & Words at or above the heat promotion threshold ($\geq 10$) & live \\
+    \texttt{avg\_word\_heat}        & \texttt{double} & heat  & Mean execution heat across the dictionary (\Qtype{} $\to$ double) & live \\
+    \texttt{window\_width}          & \texttt{uint32} & entries & Current rolling window effective size (adaptive) & live \\
+    \texttt{predicted\_label\_hits} & \texttt{uint32} & count & Successful pipelining speculation hits & TODO \\
+    \texttt{estimated\_jitter\_ns}  & \texttt{double} & ns    & Absolute deviation from the nominal 1\,ms interval & live \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Capturing Metrics}
+
+The simplest capture redirects \texttt{stderr} to a file and discards
+\texttt{stdout}:
+
+\begin{lstlisting}[language=bash]
+# Capture metrics, discard test output
+./build/amd64/fastest/starforth --doe 2>heartbeat.csv 1>/dev/null
+
+# Keep both streams, separated
+./build/amd64/fastest/starforth --doe 1>test_output.txt 2>heartbeat.csv
+\end{lstlisting}
+
+Because rows are flushed as they are produced, the stream can be monitored
+live — for example piped through \texttt{csvlook} from \texttt{csvkit}, or
+followed with \texttt{tail -f}. For post-processing, prepend the reference
+header and load the result into R or pandas:
+
+\begin{lstlisting}[language=bash]
+{ echo "tick_number,elapsed_ns,tick_interval_ns,cache_hits_delta,\
+bucket_hits_delta,word_executions_delta,hot_word_count,avg_word_heat,\
+window_width,predicted_label_hits,estimated_jitter_ns"; \
+  cat heartbeat.csv; } > analysis.csv
+\end{lstlisting}
+
+\subsection{Analysis Use Cases}
+
+The eleven-dimensional series supports three broad classes of analysis. For
+dynamics modeling, the trajectory admits phase-space reconstruction to locate
+attractor basins in the adaptive parameter space, Lyapunov-exponent
+estimation to quantify stability, and mutual-information analysis to discover
+coupling between metrics. For tuning validation, window-width adaptation can
+be correlated against prediction accuracy, heat-decay behaviour against stale
+word accumulation, and jitter against thread-scheduling effects. For workload
+profiling, the same data yields hot-word churn rate, execution density
+(\texttt{word\_executions\_delta} over \texttt{tick\_interval\_ns}), and cache
+efficiency relative to working-set size.
+
+\subsection{Implementation}
+
+Capture is performed by \texttt{heartbeat\_capture\_tick\_snapshot()}, which
+reads the monotonic tick counter, computes elapsed and inter-tick time,
+walks the dictionary to count hot words and their mean heat, samples the
+rolling window size, and estimates jitter as the absolute difference between
+the actual and nominal interval. The walk is linear in dictionary size
+(on the order of a few hundred words). Emission is performed by
+\texttt{heartbeat\_emit\_tick\_row()}, which formats the eleven values and
+flushes \texttt{stderr} immediately. Both are invoked once per cycle from the
+background heartbeat thread.
+
+The thread runs without the original 50\,ms startup delay, so metrics begin
+flowing immediately even for short-running DoE workloads. The trade-off is
+that the first few ticks may show transient values during the word-registration
+phase.
+
+\subsection{Known Limitations}
+
+Three groups of fields are not yet wired to live deltas and currently emit
+zero: the cache, bucket, and word-execution counters all require per-tick
+baseline tracking in the heartbeat state. Separately, the source notes an
+uninitialized \texttt{run\_start\_ns}, which can produce implausibly large
+\texttt{elapsed\_ns} values in the first ticks until the field is seeded at
+VM initialization, and a missing aggregation of per-word prefetch hits behind
+\texttt{predicted\_label\_hits}.
+
+%% TODO(bob): the source proposes concrete C fixes for each limitation
+%% (delta fields in HeartbeatState, run_start_ns seeding in vm_init,
+%% prefetch-hit accumulation). Promote these only after confirming against
+%% the current tree — see the header note on implementation-status drift.
+
+The runtime cost is small: emission adds well under one percent CPU at the
+nominal tick rate, the snapshot is a stack-allocated structure of under a
+hundred bytes, and the output volume is on the order of a hundred kilobytes
+per second of execution.

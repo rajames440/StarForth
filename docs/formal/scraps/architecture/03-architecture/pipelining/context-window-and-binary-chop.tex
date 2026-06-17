@@ -1,0 +1,101 @@
+%% SCRAP: architecture/03-architecture/pipelining/context-window-and-binary-chop
+%% SOURCE: docs/working/architecture/03-architecture/pipelining/context-window-and-binary-chop.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-pipelining, cookbook/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Context Window and Binary-Chop Tuning}
+
+The context window extends transition prediction beyond the immediate
+predecessor, and a binary-chop search selects the window depth that best
+predicts the next word. This addresses a single question: how deep into
+execution history must the predictor look?
+
+\subsection{The Trade-Off}
+
+A one-word window asks ``after \texttt{DUP}, what comes next?'' and is right
+roughly $60\%$ of the time, because several successors are plausible. A two-word
+window asks ``after \texttt{LOOP DUP}, what comes next?'' and the pattern
+sharpens toward a single answer near $85\%$. A four-word window improves further
+to perhaps $90\%$, but at twice the per-word memory and a more complex sparse
+hash, with diminishing returns thereafter.
+
+\subsection{Knob \#6: TRANSITION\_WINDOW\_SIZE}
+
+The window depth is a compile-time knob defaulting to two, chosen as the
+empirical sweet spot: one word captures only the immediate predecessor, two
+captures ``where we came from'' plus ``what we are doing,'' and four or eight
+rarely justify the overhead.
+
+\begin{lstlisting}[language=bash]
+make TRANSITION_WINDOW_SIZE=1   # immediate successor only
+make TRANSITION_WINDOW_SIZE=2   # 2-word patterns (default)
+make TRANSITION_WINDOW_SIZE=4   # 4-word patterns
+\end{lstlisting}
+
+The window is a per-word circular buffer of word IDs. As each word executes, its
+predecessor's window records the context-to-successor transition, then shifts
+the new word in and the oldest word out. With a window of two the overhead is
+about 16~bytes per word; for 200 words the total is roughly 27~KB, negligible
+beside the transition-heat arrays.
+
+\subsection{Binary-Chop Search}
+
+Phase 2 finds the optimal depth by testing window sizes 1, 2, 4, and 8 and
+measuring prediction accuracy at each. The search starts at two and doubles
+while accuracy improves, then reverts to one to establish the baseline, and
+converges on the best observed size.
+
+\begin{lstlisting}[language=C]
+uint32_t suggest_window(current_window, accuracy_at_current) {
+    if (current_window == 2 && accuracy_improves) return 4;
+    if (current_window == 4 && accuracy_improves) return 8;
+    if (current_window >= 4 && accuracy_plateaus) return 1;
+    /* otherwise converge to the size with best accuracy */
+}
+\end{lstlisting}
+
+For each candidate, the harness rebuilds at that window size, runs the
+\lstinline{BENCH-DICT} workload to collect transition data, counts transitions
+whose context-to-successor probability exceeds $70\%$ as predictable, and
+records accuracy as the predictable fraction.
+
+\subsection{Expected Outcome}
+
+FORTH exhibits strong local patterns, so most decisions depend on about two
+words of context. The hypothesis, to be confirmed by measurement:
+
+\begin{tabular}{lr}
+\toprule
+Window & Predicted accuracy \\
+\midrule
+1 & $\sim$65\% \\
+2 & $\sim$82\% (expected winner) \\
+4 & $\sim$88\% (marginal, $2\times$ memory) \\
+8 & $\sim$89\% (overhead unjustified) \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\noindent The recommendation is to keep the window at two: $82\%$ accuracy at
+minimal overhead is the best return on investment.
+
+\subsection{Interaction With Other Knobs}
+
+Window depth shifts the useful settings of the speculation knobs. A deeper, more
+accurate window produces fewer failures, permitting a lower speculation
+threshold (more aggressive prefetch) and fewer required samples before a pattern
+is trusted. A shallow window calls for the opposite: a higher threshold and more
+samples to compensate for noisier predictions.
+
+\subsection{Status}
+
+The Phase~1 extension---the window knob, the per-word circular buffer, and the
+context-aware recording functions---is complete and collecting data. Three
+functions remain stubs awaiting Phase~2: the accuracy-reporting string, the
+context recording that will build a sparse hash of context-to-successor
+patterns, and the binary-chop suggestion logic that will react to measured
+accuracy rather than blindly doubling.
+
+%% TODO(bob): accuracy figures are projections; replace with measured Phase 2
+%% results once the window sweep is run.

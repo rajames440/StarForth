@@ -1,0 +1,122 @@
+%% SCRAP: architecture/03-architecture/hal/migration-plan
+%% SOURCE: docs/working/architecture/03-architecture/hal/migration-plan.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-platform
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{HAL Migration Plan}
+
+This section sets out the staged refactor that moves the existing StarForth
+code base onto the Hardware Abstraction Layer. The migration is incremental by
+design: one subsystem at a time, with a passing build and a passing test suite
+required after every step, and platform parity maintained throughout. The
+governing constraint is zero functional regression --- all regression tests must
+continue to pass and the runtime's zero algorithmic variance must be preserved.
+
+\subsection{Phase 1: Define the Interfaces}
+
+The first phase writes the HAL headers and nothing else. The header directory is
+created, the six interface headers are authored against the published contract,
+the build is taught to find them, and a headers-only compile confirms the tree
+is sound. No interpreter code changes, so the risk is low.
+
+\subsection{Phase 2: Implement the Linux HAL}
+
+The reference platform is implemented next. An audit locates existing POSIX
+calls --- timing, allocation, and console I/O scattered through the tree --- and
+each is folded behind a HAL function. Timing wraps \texttt{clock\_gettime};
+allocation wraps \texttt{malloc} and \texttt{free} with mandatory
+zero-initialization; the console wraps standard I/O; interrupts are emulated with
+signals; panic writes to standard error and aborts. The VM still builds against
+its old paths at the end of this phase --- the HAL exists but is not yet called.
+
+\subsection{Phase 3: Migrate the VM Core}
+
+The interpreter core, the external API, the dictionary allocator, and the VM
+header now adopt the HAL. Direct allocation and timing calls are replaced with
+their HAL equivalents, HAL initialization is added to startup in dependency
+order, and platform conditionals are deleted in favor of single portable calls.
+
+\begin{lstlisting}[language=C]
+/* before */
+struct timespec ts;
+clock_gettime(CLOCK_MONOTONIC, &ts);
+uint64_t now = ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+
+/* after */
+uint64_t now = hal_time_now_ns();
+\end{lstlisting}
+
+This is the highest-risk phase. Compilation, link, and initialization-order
+errors are expected and are fixed incrementally. The phase is complete when the
+core builds against the HAL, the full test suite passes, and the interpreter
+contains no platform-specific code.
+
+\subsection{Phase 4: Migrate the Physics Subsystems}
+
+The physics subsystems --- heat tracking, the rolling window, the hot-words
+cache, the pipelining metrics, the inference engine, and the heartbeat --- adopt
+the HAL for all timing. The most consequential change is moving the heartbeat
+from a thread-and-sleep loop onto a HAL periodic timer whose callback runs in
+interrupt context. That callback must be ISR-safe: no allocation, no blocking
+I/O, only lock-free ring-buffer updates. Determinism is the acceptance gate here.
+A design-of-experiments run before and after the change must produce identical
+output, confirming zero algorithmic variance survives the migration.
+
+\subsection{Phase 5: Migrate the REPL and I/O Words}
+
+The read-eval-print loop and the I/O words (\texttt{EMIT}, \texttt{KEY}, and
+their relatives) move from standard I/O onto the console HAL. This phase is low
+risk; the success test is that the REPL behaves exactly as before.
+
+\subsection{Phase 6: Implement the L4Re HAL (Optional)}
+
+Implementing a second hosted platform is optional but strongly recommended,
+because it proves the abstraction actually abstracts. The L4Re HAL binds time to
+the kernel clock, memory to dataspaces, console to the L4Re console service, and
+interrupts to IRQ objects. Success means the VM runs on L4Re without source
+changes and passes its tests there.
+
+\subsection{Phase 7: Validate Determinism}
+
+The final phase is validation. The design-of-experiments harness is run
+repeatedly on Linux; every run must be byte-identical, and identical to the
+pre-migration baseline, demonstrating the HAL added no algorithmic overhead. The
+full test suite must pass and the benchmark must show under five percent
+performance delta from baseline.
+
+\subsection{Rollback and Cleanup}
+
+The migration proceeds on a dedicated branch with one commit per passing phase,
+so any failed phase reverts cleanly. Where a clean cut-over is risky, a feature
+flag can gate the HAL path against the legacy path. After validation, superseded
+platform code is removed, documentation is updated, and build artifacts for all
+platforms are ignored.
+
+\subsection{Timeline}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Phase & Duration & Cumulative \\
+\midrule
+1. Define interfaces      & 1--2 days & 1--2 days  \\
+2. Linux HAL              & 3--5 days & 4--7 days  \\
+3. VM core               & 2--3 days & 6--10 days \\
+4. Physics subsystems    & 2--3 days & 8--13 days \\
+5. REPL and I/O words    & 1--2 days & 9--15 days \\
+6. L4Re HAL (optional)   & 3--5 days & 12--20 days \\
+7. Validation            & 1 day     & 13--21 days \\
+\bottomrule
+\end{tabular}
+\caption{Estimated migration schedule, two to four weeks depending on whether
+the optional L4Re phase is included.}
+\end{table}
+
+After a successful migration the next work is the StarKernel platform itself: the
+UEFI boot loader, the freestanding HAL, and the path to an \texttt{ok} prompt on
+QEMU with OVMF.
+
+%% TODO(bob): the source lists migration as a forward plan; confirm which phases
+%%   are now complete so STATUS can be sharpened to HISTORICAL for finished work.

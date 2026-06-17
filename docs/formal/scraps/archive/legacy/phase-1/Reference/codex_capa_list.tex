@@ -1,0 +1,49 @@
+%% SCRAP: archive/legacy/phase-1/Reference/codex_capa_list
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/codex_capa_list.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Governance CAPA Register --- Phase 1 Audit (2025)}
+
+Forty-two corrective and preventive actions were generated from the Phase~1 governance
+audit. All items were open at the time of archival. A representative selection is
+listed below; the full register is in the source file.
+
+\begin{center}
+\begin{tabular}{p{1.5cm}p{1cm}p{4cm}p{4cm}p{2cm}p{1.5cm}}
+\toprule
+CAPA ID & Sev. & Problem & Corrective action & Owner & Target \\
+\midrule
+CAPA-01 & Maj & ANSI C99 compliance matrix missing &
+  Author full matrix; attach supporting logs &
+  Maintainer & 2025-11-08 \\
+CAPA-02 & Maj & FORTH-79 matrix omits 65 words &
+  Populate all 70 words with test IDs &
+  Standards Lead & 2025-11-08 \\
+CAPA-03 & Maj & ARM64 validation absent &
+  Execute Tier~I/II on ARM64; archive logs &
+  Validation Eng & 2025-11-12 \\
+CAPA-07 & Maj & Tier~I coverage metrics blank &
+  Re-run coverage; record actuals &
+  QA Lead & 2025-11-06 \\
+CAPA-15 & Maj & Validation engineer signature missing &
+  Add signature with current date &
+  Validation Eng & 2025-11-03 \\
+CAPA-23 & Maj & Governance reference manual unsigned &
+  Collect signatures from all stakeholders &
+  Maintainer & 2025-11-15 \\
+CAPA-41 & Maj & Continuous validation lacks CI evidence &
+  Document pipelines; capture run reports &
+  DevOps Lead & 2025-11-19 \\
+CAPA-42 & Maj & No SonarQube or equivalent static analysis &
+  Stand up SonarQube; archive reports &
+  DevOps Lead & 2025-11-26 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Review cadence: weekly governance sync; overdue Major items escalated immediately to
+the maintainer.
+
+%% TODO(bob): record which CAPAs were closed before the governance effort was paused.

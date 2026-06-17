@@ -1,0 +1,87 @@
+%% SCRAP: architecture/getting-started/quick-start/optimization-doe
+%% SOURCE: docs/working/architecture/getting-started/quick-start/optimization-doe.md
+%% STATUS: CURRENT
+%% FITS: cookbook/ch-doe
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Quick Start: The Optimization DoE}
+
+The Optimization DoE refines individual runtime parameters one at a time. It
+runs five focused experiments --- each called an ``opportunity'' --- that test a
+handful of parameter variations and report which value performs best. The full
+set completes in roughly nine minutes.
+
+\subsection{The Five Opportunities}
+
+Each opportunity is launched with \texttt{--opportunity N} and a label; piping
+an empty line past the confirmation prompt lets them run unattended.
+
+\begin{lstlisting}[language=bash]
+echo "" | ./scripts/run_optimization_doe.sh --opportunity 1 OPP_01_DECAY_SLOPE
+echo "" | ./scripts/run_optimization_doe.sh --opportunity 2 OPP_02_WINDOW_WIDTH
+echo "" | ./scripts/run_optimization_doe.sh --opportunity 3 OPP_03_DECAY_RATE
+echo "" | ./scripts/run_optimization_doe.sh --opportunity 4 OPP_04_WINDOW_SIZING
+echo "" | ./scripts/run_optimization_doe.sh --opportunity 5 OPP_05_THRESHOLD
+\end{lstlisting}
+
+Each script tests three or four parameter variations, runs two iterations of
+thirty samples per configuration (sixty samples in total), emits metrics in
+\Qtype{} fixed-point integer math, and writes a CSV of results.
+
+\subsection{Picking a Winner}
+
+For each opportunity, the winning configuration is the one with the highest
+\texttt{cache\_hit\_percent} and the lowest
+\texttt{vm\_workload\_duration\_ns\_q48}. Results can be inspected directly by
+sorting the CSV on the workload-duration column (lower is better) or analyzed in
+R with the load-and-explore script.
+
+\begin{lstlisting}[language=bash]
+tail -n +2 .../OPP_01_DECAY_SLOPE/experiment_results.csv | \
+  sort -t',' -k27 -n | head -5
+\end{lstlisting}
+
+\subsection{Reading \Qtype{} Metrics}
+
+All metrics are \Qtype{} fixed-point integers: a 48-bit integer part and a
+16-bit fraction. To recover a decimal value, divide by 65536. For example, a
+\texttt{vm\_workload\_duration\_ns\_q48} of $315{,}797{,}667{,}840$ corresponds
+to $315{,}797{,}667{,}840 / 65536 = 4{,}822{,}021$ nanoseconds, and a
+\texttt{cpu\_freq\_delta\_mhz\_q48} of $-6{,}356{,}992$ corresponds to
+$-6{,}356{,}992 / 65536 = -97.07$\,MHz.
+
+\subsection{Recommended Sequencing}
+
+The opportunities are best run in order, reviewing results between each so that
+a chosen value can be locked before moving on. Opportunities 1 through 3 each
+pick and lock a single winner; opportunity 4 analyzes interactions; and
+opportunity 5 applies the final refinement. The findings then aggregate into an
+optimized baseline.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Opportunity & Expected impact & Expected winner \\
+\midrule
+\#1 Decay slope & 8--15\% & \texttt{DECAY\_SLOPE\_0.33} or \texttt{0.5} \\
+\#2 Window width & 6--12\% & \texttt{WINDOW\_SIZE\_4096} or \texttt{8192} \\
+\#3 Decay rate & 3--6\% & Likely \texttt{NORMAL} (baseline) \\
+\#4 Window sizing & 5--8\% & Likely \texttt{WINDOW\_8K\_DECAY\_0.33} \\
+\#5 Threshold & 2--4\% & Likely \texttt{THRESHOLD\_10} (baseline) \\
+\bottomrule
+\end{tabular}
+\caption{Expected impact and likely winner per opportunity.}
+\end{table}
+
+\subsection{Troubleshooting}
+
+\begin{itemize}
+  \item \emph{Hangs at the confirmation prompt} --- press Enter, or pipe an
+    empty line in with \texttt{echo "" |}.
+  \item \emph{Binary not found} --- rebuild with \texttt{make test}.
+  \item \emph{No CSV data} --- inspect the per-run logs in the experiment's
+    \texttt{run\_logs/} directory.
+\end{itemize}
+
+%% TODO(bob): source uses absolute developer paths (/home/rajames/...) and references OPTIMIZATION_DoE_GUIDE.md and OPTIMIZATION_OPPORTUNITIES.md. Confirm canonical paths for the published edition.

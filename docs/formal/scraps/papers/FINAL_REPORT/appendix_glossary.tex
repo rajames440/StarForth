@@ -1,0 +1,368 @@
+%% SCRAP: papers/FINAL_REPORT/appendix_glossary
+%% SOURCE: docs/working/papers/FINAL_REPORT/appendix_glossary.adoc
+%% STATUS: CURRENT
+%% FITS: ssrn/app-glossary, vol3-research/app-glossary
+%% EDITORIAL: lifted — AsciiDoc syntax translated to LaTeX; adoc stem[] → $...$,
+%%            |=== tables → tabular with booktabs, [glossary] → description env
+
+\chapter*{Glossary of Terms}
+\addcontentsline{toc}{chapter}{Glossary of Terms}
+\label{app:glossary}
+
+Precise definitions for all terminology used throughout this work.
+Terms are organized alphabetically within three groups: core concepts,
+feedback loop taxonomy, and deprecated terminology. A mathematical
+notation table follows.
+
+\section*{Core Concepts}
+
+\begin{description}
+
+\item[Adaptive Heartbeat]
+Time-driven coordination mechanism that orchestrates feedback loop execution
+at dynamically-adjusted intervals. The heartbeat thread executes
+\texttt{vm\_tick()} at frequency $f_{\text{tick}}$, where
+$f_{\text{tick}} \in [f_{\min}, f_{\max}]$ adapts based on system stability
+metrics.
+
+\textit{Measurement}: tick period in nanoseconds, configurable via
+\texttt{HEARTBEAT\_TICK\_NS}.
+
+\textit{Implementation}: background pthread executing
+\texttt{heartbeat\_thread\_main()}.
+
+\item[Attractor]
+Stable equilibrium point or region in phase space toward which execution
+trajectories converge. Formally, a fixed point $\mathbf{x}^*$ where
+$F(\mathbf{x}^*) = \mathbf{x}^*$ for dynamical system
+$\mathbf{x}_{t+1} = F(\mathbf{x}_t)$.
+
+\textit{Measurement}: coordinates in $(w, \lambda, \sigma^2)$ phase space.
+
+\textit{Empirical observation}: StarForth exhibits a stable fixed-point
+attractor across 90 experimental runs.
+
+\item[Coefficient of Variation (CV)]
+Normalized measure of dispersion, defined as the ratio of standard deviation
+to mean:
+\begin{equation*}
+  \mathrm{CV} = \frac{\sigma}{\mu}
+\end{equation*}
+
+\textit{Convergence criterion}: $\mathrm{CV} \to 0$ indicates deterministic
+convergence.
+
+\textit{Application}: quantifies variance reduction in steady-state metrics.
+
+\item[Decay Coefficient ($\lambda$)]
+Rate parameter controlling exponential reduction in execution frequency over
+time; units $[1/\text{time}]$.
+\begin{equation*}
+  f(t) = f_0 \cdot e^{-\lambda t}
+\end{equation*}
+
+\textit{Measurement}: derived via exponential regression on rolling window
+data; stored as \Qtype\ fixed-point.
+
+\textit{Typical range}: $\lambda \in [10^{-6}, 10^{-3}]$ per microsecond.
+
+\item[Deterministic Convergence]
+Property whereby repeated executions of identical workloads produce
+statistically indistinguishable steady-state metrics. Formally:
+\begin{equation*}
+  \forall\, i, j\colon \frac{|\text{metric}_i - \text{metric}_j|}{\sigma} < \varepsilon
+\end{equation*}
+where $\varepsilon \to 0$ as $t \to \infty$.
+
+\textit{Empirical result}: 0\% algorithmic variance across 90 runs
+($\mathrm{CV} < 0.001\%$).
+
+\textit{Significance}: enables reproducible performance characterization.
+
+\item[Execution Frequency]
+Count of times a dictionary entry has been executed since VM initialization,
+optionally adjusted by temporal decay. This is the \emph{primary measurable
+quantity} in the adaptive runtime.
+\begin{equation*}
+  f = \sum \text{executions} - \int \text{decay}(t)\,dt
+\end{equation*}
+
+\textit{Implementation}: unsigned 64-bit integer (\texttt{uint64\_t
+execution\_heat}).
+
+\textit{Note}: ``heat'' is a metaphorical naming convention; the actual
+quantity is an execution count.
+
+\item[Exponential Decay]
+Mathematical function modeling reduction in execution frequency proportional
+to current value:
+\begin{equation*}
+  f(t) = f_0 \cdot e^{-\lambda t}
+\end{equation*}
+where $f_0$ is the initial frequency.
+
+\textit{Metaphorical parallel}: mathematically similar to radioactive decay
+or thermal dissipation (conceptual metaphor only; no physical process implied).
+
+\textit{Application}: applied periodically by the heartbeat system to reduce
+the weight of stale frequency counts.
+
+\item[Feedback Loop]
+Self-referential process in which system output influences future input.
+Classified as:
+\begin{itemize}
+  \item \emph{Positive} (amplifying): output reinforces input
+  \item \emph{Negative} (stabilizing): output opposes input
+  \item \emph{Neutral} (monitoring): no direct influence
+\end{itemize}
+
+\textit{Example}: Loop~1 (Execution Heat Tracking) is positive feedback:
+\begin{center}
+  Execution $\to$ Frequency$\uparrow$ $\to$ Cache Rank$\uparrow$
+  $\to$ Lookup Speed$\uparrow$ $\to$ More Execution
+\end{center}
+
+\item[Hot-Words Cache]
+Fixed-size array storing pointers to the $K$ most frequently executed
+dictionary entries, enabling O(1) lookup acceleration.
+
+\textit{Selection criterion}:
+\begin{equation*}
+  e \in \text{Cache} \iff \text{rank}(e) \leq K
+\end{equation*}
+where $\text{rank}(e) = |\{e' \in \text{Dictionary} : f(e') > f(e)\}| + 1$.
+
+\textit{Performance impact}: reduces average lookup time by 70--95\%
+(workload-dependent).
+
+\item[Levene's Test]
+Non-parametric statistical test for homogeneity of variance across groups.
+Tests $H_0\colon \sigma_1^2 = \sigma_2^2 = \cdots = \sigma_k^2$ (equal
+variances).
+
+\textit{Test statistic}: F-statistic with associated $p$-value.
+
+\textit{Application}: used in window width inference (Loop~5) to detect
+variance changes when adjusting window size.
+
+\textit{Decision threshold}: typically $\alpha = 0.05$ (5\% significance
+level).
+
+\item[Phase Space]
+Multi-dimensional coordinate system where each axis represents a system state
+variable. For StarForth:
+\begin{equation*}
+  \mathcal{S} = \{(w, \lambda, \sigma^2) \mid w \in \mathbb{N},\;
+  \lambda \in \mathbb{R}^+,\; \sigma^2 \in \mathbb{R}^+\}
+\end{equation*}
+
+\textit{Dimensions}: $w$ (window size, execution events retained);
+$\lambda$ (decay slope, frequency reduction rate);
+$\sigma^2$ (variance, metric dispersion).
+
+\textit{Analysis technique}: execution trajectories in phase space reveal
+attractor basins.
+
+\item[Rolling Window of Truth]
+Circular buffer recording recent execution history for deterministic metric
+seeding. Guarantees identical initial conditions across runs.
+
+\textit{Data structure}: ring buffer $B[i] = \text{word\_id}$ at execution
+event $i \bmod |B|$.
+
+\textit{Buffer size}: configurable (default: \texttt{ROLLING\_WINDOW\_SIZE =
+4096}).
+
+\textit{Purpose}: enables reproducible variance calculations by providing
+consistent historical context.
+
+\item[Steady-State Equilibrium]
+Condition where adaptive system metrics stabilize within bounded oscillation.
+Formally:
+\begin{equation*}
+  \exists\, t_0\colon \forall\, t > t_0,\; |x(t) - x^*| < \delta
+\end{equation*}
+for small $\delta$.
+
+\textit{Empirical criterion}: variance $\mathrm{CV} < 0.1\%$ over a
+1{,}000-tick window.
+
+\textit{Physical analogy}: similar to thermodynamic equilibrium in that
+macroscopic properties cease changing (conceptual metaphor only).
+
+\item[Thermodynamic Metaphor]
+Conceptual mapping between thermodynamic quantities and execution metrics.
+This is a \emph{metaphorical framework}, not literal physics.
+
+\textit{Mappings}:
+\begin{itemize}
+  \item Heat $\leftrightarrow$ Execution Frequency
+  \item Temperature $\leftrightarrow$ Normalized Rank
+  \item Cooling $\leftrightarrow$ Exponential Decay
+  \item Equilibrium $\leftrightarrow$ Steady State
+\end{itemize}
+
+\textit{Academic usage}: must be qualified as metaphor in formal writing.
+
+\item[Transition Probability]
+Conditional probability that word $B$ is executed immediately after word $A$.
+Maximum likelihood estimate:
+\begin{equation*}
+  P(B \mid A) = \frac{\text{count}(A \to B)}{\text{count}(A)}
+\end{equation*}
+
+\textit{Implementation}: stored as \Qtype\ fixed-point in the
+\texttt{transition\_metrics} structure.
+
+\textit{Application}: used for speculative execution (prefetching the
+likely-next word).
+
+\item[Variance Inflection Point]
+Window size $w^*$ where variance begins to increase when window shrinks below
+$w^*$. Represents the optimal trade-off between sample size and temporal
+locality.
+\begin{equation*}
+  w^* = \arg\min_{w \in [w_{\min},\, w_{\text{current}}]} \mathrm{Var}(w)
+\end{equation*}
+
+\textit{Search method}: binary search with Levene's test validation.
+
+\textit{Purpose}: adaptive window size tuning (Loop~5).
+
+\end{description}
+
+\section*{Feedback Loop Taxonomy}
+
+\begin{description}
+
+\item[Loop 1: Execution Heat Tracking]
+\textit{Type}: positive feedback (amplifying).
+\textit{Mechanism}: increment frequency counter on each word execution.
+\textit{Effect}: more executions $\to$ higher rank $\to$ more cache hits
+$\to$ more executions.
+\textit{Implementation}: \texttt{physics\_execution\_heat\_increment()} in
+\texttt{vm.c}.
+
+\item[Loop 2: Rolling Window History]
+\textit{Type}: neutral (monitoring).
+\textit{Mechanism}: record execution events in circular buffer.
+\textit{Effect}: provides historical context for inference.
+\textit{Implementation}: \texttt{rolling\_window\_record\_execution()} in
+\texttt{rolling\_window\_of\_truth.c}.
+
+\item[Loop 3: Linear Decay]
+\textit{Type}: negative feedback (stabilizing).
+\textit{Mechanism}: reduce frequency proportional to current value.
+\textit{Effect}: high frequency $\to$ faster decay $\to$ lower frequency
+$\to$ slower decay.
+\textit{Implementation}: \texttt{vm\_tick\_slope\_validator()} applies linear
+decay.
+
+\item[Loop 4: Pipelining Metrics]
+\textit{Type}: positive feedback (amplifying).
+\textit{Mechanism}: track word-to-word transitions, predict next word.
+\textit{Effect}: more transitions $\to$ better prediction $\to$ more
+prefetch hits.
+\textit{Implementation}: \texttt{transition\_metrics\_record()} in
+\texttt{physics\_pipelining\_metrics.c}.
+
+\item[Loop 5: Window Width Inference]
+\textit{Type}: negative feedback (stabilizing).
+\textit{Mechanism}: shrink window if variance increases (Levene's test).
+\textit{Effect}: high variance $\to$ smaller window $\to$ lower variance.
+\textit{Implementation}: \texttt{find\_variance\_inflection()} in
+\texttt{inference\_engine.c}.
+
+\item[Loop 6: Decay Slope Inference]
+\textit{Type}: negative feedback (stabilizing).
+\textit{Mechanism}: increase decay rate if metrics are unstable (exponential
+regression).
+\textit{Effect}: unstable metrics $\to$ steeper decay $\to$ faster
+stabilization.
+\textit{Implementation}: \texttt{infer\_decay\_slope\_from\_trajectory()} in
+\texttt{inference\_engine.c}.
+
+\item[Loop 7: Adaptive Heartbeat]
+\textit{Type}: meta-loop (coordination).
+\textit{Mechanism}: adjust tick rate based on system stability.
+\textit{Effect}: stable system $\to$ slower ticks $\to$ reduced overhead.
+\textit{Implementation}: \texttt{heartbeat\_thread\_main()} in \texttt{vm.c}.
+
+\end{description}
+
+\section*{Deprecated Terminology}
+
+The following terms should be avoided in formal academic writing.
+
+\begin{description}
+
+\item[``Physics-based optimization'']
+\textit{Use instead}: ``thermodynamically-inspired metaphor for frequency
+decay.''
+\textit{Reason}: implies literal physics; the implementation uses integer
+counters and exponential functions only.
+
+\item[``Execution heat'' (formal context)]
+\textit{Use instead}: ``execution frequency with temporal decay.''
+\textit{Reason}: ``heat'' is a metaphorical label; the precise term avoids
+confusion in academic writing.
+
+\item[``AI-driven'' or ``ML-based'']
+\textit{Use instead}: ``statistically-inferred'' or ``adaptive via Levene's
+test.''
+\textit{Reason}: no neural networks or machine learning are involved.
+
+\item[``Learning'']
+\textit{Use instead}: ``adaptive inference'' or ``parameter convergence.''
+\textit{Reason}: not supervised or unsupervised learning; this is statistical
+convergence.
+
+\item[``Quantum-inspired'']
+\textit{Use instead}: N/A.
+\textit{Reason}: no quantum mechanics or superposition is involved.
+
+\end{description}
+
+\section*{Mathematical Notation}
+
+\begin{table}[h]
+\centering
+\caption{Mathematical symbols used throughout this work.}
+\label{tab:notation}
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Definition} \\
+\midrule
+$f$ & Execution frequency (count with decay) \\
+$\lambda$ & Decay coefficient $[1/\text{time}]$ \\
+$w$ & Window size (number of events) \\
+$K$ & Cache size (constant) \\
+$\sigma$ & Standard deviation \\
+$\mu$ & Mean value \\
+$\mathrm{CV}$ & Coefficient of variation $= \sigma / \mu$ \\
+$P(B \mid A)$ & Transition probability (word $B$ after word $A$) \\
+$w^*$ & Variance inflection point \\
+$\mathcal{S}$ & State space $= \{(w, \lambda, \sigma^2)\}$ \\
+$\mathbf{x}^*$ & Attractor (fixed point) \\
+$F$ & State transition function \\
+$f_0$ & Initial frequency \\
+$t$ & Time (ticks or microseconds) \\
+$r(t)$ & Execution rate $[\text{executions}/\text{second}]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{References}
+
+\begin{itemize}
+  \item Strogatz, S. (2015). \emph{Nonlinear Dynamics and Chaos}. Westview
+    Press.
+  \item \r{A}str\"{o}m, K. \& Murray, R. (2008). \emph{Feedback Systems}.
+    Princeton University Press.
+  \item Casella, G. \& Berger, R. (2002). \emph{Statistical Inference}.
+    Duxbury Press.
+  \item Bolz, C.\ et al.\ (2009). ``Tracing the Meta-Level: PyPy's Tracing
+    JIT Compiler.'' \emph{ICOOOLPS}.
+  \item Ertl, M.A.\ (1996). ``Stack Caching for Interpreters.''
+    \emph{SIGPLAN Notices}.
+\end{itemize}

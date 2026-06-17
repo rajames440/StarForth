@@ -1,0 +1,181 @@
+%% SCRAP: archive/research/doe-metrics-schema
+%% SOURCE: docs/working/archive/research/doe-metrics-schema.md
+%% STATUS: WORKING
+%% FITS: experiments/app-schema
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{DoE Metrics Schema}
+\label{sec:doe-metrics-schema}
+
+Version~1.0, dated 2025-11-19. This schema defines the CSV output produced
+by every StarForth Design of Experiments run and consumed by R statistical
+pipelines.
+
+\subsection{CSV Format}
+
+Each run produces a single CSV row:
+
+\begin{lstlisting}
+timestamp,configuration,run_number,<35 metrics>
+\end{lstlisting}
+
+\subsubsection{Metadata Columns (3)}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Column & Type & Description \\
+\midrule
+\texttt{timestamp}     & ISO~8601 string & Run start time \\
+\texttt{configuration} & string          & Build configuration label \\
+\texttt{run\_number}   & integer         & Sequential run index within configuration \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Metrics by Category}
+
+\subsubsection{Cache Metrics (8 columns)}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Column & Type & Range & Description \\
+\midrule
+\texttt{total\_lookups}           & uint32\_t & $\geq 0$ & Dictionary lookups in run \\
+\texttt{cache\_hits}              & uint64\_t & $\geq 0$ & Hot-words cache hits \\
+\texttt{cache\_hit\_percent}      & double    & 0--100   & $100 \times \text{hits} / \text{lookups}$ \\
+\texttt{bucket\_hits}             & uint64\_t & $\geq 0$ & Bucket hits after cache miss \\
+\texttt{bucket\_hit\_percent}     & double    & 0--100   & $100 \times \text{hits} / \text{lookups}$ \\
+\texttt{cache\_hit\_latency\_ns}  & int64\_t  & $\geq 0$ & Mean cache-hit latency (ns) \\
+\texttt{cache\_hit\_stddev\_ns}   & int64\_t  & $\geq 0$ & Cache-hit latency standard deviation \\
+\texttt{bucket\_search\_latency\_ns} & int64\_t & $\geq 0$ & Mean bucket-search latency (ns) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All latencies are converted from internal Q48.16 fixed-point to nanoseconds.
+When \texttt{ENABLE\_HOTWORDS\_CACHE=0}, cache columns report zero.
+
+\subsubsection{Pipelining Metrics (3 columns)}
+
+Populated only when \texttt{ENABLE\_PIPELINING=1}; measures Loop~\#4
+(word-transition prediction) effectiveness.
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Column & Type & Range & Description \\
+\midrule
+\texttt{context\_predictions\_total} & uint64\_t & $\geq 0$ & Prefetch predictions made \\
+\texttt{context\_correct}            & uint64\_t & $\geq 0$ & Correct predictions \\
+\texttt{context\_accuracy\_percent}  & double    & 0--100   & $100 \times \text{correct} / \text{total}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Physics and Adaptive Tuning Metrics (8 columns)}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Column & Type & Range & Description \\
+\midrule
+\texttt{rolling\_window\_width}    & uint32\_t & 256--4096 & Effective rolling window size \\
+\texttt{decay\_slope}              & double    & 0--1.0    & Exponential decay slope \\
+\texttt{hot\_word\_count}          & uint64\_t & $\geq 0$  & Words above heat threshold \\
+\texttt{stale\_word\_ratio}        & double    & 0--1.0    & Fraction of stale words \\
+\texttt{avg\_word\_heat}           & double    & $\geq 0$  & Mean execution heat, all words \\
+\texttt{prefetch\_accuracy\_percent} & double  & 0--100    & Speculative prefetch success rate \\
+\texttt{prefetch\_attempts}        & uint64\_t & $\geq 0$  & Total prefetch attempts \\
+\texttt{prefetch\_hits}            & uint64\_t & $\geq 0$  & Successful prefetch hits \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Window Tuning Metrics (2 columns)}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Column & Type & Range & Description \\
+\midrule
+\texttt{window\_tuning\_checks}         & uint64\_t & $\geq 0$   & Adaptive width adjustments \\
+\texttt{final\_effective\_window\_size} & uint32\_t & $\geq 256$ & Window size after all tuning \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Performance Metrics (3 columns)}
+
+All three values are stored in Q48.16 fixed-point format
+($\text{double} = \text{q48\_value} / 65536$).
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Column & Description \\
+\midrule
+\texttt{vm\_workload\_duration\_ns\_q48} & VM workload execution time \\
+\texttt{cpu\_temp\_delta\_c\_q48}        & CPU temperature change ($\pm$100\,$^{\circ}$C) \\
+\texttt{cpu\_freq\_delta\_mhz\_q48}      & CPU frequency change ($\pm$4000\,MHz) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Configuration Knobs (5 columns)}
+
+Captured to enable reproducibility analysis: \texttt{decay\_rate\_q16},
+\texttt{decay\_min\_interval\_ns}, \texttt{rolling\_window\_size},
+\texttt{adaptive\_shrink\_rate}, \texttt{heat\_cache\_demotion\_threshold}.
+
+\subsubsection{Feature Flags (2 columns)}
+
+\texttt{enable\_hotwords\_cache} and \texttt{enable\_pipelining} (values
+0 or 1) identify which optimisations were active during the run. These are
+the treatment factors in the 2$^2$ factorial DoE.
+
+\subsection{R Analysis Template}
+
+\begin{lstlisting}[language=R]
+library(tidyverse)
+
+doe_data <- read.csv("experiment_results.csv") %>%
+  mutate(
+    configuration = as.factor(configuration),
+    timestamp = as.POSIXct(timestamp),
+    vm_workload_duration_ms = vm_workload_duration_ns_q48 / 65536 / 1e6,
+    cpu_temp_delta_c = cpu_temp_delta_c_q48 / 65536,
+    decay_rate = decay_rate_q16 / 65536
+  )
+
+# Factorial model: response ~ cache * pipelining
+lm_interaction <- lm(
+  vm_workload_duration_ms ~
+    as.factor(enable_hotwords_cache) *
+    as.factor(enable_pipelining),
+  data = doe_data
+)
+summary(lm_interaction)
+\end{lstlisting}
+
+\subsection{Statistical Validation Notes}
+
+\begin{itemize}
+  \item Minimum runs per configuration: 30; recommended: 150 for correlation analysis.
+  \item Confidence level: 95\%.
+  \item Homogeneity of variance tested with Levene's test (\texttt{leveneTest()}).
+  \item Detectable effect size at minimum run count: approximately 5\% change in any metric.
+\end{itemize}
+
+\subsection{Version History}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Version & Date & Changes \\
+\midrule
+1.0 & 2025-11-19 & Initial schema: 35 metrics, $2^2$ factorial DoE support \\
+\bottomrule
+\end{tabular}
+\end{center}

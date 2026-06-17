@@ -1,0 +1,86 @@
+%% Vol I, Chapter 4 — Formal Verification
+%% SOURCE: proof/ directory (24 .thy files)
+%%         .claude/CLAUDE.md (Formal Verification section)
+%%         docs/working/architecture/03-architecture/word-acl/DESIGN.md (ACL proofs)
+
+\chapter{Formal Verification}
+\label{vol1:chap:proofs}
+
+%% TODO(bob): introductory paragraph — Isabelle/HOL proof-checked verification
+%% of all 7 feedback loops, word categories, and the ACL system.
+%% 24 theory files total (19 core + 5 ACL).
+
+\section{Proof Infrastructure}
+\label{vol1:sec:proofs:infra}
+
+%% TODO(bob): describe the proof/ directory ROOT file, Isabelle session,
+%% and how to run: isabelle build -D proof/
+%% Note that the tool is Isabelle/HOL 2024 (or later); see DEVELOPER.md for setup.
+
+\section{Base Definitions}
+\label{vol1:sec:proofs:base}
+
+%% SOURCE: proof/StarForth_Base.thy
+%% TODO(bob): summarize the base type system, VM state type, and key
+%% definitions exported to all downstream theories.
+
+\section{Physics Loop Proofs}
+\label{vol1:sec:proofs:loops}
+
+%% SOURCE: proof/StarForth_Loop{1..7}_*.thy (7 files)
+%% TODO(bob): one subsection per loop proving its stated property.
+%% Template:
+
+%% \subsection{Loop \#1: Execution Heat Monotonicity}
+%% Source theory: \texttt{StarForth\_Loop1\_Heat.thy} \cite{james:2025:proof:loop1}
+%% TODO(bob): state the theorem and its intuition in 2--3 sentences.
+
+\subsection{Loop \#1: Execution Heat}
+%% TODO(bob): theorem statement and 2-3 sentence intuition
+
+\subsection{Loop \#2: Rolling Window Bounded Growth}
+%% TODO(bob): theorem statement and 2-3 sentence intuition
+
+\subsection{Loop \#3: Decay Convergence}
+%% TODO(bob): theorem statement and 2-3 sentence intuition
+
+\subsection{Loop \#4: Pipelining Metrics Safety}
+%% TODO(bob): theorem statement and 2-3 sentence intuition
+
+\subsection{Loop \#5: Window Width Inference Termination}
+%% TODO(bob): theorem statement and 2-3 sentence intuition
+
+\subsection{Loop \#6: Decay Slope Inference Soundness}
+%% TODO(bob): theorem statement and 2-3 sentence intuition
+
+\subsection{Loop \#7: Heartrate Adaptive Stability}
+%% TODO(bob): theorem statement and 2-3 sentence intuition
+
+\section{Word-Category Proofs}
+\label{vol1:sec:proofs:words}
+
+%% SOURCE: proof/StarForth_{Arithmetic,Stack,Logical,Memory,Return_Stack,Q48_16}_Words.thy
+%% TODO(bob): table of word-category proofs with theorem names.
+
+\section{Concurrency and Mutex}
+\label{vol1:sec:proofs:concurrent}
+
+%% SOURCE: proof/StarForth_Concurrent.thy, proof/StarForth_Mutex.thy
+%% TODO(bob): describe the concurrency model and what mutual-exclusion
+%% properties are proven. Key context: heartbeat thread vs. main thread race
+%% identified in segfault-analysis.md; tuning_lock fix applied.
+
+\section{Overall Correctness}
+\label{vol1:sec:proofs:correctness}
+
+%% SOURCE: proof/StarForth_Correctness.thy \cite{james:2025:proof:correctness}
+%% TODO(bob): state the top-level correctness theorem binding all 24 files.
+
+\section{ACL System Proofs}
+\label{vol1:sec:proofs:acl}
+
+%% SOURCE: proof/ACL_Pin_Monotone.thy, ACL_Inherit_Clears_Pin.thy,
+%%         ACL_TTL_Bounded.thy, ACL_Emergency_Bypass.thy, ACL_No_Escalation.thy
+%% TODO(bob): one paragraph per ACL theorem. Cite james:2025:proof:acl.
+%% These 5 theorems cover: pin monotonicity, inheritance clears pin,
+%% TTL bounded, emergency bypass correctness, no-escalation safety.

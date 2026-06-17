@@ -1,0 +1,251 @@
+%% SCRAP: architecture/03-architecture/OVERVIEW
+%% SOURCE: docs/working/architecture/03-architecture/OVERVIEW.md
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-overview
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Architecture Overview}
+
+StarForth is a FORTH-79 compliant virtual machine built around a
+physics-driven adaptive runtime, formally proven to achieve 0\% algorithmic
+variance across experimental runs. Its architecture is organized into three
+layers --- the VM core, a hardware abstraction layer, and platform
+implementations --- coordinated by seven physics feedback loops that let the
+runtime self-optimize without surrendering deterministic behavior. The central
+innovation is a physics-grounded modeling vocabulary --- execution heat, the
+rolling window of truth --- that drives adaptive optimization while preserving
+reproducibility.
+
+\subsection{Three-Layer Model}
+
+The VM core sits atop a Hardware Abstraction Layer (HAL), which in turn rests on
+platform-specific implementations. The VM is platform-agnostic and calls the
+HAL only; it contains no \texttt{\#ifdef PLATFORM\_*} branches.
+
+\begin{itemize}
+  \item \textbf{Layer 1 --- VM core and physics subsystems.} The FORTH-79
+    interpreter (\texttt{vm.c}), dictionary, data and return stacks, the physics
+    subsystems (heat, window, cache, pipelining), and the heartbeat coordinator.
+  \item \textbf{Layer 2 --- HAL.} Clean interfaces for timing
+    (\texttt{hal\_time.h}), interrupts (\texttt{hal\_interrupt.h}), memory
+    (\texttt{hal\_memory.h}), console I/O (\texttt{hal\_console.h}), and CPU
+    control (\texttt{hal\_cpu.h}).
+  \item \textbf{Layer 3 --- platform implementations.} Linux (POSIX
+    \texttt{clock\_gettime}, \texttt{malloc}, stdio), L4Re
+    (\texttt{L4Re::Clock}, dataspaces, L4Re console), and StarKernel (TSC +
+    HPET + APIC timing, PMM + VMM + \texttt{kmalloc}, UART + framebuffer).
+\end{itemize}
+
+\subsection{Core Components}
+
+\subsubsection{VM Core}
+
+The core (\texttt{src/vm.c}) runs the FORTH-79 interpreter loop, manages the
+dictionary and stacks, executes words, and handles compilation through
+\texttt{:} and \texttt{;}.
+
+\begin{lstlisting}[language=C]
+typedef struct VM {
+    vaddr_t data_stack[STACK_SIZE];
+    vaddr_t return_stack[STACK_SIZE];
+    vaddr_t dict_ptr;                   /* Dictionary pointer */
+    vaddr_t here;                       /* Compilation pointer */
+    DictEntry *latest;                  /* Most recent word */
+    HeartbeatState heartbeat;           /* Timing coordinator */
+    RollingWindowOfTruth *window;       /* Execution history */
+    /* ... */
+} VM;
+\end{lstlisting}
+
+Execution proceeds by fetching the next word from the input stream, searching
+the dictionary, then executing or compiling it (governed by
+\texttt{WORD\_IMMEDIATE}) or, failing a dictionary match, parsing it as a
+number. Each execution updates the word's execution heat as physics feedback.
+
+\subsubsection{Dictionary System}
+
+The dictionary is a linked list of \texttt{DictEntry} nodes, searched linearly
+but accelerated by the hot-words cache. Each entry carries a name, code pointer,
+flags, and physics metadata:
+
+\begin{lstlisting}[language=C]
+typedef struct DictEntry {
+    char name[32];
+    void (*code_ptr)(VM *vm);
+    uint32_t flags;                     /* IMMEDIATE, HIDDEN, etc. */
+    float execution_heat;               /* Physics: frequency tracking */
+    PhysicsMetadata physics;            /* Window samples, decay state */
+    TransitionMetrics *transitions;     /* Pipelining: successor prediction */
+    struct DictEntry *next;             /* Linked list */
+} DictEntry;
+\end{lstlisting}
+
+\subsubsection{Memory Model}
+
+VM addresses (\texttt{vaddr\_t}) are byte offsets, never C pointers. The
+dictionary occupies the first 2~MB; user blocks begin at block 2048; the heap
+is allocated through the HAL. All access goes through bounds-aware accessors,
+\texttt{vm\_load\_cell()} and \texttt{vm\_store\_cell()}.
+
+\subsection{Physics Subsystems}
+
+Six coordinated subsystems implement the adaptive runtime.
+
+\begin{itemize}
+  \item \textbf{Execution heat} (\texttt{dictionary\_heat\_optimization.c}) ---
+    each execution increments a per-word counter, identifying frequently used
+    words for optimization (positive feedback).
+  \item \textbf{Rolling window of truth}
+    (\texttt{rolling\_window\_of\_truth.c}) --- a fixed-size circular buffer of
+    execution samples, providing deterministic seeding for statistical metrics
+    such as ANOVA and Levene's test.
+  \item \textbf{Hot-words cache} (\texttt{physics\_hotwords\_cache.c}) --- sorts
+    dictionary entries by heat and moves hot words to the front of the list,
+    accelerating linear search. It yields a 10--30\% speedup on realistic
+    workloads, and cache updates are triggered by heat decay rather than
+    execution order, preserving determinism.
+  \item \textbf{Pipelining metrics}
+    (\texttt{physics\_pipelining\_metrics.c}) --- records the most common
+    successor of each word for future speculative prefetch; transition counts
+    update deterministically.
+  \item \textbf{Inference engine} (\texttt{inference\_engine.c}) --- adapts
+    window width and decay slope using deterministic statistical methods (ANOVA
+    early-exit, Levene's test, exponential regression), with no randomness.
+  \item \textbf{Heartbeat system} --- a centralized, time-driven coordinator
+    that periodically triggers heat decay (Loop \#3) and window-width inference
+    (Loop \#5).
+\end{itemize}
+
+The heartbeat coordinates the time-dependent loops on a periodic HAL timer:
+
+\begin{lstlisting}[language=C]
+void vm_tick(VM *vm) {
+    if (!vm->heartbeat.enabled) return;
+    vm->heartbeat.tick_count++;
+    if (should_decay_heat(vm))   decay_execution_heat(vm); /* Loop #3 */
+    if (should_tune_window(vm))  infer_window_width(vm);   /* Loop #5 */
+}
+\end{lstlisting}
+
+\subsection{Seven Feedback Loops}
+
+\begin{tabular}{llll}
+\toprule
+Loop & Name & Type & Effect \\
+\midrule
+\#1 & Execution Heat Tracking & Positive & Increments \texttt{execution\_heat} \\
+\#2 & Rolling Window History & Neutral & Captures sample in circular buffer \\
+\#3 & Linear Decay & Negative & Decays heat over time \\
+\#4 & Pipelining Metrics & Positive & Increments \texttt{transition\_count} \\
+\#5 & Window Width Inference & Adaptive & Adjusts window size (Levene's test) \\
+\#6 & Decay Slope Inference & Adaptive & Adjusts decay rate (regression) \\
+\#7 & Adaptive Heartrate & Adaptive & Adjusts heartbeat frequency (future) \\
+\bottomrule
+\end{tabular}
+
+Every loop uses deterministic algorithms; the resulting 0\% algorithmic
+variance has been validated experimentally.
+
+\subsection{Boot Sequence}
+
+On hosted platforms the path is \texttt{main()} $\rightarrow$ HAL
+initialization $\rightarrow$ \texttt{vm\_create()} $\rightarrow$ dictionary
+population $\rightarrow$ physics initialization $\rightarrow$ heartbeat start
+$\rightarrow$ REPL $\rightarrow$ clean shutdown. On StarKernel the UEFI firmware
+loads \texttt{BOOTX64.EFI}, which collects boot information (memory map, ACPI,
+framebuffer), calls \texttt{ExitBootServices()}, and enters
+\texttt{kernel\_main()}; the kernel HAL initializes, the VM is created in kernel
+mode, and Forth runs as the kernel shell.
+
+\subsection{Data Flow}
+
+A line of input is tokenized; each word is located (hot-words cache first,
+linear search as fallback), then executed --- which tracks heat, records the
+transition, and updates the rolling window --- and any output is emitted. The
+physics feedback cycle runs alongside: execution raises heat and records a
+sample; the periodic heartbeat tick decays heat (Loop \#3), runs window
+inference (Loop \#5), and, in future, decay inference (Loop \#6); the hot-words
+cache then refreshes and the cycle repeats.
+
+\subsection{Control Flow and Interrupt Context}
+
+In execute mode --- the default --- words run immediately. Compile mode, entered
+by \texttt{:}, instead compiles words into the dictionary, the exception being
+\texttt{WORD\_IMMEDIATE} words, which execute even while compiling.
+
+\begin{lstlisting}[language=Forth]
+: SQUARE   ( n -- n^2 )   DUP * ;
+\end{lstlisting}
+
+Under StarKernel, certain operations are ISR-safe: \texttt{heartbeat\_tick\_isr()},
+\texttt{vm\_tick()} (no \texttt{malloc} or blocking I/O), and the lock-free
+rolling-window updates. Blocking allocation (\texttt{hal\_mem\_alloc()}),
+blocking console reads (\texttt{hal\_console\_getc()}), and the non-reentrant
+dictionary compiler are \emph{not} ISR-safe.
+
+\subsection{Cross-Subsystem Interactions}
+
+The HAL heartbeat timer fires a periodic interrupt that drives
+\texttt{vm\_tick()}, which in turn coordinates heat decay and window-width
+inference. Defining a new word invalidates the hot-words cache, triggering a
+rebuild that re-sorts the linked list by heat. As word executions accumulate
+samples and the window fills, inference runs Levene's test and adjusts the
+window width.
+
+\subsection{Roadmap}
+
+\begin{itemize}
+  \item \textbf{Phase 1 --- StarForth (done).} FORTH-79 interpreter,
+    physics-driven adaptive runtime, proven 0\% algorithmic variance, the full
+    test suite passing, running on Linux and L4Re.
+  \item \textbf{Phase 2 --- HAL migration (in progress).} Define HAL interfaces,
+    refactor the Linux platform and the VM core onto the HAL, and validate that
+    determinism is preserved; an L4Re HAL is optional.
+  \item \textbf{Phase 3 --- StarKernel (planned).} Kernel HAL, UEFI loader, PMM,
+    VMM, \texttt{kmalloc}, UART and framebuffer console, TSC/HPET/APIC timing,
+    boot to the \texttt{ok} prompt on bare metal, and physics validation on
+    hardware.
+  \item \textbf{Phase 4 --- StarshipOS (future).} Storage drivers, filesystems,
+    networking, a Forth-task process model, a unified device model, and
+    capability/ACL-based security.
+\end{itemize}
+
+%% TODO(bob): this overview cites "780+ tests" while CLAUDE.md states 936+. Reconcile the canonical test count before publication.
+
+\subsection{Performance Characteristics}
+
+\begin{tabular}{lll}
+\toprule
+Operation & Cycles & Notes \\
+\midrule
+\texttt{DUP} & $\sim$5 & Stack manipulation (hot path) \\
+\texttt{+} & $\sim$8 & Arithmetic (optimized) \\
+Dictionary search (hot) & $\sim$20 & Cache hit \\
+Dictionary search (cold) & $\sim$200 & Linear search \\
+Word call overhead & $\sim$15 & Indirect call \\
+Heat tracking & $\sim$3 & Increment + branch \\
+\bottomrule
+\end{tabular}
+
+Physics overhead averages under 5\% on typical workloads.
+
+\subsection{Diagnostics}
+
+Built-in Forth diagnostics include \texttt{WORD-ENTROPY} (execution-heat
+statistics), \texttt{.S} and \texttt{.R} (data and return stacks), and
+\texttt{WORDS} (dictionary listing). Development builds add \texttt{make debug}
+(\texttt{-g -O0}) and \texttt{make PROFILE=1} (\texttt{gprof}); DoE mode
+(\texttt{./starforth --doe}) runs the experiments and reports metrics with
+determinism validation.
+
+\subsection{Key Invariants}
+
+\begin{itemize}
+  \item Determinism: 0\% algorithmic variance, formally validated.
+  \item Platform-agnostic VM code: zero \texttt{\#ifdef PLATFORM\_*} branches.
+  \item Memory safety: all addresses are \texttt{vaddr\_t}, bounds-checked under
+    \texttt{STRICT\_PTR=1}.
+  \item FORTH-79 compliance across all standard words.
+  \item Zero warnings under \texttt{-Wall -Werror}.
+  \item Strict ANSI C99 --- no GNU extensions, no C++ features.
+\end{itemize}

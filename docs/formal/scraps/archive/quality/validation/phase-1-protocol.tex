@@ -1,0 +1,66 @@
+%% SCRAP: archive/quality/validation/phase-1-protocol
+%% SOURCE: docs/working/archive/quality/validation/phase-1-protocol.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Phase 1 Governance Validation Protocol (November 2025)}
+
+This protocol, prepared 3 November 2025, defined the acceptance test
+for the Phase 1 GitHub governance workflow system. It verified that all
+document types routed correctly, approval chains triggered, and backlog
+access control was enforced. The system being tested has since been
+superseded; the protocol is preserved as a historical audit record.
+
+\subsection{Scope}
+
+The protocol covered ten validation domains: template recognition across
+16 document types, submission workflows, approval chains, PM routing
+decisions, backlog entry, vault routing to \texttt{in\_basket}, gatekeeper
+enforcement against unauthorized access, security event logging to
+\texttt{SEC\_LOG.adoc}, label management, and error handling.
+
+\subsection{Test Structure}
+
+Seven test suites organized validation:
+
+\begin{description}
+  \item[Suite 1 — Template Recognition.]
+        All 16 document types (ECO, CAPA, CER, DHR, DWG, ENG, SEC, IR,
+        VAL, DTA, DMR, ART, MIN, REL, RMP, and others) were submitted via
+        GitHub issue templates and checked for correct label application.
+  \item[Suite 2 — Approval Workflows.]
+        CAPA QA approval, PM routing decisions, and CER three-phase
+        sequential approval (Protocol, Results, Report) were verified end
+        to end.
+  \item[Suite 3 — Routing and Backlog Entry.]
+        Approved documents were routed to the development backlog or
+        governance vault. Reference documents (DHR, DMR, etc.) auto-vaulted
+        without manual approval.
+  \item[Suite 4 — Gatekeeper Enforcement.]
+        Unauthorized backlog access attempts were blocked; authorized
+        paths and owner (rajames440) direct access were permitted.
+  \item[Suite 5 — Security Audit Logging.]
+        All bypass attempts were verified in \texttt{SEC\_LOG.adoc} with
+        timestamps, actor usernames, and severity labels. Incident Report
+        (IR) issues were auto-created for each violation.
+  \item[Suite 6 — Label Management.]
+        Type label exclusivity and status label progression were verified.
+  \item[Suite 7 — Error Handling.]
+        Incomplete template detection and workflow feedback comment quality
+        were assessed.
+\end{description}
+
+\subsection{Pass Criteria}
+
+The system passed if all 16 document types were recognizable, all approval
+workflows triggered correctly, documents routed to the correct destination,
+the gatekeeper blocked unauthorized access while permitting authorized
+access, all events logged to \texttt{SEC\_LOG.adoc}, and user feedback was
+clear and actionable.
+
+\subsection{Execution Plan}
+
+The protocol was designed for four-day execution (7--11 hours total):
+Day 1 for templates and approvals, Day 2 for routing and backlog, Day 3
+for security and enforcement, Day 4 for labels and feedback.

@@ -1,0 +1,71 @@
+%% SCRAP: archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/08-peer-review-defense
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/06_ASCIIDOC/08-peer-review-defense.adoc
+%% STATUS: SUPERSEDED
+%% FITS: ssrn/app-defense — the structured Q\&A responses are detailed pre-submission
+%%   defence material; no equivalent appendix appears in a published paper; assess
+%%   whether this warrants preservation as a companion document.
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% TODO(bob): determine whether the SSRN submission included a reviewer-response letter
+%%   or supplemental Q\&A; if not, this document has preservation value as an appendix.
+
+\section{Peer Review Defence --- Pre-Submission Record}
+
+This section records anticipated reviewer objections and prepared responses, assembled
+prior to the SSRN submission. It is preserved as a pre-publication companion document.
+
+\subsection{Objection 1: ``Is 0\% Variance Realistic?''}
+
+\textbf{Response.} Cache promotion is threshold-based, not probabilistic. Each word
+either accumulates \texttt{execution\_heat} to or past the promotion threshold (nominally
+50 counts) or it does not. With a deterministic program and deterministic threshold
+logic, the same words cross the threshold every run, producing identical cache-hit
+counts. The probability of 30 identical discrete values occurring by random chance is
+$p < 10^{-30}$. Perfect 0\% variance is the expected outcome of a deterministic
+algorithm, not a measurement artefact.
+
+\subsection{Objection 2: ``Is the 25\% Improvement Just Warmup?''}
+
+\textbf{Response.} Generic JIT warmup predicts equal improvement for all configurations
+that receive identical warmup. A\_BASELINE \emph{degrades} by 6.4\% and B\_CACHE is
+stable at 0.5\%; only C\_FULL improves by 25.4\% ($p = 0.002$). This configuration
+specificity refutes the warmup hypothesis. The mechanism is \texttt{execution\_heat}
+accumulation: only C\_FULL carries a dynamic promotion rule, so only C\_FULL benefits
+from heat building across runs.
+
+\subsection{Objection 3: ``How Can You Claim Stability with 70\% Variance?''}
+
+\textbf{Response.} In control theory, stability means the system's response to
+perturbations is bounded and predictable---not that all measurements are identical.
+The 70\% variance is \emph{external} (OS scheduling noise), not \emph{internal}
+(algorithmic non-determinism). The stability margin is defined as
+$\text{Environmental Variance} / \text{Algorithmic Variance} = 70\% / 0\% = \infty$.
+The claim is that the algorithm maintains identical decisions despite environmental
+chaos, not that the OS is stable.
+
+\subsection{Objection 4: ``Why Trust Bounds from Only 30 Runs?''}
+
+\textbf{Response.} $n = 30$ satisfies the Central Limit Theorem boundary. The
+conservative $\mu \pm 2\sigma$ formula was used rather than the tighter
+$\mu \pm 1.96\sigma/\sqrt{n}$, producing bounds approximately five times wider than
+strictly necessary. The Chebyshev fallback guarantees at least 75\% coverage within
+$\mu \pm 2\sigma$ if the normality assumption fails. The main finding (0\% cache-hit
+variance) is a deterministic property; it does not depend on sample size.
+
+\subsection{Objection 5: ``This is Just a Toy Example (Fibonacci)''}
+
+\textbf{Response.} Fibonacci was chosen deliberately because it is CPU-bound,
+deterministic, exercises the dictionary lookup hot path, produces a measurable cache
+target, and is reproducible. The physics model properties that the experiment
+demonstrates---determinism, variance decomposition, convergence mechanism---are
+algorithm-level properties that hold for any FORTH program. The absolute numbers
+(runtime, hit rate, improvement magnitude) are workload-specific; the mechanisms are
+universal.
+
+\subsection{Anticipated Positive Question: ML-Based Optimisation}
+
+\textbf{Response.} The physics model was chosen over machine-learning approaches
+because it is deterministic (provable 0\% decision variance), formally verifiable in
+Isabelle/HOL, requires no training data, and introduces negligible overhead. An ML
+predictor would be a black box, resistant to formal proof, and dependent on
+representative training workloads. Future work could combine the physics model for
+guaranteed behaviour with ML hints for threshold tuning.
