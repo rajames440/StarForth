@@ -1,0 +1,119 @@
+%% Developer Guide — main.tex
+%% SOURCE: docs/working/architecture/, docs/working/hardware/, docs/working/specifications/
+%% TODO(bob): set version, ISBN/DOI placeholder, cover design
+
+\input{../common/preamble}
+
+\title{StarForth Developer Guide\\[0.4em]
+       \large Building, Extending, and Porting the StarForth VM}
+\author{Robert A.\ James}
+\date{%% TODO(bob): set edition date
+}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+
+\mainmatter
+
+%%────────────────────────────────────────────────
+%% Part I — Getting Started
+%%────────────────────────────────────────────────
+\part{Getting Started}
+
+\chapter{Installation and Build}
+\input{../scraps/architecture/getting-started/INSTALL}
+\input{../scraps/architecture/getting-started/QUICKSTART}
+
+\chapter{Build System Reference}
+\input{../scraps/architecture/build-and-tooling/BUILD_OPTIONS}
+\input{../scraps/architecture/build-and-tooling/PLATFORM_BUILD_GUIDE}
+\input{../scraps/architecture/build-and-tooling/INIT_TOOLS}
+
+\chapter{Documentation and API Tooling}
+\input{../scraps/architecture/build-and-tooling/DOCUMENTATION_README}
+\input{../scraps/architecture/doxygen/DOXYGEN_STYLE_GUIDE}
+\input{../scraps/architecture/doxygen/DOXYGEN_QUICK_REFERENCE}
+
+%%────────────────────────────────────────────────
+%% Part II — VM Architecture
+%%────────────────────────────────────────────────
+\part{VM Architecture}
+
+\chapter{System Overview}
+%% TODO(bob): \input{../scraps/architecture/03-architecture/OVERVIEW}
+
+\chapter{Interpreter and Memory Model}
+\input{../scraps/architecture/architecture-internals/INIT_SYSTEM}
+
+\chapter{Physics-Driven Adaptive Runtime}
+%% TODO(bob): \input scraps from working/architecture/03-architecture/physics-engine/
+
+\chapter{Pipelining and Speculative Execution}
+%% TODO(bob): \input scraps from working/architecture/03-architecture/pipelining/
+
+\chapter{Heartbeat System}
+%% TODO(bob): \input scraps from working/architecture/03-architecture/heartbeat-system/
+\input{../scraps/architecture/heartbeat_csv_export}
+
+\chapter{Word-Level ACL}
+%% TODO(bob): \input{../scraps/architecture/03-architecture/word-acl/DESIGN}
+
+\chapter{Capsule System and Mama Forth}
+\input{../scraps/architecture/MAMA_FORTH_SUPERVISOR_ARCHITECTURE}
+
+%%────────────────────────────────────────────────
+%% Part III — Platform and Hardware
+%%────────────────────────────────────────────────
+\part{Platform and Hardware}
+
+\chapter{Platform Abstraction}
+\input{../scraps/hardware/platform-integration/PLATFORM_ABSTRACTION}
+
+\chapter{Linux and POSIX}
+%% TODO(bob): stub — no dedicated source doc; pull from BUILD_OPTIONS L4RE flag notes
+
+\chapter{L4Re / Fiasco.OC}
+\input{../scraps/hardware/platform-integration/L4RE_INTEGRATION}
+\input{../scraps/hardware/platform-integration/L4RE_DICTIONARY_ALLOCATION}
+\input{../scraps/hardware/platform-integration/l_4_re_blkio_endpoints}
+
+\chapter{Raspberry Pi 4 / ARM64}
+\input{../scraps/hardware/platform-integration/RASPBERRY_PI_BUILD}
+\input{../scraps/hardware/performance-profiling/ARM64_OPTIMIZATIONS}
+
+\chapter{Performance Profiling}
+\input{../scraps/hardware/performance-profiling/PROFILER}
+\input{../scraps/hardware/performance-profiling/ASM_OPTIMIZATIONS}
+\input{../scraps/hardware/PGO_GUIDE}
+
+%%────────────────────────────────────────────────
+%% Part IV — Specifications and Protocols
+%%────────────────────────────────────────────────
+\part{Specifications}
+
+\chapter{HOLA Analytics Protocol}
+\input{../scraps/specifications/HOLA_PROTOCOL}
+
+\chapter{Formal Verification}
+\input{../scraps/architecture/VM_FORMALIZATION_PLAN}
+
+%%────────────────────────────────────────────────
+%% Appendices
+%%────────────────────────────────────────────────
+\appendix
+
+\chapter{Physics Design Notes}
+\input{../scraps/architecture/PHYSICS_CONE_OF_INFLUENCE_DESIGN}
+\input{../scraps/architecture/PHYSICS_CONTROL_SYSTEM_DESIGN}
+\input{../scraps/architecture/PHYSICS_SIGNAL_MAP}
+
+\chapter{Messaging Architecture}
+\input{../scraps/architecture/architecture-internals/MESSAGING}
+
+\backmatter
+\bibliographystyle{plainnat}
+\bibliography{../common/starship}
+
+\end{document}

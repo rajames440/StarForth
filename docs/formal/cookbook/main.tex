@@ -1,0 +1,127 @@
+%% StarForth Cookbook — main.tex
+%% SOURCE: docs/working/architecture/, docs/working/experiments/
+%% TODO(bob): set version, ISBN/DOI placeholder, cover design
+
+\input{../common/preamble}
+
+\title{The StarForth Cookbook\\[0.4em]
+       \large Patterns, Recipes, and Idioms for FORTH Programmers}
+\author{Robert A.\ James}
+\date{%% TODO(bob): set edition date
+}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+
+\mainmatter
+
+%%────────────────────────────────────────────────
+%% Part I — FORTH Fundamentals
+%%────────────────────────────────────────────────
+\part{FORTH Fundamentals}
+
+\chapter{Stack Idioms}
+%% TODO(bob): stub — classic stack manipulation patterns: juggling, DUP/OVER
+%% combos, 2-cell handling. Target: FORTH programmers new to StarForth.
+
+\chapter{Defining Words and Vocabularies}
+%% TODO(bob): stub — CREATE/DOES> patterns, vocabulary scoping, word libraries.
+
+\chapter{Factoring Recipes}
+%% TODO(bob): stub — when to factor, loop factoring, word boundary heuristics.
+
+%%────────────────────────────────────────────────
+%% Part II — Working with Blocks
+%%────────────────────────────────────────────────
+\part{Working with Blocks}
+
+\chapter{Block File Layout}
+%% TODO(bob): stub — 1KB block structure, screen convention, LBN addressing.
+
+\chapter{Block I/O Recipes}
+%% TODO(bob): stub — BLOCK / BUFFER / UPDATE / FLUSH patterns.
+
+\chapter{Capsule Programming}
+%% SOURCE: docs/working/architecture/MAMA_FORTH_SUPERVISOR_ARCHITECTURE.adoc
+\input{../scraps/architecture/MAMA_FORTH_SUPERVISOR_ARCHITECTURE}
+
+%%────────────────────────────────────────────────
+%% Part III — Physics Runtime Recipes
+%%────────────────────────────────────────────────
+\part{Physics Runtime Recipes}
+
+\chapter{Understanding Execution Heat}
+%% TODO(bob): stub — heat metaphor, WORD-ENTROPY output, what hot words mean.
+%% PATENT: heat-based dispatch is patent-adjacent; do not draft claim language.
+
+\chapter{Tuning the Rolling Window}
+%% TODO(bob): stub — Loop \#2 window sizing, Levene's test, binary chop.
+%% Source: docs/working/architecture/03-architecture/adaptive-systems/
+
+\chapter{Pipelining and Prefetch}
+%% TODO(bob): stub — Loop \#4, word-transition graph, prefetch accuracy metric.
+%% Source: docs/working/architecture/03-architecture/pipelining/
+
+\chapter{Reading Heartbeat Output}
+\input{../scraps/architecture/heartbeat_csv_export}
+
+\chapter{Physics Freeze and Thaw}
+%% TODO(bob): stub — PHYSICS-FREEZE / PHYSICS-THAW use cases, benchmarking.
+
+%%────────────────────────────────────────────────
+%% Part IV — Design of Experiments
+%%────────────────────────────────────────────────
+\part{Design of Experiments}
+
+\chapter{The 2\textsuperscript{7} Factorial Design}
+%% TODO(bob): stub — which 7 factors, how to read the DoE output table.
+
+\chapter{Running the Factorial Harness}
+%% SOURCE: docs/working/architecture/getting-started/quick-start/factorial-doe.md
+%% TODO(bob): promote the factorial-doe quick-start guide.
+
+\chapter{Heartbeat DoE}
+%% SOURCE: docs/working/architecture/getting-started/quick-start/heartbeat-doe.md
+%% TODO(bob): promote the heartbeat-doe quick-start guide.
+
+\chapter{Optimization DoE}
+%% SOURCE: docs/working/architecture/getting-started/quick-start/optimization-doe.md
+%% TODO(bob): promote the optimization-doe quick-start guide.
+
+%%────────────────────────────────────────────────
+%% Part V — Security and ACL Recipes
+%%────────────────────────────────────────────────
+\part{Security and ACL Recipes}
+
+\chapter{Word-Level ACL Basics}
+%% SOURCE: docs/working/architecture/03-architecture/word-acl/DESIGN.md
+%% TODO(bob): promote ACL recipe: loading ACL.4th, granting/revoking modes,
+%% TTL-based expiry. Do NOT draft independent claim language.
+
+\chapter{The Zuse Superuser Console}
+%% TODO(bob): stub — zuse.4th, the zuse)ok> prompt, privilege elevation flow.
+
+\chapter{Emergency Console Fallback}
+%% TODO(bob): stub — ok> emergency prompt from fault handler; use in recovery scripts.
+
+%%────────────────────────────────────────────────
+%% Appendices
+%%────────────────────────────────────────────────
+\appendix
+
+\chapter{Build Flags Quick Reference}
+\input{../scraps/architecture/build-and-tooling/BUILD_OPTIONS}
+
+\chapter{HOLA Analytics Protocol}
+\input{../scraps/specifications/HOLA_PROTOCOL}
+
+\chapter{Physics Design Notes}
+\input{../scraps/architecture/PHYSICS_SIGNAL_MAP}
+
+\backmatter
+\bibliographystyle{plainnat}
+\bibliography{../common/starship}
+
+\end{document}
