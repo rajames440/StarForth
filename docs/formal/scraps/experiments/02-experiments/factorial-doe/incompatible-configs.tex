@@ -1,0 +1,115 @@
+%% SCRAP: experiments/02-experiments/factorial-doe/incompatible-configs
+%% SOURCE: docs/working/experiments/02-experiments/factorial-doe/incompatible-configs.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-factorial
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Incompatible Configurations in the Factorial Design}
+\label{sec:factorial-incompatible-configs}
+
+\subsection{Overview}
+
+Not all 64 binary combinations of the six feedback loops produce viable builds
+or stable runtimes. The $2^6$ factorial script treats incompatibility as data:
+failing configurations are recorded in the CSV with status flags and the
+experiment continues without interruption.
+
+\subsection{Categories of Incompatibility}
+
+Three failure modes are recognised:
+
+\begin{enumerate}
+  \item \textbf{Build failure} — the Makefile target produces compilation errors
+        and the binary is not produced.
+  \item \textbf{Runtime crash} — the binary is produced but StarForth exits
+        abnormally (segfault, unhandled signal, or non-zero exit code).
+  \item \textbf{Silent failure} — the binary runs but the test harness produces
+        no metrics output.
+\end{enumerate}
+
+Known prerequisite relationships include: L5 (window inference) requires L2
+(rolling window) data to operate; L6 (decay inference) requires L3 (linear
+decay) execution to supply a measurable slope. Combinations that violate
+these prerequisites may crash or emit no metrics.
+
+\subsection{Detection and Recording}
+
+\paragraph{Build phase.}
+The script invokes \texttt{make} for each configuration and inspects the exit
+code. On failure, the configuration is marked \texttt{BUILD\_FAILED} and all
+runs for that configuration are skipped.
+
+\paragraph{Execution phase.}
+For each run, the binary is invoked and its exit code is checked. If the
+process exits abnormally or no CSV row can be extracted from the output, the
+run is marked \texttt{CRASH}.
+
+\paragraph{CSV columns.}
+Two new columns record compatibility status:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Column & Values & Meaning \\
+\midrule
+\texttt{build\_status} & \texttt{OK}, \texttt{BUILD\_FAILED} & Makefile compilation result \\
+\texttt{run\_status}   & \texttt{OK}, \texttt{CRASH}         & Runtime exit status \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Viable runs carry \texttt{OK} in both columns; all metrics fields are
+populated. Incompatible runs carry the appropriate failure code; metric fields
+are empty and the loop-flag columns preserve the attempted configuration.
+
+\subsection{Analysis Filters}
+
+\begin{lstlisting}[language=Python]
+import pandas as pd
+df = pd.read_csv('experiment_results.csv')
+
+# Only viable configurations
+viable = df[(df['build_status'] == 'OK') & (df['run_status'] == 'OK')]
+
+# Build failures (per distinct configuration)
+build_failures = df[df['build_status'] == 'BUILD_FAILED'].drop_duplicates('configuration')
+
+# Runtime crashes
+runtime_crashes = df[df['run_status'] == 'CRASH'].drop_duplicates('configuration')
+\end{lstlisting}
+
+\subsection{Experiment Continuity}
+
+The script does not abort when an incompatibility is detected. A representative
+run for 64 configurations at 30 replicates yields 1{,}920 scheduled runs; if
+17 configurations are incompatible the output contains approximately 1{,}847
+viable rows alongside 73 failure-flagged rows. The final summary reports both
+counts.
+
+\subsection{Interpreting Incompatibility}
+
+Incompatible configurations are informative. Patterns — such as L5 appearing
+consistently in crash reports — indicate unguarded prerequisite relationships
+in the source code. The recommended response is:
+
+\begin{enumerate}
+  \item Identify the failing loop or combination from the feasibility map.
+  \item Trace the dependency in source (e.g. L5 reading an uninitialized
+        rolling window when L2 is off).
+  \item Add a compile-time guard (\texttt{\#error}) or runtime guard before
+        the affected call site.
+  \item Re-run the factorial to confirm the crash is eliminated or converted
+        to a clean build failure.
+\end{enumerate}
+
+\subsection{Design Principle}
+
+Including incompatibility data rather than suppressing it preserves the full
+picture of the parameter space. The feasibility map produced by the factorial
+is itself a contribution: it documents which loop combinations are logically
+coherent and which impose hidden constraints, informing both production
+configuration selection and future engineering work.
+
+%% TODO(bob): confirm whether any incompatible configs were observed in the
+%%   completed 2^6 run; update example counts if actual data available
+

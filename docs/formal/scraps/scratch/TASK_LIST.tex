@@ -1,0 +1,64 @@
+%% SCRAP: scratch/TASK_LIST
+%% SOURCE: docs/working/scratch/TASK_LIST.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Physics Runtime Task List (Phase 1 Record)}
+
+This document records the task list that guided Phase 1 physics runtime development.
+It served as the primary instruction sheet for both human and AI contributors. Tasks
+are presented here as a historical record; completion status is noted where known.
+
+\subsection{Agent Working Rules}
+
+Contributors worked on one checkbox task per session, presented all changes as diffs
+before any commit, and halted immediately on test failure with a precise failure report.
+Architecture changes, dependency introductions, and non-C99 language conversions were
+explicitly prohibited. All new behaviour was required to be deterministic, explicit, and
+transparent, without background threads or undocumented async I/O.
+
+\subsection{Task Areas}
+
+\paragraph{Immediate stability tasks.}
+Clarifying comments on heat, decay, window, and prefetch code paths; null-safety audit
+of \texttt{prev\_word}, \texttt{transition\_metrics}, and dictionary entries; verification
+that rolling window, pipeline metrics, and execution heat paths cannot dereference NULL;
+compile-time guards around physics features; and ensuring DoE mode writes exactly one
+CSV line to \texttt{stdout}.
+
+\paragraph{VM signal and wire identification.}
+Creation of a \texttt{PHYSICS\_SIGNALS.md} document cataloguing every potential signal
+point (execution, temporal, and DoE) cross-referenced to the source file and function
+that would emit it, classified as MUST-HAVE, HIGH-VALUE, or FUTURE.
+
+\paragraph{VM event bus foundation.}
+Definition of a \texttt{vm\_event\_type\_t} enum, a \texttt{vm\_event\_t} struct with a
+tagged-union payload, a single-callback \texttt{vm\_publish\_event()} implementation, and
+a registration API. No full wiring; proof-of-concept only.
+
+\paragraph{Adaptive heartbeat.}
+Measurement foundations (pressure metrics struct and
+\texttt{physics\_compute\_pressure()}), followed by rate-control logic clamped between
+configurable minimum and maximum tick intervals, disabled by default to preserve
+deterministic test behaviour.
+
+\paragraph{Feedback loops standardisation (FL1--FL4).}
+Inline labelling and documentation of the four core loops: heat accumulation and decay
+(FL1), hotwords cache promotion (FL2), inference to decay slope (FL3), and inference
+to rolling window tuning and prefetch ROI (FL4).
+
+\paragraph{DoE subsystem overhaul.}
+Clean CLI handling, a typed \texttt{DoeMetrics} struct with named fields, stable CSV
+field order, \texttt{metrics\_from\_vm()} extractor, and header and row write functions.
+
+\paragraph{Metrics and logging hygiene.}
+Standardised log prefixes, single-line CSV output in DoE mode, separation of logs to
+stderr and CSV to stdout, and an option to suppress non-error logs during DoE runs.
+
+\paragraph{Testing and documentation.}
+Unit tests for event dispatch and pressure computation; regression tests for DoE mode;
+\texttt{PHYSICS\_RUNTIME.md}, \texttt{PHYSICS\_SIGNALS.md}, and \texttt{PUBSUB\_DESIGN.md}
+documentation deliverables.
+
+%% TODO(bob): record which tasks were completed before this file was archived.

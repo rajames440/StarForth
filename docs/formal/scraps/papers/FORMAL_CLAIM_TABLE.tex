@@ -1,0 +1,264 @@
+%% SCRAP: papers/FORMAL_CLAIM_TABLE
+%% SOURCE: docs/working/papers/FORMAL_CLAIM_TABLE.md
+%% STATUS: CURRENT
+%% FITS: ssrn/ch-claims, vol3-research/ch-formal-claims
+%% EDITORIAL: lifted — prose rewritten to press voice; all claim rows preserved
+
+\section{Formal Claim Table}
+\label{sec:formal-claims}
+
+This section provides a structured claim-evidence-reproducibility mapping
+for peer review. Each primary claim carries a unique identifier, a falsifiable
+threshold, and a one-command reproducibility protocol. Section-level
+cross-references connect each claim to its supporting documentation.
+
+\subsection{Primary Claims}
+
+\begin{table}[h]
+\centering
+\caption{Primary claims with evidence locations and falsification thresholds.}
+\label{tab:primary-claims}
+\begin{tabular}{llll}
+\toprule
+\textbf{ID} & \textbf{Statement} & \textbf{Reproducible?} & \textbf{Falsification threshold} \\
+\midrule
+C1 & Algorithmic CV = 0.00\% in cache decisions & Yes &
+     $\text{CV} > 0.1\%$ \\
+C2 & 25.4\% performance convergence (C\_FULL) & Yes &
+     No improvement, $p > 0.05$ \\
+C3 & Variance separation: algorithm (0\%) vs.\ environment (70\%) & Yes &
+     Algorithm $\text{CV} > 0.5\%$ \\
+C4 & Same workload $\to$ same cache configuration, 90 runs & Yes &
+     Any run differs \\
+C5 & $p < 10^{-30}$ for determinism (F-test) & Yes &
+     $p > 0.05$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Claim C1: Algorithmic Determinism}
+
+\textbf{Full statement.} The adaptive runtime exhibits 0.00\% coefficient of
+variation in algorithmic decisions (cache hit rates, dictionary lookup paths)
+across 30 identical runs, demonstrating determinism in the adaptive mechanism
+despite environmental stochasticity.
+
+\paragraph{Evidence chain.}
+\begin{table}[h]
+\centering
+\caption{Evidence for Claim C1.}
+\begin{tabular}{llll}
+\toprule
+\textbf{Type} & \textbf{Location} & \textbf{Key value} & \textbf{Sample size} \\
+\midrule
+Raw data & \texttt{03\_EXPERIMENTAL\_DATA/full\_90\_run\_comprehensive/} & Cache hit rates & $N = 90$ \\
+Summary stats & \texttt{experiment\_summary.txt} & $\mu = 17.39\%$, $\sigma = 0.00\%$ & $N = 30$ per config \\
+Statistical test & F-test, variance homogeneity & $F(29,29) \to \infty$, $p < 10^{-30}$ & $N = 30$ \\
+Replication & Git commit SHA checksums & \texttt{EXPERIMENTAL\_DATA\_CHECKSUMS.txt} & All runs \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Controlled confounds.}
+CPU governor set to \texttt{performance}; Turbo Boost disabled; ASLR
+disabled; process pinned to core~0.
+
+\paragraph{Reproduction.}
+\begin{lstlisting}[language=bash]
+make fastest && ./build/amd64/fastest/starforth --doe --config=C_FULL
+# Expected: Cache hit rate = 17.39 +/- 0.00%
+\end{lstlisting}
+
+\paragraph{Falsification criteria.}
+\begin{itemize}
+  \item Independent replication yields $\text{CV} > 0.1\%$.
+  \item Any single run shows cache decisions differing from others.
+  \item Environmental perturbation (thermal stress) changes the cache configuration.
+\end{itemize}
+
+\paragraph{Defense.}
+``Measurement noise'' objection: 70\% CV in runtime demonstrates the timer
+works; if measurement were inadequate, runtime would also show 0\% CV.
+``Lucky data'' objection: probability of coincidence across 90 runs is
+$< 10^{-30}$ under the null model. ``Trivial workload'' objection:
+Fibonacci(20) generates $\approx 2.1 \times 10^6$ word executions with
+non-trivial recursion.
+
+\subsection{Claim C2: Adaptive Convergence}
+
+\textbf{Full statement.} Configuration C\_FULL (all adaptive mechanisms
+active) demonstrates statistically significant performance convergence of
+$25.4 \pm 1.2\%$ between early runs (1--15) and late runs (16--30), while
+non-adaptive configurations show no improvement.
+
+\paragraph{Evidence chain.}
+\begin{table}[h]
+\centering
+\caption{Convergence results by configuration.}
+\begin{tabular}{lllll}
+\toprule
+\textbf{Config} & \textbf{Early runs} & \textbf{Late runs} & \textbf{Improvement} & \textbf{$p$-value} \\
+\midrule
+C\_NONE (baseline) & 10.76\,ms & 11.45\,ms & $-6.4\%$ (degradation) & $p > 0.10$ \\
+C\_CACHE (moderate) & 7.84\,ms & 7.80\,ms & $+0.5\%$ (stable) & $p > 0.80$ \\
+C\_FULL (adaptive) & 10.20\,ms & 7.61\,ms & $+25.4\%$ & $p < 0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Statistical test: two-sample $t$-test ($t = 4.23$, $\text{df} = 28$,
+$p = 0.00012$). Effect size: Cohen's $d \approx 5.08$ (large).
+
+\paragraph{Control logic.}
+C\_NONE degrades (no optimization); C\_CACHE stabilizes (warmup, not
+adaptation); only C\_FULL converges. This three-way comparison isolates the
+adaptation-specific effect.
+
+\paragraph{Falsification criteria.}
+\begin{itemize}
+  \item C\_FULL shows no improvement ($p > 0.05$).
+  \item C\_NONE shows equal or better convergence than C\_FULL.
+  \item Improvement is within margin of error (Cohen's $d < 0.2$).
+\end{itemize}
+
+\subsection{Claim C3: Variance Separation}
+
+\textbf{Full statement.} Variance decomposition reveals algorithmic variance
+(cache decisions) of 0.00\% CV while environmental variance (wall-clock
+runtime) exhibits 60--70\% CV. The two components are statistically
+independent.
+
+\begin{table}[h]
+\centering
+\caption{Variance decomposition.}
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{CV} & \textbf{Source} & \textbf{Measurement} \\
+\midrule
+Algorithmic (cache decisions) & 0.00\% & Deterministic decisions & Integer counters \\
+Environmental (runtime) & 60--70\% & OS scheduler, thermal & Wall-clock timer \\
+Independence & \multicolumn{3}{l}{Pearson $r = 0.03$, $p = 0.87$ (no correlation)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Falsification criteria.}
+\begin{itemize}
+  \item Cache decisions correlate with runtime variance ($r > 0.3$).
+  \item Environmental perturbation affects cache CV.
+  \item Algorithmic CV increases under OS load.
+\end{itemize}
+
+\subsection{Claim C4: Reproducibility}
+
+\textbf{Full statement.} Identical workload execution produces bit-for-bit
+identical adaptive runtime state (cache configuration, frequency rankings,
+window metrics) with 100\% reproducibility across all 90 experimental runs.
+
+\paragraph{Sources of determinism.}
+\begin{itemize}
+  \item No random number generators anywhere in the production execution path.
+  \item \Qtype\ fixed-point arithmetic throughout (no IEEE-754 non-determinism).
+  \item \texttt{CLOCK\_MONOTONIC\_RAW} time source (unaffected by NTP).
+  \item Rolling window seeded from execution history; same history yields same metrics.
+\end{itemize}
+
+\paragraph{Reproduction.}
+\begin{lstlisting}[language=bash]
+./starforth --doe --config=C_FULL > run1.csv
+./starforth --doe --config=C_FULL > run2.csv
+diff run1.csv run2.csv
+# Expected: no differences
+\end{lstlisting}
+
+\paragraph{Falsification criteria.}
+\begin{itemize}
+  \item Any two runs with identical workload produce different cache configurations.
+  \item Floating-point non-determinism is observed on different CPUs.
+  \item Replication on a different machine yields a different steady state.
+\end{itemize}
+
+\subsection{Claim C5: Statistical Significance}
+
+\textbf{Full statement.} The observed 0.00\% CV in algorithmic variance is
+statistically significant at $p < 10^{-30}$, rejecting the null hypothesis
+(variance due to chance) with overwhelming confidence.
+
+\begin{table}[h]
+\centering
+\caption{Statistical tests for Claim C5.}
+\begin{tabular}{llll}
+\toprule
+\textbf{Test} & \textbf{Statistic} & \textbf{$p$-value} & \textbf{Interpretation} \\
+\midrule
+F-test (variance homogeneity) & $F(29,29) \approx \infty$ & $p < 10^{-30}$ & Reject $H_0$ \\
+Levene's test (robustness) & $W = 0.00$ & $p < 10^{-20}$ & Reject $H_0$ \\
+Bayesian posterior & $P(H_1 \mid \text{data})$ & $\approx 1 - 10^{-30}$ & $H_1$ virtually certain \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Power analysis ($n = 30$, $\delta = 0.1$, $\sigma = 0.05$, $\alpha = 0.05$)
+yields power $> 0.99$: if 0.1\% variance existed, the experiment would have
+detected it.
+
+\paragraph{Falsification criteria.}
+\begin{itemize}
+  \item Independent analysis yields $p > 0.05$.
+  \item Power analysis shows $N = 30$ insufficient.
+  \item Bayesian posterior $P(H_1 \mid \text{data}) < 0.95$.
+\end{itemize}
+
+\subsection{Supporting Claims}
+
+\begin{table}[h]
+\centering
+\caption{Secondary supporting claims.}
+\label{tab:supporting-claims}
+\begin{tabular}{lll}
+\toprule
+\textbf{ID} & \textbf{Statement} & \textbf{Reproducible?} \\
+\midrule
+S1 & FORTH-79 compliance (780\raisebox{0.5ex}{+} tests pass) & Yes \\
+S2 & Zipf-law execution distribution ($\alpha \approx 1.1$) & Yes \\
+S3 & Exponential decay model fit ($R^2 > 0.95$) & Yes \\
+S4 & Window inference via Levene's test functional & Yes \\
+S5 & Heartbeat coordination operational & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Claim Dependency Structure}
+
+Claim C5 establishes statistical validity; C1 is the foundational claim
+(determinism); C2 and C3 depend on C1 (convergence requires determinism;
+variance separation presupposes it); C4 validates all claims through
+end-to-end reproducibility. If C1 falls, all claims fall. If C5 falls,
+claims become anecdotal.
+
+\subsection{Patent-Relevant Claims}
+% PATENT: do not draft claim language; cite filing date only
+
+\begin{table}[h]
+\centering
+\caption{Claims with patent relevance. No claim language is drafted here.}
+\begin{tabular}{llll}
+\toprule
+\textbf{ID} & \textbf{Topic} & \textbf{First public disclosure} & \textbf{Notes} \\
+\midrule
+P1 & Rolling Window of Truth & 2025-12-13 & Novel; no prior art identified \\
+P2 & Deterministic statistical inference & 2025-12-13 & Application novel; ANOVA standard \\
+P3 & Thermodynamic metaphor & N/A & Not patentable (conceptual framework) \\
+P4 & Hot-words cache & 2025-12-13 & Prior art: Ertl (1996); claim: deterministic variant \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Using This Table in Review}
+
+When a reviewer challenges a specific claim, identify the claim ID from
+Table~\ref{tab:primary-claims}, cite the evidence location in the row above,
+and offer the falsification test as the definitive resolution mechanism.
+The expected response structure is: acknowledge the concern, point to the
+claim ID, cite the evidence location, offer the reproduction command, and
+address the specific objection with the defense strategy documented above.
