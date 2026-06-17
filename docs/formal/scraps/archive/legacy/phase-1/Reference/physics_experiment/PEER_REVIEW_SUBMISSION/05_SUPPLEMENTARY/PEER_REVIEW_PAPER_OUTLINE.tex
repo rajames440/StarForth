@@ -1,0 +1,75 @@
+%% SCRAP: archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/05_SUPPLEMENTARY/PEER_REVIEW_PAPER_OUTLINE
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/05_SUPPLEMENTARY/PEER_REVIEW_PAPER_OUTLINE.md
+%% STATUS: SUPERSEDED
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Paper Outline: Physics-Driven Self-Adaptive FORTH-79 VM}
+
+This outline was prepared as a submission scaffold for the peer review paper
+subsequently published on SSRN (abstract 5930134). It is preserved as a
+historical record of the paper's structural evolution. The published paper
+supersedes all content below.
+
+\subsection{Abstract (archived draft)}
+
+The paper presented a formally verified self-adaptive FORTH-79 virtual machine
+employing a physics-based runtime model to dynamically optimize execution
+configuration. The system tracked \texttt{execution\_heat} as a
+frequency-based optimization metric and converged toward near-optimal
+performance through selective hotword caching and predictive prefetching.
+
+Key contributions claimed in the draft:
+\begin{itemize}
+  \item Physics model enables deterministic, observable optimization
+        (cache hit rate variance: 0\%).
+  \item Measurable convergence: 25.4\% performance improvement in the
+        adaptive configuration.
+  \item Formal stability: algorithmic determinism maintained despite 70\%
+        environmental variance.
+  \item Practical performance bounds established via a 90-run validation
+        campaign.
+\end{itemize}
+
+\subsection{Experimental Methodology (archived draft)}
+
+The draft described a 90-run randomized experiment (30 runs per
+configuration) across three configurations:
+
+\begin{center}
+\begin{tabular}{lllp{5cm}}
+\toprule
+Configuration & Cache & Pipelining & Purpose \\
+\midrule
+A\_BASELINE & off & off & Control (no optimization) \\
+B\_CACHE    & on  & off & Baseline adaptive \\
+C\_FULL     & on  & on  & Full physics model \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+33 metrics were collected per run, including runtime, cache hit/miss counts,
+latency, and CPU thermal state.
+
+\subsection{Formal Claims (archived draft)}
+
+The draft enumerated four theorems:
+
+\begin{description}
+  \item[Theorem 1 — Algorithmic Determinism.]
+        Cache hit rates exhibited 0\% coefficient of variation across all
+        30 runs per configuration, demonstrating deterministic state
+        transitions.
+  \item[Theorem 2 — Adaptive Convergence.]
+        C\_FULL runtime decreased from 10.20\,ms (early runs 1--15) to
+        7.61\,ms (late runs 16--30), a 25.4\% monotonic improvement.
+  \item[Theorem 3 — Environmental Robustness.]
+        OS scheduling produced 70\% runtime CV; algorithmic CV remained 0\%,
+        establishing complete independence of internal state from external
+        noise.
+  \item[Theorem 4 — Predictable Performance Bounds.]
+        95\% confidence intervals established: B\_CACHE $7.80 \pm 5.04$\,ms.
+\end{description}
+
+%% TODO(bob): cite final SSRN publication (abstract 5930134) wherever
+%% this outline is referenced in the formal volumes.

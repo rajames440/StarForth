@@ -1,0 +1,50 @@
+%% SCRAP: experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/heartbeat_analysis
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/heartbeat_analysis.md
+%% STATUS: HISTORICAL
+%% FITS: experiments/ch-l8-map
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L8 Attractor Heartbeat Analysis}
+
+\textbf{Date:} 9 December 2025. \textbf{Experiment:} StarForth L8 Attractor
+Map. \textbf{Runs:} 180 (6 workloads $\times$ 30 replicates).
+\textbf{Total heartbeat ticks:} 4{,}351.
+
+\subsection{Key Findings}
+
+\begin{description}
+  \item[Workload-Independent Convergence.]
+        ANOVA on tick count versus workload: $F(5,\,174) = 0.983$,
+        $p = 0.43$. Convergence time is not significantly affected by
+        workload type, confirming deterministic attractor behavior.
+
+  \item[Timing Consistency.]
+        Mean tick interval: 70--75\,$\mu$s across all workloads.
+        Coefficient of variation below 5\% at steady state.
+
+  \item[Workload-Specific Heat Signatures.]
+        Each workload exhibits a distinct steady-state word heat signature.
+        VOLATILE showed the highest intra-workload variance
+        ($\sigma = 8.16 \times 10^{-5}$); TEMPORAL, the lowest
+        ($\sigma = 1.76 \times 10^{-5}$).
+\end{description}
+
+\subsection{Conclusions}
+
+\begin{enumerate}
+  \item The L8 attractor exhibits deterministic convergence across all six
+        workload types.
+  \item Heartbeat timing is highly stable (CV $< 5\%$ at steady state).
+  \item Zero crashes in 180 runs confirm the memory-safety fixes applied
+        prior to this run.
+  \item The OMNI workload (7$\times$ standard computational load) served as
+        a successful stress test, confirming that timing stability is
+        independent of raw computational intensity.
+\end{enumerate}
+
+\subsection{Output Artifacts}
+
+\begin{itemize}
+  \item 13 SVG charts in \texttt{analysis\_output/charts/}
+  \item 3 CSV tables and ANOVA results in \texttt{analysis\_output/tables/}
+\end{itemize}

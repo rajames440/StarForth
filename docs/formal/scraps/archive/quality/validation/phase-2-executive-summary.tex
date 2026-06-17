@@ -1,0 +1,71 @@
+%% SCRAP: archive/quality/validation/phase-2-executive-summary
+%% SOURCE: docs/working/archive/quality/validation/phase-2-executive-summary.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Phase 2 Experiment Executive Summary (November 2025)}
+
+Dated 20 November 2025, this document captured the design for a coupled
+multivariate dynamics experiment intended to supersede the Phase 1
+factorial DoE. The experiment was designed but the Phase 1 baseline used
+a fixed heartbeat; Phase 2 was to capture adaptive heartbeat behavior.
+The work informed subsequent L8 attractor and window-scaling campaigns.
+
+\subsection{The Paradigm Shift}
+
+Phase 1 measured isolated factor effects under a fixed 1\,ms heartbeat
+interval. Phase 2 recognized that the system is a coupled multivariate
+dynamical system: the heartbeat rate (\texttt{tick\_ns}) is itself
+modulated by the inference engine in response to workload, coupling all
+metrics through a single feedback variable.
+
+\subsection{Per-Tick Observables}
+
+Seven metrics were to be captured per heartbeat tick via a circular
+buffer (100\,K slots, approximately 400\,KB memory):
+
+\begin{itemize}
+  \item \texttt{tick\_interval\_ns} — elapsed time since previous tick
+  \item \texttt{cache\_hits\_delta} — cache lookup successes
+  \item \texttt{bucket\_hits\_delta} — secondary lookup successes
+  \item \texttt{hot\_word\_count} — words above heat threshold
+  \item \texttt{avg\_word\_heat} — mean execution heat
+  \item \texttt{window\_width} — current rolling window size
+  \item \texttt{word\_executions\_delta} — total word executions
+\end{itemize}
+
+\subsection{Experimental Design}
+
+The design called for five elite configurations (identified from the
+$2^7$ DoE), 150--200 runs each, across 100\,000+ ticks per run, for
+750 total runs and an estimated 6--8 hour wall-clock runtime.
+
+\begin{center}
+\begin{tabular}{lp{6cm}}
+\toprule
+Dimension & Weight \\
+\midrule
+Stability   & 30\% — convergence and reproducibility \\
+Convergence & 25\% — speed and reliability \\
+Coupling    & 20\% — heartbeat response to load \\
+Resilience  & 15\% — noise resistance \\
+Jitter      & 10\% — timing cleanliness \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The configuration with the highest weighted composite score was to become
+the baseline for MamaForth and PapaForth.
+
+\subsection{Implementation Pipeline}
+
+Five phases were planned: heartbeat instrumentation
+(\texttt{HeartbeatTickSnapshot} struct and circular buffer injection),
+per-run stability fingerprinting, per-configuration fingerprint aggregation,
+golden configuration selection, and visualization with R/ggplot2.
+
+%% TODO(bob): confirm whether the golden configuration was ever selected
+%% and what label it carries in the current codebase. Cross-reference
+%% against CLAUDE.md HeartbeatTickSnapshot note and
+%% docs/03-architecture/heartbeat-system/instrumentation-plan.md.
