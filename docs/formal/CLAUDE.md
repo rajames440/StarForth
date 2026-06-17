@@ -14,7 +14,56 @@ goes here until it is ready to be cited.
 
 ---
 
-## Three-Volume Structure
+## Scraps System
+
+`docs/formal/scraps/` contains press-ready LaTeX fragments converted from
+every document in `docs/working/`. Each scrap is a self-contained `.tex`
+fragment — no `\documentclass`, no `\begin{document}` — ready to `\input{}`
+into any publication.
+
+### Scrap file naming
+
+Mirror the source path under `scraps/`:
+```
+docs/working/architecture/build-and-tooling/BUILD_OPTIONS.adoc
+→ docs/formal/scraps/architecture/build-and-tooling/BUILD_OPTIONS.tex
+```
+
+### Scrap header (required on every file)
+
+```latex
+%% SCRAP: architecture/build-and-tooling/BUILD_OPTIONS
+%% SOURCE: docs/working/architecture/build-and-tooling/BUILD_OPTIONS.adoc
+%% STATUS: working-triage (CURRENT|WORKING|HISTORICAL|SUPERSEDED|OBSOLETE)
+%% FITS: dev-guide/ch-build, cookbook/appendix-flags
+%% EDITORIAL: lifted — prose rewritten to press voice
+```
+
+`FITS:` lists candidate `\input{}` locations across the three publications.
+Use `none` if the scrap is archive/historical material kept for completeness.
+
+### Scrap prose conventions (editorial lift)
+
+- Rewrite passive and wordy constructions to active, tight prose.
+- Strip filler phrases ("it is important to note that", "as mentioned above").
+- Convert bullet lists to `\begin{itemize}` or prose where a list is lazy.
+- Code blocks → `\begin{lstlisting}[language=bash]` or `[language=C]`.
+- Tables → `\begin{tabular}` with `booktabs` rules.
+- All claims checked against `ANTI_CLAIMS.md`; hedged language preserved.
+- `%% TODO(bob):` for anything that requires dictation or verification.
+- `%% PATENT:` flag on any section touching patent-adjacent claims.
+
+### Three publications
+
+| Directory | Title | Audience |
+|-----------|-------|----------|
+| `dev-guide/` | StarForth Developer Guide | Contributors, embedders, kernel hackers |
+| `user-guide/` | StarForth User Guide | End users running StarForth interactively |
+| `cookbook/` | The StarForth Cookbook | FORTH programmers wanting patterns and recipes |
+
+Each publication has its own `main.tex` that `\input{}`s scraps in chapter order.
+
+
 
 | Volume | Scope |
 |--------|-------|
