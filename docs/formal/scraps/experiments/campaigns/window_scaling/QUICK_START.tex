@@ -1,0 +1,104 @@
+%% SCRAP: experiments/campaigns/window_scaling/QUICK_START
+%% SOURCE: docs/working/experiments/campaigns/window_scaling/QUICK_START.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-window-scaling, cookbook/ch-doe
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{James Law Validation: Quick-Start Guide}
+
+\textbf{Purpose:} Validate James Law, $\Lambda = W / (\text{DoF} + 1)$, by
+running the 2{,}880-run window-scaling experiment and confirming $K \approx 1.0$
+across all conditions.
+
+%% PATENT: James Law and the window-scaling invariant are patent-adjacent.
+%% Do not draft claims here.
+
+\subsection{Prerequisites}
+
+\begin{lstlisting}[language=bash]
+# Install required R packages
+R
+> install.packages(c("dplyr", "tidyr", "readr", "ggplot2",
++                    "scales", "viridis", "patchwork"))
+> q()
+\end{lstlisting}
+
+\subsection{Four-Step Workflow (Recommended)}
+
+\subsubsection{Step 1: Setup and Validation ($\sim$5 minutes)}
+
+\begin{lstlisting}[language=bash]
+cd experiments/window_scaling_james_law
+./setup_experiment.sh
+\end{lstlisting}
+
+Checks R, make, and gcc; generates the shuffled 2{,}880-row run matrix;
+runs a test build and a test VM execution; estimates experiment duration.
+
+\subsubsection{Step 2: Pre-Build All Configurations ($\sim$1.5 hours)}
+
+\begin{lstlisting}[language=bash]
+cd scripts/
+./prebuild_all_configs.sh
+\end{lstlisting}
+
+Builds all 96 unique (DoF, Window) configurations once and stores them in
+\texttt{experiments/bin/}. Binaries survive \texttt{make clean} and can be
+reused for multiple experiment runs.
+
+\subsubsection{Step 3: Execute the Experiment ($\sim$4--5 hours)}
+
+\begin{lstlisting}[language=bash]
+./run_window_sweep.sh
+
+# Monitor progress in a second terminal:
+tail -f ../results/raw/experiment.log
+\end{lstlisting}
+
+Executes 2{,}880 runs using pre-built binaries. No rebuilds: 3--5 hours
+faster than the rebuild approach.
+
+\subsubsection{Step 4: Analyze Results ($\sim$5 minutes)}
+
+\begin{lstlisting}[language=bash]
+cd scripts/
+./analyze_results.R
+\end{lstlisting}
+
+Computes $K = \Lambda \times (\text{DoF}+1) / W$ for all runs, tests
+$K \approx 1.0$, identifies the critical window threshold, and generates
+five publication-quality plots.
+
+\subsection{Validation Output}
+
+If James Law holds, the analysis script reports:
+
+\begin{lstlisting}
+K Statistic Across All Runs:
+  Mean(K):     1.0023
+  Std(K):      0.0451
+  CV(K):       4.50%
+  Mean|K-1.0|: 0.0156
+  Max|K-1.0|:  0.0823
+
+Validation Criteria:
+  [PASS] Mean(K) in [0.95, 1.05]
+  [PASS] Std(K)  < 0.1
+  [PASS] Max|K-1.0| < 0.1
+\end{lstlisting}
+
+\subsection{Timeline}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Phase    & Duration       & Deliverable \\
+\midrule
+Setup    & 5\,min         & Environment validated, run matrix generated \\
+Build    & 1.5\,hr        & 96 configurations built \\
+Execute  & 4--5\,hr       & 2{,}880 runs complete \\
+Analyze  & 5\,min         & Plots + statistics \\
+\textbf{Total} & $\sim$1\,day & James Law confirmed or falsified \\
+\bottomrule
+\end{tabular}
+\end{center}

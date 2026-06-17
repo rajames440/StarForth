@@ -1,0 +1,88 @@
+%% SCRAP: experiments/campaigns/shape_validation/README
+%% SOURCE: docs/working/experiments/campaigns/shape_validation/README.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-factorial
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Workload Shape Validation Experiment}
+
+This experiment tests how a single StarForth configuration responds to
+four distinct workload patterns (``shapes''), validating that the adaptive
+runtime adjusts appropriately to workload characteristics rather than
+locking to a fixed operating point.
+
+\textbf{Configuration tested:} C37 (binary \texttt{0100101}) — L2
+(Rolling Window), L5 (Window Inference), and L7 (Adaptive Heartrate)
+enabled; all other loops off.
+\textbf{Recommended replicates:} 100--300 per workload.
+\textbf{Reference commit:} \texttt{161a3667}.
+
+\subsection{Workload Shapes}
+
+\begin{description}
+  \item[Baseline (\texttt{init.4th}).]
+        Standard DoE benchmark. Mixed arithmetic and control flow, moderate
+        complexity, predictable pattern. Expected: moderate window size
+        ($\sim$1{,}024--2{,}048) and stable heartbeat ($\sim$1\,ms ticks).
+
+  \item[Square Wave (\texttt{init-1.4th}).]
+        Alternates between simple and complex operations on every other
+        iteration. Expected: larger window to capture the alternation
+        pattern; more frequent heartbeats during transitions.
+
+  \item[Triangle Wave (\texttt{init-2.4th}).]
+        Gradually increasing then decreasing complexity (ramp up, ramp
+        down). Expected: window size tracking the complexity ramp; heartbeat
+        slowing during stable ramps and accelerating at the inflection point.
+
+  \item[Damped Sine (\texttt{init-3.4th}).]
+        Oscillating complexity that decreases over time via amplitude
+        damping. Expected: window shrinking as amplitude decays; heartbeat
+        rate increasing as the workload stabilizes.
+\end{description}
+
+\subsection{Running the Experiment}
+
+\begin{lstlisting}[language=bash]
+cd experiments/shape_validation
+
+# Standard validation (100 reps x 4 workloads = 400 runs)
+./run_shapes.sh 100
+
+# Quick exploratory (30 reps, ~5 minutes)
+./run_shapes.sh 30
+
+# High precision (300 reps x 4 = 1200 runs)
+./run_shapes.sh 300
+\end{lstlisting}
+
+Results land in \texttt{shape\_run\_<TIMESTAMP>/shape\_results.csv}.
+
+\subsection{Expected Results}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Workload    & Expected ns/word & Expected Window & Expected CV \\
+\midrule
+Baseline    & $\sim$125        & 1{,}024--2{,}048 & $\sim$0.02 \\
+Square Wave & $\sim$130+       & $\geq$2{,}048    & $>$0.03 \\
+Triangle    & $\sim$128        & 1{,}536          & $\sim$0.025 \\
+Damped Sine & $\sim$122        & 2{,}048 → 512   & $\sim$0.018 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Key validation: window width must vary significantly across shapes
+(ANOVA $p < 0.05$), demonstrating that L5 responds to workload dynamics
+rather than holding a fixed window.
+
+\subsection{Success Criteria}
+
+\begin{enumerate}
+  \item L5 (Window Inference) produces statistically distinct window widths
+        across shapes (ANOVA $p < 0.05$).
+  \item Square-wave workload yields a larger window than baseline.
+  \item Damped-sine workload yields a smaller window than baseline.
+  \item CV remains below 10\% for all shapes (no instability).
+\end{enumerate}

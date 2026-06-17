@@ -1,0 +1,80 @@
+%% SCRAP: scratch/src/internal/PHYSICS_IMPLEMENTATION_STATUS
+%% SOURCE: docs/working/scratch/src/internal/PHYSICS_IMPLEMENTATION_STATUS.adoc
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Physics Engine Implementation Status: POSIX vs.\ L4Re Porting Strategy}
+
+This document records the implementation status of the physics engine at
+the time the porting strategy was being finalized. It is HISTORICAL;
+the current state of the codebase should be verified directly.
+
+\subsection{What Is Wired}
+
+Both word-execution paths call physics metadata updates:
+
+\begin{itemize}
+  \item \textbf{Outer interpreter} (\texttt{src/vm.c:533}) — direct word
+        execution: calls \texttt{physics\_metadata\_touch()} after each
+        primitive dispatch.
+  \item \textbf{Colon word executor} (\texttt{src/vm.c:456}) — nested word
+        calls: same call after each colon-definition word dispatch.
+\end{itemize}
+
+Both paths update \texttt{temperature\_q8} (exponential moving average from
+entropy) and \texttt{last\_active\_ns} (monotonic timestamp).
+
+Dictionary initialization calls \texttt{physics\_metadata\_init()} and
+\texttt{physics\_metadata\_apply\_seed()}, pre-seeding 20 high-impact words
+(IF, LOOP, EMIT, BLOCK, SAVE-BUFFERS, etc.) with domain-knowledge priors.
+
+\subsection{What Is Incomplete}
+
+\begin{description}
+  \item[POSIX/L4Re abstraction pattern.]
+        The physics runtime uses inline \texttt{\#ifdef \_\_l4\_\_}
+        conditionals rather than the vtable pattern established by
+        \texttt{include/platform\_time.h}. Recommended refactoring: extract
+        POSIX code to \texttt{src/platform/linux/snapshot.c} and the L4Re
+        stub to \texttt{src/platform/l4re/snapshot.c}, with a vtable
+        dispatcher in \texttt{src/physics\_runtime.c}.
+
+  \item[Periodic host snapshot capture.]
+        \texttt{physics\_host\_snapshot()} is defined but never called
+        automatically. No heartbeat mechanism invokes it; the analytics heap
+        is allocated but unused in normal operation.
+
+  \item[Temperature decay model.]
+        \texttt{temperature\_q8} is updated on execution but never decayed
+        for inactive words. The exponential moving average with configurable
+        half-life remains unimplemented.
+\end{description}
+
+\subsection{POSIX Implementation Status}
+
+The POSIX path is production-ready and robust. Captured signals include CPU
+count (\texttt{sysconf}), scheduler policy and priority (\texttt{sched\_*}),
+time quantum (\texttt{sched\_rr\_get\_interval}), load average
+(\texttt{getloadavg}), PSI metrics (\texttt{/proc/pressure/}), \texttt{/proc/stat}
+jiffies, and cgroup v2 (\texttt{cpu.stat}, \texttt{memory.current}).
+Missing interfaces result in \texttt{flags = 0} for the affected category;
+no crashes.
+
+\subsection{L4Re Implementation Status}
+
+The L4Re path is a stub: monotonic and real-time timestamps via the platform
+time abstraction work correctly; CPU count is hardcoded to 1 (KIP query
+deferred). Scheduler info via \texttt{l4\_scheduler\_info()} and IO server
+capabilities are planned for later phases.
+
+\subsection{Recommended Next Steps}
+
+\begin{enumerate}
+  \item Verify temperature updates in \texttt{starforth\_words\_test.c}:
+        define a word, execute it $N$ times, inspect \texttt{temperature\_q8}.
+  \item Add periodic host snapshot capture to the REPL loop or VM tick.
+  \item Implement temperature decay (exponential moving average with
+        configurable half-life) in \texttt{src/physics\_metadata.c}.
+  \item Refactor to the vtable pattern once the logic is proven.
+\end{enumerate}

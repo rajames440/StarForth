@@ -1,0 +1,56 @@
+%% SCRAP: scratch/AI_AGENT_MANDATORY_README
+%% SOURCE: docs/working/scratch/AI_AGENT_MANDATORY_README.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{AI Assistant Operational Protocol (Historical)}
+
+This document records the AI assistant rules that governed this repository
+during active development of the physics runtime. It is preserved as a
+historical record of the non-perturbative monitoring principle and the
+constraints it imposed on automated tooling.
+
+\subsection{Background}
+
+StarForth is not a conventional VM. Its seven feedback loops interact
+continuously: rolling truth windows, adaptive decay slopes, hot-word
+thermodynamics, prefetch heuristics, transition topology, entropy flows,
+tick-rate metabolism, and DoE scientific instrumentation. Ignorant changes
+to any one loop affect the others. The non-perturbative monitoring principle
+was established to prevent automated tools from corrupting experimental
+results.
+
+\subsection{Mandatory Scope}
+
+Any automated tool interacting with the physics runtime, hot-words cache,
+rolling window, inference engine, decay slope, DoE system, prefetch, tick
+interval, dictionary structure, feedback loops, metrics, transitions, or
+pressure model was required to have read and internalized
+\texttt{PHYSICS\_MONITORING\_PRINCIPLES.md} before generating any output.
+
+\subsection{Prohibited Actions}
+
+The following were explicitly forbidden for automated tools:
+
+\begin{itemize}
+  \item Introducing nondeterminism
+  \item Reordering dictionary buckets
+  \item Adding allocations inside hot loops
+  \item Altering feedback loop behavior or semantics
+  \item Seeding values internally
+  \item Replacing physics instrumentation with heuristics
+  \item Creating new background threads
+  \item Blending monitoring with execution
+  \item Polluting DoE metrics
+\end{itemize}
+
+\subsection{Required Operational Protocol}
+
+Before generating code: confirm that non-perturbative monitoring rules are
+understood and that the change falls within the task boundaries of the
+current \texttt{TASK\_LIST.md}. During code generation: respect deterministic
+behavior; keep changes minimal and isolated; do not modify architecture; do
+not combine tasks. After generating code: output must compile with zero
+warnings; behavior must not change unless the task explicitly requires it;
+observability must remain non-intrusive.
