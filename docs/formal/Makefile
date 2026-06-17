@@ -12,13 +12,13 @@ BOOKS := dev-guide user-guide cookbook
 # Four standalone publications
 STANDALONE := experiments proofs ssrn patent
 
-.PHONY: all vols books standalone \
+.PHONY: all vols books standalone doxygen \
         vol1 vol2 vol3 \
         dev-guide user-guide cookbook \
         experiments proofs ssrn patent \
         clean
 
-all: vols books standalone
+all: vols books standalone doxygen
 
 vols: vol1 vol2 vol3
 
@@ -76,5 +76,15 @@ patent:
 	cd patent && $(PDFLATEX) -output-directory=../$(OUTDIR)/patent main.tex
 	cd patent && $(PDFLATEX) -output-directory=../$(OUTDIR)/patent main.tex
 
+doxygen:
+	cd ../.. && doxygen Doxyfile
+	@# Replace all Unicode characters in generated LaTeX with pdflatex-safe equivalents
+	python3 fix-doxygen-unicode.py doxygen/latex/
+	$(MAKE) -C doxygen/latex pdf
+	@mkdir -p $(OUTDIR)/doxygen
+	cp doxygen/latex/refman.pdf $(OUTDIR)/doxygen/StarForth-API-Reference.pdf
+	@echo "Doxygen PDF: $(OUTDIR)/doxygen/StarForth-API-Reference.pdf"
+
 clean:
 	rm -rf $(OUTDIR)
+	rm -rf doxygen/
