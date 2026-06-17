@@ -25,6 +25,8 @@
 \chapter{Installation and Build}
 \input{../scraps/architecture/getting-started/INSTALL}
 \input{../scraps/architecture/getting-started/QUICKSTART}
+\input{../scraps/architecture/getting-started/DEVELOPER}
+\input{../scraps/architecture/getting-started/README}
 
 \chapter{Build System Reference}
 \input{../scraps/architecture/build-and-tooling/BUILD_OPTIONS}
@@ -42,23 +44,46 @@
 \part{VM Architecture}
 
 \chapter{System Overview}
-%% TODO(bob): \input{../scraps/architecture/03-architecture/OVERVIEW}
+\input{../scraps/architecture/03-architecture/OVERVIEW}
+\input{../scraps/architecture/03-architecture/README}
 
 \chapter{Interpreter and Memory Model}
 \input{../scraps/architecture/architecture-internals/INIT_SYSTEM}
 
 \chapter{Physics-Driven Adaptive Runtime}
-%% TODO(bob): \input scraps from working/architecture/03-architecture/physics-engine/
+\input{../scraps/architecture/03-architecture/physics-engine/feedback-loops}
+\input{../scraps/architecture/03-architecture/physics-engine/feedback-loops-analysis}
+\input{../scraps/architecture/03-architecture/physics-engine/monitoring-principles}
+\input{../scraps/architecture/03-architecture/physics-engine/ssm-equations}
+\input{../scraps/architecture/03-architecture/physics-engine/ssm-raw-data-analysis}
+\input{../scraps/architecture/03-architecture/physics-engine/steady-state-machine}
+\input{../scraps/architecture/03-architecture/physics-engine/metrics-and-knobs}
+\input{../scraps/architecture/03-architecture/adaptive-systems/adaptive-window-and-decay}
+\input{../scraps/architecture/03-architecture/adaptive-systems/loop-5-sketch}
+\input{../scraps/architecture/03-architecture/adaptive-systems/multivariate-dynamics}
+\input{../scraps/architecture/03-architecture/adaptive-systems/window-inference-redesign}
+\input{../scraps/scratch/src/internal/PHYSICS_HOTWORDS_CACHE_INTEGRATION}
+\input{../scraps/scratch/src/internal/PHYSICS_IMPLEMENTATION_OPTIONS}
+\input{../scraps/scratch/src/internal/PHYSICS_IMPLEMENTATION_STATUS}
+\input{../scraps/scratch/src/internal/PHYSICS_SCHEDULING_PLAN}
+\input{../scraps/scratch/src/internal/PHASE_2_PHYSICS_DECAY_AND_FREEZE}
 
 \chapter{Pipelining and Speculative Execution}
-%% TODO(bob): \input scraps from working/architecture/03-architecture/pipelining/
+\input{../scraps/architecture/03-architecture/pipelining/design}
+\input{../scraps/architecture/03-architecture/pipelining/context-window-and-binary-chop}
+\input{../scraps/architecture/03-architecture/pipelining/phase-1-instrumentation}
+\input{../scraps/architecture/03-architecture/pipelining/wired-not-utilized}
 
 \chapter{Heartbeat System}
-%% TODO(bob): \input scraps from working/architecture/03-architecture/heartbeat-system/
+\input{../scraps/architecture/03-architecture/heartbeat-system/architecture}
+\input{../scraps/architecture/03-architecture/heartbeat-system/critical-insight}
+\input{../scraps/architecture/03-architecture/heartbeat-system/implementation-plan}
+\input{../scraps/architecture/03-architecture/heartbeat-system/instrumentation-plan}
+\input{../scraps/architecture/03-architecture/heartbeat-system/segfault-analysis}
 \input{../scraps/architecture/heartbeat_csv_export}
 
 \chapter{Word-Level ACL}
-%% TODO(bob): \input{../scraps/architecture/03-architecture/word-acl/DESIGN}
+\input{../scraps/architecture/03-architecture/word-acl/DESIGN}
 
 \chapter{Capsule System and Mama Forth}
 \input{../scraps/architecture/MAMA_FORTH_SUPERVISOR_ARCHITECTURE}
@@ -70,6 +95,12 @@
 
 \chapter{Platform Abstraction}
 \input{../scraps/hardware/platform-integration/PLATFORM_ABSTRACTION}
+\input{../scraps/architecture/03-architecture/hal/README}
+\input{../scraps/architecture/03-architecture/hal/overview}
+\input{../scraps/architecture/03-architecture/hal/interfaces}
+\input{../scraps/architecture/03-architecture/hal/platform-implementations}
+\input{../scraps/architecture/03-architecture/hal/migration-plan}
+\input{../scraps/architecture/03-architecture/hal/starkernel-integration}
 
 \chapter{Linux and POSIX}
 %% TODO(bob): stub — no dedicated source doc; pull from BUILD_OPTIONS L4RE flag notes
@@ -78,6 +109,7 @@
 \input{../scraps/hardware/platform-integration/L4RE_INTEGRATION}
 \input{../scraps/hardware/platform-integration/L4RE_DICTIONARY_ALLOCATION}
 \input{../scraps/hardware/platform-integration/l_4_re_blkio_endpoints}
+\input{../scraps/scratch/src/L4RE_INTEGRATION_TODO}
 
 \chapter{Raspberry Pi 4 / ARM64}
 \input{../scraps/hardware/platform-integration/RASPBERRY_PI_BUILD}

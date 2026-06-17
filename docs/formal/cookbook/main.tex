@@ -59,10 +59,12 @@
 \chapter{Tuning the Rolling Window}
 %% TODO(bob): stub — Loop \#2 window sizing, Levene's test, binary chop.
 %% Source: docs/working/architecture/03-architecture/adaptive-systems/
+\input{../scraps/architecture/03-architecture/physics-engine/metrics-and-knobs}
 
 \chapter{Pipelining and Prefetch}
 %% TODO(bob): stub — Loop \#4, word-transition graph, prefetch accuracy metric.
 %% Source: docs/working/architecture/03-architecture/pipelining/
+\input{../scraps/architecture/03-architecture/pipelining/context-window-and-binary-chop}
 
 \chapter{Reading Heartbeat Output}
 \input{../scraps/architecture/heartbeat_csv_export}
@@ -79,16 +81,18 @@
 %% TODO(bob): stub — which 7 factors, how to read the DoE output table.
 
 \chapter{Running the Factorial Harness}
-%% SOURCE: docs/working/architecture/getting-started/quick-start/factorial-doe.md
-%% TODO(bob): promote the factorial-doe quick-start guide.
+\input{../scraps/architecture/getting-started/quick-start/factorial-doe}
+\input{../scraps/experiments/02-experiments/factorial-doe/guide}
+\input{../scraps/experiments/02-experiments/factorial-doe/workflow}
 
 \chapter{Heartbeat DoE}
-%% SOURCE: docs/working/architecture/getting-started/quick-start/heartbeat-doe.md
-%% TODO(bob): promote the heartbeat-doe quick-start guide.
+\input{../scraps/architecture/getting-started/quick-start/heartbeat-doe}
+\input{../scraps/experiments/02-experiments/heartbeat-doe/execution-guide}
 
 \chapter{Optimization DoE}
-%% SOURCE: docs/working/architecture/getting-started/quick-start/optimization-doe.md
-%% TODO(bob): promote the optimization-doe quick-start guide.
+\input{../scraps/architecture/getting-started/quick-start/optimization-doe}
+\input{../scraps/experiments/02-experiments/physics-optimization/doe-guide}
+\input{../scraps/experiments/02-experiments/physics-optimization/execution-guide}
 
 %%────────────────────────────────────────────────
 %% Part V — Security and ACL Recipes
@@ -99,6 +103,7 @@
 %% SOURCE: docs/working/architecture/03-architecture/word-acl/DESIGN.md
 %% TODO(bob): promote ACL recipe: loading ACL.4th, granting/revoking modes,
 %% TTL-based expiry. Do NOT draft independent claim language.
+\input{../scraps/architecture/03-architecture/word-acl/DESIGN}
 
 \chapter{The Zuse Superuser Console}
 %% TODO(bob): stub — zuse.4th, the zuse)ok> prompt, privilege elevation flow.
