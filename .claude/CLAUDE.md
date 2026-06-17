@@ -65,7 +65,7 @@ via **LithosAnanke** (StarKernel).
   (0% algorithmic variance across 90 experimental runs)
 - 7 feedback loops driving runtime optimization while preserving determinism
 - Formally verified with 19 Isabelle/HOL theory files covering all loops and word categories
-- Bare-metal UEFI kernel (LithosAnanke v1.0.8) enabling native execution without Linux
+- Bare-metal UEFI kernel (LithosAnanke v1.5.3) enabling native execution without Linux
 - Patent pending on adaptive runtime mechanisms
 - Published SSRN paper: `papers/James_Steady-State_Convergence_Adaptive_Runtime.pdf`
 
@@ -75,10 +75,10 @@ via **LithosAnanke** (StarKernel).
 ┌─────────────────────────────────────────────────────────────────┐
 │  StarshipOS (future — self-hosting OS)                          │
 ├─────────────────────────────────────────────────────────────────┤
-│  LithosAnanke v1.0.8 / StarKernel  (bare metal UEFI kernel)    │
+│  LithosAnanke v1.5.3)    │
 │  ← Milestones M0–M6 complete; M7 VM integration in progress →  │
 ├─────────────────────────────────────────────────────────────────┤
-│  StarForth v3.0.3  (FORTH-79 VM + physics-driven adaptive RT)   │
+│  StarForth v3.1.0  (FORTH-79 VM + physics-driven adaptive RT)   │
 ├───────────────────────────┬─────────────────────────────────────┤
 │  Linux / L4Re / Fiasco.OC │  Bare metal (amd64, aarch64, riscv) │
 └───────────────────────────┴─────────────────────────────────────┘
@@ -311,7 +311,7 @@ src/
 ### LithosAnanke / StarKernel
 
 LithosAnanke ("stone inevitability") is the bare-metal UEFI kernel that boots
-StarForth directly on hardware. Version **1.0.8**, monolithic UEFI PE32+ executable.
+StarForth directly on hardware. Version **1.5.3**, monolithic UEFI PE32+ executable.
 
 **Boot sequence:**
 ```
@@ -328,7 +328,7 @@ UEFI Firmware → uefi_loader.c (BOOTX64.EFI)
         M7: StarForth VM bootstrap + capsule loading → "ok" REPL
 ```
 
-**Milestone status (as of v1.0.8):**
+**Milestone status (as of v1.5.3):**
 - ✅ M0–M5: complete (verified with QEMU/OVMF, three-arch tested)
 - ✅ M6: kmalloc infrastructure present (full validation deferred)
 - 🔄 M7: VM integration in progress (capsule execution pipeline partially wired)

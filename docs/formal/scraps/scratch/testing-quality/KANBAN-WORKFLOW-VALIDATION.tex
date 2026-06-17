@@ -1,0 +1,38 @@
+%% SCRAP: scratch/testing-quality/KANBAN-WORKFLOW-VALIDATION
+%% SOURCE: docs/working/scratch/testing-quality/KANBAN-WORKFLOW-VALIDATION.adoc
+%% STATUS: OBSOLETE
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Kanban Workflow Validation Procedure (2025-11-02)}
+
+This document recorded the formal validation procedure for the GitHub Projects V2
+Kanban workflow automation implemented as Phase 3 of CAPA-032. It is preserved as a
+historical test-procedure artefact; the automation it describes is no longer the
+current state of the project.
+
+\subsection{Workflow Under Test}
+
+File: \texttt{.github/workflows/capa-kanban-sync.yml}. The workflow automated six
+status transitions for CAPA issues: CREATE, IMPLEMENT, VALIDATE, APPROVE, RELEASE,
+and CLOSED. Transitions were triggered by pull-request events, workflow completions,
+and comment patterns.
+
+\subsection{Validation Summary}
+
+The procedure required all five prerequisite checks to pass (GitHub CLI version,
+authentication, repository access, project existence, and workflow deployment) before
+test execution. The full lifecycle test drove a CAPA issue through all six states by
+creating a PR, waiting for the test workflow, posting QA and PM approval comments, and
+merging the PR. Success required all 13 checklist items to pass with no manual
+interventions beyond the two approval comments. Expected total elapsed time was
+approximately 20 minutes.
+
+Artifact integrity was verified by SHA-256 checksums:
+\begin{itemize}
+  \item \texttt{KANBAN-SETUP-CHECKLIST.sh}: \texttt{ad9e585538aa320521e6b4af449ead6a83c9c2471e1ae2d4d592792d9bb0deaa}
+  \item \texttt{KANBAN-QUICK-TEST.sh}: \texttt{ef13d408853a1bd221b4f31a8968a729f14ba1f9d02d5bff82cf733a39070a20}
+\end{itemize}
+
+%% TODO(bob): confirm whether this validation was completed and whether the workflow
+%% remains active or has been superseded.

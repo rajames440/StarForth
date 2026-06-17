@@ -1,0 +1,51 @@
+%% SCRAP: archive/quality/validation/comprehensive-physics-validation
+%% SOURCE: docs/working/archive/quality/validation/comprehensive-physics-validation.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Comprehensive Physics Engine Validation Protocol (November 2025)}
+
+This protocol defined the rigorous experimental design for validating the
+StarForth physics engine across three cumulative feature configurations.
+The experiment was executed as specified and its results published in the
+\textsc{ssrn} paper. The protocol is retained as a provenance record documenting
+the experimental methodology.
+
+\subsection*{Experimental Design}
+
+Three binary configurations were tested, 30 runs each (90 total):
+
+\begin{itemize}
+  \item \textbf{A\_BASELINE}: \texttt{ENABLE\_HOTWORDS\_CACHE=0},
+        \texttt{ENABLE\_PIPELINING=0}. Control condition.
+  \item \textbf{B\_CACHE}: \texttt{ENABLE\_HOTWORDS\_CACHE=1},
+        \texttt{ENABLE\_PIPELINING=0}. Isolates cache impact.
+  \item \textbf{C\_FULL}: \texttt{ENABLE\_HOTWORDS\_CACHE=1},
+        \texttt{ENABLE\_PIPELINING=1}. Combined physics optimization.
+\end{itemize}
+
+Each run executed a three-phase benchmark: warmup (100{,}000 iterations,
+discarded), statistics reset, then measurement (100{,}000 iterations, recorded).
+This design eliminates cold-start artifacts and measures steady-state performance.
+
+Run order was randomized across all 90 trials using a shuffled test matrix,
+distributing configuration-switch costs evenly and eliminating temporal bias.
+Only three binary rebuilds were required despite the interleaved execution
+sequence.
+
+\subsection*{Statistical Analysis}
+
+Per-configuration analysis computed mean, median, standard deviation, and
+Bayesian 95\% and 99\% credible intervals. Comparative analysis isolated the
+incremental contribution of each optimization layer. The coefficient of variation
+(CV) served as the reproducibility metric; a CV below 5\% was defined as
+indicative of a highly deterministic physics model.
+
+\subsection*{Outcome}
+
+The experiment confirmed the null hypothesis was false for both comparisons.
+Cache hit rate exceeded the 20\% minimum threshold; speedup under B\_CACHE
+was statistically significant; algorithmic CV under B\_CACHE was 0\%;
+OS-scheduling variance accounted for 60--70\% of total variance. Full results
+appear in the published \textsc{ssrn} paper.

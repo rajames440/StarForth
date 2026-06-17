@@ -1,0 +1,41 @@
+%% SCRAP: scratch/COMMUNICATION_GUIDE
+%% SOURCE: docs/working/scratch/COMMUNICATION_GUIDE.adoc
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{StarshipOS Analogy Reference}
+
+StarshipOS's physics-driven adaptive runtime admits a layered set of analogies that
+allow the same technical concept to be communicated across audiences from primary school
+through academic research. The anchoring fact in every case is that the system implements
+verifiable feedback loops: guard proofs, telemetry fields, and runtime invariants are
+concrete, not metaphorical.
+
+\begin{itemize}
+  \item \textbf{Elementary.} The OS watches when activity grows too noisy or energy runs
+        low and nudges the system back toward calm, the way a classroom helper restores
+        order.
+  \item \textbf{Middle school.} Health and energy bars on a video game HUD track
+        \emph{heat} and \emph{noise}; the OS reads those bars and adjusts tactics to
+        keep them balanced.
+  \item \textbf{High school.} A car dashboard combines speed, temperature, and fuel
+        readings; cruise control adjusts throttle and cooling to smooth the ride. The OS
+        applies the same pattern to compute metrics.
+  \item \textbf{Trade professional (HVAC / facilities).} A building management controller
+        reads pressure and temperature, then modulates fans and valves for steady airflow.
+        The OS treats execution metrics identically.
+  \item \textbf{University STEM.} Voltage, current, and heat readings drive a lab
+        feedback controller that keeps experiments within bounds. StarshipOS treats VM
+        metrics as the equivalent sensor inputs.
+  \item \textbf{Working engineer / developer.} The runtime implements a PID loop around
+        the VM, exposing entropy, latency, and heat as signals, enforcing invariants via
+        machine-checked proofs, and delegating tuning to policy modules.
+  \item \textbf{Researcher / academic.} The system models state variables as
+        thermodynamic constructs, verifies semantics in Isabelle/HOL, and runs scheduling
+        and policy on formally constrained, measurable signals within a dynamical-systems
+        framework.
+\end{itemize}
+
+The goal is to move effortlessly between these framings depending on the audience while
+keeping every analogy grounded in the same set of concrete artefacts.

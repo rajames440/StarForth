@@ -1,0 +1,41 @@
+%% SCRAP: archive/legacy/phase-1/Reference/github_backlog_items
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/github_backlog_items.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{GitHub Backlog Preparation --- Phase 1 Audit Items}
+
+This document recorded the GitHub issues that were to be created in Project~5
+(\texttt{rajames440/projects/5}) to drive remediation of the Phase~1 governance audit
+findings. Each issue was to reference its CAPA ID in the description.
+
+\begin{enumerate}
+  \item \textbf{Resolve Tier~I report placeholders (CAPA-35).} Replace placeholder
+        metrics; attach actual coverage and deficiency statistics; reissue signed
+        Tier~I report. Acceptance: updated report committed, signatures captured,
+        no placeholder tokens remaining.
+  \item \textbf{Archive ARM64 validation log (CAPA-36, CAPA-09).} Run the ARM64
+        suite; capture log in the required protocol format; update evidence directory
+        references. Acceptance: \texttt{starforth-test-arm64-*.log} present and
+        cross-linked.
+  \item \textbf{Standardise test log metadata (CAPA-37, CAPA-06).} Implement a logging
+        template (platform, commit, tester, timestamp, outcome) and regenerate existing
+        logs. Acceptance: \texttt{Reference/run.log} compliant; template tooling
+        documented.
+  \item \textbf{Populate deficiency ledger (CAPA-38, CAPA-14).} Enter current deficiency
+        counts and statuses; cross-link from Tier~I report. Acceptance: deficiency log
+        reflects reality; Tier~I sections updated.
+  \item \textbf{Secure policy and process signatures (CAPA-39).} Route signature blocks
+        for all governance policies and process chapters; update the signature tracker.
+  \item \textbf{Assign governance owners and status (CAPA-40).} Fill \texttt{[TBD]}
+        roles in the validation roadmap, defect logs, and refinement CAPA; set all
+        status fields.
+  \item \textbf{Document continuous validation evidence (CAPA-41, CAPA-05).} Capture
+        CI/Jenkins run outputs and schedules; place under the evidence tree; update
+        README references.
+  \item \textbf{Integrate SonarQube quality gate (CAPA-42).} Configure SonarQube
+        analysis; archive reports; embed results in Tier~II quality documentation.
+\end{enumerate}
+
+%% TODO(bob): record which issues were created and their resolution status.

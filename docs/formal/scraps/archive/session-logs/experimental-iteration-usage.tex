@@ -1,0 +1,123 @@
+%% SCRAP: archive/session-logs/experimental-iteration-usage
+%% SOURCE: docs/working/archive/session-logs/experimental-iteration-usage.md
+%% STATUS: HISTORICAL
+%% FITS: experiments/ if content warrants
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Experimental Iteration Runner: Usage Guide}
+\label{sec:exp-iteration-usage}
+
+\subsection{Overview}
+
+The \texttt{run\_doe.sh} script conducts empirical testing across four
+build configurations in a randomised, aggregated manner.
+
+One experiment equals $(30 \times \text{iterations}) \times 4$~builds.
+
+\subsubsection{Build Configurations}
+
+\begin{enumerate}
+  \item \textbf{A\_BASELINE} — no optimisations (\texttt{ENABLE\_HOTWORDS\_CACHE=0},
+    \texttt{ENABLE\_PIPELINING=0}).
+  \item \textbf{A\_B\_CACHE} — hot-words cache only.
+  \item \textbf{A\_C\_FULL} — pipelining only.
+  \item \textbf{A\_B\_C\_FULL} — full cache plus pipelining.
+\end{enumerate}
+
+All runs are randomised across configurations and aggregated into a single
+unified dataset.
+
+\subsection{Interactive Mode}
+
+\begin{lstlisting}[language=bash]
+# 30x1x4 = 120 runs (~12-15 hours)
+./scripts/run_doe.sh ./my_results
+
+# 30x2x4 = 240 runs (~24-30 hours)
+./scripts/run_doe.sh --exp-iterations 2 ./my_results
+
+# 30x4x4 = 480 runs (~48-60 hours)
+./scripts/run_doe.sh --exp-iterations 4 ./my_results
+\end{lstlisting}
+
+Interactive prompts capture: iteration description and purpose, tuning
+parameter changes from the previous iteration, expected outcome hypothesis,
+and prior-iteration observations. The script previews the first 20 lines
+of the randomised run matrix and waits for confirmation before executing.
+
+\subsection{CI/CD Mode}
+
+Setting the environment variable \texttt{ITERATION\_NOTES} suppresses all
+interactive prompts and the confirmation gate:
+
+\begin{lstlisting}[language=bash]
+export ITERATION_NOTES="Nightly baseline validation"
+export TUNING_CHANGES="decay_rate_q16=1 (unchanged)"
+export EXPECTED_OUTCOME="Baseline determinism: variance < 2%"
+export PREVIOUS_OBSERVATIONS="Iteration 1 showed stable cache promotion"
+
+./scripts/run_doe.sh --exp-iterations 2 ./nightly_results
+\end{lstlisting}
+
+\subsection{Output Structure}
+
+\begin{lstlisting}
+OUTPUT_DIR/
+  experiment_results.csv      -- N rows + header, 33 columns
+  experiment_summary.txt      -- metadata, runtime, parameters
+  experiment_notes.txt        -- audit trail + iteration context
+  test_matrix.txt             -- randomised execution order
+  run_logs/                   -- per-run stdout logs
+\end{lstlisting}
+
+\subsection{Iteration Workflow}
+
+A two-iteration study proceeds as follows.
+
+\textbf{Iteration~1 (baseline):} run with \texttt{--exp-iterations 1};
+analyse with \texttt{python3 scripts/analyze\_physics\_results.py}; observe
+variance metrics and performance trends; document tuning adjustments.
+
+\textbf{Iteration~2 (refined):} run with \texttt{--exp-iterations 2};
+provide prior-iteration context via prompts or environment variables;
+compare CV and performance against iteration~1.
+
+The \texttt{experiment\_notes.txt} file captures the scientific reasoning
+for each iteration, creating an audit trail usable for nightly builds and
+future reference.
+
+\subsection{Analysis Skeleton}
+
+\begin{lstlisting}[language=python]
+import pandas as pd
+from scipy import stats
+
+df = pd.read_csv('experiment_results.csv')
+
+# Theorem 1: Determinism
+baseline = df[df['configuration'] == 'A_BASELINE']['cache_hit_percent']
+cv = baseline.std() / baseline.mean() * 100
+print(f"Cache hit CV: {cv:.2f}%  (target < 2%)")
+
+# Theorem 2: Performance
+full = df[df['configuration'] == 'A_B_C_FULL']['total_runtime_ms']
+t, p = stats.ttest_ind(full, baseline)
+print(f"Full vs Baseline: t={t:.3f}, p={p:.4f}")
+
+# Theorem 3: ANOVA across all configs
+configs = df.groupby('configuration')['total_runtime_ms']
+f, p = stats.f_oneway(*[g.values for _, g in configs])
+print(f"ANOVA: F={f:.3f}, p={p:.4f}")
+\end{lstlisting}
+
+\subsection{Troubleshooting}
+
+\begin{itemize}
+  \item \textbf{Build failure:} inspect \texttt{run\_logs/build\_A\_BASELINE.log}.
+  \item \textbf{Prompt absent in CI:} set \texttt{ITERATION\_NOTES} environment
+    variable to suppress interactive mode.
+  \item \textbf{Wrong run count:} verify \texttt{test\_matrix.txt} contains
+    $30 \times \text{iterations} \times 4$ lines.
+  \item \textbf{Missing CSV rows:} check that the count of files in
+    \texttt{run\_logs/} matches the expected total runs.
+\end{itemize}

@@ -1,0 +1,25 @@
+%% SCRAP: archive/legacy/OPTIMIZATION_OPPORTUNITIES
+%% SOURCE: docs/working/archive/legacy/OPTIMIZATION_OPPORTUNITIES.md
+%% STATUS: SUPERSEDED
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Optimization Opportunity Analysis (2025-11-19)}
+
+A bang-for-buck analysis conducted on 2025-11-19 ranked ten candidate
+optimizations for the StarForth physics engine by impact-to-effort ratio.
+The two highest-ranked items---decay slope inference (Opportunity~1) and
+variance-based window width tuning (Opportunity~2)---were subsequently
+implemented and validated; they now constitute Feedback Loops~6 and~5
+respectively in the production architecture.
+
+The remaining eight opportunities (decay rate design-of-experiments, rolling
+window sizing, hotwords cache threshold tuning, binary-search validation, ML
+prefetch model, NUMA placement, dictionary reorganization, and SIMD
+acceleration) were assessed at lower priority. Of these, opportunities related
+to the hotwords cache and rolling window sizing were addressed implicitly
+through the DoE experimental program reported in the \textsc{ssrn} paper.
+The ML prefetch, NUMA, and SIMD items were explicitly deferred.
+
+%% TODO(bob): Confirm which of OPP 3--10 were formally closed vs.\ remain open
+%% as future work. This document predates the final OPP report series.

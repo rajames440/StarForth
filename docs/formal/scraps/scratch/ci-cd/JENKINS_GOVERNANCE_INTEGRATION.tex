@@ -1,0 +1,52 @@
+%% SCRAP: scratch/ci-cd/JENKINS_GOVERNANCE_INTEGRATION
+%% SOURCE: docs/working/scratch/ci-cd/JENKINS_GOVERNANCE_INTEGRATION.adoc
+%% STATUS: OBSOLETE
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Jenkins Governance Integration Specification}
+
+This specification defines how Jenkins pipeline jobs route outputs to the StarForth
+governance system. All governance artifacts, regardless of whether they originate in
+GitHub Actions or Jenkins, must pass through \texttt{in\_basket/} as the single gating
+point before any Vault disposition.
+
+\subsection{Jobs in Scope}
+
+Three Jenkins jobs produce governance-relevant artifacts.
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Job & Trigger & Purpose & Target path \\
+\midrule
+\texttt{starforth-devl} & PR webhook & Build and smoke test &
+  \texttt{in\_basket/Test\_Results/} \\
+\texttt{starforth-test} & Auto after devl & Full test suite &
+  \texttt{in\_basket/Test\_Results/} \\
+\texttt{starforth-qual} & Auto after test & Verification and benchmarks &
+  \texttt{in\_basket/Performance\_Data/} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Required Integration Pattern}
+
+Each job must initialise the governance repository submodule, create the required
+\texttt{in\_basket} subdirectories, generate a timestamped submission ID, copy artifacts
+to the appropriate subdirectory, write a summary document in AsciiDoc format, and
+route all operations from a \texttt{post\{always\{\}\}} block so that records are
+created even on failure.
+
+The summary document must include the submission ID, source job name and build URL,
+artifact list and locations, the applicable intake pathway from
+\texttt{INTAKE\_PROCEDURES.adoc}, and the SLA for QA triage.
+
+\subsection{Security Considerations}
+
+Jenkins SSH credentials must be scoped to the governance repository only and rotated
+on the schedule defined by the site security policy. Artifact content may include
+internal timing data and should be access-controlled at the repository level.
+
+%% TODO(bob): confirm whether Jenkins jobs were configured per this spec and, if so,
+%% whether the submodule approach was retained or replaced by a different mechanism.

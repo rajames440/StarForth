@@ -1,0 +1,129 @@
+%% SCRAP: experiments/02-experiments/james-law/protocol
+%% SOURCE: docs/working/experiments/02-experiments/james-law/protocol.md
+%% STATUS: WORKING
+%% FITS: experiments/ch-james-law, vol3-research/ch-james-law
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% PATENT: Section on gravitational collapse threshold and W_collapse
+%%         may constitute patentable subject matter. Do NOT expand claim
+%%         language here. Flag for patent counsel review.
+
+\section{James Law — Window Scaling Experiment Protocol}
+\label{sec:james-law-protocol}
+
+\subsection{Objective}
+
+The window scaling experiment tests whether the conservation invariant
+$\Lambda \times (\mathrm{DoF} + 1) = W$ holds across the full range of
+achievable window sizes, and whether a critical window capacity $W^*$ exists
+at which the Steady-State Machine undergoes a phase transition.
+
+\subsection{Conservation Invariant}
+
+Empirical validation at $W = 4096$ yielded:
+
+\begin{equation}
+  \Lambda(\mathrm{DoF}) \times (\mathrm{DoF} + 1) = 4096.0 \quad
+  (\text{CV} = 0.00\%)
+  \label{eq:james-law}
+\end{equation}
+
+The hypothesis to be tested is that this relationship generalises:
+
+\begin{equation}
+  \Lambda(\mathrm{DoF}) = \frac{W}{\mathrm{DoF} + 1}
+\end{equation}
+
+for all valid window sizes $W$, and that a critical threshold $W^*$ exists
+beyond which the invariant breaks down and the SSM collapses to the ground
+state (all loops off, configuration \texttt{0000000}).
+
+%% PATENT: The existence and characterisation of W* — a predictable collapse
+%%   threshold for adaptive feedback systems — is patent-adjacent.
+%%   Do not draft claim language here. Flag for counsel.
+
+\subsection{Experimental Design}
+
+\paragraph{Phase 1 — Coarse sweep.}
+Eight window sizes: 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536~bytes.
+Five configurations: ground state (\texttt{0000000}), best static from
+$2^7$ DoE (\texttt{0100011}), L8 adaptive choice (\texttt{0110111}), worst
+static (\texttt{1111100}), and \texttt{L8\_ADAPTIVE}. 100~replicates per
+(window, configuration) pair; $8 \times 5 \times 100 = 4{,}000$ total runs.
+
+\paragraph{Phase 2 — Critical zone refinement.}
+A fine sweep of seven window sizes within the interval identified as the
+critical zone by Phase~1, at 200~replicates per pair. Objective: locate
+$W^*$ within $\pm 1{,}024$~bytes.
+
+\paragraph{Phase 3 — Workload independence validation.}
+Three window sizes centred on $W^*$, four workload shapes (baseline, damped
+sine, square wave, triangle), five configurations, 100~replicates. Tests
+whether $W^*$ is shape-invariant.
+
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Phase & Window sizes & Replicates & Total runs \\
+\midrule
+1 — Coarse sweep & 8 & 100 & 4{,}000 \\
+2 — Fine refinement & 7 & 200 & 7{,}000 \\
+3 — Workload validation & 3 & 100 & 6{,}000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Key Metrics}
+
+\begin{itemize}
+  \item \textbf{Stability score} $= 1/\overline{\mathrm{CV}}$ for each
+        window size.
+  \item \textbf{$\Lambda$ deviation} $= |\Lambda_{\text{measured}} -
+        W/(\mathrm{DoF}+1)|$.
+  \item \textbf{Collapse probability} $= P(\text{config} = 0 \mid
+        \texttt{L8\_ADAPTIVE})$.
+  \item \textbf{Heat density} $= \text{total\_heat} / W$.
+  \item \textbf{Variance inflation} $= \mathrm{CV}(W) / \mathrm{CV}(4096)$.
+\end{itemize}
+
+\subsection{Collapse Threshold Detection}
+
+Three independent methods identify $W^*$:
+
+\begin{enumerate}
+  \item \textbf{Mode selection transition.} Plot $P(\text{config}=0 \mid
+        \texttt{L8\_ADAPTIVE})$ versus $W$. The threshold is the window size
+        at which this probability crosses 50\%.
+  \item \textbf{Variance explosion.} Plot CV versus $W$. The threshold is
+        where $\mathrm{d CV}/\mathrm{d W} \to \infty$ (divergence).
+  \item \textbf{Conservation breakdown.} Plot $\Lambda \times (\mathrm{DoF}+1)$
+        versus $W$. The threshold is where the product departs from the
+        conservation value.
+\end{enumerate}
+
+Agreement across all three methods constitutes strong evidence for a
+genuine phase transition.
+
+\subsection{Success Criteria}
+
+\begin{enumerate}
+  \item A reproducible $W^*$ is identified with $\delta W / W^* < 0.2$.
+  \item $\Lambda \times (\mathrm{DoF}+1) = W$ holds for all $W < W^*$.
+  \item $W^*$ is independent of workload shape (Phase~3 ANOVA $p > 0.05$).
+  \item $W^* = k W_0$ for a small integer $k$, where $W_0 = 4096$.
+\end{enumerate}
+
+\subsection{Planned Extensions}
+
+\begin{itemize}
+  \item \textbf{Two-dimensional phase diagram.} Vary both $W$ and $\mathrm{DoF}$
+        simultaneously; plot the stability boundary in ($W$, DoF) space.
+  \item \textbf{Hysteresis testing.} Start at $W < W^*$, increase past $W^*$,
+        decrease back, and test whether the system recovers --- analogous to
+        magnetic hysteresis.
+  \item \textbf{Adaptive window sizing.} Allow the VM to adjust $W$ dynamically
+        and test whether it self-organises toward $W \approx W_0$.
+\end{itemize}
+
+%% TODO(bob): confirm whether Phase 1 was executed and results are in the
+%%   archive; cross-reference campaigns/window_scaling/README.md
+

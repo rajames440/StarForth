@@ -1,0 +1,107 @@
+%% SCRAP: architecture/03-architecture/hal/interfaces
+%% SOURCE: docs/working/architecture/03-architecture/hal/interfaces.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-platform
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{HAL Interface Specifications}
+
+The HAL interfaces define the contract between StarForth's platform-agnostic
+core and the platform layer beneath it. The interfaces are not optional
+convenience wrappers; they are the only sanctioned path by which interpreter and
+physics code reach platform resources. Each subsystem must be implemented with
+identical semantics on every platform.
+
+\subsection{Time and Timers (\texttt{hal\_time.h})}
+
+The time subsystem supplies monotonic time, periodic and one-shot timers, and
+calibration for the physics subsystems. \texttt{hal\_time\_init()} runs first;
+it calibrates a high-resolution source, validates monotonicity, and panics if no
+suitable source exists. \texttt{hal\_time\_now\_ns()} returns nanoseconds since
+an arbitrary epoch and must be monotonic, ISR-safe, and thread-safe, with a
+target cost under fifty cycles on x86-64. \texttt{hal\_time\_delay\_ns()} is a
+busy-wait, not a sleep. The timer family --- \texttt{hal\_timer\_oneshot()},
+\texttt{hal\_timer\_periodic()}, and \texttt{hal\_timer\_cancel()} --- schedules
+callbacks that run in interrupt context and must complete quickly. The periodic
+timer is the primary mechanism for the heartbeat ISR, so the platform must
+minimize jitter to preserve experimental validity; the contract allows up to ten
+percent drift and targets under one percent.
+
+\begin{lstlisting}[language=C]
+uint64_t hal_time_now_ns(void);
+int hal_timer_periodic(uint64_t period_ns, hal_timer_callback_t cb, void *ctx);
+int hal_timer_cancel(int timer_id);
+\end{lstlisting}
+
+Platform notes: Linux maps the clock to \texttt{clock\_gettime(CLOCK\_MONOTONIC)}
+and the periodic timer to \texttt{timer\_create()} with a real-time signal,
+accepting microsecond-scale signal jitter. L4Re uses the kernel info page clock
+and an IPC-based timer with an IRQ object. StarKernel reads a calibrated TSC and
+drives the local APIC timer.
+
+\subsection{Interrupts (\texttt{hal\_interrupt.h})}
+
+The interrupt subsystem enables and disables IRQs, registers ISRs, and reports
+interrupt context. \texttt{hal\_irq\_disable()} returns the prior state so a
+caller can restore it after a critical section; \texttt{hal\_irq\_register()}
+binds one ISR per IRQ. \texttt{hal\_in\_interrupt\_context()} must be cheap
+(under ten cycles) because it gates ISR-only behavior. On Linux these map onto
+signals and a thread-local flag; on StarKernel they map onto \texttt{sti},
+\texttt{cli}, the IDT, and the local APIC, with context tracked by an interrupt
+nesting count.
+
+\subsection{Memory (\texttt{hal\_memory.h})}
+
+The memory subsystem allocates and frees heap memory, allocates contiguous
+physical pages, and maps physical memory into the virtual address space.
+\texttt{hal\_mem\_alloc()} returns zero-initialized, at-least-eight-byte-aligned
+memory and is thread-safe but not ISR-safe. \texttt{hal\_mem\_map()} carries flag
+bits for read, write, execute, and uncached MMIO mappings. On Linux the heap
+calls wrap \texttt{malloc}, page allocation falls back to the heap, and mapping
+is a no-op under the identity-mapping assumption. On StarKernel the calls bind to
+the physical memory manager, the virtual memory manager, and \texttt{kmalloc}.
+
+\subsection{Console (\texttt{hal\_console.h})}
+
+The console subsystem provides character I/O for the REPL and diagnostics:
+\texttt{hal\_console\_putc()} (blocking, ISR-safe for panic output),
+\texttt{hal\_console\_puts()}, the blocking \texttt{hal\_console\_getc()}, and
+the non-blocking \texttt{hal\_console\_has\_input()}. Linux uses standard I/O;
+StarKernel drives a 16550 UART and, where available, a framebuffer.
+
+\subsection{CPU (\texttt{hal\_cpu.h})}
+
+The CPU subsystem reports identity and count, and exposes relax and halt hints.
+\texttt{hal\_cpu\_id()} and \texttt{hal\_cpu\_relax()} are ISR-safe;
+\texttt{hal\_cpu\_halt()} parks the processor until the next interrupt and is not
+ISR-safe. The relax hint compiles to \texttt{pause} on x86, to \texttt{yield} on
+ARM, and to \texttt{sched\_yield()} on Linux.
+
+\subsection{Panic (\texttt{hal\_panic.h})}
+
+\texttt{hal\_panic()} prints a message and never returns. On a kernel it disables
+interrupts and halts; on a hosted platform it writes to standard error and
+aborts. It is ISR-safe and reserved for unrecoverable errors.
+
+\subsection{Concurrency Summary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+Subsystem & Key function & ISR-safe & Thread-safe \\
+\midrule
+Time      & \texttt{hal\_time\_now\_ns()}        & yes & yes \\
+Time      & \texttt{hal\_timer\_periodic()}      & no  & yes \\
+Interrupt & \texttt{hal\_in\_interrupt\_context()} & yes & yes \\
+Interrupt & \texttt{hal\_irq\_disable()}         & yes & yes \\
+Memory    & \texttt{hal\_mem\_alloc()}           & no  & yes \\
+Memory    & \texttt{hal\_mem\_map()}             & no  & platform-dependent \\
+Console   & \texttt{hal\_console\_putc()}        & yes & platform-dependent \\
+Console   & \texttt{hal\_console\_getc()}        & no  & no \\
+CPU       & \texttt{hal\_cpu\_id()}              & yes & yes \\
+CPU       & \texttt{hal\_cpu\_relax()}           & yes & yes \\
+\bottomrule
+\end{tabular}
+\caption{ISR and thread safety of the principal HAL entry points.}
+\end{table}

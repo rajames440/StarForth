@@ -1,0 +1,60 @@
+%% SCRAP: archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/05_SUPPLEMENTARY/WORK_COMPLETION_STATUS
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/physics_experiment/PEER_REVIEW_SUBMISSION/05_SUPPLEMENTARY/WORK_COMPLETION_STATUS.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Pre-Submission Work Completion Status (November 2025)}
+
+This status report, dated 7 November 2025, captures the state of the
+physics-driven FORTH-79 VM paper immediately prior to its final publication
+push. The experimental and analytical foundation was complete; remaining
+work was preparation and formatting. The paper was subsequently published
+on SSRN.
+
+\subsection{Completed Work}
+
+All experimental work was finished at the time of this report.
+
+\begin{center}
+\begin{tabular}{lp{8cm}}
+\toprule
+Category & Status \\
+\midrule
+90-run experiment       & Complete: 30 runs each for A\_BASELINE, B\_CACHE, C\_FULL \\
+Data collection         & Complete: all 90 rows validated across 33 columns \\
+Thermal hypothesis      & Refuted: CPU constant at 27\textdegree{}C \\
+Variance analysis       & Complete: OS scheduling identified as 60--70\% CV source \\
+Root cause analysis     & Complete: 0\% algorithm CV vs.\ 70\% environmental CV \\
+Convergence proof       & Complete: C\_FULL improvement $-25.4\%$ documented \\
+Confidence bounds       & Complete: 95\% CI established per configuration \\
+Paper draft             & Complete (95\%): citations and figures outstanding \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Outstanding at Time of Report}
+
+At the November 2025 report date, the following remained:
+
+\begin{itemize}
+  \item 25--30 citations to be integrated (estimated 3--4 hours).
+  \item Five publication-quality figures to be created
+        (convergence curves, variance decomposition, confidence bounds,
+        state-machine diagram, architecture overview).
+  \item Discussion section expansion addressing practical implications
+        and threats to validity.
+  \item Formal appendix with extended proofs of the four theorems.
+  \item Venue-specific formatting; IEEE TSE was the primary candidate.
+\end{itemize}
+
+The report assessed overall readiness at 75\%, with no critical blockers
+identified.
+
+\subsection{Data Assets}
+
+The raw dataset consisted of \texttt{experiment\_results.csv}: 91 rows
+(header plus 90 data rows), 33 columns, validated and available for
+independent reproduction via the published analysis scripts
+(\texttt{analyze\_thermal\_hypothesis.py},
+\texttt{analyze\_variance\_sources.py}).

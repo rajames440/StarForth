@@ -1,0 +1,8 @@
+// Moved from docs/src/governance/index.adoc to docs/working/scratch/src/governance/index.adoc on 2026-06-16 (docs reorg Phase 2)
+= Governance
+
+For complete governance documentation, see:
+
+**link:../../../StarForth-Governance/README.md[StarForth-Governance Repository →]**
+
+The governance vault contains all policies, procedures, formal specifications, and validation documentation.

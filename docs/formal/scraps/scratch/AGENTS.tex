@@ -1,0 +1,69 @@
+%% SCRAP: scratch/AGENTS
+%% SOURCE: docs/working/scratch/AGENTS.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Repository Guidelines for Contributors}
+
+This document records the contributor guidelines that were in effect during
+active development. It is preserved as a historical record of coding and
+workflow conventions. See \texttt{.claude/CLAUDE.md} for the current
+authoritative reference.
+
+\subsection{Project Structure}
+
+\texttt{src/} holds the VM core; \texttt{src/platform/} handles host glue
+and timing; \texttt{src/word\_source/} groups FORTH words by domain using the
+\texttt{<area>\_words.c} pattern with matching headers in
+\texttt{src/word\_source/include/}. \texttt{include/} is the public boundary;
+keep helpers and private state in \texttt{src/} to avoid symbol drift.
+\texttt{src/test\_runner/} holds the in-process harness and module suites.
+The \texttt{build/} directory is disposable output.
+
+\subsection{Build and Development Commands}
+
+\begin{itemize}
+  \item \texttt{make} — default optimized build; binary in
+        \texttt{build/<arch>/standard/starforth}.
+  \item \texttt{make fastest} — release build with LTO/asm fast paths; use
+        for performance validation.
+  \item \texttt{make debug} — \texttt{-O0 -g}; run \texttt{make clean}
+        before switching profiles.
+  \item \texttt{make test} — full harness via piped BYE.
+  \item \texttt{make bench} — microbench; helpful before pushing hot-path
+        changes.
+\end{itemize}
+
+\subsection{Coding Style}
+
+Strict ANSI C99, four-space indentation, same-line braces. Use
+\texttt{snake\_case} for functions and variables, uppercase for macros, and
+\texttt{g\_} prefixes for file-scoped statics. Exported APIs in
+\texttt{include/} carry concise doc headers; internals default to
+\texttt{static}. All builds must be warning-clean (\texttt{-Wall -Wextra
+-Werror}). Gate new behavior behind existing flags.
+
+\subsection{Testing}
+
+Add suites in \texttt{src/test\_runner/modules/} with a
+\texttt{run\_<area>\_tests} entry; register in \texttt{test\_runner.c}. Run
+\texttt{make test} before all pull requests. When touching public APIs or hot
+paths, add coverage alongside the change and note performance measurements.
+
+\subsection{Commit and Pull Request Guidelines}
+
+Sentence-style subjects under 72 characters, narrowly scoped commits,
+rationale and key flags in the body. Pull requests must state intent,
+verification commands (\texttt{make test}, \texttt{make bench}), and any
+configuration or documentation updates. Do not edit generated assets in
+\texttt{build/} or hand-edit seeded configs; use existing scripts to
+regenerate. Flag platform-specific changes early so relevant subsystem
+reviewers can weigh in.
+
+\subsection{Security and Configuration}
+
+Treat \texttt{conf/} seeds as shared fixtures — copy before experiments and
+regenerate via scripts rather than editing in place. Follow existing
+cleanup/ownership patterns when adding platform code to prevent resource
+leaks in long-running benchmarks.

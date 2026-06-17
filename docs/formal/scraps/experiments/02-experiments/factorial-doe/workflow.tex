@@ -1,0 +1,137 @@
+%% SCRAP: experiments/02-experiments/factorial-doe/workflow
+%% SOURCE: docs/working/experiments/02-experiments/factorial-doe/workflow.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-factorial, cookbook/ch-doe
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Factorial DoE Analysis Workflow}
+\label{sec:factorial-doe-workflow}
+
+\subsection{End-to-End Process}
+
+The factorial experiment produces a single CSV file in the StarForth
+repository that is then analysed in a separate environment:
+
+\begin{enumerate}
+  \item Run \texttt{run\_factorial\_doe.sh} — 64 builds, 1{,}920+ randomised
+        runs, CSV and logs written to the experiment label directory.
+  \item Transfer the CSV to the analysis environment.
+  \item Load into Python or R; separate factor columns from metric columns.
+  \item Compute main effects and two-way interactions.
+  \item Identify optimal configuration subsets and generate visualisations.
+  \item Write the summary report.
+\end{enumerate}
+
+\subsection{Phase 1: Data Collection}
+
+The run script handles all 64 configurations:
+
+\begin{lstlisting}[language=bash]
+# Quick validation (30 min)
+./scripts/run_factorial_doe.sh --runs-per-config 1 TEST_01
+
+# Full production run (2-4 hours)
+./scripts/run_factorial_doe.sh --runs-per-config 30 FULL_FACTORIAL
+\end{lstlisting}
+
+%% TODO(bob): confirm canonical path for run_factorial_doe.sh in published repo
+
+Monitor progress while the script runs:
+
+\begin{lstlisting}[language=bash]
+watch -n 5 'wc -l /path/to/experiment_results.csv'
+\end{lstlisting}
+
+Expected progression for a 30-replicate run: approximately 500 rows after
+30~minutes, 1{,}500 rows after two hours, 1{,}921 rows at completion.
+
+\subsection{Phase 2: Data Loading}
+
+\begin{lstlisting}[language=Python]
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("experiment_results.csv")
+print(f"Loaded {len(df)} runs, "
+      f"{len(df.groupby('configuration'))} configurations")
+
+factor_cols = ['enable_loop_1_heat_tracking',
+               'enable_loop_2_rolling_window',
+               'enable_loop_3_linear_decay',
+               'enable_loop_4_pipelining_metrics',
+               'enable_loop_5_window_inference',
+               'enable_loop_6_decay_inference']
+
+metric = 'vm_workload_duration_ns_q48'
+\end{lstlisting}
+
+%% TODO(bob): verify column names against actual CSV header from a completed run
+
+\subsection{Phase 3: Main Effects}
+
+For each loop, the main effect is the average metric change when the loop
+transitions from off to on, marginalised over all other loop states:
+
+\begin{lstlisting}[language=Python]
+main_effects = {}
+for loop in factor_cols:
+    on_mean  = df[df[loop] == 1][metric].mean()
+    off_mean = df[df[loop] == 0][metric].mean()
+    effect   = on_mean - off_mean
+    pct      = 100.0 * effect / off_mean
+    main_effects[loop] = {'effect': effect, 'pct': pct}
+
+for loop, e in sorted(main_effects.items(),
+                      key=lambda x: abs(x[1]['pct']), reverse=True):
+    print(f"{loop:40} {e['pct']:+7.2f}%")
+\end{lstlisting}
+
+\subsection{Phase 4: Two-Way Interactions}
+
+The interaction effect for loops $a$ and $b$:
+
+\begin{equation}
+  \hat{\beta}_{ab} = \bar{y}_{(1,1)} - \bar{y}_{(1,0)} - \bar{y}_{(0,1)} + \bar{y}_{(0,0)}
+\end{equation}
+
+A positive $\hat{\beta}_{ab}$ indicates synergy; negative indicates suppression.
+
+\begin{lstlisting}[language=Python]
+from itertools import combinations
+
+for loop_a, loop_b in combinations(factor_cols, 2):
+    y_00 = df[(df[loop_a]==0)&(df[loop_b]==0)][metric].mean()
+    y_01 = df[(df[loop_a]==0)&(df[loop_b]==1)][metric].mean()
+    y_10 = df[(df[loop_a]==1)&(df[loop_b]==0)][metric].mean()
+    y_11 = df[(df[loop_a]==1)&(df[loop_b]==1)][metric].mean()
+    interaction = y_11 - y_10 - y_01 + y_00
+    if abs(interaction) > 100_000:
+        print(f"{loop_a} x {loop_b}: {interaction:+,.0f}")
+\end{lstlisting}
+
+\subsection{Phase 5: Optimal Configuration Search}
+
+\begin{lstlisting}[language=Python]
+# Top 10 configurations by mean performance
+best = (df.groupby('configuration')[metric]
+          .mean()
+          .nlargest(10)
+          .reset_index())
+print(best.to_string())
+\end{lstlisting}
+
+\subsection{Phase 6: Reporting}
+
+The analysis report covers four sections:
+
+\begin{enumerate}
+  \item \textbf{Main effects table} — individual loop impacts sorted by effect
+        size with $p$-values.
+  \item \textbf{Interaction matrix} — $6 \times 6$ table of two-way interaction
+        estimates; cells highlighted for synergy or suppression.
+  \item \textbf{Optimal configurations} — top 3--5 production candidates on the
+        Pareto frontier of performance versus code complexity.
+  \item \textbf{Statistical summary} — variance by configuration, 95\%
+        confidence intervals, regression $R^2$.
+\end{enumerate}
+

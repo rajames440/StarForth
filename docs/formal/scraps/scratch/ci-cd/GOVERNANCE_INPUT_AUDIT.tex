@@ -1,0 +1,57 @@
+%% SCRAP: scratch/ci-cd/GOVERNANCE_INPUT_AUDIT
+%% SOURCE: docs/working/scratch/ci-cd/GOVERNANCE_INPUT_AUDIT.adoc
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Governance Input Audit (Phase 1)}
+
+This audit assessed all controlled governance inputs against the requirement that every
+document bound for the Vault must pass through \texttt{in\_basket/} as the sole gating
+point. The audit was conducted on 2025-11-03 and returned a \textbf{COMPLIANT} verdict
+with implementation verified for five of eight input sources and documentation complete
+for the remaining three.
+
+\subsection{Compliance Matrix}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Input source & Artifact type & Route & Status \\
+\midrule
+\texttt{test-stage.yml} & Test results & \texttt{in\_basket/Test\_Results/} & Implemented \\
+\texttt{qual-stage.yml} & Benchmarks & \texttt{in\_basket/Performance\_Data/} & Implemented \\
+\texttt{qual-stage.yml} & SBOM & \texttt{in\_basket/} & Implemented \\
+\texttt{prod-stage.yml} & Build manifest & \texttt{in\_basket/Build\_Manifests/} & Implemented \\
+Jenkins devl job & Build logs & \texttt{in\_basket/Test\_Results/} & Pending \\
+Jenkins test job & Test results & \texttt{in\_basket/Test\_Results/} & Pending \\
+Jenkins qual job & Benchmarks, SBOM, verification & \texttt{in\_basket/Performance\_Data/} & Pending \\
+GitHub Issues & CAPA / ECR / ECO & Kanban (development) & Correct by design \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Backdoor Analysis}
+
+The audit identified four theoretical bypass vectors and the controls in place for each.
+
+\begin{itemize}
+  \item \textbf{Direct Vault commit.} Mitigated by pull-request peer review and branch
+        protection on the governance repository.
+  \item \textbf{Workflow dynamic path injection.} Mitigated by code review of all
+        \texttt{.github/workflows/*.yml} files; paths are hardcoded, not constructed at
+        runtime.
+  \item \textbf{Jenkins SSH direct write.} Mitigated by scoping SSH credentials to the
+        governance repository and documenting required routing in
+        \texttt{JENKINS\_GOVERNANCE\_INTEGRATION.adoc}. Risk rated Medium.
+  \item \textbf{Manual operator bypass.} Mitigated by the \texttt{INTAKE\_LOG} requirement
+        and the gating rules in \texttt{INTAKE\_PROCEDURES.adoc}. Risk rated Medium.
+\end{itemize}
+
+\subsection{Pending Actions}
+
+At audit close, three Jenkins jobs required Jenkinsfile updates to route outputs through
+\texttt{in\_basket/} per the documented specification. The end-to-end flow for GitHub
+Actions pipelines was verified working.
+
+%% TODO(bob): verify whether Jenkins jobs were ever updated post-audit.

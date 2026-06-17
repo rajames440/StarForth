@@ -1,0 +1,85 @@
+%% SCRAP: scratch/src/L4RE_INTEGRATION_TODO
+%% SOURCE: docs/working/scratch/src/L4RE_INTEGRATION_TODO.adoc
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-l4re
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L4Re Integration: Platform Abstraction Layer}
+
+The StarForth platform abstraction layer was complete and tested for
+standalone POSIX builds at the time this document was written. The following
+steps remained to integrate it into the StarshipOS L4Re BID build system.
+This record is HISTORICAL; the integration status should be verified against
+the current codebase.
+
+\subsection{Pre-Integration Checklist}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Item & Status \\
+\midrule
+Platform abstraction layer implemented          & Done \\
+POSIX backend tested                            & Done \\
+L4Re backend code written                       & Done \\
+Standalone builds with \texttt{make L4RE=1}     & Done \\
+Platform files copied to StarshipOS tree        & Pending \\
+BID Makefile updated                            & Pending \\
+L4Re build tested in StarshipOS tree            & Pending \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Integration Steps}
+
+\subsubsection{Step 1: Copy Platform Files}
+
+Copy \texttt{src/platform/platform\_init.c} and
+\texttt{src/platform/time\_l4re.c} to
+\texttt{l4/pkg/starforth/server/src/platform/} in the StarshipOS tree.
+Do not copy \texttt{time\_posix.c}. Copy \texttt{include/platform\_time.h}
+to \texttt{server/include/}.
+
+\subsubsection{Step 2: Update BID Makefile}
+
+Add \texttt{platform/platform\_init.c} and \texttt{platform/time\_l4re.c}
+to \texttt{SRC\_C}. Add \texttt{librtc} to \texttt{REQUIRES\_LIBS}.
+The BID system sets \texttt{-D\_\_l4\_\_} automatically (lines 77--78 in
+the server Makefile), so platform selection is compile-time automatic.
+
+\subsubsection{Step 3: Update Core Sources}
+
+In \texttt{server/src/log.c}: add \texttt{\#include
+"platform\_time.h"} and replace \texttt{get\_timestamp()} with
+\texttt{sf\_realtime\_ns()} and \texttt{sf\_format\_timestamp()}.
+In \texttt{server/src/main.c}: add \texttt{sf\_time\_init();} before
+any logging.
+
+\subsubsection{Step 4: Verify RTC Library}
+
+Confirm \texttt{l4/pkg/rtc/} exists and \texttt{librtc.a} is present in the
+build tree. If absent, build with \texttt{make} in \texttt{l4/pkg/rtc/}.
+
+\subsubsection{Step 5: Loader Configuration}
+
+Add the RTC server to the loader script and provide the \texttt{rtc}
+capability to StarForth. StarForth runs without RTC capability (timestamps
+show 1970 epoch), but the POSIX profiler path uses the KIP clock
+independently of RTC.
+
+\subsection{Success Criteria}
+
+\begin{itemize}
+  \item StarForth builds cleanly in the L4Re tree with no linker errors
+  \item REPL starts without crashes
+  \item Logging shows timestamps (even if epoch)
+  \item Profiler works with the \texttt{--profile} flag
+  \item Tests pass with \texttt{--run-tests}
+\end{itemize}
+
+\subsection{Rollback}
+
+Remove platform files from \texttt{SRC\_C}, remove \texttt{librtc} from
+\texttt{REQUIRES\_LIBS}, revert changes to \texttt{log.c} and
+\texttt{main.c}, delete the \texttt{platform/} directory, and rebuild.
+The L4Re build reverts to direct POSIX calls via libc.

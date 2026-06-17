@@ -1,0 +1,116 @@
+%% SCRAP: experiments/campaigns/window_scaling/README
+%% SOURCE: docs/working/experiments/campaigns/window_scaling/README.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-window-scaling
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Window Scaling Experiment: James Law Validation}
+
+\textbf{Objective:} Empirically validate James Law:
+\[
+  \Lambda = \frac{W}{\mathrm{DoF} + 1}
+\]
+
+where $\Lambda$ is the effective smoothing capacity per degree of freedom,
+$W$ is the rolling window size in bytes, and $\mathrm{DoF}$ is the number
+of active feedback loops (0--7).
+
+%% PATENT: James Law ($\Lambda = W / (\text{DoF}+1)$) and the window-scaling
+%% invariant are patent-adjacent. Do not draft claims here.
+
+\subsection{Hypothesis}
+
+The quantity $K = \Lambda \times (\mathrm{DoF}+1) / W$ should remain
+approximately constant across multiple window sizes, multiple degrees of
+freedom, and diverse workload patterns. $K \approx 1.0$ across all
+conditions validates James Law as a fundamental scaling relationship in
+adaptive computational systems.
+
+\subsection{Experimental Design}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Variable     & Levels & Values \\
+\midrule
+DoF          & 8  & 0--7 \\
+Window size  & 12 & 512, 1{,}024, 1{,}536, 2{,}048, 3{,}072, 4{,}096, \\
+             &    & 6{,}144, 8{,}192, 16{,}384, 32{,}769, 52{,}153, 65{,}536 \\
+Replicate    & 30 & 1--30 \\
+\midrule
+\textbf{Total runs} & & $8 \times 12 \times 30 = 2{,}880$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Fixed workload: \texttt{init-l8-omni.4th} (the mega-workload combining all
+six L8 workload patterns). Run order is shuffled to eliminate temporal bias.
+
+Primary metrics: \texttt{ns\_per\_word}, CV. The $K$ statistic is derived
+as $K = \texttt{win\_final\_bytes} / (\mathrm{DoF}+1) / W$.
+
+\subsection{Validation Criteria}
+
+\begin{itemize}
+  \item $\mathrm{Mean}(K) \in [0.95,\,1.05]$
+  \item $\mathrm{Std}(K) < 0.1$
+  \item $\max|K - 1.0| < 0.1$
+\end{itemize}
+
+\subsection{Expected Outcomes}
+
+\begin{description}
+  \item[Scenario A — Law holds.] $K \approx 1.0$ across all conditions.
+        James Law validated as a universal scaling relationship. Implication:
+        system behavior is predictable and governed by geometric invariants.
+
+  \item[Scenario B — Critical threshold exists.] Law holds for
+        $W < W_\text{critical}$, then degrades. A phase transition is
+        present (``gravitational collapse''). The prior hypothesis places
+        $W_\text{critical} \approx 16{,}384$ bytes ($4 \times W_0$).
+
+  \item[Scenario C — DoF-dependent scaling.] $K$ varies systematically with
+        DoF but not randomly. A more complex relationship (logarithmic or
+        power-law) governs the system.
+\end{description}
+
+\subsection{Running the Experiment}
+
+\begin{lstlisting}[language=bash]
+# Step 1: Generate run matrix
+cd scripts/
+./generate_run_matrix.R
+
+# Step 2: Pre-build all 96 configurations (~1.5 hours)
+./prebuild_all_configs.sh
+
+# Step 3: Execute 2,880 runs (~4-5 hours)
+./run_window_sweep.sh
+
+# Step 4: Analyze
+./analyze_results.R
+\end{lstlisting}
+
+\subsection{Analysis Plan}
+
+The R analysis script computes:
+
+\begin{enumerate}
+  \item $K$ for all runs and its distribution by condition (DoF $\times$ window)
+  \item ANOVA to assess significance of DoF and window size effects on $K$
+  \item The critical window $W_\text{critical}$ where CV exceeds a threshold
+        (elbow detection)
+  \item Five plots: $K$ vs.\ DoF (faceted by $W$), $K$ vs.\ $W$ (faceted
+        by DoF), CV vs.\ $W$ (phase transition), 3D stability surface,
+        and $K$-deviation heatmap
+\end{enumerate}
+
+\subsection{Baseline Validation}
+
+From prior DoE experiments at the reference window $W_0 = 4{,}096$:
+\[
+  \Lambda(\mathrm{DoF}) \times (\mathrm{DoF}+1) = 4{,}096.0 \pm 0.0
+  \quad \text{(CV = 0.00\%)}
+\]
+
+This experiment extends this result to arbitrary window sizes.

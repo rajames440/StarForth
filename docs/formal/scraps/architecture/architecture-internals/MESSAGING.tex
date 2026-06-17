@@ -1,0 +1,208 @@
+%% SCRAP: architecture/architecture-internals/MESSAGING
+%% SOURCE: docs/working/architecture/architecture-internals/MESSAGING.adoc
+%% STATUS: WORKING
+%% FITS: dev-guide/app-messaging
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{The StarshipOS Messaging Field}
+
+The StarshipOS messaging subsystem is modeled as a thermodynamic field rather than
+a passive bus. In this framework, message propagation and processing behave as a
+physical system: discrete messages behave analogously to quanta (photons), and
+words --- the fundamental executable units of the StarshipOS runtime --- behave as
+particles, or loci of interaction. The thermodynamic vocabulary is a modeling tool
+for message dynamics; it grounds prioritization and scheduling, credit allocation
+and flow control, thermal regulation of load, entropy-driven policy and ML feedback,
+and instrumentation of message flow.
+
+\subsection{Conceptual Model}
+
+\paragraph{The message field.} The field is the logical substrate mediating all
+communication. It comprises endpoints (boundaries between word spaces and the
+field), channels (directed pathways: virtual channels, pub/sub topics, RPC routes),
+and field properties (dynamic parameters such as message density, propagation
+latency, and entropy). The field is not centralized; it emerges from the coordinated
+behavior of the broker/router (\texttt{sf\_msg-srv}), the ABI provider
+(\texttt{sf\_msg-drv}), and the participant library (\texttt{libsfmsg}) over shared
+memory rings and control IPC.
+
+\paragraph{Messages as quanta.} Messages are modeled as energy quanta with four core
+properties:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Property & Description \\
+\midrule
+Energy & Encodes priority, TTL, QoS, and thermodynamic state \\
+Momentum & Routing vector through the field \\
+Cross section & Probability of absorption by a word \\
+Entropy & Thermodynamic measure of the flow's state space \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Messages may be absorbed, emitted, or scattered by words and services, by analogy
+with photon--atom interactions.
+
+\paragraph{Words as particles.} Each word is a particle in the field --- a locus of
+interaction rather than an isolated routine --- with intrinsic mass (computational
+cost), charge (degree of side-effect or state mutation), and cross-section (the
+message types to which it responds). When a message reaches a word, the interaction
+may excite the word (trigger execution), alter its state, or pass through
+unabsorbed; executed words may emit new messages, either deterministically or in a
+burst (stimulated emission).
+
+\subsection{Mathematical Formulation}
+
+\paragraph{Maxwellian entropy.} The system adopts a Maxwell--Boltzmann entropy model,
+treating each endpoint or channel as a thermodynamic micro-system. For a given flow
+$f$, the flow entropy $S_f(t)$ is a scaled function of the variance of inter-arrival
+intervals $\sigma^2_t(f)$, the normalized queue occupancy $Q(f) \in [0,1]$, the
+credit-utilization ratio $U(f)$ (credits consumed over granted), the delivery fan-out
+$R(f)$, and the normalized message TTL $T(f)$, with scaling constant $k$ (typically
+$1$):
+
+\begin{equation}
+S_f(t) = k \cdot g\bigl(\sigma^2_t(f),\, Q(f),\, U(f),\, R(f),\, T(f)\bigr)
+\end{equation}
+
+%% TODO(bob): The exact closed form of S_f was corrupted in the AsciiDoc source
+%% (math markup did not render). The variables above are recovered verbatim from the
+%% source legend, but the precise functional combination must be supplied before this
+%% scrap is promoted.
+
+High entropy indicates unpredictable, high-energy flows approaching saturation; low
+entropy indicates stable, structured behavior.
+
+\paragraph{System temperature and pressure.} Temperature $\Theta$ is the
+density-weighted average energy of messages in the field. Pressure $\Pi$ represents
+backlog intensity, aggregated over flows from queue occupancy and credit utilization:
+
+\begin{equation}
+\Pi = \sum_f Q(f)\, U(f)
+\end{equation}
+
+Aggregate system entropy $\Sigma$ sums the per-flow entropies:
+
+\begin{equation}
+\Sigma = \sum_f S_f
+\end{equation}
+
+Together these quantities give real-time metrics of system health, suitable as
+inputs to control algorithms.
+
+\subsection{Header and State Extensions}
+
+Messages carry thermodynamic metadata alongside conventional routing and control
+information. A per-message header extension encodes a composite energy scalar derived
+from QoS class, TTL, and policy weighting; a Maxwellian entropy estimate computed at
+the sender or broker; and an optional producer-side temperature hint for expected
+burstiness:
+
+\begin{lstlisting}[language=C]
+struct sfm_hdr_thermo {
+    uint16_t energy_q8;    // priority/TTL/entropy composite (Q8.8)
+    uint16_t entropy_mx;   // Maxwellian entropy (Q8.8)
+    uint16_t temp_hint;    // optional producer temperature hint
+    uint16_t reserved;
+};
+\end{lstlisting}
+
+Endpoints maintain continuously updated thermodynamic state --- current entropy,
+temperature, pressure, credit utilization, and a last-refresh timestamp:
+
+\begin{lstlisting}[language=C]
+struct sfm_endpoint_state {
+    float    entropy_current;
+    float    temperature;
+    float    pressure;
+    float    credit_utilization;
+    uint64_t last_refresh_tsc;
+};
+\end{lstlisting}
+
+\subsection{Scheduler and Credit Integration}
+
+\paragraph{Credits as energy quanta.} Credits represent the available energy budget
+for message emission along a channel. High-entropy flows receive smaller, more
+frequent credit refreshes for tight regulation; low-entropy flows receive larger,
+batched credits for looser regulation. The recycling policy --- immediate, piggyback,
+or batched --- is selected dynamically from the flow's entropy and temperature.
+
+\paragraph{Thermodynamic scheduling.} Scheduling priority is a function of QoS class,
+deadline, and flow entropy:
+
+\begin{equation}
+P_{\text{sched}} = f\bigl(\text{QoS},\, \text{deadline},\, S_f\bigr)
+\end{equation}
+
+Low-entropy real-time flows are scheduled deterministically; high-entropy bulk flows
+are throttled or coalesced; aging and anti-starvation mechanisms apply within entropy
+bands. This prevents high-entropy flows from destabilizing the system while letting
+low-entropy flows achieve predictable latency.
+
+\subsection{Monitoring and Control Loop}
+
+A control loop in \texttt{sf\_msg-srv} maintains field stability in four steps:
+
+\begin{enumerate}
+  \item \textbf{Sampling} --- entropy, temperature, and pressure are sampled
+        periodically from endpoints and channels.
+  \item \textbf{Aggregation} --- system-wide $\Sigma$, $\Theta$, and $\Pi$ are
+        computed.
+  \item \textbf{Policy evaluation} --- control laws or ML bandits adjust credit
+        windows, scheduling weights, and routing from the sampled state.
+  \item \textbf{Actuation} --- the scheduler and credit allocator apply the updated
+        parameters.
+\end{enumerate}
+
+The loop runs with fixed thresholds or adaptive policies; ML components treat entropy
+as the order parameter for optimization.
+
+\subsection{Implications for the Runtime}
+
+Because words are already explicit entities with well-defined entry points, modeling
+them as particles interacting via message photons integrates cleanly with the
+existing FORTH execution model. The runtime gains a unified abstraction for
+computation and communication, fine-grained control over execution dynamics through
+entropy, a principled basis for prioritization in place of ad-hoc heuristics, and
+thermodynamic instrumentation for debugging and analysis.
+
+\subsection{Future Work}
+
+Four directions extend the model: a compact formal policy language for entropy-based
+routing and scheduling; distributed thermodynamic fields spanning multi-node
+topologies, where message photons propagate across network transports; entropy-driven
+garbage collection and memory tiering that couple message entropy with VM memory
+placement; and visualization tooling that renders message flow as a dynamic field.
+
+\subsection{Reference Header}
+
+A draft reference header, \texttt{include/sfm\_thermo.h}, accompanies the model as
+design reference rather than production code (C99, released CC0~1.0 / public domain).
+It provides fixed-point helpers for Q8.8 and Q16.16 conversion; the
+\texttt{sfm\_hdr\_thermo} header extension; a per-flow state structure
+(\texttt{sfm\_flow\_state\_t}) tracking Welford inter-arrival statistics, EWMA queue
+occupancy and credit utilization, fan-out and TTL trackers, and derived entropy,
+temperature, and pressure; a field snapshot structure; and a credit-decision
+structure. Its API initializes a flow with watermarks and entropy thresholds
+(\texttt{sfm\_thermo\_init\_flow}), updates state on enqueue
+(\texttt{sfm\_thermo\_on\_enq}), samples and decides a credit allocation
+(\texttt{sfm\_thermo\_sample\_and\_decide}), aggregates flows into a field snapshot
+(\texttt{sfm\_thermo\_aggregate}), and fills a message's thermodynamic header
+(\texttt{sfm\_thermo\_fill\_hdr}).
+
+%% TODO(bob): The full sfm_thermo.h listing exists in the source appendix. Decide
+%% whether the formal volume should reproduce it verbatim as a code appendix or keep
+%% only this API summary.
+
+\subsection{References}
+
+\begin{itemize}
+  \item J.~C.~Maxwell, \textit{Illustrations of the Dynamical Theory of Gases},
+        Phil.~Mag., 1860.
+  \item L.~Boltzmann, \textit{Weitere Studien \"uber das W\"armegleichgewicht unter
+        Gasmolek\"ulen}, 1872.
+  \item StarshipOS Internal Messaging Architecture Specifications.
+\end{itemize}

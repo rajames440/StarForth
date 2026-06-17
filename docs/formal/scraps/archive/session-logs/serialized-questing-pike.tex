@@ -1,0 +1,29 @@
+%% SCRAP: archive/session-logs/serialized-questing-pike
+%% SOURCE: docs/working/archive/session-logs/serialized-questing-pike.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Session Log: StarForth Kernel Transformation Plan}
+
+This document is a whimsical-named session log containing a detailed
+technical plan for transforming StarForth from a hosted FORTH-79 VM into
+a UEFI-bootable microkernel. The plan predates LithosAnanke and documents
+the architectural thinking that preceded it. The current LithosAnanke
+implementation (v1.0.8, milestone M7) supersedes this plan. The session
+log is preserved as a historical design record.
+
+Key architectural decisions recorded in this log that survived into
+LithosAnanke include: the StarForth VM as ring-0 microkernel (no separate
+kernel layer), FORTH words as kernel service primitives, UEFI PE32+
+executable format, ExitBootServices transition sequence, and the
+six-phase milestone structure (UEFI boot, kernel primitives, FORTH
+integration, platform I/O, multi-architecture, advanced features).
+
+The capsule system, LithosAnanke component architecture (Hera, Hermes,
+Artemis), and the current three-architecture build (amd64, aarch64,
+riscv64) all trace to the design intent recorded here.
+
+%% TODO(bob): if the formal dev-guide volume carries a LithosAnanke
+%% architecture chapter, this session log can supply footnotes for
+%% design rationale decisions (e.g., pure FORTH userspace, no ELF loader).

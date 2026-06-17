@@ -1,0 +1,110 @@
+%% SCRAP: architecture/03-architecture/adaptive-systems/window-inference-redesign
+%% SOURCE: docs/working/architecture/03-architecture/adaptive-systems/window-inference-redesign.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Window-Width Inference: A Statistically Valid Redesign}
+
+This section sets out a redesign, dated 2025-11-19 and approved for
+implementation at the time of writing, of the window-width inference algorithm
+used by the adaptive runtime. The original \texttt{find\_variance\_inflection()}
+measured the wrong quantity --- prefix variance --- and the redesign replaces it
+with a hypothesis test for variance stability across disjoint windows.
+
+\subsection{Why the Original Algorithm Was Invalid}
+
+The original algorithm scanned candidate window sizes and, for each, computed the
+variance of the trajectory prefix from the start through that size, stopping when
+the change fell below one percent of the full variance. Four statistical defects
+follow. The samples are not independent: a larger prefix wholly contains every
+smaller one, so the variance estimates are correlated and biased. The data are
+not stationary: execution heat decays roughly as $\textit{heat}(t) = h_0\,
+e^{-s t}$, so early elements are hot and late elements cold, and both mean and
+variance drift with position. The decision is confounded: a flattening variance
+cannot be distinguished between the window being wide enough for the workload (the
+goal) and the prefix simply accumulating low-heat samples that dilute variance (an
+artifact). And the threshold is arbitrary: one percent is a magic number with no
+statistical justification and no accompanying confidence measure.
+
+The failure is concrete. On a trajectory that decays through hot, warm, and cold
+phases, the algorithm halts not where the workload's true pattern width lies but
+where it runs out of hot data and crosses into the low-variance cold region --- a
+stopping point with nothing to do with the correct window width.
+
+\subsection{The Redesign: Variance-Stability Testing}
+
+The redesign replaces prefix variance with stability testing over disjoint
+windows. For each candidate size $N$, the trajectory is divided into
+non-overlapping chunks of size $N$, the variance of each chunk is computed
+independently, and a statistical test asks whether those chunk variances are
+equal. The smallest $N$ at which the variances are statistically similar is the
+sufficient window width.
+
+\subsection{Levene's Test}
+
+The chosen instrument is Levene's test for equality of variance, evaluated in
+\Qtype{} fixed point. The null hypothesis is that all chunk variances are equal.
+The test statistic is
+
+\begin{equation}
+W = \frac{(K-1)\sum_i n_i (z_i - \bar{z})^2}
+         {\sum_i \sum_j (z_{ij} - z_i)^2},
+\end{equation}
+
+where $K$ is the number of chunks, $n_i$ the size of chunk $i$,
+$z_{ij} = |x_{ij} - \mathrm{median}_i|$ the absolute deviation from the chunk
+median, $z_i$ the chunk mean of those deviations, and $\bar{z}$ their overall
+mean. When $W$ exceeds the critical value at $\alpha = 0.05$ the variances differ
+significantly and a larger window is needed; when $W$ falls at or below it the
+variances are similar enough and the window is sufficient. The redesign uses a
+conservative critical value near 6.5 to accommodate integer arithmetic.
+
+Three edge cases are handled explicitly: a trajectory shorter than the candidate
+window falls back to the minimum window; reaching the maximum window without
+passing the test returns the maximum; and a candidate that yields fewer than
+three chunks is skipped, since reliable testing needs at least three.
+
+\subsection{Implementation Outline}
+
+The Levene statistic is added as a helper over an array of per-chunk variances,
+supported by median and mean routines in fixed point. The inference routine then
+scans candidate sizes in steps of 64 from the minimum to the trajectory-bounded
+maximum, computes per-chunk variances, applies the test, and returns the first
+size that passes. The inference output structure is extended with diagnostics ---
+the Levene statistic, the number of chunks tested, a pass flag, and the minimum
+sufficient window --- so the result is inspectable from external analysis tooling.
+
+\subsection{Validation}
+
+Unit tests anchor the test against known inputs: four identically-variance chunks
+must pass with a statistic far below the critical value, four monotonically
+increasing variances must fail with a statistic well above it, and a synthetic
+trajectory with a known pattern width must return a window inside the valid
+range. Regression testing confirms the existing suite still passes, and the old
+and new algorithms are run side by side on the same trajectories for comparison.
+
+\subsection{Expected Outcome}
+
+The redesign trades an ad-hoc heuristic for a grounded hypothesis test. Where the
+old algorithm violated independence, confounded decay with sufficiency, leaned on
+a magic threshold, and could vary run to run, the new one uses disjoint windows,
+tests within-chunk stability, reports a defensible confidence measure, and is
+deterministic. The expectation is that window-width estimates stabilize across
+runs and that the resulting optimization becomes reproducible and defensible. The
+assessed risk is medium complexity with no breaking interface change and roughly
+ten to twenty percent more computation, still under one percent of total VM
+overhead.
+
+\subsection{References}
+
+\begin{itemize}
+  \item Levene, H. (1960). ``Robust tests for equality of variances.'' In
+        \textit{Contributions to Probability and Statistics}, ed. I. Olkin et
+        al. Stanford University Press.
+  \item Brown, M. B., \& Forsythe, A. B. (1974). ``Robust tests for the equality
+        of variances.'' \textit{Journal of the American Statistical
+        Association}, 69(346), 364--367.
+  \item NIST/SEMATECH e-Handbook of Statistical Methods, section on Levene's
+        test.
+\end{itemize}

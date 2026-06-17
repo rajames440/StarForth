@@ -1,232 +1,206 @@
-# CLAUDE.md
+# CLAUDE.md — StarshipOS Documentation Root
+# Instructions for Claude Code
+# Location: docs/CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Mission
 
-## Project Overview
+The documentation for StarshipOS/StarForth/LithosAnanke is scattered across
+the repository. It exists in multiple forms, at multiple vintages, with no
+consistent structure. The immediate goal is to triage, reorganize, and
+establish a two-tier documentation system that can support patent review,
+academic citation, commercial licensing, and hobbyist adoption.
 
-StarForth is a FORTH-79 compliant virtual machine written in strict ANSI C99, featuring a thermodynamically-inspired adaptive runtime. It serves as the primary userland execution engine for StarshipOS and can run standalone on Linux, L4Re/Fiasco.OC, and bare-metal targets.
+Cash flow depends on this. Treat it accordingly.
 
-**Key distinguishing feature:** Frequency-based self-adaptive runtime with formally proven deterministic behavior (0% algorithmic variance across 90 experimental runs).
+---
 
-## Build Commands
+## Two-Tier Documentation Model
+
+```
+docs/
+├── CLAUDE.md          ← you are here
+├── Makefile           ← builds both tiers
+├── formal/            ← polished, versioned, citable (LaTeX → PDF)
+│   └── CLAUDE.md      ← formal/ specific instructions
+└── working/           ← living documents, design notes, active drafts
+    └── CLAUDE.md      ← working/ specific instructions
+```
+
+### docs/formal/
+Three-volume LaTeX set. Audience: patent counsel, SSRN reviewers, potential
+licensees, paying customers, hobbyists with hardware in hand. Nothing goes
+here until it is ready to be cited. See `formal/CLAUDE.md` for all authoring
+conventions.
+
+### docs/working/
+Living documents. Design notes, DoE logs, architecture decision records,
+experiment reports, draft specs, prose not yet promoted to formal. These are
+NOT garbage — they are the source material that feeds formal/. The distinction
+is audience and stability, not quality.
+
+---
+
+## Makefile Targets
+
+```
+make docs-formal     — build all three LaTeX volumes → PDFs in formal/build/
+make docs-working    — render working/ markdown to HTML (optional, low priority)
+make docs-index      — generate docs/INDEX.md inventory of all doc files
+make docs-audit      — list files tagged OBSOLETE or SUPERSEDED in INDEX.md
+make docs            — run docs-formal + docs-index
+make docs-clean      — remove formal/build/ artifacts
+```
+
+---
+
+## Phase 1: Triage (DO THIS FIRST)
+
+Before writing, moving, or deleting anything, conduct a full inventory pass.
+
+### Step 1 — Find everything
+
+Locate every documentation file in the repository. Cast a wide net:
 
 ```bash
-# Standard optimized build (auto-detects architecture)
-make
-
-# Maximum performance build (ASM + LTO + direct threading)
-make fastest
-
-# Profile-guided optimization build
-make pgo
-
-# Debug build with symbols
-make debug
-
-# Run full test suite (780+ tests)
-make test
-
-# Quick smoke test (verifies basic operation)
-make smoke
-
-# Quick benchmark
-make bench
-
-# Clean build artifacts
-make clean
+find . -type f \( \
+  -name "*.md" \
+  -o -name "*.txt" \
+  -o -name "*.tex" \
+  -o -name "*.rst" \
+  -o -name "*.adoc" \
+  -o -name "*.org" \
+  -o -name "*.pdf" \
+  -o -name "*.odt" \
+  -o -name "*.docx" \
+\) | sort > /tmp/doc-inventory-raw.txt
 ```
 
-### Build Targets and Architectures
-
-- `TARGET=standard|fast|fastest|turbo|pgo` - Build profiles
-- `ARCH=x86_64|amd64|aarch64|arm64|raspi|riscv64` - Target architecture
-- Cross-compile for Raspberry Pi: `make rpi4-cross`
-
-### Key Build Flags
-
-- `STRICT_PTR=1` - Enforce pointer safety checks (default: on)
-- `USE_ASM_OPT=1` - Enable architecture-specific assembler optimizations (set automatically per TARGET)
-- `ENABLE_HOTWORDS_CACHE=1` - Frequency-driven hot-words cache (default: off for baseline experiments, enable for production)
-- `ENABLE_PIPELINING=1` - Speculative execution via word transition prediction (default: off for baseline experiments, enable for production)
-- `HEARTBEAT_THREAD_ENABLED=1` - Background heartbeat thread for adaptive tuning (default: on)
-
-### Important: Linker Configuration
-
-The `fastest` target uses `-flto=auto -fuse-linker-plugin` instead of plain `-flto` to avoid "ELF section name out of range" errors with large codebases. If you encounter linker errors with LTO, this is the correct fix.
-
-## Running
-
+Also check for README files without extensions:
 ```bash
-./build/amd64/standard/starforth              # Interactive REPL
-./build/amd64/standard/starforth --run-tests  # Run tests then REPL
-./build/amd64/standard/starforth -c "1 2 + . BYE"  # Execute inline code
+find . -name "README*" | sort >> /tmp/doc-inventory-raw.txt
 ```
 
-### DoE (Design of Experiments) Mode
+### Step 2 — Read and classify each file
 
-```bash
-./build/amd64/fastest/starforth --doe
+For every file found, read enough to assign it one of these status tags:
+
+| Tag | Meaning |
+|-----|---------|
+| `CURRENT` | Accurate, up to date, reflects present architecture |
+| `WORKING` | Active draft or living design document, still being edited |
+| `HISTORICAL` | Accurate for its time, superseded but worth keeping as record |
+| `SUPERSEDED` | Replaced by a newer document — note which one |
+| `OBSOLETE` | Refers to architecture, naming, or design that no longer exists |
+| `DELETE` | No value. Duplicates, temp files, auto-generated noise |
+
+### Step 3 — Produce docs/INDEX.md
+
+Create `docs/INDEX.md` with one entry per file:
+
+```markdown
+| Path | Topic | Status | Notes |
+|------|-------|--------|-------|
+| src/starforth/README.md | StarForth build instructions | CURRENT | Good candidate for Vol I Ch 3 |
+| notes/old-ssm-design.md | Early SSM design | SUPERSEDED | Replaced by SSRN paper |
+| scratch/ivmp-draft-v1.txt | IVMP protocol | HISTORICAL | Hermes spec v0.5.1 supersedes |
+| tmp/foo.md | Unknown | DELETE | Empty file |
 ```
 
-**Important:** The `--doe` flag runs the full test harness and outputs test results to stdout. As of the latest changes, the CSV metrics row has been **suppressed** because it was redundant with internal VM metrics. If you need to re-enable CSV export, see `src/main.c:395` which has detailed comments explaining the rationale for suppression.
+Do not delete anything during this pass. Tag only.
 
-## Architecture
+### Step 4 — Report to Bob
 
-### Core Components
+After producing INDEX.md, summarize:
+- Total files found
+- Count by status tag
+- Top candidates for promotion into formal/ chapters
+- Files recommended for deletion (DELETE tag) — list them explicitly and
+  wait for confirmation before removing anything
+
+**Never delete files without explicit confirmation from Bob.**
+
+---
+
+## Phase 2: Reorganize
+
+Only begin Phase 2 after Bob has reviewed and approved the INDEX.md triage.
+
+### Moving files into docs/working/
+
+Files tagged `CURRENT` or `WORKING` that are not yet in `docs/working/`
+should be moved there. Use this naming convention:
 
 ```
-src/
-├── main.c                    # Entry point, CLI parsing, VM initialization
-├── vm.c                      # Core interpreter loop, stacks, dictionary state
-├── vm_api.c                  # External VM API functions
-├── repl.c                    # Read-eval-print loop
-├── memory_management.c       # Dictionary allocator
-├── block_subsystem.c         # Logical→physical block mapper
-├── blkio_*.c                 # Block I/O backends (file, RAM)
-│
-├── word_source/              # Modular FORTH-79 word implementations
-│   ├── arithmetic_words.c    # + - * / MOD etc.
-│   ├── stack_words.c         # DUP DROP SWAP etc.
-│   ├── control_words.c       # IF ELSE THEN DO LOOP etc.
-│   ├── defining_words.c      # : ; CREATE DOES> VARIABLE CONSTANT
-│   └── ...                   # 18+ word modules
-│
-├── test_runner/              # Test framework
-│   ├── test_runner.c         # Test harness orchestration
-│   └── modules/              # Per-category test files
-│
-└── platform/                 # Platform abstraction
-    ├── linux/time.c          # POSIX timing
-    └── l4re/time.c           # L4Re timing
+docs/working/
+├── architecture/      — system design, capsule model, Uberkernel
+├── experiments/       — DoE logs, run reports, raw data notes
+├── specifications/    — IVMP, Jacquard, ACL, capsule specs
+├── hardware/          — board bring-up notes, platform specifics
+├── legal/             — patent-adjacent material (handle carefully)
+├── papers/            — SSRN drafts, Math Companion, academic writing
+└── scratch/           — genuinely informal notes, not yet categorized
 ```
 
-### Platform Abstraction (Hardware Abstraction Layer)
+When moving a file:
+1. Move it with `git mv` to preserve history
+2. Add a one-line header comment if the file format supports it:
+   ```
+   <!-- Moved to docs/working/architecture/ from [original path] — [date] -->
+   ```
+3. Update INDEX.md with the new path
 
-StarForth uses a Hardware Abstraction Layer (HAL) to enable portability across multiple platforms and the evolution toward StarKernel:
+### Files tagged HISTORICAL
 
-**Supported Platforms:**
-- **Linux** - POSIX-hosted development platform (primary development environment)
-- **L4Re/Fiasco.OC** - Microkernel platform
-- **StarKernel** (planned) - Freestanding kernel with UEFI boot
-
-**HAL Subsystems:**
-- `hal_time.h` - Monotonic time, periodic/oneshot timers
-- `hal_interrupt.h` - IRQ management, ISR registration
-- `hal_memory.h` - Memory allocation, page mapping
-- `hal_console.h` - Character I/O for REPL
-- `hal_cpu.h` - CPU ID, relax/halt, SMP coordination
-
-**Architecture Vision: StarForth → StarKernel → StarshipOS**
-
-1. **StarForth** (current) - VM + adaptive runtime on hosted platforms
-2. **StarKernel** (in progress) - UEFI-bootable kernel with Forth as native control plane
-3. **StarshipOS** (future) - Full OS with storage, networking, process model
-
-See `docs/03-architecture/hal/` for comprehensive HAL documentation.
-
-### Adaptive Runtime System
-
-The VM features a thermodynamically-inspired optimization system (see ONTOLOGY.md for formal definitions):
-
-1. **Execution Heat Model** (`dictionary_heat_optimization.c`) - Tracks word execution frequency
-2. **Rolling Window of Truth** (`rolling_window_of_truth.c`) - Circular buffer capturing execution history
-3. **Hot-Words Cache** (`physics_hotwords_cache.c`) - Frequency-driven dictionary acceleration
-4. **Pipelining Metrics** (`physics_pipelining_metrics.c`) - Word-to-word transition prediction
-5. **Inference Engine** (`inference_engine.c`) - Adaptive tuning via ANOVA early-exit + window width + decay slope inference
-6. **Heartbeat System** - Background thread coordinating Loop #3 (heat decay) and Loop #5 (window tuning)
-
-### Key Data Structures
-
-- **`VM` struct** (`include/vm.h`) - Main VM state: stacks, dictionary, memory, execution state
-- **`DictEntry`** - Dictionary entry with `execution_heat`, `physics` metadata, and `transition_metrics`
-- **`RollingWindowOfTruth`** - Execution history for deterministic metric seeding
-- **`HeartbeatState`** - Centralized time-driven tuning dispatcher
-
-### Memory Model
-
-- `vaddr_t` - VM addresses are byte offsets, not C pointers
-- `vm_load_cell()` / `vm_store_cell()` - Canonical memory accessors
-- Dictionary occupies first 2MB, user blocks start at block 2048
-
-## Testing
-
-Tests are organized in POST (Power-On Self Test) order:
-
-1. **Unit tests (POST):** Q48.16 fixed-point, inference statistics, decay slope inference
-2. **Dictionary tests:** FORTH-79 word validation across 18 modules
-
-```bash
-make test                     # Run all 936+ tests
-make test PROFILE=1           # With basic profiling
-make test FAIL_FAST=1         # Stop on first failure
+Move to `docs/working/archive/` with a dated prefix:
+```
+docs/working/archive/2024-ssm-early-design.md
 ```
 
-Test files are in `src/test_runner/modules/` - each `*_test.c` file tests one word category.
+### Files tagged SUPERSEDED
 
-## Code Standards
-
-- **Strict ANSI C99** - No GNU extensions, no C++ features
-- **Zero warnings** - Build with `-Wall -Werror`
-- **No hidden state** - All VM state is explicit in the `VM` struct
-- **Platform-agnostic** - Abstract platform-specific code via `src/platform/`
-
-## Important Conventions
-
-- Stack values on data stack are VM offsets, not C pointers
-- Use `VM_ADDR()` and `CELL()` macros for offset↔cell conversions
-- Dictionary words with `WORD_IMMEDIATE` flag execute during compilation
-- `STRICT_PTR=1` enforces bounds checking (disable only for benchmarking)
-
-## Adaptive Feedback Loops
-
-The adaptive runtime has 7 configurable feedback loops (toggled via Makefile):
-
-- Loop #1: Execution Heat Tracking
-- Loop #2: Rolling Window History
-- Loop #3: Linear Decay
-- Loop #4: Pipelining Metrics
-- Loop #5: Window Width Inference (Levene's test)
-- Loop #6: Decay Slope Inference (exponential regression)
-- Loop #7: Adaptive Heartrate
-
-See `docs/FEEDBACK_LOOPS.md` for detailed descriptions of each loop's positive/negative feedback mechanisms.
-
-## Critical Implementation Details
-
-### DoE CSV Output Suppression
-
-The CSV output at the end of `--doe` runs has been **intentionally suppressed** as of 2025-12-08. See `src/main.c:390-396` for the rationale:
-- Metrics are still collected via `metrics_from_vm()`
-- The CSV row was redundant with internal VM metrics
-- Test harness output is now clean (no trailing CSV line)
-- If CSV export is needed, consider writing to a file instead of stdout or adding a `--csv-export` flag
-
-### Heartbeat Instrumentation (Planned)
-
-The VM has data structures for heartbeat per-tick metrics (`HeartbeatTickSnapshot`, `tick_buffer`) declared in `include/vm.h`, but the export function `heartbeat_export_csv()` is **not yet implemented**. This is a planned feature documented in `docs/HEARTBEAT_INSTRUMENTATION_PLAN.md`.
-
-### Word Statistics Output
-
-The `WORD-ENTROPY` Forth word prints execution heat statistics to stdout. This output is intentionally **kept enabled** even in DoE mode because it provides valuable diagnostic information about VM behavior during test runs.
-
-## Documentation
-
-Comprehensive documentation is available in multiple formats:
-
-```bash
-make book         # LaTeX → PDF (gold standard)
-make book-html    # HTML single-page + multi-page with dark.css
+Move to `docs/working/archive/` and add a header noting what supersedes it:
+```
+<!-- SUPERSEDED by docs/formal/common/starship.bib — citation james:2024:ssrn -->
 ```
 
-Key documentation files:
-- `README.md` - Project overview and quick start
-- `docs/01-getting-started/` - Getting started guides and developer setup
-- `docs/03-architecture/hal/` - Hardware Abstraction Layer documentation
-- `docs/03-architecture/` - System architecture and subsystems
-- `docs/FEEDBACK_LOOPS.md` - Physics feedback loop details
-- `docs/HEARTBEAT_INSTRUMENTATION_PLAN.md` - Future instrumentation work
-- `FINAL_REPORT/book.adoc` - 121-page peer-review ready academic paper
+### Files tagged DELETE
 
-## License
+List them in a file called `docs/DELETE-CANDIDATES.md` and wait for Bob.
 
-See ./LICENSE
+---
+
+## Phase 3: Seed formal/
+
+After working/ is organized, identify passages, sections, or entire documents
+in working/ that are ready to be promoted into formal/ chapter stubs.
+
+For each candidate:
+1. Note the source file and section in a `%% SOURCE:` comment at the top of
+   the chapter stub
+2. Do not copy blindly — adapt to the formal/ voice conventions in
+   `formal/CLAUDE.md`
+3. Mark anything that needs Bob's dictation with:
+   ```latex
+   %% TODO(bob): [description of what's needed here]
+   ```
+
+The goal of Phase 3 is compilable stubs, not finished chapters. Every chapter
+in all three volumes should exist as a .tex file that compiles without errors,
+even if most of it is TODO comments.
+
+---
+
+## Ground Rules
+
+- **Never delete without confirmation.** Tag as DELETE, list, wait.
+- **Never rename Bob's technical terms.** James Law, SSM, Uberkernel,
+  Hades, Jacquard Selector — these are proper nouns.
+- **Never invent content.** If you don't have source material for a section,
+  stub it and mark TODO.
+- **git mv, not mv.** All file moves preserve history.
+- **One commit per phase.** Triage in one commit, reorganize in another,
+  seed formal/ in a third. Clean history matters.
+- **INDEX.md is the source of truth** for what exists and where it lives.
+  Keep it updated as files move.
+- **Ask before touching legal/.** Anything patent-adjacent gets flagged
+  for Bob's explicit instruction before moving or editing.

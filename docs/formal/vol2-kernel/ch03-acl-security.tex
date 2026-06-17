@@ -1,0 +1,41 @@
+%% Vol II, Chapter 3 — ACL and Security Model
+%% SOURCE: docs/working/architecture/03-architecture/word-acl/DESIGN.md
+%%         .claude/CLAUDE.md (Word-Level ACL System section)
+%%         capsules/ACL.4th, capsules/zuse.4th
+
+\chapter{Word-Level ACL and Security}
+\label{vol2:chap:acl}
+
+%% TODO(bob): this chapter covers the kernel-context aspects of the ACL system.
+%% The VM-level design is in Vol I Appendix B; this chapter focuses on the
+%% kernel-side bridge (Phase 7: LithosAnanke parity) and future PKI (Phase 8).
+
+\section{ACL System in Kernel Context}
+\label{vol2:sec:acl:kernel}
+
+%% TODO(bob): describe Phase 7 goals: port ACL.4th to kernel context,
+%% three-arch acceptance tests.
+
+\section{Two-Console Model}
+\label{vol2:sec:acl:consoles}
+
+%% SOURCE: docs/working/architecture/03-architecture/word-acl/DESIGN.md
+%% TODO(bob): describe the two permanent console layers:
+%%   - emergency console (ok>) — fault handler active
+%%   - zuse console (zuse)ok>) — superuser authenticated
+%% and how they interact with the EMERGENCY_CONSOLE_ENABLED build flag.
+
+\section{Zuse Superuser}
+\label{vol2:sec:acl:zuse}
+
+%% SOURCE: capsules/zuse.4th, .claude/CLAUDE.md
+%% TODO(bob): describe the zuse superuser bootstrap: defined in zuse.4th,
+%% loaded by ACL.4th at boot. CA root placeholder in ACL.4th.
+
+\section{Future: PKI and Ed25519 (Phase 8)}
+\label{vol2:sec:acl:pki}
+
+%% TODO(bob): describe Phase 8 goals: Ed25519 challenge-response authentication,
+%% thumbdrive-based user minting by zuse.
+%% NOTE: do NOT draft patent-adjacent claim text here.
+%% %% TODO(bob): PATENT — do not draft claim text for Phase 8 without explicit dictation.

@@ -1,0 +1,42 @@
+%% SCRAP: archive/quality/regression/detection-framework
+%% SOURCE: docs/working/archive/quality/regression/detection-framework.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Optimization Regression Detection Framework (November 2025)}
+
+The StarForth optimization program defined a multi-metric regression detection
+framework to distinguish genuine optimization---improvement across all relevant
+metrics---from simple speedup that trades one metric for another.
+
+\subsection*{Regression Taxonomy}
+
+Six regression types were identified:
+
+\begin{itemize}
+  \item \textbf{Type~1: Metric Inversion.} Primary metric improves while a
+        secondary metric (memory, variance, stability) regresses. Detection
+        threshold: $>10\%$ secondary degradation.
+  \item \textbf{Type~2: Variance Introduction.} Mean improves but standard
+        deviation increases. Detection threshold: $>25\%$ variance increase.
+  \item \textbf{Type~3: Tail Latency.} Median improves but P99 worsens.
+        Detection threshold: $>15\%$ P99 degradation.
+  \item \textbf{Type~4: Cascading Failure.} Small-workload gains reverse at
+        production scale (e.g., dictionary growth, memory fragmentation over
+        1M+ instructions).
+  \item \textbf{Type~5: Workload Sensitivity.} Optimization overfits the
+        936-test training workload and degrades on other patterns.
+  \item \textbf{Type~6: Parameter Interaction.} Two independently-winning
+        parameters produce a regression when combined.
+\end{itemize}
+
+\subsection*{Decision Algorithm}
+
+Each optimization candidate was evaluated as \textsc{accept} (no critical
+regressions), \textsc{investigate} ($>2$ warnings), or \textsc{reject} (any
+critical regression). The five-question validation test---is the optimization
+optimal, stable, general, non-interacting, and maintainable?---served as the
+human-readable gate before locking any parameter for subsequent experiments.
+
+This framework governed the OPP~1 through OPP~5 experimental series.

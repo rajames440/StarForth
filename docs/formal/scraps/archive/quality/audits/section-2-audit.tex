@@ -1,0 +1,35 @@
+%% SCRAP: archive/quality/audits/section-2-audit
+%% SOURCE: docs/working/archive/quality/audits/section-2-audit.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Section~2 Audit: Physics Subsystem Safety \& Clarity (November 2025)}
+
+A safety audit of five physics subsystem files conducted on 2025-11-20
+classified the subsystem as broadly safe with no critical vulnerabilities.
+Results by file:
+
+\begin{itemize}
+  \item \texttt{physics\_metadata.c}: All functions carry \texttt{NULL} checks.
+        Bounds clamping prevents overflow and underflow on heat accumulation
+        and decay paths. Compile-time guards were absent.
+  \item \texttt{physics\_pipelining\_metrics.c}: Two high-priority issues
+        identified---an unchecked array access in \texttt{transition\_metrics\_update\_cache()}
+        when \texttt{dict\_size} changes between allocation and use, and a
+        missing bounds check on \texttt{target\_word\_id} in
+        \texttt{transition\_metrics\_get\_probability\_q48()}.
+  \item \texttt{physics\_hotwords\_cache.c}: Comprehensive \texttt{NULL} and
+        bounds checks; LRU round-robin eviction correctly capped.
+  \item \texttt{rolling\_window\_of\_truth.c}: Assessed as best defensive
+        coding of all files; modulo arithmetic, double-buffered atomic
+        snapshots, and depth-clamping all correctly implemented.
+  \item \texttt{physics\_runtime.c}: Not audited in this section; deferred
+        as out-of-scope (host analytics heap, not word-dispatch logic).
+\end{itemize}
+
+Recommendations covered 15 intent-focused comment blocks (feedback-loop
+annotations), 2 bounds-check additions, compile-time guard wrappers for 4
+files, and a log-level downgrade to suppress \textsc{doe} mode stderr
+pollution. All recommendations were addressed in the corresponding corrective
+actions (see Section~2 Executive Summary in this archive).

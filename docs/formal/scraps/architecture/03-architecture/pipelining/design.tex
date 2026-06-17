@@ -1,0 +1,110 @@
+%% SCRAP: architecture/03-architecture/pipelining/design
+%% SOURCE: docs/working/architecture/03-architecture/pipelining/design.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-pipelining
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Pipelining and Speculative Execution}
+
+Pipelining reduces dictionary lookup latency by speculatively prefetching the
+next word while the current word executes. The mechanism reuses the runtime's
+existing execution-heat data: the physics model here serves as a predictor of
+word-to-word transitions, in direct analogy to CPU branch prediction.
+
+\subsection{Conceptual Model}
+
+Without pipelining, the lookup of word $B$ is blocked until word $A$ finishes
+executing, so transition latency is exposed on the critical path. With
+pipelining, the lookup of $B$ is started during the execution of $A$, hiding
+that latency behind useful work. The predictor is driven by transition heat:
+if a word is reliably followed by a particular successor, that successor is
+prefetched.
+
+\begin{lstlisting}[language=C]
+/* decision rule */
+IF transition_heat[N -> N+1] > THRESHOLD THEN prefetch_word(N+1)
+\end{lstlisting}
+
+\subsection{Transition Metrics}
+
+Each word accumulates a transition-heat vector over its successors, a total
+transition count, prefetch attempt/hit/miss counters, and \Qtype{} latency
+accounts for savings and misprediction cost. Transitions are recorded in the
+inner interpreter at each word boundary. Probability is computed in \Qtype{}
+fixed point to avoid floating point on the hot path:
+
+\begin{equation}
+  P(\text{from} \rightarrow \text{to})
+  = \frac{\mathtt{transition\_heat}[\text{to}]}{\mathtt{total\_transitions}},
+\end{equation}
+
+\begin{lstlisting}[language=C]
+int64_t transition_probability_q48(DictEntry *from, DictEntry *to) {
+    if (from->metrics.total_transitions == 0) return 0;
+    return ((int64_t)from->metrics.transition_heat[to->id] << 16) /
+           (int64_t)from->metrics.total_transitions;
+}
+\end{lstlisting}
+
+\subsection{Tuning Knobs}
+
+Five compile-time parameters govern speculation. Each trades coverage against
+accuracy or cost.
+
+\begin{tabular}{lllr}
+\toprule
+Knob & Purpose & Range & Default \\
+\midrule
+\texttt{SPECULATION\_THRESHOLD} & Min confidence to speculate & 0.10--0.95 & 0.50 \\
+\texttt{SPECULATION\_DEPTH} & Words ahead to prefetch & 1--4 & 1 \\
+\texttt{MIN\_SAMPLES} & Transitions before speculating & 1--100 & 10 \\
+\texttt{MISPREDICTION\_COST} & Penalty for wrong spec (ns) & 0--100 & 25 \\
+\texttt{MINIMUM\_ROI} & Min expected improvement & 1.0--2.0 & 1.10 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\noindent A low threshold speculates more often at the cost of mispredictions;
+a high one is conservative. Depth deeper than one or two yields diminishing
+returns bounded by the rate of instruction-pointer advancement.
+
+\subsection{Implementation in Phases}
+
+The design proceeds in stages so that each is independently verifiable:
+
+\begin{enumerate}
+  \item \textbf{Instrumentation.} Record transitions during normal execution
+        and report transition matrices---no prediction yet.
+  \item \textbf{Prediction analysis.} Predict the next word without prefetching
+        and measure how often the prediction would have been correct.
+  \item \textbf{Pipelining.} Add the actual speculative prefetch and a
+        \lstinline{should_speculate()} decision that combines the threshold,
+        minimum-sample, and ROI tests against expected latency saved.
+  \item \textbf{Knob tuning.} Sweep parameters; explore adaptive and per-word
+        thresholds.
+  \item \textbf{Integration.} Combine with the hot-words cache and harden for
+        production.
+\end{enumerate}
+
+\subsection{Relation to CPU Pipelining}
+
+The analogy maps dictionary lookup to instruction fetch, word dispatch to
+decode, transition prediction to branch prediction, and prefetch to speculative
+execution. The key difference is that the VM predicts \emph{sequential}
+transitions rather than conditional branches: sequences are more predictable,
+recovery from a wrong guess is merely a normal lookup with no pipeline flush,
+and the prefetch itself is cheap.
+
+\subsection{Expected Cumulative Speedup}
+
+Pipelining is orthogonal to the hot-words cache and stacks with it. Against an
+unoptimized baseline of $1.0\times$, the hot-words cache delivers about
+$1.78\times$; pipelining is projected to add a further $1.25$--$1.40\times$, for
+a cumulative $2.2$--$2.5\times$. The non-goal is to exceed roughly $2\times$
+from pipelining alone, which would be unrealistic without a just-in-time
+compiler.
+
+%% TODO(bob): the projected speedups are hypotheses pending Phase 3
+%% measurement; confirm or replace with measured figures before promotion.
+%% PATENT: speculative word prefetch driven by execution-heat transition
+%% statistics is patent-adjacent; no claim language is drafted here.

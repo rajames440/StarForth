@@ -1,0 +1,296 @@
+%% SCRAP: architecture/03-architecture/word-acl/DESIGN
+%% SOURCE: docs/working/architecture/03-architecture/word-acl/DESIGN.md
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-acl, cookbook/ch-acl
+%% EDITORIAL: lifted — prose rewritten to press voice
+%% PATENT: This subsystem describes potentially patentable mechanisms — the
+%%   statistically-adaptive ACL TTL derived from SSM execution physics, the
+%%   one-way pin ratchet, and the birth-time inheritance lattice. The prose below
+%%   is descriptive only. It deliberately drafts NO patent claims (no
+%%   independent or dependent claim language). Any claim drafting is reserved
+%%   for Bob and patent counsel.
+
+\section{Word-Level ACL System}
+
+StarForth's word-level access control system combines a thin C infrastructure
+layer with a pure-FORTH policy capsule, \texttt{ACL.4th}. The C layer supplies
+four \texttt{DictEntry} fields for the hot path --- a TTL counter, an allow bit,
+a mode, and a pin --- while all policy, all adaptive logic, and all inheritance
+rules live as colon definitions in \texttt{ACL.4th}. A bootstrap superuser,
+\texttt{zuse.4th}, provides the sole authenticated escalation path. The system
+is implemented through Phase 6; Phase 7 (LithosAnanke parity) remains. The
+implementation spans \texttt{capsules/ACL.4th}, \texttt{capsules/zuse.4th},
+\texttt{src/word\_source/acl\_words.c}, and
+\texttt{src/test\_runner/modules/acl\_words\_test.c}.
+
+\subsection{Three Enforcement Dispositions}
+
+Each dictionary word holds one of three dispositions:
+
+\begin{tabular}{ll}
+\toprule
+State & Behavior \\
+\midrule
+\texttt{STRICT} & ACL re-checked on every execution \\
+\texttt{TTL} & ACL cached; re-checked only when the TTL counter reaches zero \\
+\texttt{PINNED} & Mode and decision frozen permanently; a one-way ratchet \\
+\bottomrule
+\end{tabular}
+
+\subsection{Statistically Adaptive TTL}
+
+%% PATENT: The adaptive-TTL mechanism below is patent-adjacent. Descriptive only.
+
+The TTL is not a fixed value. It is derived and continuously updated from the
+existing SSM execution physics. Hotter words (higher \texttt{execution\_heat})
+earn longer TTLs, amortizing check cost over more executions. A sudden shift in
+caller pattern or access rate, detected through the rolling window, shrinks the
+TTL aggressively. Decay pulls a quiescent word's TTL back down so the next
+burst re-validates early. The inference engine (Loops L5/L6) detects an
+oscillating TTL and stabilizes it, using the same coefficient-of-variation
+threshold logic already employed for window-width inference. \texttt{PINNED} is
+the asymptote: once the adaptive process converges, the operator thumbtacks it
+and the accumulator freezes permanently. A security word selects the mode per
+word:
+
+\begin{lstlisting}[language=Forth]
+' MY-WORD ACL-STRICT      \ check every execution
+' MY-WORD ACL-TTL-MODE    \ use adaptive TTL
+' MY-WORD ACL-PIN         \ freeze -- mode and decision immutable forever
+\end{lstlisting}
+
+\subsection{The Pin Ratchet}
+
+%% PATENT: The one-way pin ratchet is patent-adjacent. Descriptive only.
+
+\texttt{ACL-PIN ( xt -- )} is a one-way ratchet. It transitions \texttt{STRICT}
+or \texttt{TTL} to \texttt{PINNED} and never back. Once pinned, a word's
+\texttt{acl\_mode} and \texttt{acl\_ttl} are immutable within that VM context,
+and any attempt to alter a pinned word's ACL is silently ignored or errors,
+depending on policy. Kernel primitive words --- \texttt{BIRTH}, \texttt{EXEC},
+\texttt{BYE}, and the like --- are pinned by Mama at boot before the first
+\texttt{BIRTH} fires.
+
+\subsection{Inheritance at Birth}
+
+%% PATENT: The birth-time inheritance lattice is patent-adjacent. Descriptive only.
+
+When a child VM is born, ACL state propagates downward once:
+
+\begin{lstlisting}[language=Forth]
+acl_mode     = parent->acl_mode    \ policy propagates (STRICT or TTL)
+acl_pinned   = 0                   \ always clear -- child owns its own lock
+acl_ttl      = default             \ reset; child has no execution history
+acl_decision = ALLOW               \ re-evaluated on first access
+\end{lstlisting}
+
+Two properties govern the design. The pin is contextual, not viral: a parent's
+pinned words do not force the child to be pinned --- the child inherits the mode
+as a starting point and may tighten, relax, or re-pin freely. The security
+lattice flows downward at birth only; afterward each VM's ACL state is
+independent, so a compromised child cannot bootstrap its way back to Mama's
+pinned ACLs.
+
+\subsection{Interpreter Hook: Two-Level Check}
+
+The C interpreter reads only two fields per \texttt{DictEntry}:
+
+\begin{lstlisting}[language=C]
+if (vm->emergency_console) goto execute;   /* 100% bypass -- physical access */
+if (entry->acl_ttl-- > 0) goto execute;    /* TTL good -- single decrement   */
+acl_recheck(vm, entry);                    /* TTL=0: call FORTH ACL-RECHECK  */
+if (!entry->acl_allow) goto reject;
+\end{lstlisting}
+
+The hot path costs one decrement and a branch --- essentially free. The cold
+path calls \texttt{ACL-RECHECK} in \texttt{ACL.4th}, which recomputes the
+adaptive TTL, updates \texttt{acl\_allow}, and resets the counter. The C side
+never reasons about policy; it only reads the result.
+
+\subsection{Two-Console Architecture}
+
+Two permanent, independent console layers exist at all times.
+
+The \textbf{emergency console} is always present. Its \texttt{emergency\_console}
+flag (a \texttt{uint8\_t} in the \texttt{VM} struct) is written only by C ---
+no FORTH word sets it --- and is checked first in the interpreter hot path,
+producing a 100\% ACL bypass; \texttt{acl\_recheck()} saves and restores it for
+re-entrancy protection. The \texttt{EMERGENCY\_CONSOLE\_ENABLED} build flag
+(default 1) strips the interactive fallthrough when set to 0, calling the weak
+\texttt{vm\_fault\_handler()} symbol instead (overridable for hardware reset,
+watchdog, or debug probe). \texttt{BYE} returns to the emergency console; only
+\texttt{panic} kills the VM; the prompt is \texttt{ok>}.
+
+The \textbf{Zuse console} is omnipresent and awaits authentication. Its
+\texttt{zuse\_session} flag (also a C-only \texttt{uint8\_t}) grants a full ACL
+bypass when a Zuse session is active. The prompt is \texttt{zuse)ok>}. The two
+consoles are completely independent --- setting one does not affect the other.
+
+\subsection{Superuser: Zuse}
+
+Named for Konrad Zuse, pioneer of programmable computers, Zuse is the bootstrap
+superuser --- the sole entity that can own the Zuse console and mint user
+credentials. It is defined in \texttt{capsules/zuse.4th} and loaded by
+\texttt{ACL.4th} at capsule boot. For now it is software-only (no thumbdrive),
+yet a capsule citizen from day one. Zuse's words are pinned by
+\texttt{ACL-ZUSE-BOOT} at load time. \texttt{ACL-BOOT} runs first, then
+\texttt{S" zuse.4th" EXEC}, both from within \texttt{ACL.4th} itself (Block
+2067). In future, thumbdrive PKI (Ed25519 challenge-response) will replace the
+software path, with \texttt{zuse.4th} becoming the bootstrapper that validates
+the physical drive.
+
+\subsection{CA Root}
+
+The certificate-authority root is embedded in \texttt{ACL.4th} (Block 2066) as
+the constants \texttt{ACL-CA-KEY-LO} and \texttt{ACL-CA-KEY-HI}. Because the
+capsule hash serves as the root-of-trust fingerprint, any change to the CA key
+changes the capsule hash, and the birth protocol detects the tampering. The key
+is a zero placeholder until \texttt{tools/mkcapsule} embeds the real Ed25519 key
+at build time.
+
+\subsection{Security Model and No-Security Condition}
+
+Security is opt-in through \texttt{init.4th}, gated by a single commented-out
+line:
+
+\begin{lstlisting}[language=Forth]
+\ S" ACL.4th" EXEC
+\end{lstlisting}
+
+\begin{tabular}{lll}
+\toprule
+\texttt{ACL.4th} & \texttt{zuse.4th} & Result \\
+\midrule
+absent & absent & No security --- open dev mode \\
+present & absent & ACL enforced; emergency REPL locked until Zuse provisioned \\
+present & present & Full lockdown; Zuse owns the Zuse console \\
+\bottomrule
+\end{tabular}
+
+Uncommenting the line enables full lockdown; leaving it commented keeps a
+development build open.
+
+\subsection{Self-Activating Capsule}
+
+\texttt{ACL.4th} is self-activating --- \texttt{init.4th} needs only
+\texttt{S" ACL.4th" EXEC}. Internally, Block 2066 holds the CA root placeholder
+constants and Block 2067 calls \texttt{ACL-BOOT} and then
+\texttt{S" zuse.4th" EXEC}. \texttt{ACL-BOOT} stamps default ACL entries onto
+every existing dictionary word; after it runs, each subsequent \texttt{:}
+definition receives an ACL entry through the defining-word hook, so no word can
+exist without one.
+
+\subsection{ACL.4th: Pure-FORTH Implementation}
+
+The ACL table is a \texttt{CREATE}d FORTH array indexed by execution token
+(XT); \texttt{'} (tick) yields the XT of any word, and the XT is simply a cell
+value usable as a table key.
+
+\begin{tabular}{lll}
+\toprule
+Word & Stack & Description \\
+\midrule
+\texttt{ACL-ENTRY} & \texttt{( xt -- addr )} & O(1) table lookup by XT \\
+\texttt{ACL-MODE@} & \texttt{( xt -- mode )} & Read enforcement mode \\
+\texttt{ACL-MODE!} & \texttt{( mode xt -- )} & Set mode (no-op if pinned) \\
+\texttt{ACL-PINNED?} & \texttt{( xt -- flag )} & Test pin bit \\
+\texttt{ACL-PIN} & \texttt{( xt -- )} & Set pin --- one-way, irreversible \\
+\texttt{ACL-STRICT} & \texttt{( xt -- )} & Set STRICT mode (no-op if pinned) \\
+\texttt{ACL-TTL-MODE} & \texttt{( xt -- )} & Set TTL mode (no-op if pinned) \\
+\texttt{ACL-TTL@} & \texttt{( xt -- n )} & Read current TTL counter \\
+\texttt{ACL-TTL!} & \texttt{( n xt -- )} & Write TTL counter \\
+\texttt{ACL-ALLOW@} & \texttt{( xt -- flag )} & Read cached decision \\
+\texttt{ACL-ALLOW!} & \texttt{( flag xt -- )} & Write decision \\
+\texttt{ACL-INHERIT} & \texttt{( src dst -- )} & Copy mode, clear pin, reset ttl+decision \\
+\texttt{ACL-RECHECK} & \texttt{( xt -- )} & Adaptive TTL recompute; update allow + new TTL \\
+\texttt{ACL-INIT-PRIMITIVES} & \texttt{( -- )} & Bulk-initialize entries for all existing words \\
+\bottomrule
+\end{tabular}
+
+A typical boot-time pin in \texttt{init.4th}:
+
+\begin{lstlisting}[language=Forth]
+' BIRTH  ACL-STRICT  ' BIRTH  ACL-PIN
+' EXEC   ACL-STRICT  ' EXEC   ACL-PIN
+' BYE    ACL-STRICT  ' BYE    ACL-PIN
+\end{lstlisting}
+
+\subsection{Bootstrap Sequence}
+
+\begin{lstlisting}[language=Forth]
+\ In init.4th (one line, opt-in toggle -- uncomment to enable):
+S" ACL.4th" EXEC       \ self-activating: ACL-BOOT then loads zuse.4th
+
+\ ACL.4th Block 2067 does internally:
+ACL-BOOT               \ stamp default ACLs on all existing words
+S" zuse.4th" EXEC      \ load and pin Zuse's words
+
+\ Subsequent capsule loads get ACL entries via the : hook
+S" doe.4th" EXEC
+\end{lstlisting}
+
+Every \texttt{:} definition after \texttt{ACL-BOOT} creates its own ACL entry at
+definition time via the defining-word hook, so no word is ever born without one.
+
+\subsection{Capsule Namespace}
+
+\begin{tabular}{ll}
+\toprule
+File & Role \\
+\midrule
+\texttt{init.4th} & Mama VM personality (default); contains the opt-in toggle \\
+\texttt{init-*.4th} & Alternate personalities \\
+\texttt{doe.4th} & DoE experiment harness \\
+\texttt{ACL.4th} & Word-level ACL subsystem; self-activating; loads \texttt{zuse.4th} \\
+\texttt{zuse.4th} & Bootstrap superuser; words pinned by \texttt{ACL-ZUSE-BOOT} \\
+\texttt{std-blob.4th} & Standard library layer (future) \\
+\bottomrule
+\end{tabular}
+
+\subsection{Implementation Status}
+
+Phases 1 through 6 are complete on \texttt{master}. Phase 1 added the four
+\texttt{DictEntry} fields (\texttt{acl\_ttl}, \texttt{acl\_allow},
+\texttt{acl\_mode}, \texttt{acl\_pinned}), the \texttt{emergency\_console} and
+\texttt{zuse\_session} VM flags, the two-level interpreter check, and
+\texttt{acl\_recheck()} with re-entrancy protection. Phase 2 delivered the
+twelve C primitive words, the XT-indexed table, the field accessors, the pin
+ratchet, the mode setters, \texttt{ACL-INHERIT}, \texttt{ACL-RECHECK},
+\texttt{ACL-INIT-PRIMITIVES}, and the pinning of privileged words. Phase 3 made
+\texttt{ACL.4th} self-activating with the CA placeholder and Zuse load. Phase 4
+added the \texttt{init.4th} opt-in toggle. Phase 5 contributed POST tests in
+\texttt{acl\_words\_test.c} (800/800 passing) covering pin monotonicity,
+inheritance, emergency bypass, STRICT and TTL behavior, the adaptive
+accumulator, and persistence of boot-time pins. Phase 6 added five Isabelle/HOL
+proofs:
+
+\begin{itemize}
+  \item \texttt{ACL\_Pin\_Monotone.thy} --- the pin bit is set-only; no
+    operation clears it once set.
+  \item \texttt{ACL\_Inherit\_Clears\_Pin.thy} --- \texttt{ACL-INHERIT} always
+    produces an entry with \texttt{acl\_pinned = 0}, regardless of source state.
+  \item \texttt{ACL\_TTL\_Bounded.thy} --- the TTL counter is bounded above by
+    \texttt{ACL-TTL-COMPUTE} output and cannot grow unboundedly.
+  \item \texttt{ACL\_Emergency\_Bypass.thy} --- when
+    \texttt{emergency\_console = 1}, the allow/deny decision is never consulted.
+  \item \texttt{ACL\_No\_Escalation.thy} --- a child VM cannot produce a pinned
+    entry with higher privilege than its inherited mode.
+\end{itemize}
+
+\subsection{Remaining Work}
+
+Phase 7 (LithosAnanke parity) ports the subsystem to the
+\texttt{lithosananke} branch: verifying that \texttt{ACL.4th} loads cleanly in
+the freestanding kernel context, running \texttt{ACL-BOOT} at kernel boot before
+the first \texttt{BIRTH}, wiring \texttt{vm->emergency\_console} and
+\texttt{vm->zuse\_session} to the kernel REPL and Zuse authentication paths, and
+achieving three-architecture acceptance (amd64, aarch64, riscv64 booting to
+\texttt{ok>} with ACL active and no regressions), with acceptance logs
+committed. Phase 8 (future) introduces thumbdrive PKI: Ed25519
+challenge-response for the Zuse drive, build-time embedding of the real CA key
+into Block 2066, CA-signed user minting with a home-block image, and a
+deliberate no-software-recovery policy --- lose the drive and the administrator
+mints a new one.
+
+%% PATENT: Phase 8 PKI / thumbdrive authentication is patent-adjacent. Described
+%%   descriptively only; no claim language drafted.

@@ -1,0 +1,148 @@
+%% SCRAP: architecture/03-architecture/heartbeat-system/architecture
+%% SOURCE: docs/working/architecture/03-architecture/heartbeat-system/architecture.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-heartbeat
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\subsection{Heartbeat Architecture: Centralised Time-Based Tuning}
+
+The heartbeat mechanism coordinates all time-driven VM operations through a
+single dispatcher, \texttt{vm\_tick()}. Both Loop~\#5 (rolling-window tuning)
+and Loop~\#3 (heat-decay validation) are time-driven events that belong in one
+place rather than scattered through execution paths. The same dispatcher is
+designed to evolve into a background thread for system observability without
+touching core VM logic.
+
+\subsubsection{HeartbeatState}
+
+The \texttt{HeartbeatState} struct, declared in \texttt{include/vm.h} and
+embedded in the \texttt{VM} struct, holds the tick counter and per-plugin
+cursors:
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint64_t tick_count;            /* total ticks since VM init */
+    uint64_t last_window_tune_tick; /* tick of last window tune */
+    uint64_t last_slope_tune_tick;  /* tick of last decay validation */
+    int      heartbeat_enabled;     /* 1 = active, 0 = disabled */
+} HeartbeatState;
+\end{lstlisting}
+
+\subsubsection{Dispatcher}
+
+\texttt{vm\_tick()} in \texttt{src/vm.c} increments the global tick counter and
+dispatches each plugin at its configured interval:
+
+\begin{lstlisting}[language=C]
+void vm_tick(VM *vm)
+{
+    if (!vm || !vm->heartbeat.heartbeat_enabled)
+        return;
+
+    vm->heartbeat.tick_count++;
+
+    /* Plugin 1: Window Tuning (Loop #5) */
+    if (ENABLE_PIPELINING &&
+        (vm->heartbeat.tick_count
+            - vm->heartbeat.last_window_tune_tick) >= WINDOW_TUNING_FREQUENCY)
+    {
+        vm_tick_window_tuner(vm);
+        vm->heartbeat.last_window_tune_tick = vm->heartbeat.tick_count;
+    }
+
+    /* Plugin 2: Heat Decay Slope Validation (Loop #3) */
+    if ((vm->heartbeat.tick_count
+            - vm->heartbeat.last_slope_tune_tick) >= SLOPE_VALIDATION_FREQUENCY)
+    {
+        vm_tick_slope_validator(vm);
+        vm->heartbeat.last_slope_tune_tick = vm->heartbeat.tick_count;
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Window Tuner Plugin}
+
+\texttt{vm\_tick\_window\_tuner()} in \texttt{src/physics\_pipelining\_metrics.c}
+computes the current prefetch accuracy and delegates to
+\texttt{loop\_5\_binary\_chop\_suggest\_window()} for the next candidate size:
+
+\begin{lstlisting}[language=C]
+void vm_tick_window_tuner(VM *vm)
+{
+    RollingWindowOfTruth *window  = &vm->rolling_window;
+    PipelineGlobalMetrics *metrics = &vm->pipeline_metrics;
+
+    if (!window->is_warm || metrics->prefetch_attempts == 0)
+        return;
+
+    double accuracy = (double)metrics->prefetch_hits
+                    / (double)metrics->prefetch_attempts;
+
+    uint32_t suggested = loop_5_binary_chop_suggest_window(
+        metrics,
+        window->effective_window_size,
+        ADAPTIVE_MIN_WINDOW_SIZE,
+        ROLLING_WINDOW_SIZE);
+
+    if (suggested != window->effective_window_size)
+        window->effective_window_size = suggested;
+
+    metrics->last_checked_window_size = window->effective_window_size;
+    metrics->last_checked_accuracy    = accuracy;
+    metrics->window_tuning_checks++;
+}
+\end{lstlisting}
+
+\subsubsection{Slope Validator Plugin}
+
+\texttt{vm\_tick\_slope\_validator()} in \texttt{src/physics\_metadata.c}
+scans the dictionary and classifies entries by execution heat, using execution
+frequency as a proxy for thermal energy.  It logs the hot-word count, the
+stale-word ratio, and the mean heat, providing the raw signal needed to assess
+whether the linear decay function is removing cache pollution at the right rate.
+A follow-on phase will compare the stale-word ratio trend over consecutive ticks
+to decide whether a different decay function (exponential, logarithmic) would
+converge faster.
+
+\subsubsection{Integration into the Execution Path}
+
+Two integration modes are supported.
+
+\textbf{Synchronous (current default).}  The main interpreter increments an
+execution counter and fires \texttt{vm\_tick()} every \texttt{HEARTBEAT\_FREQUENCY}
+word executions:
+
+\begin{lstlisting}[language=C]
+if (++vm->execution_count % HEARTBEAT_FREQUENCY == 0)
+    vm_tick(vm);
+\end{lstlisting}
+
+This adds negligible latency as long as plugin work remains lightweight.
+
+\textbf{Background thread (future).}  When \texttt{HEARTBEAT\_THREAD\_ENABLED=1},
+a POSIX thread wakes at \texttt{HEARTBEAT\_INTERVAL\_MS} and calls
+\texttt{vm\_tick()} independently of the execution hot-path.  State shared
+between threads must be protected by \texttt{vm->tuning\_lock}.
+
+\subsubsection{Configuration Knobs}
+
+\begin{tabular}{lll}
+\toprule
+Knob & Default & Meaning \\
+\midrule
+\texttt{HEARTBEAT\_FREQUENCY}        & 256   & Executions between ticks \\
+\texttt{WINDOW\_TUNING\_FREQUENCY}   & 1000  & Ticks between window-tuner calls \\
+\texttt{SLOPE\_VALIDATION\_FREQUENCY}& 5000  & Ticks between decay validations \\
+\texttt{HEARTBEAT\_THREAD\_ENABLED}  & 0     & 1 = background thread \\
+\texttt{HEARTBEAT\_THREAD\_INTERVAL\_MS} & 100 & Thread wake interval (ms) \\
+\bottomrule
+\end{tabular}
+
+\subsubsection{Code Locations}
+
+\begin{itemize}
+  \item \texttt{include/vm.h} --- \texttt{HeartbeatState} struct; \texttt{vm\_tick()} prototype
+  \item \texttt{src/vm.c} --- \texttt{vm\_tick()} dispatcher; execution-path integration
+  \item \texttt{src/physics\_pipelining\_metrics.c} --- \texttt{vm\_tick\_window\_tuner()}
+  \item \texttt{src/physics\_metadata.c} --- \texttt{vm\_tick\_slope\_validator()}
+\end{itemize}

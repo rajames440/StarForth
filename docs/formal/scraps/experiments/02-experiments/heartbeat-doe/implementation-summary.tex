@@ -1,0 +1,101 @@
+%% SCRAP: experiments/02-experiments/heartbeat-doe/implementation-summary
+%% SOURCE: docs/working/experiments/02-experiments/heartbeat-doe/implementation-summary.md
+%% STATUS: WORKING
+%% FITS: experiments/ch-heartbeat
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Heartbeat DoE — Implementation Summary}
+\label{sec:heartbeat-doe-implementation}
+
+\subsection{Deliverables}
+
+The Stage~2 heartbeat DoE implementation produced four artefacts:
+
+\begin{enumerate}
+  \item \textbf{Design document} — experiment design with theory, metrics
+        schema, and R analysis template.
+  \item \textbf{DoE run script} — \texttt{run\_factorial\_doe\_with\_heartbeat.sh};
+        randomised matrix, incremental builds, per-run logging.
+  \item \textbf{R analysis script} — \texttt{analyze\_heartbeat\_stability.R};
+        stability ranking, six visualisations, golden-configuration selection.
+  \item \textbf{Execution guide} — pre-execution checklist, step-by-step
+        instructions, metric interpretation, troubleshooting.
+\end{enumerate}
+
+\subsection{Heartbeat Metrics Schema}
+
+The \texttt{DoeMetrics} struct is extended with 20 heartbeat-specific fields,
+raising the per-run CSV column count from 38 to approximately 60.
+Key fields:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Field & Type & Purpose & Target \\
+\midrule
+\texttt{total\_heartbeat\_ticks} & uint64 & Ticks during run & --- \\
+\texttt{tick\_interval\_mean\_ns} & double & Mean interval & $\approx 1$~ms \\
+\texttt{tick\_interval\_cv} & double & Jitter (CV) & $< 0.15$ \\
+\texttt{tick\_outlier\_ratio} & double & Fraction $> 3\sigma$ & $< 0.02$ \\
+\texttt{load\_interval\_correlation} & double & Load--heartrate coupling & $> 0.75$ \\
+\texttt{response\_latency\_ticks} & double & Latency to respond to load & $< 50$ \\
+\texttt{settling\_time\_ticks} & double & Ticks to 10\% band & $< 1{,}000$ \\
+\texttt{overall\_stability\_score} & double & Composite 0--100 & $> 75$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Composite Stability Score}
+
+The overall stability score combines three components equally:
+
+\begin{equation}
+  S = \tfrac{1}{3}\bigl(S_{\text{jitter}} + S_{\text{convergence}}
+      + S_{\text{coupling}}\bigr)
+\end{equation}
+
+where $S_{\text{jitter}} = 100 - \mathrm{CV} \times 100$,
+$S_{\text{coupling}} = \rho_{\text{load,interval}} \times 100$, and
+$S_{\text{convergence}}$ is normalised from the convergence-rate measurement.
+Target: $S \geq 75$ for production use.
+
+\subsection{Execution Flow}
+
+\begin{enumerate}
+  \item The run script generates a randomised test matrix (250 runs) and
+        prints it for review before prompting for confirmation.
+  \item For each run: build the configuration (cached if unchanged), execute
+        StarForth with \texttt{--doe-experiment}, collect heartbeat and
+        performance metrics, append to CSV.
+  \item On completion, the R analysis script loads the CSV, computes
+        per-configuration stability rankings, runs pairwise $t$-tests for
+        significance, generates six visualisations, and prints the golden
+        configuration recommendation.
+\end{enumerate}
+
+\subsection{R Analysis Outputs}
+
+\begin{lstlisting}[language=bash]
+stability_rankings.csv                    # Per-configuration metric summary
+01_stability_scores.png                   # Boxplot ranking
+02_jitter_control.png                     # CV comparison
+03_convergence_speed.png                  # Convergence-rate comparison
+04_load_coupling.png                      # Load-response strength
+05_metrics_heatmap.png                    # All metrics normalised
+06_tradeoff_jitter_vs_convergence.png     # Trade-off visualisation
+\end{lstlisting}
+
+\subsection{Golden Configuration Criteria}
+
+The golden configuration is identified by the R analysis script as the
+configuration with the highest composite stability score, subject to
+$\rho_{\text{load-heartrate}} \geq 0.75$ and a significance threshold of
+$p < 0.05$ on the pairwise $t$-test against the second-ranked configuration.
+
+Once identified, the golden configuration is locked into the build system
+and used as the baseline for all subsequent experiments and as the default
+physics configuration for MamaForth production builds.
+
+%% TODO(bob): confirm whether Stage 2 experiment was executed and results
+%%   archived; update STATUS to HISTORICAL when completed
+
