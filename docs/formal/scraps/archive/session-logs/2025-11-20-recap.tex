@@ -1,0 +1,80 @@
+%% SCRAP: archive/session-logs/2025-11-20-recap
+%% SOURCE: docs/working/archive/session-logs/2025-11-20-recap.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Session Recap: 20 November 2025}
+\subsection*{From Factorial DoE to Multivariate Dynamics Analysis}
+
+\textbf{Duration:} approximately 90 minutes.
+\textbf{Outcome:} complete paradigm shift documented; ready for code
+implementation.
+\textbf{Commits:} 3 (design documents plus executive summary).
+
+\subsection{Summary of Paradigm Shift}
+
+Work began with the goal of running the DoE with heartbeat data under a
+five-configuration, fifty-runs-per-configuration plan (250 total runs).
+Three sequential corrections, each driven by deeper understanding of the
+system, produced a fundamentally different experimental framework.
+
+\textbf{Correction~1.} The heartbeat tick interval (\texttt{tick\_ns}) is
+not a fixed constant but a tuning variable modulated by the inference engine
+in response to load. The experiment therefore measures load-responsive
+adaptation, not fixed-interval jitter.
+
+\textbf{Correction~2.} 250 runs are statistically insufficient for
+correlation analysis. The revised plan calls for 150 runs per configuration,
+for a total of 750 runs (5 configurations $\times$ 150 runs). This provides
+adequate statistical power for correlation analysis between metrics.
+
+\textbf{Core insight.} Each metric in the feedback system is simultaneously
+a signal and a feedback input. The seven feedback loops form a coupled
+dynamical system in which every metric influences the future state of every
+other metric. The experimental paradigm therefore shifts from factorial
+analysis of main effects to multivariate dynamical systems analysis:
+measuring the full trajectory shape of each configuration through
+metric-space rather than summarising it by means.
+
+\subsection{Design Documents Produced}
+
+\textbf{MULTIVARIATE\_DYNAMICS\_DESIGN.md (622 lines).}
+Defines \texttt{HeartbeatTickSnapshot} (per-tick capture), \\
+\texttt{RunStabilityFingerprint} (per-run summary vector), and
+\texttt{ConfigurationFingerprint} (per-configuration aggregation). Provides
+complete CSV schemas for three output levels, a five-phase analysis pipeline,
+and references to control theory and systems-biology literature.
+
+\textbf{HEARTBEAT\_INSTRUMENTATION\_PLAN.md (350+ lines).}
+Specifies a minimal-overhead circular buffer (115\,ns per tick, 0.01\%
+overhead). Defines delta metric tracking, integration points in
+\texttt{vm.c} (\texttt{vm\_init}, \texttt{vm\_cleanup},
+\texttt{vm\_heartbeat\_run\_cycle}), and a CSV export function. Addresses
+storage and sampling for up to 75~million tick rows.
+
+\textbf{PHASE\_2\_EXECUTIVE\_SUMMARY.md (267 lines).}
+Provides stakeholder-level clarity on the paradigm shift, the seven-metric
+feedback web, the three measurement scales (tick, run, configuration), and
+the golden-configuration selection criteria (five weighted dimensions).
+
+\subsection{Key Insights}
+
+\begin{enumerate}
+  \item The heartbeat is an active control variable, not a passive clock.
+  \item Metrics must be measured simultaneously as a coupled system;
+    isolation is not possible.
+  \item 750 runs are required for correlation power; the experiment therefore
+    runs six to eight hours.
+  \item The optimal configuration is not the one with the highest mean
+    performance but the one with the deepest attractor basin, fastest
+    convergence, tightest load coupling, and lowest jitter.
+\end{enumerate}
+
+\subsection{Implementation Checklist at Session End}
+
+Structs and data definitions were complete. Integration points in
+\texttt{vm.c} were specified. The analysis pipeline (convergence detection,
+coefficient of variation, correlation matrix, spectral decomposition,
+composite stability scoring) was designed. Seven C-level code changes and
+three R/Python analysis components remained unimplemented.

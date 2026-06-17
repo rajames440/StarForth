@@ -1,0 +1,202 @@
+%% SCRAP: papers/NEGATIVE_RESULTS
+%% SOURCE: docs/working/papers/NEGATIVE_RESULTS.md
+%% STATUS: CURRENT
+%% FITS: ssrn/ch-claims, vol3-research/ch-formal-claims
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Negative Results: Documented Failure Modes}
+\label{sec:negative-results}
+
+Systems that never fail are artifacts, not scientific results. This section
+documents 15 failure modes identified through deliberate adversarial testing.
+These are not accidental discoveries; experiments were designed to break the
+system. The failure modes bound the system's applicability and constitute
+essential context for interpreting the positive claims.
+
+A concise summary table appears at the end of this section
+(\S\ref{sec:failure-summary}).
+
+\subsection{Workload-Dependent Failures}
+
+\paragraph{Failure mode 1: random execution paths.}
+A workload in which control flow depends on a nanosecond timer
+(\texttt{TIMER @ 2 MOD}) produces non-reproducible execution sequences.
+Cache hit rate CV rises to approximately 15\%; execution heat distributions
+are non-reproducible; the system oscillates without converging. Root cause:
+the rolling window captures different execution sequences on each run, giving
+the adaptive mechanisms a moving target. No mitigation exists; this is an
+intentional scope boundary. Deterministic adaptation requires deterministic
+workloads.
+
+\paragraph{Failure mode 2: I/O-bound workloads.}
+A workload dominated by file I/O (1{,}000 iterations of
+\texttt{OPEN-FILE~/ READ-FILE / CLOSE-FILE}) achieves at most 2\%
+improvement, within margin of error. The adaptive mechanisms add approximately
+5\% overhead, producing net degradation. Root cause: the bottleneck is disk
+latency, not dictionary lookup; I/O timing variance swamps algorithmic
+determinism. Mitigation (not yet implemented): detect I/O-bound workloads
+and disable adaptive loops.
+
+\paragraph{Failure mode 3: short programs.}
+Programs with fewer than approximately 1{,}000 word executions provide
+insufficient data for statistical inference. Levene's test requires minimum
+sample sizes; exponential regression on three data points is meaningless.
+Overhead exceeds benefit. Mitigation: disable adaptive loops when
+\texttt{execution\_count~<~THRESHOLD} (suggested: 10{,}000).
+
+\paragraph{Failure mode 4: adversarial workloads.}
+A workload that executes each word exactly once in rotation produces a flat
+frequency distribution---the Zipf-law assumption is violated. The hot-words
+cache is useless (all words equally ``hot''); performance improvement is 0\%.
+Mitigation: detect flat distributions via entropy measurement and disable the
+hot-words cache.
+
+\subsection{Parameter-Dependent Failures}
+
+\paragraph{Failure mode 5: window size too small.}
+Setting \texttt{ROLLING\_WINDOW\_SIZE = 10} (default: 4{,}096) produces
+unstable variance inflection detection ($R^2 < 0.5$) and convergence
+oscillation. Statistical noise dominates the signal. Mitigation: enforce a
+minimum window size of at least 1{,}024 entries.
+
+\paragraph{Failure mode 6: decay slope too steep.}
+Setting $\lambda = 10.0$ (default: ${\approx}0.001$) causes cache thrashing:
+words are promoted and immediately demoted, the system never reaches steady
+state, and performance degrades below baseline. Root cause: steep decay erases
+long-term frequency information, making the cache reactive to noise rather
+than signal. Mitigation: bound decay slope to $\lambda \in [10^{-4}, 10^{-2}]$.
+
+\paragraph{Failure mode 7: cache size mismatch.}
+Setting \texttt{HOTWORDS\_CACHE\_SIZE = 1} (default: 16) reduces cache hit
+rate to approximately 5\% and performance improvement to approximately 2\%.
+Root cause: the test workload contains 10--15 hot words; a cache of 1 entry
+captures only the single hottest. Mitigation: auto-tune cache size based on
+workload entropy.
+
+\subsection{Environmental Failures}
+
+\paragraph{Failure mode 8: thermal throttling.}
+Sustained CPU load sufficient to trigger thermal throttling increases runtime
+CV to 90\raisebox{0.5ex}{+}\% and extends the convergence window from
+${\approx}30$ to ${\approx}40$ runs. Cache decisions remain at 0\% CV:
+timing does not affect algorithmic choices. Root cause: wall-clock-based
+decay becomes inconsistent when the CPU reduces its clock frequency.
+Mitigation: use CPU cycle counters instead of wall-clock timers for
+decay application.
+
+\paragraph{Failure mode 9: aggressive OS preemption.}
+Running with 32 concurrent CPU-saturating background processes pushes runtime
+CV above 150\% and may prevent convergence if the process is preempted too
+frequently for decay to apply correctly. Cache decisions remain at 0\% CV.
+Mitigation: pin the process to an isolated core and set real-time priority.
+
+\subsection{Architectural Failures}
+
+\paragraph{Failure mode 10: cross-architecture performance difference.}
+Cache decisions are bit-identical across x86\_64 (Intel Xeon) and AArch64
+(ARM Cortex) because the algorithm is purely arithmetic. Convergence
+\emph{rate} differs---Intel achieves approximately 25\% improvement, ARM
+approximately 18\%---because dictionary lookup has a different relative cost
+on each architecture. This is expected behavior, not a failure of
+determinism. No mitigation is needed; cross-architecture performance
+comparisons require hardware-normalized baselines.
+
+\paragraph{Failure mode 11: floating-point non-determinism (hypothetical).}
+IEEE-754 arithmetic is not used anywhere in the adaptive runtime; \Qtype\
+fixed-point arithmetic provides bit-identical results across architectures
+and compilers. This entry documents why floating-point was avoided: FMA
+instructions, compiler reordering, and denormal handling all introduce
+non-determinism that would violate the 0\% CV claim.
+
+\subsection{Implementation Bugs Resolved}
+
+\paragraph{Bug 1: heartbeat thread race condition (fixed).}
+An unsynchronized shared-state access between the heartbeat thread and the
+main interpreter thread caused segmentation faults in fewer than 1\% of
+runs. Fix: added a mutex around \texttt{vm\_tick()} (commit
+\texttt{8133787}). The experimental data was collected after this fix.
+
+\paragraph{Bug 2: integer overflow in execution heat (fixed).}
+32-bit frequency counters overflowed on long-running programs, causing
+execution frequency to reset to zero unexpectedly. Fix: counters promoted
+to \texttt{uint64\_t} (commit \texttt{c0ec82d}).
+
+\subsection{Statistical Failures}
+
+\paragraph{Failure mode 12: insufficient sample size.}
+With $N = 5$ trials instead of the $N = 30$ used in the experiments, the
+Central Limit Theorem does not apply; confidence intervals are unreliable;
+$t$-test normality assumptions are violated; statistical power falls below
+50\%. Mitigation: require $n \geq 30$ for all experiments.
+
+\paragraph{Failure mode 13: multiple testing without correction.}
+Testing 100 hypotheses at $\alpha = 0.05$ without Bonferroni correction
+yields approximately 5 spurious positives by chance. The formal claim table
+tests 5 primary claims; corrected $\alpha = 0.05 / 5 = 0.01$. All reported
+$p$-values remain significant under this correction.
+
+\subsection{Generalization Failures}
+
+\paragraph{Failure mode 14: compiled languages.}
+The adaptive runtime is an interpreter optimization. Ahead-of-time compilers
+already perform static frequency analysis and hot-code optimization without
+runtime overhead; the rolling window and heartbeat infrastructure would add
+cost with no benefit. This is a scope boundary, not a bug.
+
+\paragraph{Failure mode 15: very large programs.}
+Programs with 100{,}000\raisebox{0.5ex}{+} dictionary entries would require
+sorting a 100K-entry array on every heartbeat tick and maintaining a
+$100\text{K} \times 100\text{K}$ transition matrix---both computationally
+prohibitive. Scalability at this scale is unvalidated; it is marked as
+future work.
+
+\subsection{Summary of Failure Modes}
+\label{sec:failure-summary}
+
+\begin{table}[h]
+\centering
+\caption{Failure mode summary. All failures are predictable and bounded.}
+\label{tab:failure-modes}
+\begin{tabular}{lll}
+\toprule
+\textbf{Mode} & \textbf{Root cause} & \textbf{Mitigation} \\
+\midrule
+Random execution paths & Non-deterministic workload & Detect and disable \\
+I/O-bound program & Wrong bottleneck & Profile first \\
+Short program & Insufficient data & Minimum execution threshold \\
+Adversarial (flat) workload & No frequency skew & Detect and disable cache \\
+Window size too small & Insufficient context & Enforce minimum: 1{,}024 \\
+Decay too steep & Premature forgetting & Bound $\lambda \in [10^{-4}, 10^{-2}]$ \\
+Cache too small & Mismatched capacity & Auto-tune to workload entropy \\
+Thermal throttling & Inconsistent clock & Use cycle counters \\
+OS preemption & Context switches & Isolate core, RT priority \\
+Cross-architecture & Hardware differences & Expected; document \\
+Floating-point (hypothetical) & IEEE-754 rounding & Fixed-point throughout \\
+Small sample ($N < 30$) & CLT does not apply & Require $n \geq 30$ \\
+Multiple testing & Inflated $\alpha$ & Bonferroni correction \\
+Compiled languages & Wrong paradigm & Out of scope \\
+Massive programs & Untested regime & Future work \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Lessons}
+
+Five lessons emerge from the failure modes:
+
+\begin{itemize}
+  \item Determinism requires deterministic inputs: random workloads break all
+    adaptive guarantees.
+  \item Statistical inference requires sufficient data: short programs and
+    small sample sizes produce meaningless results.
+  \item Optimization requires locality: workloads with flat frequency
+    distributions have nothing to cache.
+  \item Architecture matters: floating-point and thermal effects are real
+    engineering constraints, not theoretical concerns.
+  \item Scope boundaries make positive results credible: a system claiming
+    unlimited applicability invites justified skepticism.
+\end{itemize}
+
+The claims in \S\ref{sec:formal-claims} are scoped to CPU-bound, deterministic,
+long-running FORTH programs. Outside that scope, the system fails
+predictably and in ways documented above.
