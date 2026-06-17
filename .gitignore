@@ -6,6 +6,9 @@ out/
 # LaTeX intermediates are excluded; PDFs are tracked with git add -f
 docs/formal/build/**
 !docs/formal/build/**/*.pdf
+# Doxygen generated output (PDF artifact committed separately)
+docs/formal/doxygen/
+docs/api/
 
 # IDE crap
 .idea/
