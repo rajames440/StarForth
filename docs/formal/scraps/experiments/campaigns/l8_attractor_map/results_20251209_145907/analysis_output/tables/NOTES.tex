@@ -1,0 +1,246 @@
+%% SCRAP: experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/tables/NOTES
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/tables/NOTES.md
+%% STATUS: CURRENT
+%% FITS: vol1-vm-physics/ch-overview, vol2-kernel/ch-overview, vol3-research/ch-overview
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{StarForth, LithosAnanke, and StarshipOS: A Technical Overview}
+
+\textit{Author: Robert A. James. Date: 9 April 2026. Status: Working Document.}
+
+\subsection{StarForth}
+
+\subsubsection{What It Is}
+
+StarForth is a pure C99 FORTH-79 virtual machine with no libc dependencies.
+It is self-adaptive: it observes its own execution behavior and continuously
+adjusts internal parameters to maintain a conservation invariant called K$\equiv$1.0.
+It runs on x86\_64, aarch64, and RISC-V.
+
+\subsubsection{Why FORTH}
+
+FORTH is correct for this work for reasons beyond familiarity. FORTH words
+are discrete, classifiable, observable computational units — each word has
+a definite stack-effect signature, each word consumes a known quantity of
+computational energy, each word is a particle with measurable properties.
+This is the foundation of StarForth's self-adaptive behavior.
+
+\subsubsection{The Primitive Taxonomy}
+
+StarForth implements 23 word modules (18 FORTH-79 standard, 5 StarForth
+extensions). Every primitive word carries quantum-analog properties derived
+from its stack-effect signature:
+
+\begin{description}
+  \item[Spin.] Derived from net stack-effect arithmetic. A word consuming
+        two values and producing one has spin $-\tfrac{1}{2}$; these values
+        fall directly from \texttt{(~n~n~--~n~)} notation, as half-integer
+        spin falls from the Dirac equation.
+  \item[Charge.] The net stack delta. Charge conservation across a complete
+        program means the program is stack-balanced.
+  \item[Heat.] Execution frequency and recency. Heat decays over time,
+        analogous to radioactive decay.
+  \item[Mass.] Bytecode footprint of the word definition.
+  \item[Color.] Binding state: white words are fully resolved; colored words
+        carry unresolved forward references.
+\end{description}
+
+Three of these quantities — spin, charge, and color — behave as genuine
+conservation laws across well-formed programs. This is a structural property
+of the system discovered empirically and subsequently formalized in
+Isabelle/HOL.
+
+\subsubsection{The SSM and James Law}
+
+The SSM (Steady State Machine) is the self-adaptive core of StarForth.
+It monitors execution behavior through instrumented subsystems and
+continuously adjusts internal parameters to maintain K$\equiv$1.0.
+
+%% PATENT: James Law (K≡1.0) and the SSM adaptive mechanism are
+%% patent-adjacent. Do not draft claims here.
+
+\textbf{James Law} ($K \equiv 1.0$) is a conservation invariant: the
+normalized total execution energy of the StarForth universe is conserved
+at unity across all configurations and workloads. Validation basis:
+38{,}400 experimental runs spanning 128 factorial parameter configurations,
+CV below 1\%, published on SSRN (abstract 5930134).
+
+The SSM operates through four mechanisms:
+
+\begin{description}
+  \item[Rolling Window of Truth (RWOT).] A sliding observation window
+        encoding five observables: word identity, prev$\to$word transition,
+        instruction pointer position, execution heat, and causal stack depth.
+        Updated at heartbeat tick intervals, making it a coarse-grained
+        lattice observable.
+  \item[Adaptive Heartbeat.] A self-adjusting timer governing when the SSM
+        evaluates system state and adjusts parameters. The system's intrinsic
+        rhythm.
+  \item[Physics Hooks.] Every word execution in the inner interpreter loop
+        is bracketed by \texttt{physics\_pre\_execute} and
+        \texttt{physics\_post\_execute} calls, updating heat, decay, and
+        window measurements.
+  \item[Decay.] Execution heat decays between heartbeat ticks, keeping the
+        observable window relevant to current rather than historical behavior.
+\end{description}
+
+\subsubsection{The Phase Space and Attractor}
+
+Six workload types have been studied experimentally: STABLE, VOLATILE,
+TRANSITION, TEMPORAL, DIVERSE, and OMNI. Each produces a distinct trajectory
+in phase space. All trajectories converge to the same attractor: K$\equiv$1.0.
+Phase-space portrait visualizations confirm attractor convergence across all
+workload types on all three target architectures.
+
+\subsubsection{The Manifold Navigation Controller (Theoretical)}
+
+Given a bounded system with a known conservation invariant and predictable
+attractor manifold, a controller can:
+
+\begin{enumerate}
+  \item Identify the system's current phase-space position using three
+        observables: RWOT (position), adaptive heartbeat metadata (velocity),
+        and spin-class transition rate (acceleration — requires instrumentation).
+  \item Compute a perturbance vector sufficient to transport the system from
+        its current manifold to an arbitrary target manifold.
+  \item Inject the perturbance — the burn — and release.
+  \item Allow the system to coast back to K$\equiv$1.0 under its own restoring
+        force.
+\end{enumerate}
+
+The controller fires once and releases. The conservation invariant guarantees
+the return journey. This orbital-mechanics model scales from the word level
+through the VM, OS, FPGA, and prospectively to custom silicon.
+
+---
+
+\subsection{LithosAnanke}
+
+\subsubsection{What It Is}
+
+LithosAnanke is a bare-metal operating system for x86\_64, currently at
+milestone M7 (VM integration). It boots via UEFI, manages physical and
+virtual memory, handles interrupts via IDT/APIC, maintains a timer, manages
+a heap, and hosts the StarForth VM as its primary computational substrate.
+Written in C99 with no external dependencies.
+
+\subsubsection{The Capsule System}
+
+The primary organizational unit is the \emph{capsule}: a content-addressed,
+64-byte cache-line-aligned descriptor. A capsule's ID is its content hash.
+Identity is content: two capsules with identical content have identical IDs.
+Modification produces a new capsule with a new ID. Capsules are immutable by
+design; mutation produces new capsules.
+
+\subsubsection{Component Architecture}
+
+\begin{description}
+  \item[Hera.] The foundational VM and heartbeat. The system's ground state.
+  \item[Hermes.] Message entropy and TTL decay. Manages the message-passing
+        fabric, monitors message lifecycle, and reaps expired messages. The
+        natural home of the perturbance controller extension.
+  \item[Artemis.] Persistence and event sourcing. Manages the capsule store,
+        maintains the event log, and handles durable state.
+\end{description}
+
+Components communicate exclusively through message passing. There is no
+shared mutable state between components.
+
+\subsubsection{Authentication and Identity}
+
+LithosAnanke implements a hardware-rooted authentication model with no
+usernames and no passwords. Identity is carried on a physical thumb drive
+containing two raw block partitions.
+
+Access control is governed by temporal ACL grants that decay via the same
+Hermes TTL mechanism that governs message lifetime. The default state of
+the permission system is no access. Decay to zero requires no explicit
+revocation.
+
+\subsubsection{Normalized Virtual Block Space}
+
+From any VM's perspective, LithosAnanke presents a single contiguous block
+address space. Physical origin — local drive, system hardware, or remote
+cloud mount — is transparent. Blocks appear as grants are issued; blocks
+vanish as grants decay. Security is expressed as address-space geometry.
+
+\subsubsection{The Three UX Tiers}
+
+\begin{description}
+  \item[CLI.] The traditional FORTH terminal interface. Full power, zero
+        overhead. The REPL is operational.
+  \item[GUI.] A wireframe soundstage rendered from rasterized vector
+        graphics. Words are physical objects; the user assembles colon
+        definitions spatially. The FORTH text is always visible underneath.
+  \item[VR.] The full holodeck realization. The user stands inside the phase
+        space. Words have mass, spin, heat, and charge as observable
+        properties. Manifold navigation is literally navigable space.
+\end{description}
+
+All three tiers are windows into identical underlying mechanics.
+
+---
+
+\subsection{StarshipOS}
+
+\subsubsection{The SSPU}
+
+The SSPU (Steady State Processing Unit) is a novel processor architecture
+extending the StarForth/SSM work into hardware. It communicates entirely via
+a message-passing fabric called Gefyra. There are no traditional buses.
+Targeted for initial FPGA implementation on a Digilent Genesys ZU
+(Zynq UltraScale+).
+
+%% PATENT: SSPU architecture and Gefyra fabric are patent-adjacent.
+%% Provisional patent conversion deadline: December 26, 2026.
+%% Do not draft claims here.
+
+\subsubsection{Milestone Status}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Milestone & Description & Status \\
+\midrule
+M0 & UEFI boot                        & Complete \\
+M1 & Physical memory manager          & Complete \\
+M2 & Virtual memory manager           & Complete \\
+M3 & IDT/APIC interrupt handling       & Complete \\
+M4 & Timer                            & Complete \\
+M5 & Heap                             & Complete \\
+M6 & --                               & Complete \\
+M7 & VM integration                   & Active frontier \\
+-- & Manifold Navigation Controller   & Theoretical \\
+-- & SSPU FPGA implementation         & Planned (Genesys ZU) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Design Philosophy}
+
+The recurring pattern in this architecture is the elimination of problem
+domains rather than their simplification. No scheduler, no traditional memory
+manager, no username/password authentication, no logout ceremony, no
+coordination layer for distributed state — each elimination is a deliberate
+architectural decision. The question at each design point was not ``how do we
+implement this?'' but ``do we need this at all?''
+
+\subsubsection{Key Terms}
+
+\begin{center}
+\begin{tabular}{lp{8cm}}
+\toprule
+Term & Definition \\
+\midrule
+K$\equiv$1.0 & James Law — conservation invariant of normalized execution energy \\
+SSM   & Steady State Machine — self-adaptive core of StarForth \\
+RWOT  & Rolling Window of Truth — coarse-grained phase-space observable \\
+SSPU  & Steady State Processing Unit — novel message-passing processor \\
+Gefyra & Message-passing fabric connecting SSPU processing elements \\
+Capsule & Content-addressed, 64-byte aligned immutable descriptor \\
+Hera  & Foundational VM and heartbeat component \\
+Hermes & Message entropy, TTL decay, lifecycle management \\
+Artemis & Persistence and event sourcing \\
+\bottomrule
+\end{tabular}
+\end{center}

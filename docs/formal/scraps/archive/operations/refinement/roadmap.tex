@@ -1,0 +1,25 @@
+%% SCRAP: archive/operations/refinement/roadmap
+%% SOURCE: docs/working/archive/operations/refinement/roadmap.adoc
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice; adoc syntax translated
+
+\section*{C\,$\leftrightarrow$\,Isabelle Refinement Roadmap (Historical)}
+
+A five-phase refinement roadmap, estimated at six to eight months, was drafted
+to guide a systematic C\,$\leftrightarrow$\,Isabelle correspondence effort:
+
+\begin{itemize}
+  \item \textbf{Phase 1}: Annotate and prove \texttt{vm.c} core interpreter loop.
+  \item \textbf{Phase 2}: Extend to utility subsystems (memory, I/O, logging).
+  \item \textbf{Phase 3}: Build a proof-aware test harness for regression detection.
+  \item \textbf{Phase 4}: Cover the approximately 200 FORTH primitive word implementations.
+  \item \textbf{Phase 5}: Ongoing maintenance and extension as new words are added.
+\end{itemize}
+
+This roadmap was not followed. The actual formal verification program produced
+19 standalone Isabelle/HOL theory files organized by feedback loop and word
+category, subsequently expanded to 24 files with the ACL proof suite. The
+approach differs fundamentally from the inline-annotation methodology this
+roadmap proposed. This document is retained as a record of the design path not
+taken.

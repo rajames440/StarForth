@@ -1,0 +1,110 @@
+%% SCRAP: architecture/03-architecture/heartbeat-system/implementation-plan
+%% SOURCE: docs/working/architecture/03-architecture/heartbeat-system/implementation-plan.md
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-heartbeat
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Implementation Plan: Heartbeat Rate Logging}
+
+This plan captures the \lstinline{tick_ns} trajectory---the heartbeat rate as
+it actually changes during execution---so that each configuration can be
+analyzed for how well it modulates heartrate in response to workload. The work
+was scoped as a prerequisite to the Phase 2 DoE and touches four files.
+
+\subsection{Data Structures}
+
+A per-sample record and a buffer carried on the VM hold the trajectory.
+
+\begin{lstlisting}[language=C]
+#define HEARTBEAT_RATE_SAMPLE_MAX 100000
+
+typedef struct {
+    uint64_t tick_number;            /* absolute tick count */
+    uint64_t tick_ns;                /* heartbeat rate (ns) */
+    uint64_t workload_ops_this_tick; /* dictionary lookups this tick */
+    uint64_t timestamp_ns;           /* wall-clock timestamp */
+    uint64_t hot_word_count;         /* physics state */
+    uint64_t total_heat;             /* physics state */
+} HeartbeatRateSample;
+
+/* in VM */
+HeartbeatRateSample *heartbeat_rate_samples;
+uint64_t            heartbeat_rate_sample_count;
+uint64_t            workload_ops_current_tick;
+\end{lstlisting}
+
+The buffer is allocated with \lstinline{calloc} in \lstinline{vm_init()} and
+released in \lstinline{vm_cleanup()}.
+
+\subsection{Capturing a Sample Per Tick}
+
+A lightweight helper writes one sample per tick, halting once the buffer is
+full so sampling never overruns its allocation.
+
+\begin{lstlisting}[language=C]
+static void capture_heartbeat_rate_sample(VM *vm, uint64_t tick_ns,
+                                          uint64_t workload_ops)
+{
+    if (!vm || !vm->heartbeat_rate_samples) return;
+    if (vm->heartbeat_rate_sample_count >= HEARTBEAT_RATE_SAMPLE_MAX) return;
+
+    HeartbeatRateSample *s =
+        &vm->heartbeat_rate_samples[vm->heartbeat_rate_sample_count];
+    s->tick_number            = vm->heartbeat.tick_count;
+    s->tick_ns                = tick_ns;
+    s->workload_ops_this_tick = workload_ops;
+    s->timestamp_ns           = platform_monotonic_ns();
+    s->hot_word_count         = vm->hot_word_count_at_check;
+    s->total_heat             = vm->total_heat_at_last_check;
+    vm->heartbeat_rate_sample_count++;
+}
+\end{lstlisting}
+
+The interpreter increments \lstinline{workload_ops_current_tick} on each
+successful dictionary lookup; \lstinline{vm_heartbeat_run_cycle()} latches and
+resets that counter per tick; and \lstinline{heartbeat_thread_main()} calls the
+capture helper immediately before sleeping for \lstinline{tick_ns}.
+
+\subsection{Derived Metrics}
+
+The DoE metrics structure gains heartrate fields covering rate statistics
+(mean frequency, standard deviation, coefficient of variation, min/max
+interval, modulation range), load response (correlation, response direction,
+adaptation and settling latency), convergence (convergence time, a converged
+flag, oscillation amplitude), and two composite scores for responsiveness and
+stability.
+
+The analysis routine \lstinline{analyze_heartbeat_rate_trajectory()} walks the
+captured samples to compute these. Frequency is
+$f_{\text{Hz}} = 10^{9} / \mathtt{tick\_ns}$. The coefficient of variation is
+
+\begin{equation}
+  \mathrm{CV} = \frac{\sigma_{f}}{\bar{f}},
+\end{equation}
+
+and the headline figure is the Pearson correlation between per-tick workload
+and heartrate. A correlation above a small positive threshold marks the
+configuration as responding in the desired direction. The responsiveness score
+rewards strong correlation and penalizes high CV; the stability score rewards
+low CV and convergence. \Qtype{} fixed-point is used elsewhere in the runtime,
+but this offline analysis runs in floating point.
+
+\subsection{CSV Schema and Downstream Analysis}
+
+The CSV writers gain columns for the new heartrate fields so each run emits one
+augmented row. A revised R analysis then ranks configurations primarily by mean
+load--heartrate correlation, blended with the responsiveness and stability
+scores into a single golden score, and renders correlation and responsiveness
+box plots across configurations.
+
+\subsection{Build and Verification}
+
+After editing \lstinline{include/vm.h}, \lstinline{include/doe_metrics.h},
+\lstinline{src/vm.c}, and \lstinline{src/doe_metrics.c}, the build is
+\lstinline{make clean && make fastest}. Verification confirms a clean compile,
+a non-zero sample count after a run, the presence of the new CSV columns,
+computed correlation metrics, and an R ranking ordered by load response.
+
+%% TODO(bob): confirm whether this logging was implemented as written, or
+%% superseded by the heartbeat_export.c / HeartbeatTickSnapshot path; the two
+%% plans overlap and status should be reconciled.

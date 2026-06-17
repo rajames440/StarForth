@@ -1,0 +1,95 @@
+%% SCRAP: architecture/03-architecture/heartbeat-system/segfault-analysis
+%% SOURCE: docs/working/architecture/03-architecture/heartbeat-system/segfault-analysis.md
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-heartbeat
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Heartbeat Segfault: Root Cause and Repair}
+
+A race condition between the main VM thread and the heartbeat worker thread
+corrupted the \lstinline{RollingWindowOfTruth} structure. Both threads wrote to
+shared state without synchronization, producing index corruption, concurrent
+writes to the execution-history array, dangling snapshot pointers, and
+ultimately a segmentation fault under stress tests exceeding ten thousand
+heartbeat cycles. The fault was systematic rather than incidental: any unlocked
+access to \lstinline{rolling_window_record_execution()} would reproduce it.
+
+\subsection{The Race}
+
+The main thread records executions from the inner interpreter while the
+heartbeat thread services the same window:
+
+\begin{lstlisting}[language=C]
+/* main VM thread, inner interpreter */
+rolling_window_record_execution(&vm->rolling_window, word_id);
+
+/* heartbeat worker thread */
+rolling_window_service(&vm->rolling_window);
+\end{lstlisting}
+
+The record routine updated \lstinline{window_pos}, the
+\lstinline{execution_history} array, \lstinline{total_executions}, the warm-up
+flag, the snapshot-pending flag, and the adaptive-check accumulator---all
+without a lock.
+
+\subsection{Failure Modes}
+
+\begin{itemize}
+  \item \textbf{Index corruption.} Both threads read the same
+        \lstinline{window_pos}, write the same slot (one overwriting the
+        other), and each increment the index, losing one execution and
+        desynchronizing the position.
+  \item \textbf{Snapshot corruption.} A double-buffer copy in progress on one
+        thread reads partially-modified history as another thread records,
+        yielding a torn snapshot.
+  \item \textbf{Dangling pointer.} A snapshot view held on one thread is
+        invalidated when the other triggers adaptive shrinking that frees or
+        reallocates the snapshot buffers; the subsequent dereference faults.
+\end{itemize}
+
+\subsection{Synchronization Requirements}
+
+Six fields require protection: \lstinline{execution_history},
+\lstinline{window_pos}, \lstinline{total_executions}, the two snapshot buffers,
+the adaptive-check accumulator, and the warm flag.
+
+The chosen remedy is a single global lock---the existing
+\lstinline{vm->tuning_lock}---guarding every
+\lstinline{rolling_window_record_execution()} and
+\lstinline{rolling_window_service()} call. The overhead is roughly one hundred
+CPU cycles per word execution, under one percent of system time, and contention
+is rare because the heartbeat runs on a separate one-millisecond cadence. A
+reader--writer lock was considered and deferred; the workload is write-heavy
+and does not justify the added complexity.
+
+\subsection{The Fix}
+
+Each call site is wrapped in lock and unlock, the lock is confirmed initialized
+in \lstinline{vm_init()}, and the API header is annotated to state that
+\lstinline{rolling_window_record_execution()} is not thread-safe and must be
+called under \lstinline{vm->tuning_lock}.
+
+\begin{lstlisting}[language=C]
+sf_mutex_lock(&vm->tuning_lock);
+rolling_window_record_execution(&vm->rolling_window, word_id);
+sf_mutex_unlock(&vm->tuning_lock);
+\end{lstlisting}
+
+\subsection{Validation}
+
+The fix is validated against five criteria: no segmentation fault after 100{,}000
+heartbeat cycles; a clean Valgrind run for memory and data races; deterministic
+physics output across runs; all 936 existing tests passing; and zero compiler
+warnings under \lstinline{-Wall -Werror}. The stress regime includes an
+aggressive 100~$\mu$s heartbeat
+(\lstinline{make HEARTBEAT_TICK_NS=100000 test}) and a prolonged
+million-word execution under concurrent heartbeat.
+
+\subsection{Regression Prevention}
+
+A code-review rule requires any future \lstinline{rolling_window_*()} call to be
+lock-wrapped, supported by thread-safe unit tests, stress tests in CI, and
+continuous Valgrind checks.
+
+%% TODO(bob): confirm the line numbers cited in the source (vm.c:1160, 672,
+%% 738) still correspond after subsequent refactors before promotion.

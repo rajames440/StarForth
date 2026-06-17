@@ -1,0 +1,137 @@
+%% SCRAP: scratch/src/internal/PHASE_2_PHYSICS_DECAY_AND_FREEZE
+%% SOURCE: docs/working/scratch/src/internal/PHASE_2_PHYSICS_DECAY_AND_FREEZE.adoc
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-physics if still accurate; assess honestly
+%% EDITORIAL: lifted — prose rewritten to press voice. Design options
+%%   section preserved; implementation is now the canonical behaviour
+%%   described in Phase 2a completion report.
+
+\section{Phase~2: Physics Model Extensions — Decay and Freeze}
+\label{sec:phase2-decay-freeze}
+
+\textbf{Status at time of writing:} Design phase, ready for implementation.
+\textbf{Date:} 2025-11-07.
+
+This document specifies the freeze flag and decay mechanism that extend the
+Phase~1 physics model. Phase~2a has since been completed; this document is
+retained as the design rationale record.
+
+\subsection{Problem Statement}
+
+Phase~1 tracks \texttt{execution\_heat} as a monotonically increasing
+counter. When the StarForth VM is preempted and a new task begins execution,
+the old heat values remain in the dictionary and misrepresent the new task's
+access patterns. Words that were hot for the previous task pollute the
+hot-words cache, causing cache misses for the new task's actual hot path.
+
+A decay mechanism addresses this by dissipating heat over time, and a freeze
+mechanism ensures that genuinely cross-context critical words
+(e.g.\ \texttt{DUP}, \texttt{DROP}, \texttt{SWAP}) remain cached regardless.
+
+\subsection{Word Flag Extension}
+
+A new flag is added to the \texttt{DictEntry} flag byte:
+
+\begin{lstlisting}[language=C]
+#define WORD_FROZEN   0x04  /* execution_heat does not decay */
+\end{lstlisting}
+
+The complete flag layout is:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Bit & Flag \\
+\midrule
+\texttt{0x80} & \texttt{WORD\_IMMEDIATE} \\
+\texttt{0x40} & \texttt{WORD\_HIDDEN} \\
+\texttt{0x20} & \texttt{WORD\_SMUDGED} \\
+\texttt{0x10} & \texttt{WORD\_COMPILED} \\
+\texttt{0x08} & \texttt{WORD\_PINNED} \\
+\texttt{0x04} & \texttt{WORD\_FROZEN} \\
+\texttt{0x02} & (reserved) \\
+\texttt{0x01} & (reserved) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Decay Models Considered}
+
+\subsubsection{Halflife (Exponential) Decay}
+
+\[
+  H(t) = H_0 \cdot 2^{-t/\tau}
+\]
+
+Smooth, asymptotic approach to zero. Requires floating-point arithmetic
+(\texttt{pow()}). Heat never reaches zero exactly. Considered and rejected
+for Phase~2a.
+
+\subsubsection{Linear Decay (Selected)}
+
+\[
+  H(t) = \max\!\bigl(0,\; H_0 - d \cdot t\bigr)
+\]
+
+Pure integer subtraction. Heat reaches zero in finite time $t^* = H_0/d$.
+Predictable and bounded. Selected for Phase~2a.
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Criterion & Halflife & Linear \\
+\midrule
+Integer arithmetic       & No  & Yes \\
+Bounded convergence      & No  & Yes \\
+Simplicity               & No  & Yes \\
+Formal verifiability     & Harder & Easier \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Integration Points}
+
+Decay is applied at word-lookup time before heat accumulation (lazy strategy).
+A check prevents application for elapsed times below \texttt{DECAY\_MIN\_INTERVAL}
+(default 1\,\textmu{}s) to avoid noise from rapid successive calls.
+
+Cache eviction logic (Phase~2b) must also check the \texttt{WORD\_FROZEN}
+flag and skip frozen candidates:
+
+\begin{lstlisting}[language=C]
+if (candidate->flags & WORD_FROZEN) continue;
+\end{lstlisting}
+
+\subsection{Configuration}
+
+All decay parameters are tunable via Makefile override:
+
+\begin{lstlisting}[language=bash]
+# Aggressive decay
+make DECAY_RATE_PER_NS=2
+
+# Conservative decay
+make DECAY_RATE_PER_NS=0.5 HEAT_THRESHOLD=25
+\end{lstlisting}
+
+\subsection{Formal Verification Targets}
+
+Three theorems for Isabelle/HOL proof (Phase~2d):
+
+\begin{description}
+  \item[Theorem~5 — Decay Monotonicity]
+    For non-frozen words, heat is non-increasing over time.
+  \item[Theorem~6 — Freeze Preservation]
+    Frozen words maintain constant heat for all time.
+  \item[Theorem~7 — Convergence]
+    Non-frozen words with positive decay rate reach zero in finite time.
+\end{description}
+
+\subsection{Deployment Roadmap}
+
+\begin{description}
+  \item[Phase~2a] Freeze flag + linear decay (complete as of 2025-11-07).
+  \item[Phase~2b] Cache eviction respects frozen flag; heat demotion.
+  \item[Phase~2c] StarshipOS real-world validation with OS context switches.
+  \item[Phase~2d] Isabelle/HOL proofs for Theorems~5--7.
+\end{description}

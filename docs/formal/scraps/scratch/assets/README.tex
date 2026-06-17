@@ -1,0 +1,30 @@
+%% SCRAP: scratch/assets/README
+%% SOURCE: docs/working/scratch/assets/README.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Binary Assets Holding Directory}
+
+The \texttt{docs/assets/} directory served as a temporary holding area for binary
+files that require migration to appropriate long-term storage. Contents at the time
+of archival included:
+
+\begin{itemize}
+  \item \texttt{book-FIXED.docx} --- Book manuscript; should move to a publication
+        directory or external document management.
+  \item \texttt{patent.tar.gz} --- Patent materials; should move to secure external
+        legal/IP storage.
+        %% PATENT: do not reproduce or redistribute patent materials without counsel review.
+  \item \texttt{experiments.tar.gz} --- Archived experimental data; should move to
+        the experiments archive or Git LFS.
+  \item \texttt{files.zip} --- Miscellaneous files requiring review and organisation.
+\end{itemize}
+
+Large binary files should not reside in the git repository long-term. Publication
+materials belong in a separate publication repository; legal and IP materials belong
+in secure external storage; experimental data belongs in the experiments directory
+or an external data store with Git LFS pointers.
+
+%% TODO(bob): confirm that patent.tar.gz and book-FIXED.docx have been migrated to
+%% their appropriate destinations and removed from the repository.

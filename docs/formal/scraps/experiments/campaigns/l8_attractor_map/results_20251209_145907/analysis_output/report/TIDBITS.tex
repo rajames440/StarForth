@@ -1,0 +1,67 @@
+%% SCRAP: experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/TIDBITS
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/analysis_output/report/TIDBITS.md
+%% STATUS: HISTORICAL
+%% FITS: experiments/ch-l8-map
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L8 Attractor Map: Notable Observations from the 9 December 2025 Run}
+
+The following observations were recorded during analysis of the 180-run
+L8 attractor dataset (results\_20251209\_145907). They represent
+qualitative findings that supplement the formal statistical report.
+Several have since been partially explained; others remain open.
+
+\begin{description}
+  \item[The Jitter Mystery.]
+        Estimated jitter constituted 86\% of the tick interval. This is not
+        measurement noise. The heartbeat operates near a fundamental
+        uncertainty limit: the system cannot be more timing-precise without
+        violating something inherent in its adaptive dynamics.
+
+  \item[TRANSITION as a Phase-Change Region.]
+        TRANSITION variability (CV $\approx 22.5\%$) was four times higher
+        than STABLE (CV $\approx 5\%$) and produced the most anomalies
+        (10 of 28 total). TRANSITION is not a workload in the ordinary
+        sense; it is a critical point where the system is genuinely
+        unstable, analogous to a melting boundary.
+
+  \item[VOLATILE Warms Over Time.]
+        Mean tick interval for VOLATILE increased from 74.6\,$\mu$s (first
+        tick) to 79.9\,$\mu$s (last tick), a $+7.1\%$ rise. This
+        thermodynamic-style accumulation was not expected and gives the name
+        ``VOLATILE'' an unintended prophetic quality.
+
+  \item[Bimodal Hot-Word Distribution.]
+        The hot-word count distribution was bimodal: mode at 0 (most
+        ticks have zero hot words) with a secondary cluster at 6--7.
+        The behavior resembles quantum ground-state versus excited-state
+        switching rather than a gradual heating curve.
+
+  \item[Golden Ratio Appearance.]
+        A tick-interval ratio of approximately 1.583 (close to
+        $\varphi \approx 1.618$) appeared in DIVERSE at tick 13.
+        In chaotic systems the golden ratio appears in bifurcation
+        cascades and resonant frequencies; this single observation
+        is suggestive of self-organized criticality but requires
+        replication before any claim can be made.
+
+  \item[Orbiting, Not Settling.]
+        Convergence to a stable value took 4--5 ticks, but the system
+        continued oscillating afterward. The L8 attractor finds an orbit
+        around the attractor rather than converging to a fixed point;
+        this is genuine strange-attractor behavior.
+
+  \item[Instrumentation Gap.]
+        All delta metrics (cache hits, bucket hits, word executions,
+        predictions) were zero throughout the run. The heartbeat was
+        measuring temporal rhythm only, not computational events.
+        This gap was subsequently identified as Priority 1 for the
+        next instrumentation pass.
+
+  \item[Fixed Window Width.]
+        Window width registered as a constant 4096 throughout the run.
+        This was later understood to be an instrumentation artifact:
+        the adaptive window was changing, but \texttt{effective\_window\_size}
+        was not exported to the heartbeat CSV. Adding this metric was
+        flagged as critical follow-up work.
+\end{description}

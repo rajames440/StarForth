@@ -1,0 +1,16 @@
+%% SCRAP: archive/operations/workflow
+%% SOURCE: docs/working/archive/operations/workflow.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Jenkins Trunk-Based Development Workflow (Historical)}
+
+The StarForth CI/CD pipeline during the Phase~1 development period followed a
+five-stage trunk-based model: \texttt{devl} (5-minute smoke test),
+\texttt{test} (20-minute full suite), \texttt{qual} (25-minute quality gate),
+\texttt{prod} (2-minute deployment), and \texttt{master} (release tag). The
+pipeline enforced CAPA lifecycle requirements at the quality gate, blocking
+promotion of commits associated with open corrective actions. This workflow is
+retained as a historical record; current CI/CD configuration is defined in
+the repository's \texttt{.github/workflows/} directory.

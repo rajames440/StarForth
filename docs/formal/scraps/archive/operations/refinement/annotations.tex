@@ -1,0 +1,19 @@
+%% SCRAP: archive/operations/refinement/annotations
+%% SOURCE: docs/working/archive/operations/refinement/annotations.adoc
+%% STATUS: OBSOLETE
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice; adoc syntax translated
+
+\section*{C\,$\leftrightarrow$\,Isabelle Annotation Guide (Obsolete)}
+
+This guide defined a \textsc{refinement} header standard for annotating
+C source files with cross-references to their Isabelle/HOL counterparts.
+The standard specified invariant documentation blocks, proof status markers
+(\texttt{PROVEN}, \texttt{PENDING}, \texttt{UNVERIFIED}), and a tagging
+convention linking each C function to the corresponding Isabelle theory.
+
+The methodology was not adopted. Formal verification of StarForth proceeded
+instead through standalone \texttt{.thy} files in \texttt{proof/}, organized
+by feedback loop and word category, without inline C annotations. The 19
+(subsequently 24, with ACL proofs) theory files provide the formal record.
+This annotation guide is obsolete.

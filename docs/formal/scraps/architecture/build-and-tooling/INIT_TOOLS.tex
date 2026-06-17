@@ -1,0 +1,166 @@
+%% SCRAP: architecture/build-and-tooling/INIT_TOOLS
+%% SOURCE: docs/working/architecture/build-and-tooling/INIT_TOOLS.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-build
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{INIT Tools: Disk-Image Synchronization}
+
+StarForth ships a toolchain that maintains a bidirectional flow between
+\texttt{./conf/init.4th} --- the version-controlled source of truth --- and the
+disk images (\texttt{.img} files) tracked through Git LFS. The arrangement
+supports collaborative development: developers edit blocks natively inside a
+disk image using \texttt{LIST}, \texttt{EDIT}, and friends; tools extract the
+annotated blocks into \texttt{init.4th}; those changes are reviewed in Git pull
+requests; and approved changes are applied back to disk images.
+
+\subsection{The Two Core Tools}
+
+\subsubsection{extract-init}
+
+\texttt{tools/extract-init} (C) scans a disk image for blocks marked with a
+\texttt{(- ... )} header and writes them to an \texttt{init.4th} file.
+
+\begin{lstlisting}[language=bash]
+./tools/extract-init --img=disks/example.img --out=conf/init-4.4th \
+    [--fbs=1024] [--start=0] [--end=-1] \
+    [--loose] [--require-close] [--max=N]
+\end{lstlisting}
+
+\begin{itemize}
+  \item \texttt{--img=PATH} --- disk image to scan (required).
+  \item \texttt{--out=PATH} --- output \texttt{init.4th} file (required).
+  \item \texttt{--fbs=N} --- Forth block size in bytes (default 1024).
+  \item \texttt{--start=N}, \texttt{--end=N} --- block range; \texttt{-1} reads
+    to end of file.
+  \item \texttt{--loose} --- permit a BOM or leading whitespace before the
+    \texttt{(-} header.
+  \item \texttt{--require-close} --- require the closing \texttt{)} in the same
+    block.
+  \item \texttt{--max=N} --- stop after extracting $N$ blocks.
+\end{itemize}
+
+The detection algorithm reads each block sequentially, checks for \texttt{(-} at
+the start (tolerating a BOM or whitespace under \texttt{--loose}), optionally
+verifies a closing \texttt{)} when \texttt{--require-close} is set, and extracts
+matching blocks. Output is a header section followed by \texttt{Block N}
+segments.
+
+\subsubsection{apply-init}
+
+\texttt{tools/apply-init} (C) parses an \texttt{init.4th} file and writes its
+\texttt{Block N} sections to the corresponding blocks of a disk image.
+
+\begin{lstlisting}[language=bash]
+./tools/apply-init --img=disks/example.img --in=conf/init-4.4th \
+    [--fbs=1024] [--start=0] [--end=N] \
+    [--clip] [--dry-run] [--verify] [--verbose]
+\end{lstlisting}
+
+Only lines between a \texttt{Block N} marker and the next marker (or EOF) are
+written to block $N$; everything outside a block section, including top-level
+comments, is ignored. The \texttt{--start} and \texttt{--end} options act as
+write guards, \texttt{--clip} truncates oversized blocks, \texttt{--dry-run}
+prints the plan without writing, and \texttt{--verify} re-reads each block after
+writing for a byte-for-byte comparison.
+
+\subsection{Interactive Wrappers}
+
+Two shell wrappers add interactive prompts over the C tools.
+\texttt{scripts/update-init.sh} lists the disk images under \texttt{./disks/},
+prompts for an image and extraction parameters, displays the command, and runs
+\texttt{extract-init} after confirmation --- the natural step after editing
+blocks in an image. \texttt{scripts/apply-init.sh} mirrors this for
+\texttt{apply-init}, used after merging a pull request that changed
+\texttt{init.4th}.
+
+\subsection{Workflow Patterns}
+
+\textbf{Extract from disk to Git.} After working in a disk image, extract the
+marked blocks, review the diff, and commit:
+
+\begin{lstlisting}[language=bash]
+./scripts/update-init.sh        # select disk, confirm extraction
+git diff conf/init-4.4th
+git add conf/init-4.4th
+git commit -m "Add new INIT words: FOO and BAR"
+\end{lstlisting}
+
+\textbf{Apply from Git to disk.} After pulling a merged change, apply it to the
+local image and verify in the REPL:
+
+\begin{lstlisting}[language=bash]
+git pull origin master
+./scripts/apply-init.sh         # select disk, confirm application
+\end{lstlisting}
+
+\textbf{Automation.} For CI/CD the C tools run unattended with the full set of
+flags, for example an apply guarded to blocks at or above 1024, clipping
+oversized content, with read-back verification and verbose output.
+
+\subsection{The \texttt{(-} Metadata Marker}
+
+The \texttt{(-} word is dual-purpose: at runtime it behaves as a Forth comment
+(like \texttt{(} but with a dash), and to the tooling it marks an
+extraction-worthy block.
+
+\begin{lstlisting}[language=Forth]
+Block 2048
+(- String utilities: COUNT, COMPARE, SEARCH )
+: COUNT  DUP 1+ SWAP C@ ;
+: COMPARE ... ;
+\end{lstlisting}
+
+The dash distinguishes deliberate metadata from the ordinary \texttt{(}
+comments that fill normal blocks, avoids false positives, and is trivially
+greppable with \texttt{grep "\^(-"}. The implementation lives in
+\texttt{src/word\_source/starforth\_words.c} and is registered in both the FORTH
+and STARFORTH vocabularies:
+
+\begin{lstlisting}[language=C]
+void starforth_word_paren_dash(VM *vm) {
+    /* Consume input from "(- " to first ")" */
+    int depth = 1;
+    while (vm->input_pos < vm->input_length && depth > 0) {
+        char c = vm->input_buffer[vm->input_pos++];
+        if (c == '(') depth++;
+        else if (c == ')') depth--;
+    }
+    if (depth > 0) {
+        log_message(LOG_WARN, "(- comment not terminated");
+    }
+    log_message(LOG_DEBUG, "(- comment parsed (init.4th metadata marker)");
+}
+\end{lstlisting}
+
+\subsection{Safety Features}
+
+Four mechanisms protect against accidental data loss. \emph{Guard rails}
+(\texttt{--start} / \texttt{--end}) refuse writes outside an allowed block
+range, protecting the boot area (blocks 0--1023) and system ranges.
+\emph{Verification} (\texttt{--verify}) seeks back, re-reads the full block,
+and compares it against what was written, catching silent write failures.
+\emph{Dry run} (\texttt{--dry-run}) prints the write plan without touching the
+disk. \emph{Content-length checks} reject blocks longer than the Forth block
+size by default; \texttt{--clip} truncates instead (not recommended for code).
+
+\subsection{Building, Naming, and Testing}
+
+The interactive scripts rebuild the binaries when the source is newer; manual
+builds use a C99 compiler with POSIX 64-bit file offsets:
+
+\begin{lstlisting}[language=bash]
+gcc -std=c99 -O2 -Wall -Wextra -Werror \
+    -o tools/extract-init tools/extract_init.c
+gcc -std=gnu99 -D_FILE_OFFSET_BITS=64 -O2 -Wall -Wextra -Werror \
+    -o tools/apply-init tools/apply_init.c
+\end{lstlisting}
+
+Disk images follow the convention
+\texttt{<hostname>-<username>-<version>.img}; images go to Git LFS while
+\texttt{conf/init.4th} stays in plain Git as a diffable text file. A round-trip
+test --- apply \texttt{init.4th} to a disk, extract it back, and diff (ignoring
+the metadata header) --- should reproduce the original. The block size must
+match across extract, apply, and the VM's expectation.
+
+%% TODO(bob): source references INIT_SYSTEM.md and BLOCK_STORAGE_GUIDE.md as companions; confirm their final formal-doc locations for cross-references.

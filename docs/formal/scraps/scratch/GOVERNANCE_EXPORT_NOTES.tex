@@ -1,0 +1,52 @@
+%% SCRAP: scratch/GOVERNANCE_EXPORT_NOTES
+%% SOURCE: docs/working/scratch/GOVERNANCE_EXPORT_NOTES.adoc
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Governance Export Notes --- Physics Phase 1}
+
+This checklist records which Phase 1 artefacts require mirroring into the
+\texttt{StarForth-Governance} repository.
+
+\begin{center}
+\begin{tabular}{p{3.5cm}p{4.5cm}p{5cm}}
+\toprule
+Artefact & Location (VM repo) & Governance action \\
+\midrule
+\texttt{physics\_runtime.h} & \texttt{include/physics\_runtime.h} &
+  Copy verbatim; annotate protocol version and magic constants. \\
+HOLA protocol memo & \texttt{docs/src/internal/HOLA\_PROTOCOL.adoc} &
+  Mirror as governance RFC; retain version history. \\
+Physics formal models &
+  \texttt{Physics\_StateMachine.thy}, \texttt{Physics\_Observation.thy} &
+  Import into governance proofs tree for cross-repository review. \\
+Scheduler plan updates & \texttt{PHYSICS\_SCHEDULING\_PLAN.adoc} &
+  Reference from governance scheduling playbook (Phase 1 appendix). \\
+Signal map updates & \texttt{PHYSICS\_SIGNAL\_MAP.adoc} &
+  Link from governance telemetry charter. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Process Notes}
+
+The governance repository holds the source of truth for ABI versions. Any change to
+\texttt{HOLA\_PROTOCOL.adoc} or the analytics header must update
+\texttt{HOLA\_PROTOCOL\_VERSION} in the governance repository before landing in the VM
+repository. Isabelle theories should be bundled with build instructions so that
+governance reviewers can replay proofs independently. Export scripts must verify the
+analytics heap size and event channel table to keep governance dashboards consistent
+with the VM implementation.
+
+Phase 1 governance deliverables live under \texttt{governance/physics/phase1/}.
+
+\subsection{Open Items}
+
+\begin{itemize}
+  \item Decide whether the governance repository ships pre-built analyser binaries
+        or only the protocol description.
+  \item Clarify signature requirements for future ABI bumps (magic change or command
+        addition).
+  \item Define the approval flow for new HOLA opcodes before Phase 2 experiments begin.
+\end{itemize}

@@ -1,0 +1,93 @@
+%% SCRAP: architecture/03-architecture/pipelining/wired-not-utilized
+%% SOURCE: docs/working/architecture/03-architecture/pipelining/wired-not-utilized.md
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-pipelining
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Pipelining: Wired but Not Utilized}
+
+The pipelining infrastructure was asymmetric: the data-collection hooks were
+wired into the interpreter, but the decision functions that would act on that
+data were never called. The result was a feature that appeared active---its
+build flag could be set, its decision function was exported---yet performed no
+optimization.
+
+\subsection{Loop \#4: Transition Metrics}
+
+Collection executes when \lstinline{ENABLE_PIPELINING=1}; the matching decision
+function is defined but never invoked.
+
+\begin{lstlisting}[language=C]
+/* WIRED: data collection in the inner interpreter */
+if (prev_word && prev_word->transition_metrics && ENABLE_PIPELINING) {
+    transition_metrics_record(prev_word->transition_metrics,
+                              word_id, DICTIONARY_SIZE);
+}
+
+/* NOT UTILIZED: defined, exported, never called */
+int transition_metrics_should_speculate(const WordTransitionMetrics *metrics,
+                                        uint32_t target_word_id) {
+    if (!metrics || !metrics->transition_heat) return 0;
+    if (metrics->total_transitions < MIN_SAMPLES_FOR_SPECULATION) return 0;
+    int64_t prob_q48 = transition_metrics_get_probability_q48(metrics,
+                                                              target_word_id);
+    if (prob_q48 < SPECULATION_THRESHOLD_Q48) return 0;
+    return 1;
+}
+\end{lstlisting}
+
+With the flag set, metrics were collected but never examined, giving a false
+impression of optimization.
+
+\subsection{Loop \#5: Context Window Tuning}
+
+The binary-chop window suggestion is likewise a stub: it doubles the window by
+rote, is never called, and is not connected to any effective-window tuning. Its
+own comments concede the placeholder status.
+
+\subsection{Root Cause}
+
+Phase~2 was started but not finished. Phase~1 wired the collection hooks,
+allocated per-word metrics, and made the counting functions work. The Phase~2
+decision logic was stubbed---\lstinline{transition_metrics_should_speculate()}
+exists with a ``TODO: add ROI check'' note---but never integrated: nothing calls
+it, no prefetch action follows a positive result, and no predictive loading
+exists in the execution path.
+
+\subsection{Options}
+
+\begin{itemize}
+  \item \textbf{A --- Disable until ready.} Comment out the half-wired
+        collection in \lstinline{src/vm.c} so that setting the flag honestly
+        does nothing, reclaiming the wasted per-word memory and removing
+        confusing code from the hot path.
+  \item \textbf{B --- Wire in the decision logic.} Complete Phase~2: call the
+        decision function, implement a prefetch action, connect the binary-chop
+        suggestion to the effective window, and add a DoE knob to measure the
+        speedup. This is substantial implementation work.
+  \item \textbf{C --- Remove it.} If pipelining is not planned, delete the
+        metrics source, header declarations, collection hooks, and the build
+        flag.
+\end{itemize}
+
+\subsection{Recommendation}
+
+Option~A is the right move: it is honest, low-risk, removes dead code from the
+hot path, and is reversible when Phase~2 resumes. The disabling should be
+documented---why it is off, what Phase~2 entails, and how to re-enable it.
+
+\begin{tabular}{lll}
+\toprule
+Item & State & Note \\
+\midrule
+Data collection hooks & Wired & Active only if \texttt{ENABLE\_PIPELINING=1} \\
+Metrics structures & Allocated per word & Wastes memory when unused \\
+Decision function & Defined & Never called \\
+Header export & Yes & Appears available to users \\
+Build flag & Default off & \texttt{ENABLE\_PIPELINING ?= 0} \\
+DoE configuration & No knob & Not tested by Phase 1 DoE \\
+\bottomrule
+\end{tabular}
+
+%% TODO(bob): record which option was ultimately taken; project conventions
+%% list ENABLE_PIPELINING as default on, which may supersede this note.

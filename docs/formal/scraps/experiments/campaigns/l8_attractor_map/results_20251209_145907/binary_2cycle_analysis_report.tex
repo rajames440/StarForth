@@ -1,0 +1,83 @@
+%% SCRAP: experiments/campaigns/l8_attractor_map/results_20251209_145907/binary_2cycle_analysis_report
+%% SOURCE: docs/working/experiments/campaigns/l8_attractor_map/results_20251209_145907/binary_2cycle_analysis_report.md
+%% STATUS: HISTORICAL
+%% FITS: experiments/ch-l8-map
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Binary 2-Cycle Analysis: Phase-Space Clustering}
+
+\textbf{Date:} 11 December 2025. \textbf{Data source:}
+\texttt{heartbeat\_all.csv} from the L8 Attractor Map experiment.
+
+\subsection{Method}
+
+The analysis applied k-means clustering ($k = 2$) to the (HR, $\Delta$HR)
+coordinate space, where HR is the tick interval in nanoseconds and
+$\Delta$HR is the first difference of successive intervals. A binary
+clarity metric quantifies the separation of the two clusters:
+
+\[
+  \text{BinaryClarity} = \frac{\text{separation}^2}{\text{avg\_spread}}
+\]
+
+where separation is the Euclidean distance between cluster centers and
+avg\_spread is the average effective radius of the two covariance ellipses.
+Outliers beyond $5\sigma$ were removed before clustering.
+
+\subsection{Results}
+
+\begin{center}
+\begin{tabular}{llrrl}
+\toprule
+Rank & Workload   & Binary Clarity & Separation (ns) & Character \\
+\midrule
+1 & TRANSITION & $1.27 \times 10^6$ & 258{,}905 & Dominant two-regime structure \\
+2 & VOLATILE   & $7.66 \times 10^4$ & 41{,}487  & Moderate separation \\
+3 & TEMPORAL   & $7.02 \times 10^4$ & 44{,}851  & Moderate separation \\
+4 & OMNI       & $6.17 \times 10^4$ & 42{,}347  & Moderate separation \\
+5 & STABLE     & $6.09 \times 10^4$ & 35{,}932  & Weakest separation \\
+6 & DIVERSE    & $6.05 \times 10^4$ & 42{,}846  & Moderate separation \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Interpretation}
+
+TRANSITION exhibited binary clarity approximately $16\times$ higher than
+the other five workloads. The two cluster centers were separated by
+258{,}905\,ns — a fast-heartbeat regime versus a slow-heartbeat regime —
+compared to 35{,}000--45{,}000\,ns for the remaining workloads.
+
+The result is counterintuitive: STABLE shows the \emph{weakest} binary
+structure despite its name. STABLE operates in a homogeneous regime with
+tight cluster overlap, while TRANSITION's explicit state switching creates
+the most pronounced phase-space separation. The 2-cycle structure is
+present across all workloads; it is most clearly exposed when the workload
+forces repeated transitions between distinct operational states.
+
+Loop \#7 (Adaptive Heartrate) is the likely mechanism: it creates attractor
+points in phase space by adjusting tick frequency in response to workload
+characteristics, producing the binary clustering even in nominally
+non-transitioning workloads.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+  \item TRANSITION: are exactly two heartbeat regimes present, or is $k=2$
+        an oversimplification? Silhouette scores for $k = 3, 4$ are
+        warranted.
+  \item Autocorrelation analysis of HR$(t)$ for individual runs would
+        detect periodic switching behavior directly.
+  \item The Levene's test used internally by Loop \#5 (Window Width
+        Inference) should be compared against cluster variance homogeneity
+        to test for cross-loop interaction.
+\end{enumerate}
+
+\subsection{Generated Artifacts}
+
+\begin{itemize}
+  \item \texttt{binary\_2cycle\_analysis.svg} — six-panel visualization
+        ($1800 \times 1200$\,px), one panel per workload
+  \item \texttt{analyze\_2cycle.py} — pure Python analysis script (no
+        external dependencies)
+\end{itemize}

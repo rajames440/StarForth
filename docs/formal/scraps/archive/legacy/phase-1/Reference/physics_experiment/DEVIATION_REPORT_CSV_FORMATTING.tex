@@ -1,0 +1,17 @@
+%% SCRAP: archive/legacy/phase-1/Reference/physics_experiment/DEVIATION_REPORT_CSV_FORMATTING
+%% SOURCE: docs/working/archive/legacy/phase-1/Reference/physics_experiment/DEVIATION_REPORT_CSV_FORMATTING.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Deviation Report DEV-2025-11-06-001: CSV Formatting}
+
+On 2025-11-06, the physics engine validation experiment script produced
+malformed CSV output: 571 rows instead of the expected 91. Root-cause analysis
+identified the defect in the shell script's use of \texttt{echo -n} with a
+variable containing embedded newlines, which caused each embedded newline to
+emit as a separate CSV row. The fix---replacing the problematic construct with
+a single-argument \texttt{printf} call---was applied and verified on the same
+day. The incident was resolved without data loss; all 90 experimental runs
+were re-executed cleanly. This deviation report is retained as part of the
+experimental provenance record.

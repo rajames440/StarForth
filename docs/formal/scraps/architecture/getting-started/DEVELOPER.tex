@@ -1,0 +1,127 @@
+%% SCRAP: architecture/getting-started/DEVELOPER
+%% SOURCE: docs/working/architecture/getting-started/DEVELOPER.md
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-install
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Developer Environment}
+
+This chapter sets up a working StarForth development environment, including the
+Isabelle/HOL toolchain required to regenerate the formal-verification
+documentation.
+
+\subsection{Required Tools}
+
+The core build needs only a C toolchain and Git:
+
+\begin{lstlisting}[language=bash]
+sudo apt-get update
+sudo apt-get install build-essential gcc make git
+\end{lstlisting}
+
+Several optional tools support documentation, supply-chain, and packaging
+workflows: Doxygen for API documentation, \texttt{syft} for SBOM generation,
+and \texttt{fpm} for building DEB and RPM packages.
+
+\begin{lstlisting}[language=bash]
+sudo apt-get install doxygen
+
+wget https://github.com/anchore/syft/releases/latest/download/syft_linux_amd64.tar.gz
+tar -xzf syft_linux_amd64.tar.gz
+sudo mv syft /usr/local/bin/
+
+sudo apt-get install ruby-dev build-essential
+sudo gem install fpm
+\end{lstlisting}
+
+\subsection{Isabelle/HOL}
+
+Isabelle is required to generate the formal-verification documentation.
+Download Isabelle2025, unpack it, and place its \texttt{bin} directory on the
+\texttt{PATH}:
+
+\begin{lstlisting}[language=bash]
+cd ~/bin
+wget https://isabelle.in.tum.de/dist/Isabelle2025_linux.tar.gz
+tar -xzf Isabelle2025_linux.tar.gz
+\end{lstlisting}
+
+Add the binaries to \texttt{\textasciitilde/.bashrc}, reload the shell, and
+verify:
+
+\begin{lstlisting}[language=bash]
+export PATH="$PATH:$HOME/bin/Isabelle2025/bin"
+source ~/.bashrc
+isabelle version    # expects: Isabelle2025
+\end{lstlisting}
+
+The build system locates Isabelle on the \texttt{PATH} via a single Makefile
+variable, \texttt{ISABELLE ?= isabelle}. Isabelle is deliberately excluded from
+the repository through \texttt{.gitignore} (\texttt{/tools/Isabelle2025/}) and
+must never be committed. With it installed, three targets become available:
+\texttt{make isabelle-build} verifies all theories, \texttt{make isabelle-check}
+runs a faster syntax-only pass, and \texttt{make docs-isabelle} produces the
+audit-ready documentation.
+
+\subsection{Continuous Integration}
+
+CI pipelines must install Isabelle as a build step. A GitHub Actions job
+installs the C toolchain, fetches and unpacks Isabelle, appends its
+\texttt{bin} directory to \texttt{\$GITHUB\_PATH}, builds with \texttt{make
+fastest}, runs \texttt{make test}, and generates the verification docs with
+\texttt{make docs-isabelle} before uploading them as artifacts. The GitLab
+equivalent performs the same steps in a \texttt{before\_script} stage.
+
+\subsubsection{Docker and Performance}
+
+In Docker, Isabelle additionally requires a JDK (17 or later):
+
+\begin{lstlisting}[language=bash]
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y \
+    build-essential gcc make wget openjdk-17-jdk \
+    && rm -rf /var/lib/apt/lists/*
+RUN wget -q https://isabelle.in.tum.de/dist/Isabelle2025_linux.tar.gz && \
+    tar -xzf Isabelle2025_linux.tar.gz && rm Isabelle2025_linux.tar.gz
+ENV PATH="/Isabelle2025/bin:${PATH}"
+RUN isabelle version
+\end{lstlisting}
+
+Full theory verification takes five to ten minutes. Cache the Isabelle
+installation between builds, use \texttt{isabelle-check} for fast pre-commit
+syntax checks, and reserve the full \texttt{isabelle-build} for the main branch
+and release tags.
+
+\subsection{Quick Start}
+
+\begin{lstlisting}[language=bash]
+git clone <repo-url>
+cd StarForth
+make fastest
+make test
+make docs-isabelle
+ls -la docs/src/isabelle/
+\end{lstlisting}
+
+\subsection{Formal Verification}
+
+StarForth carries machine-checked correctness proofs in Isabelle/HOL. The
+theory files live under \texttt{docs/src/internal/formal/*.thy}, organized into
+the \texttt{VM\_Formal} and \texttt{Physics\_Formal} sessions, and
+\texttt{make docs-isabelle} renders them into \texttt{docs/src/isabelle/}. The
+session covers core VM semantics (\texttt{VM\_Core.thy}), stack operations and
+runtime (\texttt{VM\_Stacks.thy}, \texttt{VM\_StackRuntime.thy}), word and
+register definitions (\texttt{VM\_Words.thy},
+\texttt{VM\_DataStack\_Words.thy}, \texttt{VM\_ReturnStack\_Words.thy},
+\texttt{VM\_Register.thy}), and the physics state machine and observation model
+(\texttt{Physics\_StateMachine.thy}, \texttt{Physics\_Observation.thy}). All
+theories are fully verified.
+
+%% TODO(bob): the repository .thy filenames here (VM_Core.thy etc.) differ from the proof/ tree named in CLAUDE.md (StarForth_*.thy). Reconcile the canonical theory-file naming before this ships.
+
+\subsection{Contributing}
+
+When a change affects VM semantics: update the relevant Isabelle theories, run
+\texttt{make isabelle-build} to verify the proofs, regenerate documentation
+with \texttt{make docs-isabelle}, and include the regenerated docs in the pull
+request.

@@ -1,0 +1,191 @@
+%% SCRAP: architecture/MAMA_FORTH_SUPERVISOR_ARCHITECTURE
+%% SOURCE: docs/working/architecture/MAMA_FORTH_SUPERVISOR_ARCHITECTURE.adoc
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-capsule, cookbook/ch-capsule
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Mama Forth: The Multi-VM Supervisor}
+
+Mama Forth is the governing FORTH VM that orchestrates a multi-VM ecosystem.
+It departs from conventional supervisor design in one decisive respect: Mama
+Forth is itself a FORTH VM, a first-class citizen carrying the same physics
+instrumentation as every VM it governs. The supervisor does not stand outside
+the runtime model; it participates in it.
+
+The ecosystem forms a tree. Mama Forth sits at the root. Beneath it, child VMs
+each carry their own physics state. Beneath each child, block devices carry
+per-device physics. Mama observes all three layers and makes system-level
+decisions: when to spawn or kill a child VM, how to allocate block devices to
+children, how to enforce governance across the ecosystem, and how to respond to
+emergencies such as thermal runaway or memory pressure.
+
+The central design insight is that physics metadata becomes a three-tier
+hierarchy:
+
+\begin{itemize}
+  \item \textbf{Word level} --- per-word metrics: entropy, temperature, latency.
+  \item \textbf{VM level} --- per-VM aggregates: child health, resource usage.
+  \item \textbf{Block level} --- per-block device metrics: I/O patterns, thermal
+        distribution.
+\end{itemize}
+
+\subsection{VM-Level Physics Metadata}
+
+Today's physics model tracks per-word metrics attached to each \texttt{DictEntry}:
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint16_t temperature_q8;   // Thermal state [0x0000, 0xFFFF]
+    uint64_t last_active_ns;   // Last execution timestamp
+    uint32_t entropy;          // Execution randomness
+    int16_t  entropy_slope;    // Rate of entropy change
+    uint32_t avg_latency_ns;   // P50 latency
+    /* ... */
+} DictPhysics;
+\end{lstlisting}
+
+The proposed extension gives each VM its own aggregate physics record. It rolls
+up thermal state across all words (warmest word, average temperature, count of
+hot words above \texttt{0x8000}), execution load (cumulative executions,
+words-per-second rate, recency), memory pressure (dictionary heap usage against
+capacity), reliability (error count, error rate, recovery count), child VM
+health, block-device affinity, and lifecycle state (uptime, age, run state,
+criticality class).
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint16_t vm_temperature_q8;       // Warmest word temperature
+    uint16_t vm_avg_temperature_q8;   // Average across all words
+    uint32_t vm_hot_word_count;       // Words with temp > 0x8000
+    uint64_t total_word_executions;
+    uint64_t execution_rate_per_sec;
+    float    dictionary_pressure_pct; // used / max
+    uint32_t error_rate_per_sec;
+    uint32_t active_child_vm_count;
+    uint8_t  vm_state;                // RUNNING, PAUSED, DRAINING, DEAD
+    uint8_t  vm_criticality;          // system, critical, normal, background
+    /* ... */
+} VMPhysics;
+\end{lstlisting}
+
+The record attaches directly to the \texttt{VM} struct. Every physics event
+maintains it: \texttt{physics\_metadata\_touch()} updates the word, then resolves
+the current VM and updates the VM-level aggregates, recomputing running averages
+and rates.
+
+\subsection{Block Device Physics Metadata}
+
+Block storage (1024 blocks of 1024 bytes) is managed by
+\texttt{block\_subsystem.c} (logical-to-physical mapping) and
+\texttt{blkio\_factory.c} (pluggable RAM, file, and L4Re backends). Today there
+is no observability beyond capacity tracking. The proposal attaches a
+\texttt{BlockPhysics} record to each block, tracking thermal state (access
+frequency), access patterns (read and write counts, P50 and P99 latencies),
+ownership (owning VM and word), content-type hints, and health (CRC32 checksum,
+dirty and corruption flags, error count). A device-level aggregate summarizes
+total reads and writes, hottest and coldest block temperatures, and
+fragmentation percentage.
+
+Block accessors maintain these metrics inline. On read, the subsystem times the
+I/O, updates the block's read count and exponential moving-average latency,
+recomputes temperature from read frequency, and verifies the CRC32 to detect
+corruption. On write, it does the symmetric work and refreshes the stored
+checksum.
+
+\subsection{Mama's Responsibilities}
+
+Mama Forth runs with elevated privileges along three axes:
+
+\begin{itemize}
+  \item \textbf{Observe} --- all word executions in children, all block-device
+        I/O, all child lifecycle events, all errors and anomalies.
+  \item \textbf{Control} --- spawn and kill child VMs, allocate blocks to
+        children, enforce governance policies, redirect critical work, scale up
+        and down with load.
+  \item \textbf{Coordinate} --- share block resources, prevent deadlock, balance
+        load across children, degrade gracefully under stress.
+\end{itemize}
+
+Mama is itself instrumented with a \texttt{MamaPhysics} record covering its own
+supervision load, child-management counts, block-management activity, emergency
+events (thermal warnings, memory-pressure events, orphan recoveries), and
+governance metrics (violations detected, enforcement actions, audit events).
+
+\subsection{The Supervision Loop}
+
+Mama runs a periodic control loop. Each cycle observes every child's VM-level
+physics, flags thermal warnings, memory pressure above 90\%, and error surges,
+then inspects every block device for hot blocks and excessive fragmentation. It
+then makes load-balancing decisions, enforces governance compliance, and sleeps
+for an adaptive interval derived from its own decision latency.
+
+\begin{lstlisting}[language=C]
+void mama_supervision_loop(void) {
+    while (mama_vm.running) {
+        for (int i = 0; i < child_vm_count; i++) {
+            VM *child = child_vms[i];
+            VMPhysics p = child->physics;
+            if (p.vm_temperature_q8 > THERMAL_WARNING) mama_handle_hot_child(child);
+            if (p.dictionary_pressure_pct > 90)        mama_handle_memory_pressure(child);
+            if (p.error_rate_per_sec > ERROR_THRESHOLD) mama_handle_error_surge(child);
+        }
+        mama_balance_load_across_children();
+        mama_check_governance_compliance();
+        sf_sleep_ns(mama_vm.physics.decision_latency_ns * 2);
+    }
+}
+\end{lstlisting}
+
+Mama spawns a new child when average child temperature exceeds \texttt{0xD000}
+and capacity remains, allocating a block range to the newcomer and rebalancing
+the work queue. It kills a child that is unrecoverably faulted, idle, or
+under unrecoverable memory pressure --- first recovering the orphan's blocks,
+then tearing the VM down. It rebalances block allocation by grouping each
+child's hottest blocks together to reduce fragmentation and keep hot data near
+its consumer.
+
+\subsection{Three-Tier Feedback Loop}
+
+Metrics flow upward. Word execution updates word temperature and latency; the VM
+aggregates word metrics into VM state; Mama aggregates VM state into system
+state, which is logged across all three tiers to the analytics heap. Decisions
+flow downward. A Mama decision (``Child~2 is too hot, spawn Child~3'') creates a
+VM and allocates blocks; the affected child adjusts its batch groups and
+sampling rate; word-level optimization boosts priority for hot words; and the
+block device responds by relocating cold blocks, compacting fragmentation, and
+prefetching predicted accesses.
+
+\subsection{Worked Example: Thermal Emergency}
+
+A concrete sequence illustrates the loop. A child VM runs normally until a
+\texttt{BLOCK\_WRITE} word heats to \texttt{0xC000} and propagates that
+temperature to the VM. Mama's next cycle detects the warning together with
+elevated dictionary pressure and an anomalous error rate of 100 errors per
+second. Mama responds: it spawns a second child for load shedding, reassigns
+cold work to it, marks the first child's hot blocks protected, temporarily
+raises that child's heap, and logs the emergency to governance. Within a few
+seconds the original child cools and stabilizes; the system keeps the new child
+because it now carries useful work, retiring it only once the first child cools
+below the safe threshold.
+
+\subsection{Implementation Phases}
+
+\begin{itemize}
+  \item \textbf{Phase 1 --- Foundation.} Word-level physics and execution hooks
+        are complete; VM-level aggregation and block-device physics remain.
+  \item \textbf{Phase 2 --- Single-VM Control.} Word-level scheduling and memory
+        hints are complete; VM-level health monitoring and observe-only Mama
+        supervision remain.
+  \item \textbf{Phase 3 --- Multi-VM Orchestration.} Child spawn and kill, block
+        reallocation, cross-child load balancing, and emergency response.
+  \item \textbf{Phase 4 --- Mama Optimization.} Mama's own physics tuning,
+        predictive spawning, guided load balancing, and governance enforcement
+        at scale.
+\end{itemize}
+
+%% TODO(bob): Confirm whether Mama Forth runs as a dedicated thread, a
+%% coroutine, or the main loop. Source sketches mama_forth_init() called from
+%% main() but leaves the concurrency model open.
+%% PATENT: The three-tier physics rollup and the supervision-loop spawn/kill
+%% heuristics are adaptive-runtime mechanisms; flag for patent counsel review
+%% before any external publication.

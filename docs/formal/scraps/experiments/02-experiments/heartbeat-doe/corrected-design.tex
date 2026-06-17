@@ -1,0 +1,104 @@
+%% SCRAP: experiments/02-experiments/heartbeat-doe/corrected-design
+%% SOURCE: docs/working/experiments/02-experiments/heartbeat-doe/corrected-design.md
+%% STATUS: WORKING
+%% FITS: experiments/ch-heartbeat
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Heartbeat DoE — Corrected Design}
+\label{sec:heartbeat-doe-corrected-design}
+
+\subsection{Critical Discovery}
+
+The initial Stage~2 design measured \emph{jitter in a fixed heartbeat
+interval}, implicitly assuming the tick rate was constant at approximately
+1~ms. This assumption is incorrect. The heartbeat tick interval
+\texttt{tick\_ns} is a dynamic variable that the inference engine adjusts in
+response to workload intensity:
+
+\begin{lstlisting}[language=C]
+uint64_t tick_ns;  /* Nanoseconds between ticks -- VARIES with load */
+\end{lstlisting}
+
+Stage~1 was conducted with \texttt{HEARTBEAT\_THREAD\_ENABLED=0}, which fixed
+the interval and disabled the adaptive mechanism entirely. Stage~2 must
+re-enable the heartbeat thread and measure the quality of its adaptive
+modulation.
+
+\subsection{The Adaptive Feedback Loop}
+
+The heartbeat acts as a pacing mechanism, not merely a timer. Under high
+workload, the inference engine increases \texttt{tick\_ns} — slowing the
+heartbeat — to allocate more CPU time for physics-parameter tuning. The
+expected signal chain is:
+
+\begin{enumerate}
+  \item Inference engine detects increased workload intensity.
+  \item \texttt{tick\_ns} is increased (heartrate decreases).
+  \item The physics engine receives more tuning time per tick.
+  \item The system adapts and eventually converges to a new steady state.
+  \item \texttt{tick\_ns} stabilises at the new optimal rate.
+\end{enumerate}
+
+\subsection{Corrected Primary Metric}
+
+The primary discriminating metric for Stage~2 is the Pearson correlation
+between per-tick workload intensity and per-tick heartrate:
+
+\begin{equation}
+  \rho = \frac{\operatorname{Cov}(W, H)}{\sqrt{\operatorname{Var}(W)\operatorname{Var}(H)}}
+\end{equation}
+
+where $W_t$ is the dictionary-lookup count in tick~$t$ and $H_t = 10^9 /
+\texttt{tick\_ns}_t$ is the heartrate in Hz. A strong positive $\rho$
+indicates that the configuration's heartbeat responds proportionally to load.
+Target: $\rho > 0.75$.
+
+\subsection{Metric Summary}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Metric & Purpose & Target \\
+\midrule
+\texttt{load\_to\_heartrate\_correlation} & Load--heartrate coupling & $> 0.75$ \\
+\texttt{heartrate\_responsiveness\_score} & Composite adaptation score & $> 80/100$ \\
+\texttt{heartrate\_convergence\_time\_ms} & Time to stable rate & $< 5{,}000$ ms \\
+\texttt{mean\_heartbeat\_rate\_hz} & Baseline operating rate & $\approx 1{,}000$ Hz \\
+\texttt{heartbeat\_rate\_cv} & Rate variation & $0.05$--$0.20$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Implementation Requirements}
+
+Four code changes are required:
+
+\begin{enumerate}
+  \item Add \texttt{HeartbeatRateSample} struct to \texttt{include/vm.h}:
+        fields for tick number, \texttt{tick\_ns}, workload operations this
+        tick, wall-clock timestamp, and physics state (\texttt{hot\_word\_count},
+        \texttt{total\_heat}).
+  \item Extend the \texttt{VM} struct with a pointer to a rate-sample ring
+        buffer and a sample count.
+  \item Call \texttt{capture\_heartbeat\_rate\_sample()} in
+        \texttt{heartbeat\_thread\_main()} before each \texttt{nanosleep()}.
+  \item Extend \texttt{DoeMetrics} and \texttt{metrics\_from\_vm()} to compute
+        correlation, responsiveness score, and convergence time from the
+        collected samples.
+\end{enumerate}
+
+\subsection{Expected Discrimination}
+
+The corrected design is expected to reveal clear separation among the five
+elite configurations on the load-correlation axis. A configuration with
+$\rho < 0.2$ fails to adapt its heartrate to load and should not be selected
+as the golden configuration regardless of its static performance score.
+
+The golden configuration — the one used as the MamaForth production baseline
+— is identified as the configuration with the highest composite heartrate
+responsiveness score, subject to a minimum correlation threshold of
+$\rho \geq 0.75$.
+
+%% TODO(bob): confirm whether corrected-design experiment was ever executed;
+%%   update status to HISTORICAL once results are in hand
+

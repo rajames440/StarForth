@@ -1,0 +1,147 @@
+%% SCRAP: papers/EXECUTIVE_SUMMARY
+%% SOURCE: docs/working/papers/EXECUTIVE_SUMMARY.md
+%% STATUS: CURRENT
+%% FITS: ssrn/intro, vol3-research/intro
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Executive Summary}
+
+\subsection{The Problem}
+
+Modern runtime systems face a persistent conflict between two design goals.
+Adaptive systems---contemporary web browsers, mobile application runtimes,
+JIT-compiled virtual machines---learn which code paths run most often and
+reorganize themselves to accelerate those paths. They improve over time, but
+their internal decisions vary from run to run; two executions of the same
+program on the same machine may produce different optimization states. This
+non-determinism is acceptable for web browsers but disqualifying for
+safety-critical software, financial systems requiring auditable behavior, or
+real-time systems with timing guarantees.
+
+Deterministic systems---firmware for medical devices, aircraft flight
+controllers, certified real-time kernels---run the same way on every
+invocation. They can be formally verified, exhaustively tested, and
+certified by standards bodies. But they cannot adapt: the optimization
+configuration frozen at compile time may be far from optimal for the actual
+workload seen at runtime.
+
+StarForth resolves this conflict. The system is simultaneously adaptive
+and completely predictable at the level of its algorithmic decisions.
+
+\subsection{What Was Built}
+
+StarForth is a FORTH-79 compliant virtual machine with a physics-driven
+adaptive runtime. Using execution frequency as a proxy for thermal energy
+(a deliberate conceptual metaphor, not a physics claim), the system tracks
+how often each dictionary entry executes, applies exponential decay to reduce
+the weight of stale executions, and maintains a small cache of the most
+frequently executed words for accelerated lookup. Every decision in this
+pipeline is deterministic: given the same execution sequence, the system
+produces the same cache configuration on every run.
+
+Seven feedback loops coordinate the adaptive behavior:
+
+\begin{itemize}
+  \item Execution heat tracking and hot-words caching (Loop~1)
+  \item Rolling window of execution history (Loop~2)
+  \item Linear decay of quiescent entries (Loop~3)
+  \item Word-to-word transition prediction (Loop~4)
+  \item Variance-based window width inference via Levene's test (Loop~5)
+  \item Decay slope inference via exponential regression (Loop~6)
+  \item Adaptive heartbeat coordination (Loop~7)
+\end{itemize}
+
+All loops are independently togglable and formally characterized. Fixed-point
+arithmetic (\Qtype\ throughout) eliminates IEEE-754 non-determinism across
+architectures.
+
+\subsection{Experimental Results}
+
+A three-configuration design of experiments ran 90 trials (30 runs per
+configuration):
+
+\begin{itemize}
+  \item \textbf{C\_NONE} (baseline): all adaptive loops disabled
+  \item \textbf{C\_CACHE}: hot-words cache enabled, inference disabled
+  \item \textbf{C\_FULL}: all seven loops active
+\end{itemize}
+
+\paragraph{Result 1: algorithmic determinism.}
+Across all 30 runs of C\_FULL, the cache hit rate was 17.39\% with a
+coefficient of variation (CV) of exactly 0.00\%. The F-test for variance
+homogeneity yields $F(29,29) \to \infty$, $p < 10^{-30}$. Even under
+intentional thermal stress (sustained CPU load), the algorithmic decisions
+did not change; only wall-clock runtime increased.
+
+\paragraph{Result 2: adaptive convergence.}
+C\_FULL improved from a mean of 10.20\,ms in early runs (1--15) to 7.61\,ms
+in late runs (16--30), a statistically significant 25.4\% improvement
+($t = 4.23$, $p < 0.001$, Cohen's $d \approx 5.08$). The baseline
+configuration (C\_NONE) showed slight degradation over the same window;
+C\_CACHE showed no meaningful improvement. Only the fully adaptive
+configuration converged.
+
+\paragraph{Result 3: variance decomposition.}
+Runtime exhibits 60--70\% CV due to OS scheduler noise, thermal variation,
+and cache-line effects. Cache decisions exhibit 0.00\% CV. The two components
+are statistically independent (Pearson $r = 0.03$, $p = 0.87$). The
+adaptive algorithm is perfectly stable; the environment adds noise on top
+of a deterministic foundation.
+
+\subsection{Implications}
+
+\paragraph{Verifiable adaptive systems.}
+A system whose adaptive decisions are deterministic can, in principle, be
+formally verified. The optimization state reachable from a given workload is
+predictable, auditable, and reproducible---properties required for
+safety-critical certification.
+
+\paragraph{Reproducible performance characterization.}
+Benchmark results become portable: different researchers running the same
+workload reach the same adaptive steady state, enabling apples-to-apples
+comparison of optimization strategies.
+
+\paragraph{Adaptation without non-determinism.}
+The results demonstrate that statistical inference can guide optimization
+without introducing randomness. The system adapts through arithmetic and
+counting, not machine learning or stochastic search.
+
+\subsection{Scope and Limitations}
+
+This work does not claim that StarForth is the fastest virtual machine, that
+its approach is superior to JIT compilation for all use cases, or that the
+thermodynamic framework is a physical theory. The 0.00\% algorithmic CV
+applies to cache decisions, not to total system runtime. The system is
+validated on CPU-bound, deterministic FORTH programs; I/O-bound workloads,
+programs with random control flow, and very short processes fall outside the
+validated scope. Fifteen failure modes are documented in the companion
+negative-results section.
+
+\subsection{Reproducibility}
+
+Full source code, raw experimental data from all 90 runs, and a
+step-by-step reproduction protocol are publicly available. A Docker container
+provides bit-for-bit exact reproduction against a pinned environment. The
+authoritative reproduction command is:
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/rajames440/StarForth.git
+cd StarForth
+make fastest
+./build/amd64/fastest/starforth --doe
+\end{lstlisting}
+
+Deviations from the expected 0.00\% algorithmic CV should be reported as bugs.
+
+\subsection{Summary}
+
+\begin{itemize}
+  \item An adaptive virtual machine can achieve 0.00\% algorithmic variance
+    across 90 experimental runs.
+  \item Adaptation and determinism are not mutually exclusive; statistical
+    inference drives optimization without introducing non-determinism.
+  \item Performance improves measurably (25.4\%) as the system converges to
+    steady state.
+  \item All data, code, and reproduction instructions are publicly available
+    for independent verification.
+\end{itemize}

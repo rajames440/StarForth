@@ -1,0 +1,52 @@
+%% SCRAP: archive/operations/jenkins-pipeline-guide
+%% SOURCE: docs/working/archive/operations/jenkins-pipeline-guide.adoc
+%% STATUS: OBSOLETE
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Jenkins Developer Pipeline Guide (2025-10-30)}
+
+This document described the StarForth Jenkins developer pipeline as it existed at
+version 1.0 (2025-10-30). The pipeline is no longer current; it is preserved as a
+historical operations record.
+
+\subsection{Pipeline Overview}
+
+The developer baseline pipeline (\texttt{Jenkinsfile}) ran in approximately two hours
+and covered 17~stages:
+
+\begin{enumerate}
+  \item Workspace cleanup and preparation.
+  \item Build gauntlet: DEBUG, STANDARD, FASTEST, and FAST configurations in parallel.
+  \item Smoke test.
+  \item Comprehensive test suite (936 tests).
+  \item Benchmark gauntlet: quick (1\,M iterations), full suite, and stack, arithmetic,
+        and logic stress tests (10\,M iterations each).
+  \item Extreme stress tests: deep recursion, maximum stack depth, memory allocation
+        patterns, long-running stability, and nested loops.
+  \item Thermal and performance monitoring under sustained load.
+  \item Memory leak detection (Valgrind).
+  \item Profile-guided optimisation build.
+  \item PGO performance comparison.
+  \item Edge-case testing: division by zero, stack underflow, stack overflow, invalid
+        memory access.
+  \item Performance regression check against baseline CSV.
+  \item Code quality: compiler warnings and lines-of-code analysis.
+  \item Formal verification: Isabelle theory build (audit mode), refinement status
+        check, code annotation validation, refinement report generation.
+  \item Documentation build: Doxygen API reference, \LaTeX{} conversion.
+  \item Package build: Debian (\texttt{.deb}) and Red Hat (\texttt{.rpm}) via
+        \texttt{fpm}.
+  \item Test report generation.
+\end{enumerate}
+
+\subsection{Planned Variants}
+
+Three derived pipelines were documented but not implemented at the time of archival:
+a Test pipeline (stages 1--8, 13--17, approximately one hour), a QA pipeline (stages
+1--7, 13--17 plus artifact signing, approximately 45 minutes), and a Production pipeline
+(stages 1--4, 13--17 plus security scanning and repository upload, approximately
+15 minutes).
+
+%% TODO(bob): confirm current CI/CD pipeline status and whether Jenkinsfiles were
+%% superseded by GitHub Actions or another system.

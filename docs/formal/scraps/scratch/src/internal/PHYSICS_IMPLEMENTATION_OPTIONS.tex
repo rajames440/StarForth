@@ -1,0 +1,71 @@
+%% SCRAP: scratch/src/internal/PHYSICS_IMPLEMENTATION_OPTIONS
+%% SOURCE: docs/working/scratch/src/internal/PHYSICS_IMPLEMENTATION_OPTIONS.adoc
+%% STATUS: HISTORICAL
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Physics Engine Implementation Options (Pre-Implementation Survey)}
+
+This document records the three implementation paths considered for
+extending the StarForth physics engine beyond its Phase 1 infrastructure.
+It predates the current implementation and is HISTORICAL; the physics engine
+has since been developed. Preserved as a design rationale record.
+
+\subsection{State at Survey Time}
+
+Phase 1 infrastructure was complete:
+
+\begin{itemize}
+  \item Execution hooks wired at both outer interpreter
+        (\texttt{vm.c:533}) and colon word executor (\texttt{vm.c:456})
+  \item Word metadata initialized with a 20-word seed table
+        (\texttt{physics\_metadata\_apply\_seed})
+  \item Temperature via exponential moving average from entropy
+  \item Analytics heap allocated (10\,MiB default)
+  \item Host snapshots functional (POSIX comprehensive, L4Re stub)
+\end{itemize}
+
+Missing: periodic capture mechanism, temperature decay model, feedback loop
+integration.
+
+\subsection{Option A: Zone 1 Discovery (1--2 hours)}
+
+Wire the observable data stream end-to-end to verify metrics flow from word
+execution to analytics heap. Steps: (1) call \texttt{physics\_host\_snapshot()}
+at 10\,ms intervals in the REPL loop; (2) add a \texttt{PHYSICS-HEAP-DUMP}
+FORTH word to inspect heap contents; (3) add a \texttt{PHYSICS-TEMPS} word
+to display per-word temperature distribution; (4) write an end-to-end test
+confirming metrics flow.
+
+\subsection{Option B: Metrics Infrastructure (2--3 days)}
+
+Build comprehensive metrics collection to feed scheduling and memory decisions.
+Steps: (1) per-word call-stack depth and recursion tracking; (2) latency
+histogram with percentiles (P50, P99, P99.9); (3) call-graph discovery with
+edge frequencies; (4) composite summary words (\texttt{PHYSICS-SUMMARY}).
+
+\subsection{Option C: Design Questions Resolution (1 day)}
+
+Resolve six architectural decisions before committing to a control system:
+
+\begin{description}
+  \item[Scheduling model.] Option chosen: hybrid (advisory hints building
+        toward batch enforcement).
+  \item[Memory placement.] Option chosen: logical tiers (advisory labels,
+        not physical movement).
+  \item[GC vs.\ spilling.] Option chosen: governance-driven policy with
+        per-word \texttt{can\_forget} and \texttt{can\_spill} flags.
+  \item[L4Re specifics.] Decision: defer L4Re optimization to Phase 3;
+        complete POSIX path first.
+  \item[Governance integration.] Decision: load governance config at
+        startup; runtime adjustments stay within approved ranges.
+  \item[Measurement overhead.] Estimated additional cost 80--100\,ns per
+        decision; acceptable for interactive and high-performance targets.
+\end{description}
+
+\subsection{Recommended Sequence}
+
+A $\to$ C $\to$ B $\to$ Phase 2 implementation. Option A validates
+infrastructure quickly; Option C guides what metrics Option B should
+prioritize; Option B then provides the data required for Phase 2 weak
+control.

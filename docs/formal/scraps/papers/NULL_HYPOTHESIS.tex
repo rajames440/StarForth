@@ -1,0 +1,179 @@
+%% SCRAP: papers/NULL_HYPOTHESIS
+%% SOURCE: docs/working/papers/NULL_HYPOTHESIS.md
+%% STATUS: CURRENT
+%% FITS: ssrn/ch-claims, experiments/ch-framework, vol3-research/ch-formal-claims
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Null Hypothesis and Falsification Framework}
+\label{sec:null-hypothesis}
+
+\subsection{Statement of the Null Hypothesis}
+
+\begin{description}
+  \item[$H_0$ (Null):] Performance variance in StarForth is attributable
+    solely to environmental stochasticity---OS scheduling noise, cache
+    effects, thermal throttling---and no invariant scaling relationship
+    exists between adaptive mechanisms and steady-state metrics. Formally:
+    \[
+      H_0\colon \sigma_{\text{algorithmic}} = \sigma_{\text{environmental}}
+    \]
+    The algorithm contributes no determinism beyond measurement noise.
+
+  \item[$H_1$ (Alternative):] Adaptive mechanisms produce deterministic
+    cache decisions distinct from environmental noise. Formally:
+    \[
+      H_1\colon \sigma_{\text{algorithmic}} < \sigma_{\text{environmental}}
+    \]
+\end{description}
+
+\subsection{Evidence Against the Null Hypothesis}
+
+\paragraph{Variance decomposition.}
+Measured across 90 experimental runs:
+
+\begin{table}[h]
+\centering
+\caption{Variance decomposition from the 90-run experiment.}
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Algorithm CV} & \textbf{Environment CV} \\
+\midrule
+Cache hit rate & 0.00\% & N/A \\
+Wall-clock runtime & N/A & 60--70\% \\
+Statistical independence & \multicolumn{2}{l}{Pearson $r = 0.03$, $p = 0.87$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Statistical test.}
+Two-sample F-test for variance homogeneity yields $F(29, 29) \approx \infty$,
+$p < 10^{-30}$. $H_0$ is rejected at $\alpha = 0.05$.
+
+\subsection{What Would Falsify the Claims}
+
+\paragraph{Claim~1 (algorithmic determinism).}
+\begin{itemize}
+  \item Cache hit rates vary by more than 0.1\% across identical runs.
+  \item Dictionary lookup decisions differ between runs with identical workloads.
+  \item Rolling window history contains non-deterministic elements.
+\end{itemize}
+
+Empirical test:
+\begin{lstlisting}[language=bash]
+for i in {1..100}; do
+    ./starforth --doe --config=C_FULL > run_${i}.csv
+done
+# Falsified if CV(cache_hits) > 0.1%
+\end{lstlisting}
+
+\paragraph{Claim~2 (adaptive convergence).}
+\begin{itemize}
+  \item C\_FULL shows no improvement over 30 runs ($p > 0.05$).
+  \item C\_NONE shows equal or better convergence than C\_FULL.
+  \item Late-run performance is statistically indistinguishable from early-run
+    performance.
+\end{itemize}
+
+\paragraph{Claim~3 (stability under environmental noise).}
+\begin{itemize}
+  \item Algorithm variance scales proportionally with environmental variance.
+  \item OS scheduling noise propagates into cache decisions.
+  \item External perturbations (thermal throttling) change the cache configuration.
+\end{itemize}
+
+Falsification under thermal stress:
+\begin{lstlisting}[language=bash]
+stress-ng --cpu 8 --timeout 60s &
+./starforth --doe --config=C_FULL > stressed.csv
+# Falsified if cache CV under stress > 0.5%
+\end{lstlisting}
+
+\paragraph{Claim~4 (reproducibility).}
+\begin{itemize}
+  \item An independent researcher cannot reproduce CV = 0.00\%.
+  \item Different hardware produces significantly different convergence rates.
+  \item Replication across systems yields conflicting results.
+\end{itemize}
+
+\subsection{Null Model Predictions}
+
+Under $H_0$, the expected observations are:
+\begin{itemize}
+  \item Cache hit rates vary randomly at 10--20\% CV (typical scheduling
+    noise). \emph{Observed: 0.00\%.} Null model fails.
+  \item All configurations show similar adaptation curves. \emph{Observed:
+    only C\_FULL converges.} Null model fails.
+  \item Runtime CV $\approx$ cache CV. \emph{Observed: 70\% vs.\ 0\%.}
+    Null model fails.
+  \item No fixed-point attractor in phase space. \emph{Observed: stable
+    convergence.} Null model fails.
+\end{itemize}
+
+The null model fails on all four predictions.
+
+\subsection{Bayesian Interpretation}
+
+With an agnostic prior ($P(H_0) = P(H_1) = 0.50$), the likelihood ratio
+from 90 runs is approximately $P(\text{data} \mid H_1) / P(\text{data}
+\mid H_0) \approx 10^{30}$. The posterior is:
+\[
+  P(H_1 \mid \text{data}) \approx 1 - 10^{-30}
+\]
+The null hypothesis is astronomically implausible given the observed data.
+
+\subsection{Control Experiments}
+
+\paragraph{Positive control (should show variance).}
+Introducing a timer-based random element (\texttt{TIMER @ 12345 XOR}) breaks
+determinism and produces $\text{CV} > 0\%$. This proves the measurement
+infrastructure can detect variance when it exists.
+
+\paragraph{Negative control (should show determinism).}
+A minimal FORTH program (\texttt{: SIMPLE 1 2 + . ;}) with no adaptation
+produces $\text{CV} = 0.00\%$---the trivial case. This establishes the
+measurement noise floor.
+
+\subsection{Statistical Power}
+
+With $n = 30$ runs, $\delta = 0.1$ (minimum detectable CV difference),
+$\sigma = 0.05$, and $\alpha = 0.05$, the computed power exceeds 0.99.
+If any non-determinism as small as 0.1\% CV existed, the experiment would
+have detected it with 99\% probability. The experiment is over-powered for
+the detection task.
+
+\subsection{Alternative Explanations Considered}
+
+\paragraph{Alternative 1: measurement artifact.}
+If measurement resolution were inadequate, runtime would also show 0\% CV.
+Runtime shows 70\% CV. This alternative is rejected.
+
+\paragraph{Alternative 2: cherry-picked data.}
+All 90 runs are committed to the repository with SHA256 checksums. No runs
+were excluded. The experimental protocol was documented before data
+collection. This alternative is rejected.
+
+\paragraph{Alternative 3: coincidental stability.}
+Stability is observed across three configurations, 90 runs spanning multiple
+days, and deliberate thermal stress. Probability of coincidence across all
+conditions is $< 10^{-30}$. This alternative is rejected.
+
+\paragraph{Alternative 4: trivial workload.}
+Fibonacci(20) generates $\approx 2.1 \times 10^6$ word executions with
+recursive control flow and power-law execution distribution (Zipf $\alpha
+\approx 1.1$). This is a partially valid concern: generalization to all
+workloads requires further study, and I/O-bound or random workloads are
+explicitly out of scope (see \S\ref{sec:negative-results}).
+
+\subsection{Burden of Proof}
+
+To reject the claims, a skeptic must produce at least one of:
+\begin{enumerate}
+  \item An independent replication with $\text{CV} > 0.1\%$ under controlled
+    conditions.
+  \item A demonstrated measurement artifact producing false 0\% CV.
+  \item Evidence that the statistical analysis is fundamentally flawed.
+  \item An alternative explanation consistent with all evidence simultaneously.
+\end{enumerate}
+
+Absent one of these, the null hypothesis is rejected and the claims stand.
+Independent replication protocols are provided in \S\ref{sec:reproducibility}.

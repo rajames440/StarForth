@@ -1,0 +1,120 @@
+%% SCRAP: architecture/03-architecture/pipelining/phase-1-instrumentation
+%% SOURCE: docs/working/architecture/03-architecture/pipelining/phase-1-instrumentation.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-pipelining
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Phase 1: Pipelining Instrumentation}
+
+Phase~1 establishes the observability layer for pipelining: it tracks
+word-to-word transitions during execution to answer which words typically
+follow which. It deliberately stops short of speculative execution, collecting
+the data that later phases will act upon.
+
+\subsection{Transition Metrics Structure}
+
+Each dictionary word carries a pointer to a transition-metrics record holding
+the per-successor transition-heat array, a total count, prefetch counters
+reserved for Phase~3, \Qtype{} latency accounts, and a cached most-likely
+successor with its probability.
+
+\begin{lstlisting}[language=C]
+typedef struct WordTransitionMetrics {
+    uint64_t *transition_heat;               /* Array[DICTIONARY_SIZE] */
+    uint64_t  total_transitions;
+    uint64_t  prefetch_attempts;             /* Phase 3 */
+    uint64_t  prefetch_hits;                 /* Phase 3 */
+    uint64_t  prefetch_misses;               /* Phase 3 */
+    int64_t   prefetch_latency_saved_q48;    /* Phase 3 */
+    int64_t   misprediction_cost_q48;        /* Phase 3 */
+    int64_t   max_transition_probability_q48;
+    uint32_t  most_likely_next_word_id;
+} WordTransitionMetrics;
+\end{lstlisting}
+
+The transition-heat array is allocated lazily on the first transition, so words
+that never execute consume no memory for tracking.
+
+\subsection{Data Collection}
+
+The inner interpreter records one transition per word boundary, gated on
+\lstinline{ENABLE_PIPELINING}. The cost is about two cycles per word
+execution---lost in the noise of the word itself.
+
+\begin{lstlisting}[language=C]
+if (prev_word && prev_word->transition_metrics && ENABLE_PIPELINING) {
+    transition_metrics_record(prev_word->transition_metrics,
+                              word_id, DICTIONARY_SIZE);
+}
+\end{lstlisting}
+
+\subsection{Fixed-Point Probability}
+
+All probabilities use 64-bit signed \Qtype{} fixed point, which keeps the math
+deterministic across platforms, free of \texttt{libm}, and compatible with
+formal verification---no floating point appears on the path.
+
+\begin{equation}
+  P_{\text{Q48.16}}
+  = \frac{\mathtt{transition\_heat}[\text{target}] \ll 16}
+         {\mathtt{total\_transitions}}.
+\end{equation}
+
+For example, 85 of 100 successors gives $(85 \ll 16)/100 = \mathtt{0xD800}$,
+i.e.\ $0.828125$, an $82.8\%$ probability.
+
+\subsection{Tuning Knobs}
+
+Five parameters control speculation behavior in later phases:
+\lstinline{SPECULATION_THRESHOLD_Q48} (default $0.50$, minimum confidence),
+\lstinline{SPECULATION_DEPTH} (default $1$, words ahead),
+\lstinline{MIN_SAMPLES_FOR_SPECULATION} (default $10$, observations before
+trusting a pattern), \lstinline{MISPREDICTION_COST_Q48} (default $25$~ns,
+recovery cost), and \lstinline{MINIMUM_PREFETCH_ROI} (default $1.10$, required
+improvement).
+
+\subsection{Diagnostic Words}
+
+Six FORTH words inspect the collected metrics:
+
+\begin{lstlisting}[language=Forth]
+PIPELINING-STATS                  ( -- )         \ dictionary-wide aggregate
+PIPELINING-SHOW-STATS             ( addr len -- ) \ one word's metrics
+PIPELINING-SHOW-TOP-TRANSITIONS   ( addr len N -- ) \ top N successors
+PIPELINING-ANALYZE-WORD           ( addr len -- ) \ predictability assessment
+PIPELINING-RESET-ALL              ( -- )         \ clear all metrics
+PIPELINING-ENABLE                 ( -- )         \ report compile-time state
+\end{lstlisting}
+
+Hot words such as \texttt{EXIT}, \texttt{LIT}, \texttt{DUP}, \texttt{@}, and
+\texttt{!} show hundreds to thousands of transitions with strong preferred
+successors, while rare words show few, variable transitions and make poor
+speculation candidates.
+
+\subsection{Design Decisions}
+
+\begin{itemize}
+  \item \textbf{Lazy allocation.} Most words execute rarely; allocating a
+        full-width array for every word would waste memory, so allocation is
+        deferred to first use.
+  \item \textbf{Fixed point over floating point.} Double precision was rejected
+        because it breaks formal verification on L4Re, accumulates error over
+        long benchmarks, and rounds platform-dependently.
+  \item \textbf{Pointer rather than embedded struct.} A pointer permits lazy
+        allocation and optional compilation without enlarging every dictionary
+        entry.
+\end{itemize}
+
+\subsection{Status and Known Limits}
+
+Phase~1 is complete: instrumentation collects transitions automatically,
+diagnostics report them, the build is non-breaking, and the test suite passes.
+Default builds collect but do not act on the data
+(\lstinline{ENABLE_PIPELINING=0}). Known limitations are an
+$O(\text{DICTIONARY\_SIZE})$ linear scan for word-ID lookup on each transition
+(a Phase~2 target, addressable with a \lstinline{word_id} field for an
+estimated hundred-fold speedup), non-atomic recording unsuited to multiple
+threads, and manual, non-adaptive knob tuning.
+
+%% TODO(bob): the source cites "all 731 tests passing"; the current suite is
+%% 936+. Confirm the test count appropriate to this chapter's vintage.

@@ -1,0 +1,209 @@
+%% SCRAP: papers/REPRODUCIBILITY
+%% SOURCE: docs/working/papers/REPRODUCIBILITY.md
+%% STATUS: CURRENT
+%% FITS: ssrn/app-repro, vol3-research/ch-repro, experiments/app-repro
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Reproducibility Protocol}
+\label{sec:reproducibility}
+
+\subsection{The One-Command Reproduction}
+
+The full experimental claim reduces to a single reproducible command:
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/rajames440/StarForth.git && \
+cd StarForth && \
+make fastest && \
+./build/amd64/fastest/starforth --doe --config=C_FULL
+\end{lstlisting}
+
+Expected output: cache hit rate $= 17.39 \pm 0.00\%$; runtime approximately
+7--10\,ms $\pm 60\%$ (hardware-dependent). A deviation in cache CV beyond
+0.1\% should be filed as a bug.
+
+\subsection{Exact Reproduction Environment}
+
+\subsubsection{Docker (Recommended)}
+
+The Docker container eliminates all environmental differences:
+
+\begin{lstlisting}[language=bash]
+docker build -t starforth-exact -f Dockerfile.exact-reproduction .
+docker run --rm \
+  -v $(pwd)/reproduction-results:/results \
+  starforth-exact
+cd reproduction-results/ && sha256sum -c EXPECTED_CHECKSUMS.txt
+\end{lstlisting}
+
+All SHA256 checksums matching constitutes bit-for-bit exact reproduction.
+
+\subsubsection{Reference Commit}
+
+The experimental baseline is commit \texttt{8133787}. Reproduce from this
+exact state with:
+\begin{lstlisting}[language=bash]
+git clone https://github.com/rajames440/StarForth.git
+cd StarForth
+git checkout 8133787
+\end{lstlisting}
+
+\subsubsection{Dependency Lock}
+
+Canonical environment (from \texttt{docker/reproduction.lock}):
+
+\begin{table}[h]
+\centering
+\caption{Pinned dependency versions for exact reproduction.}
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Version} \\
+\midrule
+OS & Ubuntu 22.04 \\
+Kernel & 6.2.0-39-generic \\
+GCC & 11.4.0-1ubuntu1\textasciitilde22.04 \\
+Make & 4.3-4.1build1 \\
+glibc & 2.35-0ubuntu3.8 \\
+binutils & 2.38-4ubuntu2.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reference Hardware}
+
+Original experiments conducted on an Intel Xeon Gold 6154 @ 3.00\,GHz
+(18 cores), 128\,GB DDR4-2666 ECC, Samsung 970 PRO NVMe 1\,TB,
+Ubuntu 22.04.3 LTS.
+
+Minimum requirements: x86\_64 with AVX2 support, 16\,GB RAM, 10\,GB free
+disk, Linux kernel 5.x\raisebox{0.5ex}{+}.
+
+Expected variability:
+\begin{table}[h]
+\centering
+\caption{Tolerances for reproduction on different hardware.}
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Tolerance} & \textbf{Reason} \\
+\midrule
+Cache CV & 0.00\% (exact) & Algorithmic determinism \\
+Runtime & $\pm 50\%$ & Hardware speed differences acceptable \\
+Convergence rate & $\pm 10\%$ & CPU-dependent lookup cost \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Environment Configuration}
+
+CPU and OS settings critical for matching the baseline:
+
+\begin{lstlisting}[language=bash]
+# CPU governor
+sudo cpupower frequency-set -g performance
+
+# Disable Turbo Boost (Intel)
+echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+
+# Disable ASLR
+echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
+
+# Pin to single core
+taskset -c 0 ./build/amd64/fastest/starforth --doe
+\end{lstlisting}
+
+These settings eliminate clock-frequency variance, prevent address-layout
+randomization from perturbing pointer arithmetic, and prevent cache
+invalidation from core migration.
+
+\subsection{Full 90-Run Experiment}
+
+The complete design-of-experiments protocol (3 configurations $\times$ 30
+runs = 90 trials) runs via:
+
+\begin{lstlisting}[language=bash]
+make reproduce-full-experiment   # ~4 hours
+make validate-reproduction       # checks CVs, p-values, checksums
+\end{lstlisting}
+
+Output directory structure:
+\begin{lstlisting}
+reproduction-results/
+  C_NONE/run_{01..30}.csv
+  C_CACHE/run_{01..30}.csv
+  C_FULL/run_{01..30}.csv
+  summary.txt
+  convergence.png
+  CHECKSUMS.sha256
+\end{lstlisting}
+
+\subsection{Statistical Validation}
+
+An automated R script verifies the reproduction against expected values:
+
+\begin{lstlisting}[language=R]
+Rscript scripts/validate_reproduction.R \
+  --input reproduction-results/ \
+  --expected experiment_summary.txt \
+  --output validation_report.txt
+\end{lstlisting}
+
+The script checks cache CV (expected 0.00\%), convergence $p$-value
+(expected $< 0.001$), and effect size (expected Cohen's $d \approx 5.08$,
+acceptable $\pm 10\%$), and outputs a PASS/FAIL verdict with specific
+deviations.
+
+\subsection{Absence of Hidden Randomness}
+
+The implementation contains no random number generators in the production
+execution path:
+
+\begin{lstlisting}[language=bash]
+grep -r "random\|rand\|srand" src/ include/
+# Expected: no matches in production code
+\end{lstlisting}
+
+The only acceptable matches are in test code that deliberately introduces
+randomness to verify failure modes (see \S\ref{sec:negative-results}).
+
+\subsection{Cross-Platform Reproduction}
+
+\paragraph{x86\_64 (Intel/AMD).} Fully supported and validated. Cache CV:
+0.00\%; convergence: $\approx 25\%$.
+
+\paragraph{AArch64 (ARM, Apple M1).} Experimental. Cache CV: 0.00\%
+(determinism holds); convergence magnitude: 18--30\% (CPU-dependent).
+
+\paragraph{RISC-V.} Untested. Hypothesis: determinism holds (algorithm is
+architecture-agnostic); performance gains are expected to vary.
+
+\subsection{Troubleshooting}
+
+\begin{description}
+  \item[Cache CV = 12.5\%, expected 0.00\%] Critical failure. Check:
+    \texttt{grep -r "rand(" src/} (should return nothing);
+    \texttt{cat /proc/sys/kernel/randomize\_va\_space} (should be 0);
+    \texttt{cat /sys/devices/system/cpu/cpu0/cpufreq/scaling\_governor}
+    (should be ``performance''). If all pass, file a GitHub issue with logs.
+
+  \item[Runtime = 150\,ms, expected ${\approx}$8\,ms] Debug build used.
+    Run \texttt{make clean \&\& make fastest}; confirm \texttt{-O3
+    -march=native -flto} in CFLAGS.
+
+  \item[Segmentation fault] Run
+    \texttt{valgrind --leak-check=full ./build/amd64/fastest/starforth --doe}.
+    File a GitHub issue with full valgrind output.
+\end{description}
+
+\subsection{Long-Term Archival}
+
+An archival package including source at commit \texttt{8133787}, the full
+90-run dataset, the Docker image, the dependency lock file, and this protocol
+is planned for Zenodo deposit.
+%% TODO(bob): insert Zenodo DOI once upload is complete
+
+\subsection{Contact}
+
+Email \texttt{rajames440@gmail.com} (R.A.\ James) with subject
+\texttt{[StarForth Replication] <brief issue>}. Include \texttt{uname -a},
+GCC version, build command, error logs, and expected vs.\ observed results.
+Response time: within 48 hours.

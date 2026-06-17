@@ -1,0 +1,91 @@
+%% SCRAP: architecture/getting-started/quick-start/factorial-doe
+%% SOURCE: docs/working/architecture/getting-started/quick-start/factorial-doe.md
+%% STATUS: CURRENT
+%% FITS: cookbook/ch-doe
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Quick Start: The $2^6$ Factorial DoE}
+
+The factorial Design of Experiments runs a complete, exhaustive
+$2^6 = 64$-configuration sweep in a single pass, collecting every measurement
+for later analysis. It toggles six independent binary feedback loops across all
+combinations and runs each configuration a chosen number of times.
+
+\subsection{Three Run Sizes}
+
+The same script supports three levels of statistical rigor, trading time for
+precision:
+
+\begin{itemize}
+  \item \textbf{Quick validation (30--45 minutes)} ---
+    \texttt{--runs-per-config 1} gives $64 \times 1 = 64$ runs, enough to
+    confirm the script and infrastructure work.
+  \item \textbf{Standard full DoE (2--4 hours)} ---
+    \texttt{--runs-per-config 30} gives $64 \times 30 = 1{,}920$ runs, with good
+    statistical power for main effects. This is the production-grade default.
+  \item \textbf{High-precision run (6--12 hours)} ---
+    \texttt{--runs-per-config 100} gives $64 \times 100 = 6{,}400$ runs, best for
+    detecting subtle interactions; typically run overnight.
+\end{itemize}
+
+\begin{lstlisting}[language=bash]
+./scripts/run_factorial_doe.sh --runs-per-config 30 2025_11_19_FULL_FACTORIAL
+\end{lstlisting}
+
+\subsection{What Is Tested}
+
+The six factors are independent binary feedback loops, each gated by a build
+flag.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Loop & Toggle & Function \\
+\midrule
+1 & \texttt{ENABLE\_LOOP\_1\_HEAT\_TRACKING} & Count execution frequency \\
+2 & \texttt{ENABLE\_LOOP\_2\_ROLLING\_WINDOW} & Capture execution history \\
+3 & \texttt{ENABLE\_LOOP\_3\_LINEAR\_DECAY} & Age words over time \\
+4 & \texttt{ENABLE\_LOOP\_4\_PIPELINING\_METRICS} & Track word transitions \\
+5 & \texttt{ENABLE\_LOOP\_5\_WINDOW\_INFERENCE} & Infer window width \\
+6 & \texttt{ENABLE\_LOOP\_6\_DECAY\_INFERENCE} & Infer decay slope \\
+\bottomrule
+\end{tabular}
+\caption{The six feedback-loop factors in the factorial design.}
+\end{table}
+
+All 64 combinations are exercised, from the all-off baseline
+(\texttt{0\_0\_0\_0\_0\_0}) through single-loop configurations to the all-on
+configuration (\texttt{1\_1\_1\_1\_1\_1}, the current optimum).
+
+\subsection{Generated Artifacts}
+
+A completed experiment directory contains the full measurement set
+(\texttt{experiment\_results.csv} --- for the standard run, 1{,}920 rows), a
+timing and metadata summary (\texttt{experiment\_summary.txt}), the list of all
+64 configurations (\texttt{configuration\_manifest.txt}), the randomized
+execution order (\texttt{test\_matrix.txt}), and a per-run log directory.
+
+\subsection{Execution Behavior}
+
+The script builds each of the 64 configurations (rebuilding only when the
+configuration changes), runs the tests in randomized order to eliminate
+systematic and thermal bias, collects metrics into CSV, and prints progress
+after every run. Four design decisions underpin the method: rebuild on every
+configuration change for clean isolation, randomize execution to remove
+temporal and thermal bias, run the complete factorial to capture all
+interactions, and collect everything in one pass for later analysis.
+
+\subsection{Analysis}
+
+After completion the results move to the analysis repository, where the
+factorial analysis script surfaces the main effects (which individual loops
+help most), interactions (whether loops help or hinder one another), the optimal
+subset (the best combination), and the performance-versus-complexity
+trade-offs.
+
+\begin{lstlisting}[language=bash]
+python3 analyze_factorial.py data/2025_11_19_FULL_FACTORIAL/experiment_results.csv
+\end{lstlisting}
+
+%% TODO(bob): source uses absolute developer paths (/home/rajames/...) and an external StarForth-DoE / StarForth-DoE-Analysis repo. Confirm canonical repo names/paths for the published edition.

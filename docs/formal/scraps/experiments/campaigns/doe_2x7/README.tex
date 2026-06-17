@@ -1,0 +1,119 @@
+%% SCRAP: experiments/campaigns/doe_2x7/README
+%% SOURCE: docs/working/experiments/campaigns/doe_2x7/README.md
+%% STATUS: CURRENT
+%% FITS: experiments/ch-factorial
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{$2^7$ Factorial Design of Experiments}
+
+The $2^7$ DoE campaign exhaustively tested all 128 combinations of
+StarForth's seven adaptive feedback loops (L1--L7) to identify optimal
+configurations and interaction effects. It represents the empirical
+foundation for the L8 Jacquard mode selector.
+
+\textbf{Scale:} 128 configurations $\times$ 300 replicates = 38\,400
+total runs. Duration approximately 6--8 hours on modern AMD64 hardware.
+Reference commit: \texttt{161a3667}.
+
+\subsection{Experimental Design}
+
+\subsubsection{Independent Variables}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Loop & Factor & Description & Hypothesis \\
+\midrule
+L1 & \texttt{HEAT\_TRACKING}    & Execution frequency tracking     & May cause cache thrashing \\
+L2 & \texttt{ROLLING\_WINDOW}   & Execution history buffer          & Enables pattern detection \\
+L3 & \texttt{LINEAR\_DECAY}     & Heat dissipation over time        & Prevents stale accumulation \\
+L4 & \texttt{PIPELINING\_METRICS} & Word transition prediction      & May add overhead \\
+L5 & \texttt{WINDOW\_INFERENCE} & Adaptive window sizing (Levene's) & Optimizes L2 window \\
+L6 & \texttt{DECAY\_INFERENCE}  & Exponential regression on heat    & Optimizes L3 decay slope \\
+L7 & \texttt{ADAPTIVE\_HEARTRATE} & Dynamic tick frequency          & Reduces overhead when stable \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Configuration Encoding}
+
+Each configuration is a 7-bit binary number with bit position $n$
+controlling loop $L(n+1)$. Configuration C97 (binary \texttt{1100001})
+enables L1, L5, and L6.
+
+\subsubsection{Dependent Variables}
+
+Primary: \texttt{ns\_per\_word} (execution time per FORTH word) and
+\texttt{cv} (coefficient of variation as stability metric).
+Secondary: \texttt{window\_width}, \texttt{decay\_slope\_q48},
+\texttt{total\_heat}, \texttt{hot\_word\_count}, \texttt{prefetch\_hits}.
+
+\subsection{Key Findings (300 Replicates, November 2025)}
+
+\subsubsection{Loop Effectiveness in Top 5\% Configurations}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Loop & Effect & Top-5\% Prevalence & Recommendation \\
+\midrule
+L1 (Heat)        & Harmful            & 14\% enabled  & Disable by default \\
+L2 (Window)      & Workload-dependent & 57\% enabled  & L8-controlled \\
+L3 (Decay)       & Beneficial         & 57\% enabled  & L8-controlled \\
+L4 (Pipeline)    & Harmful            & 0\% enabled   & Disable by default \\
+L5 (Window Inf.) & Beneficial         & 43\% enabled  & L8-controlled \\
+L6 (Decay Inf.)  & Workload-dependent & 57\% enabled  & L8-controlled \\
+L7 (Heartrate)   & Beneficial         & 71\% enabled  & Always on \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Top Configurations}
+
+\begin{center}
+\begin{tabular}{lllll}
+\toprule
+Rank & Config & Binary & Loops & Character \\
+\midrule
+1 & C97  & \texttt{0110001} & L1+L5+L6 & Temporal+diverse \\
+2 & C7   & \texttt{0000111} & L3+L5+L6 & Full inference \\
+3 & C75  & \texttt{0100011} & L2+L6    & Diverse+decay \\
+4 & C70  & \texttt{0100110} & L2+L5+L6 & Diverse+inference \\
+5 & C1   & \texttt{0000001} & L1 only  & Minimal \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Critical insight:} No single configuration is optimal across all
+workload types. This finding directly motivates the L8 Jacquard dynamic
+mode selector.
+
+\subsection{Running the Experiment}
+
+\begin{lstlisting}[language=bash]
+# Generate 128-configuration run matrix
+cd experiments/doe_2x7
+./generate_run_matrix.sh
+
+# Run full DoE (300 replicates, ~6-8 hours)
+./run_doe.sh 300
+
+# Quick test (10 replicates, ~15 minutes)
+./run_doe.sh 10
+\end{lstlisting}
+
+Results land in a timestamped directory containing raw CSV data, summary
+statistics, ANOVA interaction results, and 56 visualization plots
+(per-loop distributions, pairwise interaction plots, performance heatmap,
+Pareto frontier).
+
+\subsection{Analysis}
+
+The auto-generated R analysis script (\texttt{doe\_full\_report.R})
+produces ANOVA tables with main effects and interactions, Cohen's $d$ and
+$\eta^2$ effect sizes, and Pareto frontiers of speed versus stability.
+Requires R $\geq 4.0$ with \texttt{ggplot2}, \texttt{dplyr},
+\texttt{tidyr}, and \texttt{gridExtra}.
+
+%% PATENT: the loop effectiveness findings and their relationship to
+%% the L8 selector mechanism are patent-adjacent. Do not draft claims here.

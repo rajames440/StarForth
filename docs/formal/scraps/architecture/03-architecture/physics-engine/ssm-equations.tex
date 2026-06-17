@@ -1,0 +1,200 @@
+%% SCRAP: architecture/03-architecture/physics-engine/ssm-equations
+%% SOURCE: docs/working/architecture/03-architecture/physics-engine/ssm-equations.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-physics
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Mathematical Models of the Steady-State Machine}
+
+%% PATENT: This scrap covers patent-adjacent empirical relationships (the capacity
+%% law and its candidate claim language). Claim wording in the source is summarized
+%% as description only; no claim language is drafted here. Flag for Bob before any
+%% promotion that touches the claims.
+
+This section presents performance models derived empirically from the
+Steady-State Machine (SSM) experimental record: 51{,}840 runs of the StarForth
+VM across 128 feedback-loop configurations. Five relationships were extracted
+from the data with measurable precision. The headline result is a capacity law,
+$\Lambda(\mathrm{DoF}) = 4096 / (\mathrm{DoF}+1)$, which holds with a 0.00\%
+coefficient of variation across all stable configurations.
+
+These models are exploratory. Several borrow functional forms and names from
+physics --- the Lorentz factor, the Friedmann equation, the Schwarzschild
+radius --- purely because the data happens to fit those forms. The physics
+vocabulary is a modeling convenience for describing adaptive-system behavior; it
+is not a claim that the runtime obeys relativity or cosmology. Throughout,
+\textit{degrees of freedom} (DoF) denotes the number of enabled feedback loops,
+ranging from 0 to 7.
+
+\subsection{Equation 1 --- Performance Scaling with Load}
+
+Execution time scales with the number of enabled loops according to a Lorentz-like
+factor:
+
+\begin{equation}
+\tau(\mathrm{DoF}) = \tau_0 \cdot \gamma(\mathrm{DoF}),
+\qquad
+\gamma = \frac{1}{\sqrt{1 - \beta^2}},
+\qquad
+\beta^2(\mathrm{DoF}) = 0.0736\,\mathrm{DoF} + 0.1464,
+\end{equation}
+
+with $\tau_0 = 31.67$\,ms/word the rest-state performance. The empirical fit is
+$R^2 = 0.938$. The $\beta^2$ term grows linearly with DoF, so each additional
+loop carries increasing marginal overhead. The structural similarity to
+relativistic time dilation is offered as a predictive model, not a physical
+claim.
+
+\subsection{Equation 2 --- Window Capacity Law $\Lambda$}
+
+The central empirical finding is an inverse capacity law:
+
+\begin{equation}
+\Lambda(\mathrm{DoF}) = \frac{W_0}{\mathrm{DoF} + 1},
+\qquad W_0 = 4096.
+\end{equation}
+
+Equivalently, the product $\Lambda \times (\mathrm{DoF}+1) = W_0$ is conserved
+across all stable configurations.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{rrrr}
+\toprule
+DoF & Ideal $\Lambda$ & $\Lambda \times (\mathrm{DoF}+1)$ & Stability (CV) \\
+\midrule
+0 & 4096.0 & 4096.0 & 17.34\% \\
+1 & 2048.0 & 4096.0 & 16.70\% \\
+2 & 1365.3 & 4096.0 & 15.31\% \\
+3 & 1024.0 & 4096.0 & 13.91\% \\
+4 & 819.2  & 4096.0 & 13.77\% \\
+5 & 682.7  & 4096.0 & 13.96\% \\
+6 & 585.1  & 4096.0 & 14.33\% \\
+7 & 512.0  & 4096.0 & 22.06\% \\
+\bottomrule
+\end{tabular}
+\caption{Window capacity verification. The conserved product holds at $4096.0 \pm 0.0$, a 0.00\% coefficient of variation.}
+\end{table}
+
+The symbol $\Lambda$ is borrowed from cosmology for convenience: it denotes the
+effective window capacity per degree of freedom, with $W_0 = 4096$ bytes an
+empirically determined constant. As loops are added, proportional window
+capacity must fall to preserve stability, and the conserved product behaves as a
+stability invariant. Notably, $W_0 = 4096 = 2^{12}$ was not designed --- it
+emerged from experimental optimization, and may reflect memory page-size
+alignment, cache-line constraints, or buffer-size effects.
+
+\subsection{Equation 3 --- Expansion Dynamics (Friedmann Form)}
+
+The growth in execution time as loops activate fits a Friedmann-like form:
+
+\begin{equation}
+H^2(\mathrm{DoF}) \approx c_1\,\rho(\mathrm{DoF}) + c_2\,\Lambda(\mathrm{DoF}) + c_3,
+\end{equation}
+
+with the fitted relation
+
+\begin{equation}
+H^2 = -2.24\times10^{12}\,\mathrm{DoF} \;-\; 4.51\times10^{9}\,\Lambda \;+\; 2.11\times10^{13}.
+\end{equation}
+
+Here $H$ stands in for the performance growth rate, $\rho$ for the degrees of
+freedom, and $\Lambda$ for window-capacity pressure. The negative coefficients
+indicate that both DoF and $\Lambda$ contribute to deceleration --- the system
+resists unbounded growth through feedback regulation.
+
+\subsection{Equation 4 --- Instability Threshold (Schwarzschild Form)}
+
+A Schwarzschild-like radius models the onset of instability:
+
+\begin{equation}
+r_s(\mathrm{DoF}) = \frac{\mathrm{DoF}}{W_{\mathrm{norm}}},
+\qquad W_{\mathrm{norm}} = \frac{\text{window}}{4096}.
+\end{equation}
+
+In this analogy $r_s$ is the instability threshold, DoF the computational load,
+and $W_{\mathrm{norm}}$ the available space. The configurations with the highest
+coefficient of variation sit near this threshold.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{rrrrr}
+\toprule
+Config & DoF & $r_s$ & CV & Performance \\
+\midrule
+1  & 1 & 1.00 & 26.90\% & 32.43\,ms \\
+84 & 3 & 3.00 & 26.36\% & 34.94\,ms \\
+46 & 4 & 4.00 & 25.70\% & 50.27\,ms \\
+59 & 5 & 5.00 & 25.31\% & 50.43\,ms \\
+\bottomrule
+\end{tabular}
+\caption{Configurations nearest the instability threshold. Where $r_s \ge \mathrm{DoF}$, the system tends toward instability.}
+\end{table}
+
+\subsection{Equation 5 --- Energy--Momentum Form}
+
+Total execution time fits an energy--momentum relation:
+
+\begin{equation}
+E^2 = E_0^2 + p^2,
+\qquad E = \tau(\mathrm{DoF}),
+\qquad E_0 = \tau_0 = 31.67\,\mathrm{ms},
+\qquad p(\mathrm{DoF}) = 5.20\,\mathrm{DoF} + 6.55.
+\end{equation}
+
+Here $E_0$ is the all-loops-off baseline, $p$ the additional time cost from
+loops, and $E$ total execution time. Momentum scales linearly with DoF
+($R = 0.425$, $p < 10^{-6}$).
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{rrrrr}
+\toprule
+Config & DoF & $E_{\text{total}}$ & $E_{\text{rest}}$ & $p$ \\
+\midrule
+0   & 0 & 31.67 & 31.67 & 0.00 \\
+35  & 3 & 31.59 & 31.67 & 0.00 \\
+55  & 5 & 31.91 & 31.67 & 3.88 \\
+124 & 5 & 59.48 & 31.67 & 50.35 \\
+\bottomrule
+\end{tabular}
+\caption{Energy--momentum decomposition for selected configurations.}
+\end{table}
+
+Two configurations are notable. Config~\#35 carries three enabled loops yet sits
+at near-zero momentum, suggesting an optimal arrangement where loop interactions
+cancel. Config~\#124, the worst performer, carries the same DoF as Config~\#55
+but enormous momentum (50.35) --- a destructive combination of loops.
+
+\subsection{Interpretation and Open Experiments}
+
+The recurring observation is that these adaptive-runtime relationships fit
+functional forms also found in general relativity, thermodynamics, and quantum
+mechanics. The strongest of them, the capacity law, is exact to within
+measurement. Whether this reflects a deep property of feedback-driven systems or
+an emergent coincidence remains open; the SSM data is presented as evidence that
+the functional forms are useful predictive models.
+
+Several follow-on experiments are proposed:
+
+\begin{itemize}
+  \item \textbf{Window-size scaling.} Vary the window across 1024, 2048, 4096,
+        8192, and 16384 bytes and test whether $\Lambda(\mathrm{DoF}) =
+        W/(\mathrm{DoF}+1)$ holds, i.e.\ whether the 4096 constant scales
+        linearly with window size.
+  \item \textbf{Critical window capacity.} Reduce the window in steps and locate
+        a $W_{\text{crit}}$ below which the selector collapses to the all-off
+        configuration.
+  \item \textbf{Maximum degrees of freedom.} Extend beyond seven loops and test
+        whether the capacity law holds up to a $\mathrm{DoF}_{\max}$, with the
+        candidate $\mathrm{DoF}_{\max} \approx \log_2(W_0) = 12$.
+\end{itemize}
+
+%% PATENT: The source proposes patent claims based on the capacity law, the
+%% Lorentz-like scaling, and the Schwarzschild-like threshold, and outlines
+%% publication and funding strategy. That material is intentionally omitted here
+%% pending Bob's instruction; do not draft claim language in this scrap.
+%% TODO(bob): confirm which empirical relationships may appear in citable form.

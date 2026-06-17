@@ -1,0 +1,61 @@
+%% SCRAP: archive/operations/qa-intake-workflow
+%% SOURCE: docs/working/archive/operations/qa-intake-workflow.adoc
+%% STATUS: OBSOLETE
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{QA Intake and CAPA Backlog Workflow (Archived)}
+
+This document described the quality assurance intake process for StarForth
+at the time GitHub-based governance workflows were active (November 2025).
+The workflow has since been superseded by the current governance model.
+The record is preserved for process archaeology.
+
+\subsection{Overview}
+
+The QA intake workflow routed defects from five source types into the CAPA
+(Corrective and Preventive Action) backlog:
+manual testing, CI/CD failures, user reports, developer self-reports, and
+code review findings. GitHub Actions validated submissions, applied severity
+labels, and created Kanban board entries automatically.
+
+\subsection{Defect Sources}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Source & Description & Trigger \\
+\midrule
+Manual testing    & QA team testing          & QA creates issue via template \\
+CI/CD failures    & Baseline torture test    & Jenkins auto-creates CAPA \\
+User reports      & GitHub Issues            & QA converts to CAPA format \\
+Developer reports & Developer self-report    & Developer creates directly \\
+Code review       & Reviewer finding in PR   & Reviewer creates linked issue \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{CAPA Issue Structure}
+
+Each CAPA issue required eight sections: problem description, reproduction
+steps, expected behavior, code location (if known), severity assessment
+(critical / major / minor / low), regression indicator, workaround, and
+a minimal test case in FORTH.
+
+\subsection{Kanban Flow}
+
+Issues transitioned through five columns: Backlog, QA Review, In Progress,
+In Review, and Done. CI/CD failures auto-created issues and placed them in
+QA Review. Developer PRs referencing \texttt{Closes \#CAPA-NNN} moved cards
+to In Progress. Merge to master auto-closed issues.
+
+\subsection{Automated Severity Classification}
+
+GitHub Actions auto-classified severity and applied labels
+(\texttt{type:capa}, \texttt{severity:\{level\}}, optionally
+\texttt{regression}) upon issue creation. FMEA requirement was determined
+during QA triage: required for core arithmetic or safety-critical changes;
+optional for localized bugs.
+
+%% TODO(bob): confirm whether any successor governance process is worth
+%% documenting in the dev-guide volume, or whether this is purely archival.

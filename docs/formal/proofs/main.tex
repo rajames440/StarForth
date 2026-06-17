@@ -1,0 +1,201 @@
+%% Formal Verification Report — main.tex
+%% SOURCE: proof/*.thy (24 Isabelle/HOL theory files)
+%%         docs/working/architecture/VM_FORMALIZATION_PLAN.adoc
+%% NOTE: This publication is generated from the Isabelle/HOL proof corpus.
+%%       The canonical source is the proof/ directory at the repository root.
+%%       Run: isabelle build -D proof/
+%%       Do NOT edit .thy files via this publication — edit in proof/ directly.
+%% TODO(bob): set version and date — tie to proof corpus tag
+
+\input{../common/preamble}
+
+\title{StarForth Formal Verification Report\\[0.4em]
+       \large Isabelle/HOL Machine-Checked Proofs of Determinism and Correctness}
+\author{Robert A.\ James}
+\date{%% TODO(bob): set edition date
+}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+
+\mainmatter
+
+%%────────────────────────────────────────────────
+%% Part I — Foundations
+%%────────────────────────────────────────────────
+\part{Foundations}
+
+\chapter{Verification Methodology}
+%% SOURCE: docs/working/architecture/VM_FORMALIZATION_PLAN.adoc
+%% TODO(bob): promote the formalization plan — scope, tool chain, proof obligations.
+
+\chapter{Base Definitions and Type System}
+%% SOURCE: proof/StarForth_Base.thy
+%% TODO(bob): extract key definitions and theorem statements from StarForth_Base.thy.
+%% Include: VM state type, stack type, dictionary type, vaddr_t model.
+
+%%────────────────────────────────────────────────
+%% Part II — The Seven Feedback Loops
+%%────────────────────────────────────────────────
+\part{The Seven Feedback Loops}
+
+\chapter{Loop 1 — Execution Heat}
+%% SOURCE: proof/StarForth_Loop1_Heat.thy
+%% TODO(bob): key theorem: heat is monotone non-negative; decay is bounded.
+%% %% TODO(bob): PATENT — execution heat tracking is patent-adjacent.
+
+\chapter{Loop 2 — Rolling Window of Truth}
+%% SOURCE: proof/StarForth_Loop2_Window.thy
+%% TODO(bob): key theorem: circular buffer preserves ordering; snapshot is consistent.
+
+\chapter{Loop 3 — Linear Decay}
+%% SOURCE: proof/StarForth_Loop3_Decay.thy
+%% TODO(bob): key theorem: decay converges to zero in finite steps.
+
+\chapter{Loop 4 — Pipelining and Prefetch}
+%% SOURCE: proof/StarForth_Loop4_Pipeline.thy
+%% TODO(bob): key theorem: prefetch accuracy is a non-decreasing function of history.
+
+\chapter{Loop 5 — Window Width Inference}
+%% SOURCE: proof/StarForth_Loop5_WinInf.thy
+%% TODO(bob): key theorem: Levene's test terminates; binary chop converges.
+
+\chapter{Loop 6 — Decay Slope Inference}
+%% SOURCE: proof/StarForth_Loop6_DecayInf.thy
+%% TODO(bob): key theorem: exponential regression produces bounded slope estimate.
+
+\chapter{Loop 7 — Adaptive Heartrate}
+%% SOURCE: proof/StarForth_Loop7_Heartrate.thy
+%% TODO(bob): key theorem: heartrate stabilizes in finite time (steady-state convergence).
+
+%%────────────────────────────────────────────────
+%% Part III — Word Category Proofs
+%%────────────────────────────────────────────────
+\part{Word Category Correctness}
+
+\chapter{Arithmetic Words}
+%% SOURCE: proof/StarForth_Arithmetic_Words.thy
+%% TODO(bob): key theorems for +, -, *, /, MOD, ABS, MIN, MAX.
+
+\chapter{Stack Words}
+%% SOURCE: proof/StarForth_Stack_Words.thy
+%% TODO(bob): key theorems for DUP, DROP, SWAP, ROT, OVER, NIP, TUCK.
+
+\chapter{Logical Words}
+%% SOURCE: proof/StarForth_Logical_Words.thy
+%% TODO(bob): key theorems for AND, OR, XOR, INVERT, LSHIFT, RSHIFT.
+
+\chapter{Memory Words}
+%% SOURCE: proof/StarForth_Memory_Words.thy
+%% TODO(bob): key theorems for @, !, C@, C!, MOVE, FILL — memory safety.
+
+\chapter{Return Stack Words}
+%% SOURCE: proof/StarForth_Return_Stack_Words.thy
+%% TODO(bob): key theorems for >R, R>, R@, RDROP — return stack discipline.
+
+\chapter{Q48.16 Fixed-Point Arithmetic}
+%% SOURCE: proof/StarForth_Q48_16.thy
+%% TODO(bob): key theorems — overflow bounds, rounding correctness.
+
+%%────────────────────────────────────────────────
+%% Part IV — System-Level Proofs
+%%────────────────────────────────────────────────
+\part{System-Level Proofs}
+
+\chapter{Overall Correctness}
+%% SOURCE: proof/StarForth_Correctness.thy
+%% TODO(bob): top-level correctness theorem — determinism across 90 runs.
+
+\chapter{State Transitions}
+%% SOURCE: proof/StarForth_Transition.thy
+%% TODO(bob): state transition relation, reachability, invariant preservation.
+
+\chapter{Concurrency Properties}
+%% SOURCE: proof/StarForth_Concurrent.thy
+%% TODO(bob): concurrency properties — heartbeat thread non-interference.
+
+\chapter{Mutual Exclusion}
+%% SOURCE: proof/StarForth_Mutex.thy
+%% TODO(bob): mutex correctness — heartbeat + interpreter isolation.
+
+%%────────────────────────────────────────────────
+%% Part V — Word-Level ACL Proofs
+%%────────────────────────────────────────────────
+\part{Word-Level ACL Proofs}
+
+\chapter{Pin Monotonicity}
+%% SOURCE: proof/ACL_Pin_Monotone.thy
+%% TODO(bob): ACL-PIN is one-way: once pinned, cannot be un-pinned.
+%% %% TODO(bob): PATENT — pin mechanism is patent-adjacent.
+
+\chapter{Inheritance Clears Pin}
+%% SOURCE: proof/ACL_Inherit_Clears_Pin.thy
+%% TODO(bob): inheritance protocol — pin is not propagated to child words.
+
+\chapter{TTL Boundedness}
+%% SOURCE: proof/ACL_TTL_Bounded.thy
+%% TODO(bob): TTL counter is bounded and decreases monotonically.
+
+\chapter{Emergency Bypass}
+%% SOURCE: proof/ACL_Emergency_Bypass.thy
+%% TODO(bob): emergency console bypass — sound under fault handler activation.
+
+\chapter{No Privilege Escalation}
+%% SOURCE: proof/ACL_No_Escalation.thy
+%% TODO(bob): no unprivileged word can escalate to zuse privilege.
+
+%%────────────────────────────────────────────────
+%% Appendices
+%%────────────────────────────────────────────────
+\appendix
+
+\chapter{Theory File Inventory}
+\label{app:proof:inventory}
+
+\begin{table}[ht]
+  \centering
+  \caption{Isabelle/HOL theory files (24 total)}
+  \label{tab:proof:inventory}
+  \begin{tabular}{ll}
+    \toprule
+    Theory file & Coverage \\
+    \midrule
+    \texttt{StarForth\_Base.thy}              & Base definitions, type system \\
+    \texttt{StarForth\_Loop1\_Heat.thy}       & Execution heat (Loop 1) \\
+    \texttt{StarForth\_Loop2\_Window.thy}     & Rolling window (Loop 2) \\
+    \texttt{StarForth\_Loop3\_Decay.thy}      & Linear decay (Loop 3) \\
+    \texttt{StarForth\_Loop4\_Pipeline.thy}   & Pipelining (Loop 4) \\
+    \texttt{StarForth\_Loop5\_WinInf.thy}     & Window inference (Loop 5) \\
+    \texttt{StarForth\_Loop6\_DecayInf.thy}   & Decay inference (Loop 6) \\
+    \texttt{StarForth\_Loop7\_Heartrate.thy}  & Adaptive heartrate (Loop 7) \\
+    \texttt{StarForth\_Arithmetic\_Words.thy} & Arithmetic word correctness \\
+    \texttt{StarForth\_Stack\_Words.thy}      & Stack word correctness \\
+    \texttt{StarForth\_Logical\_Words.thy}    & Logical word correctness \\
+    \texttt{StarForth\_Memory\_Words.thy}     & Memory word correctness \\
+    \texttt{StarForth\_Return\_Stack\_Words.thy} & Return stack correctness \\
+    \texttt{StarForth\_Q48\_16.thy}           & Q48.16 fixed-point \\
+    \texttt{StarForth\_Correctness.thy}       & Overall correctness \\
+    \texttt{StarForth\_Transition.thy}        & State transitions \\
+    \texttt{StarForth\_Concurrent.thy}        & Concurrency properties \\
+    \texttt{StarForth\_Mutex.thy}             & Mutual exclusion \\
+    \texttt{ACL\_Pin\_Monotone.thy}           & ACL pin monotonicity \\
+    \texttt{ACL\_Inherit\_Clears\_Pin.thy}    & ACL inheritance \\
+    \texttt{ACL\_TTL\_Bounded.thy}            & ACL TTL bounds \\
+    \texttt{ACL\_Emergency\_Bypass.thy}       & ACL emergency bypass \\
+    \texttt{ACL\_No\_Escalation.thy}          & ACL no escalation \\
+    \texttt{ROOT}                             & Isabelle session manifest \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\chapter{Building and Checking Proofs}
+%% TODO(bob): build instructions — isabelle build -D proof/
+%% Expected output: all 23 theories check in < N minutes.
+
+\backmatter
+\bibliographystyle{plainnat}
+\bibliography{../common/starship}
+
+\end{document}

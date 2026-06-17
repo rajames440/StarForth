@@ -1,0 +1,103 @@
+%% SCRAP: hardware/platform-integration/RASPBERRY_PI_BUILD
+%% SOURCE: docs/working/hardware/platform-integration/RASPBERRY_PI_BUILD.adoc
+%% STATUS: CURRENT
+%% FITS: dev-guide/ch-raspi, user-guide/ch-raspi
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Building StarForth on Raspberry Pi 4}
+
+This guide covers building and tuning StarForth for the Raspberry Pi 4 with its
+ARM64 assembly optimizations. The board pairs a Broadcom BCM2711 (quad-core
+Cortex-A72 at 1.5\,GHz, ARMv8-A) with 32\,KB of L1 instruction and data cache
+per core, 1\,MB of shared L2, and LPDDR4-3200 memory; NEON and CRC32 are both
+present.
+
+\subsection{Building}
+
+The Pi 4 can be built natively or cross-compiled. A native build installs
+\texttt{build-essential}, clones the repository, and compiles with the
+Cortex-A72 tuning flags:
+
+\begin{lstlisting}[language=bash]
+make CFLAGS="-std=c99 -O3 -march=armv8-a+crc+simd -mtune=cortex-a72 \
+  -DUSE_ASM_OPT=1 -DUSE_DIRECT_THREADING=1 -Iinclude \
+  -Isrc/word_source -Isrc/test_runner/include"
+\end{lstlisting}
+
+Cross-compiling from x86\_64 Linux installs
+\texttt{gcc-aarch64-linux-gnu}, builds with \texttt{CC=aarch64-linux-gnu-gcc}
+and \texttt{LDFLAGS="-static"}, and copies the static binary to the board over
+\texttt{scp}. The repository provides convenience targets: \texttt{rpi4} for a
+native build, \texttt{rpi4-cross} for a static cross-build, and
+\texttt{rpi4-perf} for the maximum-performance build with direct threading and
+LTO.
+
+\subsection{Architecture Detection and Code Integration}
+
+A detection header (\texttt{include/arch\_detect.h}) selects the right
+optimization headers and primitive macros at compile time --- x86\_64,
+AArch64, or a portable fallback with a warning. Stack management, arithmetic
+words, and dictionary lookup each keep an assembly path guarded by
+\texttt{USE\_ASM\_OPT} alongside a C path, so the architecture-agnostic
+\texttt{vm\_push\_opt}/\texttt{vm\_pop\_opt} macros resolve to the best
+available implementation.
+
+\subsection{Performance Tuning}
+
+Three techniques dominate on the Cortex-A72. Aligning the \texttt{VM} struct to
+the 64-byte cache line and grouping hot data (stacks and pointers) away from
+cold data reduces false sharing. Prefetching the next dictionary entry while
+comparing the current one hides traversal latency. And NEON block copy moves 64
+bytes per iteration for bulk memory operations, falling back to scalar copy for
+the remainder.
+
+\subsection{Benchmarking}
+
+Reliable measurement requires pinning the CPU to performance mode and watching
+temperature. The governor is set with:
+
+\begin{lstlisting}[language=bash]
+echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+watch -n 1 vcgencmd measure_temp
+vcgencmd get_throttled        # 0x0 means no throttling occurred
+\end{lstlisting}
+
+A benchmark script builds an \texttt{-O2} baseline and the optimized
+\texttt{rpi4-perf} binary, runs a million iterations each of stack, arithmetic,
+and logic loops, and reports the timing difference along with final temperature
+and throttling status. The \texttt{perf} tool supplies cache-reference,
+cache-miss, branch, and branch-miss counters for deeper analysis.
+
+\subsection{Thermal and Power}
+
+Sustained workloads need cooling. A passive aluminum or copper heatsink
+covering the entire CPU with a 1\,mm thermal pad is the minimum; a 5\,V
+30\,mm fan, optionally GPIO-controlled, handles continuous load. Power draw runs
+2--3\,W idle, 4--5\,W under light load, and 7--8\,W with all cores busy, plus
+2--3\,W for peripherals --- the official 5\,V/3\,A supply is recommended.
+Overclocking through \texttt{/boot/config.txt} is possible but requires
+adequate cooling and may void the warranty.
+
+\subsection{Storage and Deployment}
+
+For the SD card, choose UHS-I or better with an A2 application-performance
+rating; brands with strong random I/O include Samsung EVO Plus, SanDisk
+Extreme, and Kingston Canvas React. For production, a systemd service unit runs
+StarForth on boot with automatic restart on failure; boot time can be trimmed
+by disabling unused features and the splash screen in \texttt{/boot/config.txt};
+and standard hardening (system updates, a UFW firewall, and key-only SSH)
+rounds out a deployment.
+
+\subsection{Troubleshooting}
+
+\begin{itemize}
+  \item \emph{Illegal instruction at runtime} --- the build exceeded the host's
+    feature set; rebuild with the conservative \texttt{-march=armv8-a}.
+  \item \emph{Cross-compiled binary will not run} --- confirm it is statically
+    linked (\texttt{file build/starforth}); rebuild with \texttt{-static}
+    otherwise.
+  \item \emph{Slower than expected} --- verify the governor is
+    \texttt{performance} rather than \texttt{ondemand} and check
+    \texttt{vcgencmd get\_throttled} for thermal throttling.
+  \item \emph{Out of memory} --- reduce \texttt{VM\_MEMORY\_SIZE} or add swap.
+\end{itemize}

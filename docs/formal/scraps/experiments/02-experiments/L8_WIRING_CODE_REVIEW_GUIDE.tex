@@ -1,0 +1,127 @@
+%% SCRAP: experiments/02-experiments/L8_WIRING_CODE_REVIEW_GUIDE
+%% SOURCE: docs/working/experiments/02-experiments/L8_WIRING_CODE_REVIEW_GUIDE.md
+%% STATUS: HISTORICAL
+%% FITS: experiments/ch-l8
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{L8 Control-Wiring Code Review}
+\label{sec:l8-wiring-code-review}
+
+This section documents the surgical code changes that completed the final
+``last mile'' connection between the L8 Jacquard mode selector and the four
+adaptive feedback loops it governs (L2, L3, L5, L6). The changes span three
+source files and approximately 55 lines of new conditional logic.
+
+\subsection{Summary}
+
+All 731 implemented tests passed on a clean \texttt{make fastest} build with
+zero warnings and zero errors. The four execution-path gates were verified
+individually and in combination.
+
+\subsection{Files Modified}
+
+\subsubsection{\texttt{src/physics\_metadata.c} — L3 Linear Decay Gate}
+
+The gate is inserted in \texttt{physics\_metadata\_apply\_linear\_decay()} after
+the existing null, frozen-word, and minimum-interval checks, placing it at the
+optimal early-exit position:
+
+\begin{lstlisting}[language=C]
+/* L8 GATE: Check if L3 (linear decay) is enabled by Jacquard mode selector */
+if (vm->ssm_config) {
+    ssm_config_t *config = (ssm_config_t*)vm->ssm_config;
+    if (!config->L3_linear_decay) {
+        return;  /* L3 disabled by L8 mode selector */
+    }
+}
+\end{lstlisting}
+
+When L3 is disabled, words retain execution heat without temporal decay, freezing
+the thermal state until the mode selector re-enables the loop.
+
+\subsubsection{\texttt{src/inference\_engine.c} — L5 and L6 Inference Gates}
+
+Both gates appear in \texttt{inference\_engine\_run()}, one at Phase~2C
+(window-width inference) and one at Phase~2D (decay-slope inference). Each gate
+preserves the previous output value when the loop is disabled, providing
+\emph{sticky configuration} semantics: the last computed value remains in effect
+rather than resetting to a default.
+
+\begin{lstlisting}[language=C]
+/* L5: Window Width Inference gate */
+uint32_t inferred_width = outputs->adaptive_window_width; /* keep previous */
+if (inputs->vm && inputs->vm->ssm_config) {
+    ssm_config_t *config = (ssm_config_t*)inputs->vm->ssm_config;
+    if (config->L5_window_inference) {
+        inferred_width = find_variance_inflection(
+            trajectory, traj_len, current_variance);
+    }
+} else {
+    inferred_width = find_variance_inflection(  /* legacy mode */
+        trajectory, traj_len, current_variance);
+}
+\end{lstlisting}
+
+The L6 gate is structurally identical, gating \texttt{infer\_decay\_slope\_q48()}.
+When either inference loop is off, disabling it avoids Levene's test
+($\sim$5{,}000~cycles saved) or exponential regression ($\sim$3{,}000~cycles saved)
+on every heartbeat tick.
+
+\subsubsection{\texttt{src/vm.c} — L2 Rolling Window Gate}
+
+The L2 gate sits in the hot path of \texttt{execute\_colon\_word()}, adding a
+null check and one boolean read ($\sim$2~CPU cycles) per word execution:
+
+\begin{lstlisting}[language=C]
+if (vm->ssm_config) {
+    ssm_config_t *config = (ssm_config_t*)vm->ssm_config;
+    if (config->L2_rolling_window) {
+        rolling_window_record_execution(&vm->rolling_window, word_id);
+    }
+} else {
+    rolling_window_record_execution(&vm->rolling_window, word_id);
+}
+\end{lstlisting}
+
+Call-site gating (Option~A) was chosen over an internal gate inside
+\texttt{rolling\_window\_record\_execution()} to preserve separation of concerns.
+
+\subsection{L8 Signal Path}
+
+The complete control chain from measurement to enforcement is:
+
+\begin{enumerate}
+  \item \texttt{vm\_heartbeat\_update\_l8()} computes entropy, CV, temporal
+        decay, and stability score each heartbeat cycle.
+  \item \texttt{ssm\_l8\_update()} evaluates the four metrics against thresholds
+        and selects a 4-bit mode (C0--C15) subject to 5-tick hysteresis.
+  \item \texttt{ssm\_apply\_mode()} decodes the mode bits into the L2/L3/L5/L6
+        boolean flags in \texttt{vm->ssm\_config}.
+  \item The execution-path gates (this implementation) read those flags at
+        runtime.
+\end{enumerate}
+
+\subsection{Performance Overhead}
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Loop & Gate overhead & Saving when disabled \\
+\midrule
+L2 (rolling window) & $\sim$2 cycles & $\sim$10 cycles \\
+L3 (linear decay)   & $\sim$2 cycles & $\sim$50 cycles \\
+L5 (window inference) & $\sim$2 cycles & $\sim$5{,}000 cycles \\
+L6 (decay inference)  & $\sim$2 cycles & $\sim$3{,}000 cycles \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Net impact across all four gates is less than 1\% overhead; the savings when
+loops are suppressed are substantial.
+
+\subsection{Default Behaviour}
+
+The VM initialises with mode C0 (all loops off). Within approximately 25~ms the
+L8 selector adapts to the running workload and enables the appropriate loop
+subset. The test suite passes in mode~C0, confirming that the gates do not break
+any existing behaviour.

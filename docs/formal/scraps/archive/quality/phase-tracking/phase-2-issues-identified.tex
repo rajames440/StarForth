@@ -1,0 +1,39 @@
+%% SCRAP: archive/quality/phase-tracking/phase-2-issues-identified
+%% SOURCE: docs/working/archive/quality/phase-tracking/phase-2-issues-identified.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section*{Phase~2 Issues: Fixed-Point Violations, Decay Slope, and Adaptive Window (November 2025)}
+
+A root-cause analysis conducted on 2025-11-08 identified four critical issues
+blocking Phase~2 validation of the StarForth adaptive physics engine.
+
+\textbf{Issue~1: Float/Double Violations.}
+Seven locations in \texttt{src/doe\_metrics.c} and three in
+\texttt{src/rolling\_window\_of\_truth.c} used IEEE~754 floating-point
+arithmetic for physics calculations that the architecture mandates be computed
+in Q48.16 fixed-point. Seven fields in \texttt{include/doe\_metrics.h} were
+typed as \texttt{double} rather than \texttt{uint64\_t}. These violations
+contaminated physics calculations and broke compatibility with the Isabelle/HOL
+formal model.
+
+\textbf{Issue~2: Decay Slope Uninitialized.}
+The \texttt{decay\_slope} field in \texttt{src/doe\_metrics.c} was hardcoded
+to \texttt{0.0}. No mechanism existed to capture dictionary heat at experiment
+start and end, nor to compute the observed slope from those snapshots.
+
+\textbf{Issue~3: Adaptive Window Non-Responsive.}
+The rolling window effective size was consistently reported as 4096 regardless
+of execution history. Instrumentation was absent, making it impossible to
+determine whether the shrink logic was executing, miscalculating growth rate,
+or measuring diversity incorrectly.
+
+\textbf{Issue~4: Unidirectional Adaptation.}
+The window-sizing logic shrunk the window when diversity growth fell below 1\%
+but never grew it. Wiring Feedback Loop~4 (prefetch accuracy) into Loop~5
+(window width inference) as a bidirectional binary-chop signal was identified
+as the required architectural addition.
+
+All four issues were subsequently resolved through the implemented Loop~5 and
+Loop~6 architecture now in production.

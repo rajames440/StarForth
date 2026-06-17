@@ -1,0 +1,100 @@
+%% SCRAP: architecture/03-architecture/hal/overview
+%% SOURCE: docs/working/architecture/03-architecture/hal/overview.md
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-platform
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{HAL Architecture Overview}
+
+The Hardware Abstraction Layer is the architectural foundation that lets
+StarForth evolve from a hosted virtual machine into StarKernel while preserving
+the physics-driven adaptive runtime's deterministic behavior on every platform.
+It is not an afterthought bolted onto the interpreter; it is the linchpin that
+makes the StarForth $\rightarrow$ StarKernel $\rightarrow$ StarshipOS
+progression possible without compromising the experimental integrity of the
+runtime.
+
+%% TODO(bob): the source notes the current code base uses sf_time_backend_t and
+%%   related abstractions; the hal_* naming described here is the target. Confirm
+%%   whether to present this as target-state or to reconcile with current naming.
+
+\subsection{The Problem}
+
+StarForth runs on Linux as a hosted POSIX process, on L4Re/Fiasco.OC as a
+microkernel guest, and, experimentally, on bare metal. Each platform brings its
+own timing, interrupt handling, memory allocation, and I/O. Without an
+abstraction, platform-specific code bleeds into the interpreter, the physics
+subsystems, and the word implementations, producing fragile conditional
+compilation, platform-specific bugs in nominally portable code, an inability to
+test kernel code on a hosted platform, and a standing risk to the deterministic
+guarantees that the runtime depends on. With the HAL, the interpreter and
+physics subsystems are platform-agnostic, the platform code is isolated and
+testable, new platforms can be added without touching the core, and determinism
+is guaranteed by the HAL contract rather than by platform quirks.
+
+\subsection{Three-Layer Model}
+
+The architecture stacks in three layers. At the top, the VM core and physics
+subsystems call only HAL interfaces. In the middle, the HAL declares the
+platform-agnostic contract across six subsystems: time, interrupts, memory,
+console, and CPU, plus panic. At the bottom, each platform supplies a concrete
+implementation --- Linux mapping onto \texttt{clock\_gettime}, timers,
+\texttt{malloc}, standard I/O, and threads; L4Re mapping onto its clock, IRQ,
+dataspace, console, and thread services; StarKernel mapping onto a calibrated
+TSC with HPET and APIC, the IDT and APIC interrupt path, a physical and virtual
+memory manager with \texttt{kmalloc}, a UART and framebuffer console, and SMP
+bring-up.
+
+\subsection{Design Principles}
+
+\emph{VM purity}: the core never knows its platform; all platform awareness
+lives in HAL implementations, replacing conditional-compilation anti-patterns
+with a single portable call. \emph{Contract-first design}: each HAL function has
+precise semantics, defined error handling, a performance envelope, and a stated
+concurrency model. \emph{Testability on hosted platforms}: kernel-bound code,
+such as the heartbeat ISR, is developed and tested on Linux before it reaches
+bare metal, using the same interface and the same VM code over a different
+platform layer. \emph{Zero overhead where possible}: optimized builds inline HAL
+calls to direct hardware access rather than paying for function-pointer
+indirection. \emph{Fail-fast validation}: a platform validates its assumptions
+at initialization --- calibrating its timer and confirming monotonicity, for
+instance --- and panics immediately rather than failing silently during
+execution.
+
+\subsection{The HAL and the Physics Subsystems}
+
+The adaptive runtime is the HAL's primary beneficiary, and notably it touches
+the abstraction only lightly. Of the physics subsystems, execution heat
+tracking, the hot-words cache, and the pipelining metrics depend on no HAL
+service at all --- they operate purely on VM and dictionary state. Only the
+rolling window and the inference engine call \texttt{hal\_time\_now\_ns()}, and
+only the heartbeat depends on the timer and interrupt interfaces. That just two
+of six subsystems reach the HAL, and only through clean interfaces, is precisely
+what preserves deterministic behavior while enabling kernel deployment.
+
+\subsection{The HAL and StarKernel}
+
+StarKernel is not a fork of the VM; it is a new platform implementation of the
+HAL. It implements the HAL functions, the UEFI boot loader, and the device
+drivers, and it modifies neither the interpreter core, nor the physics
+subsystems, nor the word implementations. That clean separation is the proof
+that the abstraction works: StarKernel is a platform layer, not a VM variant.
+
+\subsection{The HAL and StarshipOS}
+
+StarshipOS builds on StarKernel by adding a process model of Forth tasks, a
+filesystem, a networking stack, a unified device model, and a security model
+grounded in capabilities and Forth-based access control. Each of these still
+rests on the HAL for low-level access --- the filesystem on memory and
+interrupts, networking on interrupts and time, the device model on the HAL as a
+common substrate. The HAL is therefore not merely a kernel-bootstrapping tool;
+it is the foundation for the entire operating system.
+
+\subsection{Success Criteria}
+
+The HAL succeeds when the VM core carries zero platform-specific code, the full
+test suite passes on Linux, L4Re, and StarKernel, zero algorithmic variance is
+maintained across platforms, no measurable performance regression is introduced
+by the abstraction, StarKernel boots to its \texttt{ok} prompt and runs the
+REPL, the heartbeat behaves identically everywhere, and new platforms can be
+added without touching VM code.

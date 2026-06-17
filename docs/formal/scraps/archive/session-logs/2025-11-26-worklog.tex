@@ -1,0 +1,96 @@
+%% SCRAP: archive/session-logs/2025-11-26-worklog
+%% SOURCE: docs/working/archive/session-logs/2025-11-26-worklog.md
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Work Log: 26 November 2025}
+\subsection*{L8 Jacquard Mode Selector — Final Integration}
+
+This session completed two major deliverables: the full analysis of the
+2$^7$ Design of Experiments dataset and the production integration of the
+L8 Jacquard mode selector as the sole adaptive policy engine for StarForth.
+
+\subsection{Phase 1: 2\textsuperscript{7} DoE Analysis (10:30--12:58)}
+
+The Design of Experiments tested all 128 combinations of Loops~L1--L7,
+with 300 replicates per configuration (38,400 total runs). The analysis
+produced 56 visualisation plots and three CSV summary reports.
+
+\subsubsection{Loop Effectiveness (Top 5\% Configurations)}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Loop & Effect & Recommendation \\
+\midrule
+L1 (Heat Tracking)      & Harmful (86\% disable)  & Internal signal only \\
+L2 (Rolling Window)     & Workload-dependent       & L8-controlled \\
+L3 (Linear Decay)       & Beneficial               & L8-controlled \\
+L4 (Pipelining Metrics) & Harmful (100\% disable)  & Internal signal only \\
+L5 (Window Inference)   & Beneficial               & L8-controlled \\
+L6 (Decay Inference)    & Workload-dependent       & L8-controlled \\
+L7 (Adaptive Heartrate) & Beneficial (71\% enable) & Always-on \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+ANOVA revealed significant interaction effects: L2$\times$L3 (diverse and
+temporal synergy), L5$\times$L6 (dual inference coordination), and a
+negative L1$\times$L4 interaction. The critical finding was that no single
+static configuration is optimal across all workload types, which directly
+justified the L8 dynamic mode selector.
+
+\subsection{Phase 2: L8 Validation Experiment Design (13:00--15:51)}
+
+An 8$\times$5 factorial validation experiment was designed, comparing eight
+control strategies (the DoE top-5\% elite configurations plus
+\texttt{L8\_ADAPTIVE}) against five workload types (STABLE, DIVERSE,
+VOLATILE, TEMPORAL, TRANSITION). A TRANSITION workload was introduced as a
+novel test case: no static configuration can optimise for mid-run phase
+shifts, making it a direct test of the adaptive mechanism.
+
+\subsection{Phase 3: L8 Final Integration (15:51--18:06)}
+
+Commit \texttt{4028cb92}, tagged \texttt{l8-final-integration}, completed
+the integration. 25 files changed; 7,318 lines added, 183 removed.
+
+\subsubsection{Architecture Before and After}
+
+\textbf{Before:} seven user-facing build flags
+(\texttt{-DENABLE\_LOOP\_[1-7]=0/1}), producing 128 possible compiled
+configurations with conditional compilation guards throughout.
+
+\textbf{After:} L1--L7 always-on as internal physics layers. L8 is the
+sole policy engine, selecting from modes C0--C15 at runtime based on
+real-time signals from all seven loops.
+
+\subsubsection{L8 Mode Selection}
+
+The Jacquard engine collects three signals each heartbeat cycle:
+
+\begin{itemize}
+  \item Entropy (from L2 rolling window).
+  \item Coefficient of variation (from L4 pipelining metrics).
+  \item Temporal decay (from L3 decay slope).
+\end{itemize}
+
+Thresholds: entropy $> 0.75$ activates L2; CV $> 0.15$ activates L5/L6;
+temporal locality $> 0.5$ activates L3. Five-tick hysteresis prevents mode
+thrashing. Mode transitions are logged at diagnostic level.
+
+\subsubsection{Properties of the Final Architecture}
+
+\begin{itemize}
+  \item Zero user-facing configuration: the VM self-tunes.
+  \item Linear code flow: all \texttt{\#ifdef ENABLE\_LOOP\_X} guards removed.
+  \item Data-driven: grounded in 38,400 experimental runs.
+  \item Verification-ready: deterministic mode transitions.
+\end{itemize}
+
+\subsection{Session Metrics}
+
+Development time: approximately 8 hours. Lines added: 7,318. Lines
+removed: 183. DoE runs: 38,400. Analysis artefacts: 56 plots, 3 CSV
+reports, 1 R script, 1 HTML report. Build status at session end: clean,
+zero warnings, 936+ tests passing.

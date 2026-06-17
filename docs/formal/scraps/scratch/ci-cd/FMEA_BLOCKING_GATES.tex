@@ -1,0 +1,78 @@
+%% SCRAP: scratch/ci-cd/FMEA_BLOCKING_GATES
+%% SOURCE: docs/working/scratch/ci-cd/FMEA_BLOCKING_GATES.adoc
+%% STATUS: HISTORICAL
+%% FITS: none
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{FMEA Blocking Gate Mechanism}
+
+The FMEA Blocking Gate mechanism prevents Corrective Action and Preventive Actions (CAPAs),
+Engineering Change Requests (ECRs), and Engineering Change Orders (ECOs) from advancing
+without a completed Failure Mode and Effects Analysis. The gate treats FMEA as a mandatory
+side trip: any ticket requiring analysis is held until all designated stakeholders approve
+the FMEA submission, at which point the governance record is routed to the
+\texttt{in\_basket} queue and the parent ticket is released.
+
+\subsection{Trigger Conditions}
+
+The system auto-detects FMEA requirements under the following conditions.
+
+\paragraph{CAPA triggers.}
+\begin{itemize}
+  \item Severity is CRITICAL (crashes, segfaults, data loss, security issues).
+  \item Severity is MAJOR and the regression flag is set.
+  \item Title or description contains the keywords \emph{architecture}, \emph{design},
+        \emph{data integrity}, or \emph{safety}.
+\end{itemize}
+
+\paragraph{ECR triggers.}
+The ECR submission form carries an explicit \textbf{FMEA Decision} field:
+\texttt{no}, \texttt{optional}, or \texttt{required}.
+
+\paragraph{ECO triggers.}
+An ECO inherits the FMEA decision from its related ECR. If the ECR decision is
+\texttt{required}, the ECO is blocked until FMEA approval.
+
+\subsection{Blocking Workflow}
+
+\begin{enumerate}
+  \item CAPA, ECR, or ECO is created.
+  \item Auto-assessment determines whether FMEA is required.
+  \item If required: \texttt{fmea-required} and \texttt{blocked} labels are applied;
+        a blocking comment is posted; the FMEA template link is attached; a 24-hour
+        SLA deadline is set for filing the FMEA issue.
+  \item The developer or manager files a separate FMEA issue, links it to the parent
+        ticket, defines failure modes and mitigations, and lists required stakeholders.
+  \item Stakeholders review in parallel (QA Lead, Architecture, Security if applicable)
+        and each posts an approval comment.
+  \item After all stakeholders approve, the QA Lead verifies completeness, routes the
+        FMEA to \texttt{in\_basket/Fmea/}, collects digital signatures from the approval
+        comments, and posts a final approval comment.
+  \item The QA Lead removes the \texttt{blocked} and \texttt{fmea-required} labels.
+        The parent ticket proceeds to implementation.
+\end{enumerate}
+
+\subsection{Service Level Agreements}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Activity & SLA & Owner \\
+\midrule
+File FMEA after block & 24 hours & Developer / Manager \\
+Stakeholder review window & 5 business days & QA Lead sets deadline \\
+QA Lead routes to \texttt{in\_basket} & 2 business days & QA Lead \\
+\texttt{in\_basket} FMEA triage & 10 business days & Governance QA \\
+Disposition to Vault & Per governance decision & QA / Governance \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Jenkins Integration (Phase 2)}
+
+Phase 2 of the CI/CD rollout extends the FMEA gate into Jenkins pipeline jobs. Each
+pipeline stage queries the associated GitHub issue for the \texttt{fmea-required} label
+and calls a helper that scans issue comments for stakeholder approval signatures. A stage
+fails—and pipeline promotion is blocked—if FMEA is required but not fully approved.
+
+%% TODO(bob): confirm whether Jenkins Phase 2 was ever completed or remains planned.

@@ -1,0 +1,90 @@
+%% SCRAP: hardware/platform-integration/l_4_re_blkio_endpoints
+%% SOURCE: docs/working/hardware/platform-integration/l_4_re_blkio_endpoints.adoc
+%% STATUS: WORKING
+%% FITS: dev-guide/ch-l4re
+%% EDITORIAL: lifted — prose rewritten to press voice
+
+\section{Block I/O Porting Endpoints for L4Re}
+
+The \texttt{blkio} subsystem maps cleanly onto L4Re because its northbound API
+never changes. Porting to the microkernel means supplying new backends ---
+dataspace-based or IPC-based --- behind the same six-function interface; the VM
+and Forth block words keep calling exactly what they call today.
+
+\subsection{The Stable Northbound API}
+
+Every caller goes through this fixed surface, which constitutes the subsystem
+ABI:
+
+\begin{lstlisting}[language=C]
+int  blkio_open (blkio_dev_t *dev, const blkio_vtable_t *vt, const blkio_params_t *p);
+int  blkio_close(blkio_dev_t *dev);
+int  blkio_read (blkio_dev_t *dev, uint32_t fblock, void *dst);
+int  blkio_write(blkio_dev_t *dev, uint32_t fblock, const void *src);
+int  blkio_flush(blkio_dev_t *dev);
+int  blkio_info (blkio_dev_t *dev, blkio_info_t *out);
+\end{lstlisting}
+
+\subsection{In-Process Dataspace Backend}
+
+When the VM can attach a dataspace directly, this is the fastest path --- no IPC
+involved. The backend exposes \texttt{blkio\_l4ds\_state\_size()},
+\texttt{blkio\_l4ds\_init\_state(...)}, and \texttt{blkio\_l4ds\_vtable()}, and
+holds a small state record carrying the dataspace capability, the attached
+virtual address, the mapped length, the block size, the block count, and a
+read-only flag. The operations are direct: \texttt{open} attaches the dataspace
+with \texttt{l4re\_rm\_attach()} and derives the block count;
+\texttt{read}/\texttt{write} are \texttt{memcpy} against the mapped region;
+\texttt{flush} is a no-op (or a dataspace operation if required); and
+\texttt{close} detaches with \texttt{l4re\_rm\_detach()}.
+
+\subsection{Out-of-Process Block Server Backend}
+
+When storage is owned by another task --- an AHCI, NVMe, or eMMC server --- the
+client-side backend exposes \texttt{blkio\_l4svc\_state\_size()},
+\texttt{blkio\_l4svc\_init\_state(...)}, and \texttt{blkio\_l4svc\_vtable()},
+talking to the server over a small opcode protocol:
+
+\begin{lstlisting}[language=C]
+enum bsvc_op {
+  BSVC_INFO  = 1,
+  BSVC_READ  = 2,
+  BSVC_WRITE = 3,
+  BSVC_FLUSH = 4,
+  BSVC_PING  = 5
+};
+\end{lstlisting}
+
+Two transports are available: a shared dataspace mapped by both server and
+client (preferred), or inline IPC carrying the block payload in the message
+(simpler but less efficient). The operations map onto the protocol directly ---
+\texttt{read} sends the opcode and block number and the server fills the shared
+buffer, \texttt{write} copies into the shared buffer before sending, and
+\texttt{info} queries block size, count, and flags.
+
+\subsection{Factory Helpers and CLI Semantics}
+
+Backend selection can be hidden behind factory overloads ---
+\texttt{blkio\_factory\_open\_l4ds(...)},
+\texttt{blkio\_factory\_open\_file(...)}, and
+\texttt{blkio\_factory\_open\_l4svc(...)} --- so \texttt{main.c} chooses a
+backend from its arguments and environment. On L4Re the CLI follows the same
+logic: \texttt{--disk-img=<path>} resolves either to a file server returning a
+dataspace (the l4ds backend) or to a block server (the l4svc backend);
+\texttt{--ram-disk=<MB>} allocates a RAM dataspace and uses the l4ds backend;
+and with no disk image the system falls back to a RAM disk from the allocator.
+
+\subsection{Composite Backends}
+
+The intended layout dispatches by block number: blocks 0--1023 go to a RAM
+backend and blocks 1024 and above go to a disk backend, both wrapped in a
+composite vtable that routes on \texttt{fblock}. A later enhancement adds an
+outer wrapper that packs three 1\,KiB blocks plus 1\,KiB of metadata into 4\,KiB
+pages for device alignment --- still presenting the same five operations.
+
+\subsection{Summary}
+
+The L4Re port introduces two new backends (the in-process dataspace backend and
+the IPC client/server backend) and, optionally, two factory helpers. Nothing
+else moves: the VM continues to call \texttt{blkio\_read},
+\texttt{blkio\_write}, and the rest. Backends are swapped, not call sites.
