@@ -443,6 +443,34 @@ Kernel baseline: `QEMU_BASELINE.log` captures reference QEMU/OVMF output for reg
 
 ---
 
+## Acceptance Tests — LithosAnanke Three-Arch
+
+The acceptance gate for LithosAnanke (Phase 7 and any kernel-touching change) is a
+clean QEMU boot on all three supported architectures. These run **serially** — only
+one QEMU instance at a time. `clean` is mandatory before each arch to prevent stale
+cross-arch objects from leaking.
+
+```bash
+make -f Makefile.starkernel ARCH=amd64    clean qemu
+make -f Makefile.starkernel ARCH=aarch64  clean qemu
+make -f Makefile.starkernel ARCH=riscv64  clean qemu
+```
+
+**Pass criteria — each arch must:**
+- Boot to the `ok>` REPL without fault or hang
+- Print the expected milestone banner (M0–M7 sequence)
+- Exit QEMU cleanly (no panic, no triple fault)
+
+**Constraints:**
+- **No DoE execution** during acceptance — `--doe` flag must not be set
+- **No ACL activated** — `init.4th` must have `S" ACL.4th" EXEC` commented out
+- **Serial only** — never run two QEMU instances in parallel; they share OVMF state
+- `clean` before each arch — cross-arch object contamination causes silent miscompiles
+
+**Reference output:** `QEMU_BASELINE.log`
+
+---
+
 ## Formal Verification
 
 The `proof/` directory contains 19 Isabelle/HOL theory files providing
