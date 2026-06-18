@@ -4,6 +4,10 @@
 
 \input{../common/preamble}
 
+%% longtable for the word reference appendix
+\usepackage{longtable}
+\usepackage{array}
+
 \title{StarForth User Guide\\[0.4em]
        \large Running, Scripting, and Exploring StarForth}
 \author{Robert A.\ James}
@@ -13,14 +17,34 @@
 \begin{document}
 \frontmatter
 \maketitle
+
 \tableofcontents
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter*{About This Guide}
+%%────────────────────────────────────────────────────────────────────────────
+
+This guide covers StarForth from the perspective of someone sitting at a
+terminal running it. You might know FORTH already, or this might be your first
+encounter with stack-based programming. Either way, the goal is the same: get
+you productive at the prompt.
+
+StarForth is a FORTH-79 compliant virtual machine that also happens to contain
+a physics-driven adaptive runtime. Most of the time the runtime is invisible ---
+it tunes itself in the background while you type. When you want to inspect or
+control it, this guide covers that too.
+
+The guide is organized so you can read it front-to-back or jump to the chapter
+you need. Part~I gets you running. Part~II through Part~VI cover the language.
+Part~VII covers the physics features unique to StarForth. Part~VIII gives a
+brief orientation to the access-control system. The appendix is a compact
+word-reference table you can keep open alongside your terminal.
 
 \mainmatter
 
-%%────────────────────────────────────────────────
-%% Part I — First Steps
-%%────────────────────────────────────────────────
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 \part{First Steps}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 \chapter{Installation}
 \input{../scraps/architecture/getting-started/INSTALL}
@@ -28,87 +52,2036 @@
 \chapter{Quick Start}
 \input{../scraps/architecture/getting-started/QUICKSTART}
 
-%%────────────────────────────────────────────────
-%% Part II — The StarForth REPL
-%%────────────────────────────────────────────────
-\part{The StarForth REPL}
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Your First Session}
+\label{chap:first-session}
+%%────────────────────────────────────────────────────────────────────────────
 
-\chapter{Interactive Mode}
-%% TODO(bob): stub — describe REPL prompt, input loop, error recovery, BYE.
+This chapter walks through a complete interactive session from starting the
+REPL to shutting it down. Every prompt and response is annotated.
 
-\chapter{Running Files and Blocks}
-%% TODO(bob): stub — INCLUDE, LOAD, THRU, block file layout.
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Starting StarForth}
+\label{sec:starting}
 
-\chapter{The Emergency Console}
-%% TODO(bob): stub — describe ok> emergency prompt, fault recovery, EMERGENCY_CONSOLE_ENABLED flag.
+After building, start the interactive REPL:
 
-%%────────────────────────────────────────────────
-%% Part III — FORTH-79 Word Reference
-%%────────────────────────────────────────────────
-\part{FORTH-79 Word Reference}
+\begin{lstlisting}[language=bash]
+./build/amd64/standard/starforth
+\end{lstlisting}
 
-\chapter{Stack Operations}
-%% TODO(bob): stub — DUP DROP SWAP ROT OVER NIP TUCK 2DUP 2DROP 2SWAP.
+StarForth loads \texttt{init.4th}, sets up the dictionary, and prints the
+prompt:
 
-\chapter{Arithmetic and Logic}
-%% TODO(bob): stub — + - * / MOD ABS MIN MAX AND OR XOR INVERT LSHIFT RSHIFT.
+\begin{lstlisting}[language=Forth]
+ok>
+\end{lstlisting}
 
-\chapter{Memory and Variables}
-%% TODO(bob): stub — @ ! C@ C! VARIABLE CONSTANT CREATE DOES>.
+The \texttt{ok>} prompt means the system is ready, the data stack is empty, and
+you are in interpretation mode. Everything you type is interpreted immediately.
+There is no compile-then-run cycle for interactive work.
 
-\chapter{Control Flow}
-%% TODO(bob): stub — IF ELSE THEN DO LOOP BEGIN UNTIL WHILE REPEAT.
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Pushing Numbers}
+\label{sec:push-numbers}
 
+Type a number and press Enter. StarForth pushes it onto the data stack:
+
+\begin{lstlisting}[language=Forth]
+ok> 42
+ok>
+\end{lstlisting}
+
+No output yet --- the number is on the stack waiting to be used. Push another:
+
+\begin{lstlisting}[language=Forth]
+ok> 7
+ok>
+\end{lstlisting}
+
+Now two numbers are on the stack: 42 on the bottom, 7 on top.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Arithmetic}
+\label{sec:arithmetic-first}
+
+The word \texttt{+} pops the top two items, adds them, and pushes the result:
+
+\begin{lstlisting}[language=Forth]
+ok> 42 7 +
+ok>
+\end{lstlisting}
+
+Still no output --- the result (49) is sitting on the stack. Use the dot word
+\texttt{.} to pop and print it:
+
+\begin{lstlisting}[language=Forth]
+ok> 42 7 + .
+49 ok>
+\end{lstlisting}
+
+You can write this all on one line. StarForth reads left to right, executing
+each word as it encounters it:
+
+\begin{lstlisting}[language=Forth]
+ok> 3 4 * .
+12 ok>
+\end{lstlisting}
+
+Multiplication works the same way. All arithmetic is postfix: the operands
+come before the operator.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Inspecting the Stack with .S}
+\label{sec:dot-s}
+
+\texttt{.S} (dot-S) prints the entire stack without consuming anything. This
+is your main tool for understanding what is happening:
+
+\begin{lstlisting}[language=Forth]
+ok> 10 20 30
+ok> .S
+<3> 10 20 30 ok>
+\end{lstlisting}
+
+The \texttt{<3>} tells you there are three items. The items are shown
+bottom-to-top, so the rightmost number (30) is on top. The stack is
+unchanged after \texttt{.S}.
+
+Clear the stack with \texttt{DROP} repeated, or define a word later, or just
+exit and restart. For now:
+
+\begin{lstlisting}[language=Forth]
+ok> DROP DROP DROP
+ok> .S
+<0> ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Listing Available Words with WORDS}
+\label{sec:words}
+
+\texttt{WORDS} prints every word currently in the dictionary:
+
+\begin{lstlisting}[language=Forth]
+ok> WORDS
+WORD-ENTROPY PHYSICS-FREEZE PHYSICS-THAW WORDS .S .
+DUP DROP SWAP ROT OVER NIP TUCK 2DUP 2DROP 2SWAP
+... (many more) ...
+ok>
+\end{lstlisting}
+
+The list is long. StarForth ships the full FORTH-79 word set plus
+extensions. Use \texttt{WORDS} when you cannot remember a word's exact name.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Defining Your First Word}
+\label{sec:first-definition}
+
+Use \texttt{:} to define a new word and \texttt{;} to end the definition:
+
+\begin{lstlisting}[language=Forth]
+ok> : DOUBLE  DUP + ;
+ok> 7 DOUBLE .
+14 ok>
+\end{lstlisting}
+
+\texttt{DOUBLE} is now in the dictionary. It takes one number, duplicates it,
+and adds the two copies together. You can use it anywhere.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Errors and Recovery}
+\label{sec:errors}
+
+Type something StarForth does not recognize:
+
+\begin{lstlisting}[language=Forth]
+ok> FOO
+Error: word not found: FOO
+ok>
+\end{lstlisting}
+
+StarForth reports the error and returns to the prompt. The stack is reset to
+the state it was in before the offending line. You can keep working:
+
+\begin{lstlisting}[language=Forth]
+ok> 3 4 + .
+7 ok>
+\end{lstlisting}
+
+Stack underflow (trying to pop from an empty stack) is also caught:
+
+\begin{lstlisting}[language=Forth]
+ok> .S
+<0> ok>
+ok> DROP
+Error: stack underflow
+ok>
+\end{lstlisting}
+
+The system does not crash. Error recovery brings you back to a clean prompt.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Exiting}
+\label{sec:bye}
+
+Type \texttt{BYE} to exit:
+
+\begin{lstlisting}[language=Forth]
+ok> BYE
+\end{lstlisting}
+
+The VM shuts down cleanly. Any words you defined in the session are gone;
+nothing is saved automatically. To save work, write it to a source file and
+load it next time with \texttt{INCLUDE} (see Chapter~\ref{chap:files}).
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Command-Line Shortcuts}
+\label{sec:cli}
+
+You do not have to run interactively. You can pass code directly:
+
+\begin{lstlisting}[language=bash]
+./build/amd64/standard/starforth -c "3 4 + . BYE"
+7
+\end{lstlisting}
+
+Run the test suite and then drop into the REPL:
+
+\begin{lstlisting}[language=bash]
+./build/amd64/standard/starforth --run-tests
+\end{lstlisting}
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{The Stack}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\chapter{Stack Fundamentals}
+\label{chap:stack-fundamentals}
+
+FORTH is a stack-based language. Almost everything you do involves the data
+stack. Understanding it well makes everything else easier.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{What the Stack Is}
+\label{sec:what-the-stack-is}
+
+The data stack is a last-in, first-out (LIFO) sequence of cells. A cell in
+StarForth is a 64-bit signed integer on a 64-bit host. You push values onto
+the top of the stack and pop them from the top.
+
+Numbers push automatically. Words consume values (pop) and may produce values
+(push). The stack effect notation describes what a word does:
+
+\begin{center}
+\texttt{( before -- after )}
+\end{center}
+
+Items before the \texttt{--} are consumed (top of stack on the right). Items
+after are produced. For example, \texttt{+} has the stack effect
+\texttt{( a b -- a+b )}: it pops \texttt{b}, pops \texttt{a}, and pushes
+their sum.
+
+By convention in this guide, the topmost item is labeled \texttt{n} or
+\texttt{a}; the next item down is \texttt{n2} or \texttt{b}; and so on.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Stack Depth}
+\label{sec:stack-depth}
+
+The default data stack depth is 256 cells (configurable at build time via
+\texttt{DATA\_STACK\_SIZE}). Pushing more than 256 items causes a stack
+overflow error. Popping from an empty stack causes a stack underflow error.
+Both are caught and reported; neither crashes the system.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The Data Stack vs.\ the Return Stack}
+\label{sec:two-stacks}
+
+StarForth maintains two stacks:
+
+\begin{description}
+  \item[Data stack] The main working stack. All arithmetic and most word
+    operations use it. This is the one you interact with directly.
+  \item[Return stack] Manages word call/return linkage and is used as
+    temporary storage with \texttt{>R}, \texttt{R>}, and \texttt{R@}.
+    The return stack is 256 cells deep by default. Do not leave items on the
+    return stack across word boundaries --- that causes unpredictable
+    behavior.
+\end{description}
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Core Stack Words}
+\label{chap:core-stack}
+%%────────────────────────────────────────────────────────────────────────────
+
+This chapter covers the words that manipulate the data stack directly.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Single-Item Operations}
+\label{sec:single-stack}
+
+\subsection*{DUP \texttt{( n -- n n )}}
+
+Duplicates the top of the stack.
+
+\begin{lstlisting}[language=Forth]
+ok> 5 DUP .S
+<2> 5 5 ok>
+\end{lstlisting}
+
+\subsection*{DROP \texttt{( n -- )}}
+
+Removes the top of the stack.
+
+\begin{lstlisting}[language=Forth]
+ok> 5 7 DROP .S
+<1> 5 ok>
+\end{lstlisting}
+
+\subsection*{SWAP \texttt{( a b -- b a )}}
+
+Exchanges the top two items.
+
+\begin{lstlisting}[language=Forth]
+ok> 1 2 SWAP .S
+<2> 2 1 ok>
+\end{lstlisting}
+
+\subsection*{ROT \texttt{( a b c -- b c a )}}
+
+Rotates the top three items: the third item from the top comes to the top.
+
+\begin{lstlisting}[language=Forth]
+ok> 1 2 3 ROT .S
+<3> 2 3 1 ok>
+\end{lstlisting}
+
+\subsection*{OVER \texttt{( a b -- a b a )}}
+
+Copies the second item to the top, leaving the original in place.
+
+\begin{lstlisting}[language=Forth]
+ok> 10 20 OVER .S
+<3> 10 20 10 ok>
+\end{lstlisting}
+
+\subsection*{NIP \texttt{( a b -- b )}}
+
+Removes the second item (drops below top).
+
+\begin{lstlisting}[language=Forth]
+ok> 10 20 NIP .S
+<1> 20 ok>
+\end{lstlisting}
+
+\subsection*{TUCK \texttt{( a b -- b a b )}}
+
+Copies the top item below the second item.
+
+\begin{lstlisting}[language=Forth]
+ok> 10 20 TUCK .S
+<3> 20 10 20 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Double-Item Operations}
+\label{sec:double-stack}
+
+These words operate on pairs of items (a ``double''), treating two adjacent
+cells as a single logical unit.
+
+\subsection*{2DUP \texttt{( a b -- a b a b )}}
+
+Duplicates the top pair.
+
+\begin{lstlisting}[language=Forth]
+ok> 1 2 2DUP .S
+<4> 1 2 1 2 ok>
+\end{lstlisting}
+
+\subsection*{2DROP \texttt{( a b -- )}}
+
+Drops the top pair.
+
+\begin{lstlisting}[language=Forth]
+ok> 1 2 3 4 2DROP .S
+<2> 1 2 ok>
+\end{lstlisting}
+
+\subsection*{2SWAP \texttt{( a b c d -- c d a b )}}
+
+Exchanges the top two pairs.
+
+\begin{lstlisting}[language=Forth]
+ok> 1 2 3 4 2SWAP .S
+<4> 3 4 1 2 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The Return Stack}
+\label{sec:return-stack}
+
+The return stack is normally managed automatically by StarForth's word-call
+machinery. You can borrow it as temporary storage within a single word
+definition using these three words.
+
+\subsection*{>R \texttt{( n -- ) (R: -- n )}}
+
+Moves the top of the data stack to the top of the return stack.
+
+\subsection*{R> \texttt{( -- n ) (R: n -- )}}
+
+Moves the top of the return stack to the top of the data stack.
+
+\subsection*{R@ \texttt{( -- n ) (R: n -- n )}}
+
+Copies (does not move) the top of the return stack to the data stack.
+
+A typical use: stash a loop counter temporarily while performing a computation.
+
+\begin{lstlisting}[language=Forth]
+: EXAMPLE  ( a b -- result )
+    >R       \ stash b on return stack
+    DUP *    \ square a
+    R>       \ retrieve b
+    + ;      \ add b
+\end{lstlisting}
+
+\textbf{Rule}: every \texttt{>R} in a word must be matched by an \texttt{R>}
+before the word exits, and you must not use \texttt{>R}/\texttt{R>} to move
+items across loop boundaries (DO LOOP manages the return stack internally).
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{Arithmetic and Logic}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\chapter{Integer Arithmetic}
+\label{chap:arithmetic}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Basic Arithmetic Words}
+\label{sec:basic-arith}
+
+\subsection*{+ \texttt{( a b -- a+b )}}
+
+Adds two integers.
+
+\begin{lstlisting}[language=Forth]
+ok> 100 23 + .
+123 ok>
+\end{lstlisting}
+
+\subsection*{- \texttt{( a b -- a-b )}}
+
+Subtracts: removes \texttt{b} from \texttt{a}.
+
+\begin{lstlisting}[language=Forth]
+ok> 100 23 - .
+77 ok>
+\end{lstlisting}
+
+\subsection*{* \texttt{( a b -- a*b )}}
+
+Multiplies.
+
+\begin{lstlisting}[language=Forth]
+ok> 7 8 * .
+56 ok>
+\end{lstlisting}
+
+\subsection*{/ \texttt{( a b -- a/b )}}
+
+Integer division; truncates toward zero.
+
+\begin{lstlisting}[language=Forth]
+ok> 17 5 / .
+3 ok>
+\end{lstlisting}
+
+\subsection*{MOD \texttt{( a b -- a mod b )}}
+
+Remainder after division.
+
+\begin{lstlisting}[language=Forth]
+ok> 17 5 MOD .
+2 ok>
+\end{lstlisting}
+
+\subsection*{ABS \texttt{( n -- |n| )}}
+
+Absolute value.
+
+\begin{lstlisting}[language=Forth]
+ok> -42 ABS .
+42 ok>
+\end{lstlisting}
+
+\subsection*{MIN \texttt{( a b -- min )}}
+
+Pushes the smaller of two values.
+
+\begin{lstlisting}[language=Forth]
+ok> 10 20 MIN .
+10 ok>
+\end{lstlisting}
+
+\subsection*{MAX \texttt{( a b -- max )}}
+
+Pushes the larger of two values.
+
+\begin{lstlisting}[language=Forth]
+ok> 10 20 MAX .
+20 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Comparison Words}
+\label{sec:comparison}
+
+Comparisons push a flag: \texttt{-1} (all bits set) for true, \texttt{0} for
+false. This is the standard FORTH-79 flag convention.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Word & Stack effect & Meaning \\
+\midrule
+\texttt{=}  & \texttt{( a b -- flag )} & equal \\
+\texttt{<>} & \texttt{( a b -- flag )} & not equal \\
+\texttt{<}  & \texttt{( a b -- flag )} & a less than b \\
+\texttt{>}  & \texttt{( a b -- flag )} & a greater than b \\
+\texttt{<=} & \texttt{( a b -- flag )} & a less than or equal to b \\
+\texttt{>=} & \texttt{( a b -- flag )} & a greater than or equal to b \\
+\texttt{0=} & \texttt{( n -- flag )} & true if n is zero \\
+\texttt{0<} & \texttt{( n -- flag )} & true if n is negative \\
+\texttt{0>} & \texttt{( n -- flag )} & true if n is positive \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{lstlisting}[language=Forth]
+ok> 5 3 > .
+-1 ok>
+ok> 5 3 < .
+0 ok>
+\end{lstlisting}
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Logical and Bitwise Operations}
+\label{chap:logic}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Bitwise Words}
+\label{sec:bitwise}
+
+In StarForth, the logical words operate bitwise on cells. Because FORTH flags
+are all-bits-set (\texttt{-1}) for true and zero for false, bitwise AND and OR
+also work correctly as logical AND and OR when applied to flags.
+
+\subsection*{AND \texttt{( a b -- a\&b )}}
+
+Bitwise AND.
+
+\begin{lstlisting}[language=Forth]
+ok> 0b1100 0b1010 AND .
+8 ok>     ( 0b1000 = 8 )
+\end{lstlisting}
+
+\subsection*{OR \texttt{( a b -- a|b )}}
+
+Bitwise OR.
+
+\begin{lstlisting}[language=Forth]
+ok> 0b1100 0b1010 OR .
+14 ok>    ( 0b1110 = 14 )
+\end{lstlisting}
+
+\subsection*{XOR \texttt{( a b -- a xor b )}}
+
+Bitwise exclusive OR.
+
+\begin{lstlisting}[language=Forth]
+ok> 0b1100 0b1010 XOR .
+6 ok>     ( 0b0110 = 6 )
+\end{lstlisting}
+
+\subsection*{INVERT \texttt{( n -- $\sim$n )}}
+
+Bitwise complement of all bits.
+
+\begin{lstlisting}[language=Forth]
+ok> 0 INVERT .
+-1 ok>
+\end{lstlisting}
+
+\subsection*{NOT \texttt{( n -- flag )}}
+
+Logical NOT: pushes \texttt{-1} if \texttt{n} is zero, \texttt{0} otherwise.
+Equivalent to \texttt{0=}.
+
+\subsection*{LSHIFT \texttt{( n count -- n shifted )}}
+
+Shifts \texttt{n} left by \texttt{count} bits.
+
+\begin{lstlisting}[language=Forth]
+ok> 1 4 LSHIFT .
+16 ok>
+\end{lstlisting}
+
+\subsection*{RSHIFT \texttt{( n count -- n shifted )}}
+
+Shifts \texttt{n} right by \texttt{count} bits (logical shift: fills with
+zeros).
+
+\begin{lstlisting}[language=Forth]
+ok> 256 4 RSHIFT .
+16 ok>
+\end{lstlisting}
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Q48.16 Fixed-Point Arithmetic}
+\label{chap:q48-16}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{What Q48.16 Is}
+\label{sec:q48-what}
+
+\Qtype{} is StarForth's built-in fixed-point number format. A \Qtype{} value
+is a 64-bit integer where the lower 16 bits represent the fractional part and
+the upper 48 bits represent the integer part. The precision is
+$1/65536 \approx 0.0000153$.
+
+You encounter \Qtype{} values primarily through the physics runtime (heat
+values, decay slopes) and in words prefixed with \texttt{Q}. In the REPL you
+will see them printed as rational numbers or as raw integers depending on the
+display word used.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{When You See Q48.16}
+\label{sec:q48-when}
+
+The REPL does not automatically distinguish a \Qtype{} value from a plain
+integer --- both are cells. Context tells you which you have. The physics
+diagnostics (Chapter~\ref{chap:physics}) print heat and slope values in
+\Qtype{} form. If you use \texttt{WORD-ENTROPY}, expect to see heat counters
+that may look like large integers; these are \Qtype{} values with the fractional
+part encoded in the low 16 bits.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Q48.16 Words}
+\label{sec:q48-words}
+
+The \texttt{q48\_16\_words.c} module provides the Q48.16 word set. Key words:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Word & Stack effect & Description \\
+\midrule
+\texttt{Q+}      & \texttt{( a b -- a+b )} & Add two \Qtype{} values \\
+\texttt{Q-}      & \texttt{( a b -- a-b )} & Subtract \\
+\texttt{Q*}      & \texttt{( a b -- a*b )} & Multiply (with precision) \\
+\texttt{Q/}      & \texttt{( a b -- a/b )} & Divide \\
+\texttt{INT>Q}   & \texttt{( n -- q )}     & Convert integer to \Qtype{} \\
+\texttt{Q>INT}   & \texttt{( q -- n )}     & Convert \Qtype{} to integer (truncate) \\
+\texttt{Q.}      & \texttt{( q -- )}       & Print \Qtype{} as decimal fraction \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{Defining Words}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\chapter{Colon Definitions}
+\label{chap:colon}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{: and ;}
+\label{sec:colon-semi}
+
+The colon word \texttt{:} starts a new word definition. Everything that
+follows --- until the matching \texttt{;} --- becomes the body of the new
+word:
+
+\begin{lstlisting}[language=Forth]
+: SQUARE  ( n -- n^2 )
+    DUP * ;
+\end{lstlisting}
+
+Break this down:
+\begin{itemize}
+  \item \texttt{:} switches StarForth from interpretation mode to compilation
+    mode.
+  \item \texttt{SQUARE} is the name of the new word.
+  \item \texttt{DUP *} is the body: duplicate the top, then multiply. The
+    comment in parentheses is documentation only --- StarForth ignores it.
+  \item \texttt{;} ends the definition and switches back to interpretation
+    mode.
+\end{itemize}
+
+Now use it:
+
+\begin{lstlisting}[language=Forth]
+ok> 9 SQUARE .
+81 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{A Worked Example}
+\label{sec:worked-example}
+
+Define a word that computes the sum of squares of two numbers:
+
+\begin{lstlisting}[language=Forth]
+: SQUARE   ( n -- n^2 )  DUP * ;
+
+: SUM-OF-SQUARES  ( a b -- a^2+b^2 )
+    SQUARE   \ square b (top)
+    SWAP     \ bring a to top
+    SQUARE   \ square a
+    + ;      \ add
+\end{lstlisting}
+
+Test:
+
+\begin{lstlisting}[language=Forth]
+ok> 3 4 SUM-OF-SQUARES .
+25 ok>
+\end{lstlisting}
+
+Verify it is in the dictionary:
+
+\begin{lstlisting}[language=Forth]
+ok> WORDS
+SUM-OF-SQUARES SQUARE ...
+ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The SMUDGE Flag}
+\label{sec:smudge}
+
+While StarForth is compiling a new word (between \texttt{:} and \texttt{;}),
+the word is marked as \emph{smudged}: it exists in the dictionary but is not
+visible to searches. This prevents a partially-compiled word from being called
+accidentally during its own definition (unless you explicitly use recursion via
+\texttt{RECURSIVE}). When \texttt{;} executes, it clears the smudge flag and
+the word becomes visible.
+
+If compilation is interrupted by an error, the smudged entry may remain. A
+subsequent \texttt{FORGET} or a new definition with the same name will clean it
+up.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{IMMEDIATE}
+\label{sec:immediate}
+
+Normally, a word defined with \texttt{:} is compiled into word bodies when
+encountered in compilation mode. Marking a word \texttt{IMMEDIATE} tells the
+compiler to execute it at compile time instead:
+
+\begin{lstlisting}[language=Forth]
+: MY-WORD  ... ; IMMEDIATE
+\end{lstlisting}
+
+\texttt{IF}, \texttt{ELSE}, \texttt{THEN}, \texttt{DO}, \texttt{LOOP}, and
+all the control-flow words are immediate. They do their work (patching
+branches, emitting addresses) during compilation so the compiled word runs
+efficiently.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Variables, Constants, and CREATE}
+\label{chap:variables}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{VARIABLE}
+\label{sec:variable}
+
+\texttt{VARIABLE} creates a named cell in memory:
+
+\begin{lstlisting}[language=Forth]
+VARIABLE COUNTER
+\end{lstlisting}
+
+\texttt{COUNTER} is now a word. Executing it pushes the \emph{address} of the
+cell (not the value). Use \texttt{@} to read and \texttt{!} to write:
+
+\begin{lstlisting}[language=Forth]
+ok> 0 COUNTER !      \ store 0 into COUNTER
+ok> COUNTER @  .     \ fetch and print
+0 ok>
+ok> COUNTER @ 1 + COUNTER !   \ increment
+ok> COUNTER @ .
+1 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{CONSTANT}
+\label{sec:constant}
+
+\texttt{CONSTANT} creates a word that pushes a fixed value:
+
+\begin{lstlisting}[language=Forth]
+42 CONSTANT ANSWER
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> ANSWER .
+42 ok>
+\end{lstlisting}
+
+Unlike a variable, you cannot change the value of a constant after it is
+defined (without redefining it).
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{CREATE and DOES>}
+\label{sec:create-does}
+
+\texttt{CREATE} allocates a dictionary entry without specifying behavior.
+\texttt{DOES>} adds a behavior that runs when the created word is executed.
+Together they build custom defining words --- words that create other words.
+
+A classic example: arrays.
+
+\begin{lstlisting}[language=Forth]
+: ARRAY  ( n "name" -- )
+    CREATE  CELLS ALLOT
+    DOES>   ( index addr -- element-addr )
+    SWAP CELLS + ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 10 ARRAY MYDATA
+ok> 99 3 MYDATA !     \ store 99 at index 3
+ok> 3 MYDATA @ .      \ fetch index 3
+99 ok>
+\end{lstlisting}
+
+The \texttt{DOES>} part becomes the runtime behavior of any word created by
+\texttt{ARRAY}. When \texttt{MYDATA} executes, the address of its data area
+is pushed first, then the \texttt{DOES>} code runs with that address on the
+stack.
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{Control Flow}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\chapter{Conditionals and Loops}
+\label{chap:control}
+
+Control-flow words are immediate: they compile branches and jumps into the
+word body. They only work inside word definitions (between \texttt{:} and
+\texttt{;}), not in the interactive REPL directly.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{IF ... ELSE ... THEN}
+\label{sec:if-else-then}
+
+\texttt{IF} pops the top of the stack. If it is non-zero (true), the code
+between \texttt{IF} and \texttt{ELSE} (or \texttt{THEN}) executes. If it is
+zero, the \texttt{ELSE} branch (if present) executes.
+
+Stack effect of \texttt{IF}: \texttt{( flag -- )}.
+
+\begin{lstlisting}[language=Forth]
+: SIGN  ( n -- )
+    DUP 0>  IF ." positive" ELSE
+    DUP 0<  IF ." negative" ELSE
+              ." zero"
+            THEN
+            THEN
+    DROP ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 5 SIGN
+positive ok>
+ok> -3 SIGN
+negative ok>
+ok> 0 SIGN
+zero ok>
+\end{lstlisting}
+
+Note: \texttt{IF ... ELSE ... THEN} can be nested. Each \texttt{IF} must be
+matched by exactly one \texttt{THEN}.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{DO ... LOOP}
+\label{sec:do-loop}
+
+\texttt{DO} starts a counted loop. It pops two items: the limit and the
+initial index (limit on top). The loop variable \texttt{I} is available inside
+the loop body.
+
+\texttt{LOOP} increments the index by 1 and exits when the index reaches the
+limit.
+
+Stack effect of \texttt{DO}: \texttt{( limit start -- )}.
+Stack effect of \texttt{I}: \texttt{( -- index )}.
+
+\begin{lstlisting}[language=Forth]
+: COUNT-UP  ( limit -- )
+    0 DO  I .  LOOP ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 5 COUNT-UP
+0 1 2 3 4 ok>
+\end{lstlisting}
+
+\texttt{+LOOP} increments the index by a specified amount:
+
+\begin{lstlisting}[language=Forth]
+: COUNT-BY-TWO  ( limit -- )
+    0 DO  I .  2 +LOOP ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 10 COUNT-BY-TWO
+0 2 4 6 8 ok>
+\end{lstlisting}
+
+For nested loops, \texttt{J} gives the outer loop index.
+
+\texttt{LEAVE} exits a DO loop immediately:
+
+\begin{lstlisting}[language=Forth]
+: FIND-FIVE  ( limit -- )
+    0 DO
+        I 5 = IF  ." found 5 at index " I . CR  LEAVE  THEN
+    LOOP ;
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{BEGIN ... UNTIL}
+\label{sec:begin-until}
+
+\texttt{BEGIN} marks the start of a loop. \texttt{UNTIL} pops a flag; if it
+is non-zero (true), the loop exits; if zero, control returns to \texttt{BEGIN}.
+
+The loop always executes at least once.
+
+\begin{lstlisting}[language=Forth]
+: COUNTDOWN  ( n -- )
+    BEGIN
+        DUP .
+        1 -
+        DUP 0=
+    UNTIL
+    DROP ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 5 COUNTDOWN
+5 4 3 2 1 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{BEGIN ... WHILE ... REPEAT}
+\label{sec:begin-while-repeat}
+
+\texttt{WHILE} is a mid-loop test. \texttt{WHILE} pops a flag; if the flag is
+zero (false), the loop exits (jumping to after \texttt{REPEAT}); if non-zero,
+the loop body continues.
+
+\begin{lstlisting}[language=Forth]
+: PRINT-WHILE-POSITIVE  ( n -- )
+    BEGIN
+        DUP 0>       \ test: is n positive?
+    WHILE
+        DUP .        \ print n
+        1 -          \ decrement
+    REPEAT
+    DROP ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 4 PRINT-WHILE-POSITIVE
+4 3 2 1 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{A Note on Interactive Compilation}
+\label{sec:note-interactive-compile}
+
+Control-flow words like \texttt{IF} and \texttt{DO} compile branch addresses
+that only make sense inside a complete word definition. Typing them directly
+at the \texttt{ok>} prompt will produce an error. Always wrap control flow
+inside \texttt{: ... ;}.
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{Memory and Blocks}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\chapter{Memory Access}
+\label{chap:memory}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Cell-Sized Access: @ and !}
+\label{sec:at-store}
+
+\texttt{@} (fetch) reads one cell (64 bits on a 64-bit host) from an address.
+\texttt{!} (store) writes one cell to an address.
+
+\subsection*{@ \texttt{( addr -- n )}}
+
+Fetch the cell at \texttt{addr}:
+
+\begin{lstlisting}[language=Forth]
+ok> VARIABLE X
+ok> 42 X !
+ok> X @ .
+42 ok>
+\end{lstlisting}
+
+\subsection*{! \texttt{( n addr -- )}}
+
+Store \texttt{n} at \texttt{addr}:
+
+\begin{lstlisting}[language=Forth]
+ok> 99 X !
+ok> X @ .
+99 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Byte-Sized Access: C@ and C!}
+\label{sec:cat-cstore}
+
+\texttt{C@} and \texttt{C!} read and write a single byte (character).
+
+\subsection*{C@ \texttt{( addr -- char )}}
+
+Fetch one byte.
+
+\subsection*{C! \texttt{( char addr -- )}}
+
+Store one byte.
+
+These are used for string manipulation and working with character buffers.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Bulk Memory: MOVE and FILL}
+\label{sec:move-fill}
+
+\subsection*{MOVE \texttt{( src dst count -- )}}
+
+Copies \texttt{count} bytes from \texttt{src} to \texttt{dst}. Handles
+overlapping regions correctly.
+
+\subsection*{FILL \texttt{( addr count char -- )}}
+
+Fills \texttt{count} bytes starting at \texttt{addr} with the byte value
+\texttt{char}.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{The Block Subsystem}
+\label{chap:blocks}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{What Blocks Are}
+\label{sec:blocks-what}
+
+FORTH-79 uses a block-oriented storage model. A block is 1024 bytes of data,
+addressed by a logical block number (LBN). Blocks provide a uniform interface
+to storage whether the backing medium is a file, RAM, or physical disk.
+
+In StarForth the block subsystem maps logical block numbers to physical storage
+through a pluggable backend (file, RAM, or factory). The default configuration
+uses RAM blocks for interactive sessions.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The VM Memory Map}
+\label{sec:memory-map}
+
+StarForth allocates 5\,MB of virtual memory for the VM:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Region & LBN range & Size \\
+\midrule
+Dictionary (word definitions) & LBN 0--2047 & 2\,MB \\
+User blocks & LBN 2048 and above & user data \\
+Log blocks & LBN 3072--5120 & 2\,MB \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\texttt{init.4th} is loaded from LBN 2048 at boot in the bare-metal kernel
+configuration. On hosted Linux, \texttt{init.4th} is loaded from the
+filesystem.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Block Words}
+\label{sec:block-words}
+
+\subsection*{BLOCK \texttt{( lbn -- addr )}}
+
+Finds or loads block \texttt{lbn} into a buffer and pushes the buffer address.
+The block is now in memory and can be read with \texttt{@} / \texttt{C@} or
+written with \texttt{!} / \texttt{C!}.
+
+\subsection*{BUFFER \texttt{( lbn -- addr )}}
+
+Like \texttt{BLOCK} but does not read from storage: it claims a buffer for
+\texttt{lbn} and leaves its contents uninitialized. Use when you intend to
+write the entire block and do not need to read it first.
+
+\subsection*{LOAD \texttt{( lbn -- )}}
+
+Loads and executes the FORTH source in block \texttt{lbn}. This is the
+traditional FORTH way to run stored code.
+
+\subsection*{THRU \texttt{( lbn1 lbn2 -- )}}
+
+Loads and executes blocks \texttt{lbn1} through \texttt{lbn2} inclusive.
+
+\subsection*{FLUSH \texttt{( -- )}}
+
+Writes all dirty buffers back to storage. Use before exiting or before
+switching tasks if you have written to blocks.
+
+\subsection*{UPDATE \texttt{( -- )}}
+
+Marks the most recently referenced block buffer as dirty, so \texttt{FLUSH}
+will write it back.
+
+%%────────────────────────────────────────────────────────────────────────────
 \chapter{String and I/O Words}
-%% TODO(bob): stub — EMIT KEY TYPE CR SPACE ACCEPT S" .(
+\label{chap:strings-io}
+%%────────────────────────────────────────────────────────────────────────────
 
-\chapter{Defining Words}
-%% TODO(bob): stub — : ; IMMEDIATE CONSTANT VARIABLE CREATE DOES> VOCABULARY.
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Output Words}
+\label{sec:output}
 
-\chapter{Block Words}
-%% TODO(bob): stub — BLOCK BUFFER LOAD THRU FLUSH UPDATE.
+\subsection*{EMIT \texttt{( char -- )}}
 
-\chapter{Fixed-Point Arithmetic: Q48.16}
-%% TODO(bob): stub — Q48.16 word set, notation, conversion words.
+Outputs one character (given as an ASCII code).
 
-%%────────────────────────────────────────────────
-%% Part IV — StarForth Extensions
-%%────────────────────────────────────────────────
-\part{StarForth Extensions}
+\begin{lstlisting}[language=Forth]
+ok> 65 EMIT
+A ok>
+\end{lstlisting}
 
-\chapter{Physics Diagnostics}
-%% TODO(bob): stub — WORD-ENTROPY, PHYSICS-FREEZE / PHYSICS-THAW, heat display.
+\subsection*{CR \texttt{( -- )}}
 
+Outputs a newline (carriage return and line feed).
+
+\subsection*{SPACE \texttt{( -- )}}
+
+Outputs a single space.
+
+\subsection*{TYPE \texttt{( addr count -- )}}
+
+Outputs \texttt{count} characters starting at \texttt{addr}.
+
+\subsection*{.( \texttt{( "text" -- )}}
+
+Immediately prints the text that follows (up to the closing parenthesis).
+Works in both interpretation and compilation mode.
+
+\begin{lstlisting}[language=Forth]
+ok> .( Hello, world!)
+Hello, world! ok>
+\end{lstlisting}
+
+\subsection*{." \texttt{( "text" -- )}}
+
+Inside a word definition, compiles a string literal that prints when the word
+executes:
+
+\begin{lstlisting}[language=Forth]
+: GREET  ." Hello from StarForth!" CR ;
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Input Words}
+\label{sec:input}
+
+\subsection*{KEY \texttt{( -- char )}}
+
+Waits for a keypress and pushes the ASCII code.
+
+\subsection*{ACCEPT \texttt{( addr maxcount -- count )}}
+
+Reads a line of input into the buffer at \texttt{addr}, up to
+\texttt{maxcount} characters. Returns the actual count of characters read.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{String Literals: S"}
+\label{sec:s-quote}
+
+\texttt{S"} compiles a string. At runtime it pushes the address and count of
+the string data:
+
+\begin{lstlisting}[language=Forth]
+: PRINT-NAME  S" StarForth" TYPE CR ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> PRINT-NAME
+StarForth
+ok>
+\end{lstlisting}
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Running Files and Blocks}
+\label{chap:files}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{INCLUDE}
+\label{sec:include}
+
+\texttt{INCLUDE} loads a FORTH source file from the filesystem and executes
+it:
+
+\begin{lstlisting}[language=Forth]
+ok> S" myprogram.4th" INCLUDE
+ok>
+\end{lstlisting}
+
+All words defined in the file are added to the dictionary. Errors in the
+included file are reported with the filename and line number.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{EXEC}
+\label{sec:exec}
+
+\texttt{EXEC} loads a named capsule file (the StarForth extension for loading
+\texttt{.4th} capsule files by name):
+
+\begin{lstlisting}[language=Forth]
+S" capsule.4th" EXEC
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{LOAD and THRU}
+\label{sec:load-thru}
+
+\texttt{LOAD} and \texttt{THRU} execute source from block storage (see
+Chapter~\ref{chap:blocks}).
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{The Interactive REPL}
+\label{chap:repl}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The ok> Prompt}
+\label{sec:ok-prompt}
+
+The \texttt{ok>} prompt signals that StarForth is in interpretation mode,
+the data stack is not empty but no error has occurred, and the system is
+waiting for input. More precisely:
+
+\begin{itemize}
+  \item \texttt{ok>} — normal prompt; data stack may or may not be empty.
+  \item After an error — StarForth prints the error, clears the stack to the
+    pre-error state, and re-prints \texttt{ok>}.
+\end{itemize}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Printing Numbers}
+\label{sec:printing}
+
+The basic output words:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Word & Stack effect & Effect \\
+\midrule
+\texttt{.}  & \texttt{( n -- )} & Print top of stack in current base, then space \\
+\texttt{.S} & \texttt{( -- )} & Print entire stack without consuming it \\
+\texttt{.R} & \texttt{( n width -- )} & Print right-justified in field of width \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Numeric Base}
+\label{sec:numeric-base}
+
+StarForth defaults to decimal (base 10). Switch with:
+
+\begin{lstlisting}[language=Forth]
+ok> HEX
+ok> FF .
+255 ok>
+ok> DECIMAL
+ok>
+\end{lstlisting}
+
+\texttt{BASE} is a variable that holds the current numeric base (2--36).
+\texttt{HEX} stores 16 in \texttt{BASE}; \texttt{DECIMAL} stores 10.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Dictionary Introspection}
+\label{sec:introspection}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Word & Stack effect & Description \\
+\midrule
+\texttt{WORDS}  & \texttt{( -- )} & Print all dictionary words \\
+\texttt{FIND}   & \texttt{( addr len -- xt flags | 0 )} & Search by name \\
+\texttt{'}      & \texttt{( "name" -- xt )} & Push execution token of named word \\
+\texttt{SEE}    & \texttt{( "name" -- )} & Decompile a word \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{Physics Features}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\chapter{The Adaptive Runtime}
+\label{chap:physics}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{What the Adaptive Runtime Does for You}
+\label{sec:physics-what}
+
+While you type and run FORTH code, StarForth's adaptive runtime is watching in
+the background. It tracks which words you execute most often, maintains a
+rolling history of execution sequences, and adjusts internal caches and decay
+rates to keep hot words fast and cold words from consuming resources.
+
+From a user's perspective, you do not need to configure any of this. The
+system tunes itself. The physics features become relevant when you want to
+observe what the runtime is doing (\texttt{WORD-ENTROPY}), when you want to
+lock behavior in place for reproducible benchmarks
+(\texttt{PHYSICS-FREEZE}/\texttt{PHYSICS-THAW}), or when you run the Design
+of Experiments mode (\texttt{--doe}).
+
+The runtime uses thermodynamic language as a modeling convenience: ``heat'' is
+execution frequency, ``decay'' is the process of cooling quiescent words,
+``stability'' is a statistical property of the heat trajectory. These are
+descriptive terms for internal metrics, not claims about physical
+thermodynamics.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The Seven Feedback Loops}
+\label{sec:seven-loops}
+
+The adaptive runtime is governed by seven feedback loops running concurrently.
+Here is a brief description of what each one does. For full technical detail,
+see Volume~I of the StarForth VM and Physics Runtime reference.
+
+\input{../scraps/architecture/03-architecture/physics-engine/feedback-loops}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{WORD-ENTROPY}
+\label{sec:word-entropy}
+
+\texttt{WORD-ENTROPY} prints execution heat statistics for every word in the
+dictionary to stdout. Use it to see which words are running hot:
+
+\begin{lstlisting}[language=Forth]
+ok> WORD-ENTROPY
+\end{lstlisting}
+
+The output lists each word with its current execution heat (a \Qtype{} value),
+the number of times it has been called, and its position in the hot-words
+cache (if it is cached). Words with zero heat have not been called since the
+last reset.
+
+\texttt{WORD-ENTROPY} is intentionally kept active in DoE mode because the
+diagnostic value outweighs the output noise.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{PHYSICS-FREEZE and PHYSICS-THAW}
+\label{sec:freeze-thaw}
+
+\texttt{PHYSICS-FREEZE} suspends all adaptive runtime updates. Heat values stop
+changing, the decay loop stops, and the hot-words cache is locked in its
+current state. Everything else --- word execution, I/O, compilation --- continues
+normally.
+
+\texttt{PHYSICS-THAW} resumes adaptive updates from the point they were frozen.
+
+Use these words when you want reproducible timing:
+
+\begin{lstlisting}[language=Forth]
+ok> PHYSICS-FREEZE
+ok> \ ... run your benchmark here ...
+ok> PHYSICS-THAW
+\end{lstlisting}
+
+You might also freeze before a sensitive section to prevent cache eviction
+from perturbing timing, then thaw afterward.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{PHYSICS-RESET-STATS}
+\label{sec:physics-reset}
+
+\texttt{PHYSICS-RESET-STATS} clears all heat counters back to zero. Useful
+before a fresh measurement run:
+
+\begin{lstlisting}[language=Forth]
+ok> PHYSICS-RESET-STATS
+ok> \ ... warm up and then measure ...
+\end{lstlisting}
+
+%%────────────────────────────────────────────────────────────────────────────
 \chapter{Heartbeat and Adaptive Tuning}
+\label{chap:heartbeat}
+%%────────────────────────────────────────────────────────────────────────────
+
 \input{../scraps/architecture/heartbeat_csv_export}
 
+%%────────────────────────────────────────────────────────────────────────────
 \chapter{Design of Experiments Mode}
-%% TODO(bob): stub — --doe flag, factorial 2^7 design, output interpretation.
+\label{chap:doe}
+%%────────────────────────────────────────────────────────────────────────────
 
-%%────────────────────────────────────────────────
-%% Part V — Running on Hardware
-%%────────────────────────────────────────────────
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The --doe Flag}
+\label{sec:doe-flag}
+
+The \texttt{--doe} flag runs the full test harness in DoE (Design of
+Experiments) mode and then exits:
+
+\begin{lstlisting}[language=bash]
+./build/amd64/fastest/starforth --doe
+\end{lstlisting}
+
+DoE mode exercises all 936+ tests and all seven feedback loops. It is used for
+systematic experimental runs comparing different build configurations.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Capturing Heartbeat Metrics}
+\label{sec:doe-capture}
+
+In DoE mode, heartbeat metrics stream to \texttt{stderr}. Capture them for
+analysis:
+
+\begin{lstlisting}[language=bash]
+./build/amd64/fastest/starforth --doe 2>heartbeat.csv 1>/dev/null
+\end{lstlisting}
+
+See Chapter~\ref{chap:heartbeat} for the CSV format and analysis guidance.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The 2\textsuperscript{7} Factorial Design}
+\label{sec:doe-factorial}
+
+DoE uses a 2\textsuperscript{7} factorial design, one factor per feedback loop.
+Each run enables a specific combination of loops; the metrics measure the
+incremental effect of each loop addition. The reference (baseline) has all
+seven loops disabled. At the opposite extreme, all seven loops active, the
+system is fully adaptive.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The Built-In Profiler}
+\label{sec:profiler}
+
+\input{../scraps/hardware/performance-profiling/PROFILER}
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{The ACL System}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\chapter{Access Control for Interactive Users}
+\label{chap:acl}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{What ACL Means for You}
+\label{sec:acl-user}
+
+StarForth has a word-level access-control system. In a default development
+build the ACL system is disabled (security is opt-in), so you will not
+encounter it in most sessions.
+
+When the ACL system is active, individual dictionary words may be restricted.
+Attempting to execute a restricted word produces an error. Which words are
+restricted, and under what conditions, is determined by the ACL policy loaded
+at boot.
+
+Most users on a standard build will never see ACL restrictions. The feature
+is intended for deployments where StarForth serves as a controlled execution
+environment (embedded systems, multi-user shells, kernel contexts).
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The ok> Prompt vs.\ Emergency ok>}
+\label{sec:acl-prompts}
+
+There are two permanent console layers in StarForth:
+
+\paragraph{Normal REPL --- \texttt{ok>}}
+The standard interactive prompt. ACL restrictions are in effect if the ACL
+system is active.
+
+\paragraph{Emergency console --- \texttt{ok>}}
+When a fault handler activates (a crash, an unrecoverable error), StarForth
+falls back to the emergency console. The emergency console has a 100\% ACL
+bypass --- all words execute regardless of their ACL state. This ensures you
+can always recover, even in a locked-down deployment.
+
+The \texttt{EMERGENCY\_CONSOLE\_ENABLED} build flag (default: on) controls
+whether the emergency console is present. In production embedded builds it may
+be disabled.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The Zuse Session}
+\label{sec:acl-zuse}
+
+\texttt{zuse} is the bootstrap superuser in StarForth's security model. When a
+Zuse session is active, the prompt changes to:
+
+\begin{lstlisting}[language=Forth]
+zuse)ok>
+\end{lstlisting}
+
+A Zuse session has a full ACL bypass: all words execute regardless of their
+normal ACL state. The Zuse console is completely independent of the emergency
+console --- either may be active without affecting the other.
+
+How to authenticate as Zuse and what operations a Zuse session enables is
+covered in the StarForth Developer Guide, not here. From a user's perspective,
+if you see \texttt{zuse)ok>}, you are in a privileged session.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Enabling the ACL System}
+\label{sec:acl-enable}
+
+The ACL system is opt-in. In \texttt{init.4th}, one commented-out line
+controls it:
+
+\begin{lstlisting}[language=Forth]
+\ S" ACL.4th" EXEC
+\end{lstlisting}
+
+Uncommenting that line enables full ACL enforcement at boot. Leaving it
+commented keeps a development build open. See the StarForth Developer Guide
+for the full ACL design.
+
+%%────────────────────────────────────────────────────────────────────────────
+%% FORTH Programming — patterns, debugging, working with numbers, vocabularies,
+%% I/O, source files, tests
+%%────────────────────────────────────────────────────────────────────────────
+\input{ch-forth-programming}
+
+%%────────────────────────────────────────────────────────────────────────────
+%% Advanced Topics — VM internals, performance tuning, block editor, capsules,
+%% Jacquard, formal verification, embedded targets
+%%────────────────────────────────────────────────────────────────────────────
+\input{ch-advanced}
+
+%%────────────────────────────────────────────────────────────────────────────
+%% Recipes — idioms, worked examples, migration guide
+%%────────────────────────────────────────────────────────────────────────────
+\input{ch-recipes}
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 \part{Running on Hardware}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 \chapter{Linux and POSIX Platforms}
-%% TODO(bob): stub — standard hosted build, no dependencies beyond libc.
+\label{chap:linux}
+
+StarForth's standard build requires only GCC (or Clang) and GNU Make. No
+additional runtime dependencies are needed beyond the standard C library.
+
+\begin{lstlisting}[language=bash]
+make fastest
+./build/amd64/standard/starforth
+\end{lstlisting}
+
+The binary is statically linked on supported configurations. No shared
+libraries are needed on the target system.
+
+%% TODO(bob): add notes on L4Re microkernel integration once status is confirmed.
 
 \chapter{Raspberry Pi 4}
 \input{../scraps/hardware/platform-integration/RASPBERRY_PI_BUILD}
 
 \chapter{LithosAnanke Bare-Metal Boot}
-%% TODO(bob): stub — UEFI boot flow, serial console, capsule loading on hardware.
+\label{chap:lithos}
 
-%%────────────────────────────────────────────────
+LithosAnanke (``stone inevitability'') is the bare-metal UEFI kernel that boots
+StarForth directly on hardware without a host operating system. Version 1.5.3
+ships as a monolithic UEFI PE32+ executable.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Boot Sequence}
+\label{sec:lithos-boot}
+
+\begin{lstlisting}[language=bash]
+UEFI Firmware -> uefi_loader.c (BOOTX64.EFI)
+    ExitBootServices() -- kernel owns hardware
+    -> kernel_main()
+        M1: Console (UART 16550 + framebuffer)
+        M2: Physical memory manager
+        M3: Virtual memory (4-level paging)
+        M4: IDT + APIC interrupts
+        M5: TSC + HPET + APIC timer (100 Hz heartbeat)
+        M6: kmalloc heap
+        M7: StarForth VM + capsule loading -> ok> REPL
+\end{lstlisting}
+
+Milestones M0--M6 are complete. M7 (StarForth VM integration) is in progress.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Building the Kernel}
+\label{sec:lithos-build}
+
+\begin{lstlisting}[language=bash]
+# AMD64
+make -f Makefile.starkernel
+
+# AArch64
+make -f Makefile.starkernel ARCH=aarch64
+
+# RISC-V 64
+make -f Makefile.starkernel ARCH=riscv64
+
+# Run in QEMU with OVMF
+make -f Makefile.starkernel qemu
+\end{lstlisting}
+
+Output: \texttt{build/amd64/kernel/starkernel\_loader.efi} (UEFI PE32+ executable).
+
+%% TODO(bob): add hardware bring-up notes once M7 acceptance testing is complete.
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 %% Appendices
-%%────────────────────────────────────────────────
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 \appendix
 
 \chapter{Build Flags Reference}
 \input{../scraps/architecture/build-and-tooling/BUILD_OPTIONS}
 
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{FORTH-79 Word Quick Reference}
+\label{app:word-ref}
+%%────────────────────────────────────────────────────────────────────────────
+
+This table covers the full FORTH-79 word set available in StarForth, organized
+alphabetically within categories. Stack effects use standard notation:
+\texttt{( before -- after )}, where items are listed bottom-to-top and the
+rightmost item is the top of stack.
+
+Flags are \texttt{-1} (true) or \texttt{0} (false) unless noted otherwise.
+Addresses (\texttt{addr}) are VM byte offsets, not C pointers.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Stack Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+DUP     & ( n -- n n )        & Duplicate top item \\
+DROP    & ( n -- )            & Discard top item \\
+SWAP    & ( a b -- b a )      & Exchange top two items \\
+ROT     & ( a b c -- b c a )  & Rotate top three; third comes to top \\
+OVER    & ( a b -- a b a )    & Copy second item to top \\
+NIP     & ( a b -- b )        & Drop second item \\
+TUCK    & ( a b -- b a b )    & Copy top item below second \\
+2DUP    & ( a b -- a b a b )  & Duplicate top pair \\
+2DROP   & ( a b -- )          & Drop top pair \\
+2SWAP   & ( a b c d -- c d a b ) & Exchange top two pairs \\
+2OVER   & ( a b c d -- a b c d a b ) & Copy second pair to top \\
+DEPTH   & ( -- n )            & Number of items on the data stack \\
+PICK    & ( xn...x0 n -- xn...x0 xn ) & Copy nth item to top \\
+ROLL    & ( xn...x0 n -- xn-1...x0 xn ) & Rotate nth item to top \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Return Stack Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+>R      & ( n -- ) (R: -- n )        & Move top data item to return stack \\
+R>      & ( -- n ) (R: n -- )        & Move top return item to data stack \\
+R@      & ( -- n ) (R: n -- n )      & Copy top of return stack to data stack \\
+RDROP   & ( -- ) (R: n -- )          & Discard top of return stack \\
+2>R     & ( a b -- ) (R: -- a b )    & Move top data pair to return stack \\
+2R>     & ( -- a b ) (R: a b -- )    & Move top return pair to data stack \\
+2R@     & ( -- a b ) (R: a b -- a b ) & Copy top return pair to data stack \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Arithmetic Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
++       & ( a b -- a+b )      & Integer addition \\
+-       & ( a b -- a-b )      & Integer subtraction \\
+*       & ( a b -- a*b )      & Integer multiplication \\
+/       & ( a b -- a/b )      & Integer division (truncate toward zero) \\
+MOD     & ( a b -- a mod b )  & Integer remainder \\
+/MOD    & ( a b -- rem quot ) & Division and remainder \\
+ABS     & ( n -- |n| )        & Absolute value \\
+NEGATE  & ( n -- -n )         & Arithmetic negation \\
+MIN     & ( a b -- min )      & Minimum of two values \\
+MAX     & ( a b -- max )      & Maximum of two values \\
+1+      & ( n -- n+1 )        & Add 1 \\
+1-      & ( n -- n-1 )        & Subtract 1 \\
+2+      & ( n -- n+2 )        & Add 2 \\
+2-      & ( n -- n-2 )        & Subtract 2 \\
+2*      & ( n -- n*2 )        & Multiply by 2 (left shift 1) \\
+2/      & ( n -- n/2 )        & Divide by 2 (arithmetic right shift 1) \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Double-Cell Arithmetic}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+D+      & ( d1 d2 -- d1+d2 )  & Double-cell addition \\
+D-      & ( d1 d2 -- d1-d2 )  & Double-cell subtraction \\
+D=      & ( d1 d2 -- flag )    & Double-cell equality \\
+D<      & ( d1 d2 -- flag )    & Double-cell signed less-than \\
+DNEGATE & ( d -- -d )          & Double-cell negation \\
+DABS    & ( d -- |d| )         & Double-cell absolute value \\
+M+      & ( d n -- d+n )       & Add single to double \\
+M*      & ( a b -- d )         & Multiply; produce double-cell result \\
+UM*     & ( u1 u2 -- ud )      & Unsigned multiply; produce double-cell result \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Logical and Bitwise Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+AND     & ( a b -- a\&b )     & Bitwise AND (also logical AND on flags) \\
+OR      & ( a b -- a|b )      & Bitwise OR (also logical OR on flags) \\
+XOR     & ( a b -- a xor b )  & Bitwise exclusive OR \\
+INVERT  & ( n -- \textasciitilde n ) & Bitwise complement (all bits flipped) \\
+NOT     & ( n -- flag )       & Logical NOT: -1 if n=0, else 0 \\
+LSHIFT  & ( n count -- n' )   & Left shift n by count bits \\
+RSHIFT  & ( n count -- n' )   & Logical right shift n by count bits \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Comparison Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+=       & ( a b -- flag )     & Equal \\
+<>      & ( a b -- flag )     & Not equal \\
+<       & ( a b -- flag )     & Signed less-than \\
+>       & ( a b -- flag )     & Signed greater-than \\
+<=      & ( a b -- flag )     & Signed less-than-or-equal \\
+>=      & ( a b -- flag )     & Signed greater-than-or-equal \\
+U<      & ( u1 u2 -- flag )   & Unsigned less-than \\
+U>      & ( u1 u2 -- flag )   & Unsigned greater-than \\
+0=      & ( n -- flag )       & True if n equals zero \\
+0<>     & ( n -- flag )       & True if n is non-zero \\
+0<      & ( n -- flag )       & True if n is negative \\
+0>      & ( n -- flag )       & True if n is positive \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Memory Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+@       & ( addr -- n )       & Fetch one cell from addr \\
+!       & ( n addr -- )       & Store one cell at addr \\
+C@      & ( addr -- char )    & Fetch one byte from addr \\
+C!      & ( char addr -- )    & Store one byte at addr \\
+2@      & ( addr -- d )       & Fetch double-cell (two consecutive cells) \\
+2!      & ( d addr -- )       & Store double-cell \\
+MOVE    & ( src dst count -- ) & Copy count bytes from src to dst \\
+FILL    & ( addr count char -- ) & Fill count bytes at addr with char \\
+HERE    & ( -- addr )         & Address of next free dictionary byte \\
+ALLOT   & ( n -- )            & Reserve n bytes in dictionary \\
+,       & ( n -- )            & Compile n as a cell into dictionary \\
+C,      & ( char -- )         & Compile char as a byte into dictionary \\
+CELLS   & ( n -- n*cell-size ) & Convert cell count to byte count \\
+CELL+   & ( addr -- addr' )   & Advance address by one cell \\
+CHARS   & ( n -- n )          & Convert char count to byte count (=1 on byte-addressed) \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Control Flow Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+IF      & ( flag -- )         & Branch if flag is zero (skip to ELSE/THEN) \\
+ELSE    & ( -- )              & Alternate branch after IF \\
+THEN    & ( -- )              & End of IF...ELSE...THEN \\
+DO      & ( limit start -- )  & Begin counted loop \\
+LOOP    & ( -- )              & Increment index by 1; exit if index = limit \\
++LOOP   & ( n -- )            & Increment index by n; exit when index crosses limit \\
+LEAVE   & ( -- )              & Exit enclosing DO loop immediately \\
+I       & ( -- index )        & Copy innermost loop index \\
+J       & ( -- index )        & Copy outermost loop index \\
+BEGIN   & ( -- )              & Mark start of BEGIN loop \\
+UNTIL   & ( flag -- )         & Branch back to BEGIN if flag is zero \\
+WHILE   & ( flag -- )         & Exit BEGIN loop if flag is zero \\
+REPEAT  & ( -- )              & Branch back to BEGIN (used with WHILE) \\
+AGAIN   & ( -- )              & Unconditional branch back to BEGIN \\
+EXIT    & ( -- )              & Return from current word \\
+EXECUTE & ( xt -- )           & Execute word whose execution token is xt \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Defining Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+:       & ( "name" -- )       & Begin word definition; enter compilation mode \\
+;       & ( -- )              & End word definition; return to interpretation mode \\
+IMMEDIATE & ( -- )            & Mark most recently defined word as immediate \\
+CONSTANT & ( n "name" -- )   & Define a constant word that pushes n \\
+VARIABLE & ( "name" -- )     & Define a variable; word pushes its address \\
+CREATE  & ( "name" -- )      & Create a named dictionary entry; no behavior \\
+DOES>   & ( -- )             & Specify runtime behavior for CREATE'd words \\
+FORGET  & ( "name" -- )      & Remove named word and all newer words from dictionary \\
+'       & ( "name" -- xt )   & Push execution token of named word \\
+{[}'{}]     & ( "name" -- xt )   & Compile-time version of tick (immediate) \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{I/O and String Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+EMIT    & ( char -- )         & Output one character \\
+KEY     & ( -- char )         & Wait for and return one keypress \\
+CR      & ( -- )              & Output newline \\
+SPACE   & ( -- )              & Output one space \\
+SPACES  & ( n -- )            & Output n spaces \\
+TYPE    & ( addr count -- )   & Output count characters from addr \\
+.       & ( n -- )            & Print top of stack in current base, followed by space \\
+.S      & ( -- )              & Print entire stack contents without consuming \\
+.R      & ( n width -- )      & Print n right-justified in field of width \\
+U.      & ( u -- )            & Print top of stack as unsigned \\
+U.R     & ( u width -- )      & Print unsigned right-justified in field \\
+.(      & ( "text)" -- )      & Immediately print text up to closing paren \\
+."      & ( "text" -- )       & Compile string that prints at runtime \\
+S"      & ( "text" -- addr count ) & Compile string literal; push addr+count at runtime \\
+ACCEPT  & ( addr maxcount -- count ) & Read line of input into buffer \\
+WORD    & ( char -- addr )    & Parse next word from input, delimited by char \\
+PARSE   & ( char -- addr count ) & Parse input to delimiter, return addr+count \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Numeric Output Format Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+HEX     & ( -- )              & Set numeric base to 16 \\
+DECIMAL & ( -- )              & Set numeric base to 10 \\
+BINARY  & ( -- )              & Set numeric base to 2 \\
+BASE    & ( -- addr )         & Address of the base variable (default 10) \\
+<\#     & ( -- )              & Begin pictured numeric output \\
+\#      & ( ud -- ud' )       & Convert one digit of pictured numeric output \\
+\#S     & ( ud -- 0 0 )       & Convert all remaining digits \\
+HOLD    & ( char -- )         & Insert char into pictured numeric output \\
+\#>     & ( xd -- addr count ) & End pictured numeric output; return string \\
+SIGN    & ( n -- )            & Add minus sign to pictured output if n is negative \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Block Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+BLOCK   & ( lbn -- addr )     & Load block lbn into a buffer; return buffer address \\
+BUFFER  & ( lbn -- addr )     & Assign buffer to lbn without reading; return address \\
+LOAD    & ( lbn -- )          & Load and execute FORTH source in block lbn \\
+THRU    & ( lbn1 lbn2 -- )    & Load and execute blocks lbn1 through lbn2 \\
+FLUSH   & ( -- )              & Write all dirty buffers to storage \\
+UPDATE  & ( -- )              & Mark current buffer as dirty (modified) \\
+SAVE-BUFFERS & ( -- )         & Synonym for FLUSH \\
+EMPTY-BUFFERS & ( -- )        & Invalidate all buffers without writing \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Dictionary and System Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+WORDS   & ( -- )              & Print all dictionary words \\
+FIND    & ( addr len -- xt flags | 0 ) & Search dictionary by name \\
+SEARCH-WORDLIST & ( addr len wid -- xt flags | 0 ) & Search a specific wordlist \\
+VOCABULARY & ( "name" -- )   & Define a new vocabulary (wordlist) \\
+DEFINITIONS & ( -- )         & Set current vocabulary as definition target \\
+FORTH-WORDLIST & ( -- wid )  & Push the id of the FORTH vocabulary \\
+STATE   & ( -- addr )         & Address of compilation-state flag (0=interpret, -1=compile) \\
+SEE     & ( "name" -- )       & Decompile named word \\
+ABORT   & ( -- )              & Reset stacks, print error message, restart interpreter \\
+ABORT"  & ( flag "text" -- )  & If flag is non-zero, abort with message \\
+QUIT    & ( -- )              & Return to outer interpreter (no error message) \\
+BYE     & ( -- )              & Exit StarForth \\
+INCLUDE & ( "filename" -- )   & Load and execute FORTH source file \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{Q48.16 Fixed-Point Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Q+      & ( q1 q2 -- q1+q2 )  & \Qtype{} addition \\
+Q-      & ( q1 q2 -- q1-q2 )  & \Qtype{} subtraction \\
+Q*      & ( q1 q2 -- q1*q2 )  & \Qtype{} multiplication \\
+Q/      & ( q1 q2 -- q1/q2 )  & \Qtype{} division \\
+INT>Q   & ( n -- q )           & Convert integer to \Qtype{} \\
+Q>INT   & ( q -- n )           & Convert \Qtype{} to integer (truncate) \\
+Q.      & ( q -- )             & Print \Qtype{} value as decimal fraction \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{StarForth Physics Words}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+WORD-ENTROPY        & ( -- )   & Print execution heat statistics for all words \\
+PHYSICS-FREEZE      & ( -- )   & Suspend all adaptive runtime updates \\
+PHYSICS-THAW        & ( -- )   & Resume adaptive runtime updates after freeze \\
+PHYSICS-RESET-STATS & ( -- )   & Clear all heat counters to zero \\
+\end{longtable}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section*{ACL Words (active only when ACL.4th is loaded)}
+\begin{longtable}{>{\ttfamily}lp{4.5cm}p{7cm}}
+\toprule
+\normalfont Word & Stack Effect & Description \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+ACL-ENTRY       & ( xt -- addr )      & O(1) ACL table lookup by execution token \\
+ACL-MODE@       & ( xt -- mode )      & Read enforcement mode of word \\
+ACL-MODE!       & ( mode xt -- )      & Set enforcement mode (no-op if pinned) \\
+ACL-PINNED?     & ( xt -- flag )      & Test whether word is pinned \\
+ACL-PIN         & ( xt -- )           & One-way pin: freeze mode and decision permanently \\
+ACL-STRICT      & ( xt -- )           & Set STRICT enforcement mode (no-op if pinned) \\
+ACL-TTL-MODE    & ( xt -- )           & Set adaptive TTL mode (no-op if pinned) \\
+ACL-TTL@        & ( xt -- n )         & Read current TTL counter \\
+ACL-TTL!        & ( n xt -- )         & Write TTL counter \\
+ACL-ALLOW@      & ( xt -- flag )      & Read cached access decision \\
+ACL-ALLOW!      & ( flag xt -- )      & Write access decision \\
+ACL-INHERIT     & ( src dst -- )      & Copy mode from src to dst; clear pin; reset TTL and decision \\
+ACL-RECHECK     & ( xt -- )           & Recompute adaptive TTL and update decision \\
+ACL-INIT-PRIMITIVES & ( -- )          & Bulk-initialize ACL entries for all existing words \\
+ACL-GRANT       & ( xt -- )           & Grant access to word \\
+ACL-REVOKE      & ( xt -- )           & Revoke access to word \\
+\end{longtable}
+
+%%────────────────────────────────────────────────────────────────────────────
 \chapter{Glossary}
-%% TODO(bob): stub — FORTH, Capsule, Heat, Rolling Window, Jacquard, Uberkernel, Hades, James Law, SSM.
+\label{app:glossary}
+%%────────────────────────────────────────────────────────────────────────────
+
+\begin{description}
+  \item[ACL] Access Control List. In StarForth, a per-word access-control
+    mechanism implemented in \texttt{ACL.4th}.
+  \item[Capsule] An immutable, content-addressed VM initialization payload.
+    A capsule's ID is its XXHash64 content hash.
+  \item[Cell] The fundamental unit of the data stack. On a 64-bit host,
+    one cell is 64 bits (8 bytes).
+  \item[Colon definition] A word defined with \texttt{:} and \texttt{;}.
+  \item[Compilation mode] The interpreter state entered after \texttt{:},
+    in which words are compiled rather than executed.
+  \item[Data stack] The primary working stack, distinct from the return stack.
+  \item[Decay] The process by which execution heat diminishes over time for
+    quiescent words (\loopref{3}).
+  \item[DoE] Design of Experiments. StarForth's 2\textsuperscript{7} factorial
+    experimental framework for measuring the effect of each feedback loop.
+  \item[Execution token (XT)] An opaque value identifying a word in the
+    dictionary, suitable for use with \texttt{EXECUTE} or ACL words.
+  \item[Heat] The execution-frequency metric tracked per word by
+    \loopref{1}. Higher heat means more recent and frequent execution.
+  \item[Immediate word] A word that executes at compile time rather than
+    being compiled into the current word definition.
+  \item[Interpretation mode] The default interpreter state in which words
+    are executed as they are encountered.
+  \item[Jacquard Selector] The L8 steady-state machine (\texttt{ssm\_jacquard.c})
+    that selects between runtime mode configurations: stable, volatile,
+    diverse, temporal, transition, omni.
+  \item[LBN] Logical Block Number. The address scheme for StarForth's
+    block storage subsystem.
+  \item[LithosAnanke] The bare-metal UEFI kernel that boots StarForth
+    directly on hardware without a host operating system.
+  \item[\Qtype{}] Q48.16 fixed-point format: 48-bit integer part, 16-bit
+    fractional part. Precision of $1/65536 \approx 0.0000153$.
+  \item[Return stack] The secondary stack used for word-call linkage and
+    temporary storage with \texttt{>R}/\texttt{R>}.
+  \item[Rolling window] The circular execution history buffer managed by
+    \loopref{2}.
+  \item[SMUDGE] A flag set during word compilation that hides the partial
+    definition from dictionary searches until \texttt{;} completes it.
+  \item[SSM] Steady-State Machine. The control structure governing
+    StarForth's adaptive runtime.
+  \item[Stack effect] The notation \texttt{( before -- after )} documenting
+    what a word consumes and produces on the data stack.
+  \item[Zuse] The bootstrap superuser in StarForth's security model, named
+    for Konrad Zuse.
+\end{description}
 
 \backmatter
 \bibliographystyle{plainnat}
