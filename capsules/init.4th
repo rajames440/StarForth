@@ -25,6 +25,6 @@ Block 2049
 \ S" Hermes" BIRTH
 \ S" Artemis" BIRTH
 
-S" ACL.4th" EXEC
-S" doe.4th" EXEC
+\ S" ACL.4th" EXEC
+\ S" doe.4th" EXEC
 BOOT-BANNER
