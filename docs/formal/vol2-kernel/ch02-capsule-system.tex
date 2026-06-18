@@ -1,19 +1,27 @@
 %% Vol II, Chapter 2 — Capsule System
 %% SOURCE: .claude/CLAUDE.md (Capsule System section)
-%%         docs/working/scratch/src/internal/MAMA_FORTH_SUPERVISOR_ARCHITECTURE.adoc
+%%         docs/formal/scraps/architecture/MAMA_FORTH_SUPERVISOR_ARCHITECTURE.tex
 %%         src/starkernel/capsule/ (6 files)
+%%         capsules/ directory (19 .4th files)
 
 \chapter{Capsule System}
 \label{vol2:chap:capsules}
 
-%% TODO(bob): opening paragraph. Capsules are immutable, content-addressed VM
-%% initialization payloads. Capsule ID = XXHash64 content hash — any mutation
-%% is detectable.
+A capsule is an immutable, content-addressed VM initialization payload.
+The capsule identifier is the XXHash64 hash of the capsule's content;
+any mutation of the payload produces a different hash and is therefore
+detectable at birth time. Capsules provide the mechanism by which new
+FORTH virtual machine instances are initialized in a verifiable and
+reproducible manner, whether on a hosted Linux system or within the
+LithosAnanke bare-metal kernel.
 
 \section{Capsule Types}
 \label{vol2:sec:capsules:types}
 
 %% SOURCE: .claude/CLAUDE.md (Capsule types)
+
+Three capsule types exist, distinguished by a single type-code field
+in the capsule descriptor.
 
 \begin{table}[ht]
   \centering
@@ -30,47 +38,206 @@
   \end{tabular}
 \end{table}
 
+Exactly one \texttt{MAMA\_INIT} capsule exists per deployment. It initializes
+the root VM (Mama Forth) from which all child VMs are subsequently born.
+\texttt{PRODUCTION} capsules carry the authoritative personality for
+truth-bearing baby VMs. \texttt{EXPERIMENT} capsules supply workload-only
+initialization for Design of Experiments runs; they do not carry personality
+state and are not used as birth-protocol truth bearers.
+
+\section{Content Addressing and Immutability}
+\label{vol2:sec:capsules:hash}
+
+%% SOURCE: .claude/CLAUDE.md (Capsule System section)
+%% SOURCE: src/starkernel/hash/xxhash64.c
+
+The capsule identifier is the XXHash64 hash of the capsule binary content,
+computed by \texttt{src/starkernel/hash/xxhash64.c}. Because the identifier
+is derived from the content, any alteration to the payload --- including
+changes to capsule code, CA-key constants, or block layout --- produces a
+different hash. The birth protocol validates this hash before allocating a
+VM ID, making the content-hash serve as the root-of-trust fingerprint for
+each capsule.
+
+Capsule immutability has a further consequence for the ACL subsystem: the
+CA-root public-key placeholder embedded in \texttt{ACL.4th} (Block 2066)
+is part of the hashed content. Replacing the placeholder with a real
+Ed25519 key necessarily changes the capsule hash, and any such change is
+detectable by the birth protocol.
+
 \section{Birth Protocol}
 \label{vol2:sec:capsules:birth}
 
 %% SOURCE: .claude/CLAUDE.md (Birth protocol section)
 
-The capsule birth protocol:
+The capsule birth protocol executes the following steps in order:
 
 \begin{enumerate}
-  \item Locate capsule by name
-  \item Validate content hash (XXHash64)
-  \item Allocate VM ID
-  \item Execute IDENTITY (capsule code)
-  \item Execute PERSONALITY (block 1 from ramdrive)
-  \item Log parity record: VM ID + capsule hash + dict hash
+  \item Locate the capsule by name in the capsule directory.
+  \item Validate the content hash (XXHash64); reject the capsule if the
+        computed hash does not match the stored identifier.
+  \item Allocate a fresh VM ID for the new virtual machine instance.
+  \item Execute \textsc{Identity}: run the capsule code, which establishes
+        the word definitions and initial state specific to this capsule.
+  \item Execute \textsc{Personality}: load block~1 from the kernel ramdrive
+        (LBN~2048), which supplies the VM's behavioral personality.
+  \item Log a parity record containing: the VM ID, the capsule hash, and
+        the dictionary hash at the moment personality execution completes.
 \end{enumerate}
 
-\section{Content Addressing and Immutability}
-\label{vol2:sec:capsules:hash}
+Parity logging is implemented in \texttt{src/starkernel/vm/parity.c}.
+Each birth and execution event is recorded with sufficient information
+for an independent system to load the same capsule and compare dictionary
+hashes. Zero deviation in dictionary hashes across independent runs
+constitutes the primary evidence for deterministic behavior.
 
-%% TODO(bob): describe XXHash64 and why content addressing guarantees
-%% immutability. Reference src/starkernel/hash/xxhash64.c.
+\section{Capsule Descriptor}
+\label{vol2:sec:capsules:descriptor}
 
-\section{Parity Logging}
-\label{vol2:sec:capsules:parity}
+%% SOURCE: .claude/CLAUDE.md (CapsuleDesc)
 
-%% SOURCE: src/starkernel/vm/parity.c (.claude/CLAUDE.md StarKernel M7 Parity)
-%% TODO(bob): describe parity.c — logs every VM birth and execution with:
-%%   VM ID, capsule hash, dict hash.
-%% Enable offline determinism verification: independent system loads same
-%% capsule and compares dict hashes. Zero-deviation = 0% algorithmic variance.
+Each capsule is described by a \texttt{CapsuleDesc} structure. The structure
+is 64 bytes in size and cache-line aligned to avoid false sharing when the
+capsule directory is scanned at birth time.
+
+\begin{table}[ht]
+  \centering
+  \caption{CapsuleDesc fields}
+  \label{tab:capsule-desc}
+  \begin{tabular}{lll}
+    \toprule
+    Field & Type & Description \\
+    \midrule
+    content hash & \texttt{uint64\_t} & XXHash64 of capsule binary content \\
+    type code & \texttt{uint8\_t} & \texttt{(m)}, \texttt{(p)}, or \texttt{(e)} \\
+    name & \texttt{char[]} & Null-terminated capsule name \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+%% TODO(bob): confirm the full field list for CapsuleDesc from include/vm.h
+%% or starkernel/capsule/capsule_loader.c — the CLAUDE.md summary names
+%% only content hash and type; the table above should be expanded with the
+%% remaining fields (size, flags, block offset, etc.) once verified.
+
+\section{Memory Layout}
+\label{vol2:sec:capsules:memory}
+
+%% SOURCE: .claude/CLAUDE.md (Kernel memory layout section)
+
+The LithosAnanke kernel partitions VM memory as follows. Block RAM occupies
+logical block numbers (LBN) 0 through 991, providing 1~MB of dedicated
+RAM-backed blocks. The kernel ramdrive occupies LBN 2048 through 3071,
+providing a further 1~MB used for capsule loading. LBN~2048 is the entry
+point for \texttt{init.4th}: when the birth protocol executes Personality,
+execution begins at this block. The log region occupies LBN 3072 through
+5120, providing 2~MB for persistent logging at up to 32,768 lines of
+64~bytes each. The full VM memory space is 5~MB in the hosted build
+(\texttt{VM\_MEMORY\_SIZE}), with the first 2~MB reserved for the
+dictionary (\texttt{DICTIONARY\_BLOCKS} = 2048 blocks).
+
+\begin{table}[ht]
+  \centering
+  \caption{LithosAnanke LBN layout}
+  \label{tab:lbn-layout}
+  \begin{tabular}{lll}
+    \toprule
+    LBN range & Size & Purpose \\
+    \midrule
+    0 -- 991      & 1 MB & Block RAM (dedicated RAM blocks) \\
+    2048 -- 3071  & 1 MB & Kernel ramdrive; LBN 2048 = \texttt{init.4th} entry \\
+    3072 -- 5120  & 2 MB & Persistent log (32,768 lines $\times$ 64 bytes) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \section{Capsule Files}
 \label{vol2:sec:capsules:files}
 
 %% SOURCE: .claude/CLAUDE.md (Capsule files in capsules/)
-%% TODO(bob): table of the 17 .4th capsule files (init.4th, init-0..9, L8 variants).
-%% Also describe tools/mkcapsule.c and capsule_generated.c.
+%% SOURCE: ls /home/user/StarForth/capsules/
+
+The \texttt{capsules/} directory contains 19 \texttt{.4th} source files.
+These are assembled by \texttt{tools/mkcapsule.c} into the binary capsule
+directory format, which is compiled into the kernel image as
+\texttt{capsule\_generated.c}.
+
+\begin{table}[ht]
+  \centering
+  \caption{Capsule \texttt{.4th} source files}
+  \label{tab:capsule-files}
+  \begin{tabular}{ll}
+    \toprule
+    File & Purpose \\
+    \midrule
+    \texttt{init.4th}            & Default Mama VM personality \\
+    \texttt{init-0.4th}          & Numbered personality variant 0 \\
+    \texttt{init-1.4th}          & Numbered personality variant 1 \\
+    \texttt{init-2.4th}          & Numbered personality variant 2 \\
+    \texttt{init-3.4th}          & Numbered personality variant 3 \\
+    \texttt{init-4.4th}          & Numbered personality variant 4 \\
+    \texttt{init-5.4th}          & Numbered personality variant 5 \\
+    \texttt{init-6.4th}          & Numbered personality variant 6 \\
+    \texttt{init-7.4th}          & Numbered personality variant 7 \\
+    \texttt{init-8.4th}          & Numbered personality variant 8 \\
+    \texttt{init-9.4th}          & Numbered personality variant 9 \\
+    \texttt{init-l8-stable.4th}  & L8 Jacquard: stable mode \\
+    \texttt{init-l8-volatile.4th}& L8 Jacquard: volatile mode \\
+    \texttt{init-l8-diverse.4th} & L8 Jacquard: diverse mode \\
+    \texttt{init-l8-temporal.4th}& L8 Jacquard: temporal mode \\
+    \texttt{init-l8-transition.4th} & L8 Jacquard: transition mode \\
+    \texttt{init-l8-omni.4th}    & L8 Jacquard: omni mode \\
+    \texttt{ACL.4th}             & Word-level ACL subsystem (self-activating) \\
+    \texttt{zuse.4th}            & Bootstrap superuser; loaded by \texttt{ACL.4th} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The \texttt{mkcapsule} tool (\texttt{tools/mkcapsule.c}) reads each
+\texttt{.4th} source file, computes its XXHash64 content hash, and writes
+a binary capsule directory entry. The resulting \texttt{capsule\_generated.c}
+is a C translation unit that, when compiled into the kernel image, provides
+the capsule directory accessible at boot time without filesystem access.
 
 \section{Mama Forth Supervisor}
 \label{vol2:sec:capsules:mama}
 
-%% SOURCE: docs/working/scratch/src/internal/MAMA_FORTH_SUPERVISOR_ARCHITECTURE.adoc
-%% TODO(bob): describe the Mama VM / Baby VM hierarchy and how it maps to
-%% the MAMA_INIT capsule type.
+%% SOURCE: docs/formal/scraps/architecture/MAMA_FORTH_SUPERVISOR_ARCHITECTURE.tex
+
+Mama Forth is the governing FORTH VM that orchestrates the multi-VM
+ecosystem. It is itself a FORTH VM, a first-class citizen carrying the same
+physics instrumentation as every VM it governs. The supervisor does not
+stand outside the runtime model; it participates in it.
+
+The ecosystem forms a tree. Mama Forth sits at the root. Beneath it, child
+VMs each carry their own physics state. Beneath each child, block devices
+carry per-device physics. Mama observes all three layers and makes
+system-level decisions: when to spawn or kill a child VM, how to allocate
+block devices to children, how to enforce governance across the ecosystem,
+and how to respond to anomalous conditions.
+
+The central design insight is that physics metadata becomes a three-tier
+hierarchy:
+
+\begin{itemize}
+  \item \textbf{Word level} --- per-word metrics: execution heat, temperature,
+        latency.
+  \item \textbf{VM level} --- per-VM aggregates: child health, resource usage.
+  \item \textbf{Block level} --- per-block device metrics: I/O patterns,
+        thermal distribution.
+\end{itemize}
+
+Mama runs with elevated privileges along three axes: observing all word
+executions in children, all block-device I/O, all child lifecycle events,
+and all errors; controlling child VM spawn and kill, block allocation and
+rebalancing; and coordinating shared block resources and load balancing.
+
+%% TODO(bob): Confirm whether Mama Forth runs as a dedicated thread, a
+%% coroutine, or the main loop. Source material leaves the concurrency
+%% model open. The MAMA_FORTH_SUPERVISOR_ARCHITECTURE scrap notes this
+%% is unresolved.
+
+The Mama VM is initialized by the \texttt{MAMA\_INIT} capsule (type code
+\texttt{(m)}). Exactly one such capsule exists per deployment. Child VMs
+are born from \texttt{PRODUCTION} or \texttt{EXPERIMENT} capsules via
+the birth protocol described in Section~\ref{vol2:sec:capsules:birth}.

@@ -1,0 +1,834 @@
+%% ch-forth-programming.tex — FORTH Programming Patterns and Style
+%% SOURCE: .claude/CLAUDE.md, src/word_source/
+%% Included from user-guide/main.tex
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{FORTH Programming}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Thinking in FORTH}
+\label{chap:thinking}
+%%────────────────────────────────────────────────────────────────────────────
+
+FORTH is a different kind of language. If you come from C, Python, or Java, a
+few shifts in thinking will make it click faster.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Postfix Notation}
+\label{sec:postfix}
+
+Every language you have probably used puts operators between operands:
+\texttt{3 + 4}. FORTH puts the operands first and the operator last:
+\texttt{3 4 +}. This is postfix (or reverse Polish) notation.
+
+The reason is the stack. When you type \texttt{3 4 +}, the runtime pushes 3,
+pushes 4, then \texttt{+} pops both and pushes 7. There are no parentheses
+for grouping because order of operations is completely explicit. Compare:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Infix (C) & FORTH \\
+\midrule
+\texttt{(3 + 4) * 2} & \texttt{3 4 + 2 *} \\
+\texttt{a * a + b * b} & \texttt{a a * b b * +} \\
+\texttt{(x - 1) / (x + 1)} & \texttt{x 1 - x 1 + /} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+You evaluate left to right, and the result of each operation is immediately
+available for the next.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Words Are Verbs}
+\label{sec:words-are-verbs}
+
+In FORTH, a ``word'' is any named operation --- primitive or user-defined.
+Numbers push themselves; everything else is a word that does something to the
+stack. \texttt{DUP} is a word. \texttt{+} is a word. \texttt{HELLO} (once you
+define it) is a word.
+
+This uniformity means the language is extensible in a deep way. After you
+define \texttt{SQUARE}, it is indistinguishable from a primitive --- it appears
+in \texttt{WORDS}, it runs when you type it, and other words can call it. The
+line between ``built-in'' and ``user-defined'' is stylistic, not structural.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Factor Early, Factor Often}
+\label{sec:factor}
+
+The FORTH style is to decompose programs into many small words, each doing one
+thing. A word with more than five or six lines in its body is usually a sign
+that it wants to be split.
+
+\begin{lstlisting}[language=Forth]
+( Bad: one big word )
+: PROCESS-PAYMENT  ( amount account-id -- )
+    DUP VALID-ACCOUNT? IF
+        OVER CHECK-FUNDS IF
+            SWAP DEDUCT
+            LOG-TRANSACTION
+        ELSE ." Insufficient funds" CR THEN
+    ELSE ." Invalid account" CR THEN
+    DROP ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+( Better: factored )
+: REJECT-INVALID  ." Invalid account" CR DROP DROP ;
+: REJECT-FUNDS    ." Insufficient funds" CR DROP DROP ;
+: COMMIT-PAYMENT  ( amount account-id -- )
+    SWAP DEDUCT LOG-TRANSACTION ;
+
+: PROCESS-PAYMENT  ( amount account-id -- )
+    DUP VALID-ACCOUNT? NOT IF  REJECT-INVALID  EXIT  THEN
+    OVER CHECK-FUNDS  NOT IF  REJECT-FUNDS     EXIT  THEN
+    COMMIT-PAYMENT ;
+\end{lstlisting}
+
+Factored code is easier to test interactively, easier to reuse, and easier to
+read. You can test \texttt{COMMIT-PAYMENT} in isolation before wiring it into
+\texttt{PROCESS-PAYMENT}.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Stack Comments Are Documentation}
+\label{sec:stack-comments}
+
+FORTH comments use parentheses: \texttt{( this is a comment )}. By
+convention, every word definition begins with a stack-effect comment:
+
+\begin{lstlisting}[language=Forth]
+: AREA  ( width height -- area )
+    * ;
+\end{lstlisting}
+
+The stack comment is the primary documentation. Write it first, before the
+body, and treat it as a contract: the word must consume exactly the items
+before the \texttt{--} and produce exactly the items after. Violations cause
+hard-to-debug stack confusion.
+
+StarForth does not enforce stack effects at runtime --- it is your
+responsibility to make them accurate.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The Interactive Development Loop}
+\label{sec:dev-loop}
+
+FORTH's interactive nature is a feature, not a limitation. The typical
+development cycle is:
+
+\begin{enumerate}
+  \item Type a small fragment at the \texttt{ok>} prompt and test it.
+  \item When it works, wrap it in a \texttt{: NAME ... ;} definition.
+  \item Test the word interactively.
+  \item Build larger words on top of working smaller ones.
+\end{enumerate}
+
+For example, building a Fahrenheit-to-Celsius converter step by step:
+
+\begin{lstlisting}[language=Forth]
+ok> 32 .
+32 ok>
+
+ok> 212 32 - .
+180 ok>
+
+ok> 212 32 - 5 * 9 / .
+100 ok>
+
+ok> : F>C  ( f -- c )  32 - 5 * 9 / ;
+ok> 212 F>C .
+100 ok>
+ok> 32 F>C .
+0 ok>
+ok> 98 F>C .
+36 ok>
+\end{lstlisting}
+
+Each step confirmed before moving on.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Common Programming Patterns}
+\label{chap:patterns}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Accumulator Pattern}
+\label{sec:pattern-accumulator}
+
+Use a variable as an accumulator and update it in a loop:
+
+\begin{lstlisting}[language=Forth]
+VARIABLE SUM
+
+: SUM-TO  ( n -- sum )
+    0 SUM !
+    1 + 1 DO
+        I SUM @ + SUM !
+    LOOP
+    SUM @ ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 10 SUM-TO .
+55 ok>
+\end{lstlisting}
+
+The pattern: initialize the variable before the loop, update inside, read
+after.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Table Dispatch}
+\label{sec:pattern-dispatch}
+
+Use \texttt{EXECUTE} to implement a jump table. First, build an array of
+execution tokens:
+
+\begin{lstlisting}[language=Forth]
+: GREET-EN  ." Hello" ;
+: GREET-ES  ." Hola" ;
+: GREET-FR  ." Bonjour" ;
+
+CREATE GREET-TABLE
+    ' GREET-EN ,
+    ' GREET-ES ,
+    ' GREET-FR ,
+
+: GREET  ( lang-index -- )
+    CELLS GREET-TABLE + @ EXECUTE  CR ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 0 GREET
+Hello ok>
+ok> 1 GREET
+Hola ok>
+ok> 2 GREET
+Bonjour ok>
+\end{lstlisting}
+
+\texttt{CELLS} converts the index to a byte offset. \texttt{EXECUTE} runs the
+stored execution token.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Counted String Pattern}
+\label{sec:pattern-counted-string}
+
+A common FORTH idiom is the counted string: a byte at the start holds the
+length, followed by the characters. \texttt{COUNT} converts a counted-string
+address to the \texttt{( addr len )} form that \texttt{TYPE} expects:
+
+\begin{lstlisting}[language=Forth]
+: PRINT-COUNTED  ( c-addr -- )
+    COUNT TYPE CR ;
+\end{lstlisting}
+
+\texttt{S"} produces an \texttt{( addr len )} pair directly:
+
+\begin{lstlisting}[language=Forth]
+ok> S" hello world" TYPE CR
+hello world
+ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Guard Clauses}
+\label{sec:pattern-guard}
+
+Use \texttt{EXIT} at the start of a word to reject bad inputs early. This is
+cleaner than deeply nested \texttt{IF}s:
+
+\begin{lstlisting}[language=Forth]
+: SAFE-DIVIDE  ( a b -- a/b )
+    DUP 0= IF
+        ." Division by zero" CR
+        DROP DROP  0
+        EXIT
+    THEN
+    / ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 10 2 SAFE-DIVIDE .
+5 ok>
+ok> 10 0 SAFE-DIVIDE .
+Division by zero
+0 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{State Machine in FORTH}
+\label{sec:pattern-state-machine}
+
+Encode state as an integer in a variable, and dispatch on it:
+
+\begin{lstlisting}[language=Forth]
+0 CONSTANT STATE-IDLE
+1 CONSTANT STATE-RUN
+2 CONSTANT STATE-DONE
+
+VARIABLE MACHINE-STATE
+STATE-IDLE MACHINE-STATE !
+
+: TRANSITION  ( new-state -- )  MACHINE-STATE ! ;
+: STATE@      ( -- state )      MACHINE-STATE @ ;
+
+: STEP
+    STATE@ CASE
+        STATE-IDLE OF  ." Idle -> Run"  STATE-RUN  TRANSITION  ENDOF
+        STATE-RUN  OF  ." Running..."   STATE-DONE TRANSITION  ENDOF
+        STATE-DONE OF  ." Done."                                ENDOF
+    ENDCASE
+    CR ;
+\end{lstlisting}
+
+\texttt{CASE} / \texttt{OF} / \texttt{ENDOF} / \texttt{ENDCASE} are the
+FORTH multi-way branch words.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Debugging at the Prompt}
+\label{chap:debugging}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Using .S Liberally}
+\label{sec:debug-dots}
+
+\texttt{.S} is non-destructive --- it leaves the stack intact. Sprinkle it
+freely while working out what a piece of code does:
+
+\begin{lstlisting}[language=Forth]
+ok> 5 7 .S * .S .
+<2> 5 7
+<1> 35
+35 ok>
+\end{lstlisting}
+
+You can also insert \texttt{.S} inside a word definition during debugging (it
+compiles to a call to the runtime print-stack routine):
+
+\begin{lstlisting}[language=Forth]
+: BUGGY  ( a b -- result )
+    .S        \ what do we have?
+    +
+    .S        \ what did + produce?
+    2 * ;
+\end{lstlisting}
+
+Remove the \texttt{.S} calls once the word works correctly.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{SEE: Decompiling a Word}
+\label{sec:debug-see}
+
+\texttt{SEE} decompiles a word, showing its compiled form:
+
+\begin{lstlisting}[language=Forth]
+ok> SEE DOUBLE
+: DOUBLE  DUP + ; ok>
+\end{lstlisting}
+
+The output is a reconstruction from the compiled threaded code. It may not
+look identical to the original source but shows the same operations.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{WORDS: Finding What Exists}
+\label{sec:debug-words}
+
+When you cannot remember whether you defined a word:
+
+\begin{lstlisting}[language=Forth]
+ok> WORDS
+\end{lstlisting}
+
+The output is long. You can pipe StarForth output through \texttt{grep} at
+the shell level:
+
+\begin{lstlisting}[language=bash]
+echo "WORDS BYE" | ./build/amd64/standard/starforth | grep SQUARE
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Common Mistakes}
+\label{sec:debug-mistakes}
+
+\paragraph{Wrong argument order.}
+Postfix is different from most calculators. \texttt{10 3 -} gives 7, not
+\(-7\). When in doubt, use \texttt{.S} before and after each operation.
+
+\paragraph{Forgetting to consume values.}
+If \texttt{.S} shows values you did not expect, a word left extra values on
+the stack. Check every word's documented stack effect.
+
+\paragraph{Control flow outside a definition.}
+\texttt{IF}, \texttt{DO}, \texttt{BEGIN}, etc.\ are compile-only. Typing them
+at the prompt produces an error. Wrap them inside \texttt{: ... ;}.
+
+\paragraph{Mismatched IF / THEN.}
+Every \texttt{IF} needs a \texttt{THEN}. Forgetting one leaves the compiler in
+a confused state. An error mid-definition usually means the definition was not
+completed; start over with a fresh \texttt{:} definition.
+
+\paragraph{Return stack imbalance.}
+Every \texttt{>R} in a word must be matched by an \texttt{R>} before
+\texttt{;}. Leaving items on the return stack corrupts the call chain.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Working with Numbers}
+\label{chap:numbers-detail}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Integer Ranges}
+\label{sec:int-ranges}
+
+A StarForth cell is a 64-bit signed integer on a 64-bit host. The range is
+$-2^{63}$ to $2^{63}-1$ (approximately $\pm9.2 \times 10^{18}$). Overflow
+wraps silently (two's complement arithmetic) --- StarForth does not trap integer
+overflow by default.
+
+\begin{lstlisting}[language=Forth]
+ok> 9223372036854775807 1 + .
+-9223372036854775808 ok>
+\end{lstlisting}
+
+That is the maximum signed 64-bit integer wrapping to the minimum. Keep this
+in mind when working with large values.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Numeric Literals}
+\label{sec:numeric-literals}
+
+StarForth accepts numbers in the current base. In decimal (the default):
+
+\begin{lstlisting}[language=Forth]
+ok> 255 .
+255 ok>
+\end{lstlisting}
+
+After \texttt{HEX}:
+
+\begin{lstlisting}[language=Forth]
+ok> HEX
+ok> FF .
+255 ok>
+ok> DECIMAL
+\end{lstlisting}
+
+Negative numbers use the minus sign prefix:
+
+\begin{lstlisting}[language=Forth]
+ok> -7 ABS .
+7 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Double-Cell Numbers}
+\label{sec:double-cell}
+
+When you need values larger than one cell, FORTH uses double-cell numbers ---
+two consecutive cells treated as a single 128-bit value (on a 64-bit host).
+Words that produce or consume double-cells are conventionally prefixed with
+\texttt{D} (e.g.\ \texttt{D+}, \texttt{D-}) or suffixed with \texttt{D} in
+their stack comments. A double cell occupies two stack positions: the lower
+(less significant) cell on top.
+
+\texttt{M*} multiplies two single cells and produces a double cell result:
+
+\begin{lstlisting}[language=Forth]
+ok> 1000000 1000000 M* D. CR
+1000000000000
+ok>
+\end{lstlisting}
+
+Double-cell arithmetic is used when single-cell overflow is possible.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Pictured Numeric Output}
+\label{sec:pictured-output}
+
+FORTH provides a formatting mechanism called pictured numeric output for
+constructing number strings character by character:
+
+\begin{lstlisting}[language=Forth]
+: HEX-PRINT  ( n -- )
+    BASE @ >R  HEX
+    <# # # # # # # # # #> TYPE CR
+    R> BASE ! ;
+\end{lstlisting}
+
+The sequence \texttt{<\#} ... \texttt{\#>} builds the number string in a
+scratch buffer. \texttt{\#} converts one digit; \texttt{\#S} converts all
+remaining digits; \texttt{HOLD} inserts a literal character; \texttt{\#>}
+finishes and returns the string address and length.
+
+A practical example --- printing a number with a comma separator:
+
+\begin{lstlisting}[language=Forth]
+: .COMMA  ( n -- )
+    <#
+    #S
+    HOLD 44    \ 44 = comma character
+    #S
+    #>
+    TYPE CR ;
+\end{lstlisting}
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Vocabularies and the Dictionary}
+\label{chap:vocabularies}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{How the Dictionary Is Organized}
+\label{sec:dict-structure}
+
+The StarForth dictionary is a linked list of word entries. The newest word is
+at the head; \texttt{FIND} searches from head toward tail. This means a
+newly-defined word with the same name as an existing word shadows the older
+one. The older word is not deleted --- it is simply unreachable through the
+normal search path until the newer definition is removed with \texttt{FORGET}.
+
+\begin{lstlisting}[language=Forth]
+ok> : HELLO  ." Version 1" CR ;
+ok> HELLO
+Version 1
+ok> : HELLO  ." Version 2" CR ;
+ok> HELLO
+Version 2
+ok> FORGET HELLO
+ok> HELLO
+Version 1
+ok>
+\end{lstlisting}
+
+\texttt{FORGET} removes the named word and all words defined after it. Use it
+carefully --- definitions made after the word you want to forget will also
+disappear.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{VOCABULARY}
+\label{sec:vocabulary}
+
+A vocabulary is a named wordlist. StarForth supports multiple vocabularies,
+allowing you to organize related words and avoid name collisions.
+
+\begin{lstlisting}[language=Forth]
+VOCABULARY GRAPHICS
+GRAPHICS DEFINITIONS
+
+: DRAW-LINE   ... ;
+: DRAW-CIRCLE ... ;
+
+FORTH DEFINITIONS
+\end{lstlisting}
+
+After \texttt{GRAPHICS DEFINITIONS}, new words go into the \texttt{GRAPHICS}
+vocabulary. \texttt{FORTH DEFINITIONS} returns to defining into the FORTH
+vocabulary.
+
+To make a vocabulary searchable, name it in the search order. The
+\texttt{ALSO} word adds a vocabulary to the front of the search order:
+
+\begin{lstlisting}[language=Forth]
+ok> ALSO GRAPHICS
+ok> DRAW-LINE   \ now visible
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{SEARCH-WORDLIST}
+\label{sec:search-wordlist}
+
+\texttt{SEARCH-WORDLIST} searches a specific wordlist by name and count,
+returning an execution token and flags if found, or zero if not found:
+
+\begin{lstlisting}[language=Forth]
+ok> S" DRAW-LINE" FORTH-WORDLIST SEARCH-WORDLIST
+\end{lstlisting}
+
+This is useful when you want to test for word existence programmatically
+before attempting to execute it.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Working with Text and I/O}
+\label{chap:text-io}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Reading User Input}
+\label{sec:user-input}
+
+\texttt{ACCEPT} reads a line from the terminal:
+
+\begin{lstlisting}[language=Forth]
+CREATE INPUT-BUF 80 ALLOT
+
+: GET-LINE  ( -- addr count )
+    INPUT-BUF 80 ACCEPT ;
+
+: ECHO-LINE
+    ." Enter text: "
+    GET-LINE TYPE CR ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> ECHO-LINE
+Enter text: Hello, FORTH!
+Hello, FORTH!
+ok>
+\end{lstlisting}
+
+\texttt{KEY} reads a single character without echoing:
+
+\begin{lstlisting}[language=Forth]
+: WAIT-FOR-ENTER
+    ." Press Enter to continue..."
+    BEGIN KEY 13 = UNTIL CR ;
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Parsing Input}
+\label{sec:parsing}
+
+\texttt{PARSE} scans the input stream up to a delimiter and returns address
+and count. \texttt{WORD} scans to the next whitespace-delimited token and
+stores it as a counted string:
+
+\begin{lstlisting}[language=Forth]
+\ Parse everything up to the end of line
+: PARSE-LINE  ( -- addr count )
+    10 PARSE ;   \ 10 = newline
+\end{lstlisting}
+
+\texttt{WORD} is used internally by the interpreter to tokenize input. At
+the prompt, you rarely need to call it directly.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Number Conversion}
+\label{sec:number-convert}
+
+\texttt{NUMBER} (or \texttt{NUMBER?} in some implementations) attempts to
+parse a string as a number. In StarForth, the outer interpreter does this
+automatically when a word is not found in the dictionary. For programmatic
+parsing, use the base-aware conversion words.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Formatted Output}
+\label{sec:formatted-output}
+
+Build formatted output using the print words together:
+
+\begin{lstlisting}[language=Forth]
+: PRINT-ROW  ( value label-addr label-len -- )
+    TYPE           \ print label
+    ." : "
+    .R  ;          \ print value right-justified (needs width on stack)
+
+: SHOW-STATS
+    ." --- Statistics ---" CR
+    42  S" Iterations" 7 ROLL .R  CR
+    100 S" Percent"    7 ROLL .R  CR ;
+\end{lstlisting}
+
+For tables, use \texttt{.R} (right-justified print) to align columns:
+
+\begin{lstlisting}[language=Forth]
+: PRINT-TABLE
+    ." N     N^2   N^3" CR
+    10 1 DO
+        I     5 .R
+        I I * 7 .R
+        I I * I * 9 .R
+        CR
+    LOOP ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> PRINT-TABLE
+    N     N^2      N^3
+    1       1        1
+    2       4        8
+    3       9       27
+    4      16       64
+    5      25      125
+    6      36      216
+    7      49      343
+    8      64      512
+    9      81      729
+ok>
+\end{lstlisting}
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Writing and Loading Source Files}
+\label{chap:source-files}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The .4th File Convention}
+\label{sec:4th-files}
+
+StarForth source files use the \texttt{.4th} extension by convention. A
+\texttt{.4th} file is plain text containing FORTH words and definitions,
+exactly as you would type them at the prompt:
+
+\begin{lstlisting}[language=Forth]
+\ mylib.4th
+\ A small library of utility words
+
+: MAX3  ( a b c -- max )
+    ROT MAX MAX ;
+
+: MIN3  ( a b c -- min )
+    ROT MIN MIN ;
+
+: CLAMP  ( n lo hi -- n' )
+    ROT        \ ( lo hi n )
+    MIN        \ ( lo n )
+    MAX ;      \ ( result )
+\end{lstlisting}
+
+Load it with \texttt{INCLUDE}:
+
+\begin{lstlisting}[language=Forth]
+ok> S" mylib.4th" INCLUDE
+ok> 5 1 10 CLAMP .
+5 ok>
+ok> 0 1 10 CLAMP .
+1 ok>
+ok> 99 1 10 CLAMP .
+10 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Comments in Source Files}
+\label{sec:comments}
+
+FORTH supports two comment forms:
+
+\begin{lstlisting}[language=Forth]
+\ This is a line comment (backslash-space)
+( This is a paren comment )
+\end{lstlisting}
+
+The backslash comment extends to end of line. The paren comment extends to the
+closing parenthesis. Both are legal anywhere --- in the REPL, in definitions,
+or in source files. By convention, stack effects use paren comments and
+explanations use backslash comments:
+
+\begin{lstlisting}[language=Forth]
+: HYPOTENUSE  ( a b -- c )
+    \ computes sqrt(a^2 + b^2) using integer approximation
+    DUP *  SWAP DUP *  + ;  ( a^2+b^2 -- needs SQRT )
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Conditional Compilation}
+\label{sec:conditional-compile}
+
+Use \texttt{[IF]} / \texttt{[ELSE]} / \texttt{[THEN]} for compile-time
+conditionals. These are immediate words that run at compile time rather than
+being compiled:
+
+\begin{lstlisting}[language=Forth]
+\ Define a debug-print word only in debug builds
+HAS-DEBUG [IF]
+    : DPRINT  ( n -- )  ." DEBUG: " . CR ;
+[ELSE]
+    : DPRINT  ( n -- )  DROP ;   \ no-op in production
+[THEN]
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Loading Capsule Files}
+\label{sec:loading-capsules}
+
+StarForth extends the standard FORTH file-loading mechanism with the
+\texttt{EXEC} word, which loads named capsule files by name from the capsule
+directory:
+
+\begin{lstlisting}[language=Forth]
+S" ACL.4th" EXEC      \ load the ACL subsystem
+S" doe.4th" EXEC      \ load the DoE experiment harness
+\end{lstlisting}
+
+Capsules are content-addressed: the capsule ID is its XXHash64 content hash.
+Any modification to the capsule changes its hash, and the system detects the
+change at load time.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{The Test Suite}
+\label{chap:tests}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Running the Tests}
+\label{sec:running-tests}
+
+StarForth ships 936+ tests covering every word category:
+
+\begin{lstlisting}[language=bash]
+make test
+\end{lstlisting}
+
+Tests are organized in POST (Power-On Self Test) order:
+
+\begin{enumerate}
+  \item Unit tests: Q48.16 fixed-point, inference statistics, decay slope
+    inference.
+  \item Dictionary tests: FORTH-79 word validation across 22 categories.
+  \item Integration tests and stress tests.
+  \item Adversarial and fuzzing tests (\texttt{break\_me\_tests.c}).
+\end{enumerate}
+
+Additional options:
+
+\begin{lstlisting}[language=bash]
+make test FAIL_FAST=1    # Stop on first failure
+make test PROFILE=1      # With basic profiling
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Writing Your Own Tests}
+\label{sec:writing-tests}
+
+A minimal test pattern in FORTH is:
+
+\begin{lstlisting}[language=Forth]
+: TEST-EQUAL  ( actual expected -- )
+    = IF ." PASS" ELSE ." FAIL" THEN CR ;
+
+\ Test SQUARE
+9 SQUARE 81 TEST-EQUAL
+3 SQUARE  9 TEST-EQUAL
+0 SQUARE  0 TEST-EQUAL
+\end{lstlisting}
+
+For larger test suites, use a counter:
+
+\begin{lstlisting}[language=Forth]
+VARIABLE TEST-PASS
+VARIABLE TEST-FAIL
+0 TEST-PASS !
+0 TEST-FAIL !
+
+: CHECK  ( actual expected "desc" -- )
+    PARSE-LINE  TYPE ." : "
+    = IF
+        ." PASS"
+        TEST-PASS @ 1 + TEST-PASS !
+    ELSE
+        ." FAIL"
+        TEST-FAIL @ 1 + TEST-FAIL !
+    THEN  CR ;
+
+: REPORT
+    ." Passed: " TEST-PASS @ . CR
+    ." Failed: " TEST-FAIL @ . CR ;
+
+\ Usage:
+9 SQUARE 81 CHECK square of 9
+0 SQUARE  0 CHECK square of 0
+REPORT
+\end{lstlisting}

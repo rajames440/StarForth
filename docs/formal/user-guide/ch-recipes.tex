@@ -1,0 +1,553 @@
+%% ch-recipes.tex — FORTH Cookbook Recipes for daily use
+%% SOURCE: .claude/CLAUDE.md, src/word_source/
+%% Included from user-guide/main.tex
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{Recipes}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Frequently Used Idioms}
+\label{chap:idioms}
+%%────────────────────────────────────────────────────────────────────────────
+
+This chapter collects short FORTH idioms you will reach for repeatedly. Each
+entry shows the idiom, its stack effect, and a concrete example. They are
+organized by what you are trying to accomplish, not by word name.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Swap and Drop a Pair}
+\label{sec:idiom-nip}
+
+Discard the second item from the top:
+
+\begin{lstlisting}[language=Forth]
+( a b -- b )
+SWAP DROP         \ explicit
+NIP               \ compact equivalent
+\end{lstlisting}
+
+Use \texttt{NIP} when you compute something from two values but only need the
+result of the second operation:
+
+\begin{lstlisting}[language=Forth]
+: AREA-FROM-SIDES  ( width height -- area )
+    * ;   \ stack: width height -- area; no NIP needed here
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+: LAST-OF-THREE  ( a b c -- c )
+    NIP NIP ;
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Apply an Operation to Two Copies}
+\label{sec:idiom-tuck}
+
+\texttt{TUCK} lets you use a value in two consecutive operations without
+re-fetching it from a variable:
+
+\begin{lstlisting}[language=Forth]
+( n -- n*n  n )      \ square, then original
+TUCK *
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+( a b -- b a b )
+TUCK
+\end{lstlisting}
+
+Use \texttt{TUCK} when you need the top value both as an operand and to keep it
+on the stack:
+
+\begin{lstlisting}[language=Forth]
+: PERCENT-OF  ( total pct -- value remaining )
+    \ pct of total, then total minus that value
+    TUCK  100 */ DUP ROT SWAP - ;
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Conditional Increment}
+\label{sec:idiom-cond-inc}
+
+Increment a counter only if a condition is true. FORTH's flag convention
+(\texttt{-1} for true, \texttt{0} for false) means you can add a flag
+directly:
+
+\begin{lstlisting}[language=Forth]
+( counter condition -- counter+1|counter )
++        \ adds -1 (true) or 0 (false) -- this subtracts 1!
+SWAP -   \ correct: condition is -1, negating gives 1
+\end{lstlisting}
+
+More clearly:
+
+\begin{lstlisting}[language=Forth]
+: COND-INC  ( n flag -- n' )
+    IF  1 +  THEN ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 5 1 3 > COND-INC .    \ 1 > 3 is false (0), so no increment
+5 ok>
+ok> 5 3 1 > COND-INC .    \ 3 > 1 is true (-1), so increment
+6 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Clamp a Value to a Range}
+\label{sec:idiom-clamp}
+
+\begin{lstlisting}[language=Forth]
+: CLAMP  ( n lo hi -- n' )
+    ROT     \ ( lo hi n )
+    MIN     \ ( lo min(hi,n) )
+    MAX ;   \ ( max(lo, min(hi,n)) )
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 15 0 10 CLAMP .
+10 ok>
+ok> -5 0 10 CLAMP .
+0 ok>
+ok>  7 0 10 CLAMP .
+7 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Absolute Difference}
+\label{sec:idiom-abs-diff}
+
+\begin{lstlisting}[language=Forth]
+: ABS-DIFF  ( a b -- |a-b| )
+    - ABS ;
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Integer Division with Rounding}
+\label{sec:idiom-round-div}
+
+FORTH's \texttt{/} truncates toward zero. For rounded division:
+
+\begin{lstlisting}[language=Forth]
+: ROUND-DIV  ( a b -- a/b rounded )
+    2DUP /        \ quotient
+    -ROT MOD      \ remainder  ( quot rem )
+    SWAP OVER     \ ( rem quot rem )
+    2/ ABS > IF   \ remainder > |divisor/2|?
+        1 +       \ round up
+    THEN ;
+\end{lstlisting}
+
+Or, more simply for positive values:
+
+\begin{lstlisting}[language=Forth]
+: ROUND-DIV+  ( a b -- rounded )
+    2DUP  2/  +  SWAP / ;   \ (a + b/2) / b
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Swap Top Two Booleans}
+\label{sec:idiom-bool-logic}
+
+Because FORTH booleans are plain integers, boolean operations are just
+arithmetic. \texttt{NOT} inverts, \texttt{AND} is bitwise AND (works correctly
+on \texttt{-1}/\texttt{0} flags), and \texttt{OR} is bitwise OR:
+
+\begin{lstlisting}[language=Forth]
+ok> -1 0 AND .     \ true AND false = false
+0 ok>
+ok> -1 0 OR  .     \ true OR false = true
+-1 ok>
+ok> -1 NOT   .     \ NOT true = false
+0 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{String Equality Test}
+\label{sec:idiom-str-eq}
+
+Compare two strings of known length:
+
+\begin{lstlisting}[language=Forth]
+: STR=  ( addr1 len1 addr2 len2 -- flag )
+    ROT OVER <> IF  2DROP DROP  0  EXIT  THEN
+    \ lengths are equal; now compare bytes
+    OVER SWAP  ( addr1 addr2 len )
+    0 DO
+        OVER C@  OVER C@  <> IF
+            2DROP  0  UNLOOP  EXIT
+        THEN
+        SWAP 1+ SWAP 1+
+    LOOP
+    2DROP  -1 ;
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Fibonacci Sequence}
+\label{sec:idiom-fib}
+
+Classic Fibonacci using the return stack as a third register:
+
+\begin{lstlisting}[language=Forth]
+: FIB  ( n -- fib(n) )
+    DUP 2 < IF EXIT THEN   \ base cases: fib(0)=0, fib(1)=1
+    DUP 1 - RECURSE        \ fib(n-1)
+    SWAP 2 - RECURSE       \ fib(n-2)
+    + ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 10 FIB .
+55 ok>
+\end{lstlisting}
+
+For larger values, use the iterative form (much faster):
+
+\begin{lstlisting}[language=Forth]
+: FIB-ITER  ( n -- fib(n) )
+    DUP 2 < IF EXIT THEN
+    1 0           \ a=1, b=0 (fib(1), fib(0))
+    ROT 1 - 0 DO
+        OVER +    \ new a = a+b
+        SWAP      \ rotate
+    LOOP
+    DROP ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> 40 FIB-ITER .
+102334155 ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Printing a Separator Line}
+\label{sec:idiom-separator}
+
+\begin{lstlisting}[language=Forth]
+: HLINE  ( n -- )
+    0 DO  45 EMIT  LOOP  CR ;   \ 45 = '-'
+
+: BANNER  ( addr len -- )
+    DUP 2 + >R
+    ." +-"  R@ HLINE  ." | "
+    2DUP TYPE  CR  ." +-"  R> HLINE ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> S" StarForth v3.1" BANNER
++----------------+
+| StarForth v3.1
++----------------+
+ok>
+\end{lstlisting}
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Working Examples}
+\label{chap:examples}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{A Simple Stack Calculator}
+\label{sec:example-calculator}
+
+This example builds an interactive RPN calculator on top of the StarForth
+REPL. Because StarForth IS an RPN calculator, this is mostly a demonstration
+of how you can add user-level commands on top:
+
+\begin{lstlisting}[language=Forth]
+\ A FORTH-based RPN calculator session
+
+\ Define helper display words
+: SHOW-STACK  .S CR ;
+: RESULT      . CR ;
+
+\ Factorial
+: FACT  ( n -- n! )
+    DUP 0= IF  DROP 1  EXIT  THEN
+    DUP 1 - RECURSE  * ;
+
+\ Power
+: POW  ( base exp -- base^exp )
+    1 SWAP 0 DO OVER * LOOP  NIP ;
+\end{lstlisting}
+
+Using these at the REPL:
+
+\begin{lstlisting}[language=Forth]
+ok> 5 FACT RESULT
+120
+ok> 2 10 POW RESULT
+1024
+ok> 12 FACT RESULT
+479001600
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{A Data Table}
+\label{sec:example-data-table}
+
+Store and retrieve structured data using \texttt{CREATE} and array indexing:
+
+\begin{lstlisting}[language=Forth]
+\ A table of (name-hash, value) pairs
+\ 5 entries, 2 cells each
+
+CREATE DATA-TABLE 10 CELLS ALLOT
+
+: TABLE-SET  ( value index -- )
+    2* CELLS DATA-TABLE + ! ;
+
+: TABLE-GET  ( index -- value )
+    2* CELLS DATA-TABLE + @ ;
+
+\ Initialize
+100  0 TABLE-SET
+200  1 TABLE-SET
+300  2 TABLE-SET
+400  3 TABLE-SET
+500  4 TABLE-SET
+
+: DUMP-TABLE
+    ." Index  Value" CR
+    5 0 DO
+        I  4 .R  I TABLE-GET  8 .R  CR
+    LOOP ;
+\end{lstlisting}
+
+\begin{lstlisting}[language=Forth]
+ok> DUMP-TABLE
+Index  Value
+    0    100
+    1    200
+    2    300
+    3    400
+    4    500
+ok>
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{A Simple Moving Average}
+\label{sec:example-moving-average}
+
+Compute a moving average over the last N readings using a circular buffer:
+
+\begin{lstlisting}[language=Forth]
+10 CONSTANT MA-SIZE
+CREATE MA-BUF   MA-SIZE CELLS ALLOT
+VARIABLE MA-INDEX
+VARIABLE MA-SUM
+
+0 MA-INDEX !
+0 MA-SUM !
+MA-BUF  MA-SIZE CELLS  0 FILL   \ zero the buffer
+
+: MA-UPDATE  ( new-value -- average )
+    \ subtract old value at current index
+    MA-INDEX @ CELLS MA-BUF + @
+    MA-SUM @ SWAP - MA-SUM !
+    \ store new value
+    DUP MA-INDEX @ CELLS MA-BUF + !
+    \ add to sum
+    MA-SUM @ + MA-SUM !
+    \ advance index circularly
+    MA-INDEX @ 1 + MA-SIZE MOD MA-INDEX !
+    \ return average
+    MA-SUM @ MA-SIZE / ;
+
+: TEST-MA
+    ." Moving average test (window=10)" CR
+    20 0 DO
+        I 3 *    \ input: 0,3,6,9,...,57
+        MA-UPDATE
+        ." Input: " I 3 * 4 .R
+        ."  Avg: " . CR
+    LOOP ;
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{A Minimal State Logger}
+\label{sec:example-logger}
+
+Log timestamped events to a block buffer:
+
+\begin{lstlisting}[language=Forth]
+\ Minimal event logger using block 2048
+2048 CONSTANT LOG-BLOCK
+0 CONSTANT LOG-OFFSET   \ offset within block (in bytes)
+VARIABLE LOG-POS
+0 LOG-POS !
+
+: LOG-RESET
+    0 LOG-POS !
+    LOG-BLOCK BUFFER  1024 0 FILL  UPDATE ;
+
+: LOG-WRITE  ( addr count -- )
+    LOG-POS @  1024 <  IF
+        LOG-BLOCK BUFFER LOG-POS @ +
+        SWAP MOVE
+        LOG-POS @ + LOG-POS !
+    ELSE
+        ." Log full" CR
+    THEN ;
+
+: LOG-MSG  ( addr count -- )
+    2DUP LOG-WRITE  DROP DROP ;
+
+: LOG-DUMP
+    LOG-BLOCK BLOCK  LOG-POS @ TYPE CR ;
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Physics-Aware Benchmarking}
+\label{sec:example-physics-bench}
+
+A benchmark harness that controls the adaptive runtime for reproducible
+measurements:
+
+\begin{lstlisting}[language=Forth]
+\ Benchmark framework using physics controls
+
+VARIABLE BENCH-ITERATIONS
+100000 BENCH-ITERATIONS !
+
+: BENCH-WORD  ( xt -- )
+    \ Warm up (let physics settle)
+    PHYSICS-RESET-STATS
+    1000 0 DO  DUP EXECUTE  LOOP
+    \ Now freeze and measure
+    PHYSICS-FREEZE
+    BENCH-ITERATIONS @ 0 DO  DUP EXECUTE  LOOP
+    PHYSICS-THAW
+    DROP ;
+
+\ Example: benchmark DUP
+: RUN-DUP-BENCH
+    ." Benchmarking DUP x "
+    BENCH-ITERATIONS @ . ." iterations" CR
+    ' DUP  BENCH-WORD
+    ." Done." CR ;
+\end{lstlisting}
+
+The \texttt{PHYSICS-FREEZE}/\texttt{PHYSICS-THAW} pair ensures that heat
+updates, cache evictions, and decay events do not occur during the timed
+region, giving cleaner timing measurements.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Quick Reference: Key Sequences}
+\label{chap:key-sequences}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% TODO(bob): verify which readline / terminal sequences StarForth actually
+%% supports in the REPL — these are standard terminal behaviors, not FORTH words.
+
+The StarForth REPL runs in a standard POSIX terminal. The following key
+sequences are handled by the terminal or readline layer:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Key sequence & Effect \\
+\midrule
+\textbf{Enter} & Execute the current input line \\
+\textbf{Ctrl-C} & Interrupt current operation; return to prompt \\
+\textbf{Ctrl-D} & End of input (exits REPL, same as \texttt{BYE}) \\
+\textbf{Backspace} & Delete previous character \\
+\textbf{Up arrow} & Previous history entry \\
+\textbf{Down arrow} & Next history entry \\
+\textbf{Ctrl-A} & Move cursor to beginning of line \\
+\textbf{Ctrl-E} & Move cursor to end of line \\
+\textbf{Ctrl-K} & Kill to end of line \\
+\textbf{Ctrl-U} & Kill entire line \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%% TODO(bob): confirm whether StarForth uses GNU readline or its own line
+%% editor. Add a section on the block editor key bindings once confirmed.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Migrating from Other FORTH Systems}
+\label{chap:migrating}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{From gforth or ANS FORTH}
+\label{sec:migrate-gforth}
+
+StarForth targets FORTH-79 compliance. It is broadly compatible with ANS FORTH
+(FORTH-94) and gforth programs, with a few differences to watch:
+
+\begin{description}
+  \item[\texttt{S"} handling] StarForth's \texttt{S"} behaves as in ANS FORTH:
+    it pushes an address and count. Programs that assume counted-string format
+    (a length byte followed by characters) need to use \texttt{COUNT} to
+    convert.
+
+  \item[Character size] ANS FORTH specifies \texttt{CHAR} as one address unit.
+    StarForth uses byte-addressed cells, so \texttt{CHAR+} is \texttt{1+} and
+    \texttt{CHARS} is a no-op. Code that uses \texttt{CHARS} for portability
+    will work correctly.
+
+  \item[Cell size] StarForth cells are 64 bits on a 64-bit host. Programs
+    that assume 32-bit cells will need adjustment if they use bit patterns that
+    fill a cell exactly.
+
+  \item[LOCAL variables] StarForth does not implement ANS FORTH local variables
+    (\texttt{LOCALS|} / \texttt{TO}). Use named \texttt{VARIABLE}s instead, or
+    restructure to keep values on the stack.
+
+  \item[THROW/CATCH] StarForth's exception handling may differ from ANS FORTH.
+    %% TODO(bob): confirm whether THROW/CATCH are implemented and to what spec.
+
+  \item[Floating-point] StarForth does not implement the ANS FORTH floating-point
+    word set. Use Q48.16 fixed-point (\texttt{Q+}, \texttt{Q*}, etc.) or integer
+    arithmetic for fractional values.
+\end{description}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{From FORTH-79}
+\label{sec:migrate-forth79}
+
+StarForth is FORTH-79 compliant. Programs written for the original FORTH-79
+standard should run without modification. The main additions StarForth makes
+beyond FORTH-79 are:
+
+\begin{itemize}
+  \item The physics adaptive runtime (seven feedback loops), which is entirely
+    transparent unless you call \texttt{WORD-ENTROPY},
+    \texttt{PHYSICS-FREEZE}, or \texttt{PHYSICS-THAW}.
+  \item The ACL word-level access control system, disabled by default.
+  \item Q48.16 fixed-point arithmetic words.
+  \item The block subsystem with pluggable backends.
+  \item StarForth-specific extensions in \texttt{starforth\_words.c}.
+\end{itemize}
+
+None of these conflict with FORTH-79 code. They simply add capability on top.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{From C or Python}
+\label{sec:migrate-c-python}
+
+The largest adjustment is postfix notation and the stack discipline. Some
+practical advice:
+
+\begin{itemize}
+  \item Draw a picture of the stack before each operation while learning.
+    Writing \texttt{( a b -- c )} for every sub-expression helps.
+
+  \item Use \texttt{.S} compulsively at first. It does not consume anything,
+    so you can sprinkle it everywhere.
+
+  \item Resist the urge to write long, complex word bodies. Five lines is
+    often too many. Factor into smaller words.
+
+  \item \texttt{VARIABLE} fills the role of a local variable but it is global
+    within the VM --- be careful with re-entrancy if a word using a
+    \texttt{VARIABLE} calls itself or a word that also uses the same variable.
+
+  \item There are no types. You decide what each stack cell means. A cell could
+    be an integer, an address, a boolean, a character, or a \Qtype{} value.
+    Naming your stack-effect slots meaningfully (\texttt{( count addr -- result )})
+    is your type system.
+\end{itemize}

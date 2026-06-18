@@ -1,0 +1,533 @@
+%% ch-advanced.tex — Advanced Topics for StarForth Users
+%% SOURCE: .claude/CLAUDE.md, scraps/architecture/
+%% Included from user-guide/main.tex
+
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\part{Advanced Topics}
+%%━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{The StarForth VM Internals for Users}
+\label{chap:vm-internals}
+%%────────────────────────────────────────────────────────────────────────────
+
+You do not need to understand the VM implementation to use StarForth
+productively. But knowing a little about what happens under the hood explains
+several things you will observe in practice: why some words are faster than
+others, what the physics diagnostics are measuring, and how the adaptive
+runtime relates to the code you write.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{How the Interpreter Loop Works}
+\label{sec:interp-loop}
+
+When you type a line at the \texttt{ok>} prompt, StarForth:
+
+\begin{enumerate}
+  \item Tokenizes the input, splitting on whitespace.
+  \item For each token, searches the dictionary (hot-words cache first, then
+    linear scan from the head of the dictionary linked list).
+  \item If found and in interpretation mode: executes the word immediately.
+  \item If found and in compilation mode (inside \texttt{: ...}): compiles a
+    reference to the word into the current definition (unless the word is
+    \texttt{IMMEDIATE}, in which case it executes at compile time).
+  \item If not found: attempts to parse the token as a number and push it.
+  \item If not a number: reports an error and aborts the current line.
+\end{enumerate}
+
+Execution heat (\loopref{1}) is updated on every word execution. The rolling
+window (\loopref{2}) records each execution for statistical analysis. Both
+happen transparently.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Direct Threading}
+\label{sec:direct-threading}
+
+In the \texttt{fastest} build, StarForth uses direct threading: each
+compiled word body is a sequence of code pointers, and the inner interpreter
+jumps from one to the next using computed-goto. This eliminates an indirection
+level compared to indirect threading and accounts for a significant portion of
+the performance difference between the \texttt{debug} and \texttt{fastest}
+builds.
+
+From a user's perspective, direct threading is invisible --- words behave
+identically. The only observable effect is speed.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The Hot-Words Cache}
+\label{sec:hot-words-cache}
+
+StarForth maintains a hot-words cache: the most frequently executed words are
+sorted to the front of the dictionary linked list. Dictionary search always
+starts at the head, so hot words are found faster.
+
+When you define a new word, the cache may be invalidated and rebuilt. For
+short interactive sessions this is imperceptible. For long-running programs
+that define many words at startup, you may notice a brief pause as the cache
+rebuilds --- this is \loopref{1} doing its work.
+
+\texttt{WORD-ENTROPY} shows the current heat values. Words you use heavily
+will show higher heat values; words you have not called recently will show
+lower values (heat decays over time via \loopref{3}).
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Execution Tokens}
+\label{sec:execution-tokens}
+
+An execution token (XT) is an opaque value that identifies a word. Tick
+(\texttt{'}) produces an XT:
+
+\begin{lstlisting}[language=Forth]
+ok> ' DUP .
+12345 ok>    \ some dictionary address
+\end{lstlisting}
+
+The number printed is implementation-dependent --- it is a VM address, not
+meaningful on its own. What you can do with an XT is pass it to
+\texttt{EXECUTE} to run the word later:
+
+\begin{lstlisting}[language=Forth]
+ok> ' DUP EXECUTE   \ same as just typing DUP
+\end{lstlisting}
+
+Or store it for a callback:
+
+\begin{lstlisting}[language=Forth]
+VARIABLE HOOK
+' NOOP HOOK !         \ default: do nothing
+
+: SET-HOOK  ( xt -- )  HOOK ! ;
+: RUN-HOOK  ( -- )     HOOK @ EXECUTE ;
+\end{lstlisting}
+
+XTs are also the key for ACL lookups (Chapter~\ref{chap:acl}).
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Performance Tuning Your Code}
+\label{chap:perf-tuning}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Measuring Before Optimizing}
+\label{sec:measure-first}
+
+Use \texttt{WORD-ENTROPY} to identify which words are hot before attempting
+to optimize. Optimizing a cold word wastes effort.
+
+The profiler gives more detail. Enable it at the shell level:
+
+\begin{lstlisting}[language=bash]
+./build/amd64/standard/starforth --profile 1 --profile-report < myprogram.4th
+\end{lstlisting}
+
+The report shows each word ranked by execution count. Typically 80--95\% of
+all executions concentrate in the top ten words.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Build Profiles and Their Effect}
+\label{sec:build-profiles}
+
+The choice of build profile has a larger effect than any FORTH-level
+optimization for most programs:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Build & Relative speed & When to use \\
+\midrule
+\texttt{debug}   & 1$\times$ (baseline) & Debugging \\
+\texttt{all}     & 3--4$\times$ & Development testing \\
+\texttt{fast}    & 5--6$\times$ & Normal production \\
+\texttt{fastest} & 6--7$\times$ & Benchmarks, deployment \\
+\texttt{pgo}     & 7--8$\times$ & Maximum throughput \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For most interactive use, \texttt{all} or \texttt{fast} is fine. For
+benchmarking or deployment, use \texttt{fastest} or \texttt{pgo}.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Physics-Aware Programming}
+\label{sec:physics-aware}
+
+The adaptive runtime favors frequently-used words. If you have a word that is
+called millions of times in a tight loop, you can expect it to migrate to the
+hot-words cache quickly. Conversely, setup words called only at startup will
+cool off and be pushed toward the tail of the dictionary list.
+
+For reproducible benchmarks:
+
+\begin{lstlisting}[language=Forth]
+: BENCH-RUN  ( iterations -- )
+    PHYSICS-RESET-STATS    \ clear heat history
+    PHYSICS-FREEZE         \ stop adaptive updates
+    0 DO
+        MY-WORD-UNDER-TEST
+    LOOP
+    PHYSICS-THAW ;
+\end{lstlisting}
+
+\texttt{PHYSICS-FREEZE} ensures the cache and heat values do not change during
+measurement. \texttt{PHYSICS-THAW} restores normal operation afterward.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Stack Manipulation Cost}
+\label{sec:stack-cost}
+
+Stack operations (\texttt{DUP}, \texttt{SWAP}, \texttt{ROT}, etc.) are among
+the fastest operations in StarForth --- they are direct array accesses on
+the stack. Excessive stack manipulation is a sign of design issues, not a
+performance problem per se. If you find yourself writing long sequences of
+\texttt{ROT}, \texttt{SWAP}, and \texttt{OVER} to get values in the right
+positions, consider using named variables instead:
+
+\begin{lstlisting}[language=Forth]
+\ Tangled stack version
+: COMPLEX  ( a b c d -- result )
+    ROT ROT OVER * ROT ROT ... ;
+
+\ Cleaner with locals / variables
+VARIABLE _A  VARIABLE _B  VARIABLE _C  VARIABLE _D
+
+: COMPLEX  ( a b c d -- result )
+    _D !  _C !  _B !  _A !
+    _A @ _B @ * _C @ _D @ * + ;
+\end{lstlisting}
+
+The variable version is slightly slower per operation but far easier to read
+and debug.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{The Block Editor}
+\label{chap:block-editor}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Blocks as Source Storage}
+\label{sec:blocks-as-source}
+
+Traditional FORTH stored all source code in 1024-byte blocks on disk. StarForth
+preserves this model. A block holds up to 16 lines of 64 characters each, no
+newlines --- a fixed-format screen of text.
+
+To list the contents of a block:
+
+\begin{lstlisting}[language=Forth]
+ok> 2048 LIST
+\end{lstlisting}
+
+This prints the 16 lines of block 2048, line-numbered. Empty blocks print as
+blank lines.
+
+To load (execute) a block:
+
+\begin{lstlisting}[language=Forth]
+ok> 2048 LOAD
+\end{lstlisting}
+
+To load a range of blocks:
+
+\begin{lstlisting}[language=Forth]
+ok> 2048 2055 THRU
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Block Storage Backends}
+\label{sec:block-backends}
+
+StarForth supports three block storage backends:
+
+\begin{description}
+  \item[RAM] Default for interactive sessions. Blocks live in VM memory.
+    Fast but not persistent across sessions.
+  \item[File] Blocks are stored in a file on the host filesystem. Persistent.
+    Configured by \texttt{STARFORTH\_BLOCK\_FILE} environment variable.
+  \item[Factory] Read-only blocks baked into the binary. Used for capsule
+    content in the bare-metal kernel.
+\end{description}
+
+On a standard hosted build, the default is RAM. To use file-backed blocks:
+
+\begin{lstlisting}[language=bash]
+STARFORTH_BLOCK_FILE=myblocks.blk ./build/amd64/standard/starforth
+\end{lstlisting}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Protecting Blocks with FLUSH}
+\label{sec:flush-protection}
+
+If you have written to file-backed blocks and want to ensure changes are
+saved before exiting:
+
+\begin{lstlisting}[language=Forth]
+ok> FLUSH
+ok> BYE
+\end{lstlisting}
+
+\texttt{FLUSH} writes all modified (dirty) block buffers back to the backing
+store. Exiting without \texttt{FLUSH} may lose changes if the backend does
+not auto-flush on close.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Capsules and the Boot System}
+\label{chap:capsules}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{What a Capsule Is}
+\label{sec:capsule-what}
+
+A capsule is a self-contained FORTH source file whose identity is its content
+hash. The capsule ID is the XXHash64 of the capsule's contents --- any change
+to the file produces a different ID. This makes capsules tamper-evident:
+load a capsule, compute its hash, compare to the expected ID, and you know
+whether the content is unchanged.
+
+Capsule files live in the \texttt{capsules/} directory and use the
+\texttt{.4th} extension.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{init.4th: The Default Personality}
+\label{sec:init-4th}
+
+When StarForth starts, it loads \texttt{init.4th} from \texttt{./conf/} (on a
+hosted build). This file defines the foundational word set, installs a
+dictionary fence, and zeros blocks for user use.
+
+The fence means that words defined in \texttt{init.4th} cannot be removed with
+\texttt{FORGET}. This protects the core vocabulary from accidental deletion.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Capsule Variants}
+\label{sec:capsule-variants}
+
+StarForth ships several \texttt{init.4th} variants for different operating
+modes:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+File & Purpose \\
+\midrule
+\texttt{init.4th}          & Default Mama VM personality \\
+\texttt{init-0.4th} through \texttt{init-9.4th} & Numbered personality variants \\
+\texttt{init-l8-stable.4th}   & L8 Jacquard stable mode \\
+\texttt{init-l8-volatile.4th} & L8 Jacquard volatile mode \\
+\texttt{init-l8-diverse.4th}  & L8 Jacquard diverse mode \\
+\texttt{init-l8-temporal.4th} & L8 Jacquard temporal mode \\
+\texttt{init-l8-transition.4th} & L8 Jacquard transition mode \\
+\texttt{init-l8-omni.4th}    & L8 Jacquard omni mode \\
+\texttt{ACL.4th}             & Word-level ACL subsystem (opt-in) \\
+\texttt{zuse.4th}            & Bootstrap superuser (loaded by ACL.4th) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The L8 Jacquard variants configure the Steady-State Machine (\texttt{ssm\_jacquard.c})
+to operate in a specific mode. Each mode biases the adaptive runtime toward
+different behavior: stable prefers low-variance execution, diverse favors
+broad word coverage, temporal weights recent history more heavily, and so on.
+These are intended for DoE experimentation rather than everyday use.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The Birth Protocol}
+\label{sec:birth-protocol}
+
+In the bare-metal kernel (LithosAnanke), StarForth VMs are born through a
+birth protocol:
+
+\begin{enumerate}
+  \item Locate the capsule by name.
+  \item Validate the content hash.
+  \item Allocate a VM ID.
+  \item Execute the capsule's IDENTITY block (the capsule code).
+  \item Execute the PERSONALITY block (block 1 from the ramdrive).
+  \item Log a parity record: VM ID + capsule hash + dictionary hash.
+\end{enumerate}
+
+The parity record enables offline determinism verification: an independent
+system can load the same capsule and compare dictionary hashes. Identical
+hashes mean identical dictionaries --- the definition of 0\% algorithmic
+variance.
+
+For hosted interactive use, the birth protocol runs transparently when
+StarForth starts. You only interact with its results (the loaded dictionary),
+not the protocol itself.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{The L8 Jacquard Mode Selector}
+\label{chap:jacquard}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{What the Jacquard Selector Does}
+\label{sec:jacquard-what}
+
+The L8 Jacquard Mode Selector is an additional layer above the seven feedback
+loops. It monitors the distribution of execution patterns across attractor
+buckets (clusters of similar execution histories) and switches between six
+predefined mode configurations based on which attractor the system is
+approaching.
+
+Named after Joseph Marie Jacquard, whose programmable loom used punch cards to
+control complex patterns, the Jacquard Selector treats the adaptive runtime
+as a programmable pattern --- selecting different behavior profiles depending
+on the observed workload dynamics.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{The Six Modes}
+\label{sec:jacquard-modes}
+
+\begin{description}
+  \item[\textbf{stable}] Favors low-variance, predictable execution. Decay
+    slopes are conservative; the hot-words cache changes slowly. Best for
+    long-running workloads with stable access patterns.
+  \item[\textbf{volatile}] Responds quickly to changes in access patterns.
+    Decay is aggressive; the cache refreshes rapidly. Best for workloads
+    with rapidly shifting hot paths.
+  \item[\textbf{diverse}] Biases toward broad dictionary coverage. Prevents
+    a small set of words from monopolizing the cache at the expense of
+    moderately-used words. Best for exploratory interactive sessions.
+  \item[\textbf{temporal}] Weights recent execution history more heavily.
+    The rolling window shrinks to focus on the most recent activity. Best
+    for workloads with clear phases.
+  \item[\textbf{transition}] Intermediate mode used during mode changes.
+    Smooths the transition between attractor basins.
+  \item[\textbf{omni}] All attractor statistics are weighted equally. No
+    single mode dominates. Used when the workload does not fit a single
+    characterization.
+\end{description}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Mode Selection for Users}
+\label{sec:jacquard-user}
+
+In everyday interactive use you will not configure the Jacquard Selector
+directly. It operates automatically based on workload statistics. The L8
+mode variants of \texttt{init.4th} (\texttt{init-l8-stable.4th}, etc.)
+pre-configure the Selector to start in a specific mode for DoE experiments
+where you want to observe behavior in a controlled attractor.
+
+If you are running a long benchmark and want to observe which mode the system
+is in, use \texttt{WORD-ENTROPY} --- the output includes SSM state
+information in builds where that diagnostic is enabled.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{Formal Verification}
+\label{chap:formal-verification}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{What Has Been Proved}
+\label{sec:proofs-overview}
+
+StarForth ships 24 Isabelle/HOL theory files providing machine-checkable
+proofs of correctness and determinism. These proofs live in the \texttt{proof/}
+directory and cover:
+
+\begin{itemize}
+  \item All seven feedback loops (Loop~\#1 through Loop~\#7), proving that
+    each accumulation--stabilization pair behaves as designed.
+  \item Core word categories: arithmetic, stack operations, logical operations,
+    memory operations, return-stack operations, and Q48.16 fixed-point.
+  \item Overall correctness (\texttt{StarForth\_Correctness.thy}), concurrency
+    properties (\texttt{StarForth\_Concurrent.thy}), state transitions, and
+    mutual exclusion.
+  \item ACL system (five additional theories): pin monotonicity, inheritance
+    clearing pin, TTL boundedness, emergency bypass, and no-escalation.
+\end{itemize}
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{What Determinism Means Here}
+\label{sec:determinism}
+
+The proofs establish that the adaptive runtime is \emph{algorithmically
+deterministic}: given the same sequence of word executions and the same
+initial state, the runtime produces the same internal state every time.
+This property was validated experimentally across 90 runs with 0\% variance.
+
+Algorithmic determinism does not mean the same wall-clock times --- timing
+depends on the host hardware, OS scheduler, and other factors outside StarForth's
+control. It means the logic of adaptation (which words are promoted to the cache,
+what decay slope is computed, what window size is selected) is fully determined
+by the execution history, not by any random or non-deterministic process.
+
+This matters for reproducible deployments: two instances of StarForth loading
+the same capsule and receiving the same inputs will arrive at the same
+dictionary heat distribution.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Checking the Proofs}
+\label{sec:checking-proofs}
+
+To check the Isabelle/HOL proofs (requires an Isabelle installation):
+
+\begin{lstlisting}[language=bash]
+isabelle build -D proof/
+\end{lstlisting}
+
+See \texttt{docs/01-getting-started/DEVELOPER.md} for Isabelle installation
+instructions and compatible versions.
+
+%%────────────────────────────────────────────────────────────────────────────
+\chapter{StarForth on L4Re and Embedded Targets}
+\label{chap:l4re}
+%%────────────────────────────────────────────────────────────────────────────
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{L4Re Microkernel}
+\label{sec:l4re}
+
+StarForth can run on the L4Re microkernel operating system. The L4Re build
+target enables the L4Re block-storage backend and ROMFS file access in place
+of POSIX:
+
+\begin{lstlisting}[language=bash]
+make l4re
+\end{lstlisting}
+
+The L4Re build implies \texttt{STARFORTH\_MINIMAL=1}: ANSI color codes are
+suppressed and I/O is reduced to minimal output. The build links without the
+standard C library (\texttt{-nostdlib -ffreestanding}).
+
+Status: partially implemented. The ROMFS stub is present; full L4Re integration
+is ongoing.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Minimal / Freestanding Builds}
+\label{sec:minimal-build}
+
+The minimal build produces a freestanding binary with no libc dependencies:
+
+\begin{lstlisting}[language=bash]
+make minimal
+\end{lstlisting}
+
+This is useful for embedded environments or as a starting point for porting to
+a new operating system. The minimal build disables features that depend on POSIX
+or the C library. You can add features back selectively by enabling the
+corresponding build flags.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\section{Cross-Compilation}
+\label{sec:cross-compile}
+
+Cross-compile for AArch64 from an x86\_64 host:
+
+\begin{lstlisting}[language=bash]
+sudo apt-get install gcc-aarch64-linux-gnu
+make CC=aarch64-linux-gnu-gcc rpi4-cross
+scp build/starforth user@target-device:~/
+\end{lstlisting}
+
+The cross-compiled binary is statically linked and requires no runtime
+dependencies on the target. Verify the architecture:
+
+\begin{lstlisting}[language=bash]
+file build/starforth
+# ELF 64-bit LSB executable, ARM aarch64, statically linked
+\end{lstlisting}
+
+Cross-compilation for RISC-V 64 follows the same pattern with the appropriate
+cross-toolchain (\texttt{gcc-riscv64-linux-gnu}).
