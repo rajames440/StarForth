@@ -38,6 +38,9 @@ qemu.log
 logs/*.log
 # logs2/*.log — tracked; do not ignore
 
+# doc-branch research notes (not part of lithosananke)
+docs/06-research/
+
 # Retired data directories (replaced by experiments/bare_metal/)
 doe/
 csv/
