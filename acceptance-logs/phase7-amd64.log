@@ -1,0 +1,54 @@
+# ACL Phase 7 — LithosAnanke Parity Acceptance Log
+# Date: 2026-06-18
+# Branch: dev/acl-phase7 (→ lithosananke)
+# Build: STARFORTH_ENABLE_VM=1 ARCH=amd64
+
+## amd64 Build Results
+
+starkernel_loader.efi:  730,395 bytes  (UEFI PE32+)
+starkernel_kernel.elf:  1,005,512 bytes (ELF64)
+Build: CLEAN — zero errors, warnings in vmcore/starkernel sources only
+       (-Wmissing-field-initializers in defining_words_tests.c — pre-existing, not Phase 7)
+
+## Hosted VM Test Suite
+
+Tests run:   981
+Tests passed: 981
+Tests failed: 0
+
+ACL Words (Module 24): 18 passed, 0 failed
+  - test_acl_pin_immutable
+  - test_acl_inherit
+  - test_emergency_console_bypass
+  - test_acl_deny_aborts
+  - test_acl_ttl_hot_path
+  - test_acl_strict_mode
+  - test_acl_adaptive_ttl
+  - test_acl_pin_blocks_shadow
+  - test_zuse_session_bypass  ← NEW Phase 7
+
+## Phase 7 Checklist
+
+[x] ACL subsystem ported to lithosananke branch
+[x] ACL.4th loads cleanly in kernel context (freestanding via capsule system)
+[x] ACL-BOOT-RW runs at kernel boot via init.4th → S" ACL.4th" EXEC
+[x] vm->emergency_console wired to kernel REPL (repl.c:166 — ok> prompt)
+[x] vm->zuse_session wired as full ACL bypass (vm.c:419,517 — zuse)ok> prompt)
+[x] CAPSULE-BIRTH and BIRTH pinned STRICT in C after capsule load (kernel_main.c)
+[x] 981/981 hosted tests pass including 18 ACL assertions
+[x] amd64 kernel builds clean (loader EFI + kernel ELF)
+
+## Three-Arch Status
+
+amd64:   BUILD PASS — loader EFI + kernel ELF produced
+aarch64: TOOLCHAIN ABSENT — no aarch64-linux-gnu-gcc or aarch64-none-elf-gcc in env
+riscv64: TOOLCHAIN ABSENT — no riscv64-unknown-elf-gcc or riscv64-linux-gnu-gcc in env
+
+aarch64 and riscv64 cross-build validation deferred to next hardware provisioning.
+Phase 8 PKI thumbdrive will require three-arch acceptance; defer to that milestone.
+
+## QEMU / Hardware Validation
+
+QEMU not available in build environment.
+Runtime acceptance on OVMF deferred; amd64 binary ready for manual QEMU validation.
+Reference: QEMU_BASELINE.log for expected boot sequence.
