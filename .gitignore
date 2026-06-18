@@ -43,3 +43,11 @@ logs/*.log
 # Retired data directories (replaced by experiments/bare_metal/)
 doe/
 csv/
+
+# LaTeX build artifacts
+*.aux
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
