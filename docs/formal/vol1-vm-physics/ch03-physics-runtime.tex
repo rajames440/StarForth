@@ -1,90 +1,512 @@
 %% Vol I, Chapter 3 — Physics-Driven Adaptive Runtime
-%% SOURCE: docs/working/architecture/03-architecture/physics-engine/feedback-loops.md
-%%         ONTOLOGY.md
-%%         docs/working/architecture/03-architecture/adaptive-systems/window-inference-redesign.md
-%%         docs/working/architecture/03-architecture/pipelining/wired-not-utilized.md
-%%         docs/working/architecture/03-architecture/heartbeat-system/instrumentation-plan.md
+%% SOURCE: docs/formal/scraps/architecture/03-architecture/physics-engine/feedback-loops.tex
+%%         docs/formal/scraps/architecture/03-architecture/physics-engine/steady-state-machine.tex
+%%         docs/formal/scraps/architecture/03-architecture/physics-engine/ssm-equations.tex
+%%         docs/formal/scraps/architecture/03-architecture/physics-engine/metrics-and-knobs.tex
+%%         docs/formal/scraps/architecture/03-architecture/adaptive-systems/adaptive-window-and-decay.tex
+%%         docs/formal/scraps/architecture/03-architecture/pipelining/design.tex
+%%         docs/formal/scraps/architecture/03-architecture/heartbeat-system/architecture.tex
+%%         .claude/CLAUDE.md (Physics Engine section, Key Data Structures section)
 
 \chapter{Physics-Driven Adaptive Runtime}
 \label{vol1:chap:physics}
 
-%% TODO(bob): opening paragraph explaining the thermodynamic-modeling-language
-%% framing per ONTOLOGY.md. Key calibration: "thermodynamic" is the modeling
-%% language, not a physics claim.
+StarForth's adaptive runtime models its own execution behavior using execution
+statistics as a proxy for thermodynamic quantities. Using execution frequency
+as a proxy for thermal energy, the runtime tracks \emph{heat} per word, allows
+heat to \emph{decay} over time, and reasons about \emph{stability} in
+statistical terms. These are descriptive tools borrowed from thermodynamics as
+a modeling convenience; they are not claims of physical thermodynamics. The
+canonical term definitions are given in \texttt{ONTOLOGY.md}.
+
+The runtime is governed by seven configurable feedback loops and an
+overarching Steady-State Machine (SSM). Each loop pairs a positive
+(accumulation) signal that drives the runtime toward optimization with a
+negative (stabilization) signal that prevents runaway growth and holds the
+system near equilibrium. All seven loops are independently togglable at build
+time, enabling factorial Design of Experiments (DoE) campaigns that measure
+each loop's contribution in isolation.
 
 \section{Overview: Seven Feedback Loops}
 \label{vol1:sec:physics:overview}
 
-%% TODO(bob): promote the loop-summary table from feedback-loops.md into a
-%% formal \begin{table}...\end{table} here. Seven rows, one per loop.
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+Loop & Name & Accumulation signal & Stabilization signal \\
+\midrule
+\#1 & Execution Heat       & word execution increments heat          & Loop \#3 decay; cold words demoted \\
+\#2 & Rolling Window       & every execution recorded to buffer      & wrap overwrite; adaptive shrinking \\
+\#3 & Linear Decay         & slope starts at $1/3$                   & decay reduces heat; slope adjusts $\pm 5\%$ \\
+\#4 & Pipelining           & word$\rightarrow$word transitions recorded & counts age out; miss-rate feedback \\
+\#5 & Window Inference     & window grows with diversity             & Levene's test shrinks to minimum \\
+\#6 & Decay Inference      & regression extracts decay rate          & ANOVA early-exit; fit-quality bound \\
+\#7 & Adaptive Heartrate   & tick counter increments                 & inference cadence falls when stable \\
+\bottomrule
+\end{tabular}
+\caption{The seven feedback loops, with their accumulation and stabilization mechanisms.}
+\label{vol1:tab:physics:loops}
+\end{table}
 
-\section{Loop \#1 — Execution Heat}
+Any loop can be disabled at build time by setting its flag to zero; setting
+all seven to zero yields the baseline configuration used as the DoE reference
+point. A global configuration table is given in
+Section~\ref{vol1:sec:physics:knobs}.
+
+\section{Loop \#1 --- Execution Heat}
 \label{vol1:sec:physics:loop1}
 
-%% SOURCE: docs/working/architecture/03-architecture/physics-engine/feedback-loops.md
-%%         src/dictionary_heat_optimization.c
-%% TODO(bob): describe the frequency counter per word, the WORD_FROZEN and
-%% WORD_PINNED flags, and the hot-words cache (ENABLE_HOTWORDS_CACHE=1).
-%% Cite proof/StarForth_Loop1_Heat.thy.
+%% SOURCE: feedback-loops.tex §Loop #1, .claude/CLAUDE.md §Physics Engine
+%% Proof: proof/StarForth_Loop1_Heat.thy
 
-\section{Loop \#2 — Rolling Window of Truth}
+Loop~\#1 counts word usage to identify hot execution paths. The implementation
+resides in \texttt{src/dictionary\_heat\_optimization.c}. Every word execution
+increments the \texttt{execution\_heat} field in the word's \texttt{DictEntry},
+using execution frequency as a proxy for thermal energy. Words whose heat
+crosses the promotion threshold migrate into the \texttt{hotwords\_cache} for
+constant-time lookup; words falling below \texttt{HEAT\_CACHE\_DEMOTION\_THRESHOLD}
+(default~10) are evicted from the cache. The \texttt{PHYSICS-RESET-STATS} word
+resets all heat counters.
+
+Two special flags modify decay behavior for individual words.
+\texttt{WORD\_FROZEN} words never lose heat---their \texttt{execution\_heat}
+does not participate in the Loop~\#3 decay sweep at all. \texttt{WORD\_PINNED}
+words decay normally but are prevented from reaching zero: their heat is held at
+a minimum of one after any decay step. These flags allow critical words to
+remain permanently warm without requiring the heat tracking mechanism to be
+suppressed globally.
+
+Loop~\#1 interacts with Loop~\#3 (Linear Decay), which provides the
+stabilization signal that prevents unlimited heat accumulation, and with the
+hot-words cache (Section~\ref{vol1:sec:physics:hotwords}), which consumes
+Loop~\#1's output. The build flag is \texttt{ENABLE\_LOOP\_1\_HEAT\_TRACKING}.
+Formal properties of the heat lifecycle are established in
+\texttt{proof/StarForth\_Loop1\_Heat.thy}, which proves heat non-negativity,
+strict monotonicity of increment, an upper bound of \texttt{MAX\_HEAT},
+immunity to decay for \texttt{WORD\_FROZEN} words, and a heat floor of~1 for
+\texttt{WORD\_PINNED} words after any decay step.
+
+\begin{description}
+  \item[\texttt{HEAT\_CACHE\_DEMOTION\_THRESHOLD}] Heat value below which a
+    word is evicted from the hot-words cache. Default: 10.
+  \item[\texttt{ENABLE\_LOOP\_1\_HEAT\_TRACKING}] Build flag; set to~0 to
+    disable the entire heat-tracking subsystem.
+  \item[\texttt{WORD\_FROZEN}] Word flag: heat does not decay.
+  \item[\texttt{WORD\_PINNED}] Word flag: heat cannot decay to zero.
+\end{description}
+
+\section{Loop \#2 --- Rolling Window of Truth}
 \label{vol1:sec:physics:loop2}
 
-%% SOURCE: src/rolling_window_of_truth.c, feedback-loops.md
-%% TODO(bob): describe the circular buffer, double-buffered snapshots, and
-%% adaptive sizing. Key struct: RollingWindowOfTruth.
+%% SOURCE: feedback-loops.tex §Loop #2, .claude/CLAUDE.md §Key Data Structures
+%% Proof: proof/StarForth_Loop2_Window.thy
 
-\section{Loop \#3 — Linear Decay}
+Loop~\#2 captures the execution sequence in a circular buffer to provide
+representative data for the inference engine. The implementation resides in
+\texttt{src/rolling\_window\_of\_truth.c}. The key data structure is
+\texttt{RollingWindowOfTruth}, which is embedded in the \texttt{VM} struct and
+provides a circular buffer of recently executed word identifiers, double-buffered
+snapshots for safe concurrent access by the heartbeat thread, and an adaptive
+effective window size field controlled by Loops~\#2 and~\#5.
+
+The window grows to \texttt{ROLLING\_WINDOW\_SIZE} (default~4096) before
+wrapping and becomes ``warm'' after~1024 executions. Only a warm window holds
+representative data; inference operations check the \texttt{is\_warm} flag
+before running. Stabilization is twofold: oldest entries are overwritten on
+wrap, and adaptive shrinking reduces \texttt{effective\_window\_size} whenever
+pattern-diversity growth falls below \texttt{ADAPTIVE\_GROWTH\_THRESHOLD}
+(1\%). The diversity check runs every \texttt{ADAPTIVE\_CHECK\_FREQUENCY}
+(256) executions, retains \texttt{ADAPTIVE\_SHRINK\_RATE} (75\%) of the
+current window per cycle, and never shrinks below
+\texttt{ADAPTIVE\_MIN\_WINDOW\_SIZE} (256).
+
+Loop~\#2 interacts with Loop~\#5, which applies Levene's test to determine
+whether the window has reached its minimum sufficient size for the current
+workload. The build flag is \texttt{ENABLE\_LOOP\_2\_ROLLING\_WINDOW}. Formal
+properties are established in \texttt{proof/StarForth\_Loop2\_Window.thy},
+which models both the effective window size and the actual (fill-level) window
+size and proves that the effective window remains within the
+$[\texttt{ADAPTIVE\_MIN}, \texttt{ROLLING\_WINDOW\_SIZE}]$ bounds.
+
+\begin{description}
+  \item[\texttt{ROLLING\_WINDOW\_SIZE}] Maximum window size and initial
+    capacity. Default: 4096.
+  \item[\texttt{ADAPTIVE\_CHECK\_FREQUENCY}] Executions between diversity
+    checks. Default: 256.
+  \item[\texttt{ADAPTIVE\_GROWTH\_THRESHOLD}] Pattern-diversity growth rate
+    (\%) below which shrinking triggers. Default: 1\%.
+  \item[\texttt{ADAPTIVE\_SHRINK\_RATE}] Fraction of window retained per
+    shrink cycle. Default: 75\%.
+  \item[\texttt{ADAPTIVE\_MIN\_WINDOW\_SIZE}] Floor for the effective window
+    size. Default: 256.
+\end{description}
+
+\section{Loop \#3 --- Linear Decay}
 \label{vol1:sec:physics:loop3}
 
-%% SOURCE: feedback-loops.md, docs/working/scratch/src/internal/PHASE_2A_COMPLETION_REPORT.adoc
-%% TODO(bob): describe quiescent word heat decay over time; WORD_FROZEN
-%% semantics (does not decay at all).
+%% SOURCE: feedback-loops.tex §Loop #3, adaptive-window-and-decay.tex
+%% Proof: proof/StarForth_Loop3_Decay.thy
 
-\section{Loop \#4 — Word Transition Prediction (Pipelining)}
+Loop~\#3 ages words to prevent unbounded heat accumulation; it is primarily a
+negative-feedback loop. It does not have a separate implementation file but is
+part of the heat-tracking subsystem in
+\texttt{src/dictionary\_heat\_optimization.c}, driven by the heartbeat
+dispatcher in \texttt{src/vm.c}. On each decay sweep, every word's heat is
+reduced according to:
+
+\begin{equation}
+  H(t) = \max\!\bigl(0,\; H_0 - d \cdot \Delta t\bigr),
+\end{equation}
+
+where $d$ is the decay constant expressed in \Qtype{} fixed point as
+\texttt{DECAY\_RATE\_PER\_US\_Q16}, giving a half-life of roughly six to seven
+seconds for a word carrying 100 heat units. A minimum interval of
+\texttt{DECAY\_MIN\_INTERVAL} ($1\,\mu$s) guards against over-decay when the
+heartbeat fires in rapid succession.
+
+The decay slope is stored as a \Qtype{} value (\texttt{decay\_slope\_q48},
+initialized to~$1/3$) and self-adjusts by~$\pm 5$\% against the hot-to-stale
+word ratio observed during each heartbeat sweep: an excess of hot words
+increases the slope (faster decay), while an excess of stale words decreases
+it (slower decay). This self-adjustment is the accumulation signal for a
+primarily stabilizing loop. Loop~\#6 provides the longer-horizon inference
+mechanism that recalculates the decay slope from exponential regression over
+the heat trajectory.
+
+The build flag is \texttt{ENABLE\_LOOP\_3\_LINEAR\_DECAY}. Formal properties
+are established in \texttt{proof/StarForth\_Loop3\_Decay.thy}, which proves
+that the decay operation is non-negative, monotonically decreasing, and that
+\texttt{WORD\_FROZEN} words are immune to decay steps.
+
+\begin{description}
+  \item[\texttt{DECAY\_RATE\_PER\_US\_Q16}] Heat decay per microsecond in
+    \Qtype{} fixed point. Default: $1/65536$ heat per $\mu$s.
+  \item[\texttt{DECAY\_MIN\_INTERVAL}] Minimum elapsed time before a decay
+    sweep fires. Default: $1\,\mu$s.
+  \item[\texttt{decay\_slope\_q48}] Per-VM \Qtype{} value holding the current
+    decay slope; initialized to~$1/3$; adjusted $\pm 5$\% by Loop~\#3's
+    self-tuning and updated by Loop~\#6.
+\end{description}
+
+\section{Loop \#4 --- Word Transition Prediction (Pipelining)}
 \label{vol1:sec:physics:loop4}
 
-%% SOURCE: src/physics_pipelining_metrics.c
-%%         docs/working/architecture/03-architecture/pipelining/wired-not-utilized.md
-%% TODO(bob): describe the word-to-word transition matrix and prefetch
-%% mechanism. IMPORTANT FLAG: per wired-not-utilized.md, the
-%% decision/speculation logic is currently wired but not called.
-%% Describe the implemented state accurately, and note what remains pending.
+%% SOURCE: feedback-loops.tex §Loop #4, pipelining/design.tex
+%%         metrics-and-knobs.tex §Pipelining Metrics
+%% Proof: proof/StarForth_Loop4_Pipeline.thy
 
-\section{Loop \#5 — Window Width Inference}
+Loop~\#4 tracks word-to-word transitions to enable speculative prefetch,
+reducing dictionary lookup latency by starting the lookup of word~$B$ during
+the execution of word~$A$. The implementation resides in
+\texttt{src/physics\_pipelining\_metrics.c}. Each \texttt{DictEntry} carries a
+\texttt{WordTransitionMetrics} substructure that records transition counts
+toward each successor, a total-transitions counter, and \Qtype{} latency
+accounts for prefetch savings and misprediction cost. Global aggregate state
+is held in \texttt{PipelineGlobalMetrics}, which includes
+\texttt{prefetch\_attempts}, \texttt{prefetch\_hits},
+\texttt{suggested\_next\_size} (the binary-chop window candidate), and
+\texttt{last\_checked\_accuracy}. Transition probability is computed in \Qtype{}
+fixed point to avoid floating-point arithmetic on the hot path:
+
+\begin{equation}
+  P(\text{from} \rightarrow \text{to})
+  = \frac{\mathtt{transition\_heat}[\text{to}]}{\mathtt{total\_transitions}}.
+\end{equation}
+
+The design proceeds in phases. Instrumentation (recording transitions) is
+implemented and active. Prediction analysis and the actual speculative
+prefetch are subsequent phases. Transition counts age out over time, and a
+miss-rate signal drives binary-chop search over
+\texttt{TRANSITION\_WINDOW\_SIZE} through
+\texttt{PipelineGlobalMetrics.suggested\_next\_size}. The build flag is
+\texttt{ENABLE\_LOOP\_4\_PIPELINING\_METRICS}. Formal safety properties are
+established in \texttt{proof/StarForth\_Loop4\_Pipeline.thy}.
+
+\begin{description}
+  \item[\texttt{TRANSITION\_WINDOW\_SIZE}] Context depth (number of prior
+    words) used for transition prediction. Default: 2.
+  \item[\texttt{SPECULATION\_THRESHOLD}] Minimum transition probability
+    required before a speculative prefetch is issued. Default: 0.50.
+  \item[\texttt{MIN\_SAMPLES}] Minimum recorded transitions before the
+    predictor begins speculating. Default: 10.
+  \item[\texttt{MISPREDICTION\_COST}] Penalty charged for a wrong prediction,
+    in nanoseconds. Default: 25\,ns.
+\end{description}
+
+\section{Loop \#5 --- Window Width Inference}
 \label{vol1:sec:physics:loop5}
 
-%% SOURCE: src/inference_engine.c
-%%         docs/working/architecture/03-architecture/adaptive-systems/window-inference-redesign.md
-%% TODO(bob): describe Levene's test on disjoint chunks + binary-chop
-%% mechanism from the approved redesign doc.
+%% SOURCE: feedback-loops.tex §Loop #5, adaptive-window-and-decay.tex §Toward a
+%%         Bidirectional Loop
+%% Proof: proof/StarForth_Loop5_WinInf.thy
 
-\section{Loop \#6 — Decay Slope Inference}
+Loop~\#5 finds the optimal rolling-window size through statistical testing, using
+the inference engine in \texttt{src/inference\_engine.c}. The effective window
+size expands toward \texttt{ROLLING\_WINDOW\_SIZE} when pattern diversity rises
+above threshold. For stabilization, it applies Levene's test for equality of
+variance: the heat trajectory is split into $K$ disjoint chunks, each chunk's
+variance is computed independently, and the Levene test statistic $W$ is compared
+against a critical value ($W \approx 6.5$ at $\alpha = 0.05$). When
+$W \le$ critical, the variances are stable and the window has reached its minimum
+sufficient size, preventing over-capture of redundant pattern data.
+
+The binary-chop mechanism (\texttt{loop\_5\_binary\_chop\_suggest\_window()})
+is invoked by the heartbeat window-tuner plugin
+(\texttt{vm\_tick\_window\_tuner()}, which runs at
+\texttt{WINDOW\_TUNING\_FREQUENCY} ticks). It computes the current prefetch
+accuracy and proposes a new effective window size, which the window tuner
+applies if it differs from the current size.
+
+The Levene test's statistical correctness---that it correctly detects
+non-uniform execution diversity---is taken as an explicit named axiom
+(\texttt{inference\_window\_clamped\_valid}) in
+\texttt{proof/StarForth\_Loop5\_WinInf.thy}, carrying a documented human-audit
+obligation against \texttt{src/inference\_engine.c}. All other properties
+(boundedness, monotonicity, ANOVA early-exit) are fully mechanised.
+
+\begin{description}
+  \item[\texttt{WINDOW\_TUNING\_FREQUENCY}] Heartbeat ticks between
+    window-tuner invocations. Default: 1000.
+  \item[\texttt{ADAPTIVE\_MIN\_WINDOW\_SIZE}] Hard floor on the effective
+    window size. Default: 256.
+\end{description}
+
+\section{Loop \#6 --- Decay Slope Inference}
 \label{vol1:sec:physics:loop6}
 
-%% SOURCE: src/inference_engine.c, feedback-loops.md
-%% TODO(bob): describe the exponential-regression mechanism for tuning
-%% the Loop \#3 decay slope.
+%% SOURCE: feedback-loops.tex §Loop #6
+%% Proof: proof/StarForth_Loop6_DecayInf.thy
 
-\section{Loop \#7 — Adaptive Heartrate}
+Loop~\#6 extracts the optimal decay rate by exponential regression over the
+heat trajectory, using the inference engine in \texttt{src/inference\_engine.c}.
+Fitting the log-linear model
+
+\begin{equation}
+  \ln(\mathrm{heat}[t]) = \ln(h_0) - \mathrm{slope} \cdot t
+\end{equation}
+
+yields a closed-form \texttt{adaptive\_decay\_slope}. An ANOVA early-exit
+guards cost: if \texttt{has\_variance\_stabilized()} reports that variance
+changed by less than~5\% since the last inference, the computation is skipped
+and the cached result reused, saving an estimated 5{,}000--10{,}000 CPU cycles
+per skipped run. The slope is bounded by fit quality
+(\texttt{slope\_fit\_quality\_q48}), and
+\texttt{inference\_outputs\_validate()} rejects slopes that are zero or exceed
+100.
+
+The build flag is \texttt{ENABLE\_LOOP\_6\_DECAY\_INFERENCE}. Unlike
+Loop~\#5, Loop~\#6 requires no statistical axiom: all invariants are proved
+purely from the clamping of the raw ordinary least-squares slope to
+$[\texttt{DECAY\_SLOPE\_MIN}, \texttt{DECAY\_SLOPE\_MAX}]$ before writing to
+the VM state. This is established in \texttt{proof/StarForth\_Loop6\_DecayInf.thy}.
+
+\begin{description}
+  \item[\texttt{slope\_fit\_quality\_q48}] \Qtype{} quality metric for the
+    current regression fit; used to gate slope updates.
+  \item[\texttt{HEARTBEAT\_INFERENCE\_FREQUENCY}] Ticks between full inference
+    runs. Default: 5000.
+  \item[\texttt{SLOPE\_VALIDATION\_FREQUENCY}] Ticks between decay-slope
+    validation passes. Default: 5000.
+\end{description}
+
+\section{Loop \#7 --- Adaptive Heartrate}
 \label{vol1:sec:physics:loop7}
 
-%% SOURCE: HeartbeatState in include/vm.h, feedback-loops.md
-%%         docs/working/architecture/03-architecture/heartbeat-system/instrumentation-plan.md
-%% TODO(bob): describe the HeartbeatState tick coordinator, DoE observation
-%% counters, L8 bucket stats, and M5 time trust. Note that HeartbeatTickSnapshot
-%% and tick_buffer are declared in include/vm.h, but heartbeat_export_csv()
-%% is not yet implemented.
+%% SOURCE: feedback-loops.tex §Loop #7, heartbeat-system/architecture.tex
+%%         .claude/CLAUDE.md §Critical Implementation Details
+%% Proof: proof/StarForth_Loop7_Heartrate.thy
+
+Loop~\#7 adjusts tick frequency to balance responsiveness against inference
+cost. All time-driven VM operations are coordinated through a single
+dispatcher, \texttt{vm\_tick()}, in \texttt{src/vm.c}. The \texttt{HeartbeatState}
+struct, embedded in the \texttt{VM} struct and declared in
+\texttt{include/vm.h}, holds the tick counter and per-plugin cursors:
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint64_t tick_count;            /* total ticks since VM init */
+    uint64_t last_window_tune_tick; /* tick of last window tune */
+    uint64_t last_slope_tune_tick;  /* tick of last decay validation */
+    int      heartbeat_enabled;     /* 1 = active, 0 = disabled */
+} HeartbeatState;
+\end{lstlisting}
+
+The main interpreter increments an execution counter and fires
+\texttt{vm\_tick()} every \texttt{HEARTBEAT\_FREQUENCY} (default~256) word
+executions. The dispatcher increments \texttt{tick\_count} and invokes each
+registered plugin at its configured interval: the window-tuner plugin
+(\texttt{vm\_tick\_window\_tuner()}, every \texttt{WINDOW\_TUNING\_FREQUENCY}
+ticks) and the slope-validator plugin (\texttt{vm\_tick\_slope\_validator()},
+every \texttt{SLOPE\_VALIDATION\_FREQUENCY} ticks).
+
+When the system is stable, full inference runs less often, reducing CPU
+overhead. The background \texttt{HeartbeatWorker} thread can be enabled with
+\texttt{HEARTBEAT\_THREAD\_ENABLED=1}, in which case it wakes at
+\texttt{HEARTBEAT\_THREAD\_INTERVAL\_MS} and calls \texttt{vm\_tick()}
+independently of the execution hot-path. In threaded mode, state shared between
+the execution thread and the heartbeat thread is protected by
+\texttt{vm->tuning\_lock}.
+
+\textbf{Implementation status:} \texttt{HeartbeatTickSnapshot} and
+\texttt{tick\_buffer} are declared in \texttt{include/vm.h}, but
+\texttt{heartbeat\_export\_csv()} is not yet implemented. The instrumentation
+plan is recorded in
+\texttt{docs/03-architecture/heartbeat-system/instrumentation-plan.md}.
+
+The build flag is \texttt{ENABLE\_LOOP\_7\_ADAPTIVE\_HEARTRATE}. Formal
+invariants are established in \texttt{proof/StarForth\_Loop7\_Heartrate.thy},
+which proves that \texttt{tick\_target\_ns} is always greater than zero,
+remains within $[\texttt{TICK\_MIN\_NS}, \texttt{TICK\_MAX\_NS}]$, and that
+\texttt{hb\_tick\_count} increases monotonically.
+
+\begin{description}
+  \item[\texttt{HEARTBEAT\_FREQUENCY}] Word executions between ticks.
+    Default: 256.
+  \item[\texttt{WINDOW\_TUNING\_FREQUENCY}] Ticks between window-tuner
+    calls. Default: 1000.
+  \item[\texttt{SLOPE\_VALIDATION\_FREQUENCY}] Ticks between decay-slope
+    validation. Default: 5000.
+  \item[\texttt{HEARTBEAT\_THREAD\_ENABLED}] Build flag; 1 enables the
+    background POSIX thread. Default: 0 (synchronous mode).
+  \item[\texttt{HEARTBEAT\_THREAD\_INTERVAL\_MS}] Wake interval for the
+    background thread when enabled. Default: 100\,ms.
+\end{description}
 
 \section{L8 Jacquard Mode Selector}
 \label{vol1:sec:physics:l8}
 
-%% SOURCE: src/ssm_jacquard.c
-%%         docs/working/architecture/03-architecture/physics-engine/ssm-raw-data-analysis.md
-%% TODO(bob): describe the six L8 Jacquard modes (stable, volatile, diverse,
-%% temporal, transition, omni), the attractor-bucket mechanism, and the
-%% vm->ssm_l8_state field. Distinguish L8 from the seven loops (L8 is a
-%% meta-coordinator, not a loop).
+%% SOURCE: .claude/CLAUDE.md §L8 Jacquard Mode Selector, ssm_jacquard.c
+%%         steady-state-machine.tex
+
+The L8 Jacquard Mode Selector is a meta-coordinator that sits above the seven
+feedback loops. It is implemented in \texttt{src/ssm\_jacquard.c} and its
+current mode is held in \texttt{vm->ssm\_l8\_state}. Rather than a feedback
+loop in the same sense as Loops~\#1--\#7, L8 is a Steady-State Machine (SSM)
+that switches the runtime between predefined operating configurations based on
+observed attractor-bucket statistics aggregated by the heartbeat mechanism.
+
+Using execution statistics as a proxy for thermodynamic quantities, the SSM
+tracks execution heat, entropy (workload diversity), pipeline readiness, heat
+decay, and the steady-state slope. When a configuration's attractor-bucket
+counts reach characteristic thresholds, L8 transitions the runtime to a
+different operating mode, adjusting the balance of loops and their parameters
+to suit the new workload regime. The SSM passes through four phases: transient
+(warming up, noisy gradients), quasi-steady (emerging patterns), true steady
+state (smooth heat surface, stable lookups), and chaotic/disruption
+(triggered by major workload shift).
+
+Six operating modes are defined:
+
+\begin{description}
+  \item[stable] The system has converged to a predictable workload; decay
+    rates and window sizes are held conservatively to avoid disrupting an
+    established optimum.
+  \item[volatile] High workload diversity; the window is widened and
+    inference runs more frequently to track rapidly changing heat surfaces.
+  \item[diverse] Moderate, sustained diversity; window and decay parameters
+    are tuned for broad pattern capture.
+  \item[temporal] Time-structured workloads where periodically recurring
+    patterns dominate; the window is sized to capture at least one full
+    period.
+  \item[transition] The system is moving between attractors; parameters are
+    relaxed to allow rapid re-convergence.
+  \item[omni] All-loops active at maximum sensitivity; intended for initial
+    warm-up or after a major disruption.
+\end{description}
+
+The L8 mode selector is not a loop with an accumulation/stabilization pair;
+it is a higher-order coordinator that reconfigures the parameters of the
+seven loops based on observed steady-state behavior. The six L8 variants are
+also available as separate capsule personalities:
+\texttt{capsules/init-l8-\{stable,volatile,diverse,temporal,transition,omni\}.4th}.
+
+\section{Steady-State Machine Theory}
+\label{vol1:sec:physics:ssm}
+
+%% SOURCE: steady-state-machine.tex
+
+The theoretical basis for the adaptive runtime is the Steady-State Machine
+(SSM), a computational model whose operational state is defined not by discrete
+symbolic transitions but by convergence to an optimal runtime equilibrium.
+Using execution statistics as a proxy for thermodynamic quantities, the SSM
+tracks execution heat $H$, entropy and diversity measures $E$, pipeline
+activation thresholds $P$, a heat-decay profile $\Theta$, and the sliding
+execution window $W$. The governing dynamic is:
+
+\begin{equation}
+M_{t+1} = f\!\bigl(M_t,\; \Delta H,\; \Delta W,\; \Delta E\bigr),
+\end{equation}
+
+where $f$ drives the machine toward a stable basin. The machine is defined by
+its convergence behavior, not by its instruction sequence.
+
+Five axioms characterize the SSM:
+
+\begin{description}
+  \item[Convergence] Every sustained workload induces the SSM to converge
+    toward a stable attractor unless external entropy forces divergence.
+  \item[Locality of Heat] Execution heat reflects both locality and temporal
+    relevance; locality produces stability.
+  \item[Adaptive Reordering] Dictionary reordering is thermodynamic
+    self-optimization, not symbolic mutation.
+  \item[Stability Maximizes Throughput] The steady state is always faster
+    than the cold state.
+  \item[Perturbation Response] When disrupted, the SSM seeks a new steady
+    state; it does not thrash indefinitely.
+\end{description}
+
+\section{Configuration Knobs}
+\label{vol1:sec:physics:knobs}
+
+%% SOURCE: feedback-loops.tex §Configuration
+
+Any loop can be disabled at build time. Setting all seven flags to zero yields
+the baseline configuration used as the DoE reference point.
+
+\begin{lstlisting}[language=bash]
+# Disable a single loop
+make ENABLE_LOOP_3_LINEAR_DECAY=0
+
+# Baseline build (all loops off)
+make ENABLE_LOOP_1_HEAT_TRACKING=0 \
+     ENABLE_LOOP_2_ROLLING_WINDOW=0 \
+     ENABLE_LOOP_3_LINEAR_DECAY=0 \
+     ENABLE_LOOP_4_PIPELINING_METRICS=0 \
+     ENABLE_LOOP_5_WINDOW_INFERENCE=0 \
+     ENABLE_LOOP_6_DECAY_INFERENCE=0 \
+     ENABLE_LOOP_7_ADAPTIVE_HEARTRATE=0
+\end{lstlisting}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Knob & Default & Description \\
+\midrule
+\texttt{ROLLING\_WINDOW\_SIZE}            & 4096 & Initial/maximum window size \\
+\texttt{ADAPTIVE\_SHRINK\_RATE}           & 75   & \% retained when shrinking \\
+\texttt{ADAPTIVE\_MIN\_WINDOW\_SIZE}      & 256  & Floor for window shrinking \\
+\texttt{ADAPTIVE\_CHECK\_FREQUENCY}       & 256  & Executions between diversity checks \\
+\texttt{ADAPTIVE\_GROWTH\_THRESHOLD}      & 1    & Growth rate (\%) signalling saturation \\
+\texttt{DECAY\_RATE\_PER\_US\_Q16}        & 1    & Heat decay per microsecond (\Qtype{}) \\
+\texttt{HEARTBEAT\_INFERENCE\_FREQUENCY}  & 5000 & Ticks between full inference runs \\
+\texttt{TRANSITION\_WINDOW\_SIZE}         & 2    & Context depth for pipelining prediction \\
+\bottomrule
+\end{tabular}
+\caption{Principal tuning knobs for the feedback loops.}
+\label{vol1:tab:physics:knobs}
+\end{table}
+
+The implementation is distributed across
+\texttt{src/rolling\_window\_of\_truth.c} (Loop~\#2),
+\texttt{src/dictionary\_heat\_optimization.c} (Loops~\#1 and~\#3),
+\texttt{src/inference\_engine.c} (unified Loops~\#5 and~\#6),
+\texttt{src/physics\_pipelining\_metrics.c} (Loop~\#4), and the
+\texttt{vm\_tick()} heartbeat dispatcher in \texttt{src/vm.c} (Loop~\#7).
+Knob definitions live in \texttt{include/rolling\_window\_knobs.h}.
 
 \section{Determinism and Formal Properties}
 \label{vol1:sec:physics:determinism}
