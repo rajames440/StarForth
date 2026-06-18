@@ -461,11 +461,39 @@ make -f Makefile.starkernel ARCH=riscv64  clean qemu
 - Print the expected milestone banner (M0–M7 sequence)
 - Exit QEMU cleanly (no panic, no triple fault)
 
-**Constraints:**
-- **No DoE execution** during acceptance — `--doe` flag must not be set
+**Round 1 constraints:**
+- **No DoE execution** — `--doe` flag must not be set
 - **No ACL activated** — `init.4th` must have `S" ACL.4th" EXEC` commented out
 - **Serial only** — never run two QEMU instances in parallel; they share OVMF state
 - `clean` before each arch — cross-arch object contamination causes silent miscompiles
+
+**Round 1 pass criteria — each arch must:**
+- Boot to the bare `ok>` REPL without fault or hang
+- Print the expected milestone banner (M0–M7 sequence)
+- Exit QEMU cleanly (no panic, no triple fault)
+
+### Round 2 — ACL Activated, No DoE
+
+Once Round 1 passes on all three arches, repeat with ACL enabled:
+
+```bash
+make -f Makefile.starkernel ARCH=amd64    clean qemu
+make -f Makefile.starkernel ARCH=aarch64  clean qemu
+make -f Makefile.starkernel ARCH=riscv64  clean qemu
+```
+
+Enable ACL by uncommenting `S" ACL.4th" EXEC` in `init.4th` before building.
+
+**Round 2 constraints:**
+- **No DoE execution** — `--doe` flag must not be set
+- **ACL activated** — `S" ACL.4th" EXEC` uncommented in `init.4th`
+- Same serial / clean rules apply
+
+**Round 2 pass criteria — each arch must:**
+- Boot through ACL self-activation without fault
+- Present the `zuse)ok>` prompt (or `ok>` if zuse boot is deferred)
+- ACL enforcement active — unprivileged words blocked as configured
+- Exit QEMU cleanly
 
 **Reference output:** `QEMU_BASELINE.log`
 
