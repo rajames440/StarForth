@@ -44,10 +44,11 @@ logs/*.log
 doe/
 csv/
 
-# LaTeX build artifacts
-*.aux
-*.out
-*.toc
-*.fls
-*.fdb_latexmk
-*.synctex.gz
+# LaTeX build artifacts (path-scoped to avoid conflicting with logs3/*.log LFS)
+docs/**/*.aux
+docs/**/*.log
+docs/**/*.out
+docs/**/*.toc
+docs/**/*.fls
+docs/**/*.fdb_latexmk
+docs/**/*.synctex.gz
