@@ -284,6 +284,32 @@ static void test_acl_pin_blocks_shadow(VM *vm)
     ACL_ASSERT(found == orig,   "original pinned entry still found after blocked shadow");
 }
 
+/* Test 9: zuse_session bypasses denied word (same semantics as emergency_console) */
+static void test_zuse_session_bypass(VM *vm)
+{
+    vm_interpret(vm, ": __acl_zuse_test__ 77 ;");
+    vm->error = 0;
+
+    DictEntry *e = vm_find_word(vm, "__acl_zuse_test__", 17);
+    if (!e) { tests_failed++; return; }
+
+    e->acl_allow  = 0;
+    e->acl_ttl    = 0;
+    e->acl_pinned = 0;
+
+    int saved_dsp = vm->dsp;
+    vm->zuse_session = 1;
+    vm->emergency_console = 0;
+    vm_interpret(vm, "__acl_zuse_test__");
+    vm->zuse_session = 0;
+    vm->error = 0;
+
+    ACL_ASSERT(vm->dsp == saved_dsp + 1, "zuse_session bypasses ACL deny");
+    if (vm->dsp > saved_dsp) vm->dsp--;
+
+    e->acl_allow = 1;
+}
+
 /* ------------------------------------------------------------------ */
 
 void run_acl_words_tests(VM *vm)
@@ -298,6 +324,7 @@ void run_acl_words_tests(VM *vm)
 
     save_vm_state(vm, &saved_dsp, &saved_rsp, &saved_error, &saved_mode);
     uint8_t saved_ec = vm->emergency_console;
+    uint8_t saved_zs = vm->zuse_session;
 
     test_acl_pin_immutable(vm);
     restore_vm_state(vm, saved_dsp, saved_rsp, 0, saved_mode);
@@ -323,7 +350,11 @@ void run_acl_words_tests(VM *vm)
     test_acl_pin_blocks_shadow(vm);
     restore_vm_state(vm, saved_dsp, saved_rsp, 0, saved_mode);
 
+    test_zuse_session_bypass(vm);
+    restore_vm_state(vm, saved_dsp, saved_rsp, 0, saved_mode);
+
     vm->emergency_console = saved_ec;
+    vm->zuse_session      = saved_zs;
 
     print_module_summary("ACL Words", tests_passed, tests_failed, 0, 0);
 }
