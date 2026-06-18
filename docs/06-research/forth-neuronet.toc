@@ -1,0 +1,8 @@
+\contentsline {section}{\numberline {1}The Core Observation}{2}{section.1}%
+\contentsline {section}{\numberline {2}The Danger and Its Resolution}{2}{section.2}%
+\contentsline {section}{\numberline {3}The Architectural Hierarchy}{2}{section.3}%
+\contentsline {section}{\numberline {4}The LLM Capsule}{3}{section.4}%
+\contentsline {section}{\numberline {5}Differentiation from Prior Work}{3}{section.5}%
+\contentsline {section}{\numberline {6}Prior Art}{3}{section.6}%
+\contentsline {section}{\numberline {7}Next Steps}{4}{section.7}%
+\contentsline {section}{\numberline {8}Relationship to Existing Work}{4}{section.8}%

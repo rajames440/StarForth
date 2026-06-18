@@ -76,7 +76,7 @@ KERNEL_SRC         := src/starkernel
 KERNEL_INC         := include/starkernel
 STARFORTH_CONFIG_HEADER := include/starforth_config.h
 
-QEMU_LOG_DIR       := logs2
+QEMU_LOG_DIR       := logs3
 QEMU_ISO           := $(BUILD_DIR)/starkernel.iso
 DOE_RUNS_DIR       := experiments/bare_metal/runs
 DOE_LATEST_DIR     := experiments/bare_metal/latest
