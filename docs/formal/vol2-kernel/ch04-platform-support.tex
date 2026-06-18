@@ -1,59 +1,257 @@
 %% Vol II, Chapter 4 — Platform Support
-%% SOURCE: docs/working/scratch/src/platform-integration/ (multiple .adoc files)
-%%         docs/working/architecture/03-architecture/hal/ (HAL design — aspirational)
+%% SOURCE: docs/formal/scraps/hardware/platform-integration/PLATFORM_ABSTRACTION.tex
+%%         docs/formal/scraps/hardware/platform-integration/L4RE_INTEGRATION.tex
 %%         .claude/CLAUDE.md (Platform abstraction, build targets)
 
 \chapter{Platform Support}
 \label{vol2:chap:platforms}
 
-%% TODO(bob): intro paragraph listing the three supported execution contexts:
-%%   1. Hosted (Linux, POSIX)
-%%   2. L4Re / Fiasco.OC microkernel
-%%   3. Bare metal via LithosAnanke (amd64, aarch64, riscv64)
+StarForth executes across three distinct runtime contexts: the hosted
+Linux/POSIX environment, the L4Re/Fiasco.OC microkernel, and bare metal
+via LithosAnanke on three hardware architectures (amd64, aarch64, riscv64).
+Each context is addressed by a platform abstraction layer that presents a
+uniform API to the core VM while confining platform-specific code to
+separate compilation units selected at build time.
+
+\section{Platform Abstraction Layer}
+\label{vol2:sec:platforms:pal}
+
+%% SOURCE: docs/formal/scraps/hardware/platform-integration/PLATFORM_ABSTRACTION.tex
+
+The platform abstraction layer provides portable timing and clock
+functionality across POSIX systems and the L4Re microkernel, selected by a
+single Makefile switch. It follows the same vtable pattern as the block I/O
+subsystem, achieving zero runtime overhead while keeping platform-specific
+code cleanly separated from the core VM.
+
+The core VM is platform-agnostic and speaks only to
+\texttt{include/platform\_time.h}. Behind that header, compile-time
+selection routes to one of two backends:
+\texttt{src/platform/linux/time.c} using \texttt{clock\_gettime}, or
+\texttt{src/platform/l4re/time.c} using the RTC server and KIP clock.
+Builds choose the path explicitly:
+
+\begin{lstlisting}[language=bash]
+make            # POSIX (default)
+make L4RE=1     # L4Re/StarshipOS
+make MINIMAL=1  # minimal embedded, no platform layer
+\end{lstlisting}
+
+\subsection{Platform API}
+
+All timing flows through \texttt{platform\_time.h}. The host calls
+\texttt{sf\_time\_init()} once at startup, then reads
+\texttt{sf\_monotonic\_ns()} for performance measurement (nanoseconds since
+boot) and \texttt{sf\_realtime\_ns()} for wall-clock time (nanoseconds since
+the Unix epoch). Additional functions cover clock setting, human-readable
+timestamp formatting, RTC availability reporting, and unit conversions
+(\texttt{sf\_seconds\_to\_ns}, \texttt{sf\_ns\_to\_ms}, and related
+helpers).
+
+Backend selection occurs at compile time on the \texttt{\_\_l4\_\_} define:
+
+\begin{lstlisting}[language=C]
+void sf_time_init(void) {
+#ifdef __l4__
+    sf_time_init_l4re();
+    sf_time_backend = &sf_time_backend_l4re;
+#else
+    sf_time_backend = &sf_time_backend_posix;
+#endif
+}
+\end{lstlisting}
+
+\begin{table}[ht]
+  \centering
+  \caption{Platform vs.\ feature support}
+  \label{tab:platform-features}
+  \begin{tabular}{lllll}
+    \toprule
+    Feature & Linux/POSIX & L4Re/Fiasco.OC & amd64 (LithosAnanke) & aarch64 / riscv64 \\
+    \midrule
+    Monotonic time   & \texttt{CLOCK\_MONOTONIC} & KIP clock      & TSC + HPET & (see note) \\
+    Wall-clock time  & \texttt{CLOCK\_REALTIME}  & RTC server     & APIC timer & (see note) \\
+    Interactive REPL & yes                       & yes            & yes        & yes (QEMU validated) \\
+    Block I/O        & file + RAM backends       & L4Re dataspace & RAM blocks & RAM blocks \\
+    Heartbeat thread & yes                       & yes            & M5 timer   & (see note) \\
+    ACL subsystem    & Phases 1--6 complete      & (see note)     & Phase 7 pending & Phase 7 pending \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Entries marked ``(see note)'' are not confirmed in available source material.
+%% TODO(bob): fill in aarch64 and riscv64 timing mechanism and heartbeat
+%% confirmation once three-arch acceptance logs exist (Phase 7 deliverable).
+%% TODO(bob): confirm L4Re ACL subsystem status against StarKernel M7.
 
 \section{Linux / Hosted}
 \label{vol2:sec:platforms:linux}
 
 %% SOURCE: src/platform/linux/time.c, .claude/CLAUDE.md
-%% TODO(bob): describe POSIX timing, standard build, and the hosted execution path.
+
+The hosted Linux build is the primary development target. The standard
+build procedure produces an optimized binary:
+
+\begin{lstlisting}[language=bash]
+make                      # optimized build
+make fastest              # ASM + LTO + direct threading
+make debug                # symbols enabled
+./build/amd64/standard/starforth              # interactive REPL
+./build/amd64/standard/starforth --run-tests  # run 936+ tests then REPL
+./build/amd64/standard/starforth -c "1 2 + . BYE"  # inline execution
+\end{lstlisting}
+
+The POSIX timing backend uses \texttt{CLOCK\_MONOTONIC} for high-precision
+monotonic time, \texttt{CLOCK\_REALTIME} for wall-clock time, and
+\texttt{localtime}/\texttt{strftime} for timestamp formatting. It always
+reports an RTC as available.
+
+Key build flags for the hosted target are documented in
+Chapter~\ref{vol2:chap:kernel}. The \texttt{EMERGENCY\_CONSOLE\_ENABLED}
+flag (default 1) is relevant to the hosted build as well as the bare-metal
+target: setting it to~0 strips the interactive fallthrough surface,
+appropriate for production or embedded deployments.
 
 \section{L4Re / Fiasco.OC}
 \label{vol2:sec:platforms:l4re}
 
-%% SOURCE: docs/working/scratch/src/platform-integration/L4RE_INTEGRATION.adoc
-%%         docs/working/scratch/src/platform-integration/l_4_re_blkio_endpoints.adoc
-%% TODO(bob): describe the L4Re integration: IPC, dataspaces, package structure,
-%% and the blkio vtable API. Note that the malloc/free → L4Re-native allocator
-%% migration (dictionary_management.c) is still pending.
+%% SOURCE: docs/formal/scraps/hardware/platform-integration/L4RE_INTEGRATION.tex
+
+L4Re is a user-level infrastructure layered on the L4 microkernel, providing
+memory management, task and thread management, inter-process communication,
+device drivers, and runtime libraries. StarForth installs into the L4Re
+source tree as \texttt{l4/pkg/starforth}.
+
+\subsection{Package Structure}
+
+The package holds: a \texttt{Control} metadata file (declaring that
+the package provides \texttt{starforth} and requires \texttt{libc},
+\texttt{libstdc++}, and \texttt{l4re-core}), a top-level \texttt{Makefile},
+a \texttt{server/} directory with the L4Re entry point and VM wrapper, a
+\texttt{lib/} directory wrapping the existing \texttt{src/} files, the
+existing \texttt{include/}, and an \texttt{examples/} client.
+
+\subsection{Memory Management via Dataspaces}
+
+Instead of \texttt{malloc}, the L4Re wrapper backs VM memory with a
+dataspace. Initialization allocates a capability slot, allocates a
+dataspace of \texttt{VM\_MEMORY\_SIZE}, and maps it into the address space
+with \texttt{L4RE\_RM\_F\_SEARCH\_ADDR | L4RE\_RM\_F\_RW}. The mapped
+region becomes \texttt{vm\_.memory}. Cleanup detaches the region and frees
+the capability.
+
+\subsection{IPC Interface}
+
+The server exposes a small opcode protocol: \texttt{OP\_INTERPRET},
+\texttt{OP\_PUSH}, \texttt{OP\_POP}, \texttt{OP\_GET\_STATE}, and
+\texttt{OP\_RESET}. \texttt{OP\_INTERPRET} copies an inbound code buffer,
+runs \texttt{vm\_interpret}, and returns the VM error status. A matching
+client wraps these calls, and registration with the name server makes the
+server reachable under the \texttt{starforth} capability.
+
+\subsection{Multi-VM Architecture on L4Re}
+
+A typical deployment runs several FORTH VMs under a root task (Ned), which
+acts as name server and VM manager. Distinct VMs serve distinct roles:
+one hosting FORTH tasks, one a request/response server, one an interactive
+REPL. Ned's \texttt{modules.list} wires each VM's capabilities.
+
+%% TODO(bob): confirm current L4Re port status against StarKernel M7; the
+%% L4RE_INTEGRATION scrap describes the L4Re-on-Fiasco path rather than
+%% the bare-metal LithosAnanke path, and notes the
+%% malloc/free → L4Re-native allocator migration in
+%% dictionary_management.c is still pending.
+
+\subsection{L4Re Timing Backend}
+
+The L4Re timing backend draws monotonic time directly from the Kernel
+Info Page clock (\texttt{l4\_kip\_clock\_ns(l4re\_kip())}) and real time
+from the RTC server offset added to that clock. It obtains the
+\texttt{"rtc"} capability from the L4Re environment, queries the offset
+over RPC, and degrades gracefully to epoch time when no RTC server is
+present. Setting time updates the offset over RPC and requires a write
+capability.
 
 \section{Bare Metal: amd64}
 \label{vol2:sec:platforms:amd64}
 
 %% SOURCE: .claude/CLAUDE.md (src/starkernel/arch/amd64/)
-%% TODO(bob): describe the amd64 kernel path: arch.c, apic.c, timer.c,
-%% interrupts.c, boot.S, isr.S.
+
+The amd64 bare-metal path is provided by the LithosAnanke kernel. The
+architecture-specific layer resides in \texttt{src/starkernel/arch/amd64/}
+and contains:
+
+\begin{itemize}
+  \item \texttt{arch.c} --- architecture initialization
+  \item \texttt{apic.c} --- Advanced Programmable Interrupt Controller
+  \item \texttt{timer.c} --- TSC and HPET timer support
+  \item \texttt{interrupts.c} --- interrupt management
+  \item \texttt{boot.S} --- low-level boot assembly
+  \item \texttt{isr.S} --- interrupt service routine stubs
+\end{itemize}
+
+The UEFI loader (\texttt{src/starkernel/boot/uefi\_loader.c}) calls
+\texttt{ExitBootServices()} and transfers control to
+\texttt{src/starkernel/kernel\_main.c}. Milestone M5 establishes the
+100~Hz heartbeat timer using TSC, HPET, and the APIC timer, which drives
+the adaptive heartbeat subsystem described in Volume~I.
+
+Build and QEMU execution:
+
+\begin{lstlisting}[language=bash]
+make -f Makefile.starkernel                        # build UEFI image
+make -f Makefile.starkernel qemu                   # run under QEMU/OVMF
+make -f Makefile.starkernel STARFORTH_ENABLE_VM=1  # enable M7 VM integration
+\end{lstlisting}
+
+Output: \texttt{build/amd64/kernel/starkernel\_loader.efi} (UEFI PE32+
+executable).
 
 \section{Bare Metal: aarch64 and riscv64}
 \label{vol2:sec:platforms:arm-riscv}
 
-%% SOURCE: docs/working/scratch/src/platform-integration/RASPBERRY_PI_BUILD.adoc
-%% TODO(bob): describe aarch64 (Raspberry Pi 4) and riscv64 targets.
-%% QEMU-based validation for all three arches.
+%% SOURCE: .claude/CLAUDE.md (Build targets section)
 
-\section{Platform Abstraction Layer (HAL Target)}
-\label{vol2:sec:platforms:hal}
+Cross-compilation targets for aarch64 and riscv64 are provided via
+\texttt{Makefile.starkernel}:
 
-%% SOURCE: docs/working/architecture/03-architecture/hal/overview.md
-%% IMPORTANT: the hal_* API described in the hal/ doc family is the TARGET
-%% design, not the current codebase. Current code uses sf_time_backend_t-style
-%% naming. This section describes the planned migration.
-%% TODO(bob): review hal/migration-plan.md and decide whether to describe
-%% the current state, the target, or both (with clear labeling).
+\begin{lstlisting}[language=bash]
+make -f Makefile.starkernel ARCH=aarch64    # aarch64 build
+make -f Makefile.starkernel ARCH=riscv64    # riscv64 build
+make rpi4-cross                             # Raspberry Pi 4 cross-compile
+\end{lstlisting}
+
+QEMU-based validation is used for all three architectures. Milestones M0
+through M5 have been verified under QEMU/OVMF across all three. The
+\texttt{QEMU\_BASELINE.log} file captures reference output for regression
+detection.
+
+%% TODO(bob): describe aarch64-specific bring-up notes (Raspberry Pi 4)
+%% and riscv64 details once platform-specific documentation is available.
+%% Phase 7 ACL acceptance logs will cover three-arch validation.
 
 \section{Raspberry Pi Build}
 \label{vol2:sec:platforms:rpi}
 
-%% SOURCE: docs/working/scratch/src/performance-profiling/ARM64_OPTIMIZATIONS.adoc
-\begin{lstlisting}[language=bash, caption={Raspberry Pi cross-compilation}]
-make rpi4-cross    # Cross-compile for Raspberry Pi 4 (ARM64)
+%% SOURCE: .claude/CLAUDE.md (Build commands section)
+
+\begin{lstlisting}[language=bash]
+make rpi4-cross    # Cross-compile for Raspberry Pi 4 (aarch64)
 \end{lstlisting}
+
+%% TODO(bob): describe Raspberry Pi 4 board bring-up details, UART
+%% configuration, and any aarch64-specific optimizations once
+%% ARM64_OPTIMIZATIONS documentation is promoted to formal tier.
+
+\section{Future Platforms}
+\label{vol2:sec:platforms:future}
+
+%% SOURCE: docs/formal/scraps/hardware/platform-integration/PLATFORM_ABSTRACTION.tex
+
+The platform abstraction design anticipates additional backends. Adding a
+new backend requires: a new \texttt{time\_<platform>.c} translation unit,
+its backend vtable entry, a detection branch in \texttt{platform\_init.c},
+and a Makefile flag. Anticipated future targets noted in the platform
+abstraction design include bare-metal hardware timers (beyond the current
+amd64/APIC path), WebAssembly via \texttt{performance.now()}, RTOSes such
+as FreeRTOS and Zephyr, and additional microkernels such as seL4.
