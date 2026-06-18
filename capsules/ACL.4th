@@ -82,10 +82,7 @@ Block 4006
 0 CONSTANT ACL-CA-KEY-HI
 
 Block 4007
-( Self-activation - runs at capsule load time )
-( init.4th only needs: S" ACL.4th" EXEC      )
-ACL-BOOT-RW
-S" zuse.4th" EXEC
+( Self-activation moved to Block 4015 — must run after ACL-BOOT-RW )
 
 Block 4010
 ( ACL Rolling Window of Truth — topology mirrors Loop #2+#3+#6    )
@@ -145,7 +142,7 @@ Block 4013
   ( Push current tick stamp into ring buffer )
   ACL-RWT-TICK@ OVER ACL-RWT-PUSH
   ( Update slope if we have enough history )
-  DUP ACL-RWT-COUNT@ 3 >= IF
+  DUP ACL-RWT-COUNT@ 2 > IF
     DUP ACL-RWT-SLOPE-COMPUTE OVER ACL-RWT-SLOPE!
   THEN
   ( Compute and apply new TTL )
@@ -168,3 +165,10 @@ Block 4014
   ' ACL-RECHECK-RW      ACL-PIN
   ' ACL-INIT-PRIMITIVES ACL-PIN
   ' ACL-BOOT-RW         ACL-PIN ;
+
+Block 4015
+( Self-activation - runs at capsule load time )
+( Block 4015 ensures ACL-BOOT-RW is defined before call )
+( init.4th only needs: S" ACL.4th" EXEC                )
+ACL-BOOT-RW
+S" zuse.4th" EXEC
