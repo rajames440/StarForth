@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Hard Rules
+
+- **NEVER CREATE A BRANCH WITHOUT EXPLICIT PERMISSION FROM THE USER.** Work on the branch you are given or already on. Do not create feature branches, session branches, or any other branch unless the user explicitly asks.
+
+---
+
 ## Word-Level ACL System — Implemented
 
 **Design doc:** `docs/03-architecture/word-acl/DESIGN.md`
