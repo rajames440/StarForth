@@ -6,9 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## Hard Rules
+## Hard Rules — Captain Bob's Law
 
 - **NEVER CREATE A BRANCH WITHOUT EXPLICIT PERMISSION FROM THE USER.** Work on the branch you are given or already on. Do not create feature branches, session branches, or any other branch unless the user explicitly asks.
+- **USE A SUBVERSION-LIKE WORKFLOW.** Commit and push directly to the working branch. No detours, no side branches, no pull requests unless explicitly requested.
+- **AFTER ANY OUT-OF-BRANCH WORK** (switching branches, resetting, fetching, etc.) always return to the correct working branch and do a full `git fetch` + `git pull` to ensure the working tree is clean and current before continuing.
+- **ALWAYS START CLEAN.** Before doing any work, verify `git status` is clean and the branch is the correct one. No surprises.
 
 ---
 
