@@ -71,14 +71,13 @@ Block 4005
   ' ACL-BOOT           ACL-PIN ;
 
 Block 4006
-( CA ROOT - ONE signing authority for StarForth ACL.  )
-( ca.sec: 32-byte Ed25519 seed; binary blob picked up )
-( by mkcapsule automatically from capsules/ca.sec.    )
-( Public key is derived from seed at runtime.         )
-( Capsule hash covers ca.sec — any swap is detectable.)
-( DEVELOPMENT PLACEHOLDER: replace ca.sec at build    )
-( time on the trusted machine before deployment.      )
-( This mechanism is temporary; PKI will be revisited. )
+( CA ROOT - Ed25519 public key of system CA.          )
+( Capsule hash IS the root-of-trust fingerprint; any  )
+( change to CA changes hash and birth-protocol rejects)
+( the tampered image.                                 )
+( FUTURE: Replace placeholders at build time via      )
+( tools/mkcapsule. Two 16-bit halves for portability. )
+( HUMAN-REVIEW: Verify CA key matches build manifest. )
 0 CONSTANT ACL-CA-KEY-LO
 0 CONSTANT ACL-CA-KEY-HI
 
