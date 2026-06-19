@@ -9,6 +9,7 @@
 
 /* log_words.c — FORTH words for log level control */
 
+#include <string.h>
 #include "include/log_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
@@ -39,6 +40,30 @@ static void log_word_get_level(VM *vm)
     vm_push(vm, (cell_t)log_get_level());
 }
 
+/* ── LOG ( c-addr u level -- ) ──────────────────────────────────────────
+   Emit a tagged log line at the given level.
+   Usage:  S" message" LOG-INFO LOG
+           S" oh no"   LOG-ERROR LOG                                      */
+
+static void log_word_log(VM *vm)
+{
+    if (vm->dsp < 2) { vm->error = 1; return; }
+    cell_t level  = vm_pop(vm);
+    cell_t u      = vm_pop(vm);
+    cell_t c_addr = vm_pop(vm);
+
+    if (level < (cell_t)LOG_ERROR) level = (cell_t)LOG_ERROR;
+    if (level > (cell_t)LOG_DEBUG) level = (cell_t)LOG_DEBUG;
+
+    if (u <= 0 || u >= LOG_LINE_MAX) { vm->error = 1; return; }
+
+    char buf[LOG_LINE_MAX];
+    memcpy(buf, (const char *)CELL(c_addr), (size_t)u);
+    buf[u] = '\0';
+
+    log_message((LogLevel)level, "%s", buf);
+}
+
 /* ── Registration ────────────────────────────────────────────────────── */
 
 void register_log_words(VM *vm)
@@ -50,4 +75,5 @@ void register_log_words(VM *vm)
     register_word(vm, "LOG-DEBUG", log_word_debug);
     register_word(vm, "LOG-LEVEL!", log_word_set_level);
     register_word(vm, "LOG-LEVEL@", log_word_get_level);
+    register_word(vm, "LOG",        log_word_log);
 }
