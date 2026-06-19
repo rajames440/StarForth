@@ -32,5 +32,6 @@ Block 2049
 ( To disable zuse only: edit ACL.4th block 4015, comment out   )
 (   the S" zuse.4th" EXEC line there.                          )
 S" ACL.4th" EXEC
+S" init.4th loaded — StarForth boot complete" LOG-INFO LOG
 \ S" doe.4th" EXEC
 BOOT-BANNER
