@@ -43,6 +43,7 @@
 #include "vm.h"
 #include "log.h"
 #include "platform_time.h"
+#include "physics_hotwords_cache.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -79,8 +80,16 @@ void heartbeat_capture_tick_snapshot(VM* vm, HeartbeatTickSnapshot* snapshot)
      * On VM reset (current < last), treat current value as the full delta. */
 
     /* Cache metrics from hotwords cache */
-    snapshot->cache_hits_delta = 0;  /* TODO: wire hotwords cache hit counter */
-    snapshot->bucket_hits_delta = 0; /* TODO: wire bucket hit counter */
+    {
+        static uint64_t last_cache_hits = 0;
+        static uint64_t last_bucket_hits = 0;
+        uint64_t cur_cache  = (vm->hotwords_cache) ? vm->hotwords_cache->stats.cache_hits  : 0;
+        uint64_t cur_bucket = (vm->hotwords_cache) ? vm->hotwords_cache->stats.bucket_hits : 0;
+        snapshot->cache_hits_delta  = (uint32_t)(cur_cache  >= last_cache_hits  ? cur_cache  - last_cache_hits  : cur_cache);
+        snapshot->bucket_hits_delta = (uint32_t)(cur_bucket >= last_bucket_hits ? cur_bucket - last_bucket_hits : cur_bucket);
+        last_cache_hits  = cur_cache;
+        last_bucket_hits = cur_bucket;
+    }
 
     /* Word execution delta — words executed since the previous heartbeat tick.
      * vm->heartbeat.words_executed is incremented by vm_core.c on every dispatch. */
