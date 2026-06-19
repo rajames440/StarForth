@@ -9,7 +9,6 @@
 
 /* log_words.c — FORTH words for log level control */
 
-#include <string.h>
 #include "include/log_words.h"
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
@@ -56,9 +55,11 @@ static void log_word_log(VM *vm)
     if (level > (cell_t)LOG_DEBUG) level = (cell_t)LOG_DEBUG;
 
     if (u <= 0 || u >= LOG_LINE_MAX) { vm->error = 1; return; }
+    if (c_addr < 0 || (c_addr + u) > VM_MEMORY_SIZE) { vm->error = 1; return; }
 
     char buf[LOG_LINE_MAX];
-    memcpy(buf, (const char *)CELL(c_addr), (size_t)u);
+    for (cell_t i = 0; i < u; i++)
+        buf[i] = (char)vm->memory[c_addr + i];
     buf[u] = '\0';
 
     log_message((LogLevel)level, "%s", buf);
