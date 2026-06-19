@@ -16,6 +16,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Lessons Learned — Hard-Won in the Field
+
+### On Tags
+- **Tags are sacred ground.** Each tag has logs attached proving its state. When in doubt about the correct state of any file or branch, look at the tag first. `git show <tag>` and `git log <tag>` are your oracle.
+- **Two same-day tags = two production targets.** `v3.1.0` = StarForth hosted (master). `v1.5.3` = LithosAnanke bare metal (lithosananke). They diverge intentionally.
+
+### On the FORTH Dictionary
+- **BIRTH, RUN, USE are primitives** — registered in C exactly like DUP, BYE, EXEC. Use `' BIRTH` directly. Never reach for FIND, never add conditionals, never rename them to `CAPSULE-BIRTH` or anything else.
+- **FIND is a proven, tested, registered word. Never modify it.** The implementation is intentionally non-standard (parses from input stream). It is tested. Leave it alone.
+- **Never modify a registered, tested word to "fix" it.** If something seems wrong with a word, the problem is almost certainly in the caller, not the word.
+- **ACL policy belongs in `ACL.4th`, never in C.** No policy logic in `kernel_main.c`, no `vm_find_word` + field assignment for pinning. Use `' WORD ACL-PIN` in FORTH exactly as IMMEDIATE works.
+- **`' BIRTH` in shared capsules breaks the hosted build** — BIRTH is kernel-only. Pin it in a kernel-specific capsule, not in `ACL.4th` which is shared.
+
+### On the Two Production Targets
+- **Every change to shared VM code must compile and behave on both targets.** `src/vm.c`, `include/vm.h`, `capsules/`, `src/word_source/` are shared. Gate with `#ifdef __STARKERNEL__` or `#ifdef STARFORTH_ENABLE_VM`.
+- **`make test` is the hosted acceptance test.** It must pass before touching anything else.
+- **`INPUT_BUFFER_SIZE` must be >= 1025** to hold a full 1024-byte FORTH block + null terminator. 256 is too small and silently truncates block content mid-word.
+
+### On Working Style
+- **When told to stop, stop immediately.** Do not make one more change. Do not commit "just to clean up". Stop.
+- **Show the plan and wait for yes before destructive operations** (force push, reset --hard, branch deletion). The user will say yes explicitly when ready.
+- **Do not over-engineer.** If the user says "BIRTH is a primitive", that is the complete specification. No conditionals, no fallbacks, no renamed variants.
+- **Capsule subsystem wiring belongs in `sk_vm_bootstrap.c`**, not `kernel_main.c`. The bootstrap owns VM init; kernel_main owns hardware milestones.
+- **Compose in FORTH first.** Before writing any new C primitive, exhaust the existing vocabulary. New C words are justified only for raw hardware access, atomics, syscalls, or freestanding kernel ops.
+
+---
+
 ## Word-Level ACL System — Implemented
 
 **Design doc:** `docs/03-architecture/word-acl/DESIGN.md`
