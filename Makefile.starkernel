@@ -82,10 +82,6 @@ DOE_RUNS_DIR       := experiments/bare_metal/runs
 DOE_LATEST_DIR     := experiments/bare_metal/latest
 
 CAPSULES_DIR       ?= capsules
-# CA_SECRET: path to ca.sec binary blob (privkey DER + cert DER).
-# Default: capsules/ca.sec (shared dev CA, all devs have access).
-# Product builds: override with your own:  make CA_SECRET=/path/to/ca.sec
-CA_SECRET          ?= $(CAPSULES_DIR)/ca.sec
 MKCAPSULE_SRC       = tools/mkcapsule.c
 MKCAPSULE_BIN       = $(BUILD_DIR)/tools/mkcapsule
 CAPSULE_GENERATED   = $(BUILD_DIR)/capsule_generated.c
@@ -453,14 +449,9 @@ $(MKCAPSULE_BIN): $(MKCAPSULE_SRC)
 	@cc -std=c99 -Wall -Wextra -O2 -o $@ $<
 
 # Generate capsule_generated.c from capsules/
-# If CA_SECRET is overridden (product build), copy it into place before mkcapsule runs.
 CAPSULE_SRCS := $(shell find $(CAPSULES_DIR) -type f ! -name '.*' 2>/dev/null)
-$(CAPSULE_GENERATED): $(MKCAPSULE_BIN) $(CAPSULE_SRCS) $(CA_SECRET)
+$(CAPSULE_GENERATED): $(MKCAPSULE_BIN) $(CAPSULE_SRCS)
 	@mkdir -p $(dir $@)
-ifneq ($(CA_SECRET),$(CAPSULES_DIR)/ca.sec)
-	@echo "  CA_SECRET override: $(CA_SECRET)"
-	@cp $(CA_SECRET) $(CAPSULES_DIR)/ca.sec
-endif
 	@echo "  MKCAP   $(CAPSULES_DIR) -> $@"
 	@$(MKCAPSULE_BIN) $(CAPSULES_DIR) $@
 
