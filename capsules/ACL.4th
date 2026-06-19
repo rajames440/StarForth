@@ -63,12 +63,14 @@ Block 4005
 ( hosted VM. Pinned in C (kernel_main.c) after capsule )
 ( load instead, so this file stays host-portable.      )
 : ACL-BOOT ( -- )
+  S" ACL-BOOT: starting" LOG-INFO LOG
   ACL-INIT-PRIMITIVES
   ' EXEC   ACL-STRICT  ' EXEC   ACL-PIN
   ' BYE    ACL-STRICT  ' BYE    ACL-PIN
   ' ACL-RECHECK        ACL-PIN
   ' ACL-INIT-PRIMITIVES ACL-PIN
-  ' ACL-BOOT           ACL-PIN ;
+  ' ACL-BOOT           ACL-PIN
+  S" ACL-BOOT: complete" LOG-INFO LOG ;
 
 Block 4006
 ( CA ROOT - Ed25519 public key of system CA.          )
@@ -159,16 +161,20 @@ Block 4014
   ACL-TTL-MODE-VAL SWAP ACL-MODE! ;
 
 : ACL-BOOT-RW ( -- )
+  S" ACL-BOOT-RW: starting" LOG-INFO LOG
   ACL-INIT-PRIMITIVES
   ' EXEC   ACL-STRICT  ' EXEC   ACL-PIN
   ' BYE    ACL-STRICT  ' BYE    ACL-PIN
   ' ACL-RECHECK-RW      ACL-PIN
   ' ACL-INIT-PRIMITIVES ACL-PIN
-  ' ACL-BOOT-RW         ACL-PIN ;
+  ' ACL-BOOT-RW         ACL-PIN
+  S" ACL-BOOT-RW: complete" LOG-INFO LOG ;
 
 Block 4015
 ( Self-activation - runs at capsule load time )
 ( Block 4015 ensures ACL-BOOT-RW is defined before call )
 ( init.4th only needs: S" ACL.4th" EXEC                )
+S" ACL.4th: activating" LOG-INFO LOG
 ACL-BOOT-RW
 S" zuse.4th" EXEC
+S" ACL.4th: zuse loaded" LOG-INFO LOG
