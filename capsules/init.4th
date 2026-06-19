@@ -25,6 +25,12 @@ Block 2049
 \ S" Hermes" BIRTH
 \ S" Artemis" BIRTH
 
+( --- Security toggle ---                                      )
+( ACL on  (default): S" ACL.4th" EXEC  -> prompt: zuse)ok>    )
+( ACL off (no-sec):  comment out line  -> prompt: ok>          )
+( zuse (superuser) is loaded by ACL.4th at block 4015.         )
+( To disable zuse only: edit ACL.4th block 4015, comment out   )
+(   the S" zuse.4th" EXEC line there.                          )
 S" ACL.4th" EXEC
 \ S" doe.4th" EXEC
 BOOT-BANNER
