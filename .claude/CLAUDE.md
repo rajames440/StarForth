@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **USE A SUBVERSION-LIKE WORKFLOW.** Commit and push directly to the working branch. No detours, no side branches, no pull requests unless explicitly requested.
 - **AFTER ANY OUT-OF-BRANCH WORK** (switching branches, resetting, fetching, etc.) always return to the correct working branch and do a full `git fetch` + `git pull` to ensure the working tree is clean and current before continuing.
 - **ALWAYS START CLEAN.** Before doing any work, verify `git status` is clean and the branch is the correct one. No surprises.
+- **ANNOUNCE THE BRANCH** at the start of every session resumption. First line of output after context load: state the current branch and last commit.
 
 ---
 
