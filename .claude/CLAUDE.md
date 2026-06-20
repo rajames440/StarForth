@@ -9,6 +9,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Hard Rules — Captain Bob's Law
 
 - **NEVER CREATE A BRANCH WITHOUT EXPLICIT PERMISSION FROM THE USER.** Work on the branch you are given or already on. Do not create feature branches, session branches, or any other branch unless the user explicitly asks.
+- **NEVER WORK ON MASTER.** `master` is a production branch. All development happens on feature or integration branches. If you find yourself on master, stop and ask.
+- **NEVER STASH WITHOUT EXPLICIT PERMISSION.** `git stash` hides work and creates debt. If the working tree is dirty, report it and wait for instructions. Do not stash to work around a problem.
+- **NEVER APPLY A FIX NOT EXPLICITLY REQUESTED.** If you identify a bug, report it. Do not fix it unless the user says to. Initiative on code changes causes damage.
 - **USE A SUBVERSION-LIKE WORKFLOW.** Commit and push directly to the working branch. No detours, no side branches, no pull requests unless explicitly requested.
 - **AFTER ANY OUT-OF-BRANCH WORK** (switching branches, resetting, fetching, etc.) always return to the correct working branch and do a full `git fetch` + `git pull` to ensure the working tree is clean and current before continuing.
 - **ALWAYS START CLEAN.** Before doing any work, verify `git status` is clean and the branch is the correct one. No surprises.
