@@ -787,6 +787,8 @@ else ifeq ($(ARCH),riscv64)
 	@# riscv64 QEMU virt: pflash firmware + virtio-blk-pci GPT disk.
 	@# El Torito ISO and -bios mode do NOT work on riscv64 virt.
 	@mkdir -p $(QEMU_LOG_DIR) $(DOE_RUNS_DIR) $(DOE_LATEST_DIR)
+	@if ! which sgdisk >/dev/null 2>&1; then echo "Error: sgdisk not found. Install gdisk (apt-get install gdisk)."; exit 1; fi
+	@if ! which mkfs.fat >/dev/null 2>&1; then echo "Error: mkfs.fat not found. Install dosfstools (apt-get install dosfstools)."; exit 1; fi
 	@if [ -f /usr/share/qemu-efi-riscv64/RISCV_VIRT_CODE.fd ]; then \
 		EDK2_RISCV_CODE=/usr/share/qemu-efi-riscv64/RISCV_VIRT_CODE.fd; \
 	elif [ -f /usr/share/qemu/edk2-riscv64-code.fd ]; then \
