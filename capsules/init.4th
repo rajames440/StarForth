@@ -16,12 +16,6 @@ Block 2057
   .SEP CR ;
 Block 2049
 ( first init.4th )
-: STAR 42 EMIT ;
-: STARS 0 DO STAR LOOP ;
-: MARGIN 30 SPACES ;
-: BAR MARGIN 5 STARS CR ;
-: BLIP MARGIN STAR CR ;
-: F CR BAR BLIP BAR BLIP BLIP CR ;
 \ S" Hermes" BIRTH
 \ S" Artemis" BIRTH
 
