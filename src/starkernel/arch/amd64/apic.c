@@ -107,6 +107,18 @@ static uint32_t timer_tick_hz = 0;
  * MSR access (freestanding — no libgcc, no libc)
  * ============================================================================ */
 
+/**
+ * @brief Read a 64-bit Model Specific Register via @c RDMSR.
+ *
+ * Executes the @c RDMSR instruction with @p msr in @c ECX. The processor
+ * returns the high 32 bits in @c EDX and the low 32 bits in @c EAX; this
+ * function combines them into a single 64-bit value. Must run at CPL 0
+ * (ring 0); a #GP fault results if executed in user mode or if @p msr
+ * denotes a reserved or non-existent register.
+ *
+ * @param msr 32-bit MSR index (e.g., @c IA32_APIC_BASE_MSR = 0x1B).
+ * @return Current 64-bit value of the specified MSR.
+ */
 static uint64_t rdmsr64(uint32_t msr)
 {
     uint32_t lo, hi;
@@ -114,6 +126,19 @@ static uint64_t rdmsr64(uint32_t msr)
     return ((uint64_t)hi << 32) | lo;
 }
 
+/**
+ * @brief Write a 64-bit value to a Model Specific Register via @c WRMSR.
+ *
+ * Executes the @c WRMSR instruction with @p msr in @c ECX, the high 32 bits
+ * of @p val in @c EDX, and the low 32 bits in @c EAX. Must run at CPL 0;
+ * a #GP results for reserved, non-existent, or read-only MSRs, or for writes
+ * that set reserved bits. Used here exclusively to manipulate
+ * @c IA32_APIC_BASE_MSR to switch from x2APIC to xAPIC mode and to assert
+ * the global hardware-enable bit.
+ *
+ * @param msr 32-bit MSR index.
+ * @param val 64-bit value to write.
+ */
 static void wrmsr64(uint32_t msr, uint64_t val)
 {
     __asm__ volatile ("wrmsr"
@@ -126,10 +151,36 @@ static void wrmsr64(uint32_t msr, uint64_t val)
  * Low-level APIC access
  * ============================================================================ */
 
+/**
+ * @brief Write a 32-bit value to a Local APIC MMIO register.
+ *
+ * All xAPIC registers are 32-bit wide and 16-byte aligned within the
+ * 4 KB MMIO page at @c lapic_base. The register offset @p reg is a
+ * byte offset (e.g., @c APIC_REG_EOI = 0x0B0); dividing by 4 converts
+ * it to a @c uint32_t array index. Writes must be 32-bit aligned and
+ * must not be merged or reordered by the compiler, hence the
+ * @c volatile qualifier on @c lapic_base.
+ *
+ * @param reg Byte offset of the APIC register (e.g., @c APIC_REG_EOI).
+ * @param val 32-bit value to write.
+ */
 static void lapic_write(uint32_t reg, uint32_t val) {
     lapic_base[reg / 4] = val;
 }
 
+/**
+ * @brief Read a 32-bit value from a Local APIC MMIO register.
+ *
+ * Performs a @c volatile 32-bit MMIO load from the register at byte
+ * offset @p reg within the LAPIC page. The @c volatile qualifier on
+ * @c lapic_base prevents the compiler from caching the value across
+ * reads, which is essential for registers that change asynchronously
+ * (e.g., @c APIC_REG_TIMER_CCR which counts down independently of the
+ * CPU instruction stream).
+ *
+ * @param reg Byte offset of the APIC register (e.g., @c APIC_REG_TIMER_CCR).
+ * @return Current 32-bit value of the register.
+ */
 static uint32_t lapic_read(uint32_t reg) {
     return lapic_base[reg / 4];
 }
@@ -138,6 +189,35 @@ static uint32_t lapic_read(uint32_t reg) {
  * APIC Initialization
  * ============================================================================ */
 
+/**
+ * @brief Initialise the Local APIC in xAPIC MMIO mode.
+ *
+ * Called during M4 (interrupt controller init) before the IDT is loaded.
+ * Performs the following steps:
+ *
+ * 1. Reads @c IA32_APIC_BASE_MSR (0x1B) to determine the current APIC mode.
+ * 2. If x2APIC mode (bit 10) is active, clears it to switch to xAPIC MMIO mode
+ *    while keeping the global-enable bit (bit 11) set, as required by Intel
+ *    SDM Vol.3 §10.12.5 (never clear both bits simultaneously).
+ * 3. If the global-enable bit (bit 11) was clear, sets it.
+ * 4. Software-enables the APIC via @c APIC_REG_SIVR (Spurious Interrupt Vector
+ *    Register) and assigns spurious vector 0xFF.
+ * 5. Clears the Task Priority Register (TPR=0) so all interrupt priorities
+ *    are delivered; a non-zero TPR left by UEFI would silently suppress all
+ *    APIC interrupts at or below that priority level.
+ * 6. Issues a spurious EOI write to clear any stale in-service interrupt
+ *    that UEFI may have left pending (specifically the APIC timer vector
+ *    that fires just before @c ExitBootServices).
+ *
+ * The @p boot_info parameter is reserved for future use (e.g., reading the
+ * ACPI MADT for the physical LAPIC base address); it is currently unused and
+ * the default identity-mapped address @c LAPIC_DEFAULT_PHYS = 0xFEE00000 is
+ * always used.
+ *
+ * @param boot_info Pointer to kernel @c BootInfo (ACPI/memory-map data);
+ *                  currently unused, reserved for MADT-based LAPIC relocation.
+ * @return 0 on success (always; the APIC is assumed to be present on x86-64).
+ */
 int apic_init(BootInfo *boot_info) {
     (void)boot_info;
     lapic_phys_base = LAPIC_DEFAULT_PHYS;
@@ -204,6 +284,18 @@ int apic_init(BootInfo *boot_info) {
     return 0;
 }
 
+/**
+ * @brief Signal End of Interrupt to the Local APIC.
+ *
+ * Writes zero to @c APIC_REG_EOI (offset 0x0B0). This informs the APIC
+ * that the currently serviced interrupt has been handled so that the next
+ * interrupt in the vector's priority class can be delivered. Must be called
+ * at the end of every interrupt service routine before @c IRET; omitting
+ * the EOI stalls all future interrupt delivery at the same or lower priority.
+ *
+ * For the APIC timer heartbeat path this is called inside
+ * @c isr_common_handler() immediately after @c heartbeat_tick().
+ */
 void apic_eoi(void) {
     lapic_write(APIC_REG_EOI, 0);
 }
@@ -213,14 +305,31 @@ void apic_eoi(void) {
  * ============================================================================ */
 
 /**
- * Calibrate APIC timer using TSC.
- * Returns APIC timer ticks per TSC tick (approximate).
+ * @brief Calibrate the APIC timer against the TSC to determine its frequency.
  *
- * Strategy:
- *   1. Set APIC timer to max count, divisor = 1
- *   2. Wait for a fixed TSC interval
- *   3. Read how many APIC timer ticks elapsed
- *   4. Compute ratio
+ * The APIC timer runs from an internal bus-clock-derived source that has no
+ * fixed architectural relationship to the TSC. This function measures the
+ * APIC timer frequency empirically using a TSC-timed spin loop:
+ *
+ * 1. Configures the APIC timer DCR (Divide Configuration Register) to
+ *    divisor 1 for maximum resolution.
+ * 2. Masks the LVT timer entry so no interrupt fires during calibration.
+ * 3. Loads the maximum initial count (0xFFFFFFFF) so the counter does not
+ *    wrap during the measurement window.
+ * 4. Spins for a calibration window of @c tsc_hz/100 TSC ticks (≈ 10 ms)
+ *    using @c arch_read_timestamp(). Falls back to 10,000,000 cycles if
+ *    @p tsc_hz is not yet known.
+ * 5. Reads @c APIC_REG_TIMER_CCR and subtracts from 0xFFFFFFFF to get the
+ *    number of APIC ticks that elapsed in the window.
+ * 6. Scales by @c tsc_hz / calibration_tsc_ticks to obtain APIC Hz.
+ *
+ * If @p tsc_hz is 0 (TSC not yet calibrated), the APIC count is multiplied
+ * by 100 as a rough fallback (assumes the 10M-cycle window was ≈ 10 ms on
+ * a 1 GHz core — good enough for initial bringup on QEMU TCG).
+ *
+ * @param tsc_hz TSC frequency in Hz from @c timer_init(); 0 if not yet known.
+ * @return Measured APIC timer frequency in ticks per second (APIC Hz),
+ *         or 0 if calibration could not produce a meaningful result.
  */
 static uint32_t calibrate_apic_timer(uint64_t tsc_hz) {
     /* Use divisor 1 for maximum resolution */
@@ -268,6 +377,33 @@ static uint32_t calibrate_apic_timer(uint64_t tsc_hz) {
     return (uint32_t)(apic_hz & 0xFFFFFFFFu);
 }
 
+/**
+ * @brief Initialise and configure the APIC timer for periodic heartbeat delivery.
+ *
+ * Calibrates the APIC timer frequency via @c calibrate_apic_timer() then
+ * programs the LVT Timer Register and Initial Count Register to deliver
+ * @c APIC_TIMER_VECTOR periodically at @p tick_hz interrupts per second.
+ * The timer is left @b masked after initialisation; call @c apic_timer_start()
+ * after the IDT is loaded and interrupts are enabled to begin delivery.
+ *
+ * Derived quantities stored for later use:
+ * - @c timer_initial_count — APIC ticks per heartbeat period
+ *   (@c apic_hz / @p tick_hz), written to @c APIC_REG_TIMER_ICR.
+ * - @c timer_tick_hz — requested tick rate (100 Hz default).
+ * - @c timer_period_tsc_ticks — expected TSC ticks per heartbeat
+ *   (@c tsc_hz / @p tick_hz), used by @c heartbeat_tick() to compute
+ *   inter-tick variance for the TIME-TRUST Q48.16 metric.
+ *
+ * If @p tick_hz is 0 it defaults to 100 Hz (10 ms period). If calibration
+ * returns 0 (no APIC timer detected or counter stuck) the function prints
+ * a diagnostic and returns -1 without programming the timer.
+ *
+ * @param tsc_hz TSC frequency in Hz (from @c timer_init()); used to derive
+ *               the 10 ms calibration window and @c timer_period_tsc_ticks.
+ *               Pass 0 if TSC is not yet calibrated.
+ * @param tick_hz Desired interrupt rate in Hz; 0 → defaults to 100 Hz.
+ * @return 0 on success, -1 if APIC timer calibration failed.
+ */
 int apic_timer_init(uint64_t tsc_hz, uint32_t tick_hz) {
     if (tick_hz == 0) {
         tick_hz = 100;  /* Default: 100 Hz (10ms period) */
@@ -351,6 +487,26 @@ int apic_timer_init(uint64_t tsc_hz, uint32_t tick_hz) {
     return 0;
 }
 
+/**
+ * @brief Unmask and re-arm the APIC timer to begin periodic interrupt delivery.
+ *
+ * Called after @c arch_interrupts_init() and @c arch_enable_interrupts()
+ * to start the 100 Hz heartbeat that drives @c heartbeat_tick(). The
+ * sequence is:
+ *
+ * 1. Read the current LVT Timer Register.
+ * 2. Clear the @c LVT_MASKED bit (bit 16) to unmask the interrupt.
+ * 3. Write the LVT register back.
+ * 4. Write @c timer_initial_count to @c APIC_REG_TIMER_ICR to (re-)arm the
+ *    countdown. QEMU TCG requires an explicit ICR write after unmask — it
+ *    does not auto-restart a previously masked periodic timer. On real
+ *    hardware this is harmless and equally correct.
+ * 5. Reads back LVT and ICR values and prints them for boot-log verification.
+ *
+ * Must be called exactly once per boot after the IDT is loaded. Calling it
+ * again restarts the countdown from the initial value without otherwise
+ * reconfiguring the timer.
+ */
 void apic_timer_start(void) {
     /* Unmask the timer first */
     uint32_t lvt = lapic_read(APIC_REG_LVT_TIMER);
@@ -387,6 +543,19 @@ void apic_timer_start(void) {
     console_puts(")\r\n");
 }
 
+/**
+ * @brief Mask the APIC timer to suppress further periodic interrupts.
+ *
+ * Sets the @c LVT_MASKED bit (bit 16) in the LVT Timer Register by
+ * performing a read-modify-write on @c APIC_REG_LVT_TIMER. The existing
+ * periodic-mode and vector configuration is preserved; only the mask bit
+ * changes. The APIC timer's internal countdown continues running but
+ * interrupt delivery is suppressed. Calling @c apic_timer_start() again
+ * after this function will unmask and re-arm the timer.
+ *
+ * Used in the kernel panic path and during any critical section where
+ * heartbeat interrupts would corrupt shared state.
+ */
 void apic_timer_stop(void) {
     /* Mask the timer to stop interrupts */
     uint32_t lvt = lapic_read(APIC_REG_LVT_TIMER);
@@ -394,6 +563,22 @@ void apic_timer_stop(void) {
     lapic_write(APIC_REG_LVT_TIMER, lvt);
 }
 
+/**
+ * @brief Return the expected TSC-tick count per APIC heartbeat period.
+ *
+ * Returns @c timer_period_tsc_ticks, computed by @c apic_timer_init() as
+ * @c tsc_hz / @c tick_hz. The value represents the ideal number of TSC
+ * ticks that should elapse between consecutive @c APIC_TIMER_VECTOR
+ * interrupts when the TSC runs at @c tsc_hz Hz and the heartbeat runs at
+ * @c tick_hz Hz.
+ *
+ * Used by @c timer.c to seed the heartbeat rolling window with the
+ * nominal inter-tick interval so that the first few ticks produce
+ * meaningful variance estimates rather than comparing against zero.
+ * Returns 0 if @c tsc_hz was 0 at initialisation time (TSC unknown).
+ *
+ * @return Expected TSC ticks per heartbeat period, or 0 if unavailable.
+ */
 uint64_t apic_timer_period_tsc(void) {
     return timer_period_tsc_ticks;
 }

@@ -57,6 +57,23 @@ volatile const char *g_sk_fault_word = (void *)0;
 #define IDT_ENTRIES 256
 #define INTERRUPT_GATE 0x8E
 
+/**
+ * @brief Write a single byte to an x86 I/O port via @c OUT.
+ *
+ * Issues the @c OUT instruction to port @p port with data byte @p val.
+ * Used exclusively to program the legacy 8259 PIC's interrupt-mask
+ * registers during @c pic_disable(). In a kernel that uses the Local APIC
+ * for all interrupt delivery the PIC must be fully masked before enabling
+ * CPU interrupts; otherwise spurious IRQ0 from the PIC timer can corrupt
+ * the APIC timer ISR path.
+ *
+ * The @c "Nd" constraint allows the assembler to emit the short-form
+ * @c OUT @p imm8 encoding for constants in [0, 255] and the register form
+ * @c OUT @c DX otherwise.
+ *
+ * @param port 16-bit I/O port number (e.g., 0x21 = PIC1 data, 0xA1 = PIC2 data).
+ * @param val  Byte value to write to the port.
+ */
 static inline void outb(uint16_t port, uint8_t val)
 {
     __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
@@ -96,6 +113,25 @@ extern void isr_common_handler(uint64_t vector,
 
 static struct idt_entry idt[IDT_ENTRIES];
 
+/**
+ * @brief Write a single 64-bit interrupt gate descriptor into the IDT.
+ *
+ * Fills @c idt[@p vector] with an x86-64 interrupt gate (type 0x8E):
+ * - @c offset_low / @c offset_mid / @c offset_high — three parts of the
+ *   ISR handler address @p isr split across the 16-byte descriptor layout.
+ * - @c selector = 0x08 — kernel code segment (GDT slot 1).
+ * - @c ist = 0 — no interrupt stack table; uses the current RSP.
+ * - @c type_attr = @c INTERRUPT_GATE (0x8E) — P=1, DPL=0, 64-bit interrupt gate;
+ *   the CPU automatically clears RFLAGS.IF on entry.
+ * - @c zero = 0 — upper reserved dword must be zero.
+ *
+ * Called once per vector inside @c arch_interrupts_init()'s loop after
+ * the relocation offset has been applied to the stub address from
+ * @c isr_stub_table.
+ *
+ * @param vector IDT vector index [0, 255].
+ * @param isr    Runtime address of the per-vector assembly stub in @c isr.S.
+ */
 static void set_idt_entry(int vector, void *isr) {
     uint64_t addr = (uint64_t)isr;
     idt[vector].offset_low  = (uint16_t)(addr & 0xFFFFu);
@@ -107,10 +143,34 @@ static void set_idt_entry(int vector, void *isr) {
     idt[vector].zero        = 0;
 }
 
+/**
+ * @brief Load the Interrupt Descriptor Table register (@c LIDT).
+ *
+ * Executes the @c LIDT instruction with the descriptor at @p idtr_desc,
+ * which contains the 16-bit limit (byte size of the IDT minus 1) and the
+ * 64-bit linear base address of the IDT array. After this instruction the
+ * CPU uses the new IDT for all exception and interrupt dispatch.
+ *
+ * Must be called after all 256 entries in @c idt[] have been filled by
+ * @c set_idt_entry(). Called at the end of @c arch_interrupts_init().
+ *
+ * @param idtr_desc Pointer to an @c idtr struct containing limit and base.
+ */
 static void lidt(struct idtr *idtr_desc) {
     __asm__ volatile ("lidt (%0)" :: "r"(idtr_desc));
 }
 
+/**
+ * @brief Print a 64-bit value as 16 lowercase hex digits to the kernel console.
+ *
+ * Emits exactly 16 nibbles (no @c 0x prefix, no separators) by iterating
+ * from bit 60 down to bit 0 in steps of 4. Used exclusively by
+ * @c isr_common_handler() to print register values (RIP, CR2, RSP, RBP,
+ * return address) in the exception diagnostic dump. No allocation or libc
+ * dependency.
+ *
+ * @param value 64-bit value to format as lowercase hex.
+ */
 static void print_hex64(uint64_t value) {
     for (int i = 60; i >= 0; i -= 4) {
         uint8_t nib = (uint8_t)((value >> (uint64_t)i) & 0xFu);
@@ -118,6 +178,17 @@ static void print_hex64(uint64_t value) {
     }
 }
 
+/**
+ * @brief Print a 64-bit unsigned integer in decimal to the kernel console.
+ *
+ * Converts @p v to a decimal ASCII string using a 32-byte stack buffer
+ * (digit reversal technique) and emits each character via @c console_putc().
+ * Prints "0" for a zero value. Used by @c isr_common_handler() to print
+ * the exception vector number in decimal alongside its hex representation.
+ * No allocation or libc dependency.
+ *
+ * @param v 64-bit unsigned integer to print.
+ */
 static void print_dec_u64(uint64_t v) {
     /* tiny decimal printer, no malloc, no libc */
     char buf[32];
@@ -137,6 +208,23 @@ static void print_dec_u64(uint64_t v) {
     }
 }
 
+/**
+ * @brief Fully mask the legacy 8259A PIC to suppress all legacy IRQs.
+ *
+ * Writes 0xFF to PIC1's interrupt-mask register (port 0x21) and PIC2's
+ * interrupt-mask register (port 0xA1). When all bits are set every IRQ
+ * line (IRQ0–IRQ15) is masked and the PIC will not assert INTR to the CPU.
+ *
+ * This is necessary because UEFI firmware initialises the 8259 PIC in
+ * compatibility mode with IRQ0 (timer) running at 18.2 Hz. After
+ * @c ExitBootServices() the firmware no longer handles these IRQs; if the
+ * PIC is not masked before @c STI, spurious PIC interrupts are delivered
+ * to the kernel's IDT at legacy vectors 0x20–0x2F, most of which have not
+ * been set up as ISRs and will triple-fault.
+ *
+ * Called from @c arch_interrupts_init() after the IDT is loaded but
+ * before @c arch_enable_interrupts().
+ */
 static void pic_disable(void)
 {
     /* Mask all IRQs on PIC1 and PIC2 to avoid spurious legacy interrupts */
@@ -144,6 +232,29 @@ static void pic_disable(void)
     outb(0xA1, 0xFF);
 }
 
+/**
+ * @brief Decode and print the x86-64 Page Fault error code to the kernel console.
+ *
+ * The processor pushes a 32-bit error code onto the stack for a #PF
+ * (vector 14). Each bit encodes information about the faulting access:
+ *
+ * - bit 0 (P): 0 = page not present; 1 = protection violation.
+ * - bit 1 (W/R): 0 = read access; 1 = write access.
+ * - bit 2 (U/S): 0 = supervisor mode access; 1 = user mode access.
+ * - bit 3 (RSVD): 1 = fault caused by a reserved bit set in a PTE.
+ * - bit 4 (I/D): 1 = instruction fetch (no-execute violation).
+ * - bit 5 (PK): 1 = protection-key violation (if PKRU is active).
+ * - bit 6 (SS): 1 = shadow-stack access violation (CET).
+ * - bit 15 (SGX): 1 = SGX enclave access violation.
+ *
+ * Prints each active flag as a short tag to the kernel console followed
+ * by a newline. The CR2 register (captured by the ISR stub) holds the
+ * faulting linear address and is printed separately by
+ * @c isr_common_handler().
+ *
+ * @param ec 64-bit page fault error code (upper 32 bits are always zero
+ *           on current x86-64 hardware; tested up to bit 15 per SDM).
+ */
 static void decode_pf_error(uint64_t ec)
 {
     /*
@@ -169,6 +280,50 @@ static void decode_pf_error(uint64_t ec)
     console_println("");
 }
 
+/**
+ * @brief Unified C-level interrupt and exception handler.
+ *
+ * All 256 IDT entries funnel through a common assembly trampoline in
+ * @c isr.S which captures caller-saved registers, reads @c CR2 (the
+ * page-fault linear address), normalises the error code to 0 for vectors
+ * that do not push one, and then calls this function with six arguments
+ * reconstructed from the interrupt stack frame.
+ *
+ * **APIC timer path (vector == @c APIC_TIMER_VECTOR):**
+ * Calls @c heartbeat_tick() to update the rolling window of inter-tick TSC
+ * deviations, then issues @c apic_eoi() and returns. This is the hot path
+ * — it executes at 100 Hz during normal kernel operation and must be kept
+ * brief.
+ *
+ * **Exception path (all other vectors):**
+ * Prints a structured diagnostic to the kernel console:
+ * - Vector number (decimal and hex)
+ * - Error code (hex)
+ * - RIP (hex) — faulting instruction pointer
+ * - CR2 (hex) — page-fault linear address (meaningful only for vector 14)
+ * - RSP (derived from @p stack_frame_ptr + 160, covering the ISR stub's
+ *   pushed register block)
+ * - RBP (read from the saved-register block at @p stack_frame_ptr + 64)
+ * - Return address (first quadword at the derived RSP)
+ * - Vector-specific decoding: @c #DE (0), @c #GP (13) with the active FORTH
+ *   word name from @c g_sk_fault_word, @c #PF (14) with @c decode_pf_error().
+ * Then halts the CPU in an infinite @c HLT loop — exceptions are fatal.
+ *
+ * The @p cs and @p rflags parameters are currently unused (suppressed with
+ * @c (void) casts) but retained in the signature for future use (e.g.,
+ * printing privilege level on #GP).
+ *
+ * @param vector         IDT vector that fired [0, 255].
+ * @param error_code     Error code from the CPU stack (0 if not applicable).
+ * @param rip            Faulting or interrupted instruction pointer.
+ * @param cs             Code segment selector at the time of the interrupt.
+ * @param rflags         RFLAGS at the time of the interrupt.
+ * @param cr2            Value of @c CR2 (page-fault linear address; only
+ *                       architecturally meaningful for vector 14).
+ * @param stack_frame_ptr Address of the ISR stub's saved-register block on
+ *                        the stack; used to reconstruct RSP and RBP for the
+ *                        diagnostic dump.
+ */
 void isr_common_handler(uint64_t vector,
                         uint64_t error_code,
                         uint64_t rip,
@@ -247,6 +402,36 @@ void isr_common_handler(uint64_t vector,
  */
 extern void isr_stub0(void) __attribute__((visibility("hidden")));  /* Defined in isr.S */
 
+/**
+ * @brief Initialise the x86-64 IDT and disable the legacy 8259 PIC (M4).
+ *
+ * This is the M4 milestone function called from @c kernel_main() after the
+ * GDT is live (@c arch_early_init()) and before @c arch_enable_interrupts().
+ * It performs three operations:
+ *
+ * 1. **Relocation fixup for the ISR stub table.**
+ *    @c isr.S exports @c isr_stub_table[], a 256-entry table of link-time
+ *    function pointers assembled at their expected virtual addresses. In a
+ *    UEFI PE32+ image the UEFI loader places the image at an arbitrary base;
+ *    pointer-sized relocations in @c .data are not applied by the PE loader
+ *    (only code-relative relocations in @c .text are). The fixup computes the
+ *    runtime delta between @c isr_stub0's runtime address and its link-time
+ *    address stored in @c isr_stub_table[0], then applies that delta to every
+ *    entry before installing it in the IDT.
+ *
+ * 2. **Fill all 256 IDT entries.**
+ *    Calls @c set_idt_entry() for each vector with the corrected stub address,
+ *    selector 0x08, IST 0, and type_attr @c INTERRUPT_GATE (0x8E).
+ *
+ * 3. **Load the IDT and mask the PIC.**
+ *    Calls @c lidt() with the fully populated @c idt[] array, then calls
+ *    @c pic_disable() to mask both PIC1 and PIC2 before @c STI is issued.
+ *    This prevents spurious legacy PIC IRQs from reaching the IDT before the
+ *    Local APIC takes over.
+ *
+ * Must be called after @c gdt_init() (for selector 0x08) and before
+ * @c apic_init() / @c apic_timer_init() / @c arch_enable_interrupts().
+ */
 void arch_interrupts_init(void)
 {
     uint64_t link_time_addr = (uint64_t)isr_stub_table[0];
