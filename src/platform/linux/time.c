@@ -56,6 +56,17 @@
 
 /* POSIX implementation */
 
+/**
+ * @brief Return the current monotonic time in nanoseconds.
+ *
+ * Reads @c CLOCK_MONOTONIC via @c clock_gettime(). The clock advances
+ * continuously and is unaffected by wall-clock adjustments — suitable for
+ * measuring elapsed durations such as execution latency and decay intervals.
+ * Returns 0 on @c clock_gettime() failure (should not occur on any modern
+ * POSIX kernel).
+ *
+ * @return Nanoseconds since an arbitrary but fixed epoch, or 0 on error
+ */
 static sf_time_ns_t posix_get_monotonic_ns(void) {
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0)
@@ -63,6 +74,15 @@ static sf_time_ns_t posix_get_monotonic_ns(void) {
     return (sf_time_ns_t) ts.tv_sec * 1000000000ULL + (sf_time_ns_t) ts.tv_nsec;
 }
 
+/**
+ * @brief Return the current wall-clock time in nanoseconds since the Unix epoch.
+ *
+ * Reads @c CLOCK_REALTIME via @c clock_gettime(). Subject to NTP or @c settimeofday()
+ * adjustments — use @c posix_get_monotonic_ns() for interval timing.
+ * Returns 0 on @c clock_gettime() failure.
+ *
+ * @return Nanoseconds since 1970-01-01 00:00:00 UTC, or 0 on error
+ */
 static sf_time_ns_t posix_get_realtime_ns(void) {
     struct timespec ts;
     if (clock_gettime(CLOCK_REALTIME, &ts) != 0)
@@ -70,6 +90,16 @@ static sf_time_ns_t posix_get_realtime_ns(void) {
     return (sf_time_ns_t) ts.tv_sec * 1000000000ULL + (sf_time_ns_t) ts.tv_nsec;
 }
 
+/**
+ * @brief Set the system real-time clock to @c ns_since_epoch.
+ *
+ * Converts @c ns_since_epoch to a @c struct timespec and calls
+ * @c clock_settime(CLOCK_REALTIME). Requires @c CAP_SYS_TIME or equivalent
+ * privilege; fails with @c EPERM if the caller lacks permission.
+ *
+ * @param ns_since_epoch Desired new wall-clock time in nanoseconds since Unix epoch
+ * @return 0 on success, non-zero errno-encoded error on failure
+ */
 static int posix_set_realtime_ns(sf_time_ns_t ns_since_epoch) {
     struct timespec ts;
     ts.tv_sec = (time_t)(ns_since_epoch / 1000000000ULL);
@@ -77,6 +107,20 @@ static int posix_set_realtime_ns(sf_time_ns_t ns_since_epoch) {
     return clock_settime(CLOCK_REALTIME, &ts);
 }
 
+/**
+ * @brief Format a nanosecond-precision wall-clock time as a human-readable string.
+ *
+ * Converts @c ns_since_epoch to local time, formats hours/minutes/seconds via
+ * @c strftime(), then appends a three-digit millisecond suffix. The result is
+ * written into @c buf (must be at least @c SF_TIME_STAMP_SIZE bytes). On
+ * @c localtime() or @c strftime() failure, writes @c "??:??:??.???" into @c buf
+ * and returns -1.
+ *
+ * @param ns_since_epoch Wall-clock time in nanoseconds since Unix epoch
+ * @param buf            Output buffer (at least @c SF_TIME_STAMP_SIZE bytes); must not be NULL
+ * @param format_24h     Non-zero for 24-hour format (@c %H:%M:%S), zero for 12-hour (@c %I:%M:%S %p)
+ * @return 0 on success, -1 if @c buf is NULL or time formatting fails
+ */
 static int posix_format_timestamp(sf_time_ns_t ns_since_epoch, char *buf, int format_24h) {
     if (!buf)
         return -1;
@@ -102,6 +146,16 @@ static int posix_format_timestamp(sf_time_ns_t ns_since_epoch, char *buf, int fo
     return 0;
 }
 
+/**
+ * @brief Probe whether a real-time clock is available.
+ *
+ * Attempts a @c clock_gettime(CLOCK_REALTIME) probe. POSIX systems invariably
+ * support @c CLOCK_REALTIME so this will return 1 in practice; the check
+ * mirrors the bare-metal backend's interface where RTC presence is genuinely
+ * uncertain.
+ *
+ * @return 1 if @c CLOCK_REALTIME is readable, 0 otherwise
+ */
 static int posix_has_rtc(void) {
     /* POSIX systems typically have working CLOCK_REALTIME */
     struct timespec ts;
