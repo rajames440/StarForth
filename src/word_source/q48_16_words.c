@@ -59,6 +59,18 @@
  * - For platforms without uint128_t, use uint64_t with overflow check
  */
 
+/**
+ * @brief Multiply two Q48.16 fixed-point values.
+ *
+ * Computes @c (a * b) >> 16 to maintain the Q48.16 scale. Uses
+ * @c __uint128_t on GCC/Clang (128-bit intermediate, no precision loss)
+ * and falls back to a manual 64-bit four-partial-product path with carry
+ * tracking on platforms that lack @c __SIZEOF_INT128__.
+ *
+ * @param a First operand in Q48.16 format
+ * @param b Second operand in Q48.16 format
+ * @return Product in Q48.16 format (truncated, not rounded)
+ */
 q48_16_t q48_mul(q48_16_t a, q48_16_t b)
 {
     /* Use __uint128_t if available (GCC/Clang) */
@@ -103,6 +115,17 @@ q48_16_t q48_mul(q48_16_t a, q48_16_t b)
  * Precondition: b > 0 (division by zero check in caller)
  */
 
+/**
+ * @brief Divide two Q48.16 fixed-point values.
+ *
+ * Computes @c (a << 16) / b. Returns 0 if @c b == 0 (safe, but callers
+ * should guard). Returns @c UINT64_MAX as a saturation sentinel when @c a
+ * exceeds 2^48, which would overflow the 16-bit left-shift.
+ *
+ * @param a Dividend in Q48.16 format
+ * @param b Divisor in Q48.16 format; 0 returns 0
+ * @return Quotient in Q48.16 format, or UINT64_MAX on saturation
+ */
 q48_16_t q48_div(q48_16_t a, q48_16_t b)
 {
     if (b == 0) {
@@ -128,6 +151,16 @@ q48_16_t q48_div(q48_16_t a, q48_16_t b)
  * ============================================================================
  */
 
+/**
+ * @brief Convert a @c double to Q48.16 format.
+ *
+ * Multiplies @c d by 65536.0 and rounds to nearest. Intended for
+ * testing and diagnostics only — not called in the inference engine
+ * hot path to avoid floating-point dependency.
+ *
+ * @param d Value to convert
+ * @return Nearest Q48.16 representation of @c d
+ */
 q48_16_t q48_from_double(double d)
 {
     /* Convert double to Q48.16 */
@@ -135,6 +168,15 @@ q48_16_t q48_from_double(double d)
     return (q48_16_t)(d * 65536.0 + 0.5);  /* Round to nearest */
 }
 
+/**
+ * @brief Convert a Q48.16 value to @c double.
+ *
+ * Divides @c q by 65536.0. Used for logging and RStudio dashboard output;
+ * not called in the inference engine hot path.
+ *
+ * @param q Value in Q48.16 format
+ * @return Equivalent @c double value
+ */
 double q48_to_double(q48_16_t q)
 {
     /* Convert Q48.16 to double */
@@ -161,6 +203,20 @@ double q48_to_double(q48_16_t q)
  * 3. Do 4-5 iterations for Q48.16 precision
  */
 
+/**
+ * @brief Compute an approximation of @c ln(x) in Q48.16 format (integer-only).
+ *
+ * Used by @c infer_decay_slope_q48() (Loop #6) for log-linear OLS regression.
+ * Algorithm: range-reduces @c x to the interval [1, 2) by tracking the
+ * exponent @c k (so @c x = 2^k * m), applies 6 Newton-Raphson iterations on
+ * @c e^y = m starting from the first-order approximation @c y_0 = m - 1,
+ * then assembles the result as @c ln(x) = k*ln(2) + ln(m). Returns 0 for
+ * @c x == 0 (ln undefined) and for @c x == 65536 (ln(1.0) == 0.0 exactly).
+ * @c LN2_Q48 = 45426 (0.693147... × 65536).
+ *
+ * @param x Input value in Q48.16 format (uint64_t; value of 65536 = 1.0)
+ * @return @c ln(x) in Q48.16 format, or 0 for x==0 or x==65536
+ */
 q48_16_t q48_log_approx(uint64_t x)
 {
     if (x == 0) {
@@ -248,6 +304,18 @@ q48_16_t q48_log_approx(uint64_t x)
  * For Q48.16 arithmetic, compute 6-8 terms for good precision.
  */
 
+/**
+ * @brief Compute an approximation of @c e^q in Q48.16 format (Taylor series).
+ *
+ * Supporting function for @c q48_log_approx() Newton iterations. Uses the
+ * Taylor series @c 1 + x + x²/2! + … up to 10 terms, with an early-exit when
+ * a term falls below 50 (sub-LSB in Q48.16). Handles negative @c q by
+ * computing @c e^|q| then returning @c 1/result. Returns 1.0 (65536) for
+ * @c q == 0, @c UINT64_MAX for @c q >= 16.0, and 0 for @c q <= -16.0.
+ *
+ * @param q Exponent in Q48.16 format (signed interpretation)
+ * @return @c e^q in Q48.16 format
+ */
 q48_16_t q48_exp_approx(q48_16_t q)
 {
     /* Handle special cases */
@@ -306,6 +374,18 @@ q48_16_t q48_exp_approx(q48_16_t q)
  * x_{n+1} = (x_n + q/x_n) / 2
  */
 
+/**
+ * @brief Compute an approximation of @c sqrt(q) in Q48.16 format (Newton-Raphson).
+ *
+ * Iterates @c x_{n+1} = (x_n + q/x_n) / 2 starting from @c (q >> 1) + 16384,
+ * for up to 8 iterations. Terminates early when the delta between successive
+ * estimates falls below 10 (approximately 0.00015 in Q48.16). Used for R²
+ * computation in the inference engine. Returns 0 for @c q == 0, and 1.0
+ * (65536) for @c q == 65536.
+ *
+ * @param q Input value in Q48.16 format
+ * @return @c sqrt(q) in Q48.16 format
+ */
 q48_16_t q48_sqrt_approx(q48_16_t q)
 {
     if (q == 0) {
@@ -339,6 +419,16 @@ q48_16_t q48_sqrt_approx(q48_16_t q)
  * ============================================================================
  */
 
+/**
+ * @brief Format a Q48.16 value as a decimal string @c "INTEGER.FRAC".
+ *
+ * Writes into a static buffer — not thread-safe and not re-entrant.
+ * The fractional part is expressed as 5 decimal digits
+ * (@c frac_part * 100000 / 65536). Intended for diagnostic logging.
+ *
+ * @param q Value in Q48.16 format
+ * @return Pointer to a static buffer containing the formatted string
+ */
 const char* q48_to_string(q48_16_t q)
 {
     static char buf[64];
@@ -353,6 +443,16 @@ const char* q48_to_string(q48_16_t q)
     return buf;
 }
 
+/**
+ * @brief Test whether a Q48.16 value is valid.
+ *
+ * Currently accepts any @c uint64_t value as valid — all bit patterns are
+ * representable in Q48.16. A more sophisticated implementation could check
+ * for saturation sentinels or range limits. Returns 1 always.
+ *
+ * @param q Value to validate
+ * @return 1 always (placeholder for future range validation)
+ */
 int q48_is_valid(q48_16_t q)
 {
     /* Q48.16 is always valid if it fits in uint64_t */

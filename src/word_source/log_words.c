@@ -15,14 +15,30 @@
 
 /* ── Level constants ─────────────────────────────────────────────────── */
 
+/** @brief LOG-ERROR ( -- n )  Push the @c LOG_ERROR level constant. Stack: ( -- LOG_ERROR ) */
 static void log_word_error(VM *vm) { vm_push(vm, (cell_t)LOG_ERROR); }
+/** @brief LOG-WARN  ( -- n )  Push the @c LOG_WARN level constant.  Stack: ( -- LOG_WARN  ) */
 static void log_word_warn (VM *vm) { vm_push(vm, (cell_t)LOG_WARN);  }
+/** @brief LOG-INFO  ( -- n )  Push the @c LOG_INFO level constant.  Stack: ( -- LOG_INFO  ) */
 static void log_word_info (VM *vm) { vm_push(vm, (cell_t)LOG_INFO);  }
+/** @brief LOG-TEST  ( -- n )  Push the @c LOG_TEST level constant.  Stack: ( -- LOG_TEST  ) */
 static void log_word_test (VM *vm) { vm_push(vm, (cell_t)LOG_TEST);  }
+/** @brief LOG-DEBUG ( -- n )  Push the @c LOG_DEBUG level constant. Stack: ( -- LOG_DEBUG ) */
 static void log_word_debug(VM *vm) { vm_push(vm, (cell_t)LOG_DEBUG); }
 
 /* ── LOG-LEVEL! ( n -- ) ─────────────────────────────────────────────── */
 
+/**
+ * @brief LOG-LEVEL! ( n -- )
+ *
+ * Pops @c n from the stack and calls @c log_set_level() to update the active
+ * log filter. Values below @c LOG_ERROR are clamped to @c LOG_ERROR; values
+ * above @c LOG_DEBUG are clamped to @c LOG_DEBUG.
+ *
+ * Stack effect: ( n -- )
+ *
+ * @param vm Active VM; sets @c vm->error = 1 on stack underflow
+ */
 static void log_word_set_level(VM *vm)
 {
     if (vm->dsp < 0) { vm->error = 1; return; }
@@ -34,6 +50,15 @@ static void log_word_set_level(VM *vm)
 
 /* ── LOG-LEVEL@ ( -- n ) ─────────────────────────────────────────────── */
 
+/**
+ * @brief LOG-LEVEL@ ( -- n )
+ *
+ * Pushes the current log level (as returned by @c log_get_level()) onto the stack.
+ *
+ * Stack effect: ( -- current_level )
+ *
+ * @param vm Active VM
+ */
 static void log_word_get_level(VM *vm)
 {
     vm_push(vm, (cell_t)log_get_level());
@@ -41,6 +66,14 @@ static void log_word_get_level(VM *vm)
 
 /* ── Registration ────────────────────────────────────────────────────── */
 
+/**
+ * @brief Register all log-level control words with the VM dictionary.
+ *
+ * Registers: @c LOG-ERROR, @c LOG-WARN, @c LOG-INFO, @c LOG-TEST,
+ * @c LOG-DEBUG, @c LOG-LEVEL!, @c LOG-LEVEL@. Called during VM bootstrap.
+ *
+ * @param vm Active VM to register words into
+ */
 void register_log_words(VM *vm)
 {
     register_word(vm, "LOG-ERROR", log_word_error);
