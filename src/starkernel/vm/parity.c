@@ -128,6 +128,18 @@ static void sk_parity_debug_check_ptr(struct VM *vm,
  * to avoid GOT indirection issues with -fPIC. The rodata/data/bss section
  * checks are skipped since XT pointers should only be in text section. */
 
+/**
+ * @brief Emit a @c SK_PARITY_DEBUG_PREFIX-prefixed diagnostic message line.
+ *
+ * Prints @c "SKPD:<msg>\n" to the kernel console or stdout. Used throughout
+ * parity traversal to trace the hash walk when @c SK_PARITY_DEBUG=1.
+ * Prints @c "<null>" if @p msg is @c NULL.
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero; all call sites are
+ * macro-eliminated otherwise.
+ *
+ * @param msg Null-terminated diagnostic message string.
+ */
 static void sk_parity_debug_log_msg(const char *msg)
 {
     print_str(SK_PARITY_DEBUG_PREFIX);
@@ -135,6 +147,19 @@ static void sk_parity_debug_log_msg(const char *msg)
     print_nl();
 }
 
+/**
+ * @brief Test whether a 64-bit address is a canonical x86-64 virtual address.
+ *
+ * On x86-64, bits [63:48] must all equal bit 47 (sign-extend). This function
+ * checks that invariant: extracts bit 47, then verifies that the upper 16 bits
+ * (@c SK_PARITY_CANONICAL_MASK) are either all-zero (user space) or all-one
+ * (kernel space).
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param addr 64-bit virtual address to test.
+ * @return @c true if @p addr is canonical, @c false otherwise.
+ */
 static bool sk_parity_debug_is_canonical(uint64_t addr)
 {
     uint64_t sign = (addr >> 47) & 1ULL;
@@ -142,6 +167,25 @@ static bool sk_parity_debug_is_canonical(uint64_t addr)
     return sign ? ((addr & mask) == mask) : ((addr & mask) == 0);
 }
 
+/**
+ * @brief Classify a pointer into a known memory region for debug diagnostics.
+ *
+ * Checks @p ptr against known address ranges in the following priority order:
+ * 1. @c NULL → @c SK_PTR_REGION_NULL
+ * 2. VM arena [@c vm->memory, @c vm->memory + VM_MEMORY_SIZE) →
+ *    @c SK_PTR_REGION_VM_ARENA
+ * 3. Kernel .text section [sk_hal_text_start(), sk_hal_text_end()) →
+ *    @c SK_PTR_REGION_TEXT  (kernel build only; rodata/data/bss skipped)
+ * 4. Direct-map region (≥ @c SK_PARITY_DIRECTMAP_BASE) →
+ *    @c SK_PTR_REGION_DIRECTMAP  (kernel build only)
+ * 5. Anything else → @c SK_PTR_REGION_UNKNOWN
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param vm  Active VM (used for arena base/size); may be @c NULL.
+ * @param ptr Pointer to classify.
+ * @return One of the @c sk_parity_ptr_region enum values.
+ */
 static enum sk_parity_ptr_region sk_parity_classify_region(struct VM *vm, const void *ptr)
 {
     if (!ptr) {
@@ -171,6 +215,17 @@ static enum sk_parity_ptr_region sk_parity_classify_region(struct VM *vm, const 
     return SK_PTR_REGION_UNKNOWN;
 }
 
+/**
+ * @brief Return a human-readable name for a @c sk_parity_ptr_region value.
+ *
+ * Used by debug print helpers to label pointer regions in diagnostic output.
+ * Returns @c "unknown" for any value not listed in the enum.
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param region Enum value from @c sk_parity_classify_region().
+ * @return Pointer to a static string literal naming the region.
+ */
 static const char *sk_parity_region_name(enum sk_parity_ptr_region region)
 {
     switch (region) {
@@ -185,6 +240,18 @@ static const char *sk_parity_region_name(enum sk_parity_ptr_region region)
     }
 }
 
+/**
+ * @brief Print the name of a dictionary entry to the console for debug output.
+ *
+ * Copies @p entry->name into a local null-terminated buffer (bounded by
+ * @c WORD_NAME_MAX) and emits it via @c print_str(). Prints @c "<none>" if
+ * @p entry is @c NULL. Used by @c sk_parity_debug_panic() to identify the
+ * word being hashed when a pointer violation is detected.
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param entry Dictionary entry whose name to print; may be @c NULL.
+ */
 static void sk_parity_debug_print_word_name(const DictEntry *entry)
 {
     if (!entry) {
@@ -203,6 +270,21 @@ static void sk_parity_debug_print_word_name(const DictEntry *entry)
     print_str(buf);
 }
 
+/**
+ * @brief Log a pointer's address, canonicality, and region to the console.
+ *
+ * Emits a single debug line in the format:
+ * @c "SKPD:<label>=0xADDR canon=Y/N region=<region_name>\n".
+ * Used by @c sk_parity_debug_check_ptr() to trace each pointer inspected
+ * during the canonical hash walk.
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param label    Short string label for the pointer (e.g., "colon_entry").
+ * @param ptr      Pointer whose address is to be printed.
+ * @param region   Region classification from @c sk_parity_classify_region().
+ * @param canonical Whether @p ptr is a canonical x86-64 address.
+ */
 static void sk_parity_debug_log_ptr(const char *label,
                                     const void *ptr,
                                     enum sk_parity_ptr_region region,
@@ -219,6 +301,33 @@ static void sk_parity_debug_log_ptr(const char *label,
     print_nl();
 }
 
+/**
+ * @brief Emit a parity pointer-violation diagnostic and halt.
+ *
+ * Called when @c sk_parity_debug_check_ptr() finds a pointer that is either
+ * non-canonical or in an unexpected memory region during the hash walk.
+ * Prints a multi-line @c "SK_PARITY_PANIC:" report containing:
+ * - the violation reason string
+ * - the word's creation-order index and name
+ * - the entry's header and XT pointers
+ * - the bad pointer, its canonicality flag, and its region
+ * - the VM's current @c HERE and @c LATEST values
+ *
+ * Then calls @c sk_hal_panic() in kernel builds or @c abort() in hosted
+ * builds; never returns.
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param vm         Active VM (for HERE/LATEST diagnostics); may be @c NULL.
+ * @param reason     Short string describing the violation (e.g., "colon_entry").
+ * @param entry      Dictionary entry being processed when the violation occurred.
+ * @param word_index Creation-order ordinal of @p entry.
+ * @param header_ptr Pointer to the dictionary entry header.
+ * @param xt_ptr     Pointer to the word's execution token (func pointer).
+ * @param bad_ptr    The offending pointer that failed the check.
+ * @param region     Region classification of @p bad_ptr.
+ * @param canonical  Whether @p bad_ptr is a canonical x86-64 address.
+ */
 static void sk_parity_debug_panic(struct VM *vm,
                                   const char *reason,
                                   const DictEntry *entry,
@@ -268,6 +377,30 @@ static void sk_parity_debug_panic(struct VM *vm,
 #endif
 }
 
+/**
+ * @brief Validate a pointer and panic if it is non-canonical or out-of-region.
+ *
+ * Classifies @p ptr with @c sk_parity_classify_region() and tests it for
+ * canonicality with @c sk_parity_debug_is_canonical(). Logs the result via
+ * @c sk_parity_debug_log_ptr(). If the pointer is non-canonical or in the
+ * @c SK_PTR_REGION_UNKNOWN region, calls @c sk_parity_debug_panic() which
+ * never returns.
+ *
+ * This is the central guard point called at every pointer dereference in
+ * the hash walk to catch dictionary corruption or bad function pointers
+ * before they cause silent incorrect results.
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero; call sites are
+ * macro-eliminated in release builds.
+ *
+ * @param vm         Active VM (passed to @c sk_parity_classify_region()).
+ * @param label      Short label string identifying which pointer is being checked.
+ * @param entry      Current dictionary entry being hashed.
+ * @param word_index Creation-order ordinal of @p entry.
+ * @param header_ptr Pointer to the entry header (for panic diagnostics).
+ * @param xt_ptr     Pointer to the entry's XT (for panic diagnostics).
+ * @param ptr        The pointer to validate.
+ */
 static void sk_parity_debug_check_ptr(struct VM *vm,
                                       const char *label,
                                       const DictEntry *entry,
@@ -286,7 +419,19 @@ static void sk_parity_debug_check_ptr(struct VM *vm,
 #endif /* SK_PARITY_DEBUG */
 
 /**
- * fnv1a_64 - FNV-1a 64-bit hash function
+ * @brief FNV-1a 64-bit incremental hash over a byte buffer.
+ *
+ * Updates a running FNV-1a hash by folding @p len bytes from @p data into
+ * @p hash. The caller supplies the current hash state so that multiple
+ * buffers can be chained: pass @c FNV1A_64_OFFSET_BASIS for the first call
+ * and the returned value as @p hash for subsequent calls.
+ *
+ * Algorithm: for each byte @c b, @c hash ^= b then @c hash *= FNV1A_64_PRIME.
+ *
+ * @param data Pointer to the byte buffer to hash.
+ * @param len  Number of bytes to consume.
+ * @param hash Running hash state; seed with @c FNV1A_64_OFFSET_BASIS.
+ * @return Updated hash state after processing all @p len bytes.
  */
 uint64_t fnv1a_64(const uint8_t *data, size_t len, uint64_t hash) {
     for (size_t i = 0; i < len; i++) {
@@ -297,7 +442,15 @@ uint64_t fnv1a_64(const uint8_t *data, size_t len, uint64_t hash) {
 }
 
 /**
- * fnv1a_64_u8 - Hash a single byte
+ * @brief FNV-1a 64-bit incremental hash over a single byte.
+ *
+ * Convenience wrapper for folding one byte into a running FNV-1a hash state.
+ * Used by @c fnv1a_64_u32() to hash multi-byte values byte-by-byte in a
+ * defined endian order.
+ *
+ * @param byte Single byte to fold into the hash.
+ * @param hash Running hash state.
+ * @return Updated hash state.
  */
 static uint64_t fnv1a_64_u8(uint8_t byte, uint64_t hash) {
     hash ^= byte;
@@ -306,7 +459,16 @@ static uint64_t fnv1a_64_u8(uint8_t byte, uint64_t hash) {
 }
 
 /**
- * fnv1a_64_u32 - Hash a 32-bit value (little-endian)
+ * @brief FNV-1a 64-bit incremental hash over a 32-bit value (little-endian).
+ *
+ * Folds all four bytes of @p val into @p hash in little-endian order
+ * (least-significant byte first) via four @c fnv1a_64_u8() calls. Used to
+ * hash @c word_id fields — which are @c uint32_t — into the canonical
+ * dictionary hash in a byte-order-stable way.
+ *
+ * @param val  32-bit value to hash.
+ * @param hash Running FNV-1a hash state.
+ * @return Updated hash state after consuming all four bytes.
  */
 static uint64_t fnv1a_64_u32(uint32_t val, uint64_t hash) {
     hash = fnv1a_64_u8((uint8_t)(val & 0xFF), hash);
@@ -317,7 +479,15 @@ static uint64_t fnv1a_64_u32(uint32_t val, uint64_t hash) {
 }
 
 /**
- * sk_dict_word_count - Count dictionary entries
+ * @brief Count the number of entries in the VM dictionary.
+ *
+ * Walks the linked list starting at @c vm->latest, following each entry's
+ * @c link pointer until @c NULL. Stops early and returns @c MAX_DICT_ENTRIES
+ * if the list exceeds that limit, preventing runaway traversal on a corrupt
+ * dictionary.
+ *
+ * @param vm Active VM whose dictionary will be counted; returns 0 if @c NULL.
+ * @return Number of dictionary entries found, capped at @c MAX_DICT_ENTRIES.
  */
 uint32_t sk_dict_word_count(struct VM *vm) {
     if (!vm) return 0;
@@ -331,16 +501,28 @@ uint32_t sk_dict_word_count(struct VM *vm) {
 }
 
 /**
- * hash_colon_body - Hash compiled word body as word_id sequence
+ * @brief Hash the compiled body of a colon definition as a sequence of word IDs.
  *
- * Traverses threaded code, hashes word_id of each called word.
- * Literals are hashed as their value (not address).
+ * Implements M7 Rule 2: colon bodies are hashed as their @c word_id sequence,
+ * not as raw code pointers, ensuring the hash is stable across address-space
+ * layout changes (ASLR, relocation, different build addresses).
  *
- * @param vm    VM instance
- * @param entry Dictionary entry (must have WORD_COMPILED flag)
- * @param word_index Dictionary ordinal (creation order)
- * @param hash  Current hash value
- * @return Updated hash value
+ * Traversal reads each cell from the threaded body in order:
+ * - A non-NULL @c DictEntry pointer → its @c word_id is hashed.
+ * - An @c EXIT entry → its @c word_id is hashed and traversal stops.
+ * - A @c LIT entry → its @c word_id is hashed and the following cell (the
+ *   literal value) is hashed as eight individual bytes (little-endian).
+ * - A @c NULL cell → traversal stops (end-of-body sentinel).
+ *
+ * Returns @p hash unchanged if @p entry lacks the @c WORD_COMPILED flag or
+ * has no valid data-field. Capped at 1024 cells per body as a safety limit.
+ *
+ * @param vm         Active VM instance.
+ * @param entry      Dictionary entry whose body will be hashed; must have
+ *                   @c WORD_COMPILED set.
+ * @param word_index Creation-order ordinal of @p entry (used by debug mode).
+ * @param hash       Running FNV-1a hash state from the caller.
+ * @return Updated hash state after processing the colon body.
  */
 static uint64_t hash_colon_body(struct VM *vm, DictEntry *entry, uint32_t word_index, uint64_t hash) {
     if (!vm || !entry || !(entry->flags & WORD_COMPILED)) {
@@ -432,9 +614,30 @@ static uint64_t hash_colon_body(struct VM *vm, DictEntry *entry, uint32_t word_i
 }
 
 /**
- * sk_dict_canonical_hash - Compute canonical dictionary hash
+ * @brief Compute the canonical FNV-1a 64-bit hash of the VM dictionary.
  *
- * Traverses dictionary in creation order, hashes structural fields only.
+ * Implements M7 Rule 3: dictionary traversal is in creation order (oldest
+ * word first). Because @c vm->latest is the newest word, the function first
+ * builds a reverse array of entries and then hashes them in reverse-array
+ * order (oldest → newest).
+ *
+ * For each entry the following structural fields are folded into the hash:
+ * 1. @c flags (1 byte)
+ * 2. @c name_len (1 byte)
+ * 3. @c name (name_len bytes)
+ * 4. @c acl_default (1 byte)
+ * 5. @c word_id (4 bytes, little-endian)
+ * 6. Colon body (via @c hash_colon_body()) if @c WORD_COMPILED is set
+ *
+ * Pointer-valued fields (@c func, @c link) are intentionally excluded so
+ * the hash is stable across different build addresses and address-space
+ * layouts.
+ *
+ * Traversal is capped at @c MAX_DICT_ENTRIES (2048) entries to guard
+ * against corruption.
+ *
+ * @param vm Active VM whose dictionary will be hashed; returns 0 if @c NULL.
+ * @return 64-bit FNV-1a canonical hash of the dictionary structure.
  */
 uint64_t sk_dict_canonical_hash(struct VM *vm) {
     if (!vm) return 0;
@@ -515,7 +718,24 @@ uint64_t sk_dict_canonical_hash(struct VM *vm) {
 }
 
 /**
- * sk_parity_collect - Collect parity data from VM
+ * @brief Collect M7 parity data from the VM into a @c ParityPacket.
+ *
+ * Populates @p out with a snapshot of the VM's structural state for offline
+ * determinism verification. The packet contains:
+ *
+ * - M7.1a fields: @c word_count, @c here_offset, @c latest_word_id, and the
+ *   canonical dictionary hash (@c header_hash64) computed by
+ *   @c sk_dict_canonical_hash().
+ * - M7.1b fields: test result counters (@c tests_total / @c tests_passed /
+ *   @c tests_failed / @c tests_skipped / @c tests_errors) populated from
+ *   @c global_test_stats when @c STARFORTH_ENABLE_TESTS is defined.
+ *
+ * If @p vm is @c NULL, sets @c out->bootstrap_result to
+ * @c SK_BOOTSTRAP_INIT_FAIL and returns with all other fields zeroed. If
+ * @p out is @c NULL the function is a no-op.
+ *
+ * @param vm  Active VM to collect parity data from; may be @c NULL.
+ * @param out Output @c ParityPacket to fill; caller must allocate.
  */
 void sk_parity_collect(struct VM *vm, ParityPacket *out) {
     if (!out) return;
@@ -559,7 +779,14 @@ void sk_parity_collect(struct VM *vm, ParityPacket *out) {
 }
 
 /**
- * Helper: print uint32 as decimal
+ * @brief Print a @c uint32_t value as decimal to the kernel console or stdout.
+ *
+ * Converts @p val to a decimal ASCII string using a local buffer (no libc
+ * required) and emits it via @c console_puts() in kernel builds or
+ * @c printf() in hosted builds. Used by @c sk_parity_print() to format
+ * count and ID fields in parity output lines.
+ *
+ * @param val 32-bit unsigned value to print.
  */
 static void print_u32(uint32_t val) {
     char buf[16];
@@ -581,7 +808,14 @@ static void print_u32(uint32_t val) {
 }
 
 /**
- * Helper: print uint64 as hex (with 0x prefix)
+ * @brief Print a @c uint64_t value as a 16-digit hex string with "0x" prefix.
+ *
+ * Formats @p val as "0xNNNNNNNNNNNNNNNN" using a fixed-size local buffer
+ * (no libc required) and emits it via @c console_puts() in kernel builds or
+ * @c printf() in hosted builds. Used by @c sk_parity_print() to format hash
+ * and address fields in parity output lines.
+ *
+ * @param val 64-bit value to print as lowercase hex.
  */
 static void print_hex64(uint64_t val) {
     char buf[19];
@@ -601,7 +835,14 @@ static void print_hex64(uint64_t val) {
 }
 
 /**
- * Helper: print string
+ * @brief Print a null-terminated string to the kernel console or stdout.
+ *
+ * Emits @p s via @c console_puts() in kernel builds or @c printf() in hosted
+ * builds. Serves as a single dispatch point so parity output compiles cleanly
+ * in both environments without scattering @c ifdef guards through the
+ * formatting code.
+ *
+ * @param s Null-terminated string to print.
  */
 static void print_str(const char *s) {
 #ifdef __STARKERNEL__
@@ -612,7 +853,11 @@ static void print_str(const char *s) {
 }
 
 /**
- * Helper: print newline
+ * @brief Print a newline to the kernel console or stdout.
+ *
+ * Emits a line terminator via @c console_println("") in kernel builds or
+ * @c printf("\n") in hosted builds. Paired with @c print_str() to avoid
+ * scattering @c ifdef guards through parity formatting code.
  */
 static void print_nl(void) {
 #ifdef __STARKERNEL__
@@ -623,7 +868,22 @@ static void print_nl(void) {
 }
 
 /**
- * sk_parity_print - Print parity packet to console
+ * @brief Print a @c ParityPacket to the kernel console or stdout.
+ *
+ * Emits two or three structured lines that can be captured in the QEMU serial
+ * log for offline determinism verification:
+ *
+ * - @c "PARITY:M7.1a word_count=N here=0xH latest_id=N hash=0xH" — always
+ *   emitted; contains the structural dictionary fingerprint.
+ * - @c "PARITY:M7.1b tests=N pass=N fail=N skip=N err=N" — emitted only
+ *   when @c pkt->tests_total > 0; contains POST result counts.
+ * - @c "PARITY:OK" or @c "PARITY:FAIL code=N" — result verdict line.
+ *
+ * All output goes through @c print_str() / @c print_u32() / @c print_hex64()
+ * / @c print_nl() so the function compiles cleanly in both kernel and hosted
+ * builds. No-op if @p pkt is @c NULL.
+ *
+ * @param pkt Pointer to the @c ParityPacket to display; may be @c NULL.
  */
 void sk_parity_print(const ParityPacket *pkt) {
     if (!pkt) return;
