@@ -69,6 +69,16 @@ static int rtc_available = 0;
 
 /* L4Re implementation */
 
+/**
+ * @brief Return the current monotonic time in nanoseconds (L4Re build).
+ *
+ * Reads the KIP (Kernel Info Page) clock via @c l4_kip_clock_ns(). The KIP
+ * clock is a monotonic counter driven by the L4Re microkernel and is the
+ * standard high-resolution time source on L4Re. Returns 0 if the KIP pointer
+ * is unavailable (should never occur in a healthy L4Re environment).
+ *
+ * @return Nanoseconds since the L4Re epoch (system boot), or 0 on KIP error
+ */
 static sf_time_ns_t l4re_get_monotonic_ns(void) {
     /* Use L4Re KIP clock: monotonic time since boot */
     l4_kernel_info_t *kip = l4re_kip();
@@ -78,6 +88,17 @@ static sf_time_ns_t l4re_get_monotonic_ns(void) {
     return l4_kip_clock_ns(kip);
 }
 
+/**
+ * @brief Return the current wall-clock time in nanoseconds since the Unix epoch (L4Re build).
+ *
+ * Combines the RTC offset (nanoseconds from epoch to system boot, obtained
+ * from the L4Re RTC server during @c sf_time_init_l4re()) with the current
+ * KIP clock value to produce an absolute timestamp. Falls back to monotonic
+ * time alone when @c rtc_available is 0, and to @c rtc_offset alone when
+ * the KIP pointer is unavailable.
+ *
+ * @return Nanoseconds since 1970-01-01 00:00:00 UTC, or approximate value on fallback
+ */
 static sf_time_ns_t l4re_get_realtime_ns(void) {
     /* Use RTC server offset + KIP clock for wall-clock time */
     if (!rtc_available) {
@@ -94,6 +115,18 @@ static sf_time_ns_t l4re_get_realtime_ns(void) {
     return rtc_offset + l4_kip_clock_ns(kip);
 }
 
+/**
+ * @brief Set the system real-time clock via the L4Re RTC server (L4Re build).
+ *
+ * Computes the new RTC timer offset as @c ns_since_epoch minus the current
+ * KIP clock value, then calls @c rtc_cap->set_timer_offset() over IPC.
+ * On success, updates the cached @c rtc_offset. Returns -1 if the RTC
+ * capability is invalid, the KIP pointer is unavailable, or the IPC call
+ * fails.
+ *
+ * @param ns_since_epoch Desired wall-clock time in nanoseconds since Unix epoch
+ * @return 0 on success, -1 on any failure (no RTC capability, KIP error, IPC error)
+ */
 static int l4re_set_realtime_ns(sf_time_ns_t ns_since_epoch) {
     if (!rtc_available || !rtc_cap.is_valid()) {
         return -1; /* No RTC capability */
@@ -119,6 +152,20 @@ static int l4re_set_realtime_ns(sf_time_ns_t ns_since_epoch) {
     return 0;
 }
 
+/**
+ * @brief Format a nanosecond-precision wall-clock time as a human-readable string (L4Re build).
+ *
+ * Converts @c ns_since_epoch to a @c time_t, calls @c localtime() and
+ * @c strftime() using the L4Re libc. Unlike the Linux backend, this variant
+ * uses a full date+time format (@c "%Y-%m-%d %H:%M:%S" or @c "%Y-%m-%d %I:%M:%S %p")
+ * rather than time-only. On @c localtime() failure, writes the raw second count as
+ * a decimal fallback and returns -1.
+ *
+ * @param ns_since_epoch Wall-clock time in nanoseconds since Unix epoch
+ * @param buf            Output buffer (at least @c SF_TIME_STAMP_SIZE bytes); must not be NULL
+ * @param format_24h     Non-zero for 24-hour format, zero for 12-hour with AM/PM
+ * @return 0 on success, -1 if @c buf is NULL or time formatting fails
+ */
 static int l4re_format_timestamp(sf_time_ns_t ns_since_epoch, char *buf, int format_24h) {
     if (!buf) {
         return -1;
@@ -142,6 +189,15 @@ static int l4re_format_timestamp(sf_time_ns_t ns_since_epoch, char *buf, int for
     return (ret > 0) ? 0 : -1;
 }
 
+/**
+ * @brief Report whether an RTC is available (L4Re build).
+ *
+ * Returns the @c rtc_available flag set during @c sf_time_init_l4re().
+ * A value of 0 means the RTC IPC capability was absent or its offset query
+ * failed; wall-clock functions will return monotonic time as a fallback.
+ *
+ * @return 1 if the L4Re RTC server is reachable and its offset was obtained, 0 otherwise
+ */
 static int l4re_has_rtc(void) {
     return rtc_available;
 }
@@ -155,7 +211,19 @@ const sf_time_backend_t sf_time_backend_l4re = {
     .has_rtc = l4re_has_rtc,
 };
 
-/* L4Re-specific initialization (called by sf_time_init) */
+/**
+ * @brief Initialise the L4Re time backend — acquire RTC capability and fetch epoch offset.
+ *
+ * Called once from @c sf_time_init() on L4Re builds. Attempts to obtain the
+ * @c "rtc" capability from the L4Re environment, then queries the RTC server
+ * for its timer offset (nanoseconds from the Unix epoch to the system boot
+ * time). On success sets @c rtc_available = 1 and caches @c rtc_offset.
+ * On any failure (missing capability, IPC error) sets @c rtc_available = 0
+ * and @c rtc_offset = 0, leaving the backend in monotonic-only mode.
+ * Diagnostic messages are printed to @c stderr throughout.
+ *
+ * @note Defined only when @c __l4__ is set; compiles to a no-op stub otherwise.
+ */
 void sf_time_init_l4re(void) {
     fprintf(stderr, "[L4Re Time] Initializing L4Re time backend...\n");
 
