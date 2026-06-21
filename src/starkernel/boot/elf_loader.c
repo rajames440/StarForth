@@ -51,7 +51,20 @@
 #include "elf64.h"
 #include "arch.h"
 
-/* Simple memory operations (no libc) */
+/**
+ * @brief Fill a memory region with a byte value (freestanding memset).
+ *
+ * Writes @p n copies of the low byte of @p c to the memory starting at
+ * @p s. Used by @c elf_load_segments() to zero-fill BSS regions
+ * (@c p_memsz > @c p_filesz) without a libc dependency. The byte loop
+ * is correct for all sizes; a future optimisation could use SIMD or
+ * word-width stores for large BSS regions.
+ *
+ * @param s Pointer to the start of the destination region.
+ * @param c Value to fill (only the low 8 bits are used).
+ * @param n Number of bytes to write.
+ * @return @p s (matches standard @c memset signature).
+ */
 static void *elf_memset(void *s, int c, uint64_t n)
 {
     unsigned char *p = (unsigned char *)s;
@@ -59,6 +72,19 @@ static void *elf_memset(void *s, int c, uint64_t n)
     return s;
 }
 
+/**
+ * @brief Copy a non-overlapping memory region (freestanding memcpy).
+ *
+ * Copies @p n bytes from @p src to @p dest using a byte-at-a-time loop.
+ * Behaviour is undefined if the source and destination ranges overlap.
+ * Used by @c elf_load_segments() to copy each PT_LOAD segment's
+ * @c p_filesz bytes from the ELF image in memory to its load address.
+ *
+ * @param dest Destination buffer; must not overlap with @p src.
+ * @param src  Source buffer.
+ * @param n    Number of bytes to copy.
+ * @return @p dest (matches standard @c memcpy signature).
+ */
 static void *elf_memcpy(void *dest, const void *src, uint64_t n)
 {
     unsigned char *d = (unsigned char *)dest;
@@ -67,7 +93,25 @@ static void *elf_memcpy(void *dest, const void *src, uint64_t n)
     return dest;
 }
 
-/* Validate ELF header */
+/**
+ * @brief Validate an ELF64 header for the current target architecture.
+ *
+ * Checks the following fields in the ELF identification block and header:
+ * - Magic bytes @c e_ident[0..3]: must be @c 0x7F 'E' 'L' 'F'.
+ * - Class @c e_ident[EI_CLASS]: must be @c ELFCLASS64 (64-bit).
+ * - Data encoding @c e_ident[EI_DATA]: must be @c ELFDATA2LSB
+ *   (little-endian, the only byte order used by all three supported ISAs).
+ * - Version @c e_ident[EI_VERSION]: must be @c EV_CURRENT (1).
+ * - Type @c e_type: must be @c ET_EXEC (statically linked) or
+ *   @c ET_DYN (position-independent executable).
+ * - Machine @c e_machine: must match the build target —
+ *   @c EM_X86_64 for @c ARCH_AMD64,
+ *   @c EM_AARCH64 for @c ARCH_AARCH64,
+ *   @c EM_RISCV for @c ARCH_RISCV64.
+ *
+ * @param ehdr Pointer to the ELF64 header at the start of the image.
+ * @return 1 if the header is valid for this architecture, 0 otherwise.
+ */
 static int elf_validate_header(const Elf64_Ehdr *ehdr)
 {
     /* Check magic number */
@@ -119,7 +163,29 @@ static int elf_validate_header(const Elf64_Ehdr *ehdr)
     return 1;
 }
 
-/* Load ELF segments into memory */
+/**
+ * @brief Map all PT_LOAD segments from an ELF64 image into memory.
+ *
+ * Iterates the program header table (@c e_phnum entries starting at
+ * offset @c e_phoff) and processes every entry with @c p_type == @c PT_LOAD:
+ *
+ * 1. Computes the destination address as @p load_base + @c p_vaddr.
+ * 2. Copies @c p_filesz bytes from @p elf_data + @c p_offset using
+ *    @c elf_memcpy().
+ * 3. If @c p_memsz > @c p_filesz, zero-fills the remaining
+ *    (@c p_memsz - @c p_filesz) bytes with @c elf_memset() to
+ *    initialise the BSS region within the segment.
+ *
+ * The function does not check for address-range overlaps or that
+ * destination memory is physically available; the UEFI loader is
+ * responsible for allocating pages before calling @c elf_load_kernel().
+ *
+ * @param elf_data  Pointer to the start of the ELF64 file in memory.
+ * @param load_base Base address at which to load the ELF image
+ *                  (0 for @c ET_EXEC, 0x400000 for @c ET_DYN).
+ * @return 1 always (errors are silently ignored at this milestone; a
+ *         future revision should return 0 on a failed memory access).
+ */
 static int elf_load_segments(const uint8_t *elf_data, Elf64_Addr load_base)
 {
     const Elf64_Ehdr *ehdr = (const Elf64_Ehdr *)elf_data;
@@ -146,7 +212,39 @@ static int elf_load_segments(const uint8_t *elf_data, Elf64_Addr load_base)
     return 1;
 }
 
-/* Apply relocations */
+/**
+ * @brief Apply all RELA relocation sections from an ELF64 image.
+ *
+ * Scans the section header table for sections of type @c SHT_RELA. For
+ * each such section, resolves the associated symbol table (via
+ * @c sh_link) and applies every relocation entry to the loaded image.
+ *
+ * Supported relocation types are ISA-specific and compile-time selected:
+ *
+ * - **amd64 (@c ARCH_AMD64)**:
+ *   - @c R_X86_64_NONE — no-op.
+ *   - @c R_X86_64_RELATIVE — absolute address = @c load_base + @c r_addend.
+ *   - @c R_X86_64_64 — @c load_base + symbol value + @c r_addend (64-bit).
+ *   - @c R_X86_64_32 / @c R_X86_64_32S — same, truncated to 32 bits.
+ *
+ * - **aarch64 (@c ARCH_AARCH64)**:
+ *   - @c R_AARCH64_NONE — no-op.
+ *   - @c R_AARCH64_RELATIVE — @c load_base + @c r_addend.
+ *   - @c R_AARCH64_ABS64 — @c load_base + symbol + @c r_addend.
+ *
+ * - **riscv64 (@c ARCH_RISCV64)**:
+ *   - @c R_RISCV_NONE — no-op.
+ *   - @c R_RISCV_RELATIVE — @c load_base + @c r_addend.
+ *   - @c R_RISCV_64 — @c load_base + symbol + @c r_addend.
+ *
+ * Returns 0 (failure) if a symbol index in a relocation entry is out
+ * of bounds, if the symbol table entry size is zero, or if an unknown
+ * relocation type is encountered. Returns 1 on success.
+ *
+ * @param elf_data  Pointer to the ELF64 file image.
+ * @param load_base Load base address applied during @c elf_load_segments().
+ * @return 1 on success, 0 on any relocation error.
+ */
 static int elf_apply_relocations(const uint8_t *elf_data, Elf64_Addr load_base)
 {
     const Elf64_Ehdr *ehdr = (const Elf64_Ehdr *)elf_data;
@@ -248,12 +346,37 @@ static int elf_apply_relocations(const uint8_t *elf_data, Elf64_Addr load_base)
 }
 
 /**
- * Load and relocate the StarKernel ELF binary
+ * @brief Load, relocate, and return the entry point of a StarKernel ELF64 binary.
  *
- * @param elf_data Pointer to ELF file in memory
- * @param elf_size Size of ELF file in bytes
- * @param entry_out Output: kernel entry point address
- * @return 1 on success, 0 on failure
+ * Top-level ELF loader called by @c efi_main() (in the split-build path)
+ * after @c ExitBootServices(). Performs three operations in sequence:
+ *
+ * 1. **Header validation** via @c elf_validate_header() — checks magic,
+ *    class, data encoding, version, type, and machine-specific architecture.
+ *    Returns 0 immediately on failure.
+ *
+ * 2. **Segment loading** via @c elf_load_segments() — maps all @c PT_LOAD
+ *    segments to their target addresses, initialises BSS to zero.
+ *    The @p load_base is:
+ *    - 0 for @c ET_EXEC (absolute-address kernel; typical for StarKernel).
+ *    - 0x400000 (4 MB) for @c ET_DYN (position-independent kernel).
+ *
+ * 3. **Relocation processing** via @c elf_apply_relocations() — applies
+ *    @c SHT_RELA sections to patch in the correct runtime addresses.
+ *    Returns 0 on any relocation error.
+ *
+ * On success, stores @c load_base + @c e_entry in @c *entry_out — the
+ * virtual address of the kernel's C entry function @c kernel_main() — and
+ * returns 1. The caller performs an indirect call to this address.
+ *
+ * @c elf_size is currently unused (reserved for future bounds-checking of
+ * program-header and section-header offsets against the file boundary).
+ *
+ * @param elf_data   Pointer to the ELF64 file image in UEFI loader memory;
+ *                   must remain valid until after the call returns.
+ * @param elf_size   Size of the ELF image in bytes (currently unchecked).
+ * @param entry_out  Output: receives the kernel entry point address on success.
+ * @return 1 on success, 0 if validation, segment loading, or relocation fails.
  */
 int elf_load_kernel(const uint8_t *elf_data, uint64_t elf_size,
                     Elf64_Addr *entry_out)
