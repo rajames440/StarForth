@@ -240,6 +240,36 @@ static void logical_word_greater_than(VM *vm) {
     log_message(LOG_DEBUG, ">: %ld > %ld? %s", (long) n1, (long) n2, (result == FORTH_TRUE) ? "TRUE" : "FALSE");
 }
 
+/* >= - Greater than or equal ( n1 n2 -- flag ) */
+static void logical_word_greater_equal(VM *vm) {
+    if (vm->dsp < 1) {
+        log_message(LOG_ERROR, ">=: Stack underflow");
+        vm->error = 1;
+        return;
+    }
+    cell_t n2 = vm_pop(vm);
+    cell_t n1 = vm_pop(vm);
+    cell_t result = (n1 >= n2) ? FORTH_TRUE : FORTH_FALSE;
+    vm_push(vm, result);
+    log_message(LOG_DEBUG, ">=: %ld >= %ld? %s", (long)n1, (long)n2,
+                (result == FORTH_TRUE) ? "TRUE" : "FALSE");
+}
+
+/* <= - Less than or equal ( n1 n2 -- flag ) */
+static void logical_word_less_equal(VM *vm) {
+    if (vm->dsp < 1) {
+        log_message(LOG_ERROR, "<=: Stack underflow");
+        vm->error = 1;
+        return;
+    }
+    cell_t n2 = vm_pop(vm);
+    cell_t n1 = vm_pop(vm);
+    cell_t result = (n1 <= n2) ? FORTH_TRUE : FORTH_FALSE;
+    vm_push(vm, result);
+    log_message(LOG_DEBUG, "<=: %ld <= %ld? %s", (long)n1, (long)n2,
+                (result == FORTH_TRUE) ? "TRUE" : "FALSE");
+}
+
 /* U< - Unsigned less than ( u1 u2 -- flag ) */
 static void logical_word_u_less_than(VM *vm) {
     if (vm->dsp < 1) {
@@ -345,6 +375,8 @@ void register_logical_words(VM *vm) {
     register_word(vm, "<>", logical_word_not_equals);
     register_word(vm, "<", logical_word_less_than);
     register_word(vm, ">", logical_word_greater_than);
+    register_word(vm, ">=", logical_word_greater_equal);
+    register_word(vm, "<=", logical_word_less_equal);
 
     /* Unsigned comparisons */
     register_word(vm, "U<", logical_word_u_less_than);

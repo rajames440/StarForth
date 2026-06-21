@@ -705,6 +705,102 @@ static void defining_word_immediate(VM *vm) {
                 (int) vm->latest->name_len, vm->latest->name);
 }
 
+/* ───────────────────────────── DEFER / IS ─────────────────────────── */
+
+/* DEFER runtime: execute the XT stored in this word's data field */
+static void defining_runtime_defer(VM *vm) {
+    if (!vm) return;
+    DictEntry *self = vm->current_executing_entry;
+    if (!self) { vm->error = 1; return; }
+
+    cell_t *df = vm_dictionary_get_data_field(self);
+    if (!df) { vm->error = 1; return; }
+
+    DictEntry *target = (DictEntry *)(uintptr_t)(*df);
+    if (!target || !target->func) {
+        log_message(LOG_ERROR, "DEFER %.*s: uninitialized — use IS to set",
+                    (int)self->name_len, self->name);
+        vm->error = 1;
+        return;
+    }
+
+    vm->current_executing_entry = target;
+    target->func(vm);
+}
+
+/* DEFER ( "name" -- ) create a deferred word with an empty XT slot */
+static void defining_word_defer(VM *vm) {
+    if (!vm) return;
+
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) { vm->error = 1; return; }
+
+    DictEntry *entry = vm_create_word(vm, namebuf, (size_t)nlen, defining_runtime_defer);
+    if (!entry) { vm->error = 1; return; }
+
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) { vm->error = 1; return; }
+    *df = 0;
+
+    log_message(LOG_DEBUG, "DEFER: '%.*s'", nlen, namebuf);
+}
+
+/* IS ( xt "name" -- ) store xt into the deferred word's slot */
+static void defining_word_is(VM *vm) {
+    if (!vm) return;
+    if (vm->dsp < 0) {
+        log_message(LOG_ERROR, "IS: stack underflow");
+        vm->error = 1;
+        return;
+    }
+    cell_t xt = vm_pop(vm);
+
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) { vm->error = 1; return; }
+
+    DictEntry *entry = vm_find_word(vm, namebuf, (size_t)nlen);
+    if (!entry) {
+        log_message(LOG_ERROR, "IS: '%.*s' not found", nlen, namebuf);
+        vm->error = 1;
+        return;
+    }
+    if (entry->func != defining_runtime_defer) {
+        log_message(LOG_ERROR, "IS: '%.*s' is not a DEFER word", nlen, namebuf);
+        vm->error = 1;
+        return;
+    }
+
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) { vm->error = 1; return; }
+    *df = xt;
+
+    log_message(LOG_DEBUG, "IS: '%.*s' <- XT %p", nlen, namebuf, (void *)(uintptr_t)xt);
+}
+
+/* DEFER@ ( "name" -- xt ) fetch the XT stored in a deferred word */
+static void defining_word_defer_fetch(VM *vm) {
+    if (!vm) return;
+
+    char namebuf[WORD_NAME_MAX + 1];
+    int nlen = vm_parse_word(vm, namebuf, sizeof(namebuf));
+    if (nlen <= 0) { vm->error = 1; return; }
+
+    DictEntry *entry = vm_find_word(vm, namebuf, (size_t)nlen);
+    if (!entry) {
+        log_message(LOG_ERROR, "DEFER@: '%.*s' not found", nlen, namebuf);
+        vm->error = 1;
+        return;
+    }
+
+    cell_t *df = vm_dictionary_get_data_field(entry);
+    if (!df) { vm->error = 1; return; }
+    vm_push(vm, *df);
+
+    log_message(LOG_DEBUG, "DEFER@: '%.*s' -> XT %p", nlen, namebuf, (void *)(uintptr_t)(*df));
+}
+
 /* ───────────────────────────── Registration ───────────────────────── */
 
 /**
@@ -756,4 +852,9 @@ void register_defining_words(VM *vm) {
     register_word(vm, "does_rt", defining_runtime_does_rt); /* internal helper */
     register_word(vm, "DOES>", defining_word_does);
     vm_make_immediate(vm);
+
+    /* DEFER / IS / DEFER@ */
+    register_word(vm, "DEFER", defining_word_defer);
+    register_word(vm, "IS", defining_word_is);
+    register_word(vm, "DEFER@", defining_word_defer_fetch);
 }
