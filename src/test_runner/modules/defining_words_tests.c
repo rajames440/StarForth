@@ -132,6 +132,34 @@ static WordTestSuite defining_word_suites[] = {
         2
     },
 
+    {
+        "DEFER", {
+            {"basic",   "DEFER DF1 : DF1W 42 . CR ; ' DF1W IS DF1 DF1", "Should print: 42", TEST_NORMAL, 0, 1},
+            {"uninit",  "DEFER DF2 DF2",  "Should error: uninitialized deferred word", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        2
+    },
+
+    {
+        "IS", {
+            {"basic",     "DEFER IS1 : IS1W 99 . CR ; ' IS1W IS IS1 IS1", "Should print: 99", TEST_NORMAL, 0, 1},
+            {"not_defer", "42 IS DUP",    "Should error: DUP is not a DEFER word", TEST_ERROR_CASE, 1, 1},
+            {"not_found", "42 IS NOSUCH", "Should error: word not found", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
+    {
+        "DEFER@", {
+            {"basic",     "DEFER DFA1 : DFA1W 7 . CR ; ' DFA1W IS DFA1 DEFER@ DFA1 0<> . CR", "Should print: -1", TEST_NORMAL, 0, 1},
+            {"not_found", "DEFER@ NOSUCH2", "Should error: word not found", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        2
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };

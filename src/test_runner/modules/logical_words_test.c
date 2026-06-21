@@ -255,6 +255,32 @@ static WordTestSuite logical_word_suites[] = {
         3
     },
 
+    {
+        ">=", {
+            {"less",       "3 5 >= . CR",  "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"greater",    "5 3 >= . CR",  "Should print: -1", TEST_NORMAL, 0, 1},
+            {"equal",      "3 3 >= . CR",  "Should print: -1", TEST_NORMAL, 0, 1},
+            {"negative",   "-1 0 >= . CR", "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"neg_neg",    "-1 -2 >= . CR","Should print: -1", TEST_NORMAL, 0, 1},
+            {"underflow",  ">=",           "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        6
+    },
+
+    {
+        "<=", {
+            {"less",       "3 5 <= . CR",  "Should print: -1", TEST_NORMAL, 0, 1},
+            {"greater",    "5 3 <= . CR",  "Should print: 0",  TEST_NORMAL, 0, 1},
+            {"equal",      "3 3 <= . CR",  "Should print: -1", TEST_NORMAL, 0, 1},
+            {"negative",   "-1 0 <= . CR", "Should print: -1", TEST_NORMAL, 0, 1},
+            {"neg_neg",    "-2 -1 <= . CR","Should print: -1", TEST_NORMAL, 0, 1},
+            {"underflow",  "<=",           "Should cause stack underflow", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        6
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
