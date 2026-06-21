@@ -66,6 +66,20 @@
 
 /* ====================== Base helpers ======================= */
 
+/**
+ * @brief Read the current number base from the VM.
+ *
+ * Prefers the cell stored at @c vm->base_addr (the canonical FORTH
+ * @c BASE variable) if it is aligned and in the valid range [2, 36].
+ * Falls back to the host-mirror @c vm->base if the cell is out of
+ * range, and finally returns 10 if both are invalid or @p vm is NULL.
+ *
+ * The double-read (cell + mirror) keeps the VM consistent when C code
+ * modifies @c vm->base directly without going through @c vm_set_base().
+ *
+ * @param vm  VM instance to query (may be NULL; returns 10 in that case).
+ * @return    Current number base in range [2, 36].
+ */
 unsigned vm_get_base(const VM* vm)
 {
     if (!vm) return 10u;
@@ -81,6 +95,16 @@ unsigned vm_get_base(const VM* vm)
     return 10u;
 }
 
+/**
+ * @brief Set the VM number base and update both the cell and the host mirror.
+ *
+ * Clamps @p b to [2, 36] (replacing out-of-range values with 10), then
+ * writes to the FORTH @c BASE variable cell at @c vm->base_addr and to
+ * the host-mirror field @c vm->base so both sources agree.
+ *
+ * @param vm  VM instance to update.
+ * @param b   Desired number base; clamped to [2, 36].
+ */
 void vm_set_base(VM* vm, unsigned b)
 {
     if (!vm) return;
@@ -95,14 +119,19 @@ void vm_set_base(VM* vm, unsigned b)
 /* ====================== Parser / number ======================= */
 
 /**
- * @brief Parse next word from input buffer
+ * @brief Parse the next whitespace-delimited token from the input buffer.
  *
- * Skips leading whitespace and extracts next word delimited by whitespace.
+ * Skips leading whitespace (space, tab, CR, LF), then extracts characters
+ * until the next whitespace or end of buffer, storing up to @p max_len − 1
+ * characters in @p word followed by a NUL terminator. Advances
+ * @c vm->input_pos past the consumed token.
  *
- * @param vm Pointer to VM instance
- * @param word Buffer to store parsed word
- * @param max_len Maximum length of word buffer
- * @return Length of parsed word or 0 if no word found
+ * @param vm       VM instance; @c vm->input_buffer / @c input_pos / @c input_length
+ *                 must be populated (typically by @c vm_interpret()).
+ * @param word     Output buffer for the parsed token.
+ * @param max_len  Size of @p word in bytes (including NUL terminator).
+ * @return         Number of characters written (excluding NUL), or 0 if
+ *                 the buffer is exhausted or @p vm / @p word is NULL.
  */
 int vm_parse_word(VM* vm, char* word, size_t max_len)
 {
@@ -130,15 +159,22 @@ int vm_parse_word(VM* vm, char* word, size_t max_len)
 }
 
 /**
- * @brief Parse string as number in current base
+ * @brief Attempt to parse a string as an integer in the current number base.
  *
- * Attempts to parse string as number using VM's current number base.
- * Handles optional sign prefix.
+ * Reads the current base from @c vm_get_base(), then converts each
+ * character of @p s (case-insensitive, digits 0–9 and letters A–Z/a–z)
+ * to a digit value. Returns 0 immediately on any character that is not
+ * a valid digit in the current base, or on an empty string after the
+ * optional sign.
  *
- * @param vm Pointer to VM instance 
- * @param s String to parse
- * @param out Pointer to store parsed value
- * @return 1 on success, 0 on parse failure
+ * Handles an optional leading @c '+' or @c '-' sign. The result is a
+ * full-width @c cell_t (sign extended for negative values).
+ *
+ * @param vm  VM instance (used for base only; may be NULL, in which case
+ *            base defaults to 10).
+ * @param s   NUL-terminated string to parse.
+ * @param out Pointer to receive the parsed value on success.
+ * @return    1 on successful parse, 0 on any parse failure.
  */
 int vm_parse_number(VM* vm, const char* s, cell_t* out)
 {
@@ -176,6 +212,22 @@ int vm_parse_number(VM* vm, const char* s, cell_t* out)
 
 /* ====================== Compile state ======================= */
 
+/**
+ * @brief Begin a colon definition and switch the VM to compile mode.
+ *
+ * Creates a new dictionary entry for @p name via @c vm_create_word(),
+ * marks it @c WORD_SMUDGED so it is invisible to lookups during
+ * compilation, sets the VM mode to @c MODE_COMPILE, and writes the
+ * current @c HERE address into the entry's data field as the start of
+ * the threaded body.
+ *
+ * The SMUDGE flag is cleared by @c vm_exit_compile_mode() when the
+ * semicolon is encountered.
+ *
+ * @param vm   VM instance.
+ * @param name Word name string (does not need to be NUL-terminated).
+ * @param len  Length of @p name; clamped to @c WORD_NAME_MAX.
+ */
 void vm_enter_compile_mode(VM* vm, const char* name, size_t len)
 {
     if (!vm) return;
@@ -210,6 +262,20 @@ void vm_enter_compile_mode(VM* vm, const char* name, size_t len)
     log_message(LOG_DEBUG, ": started '%s' at HERE=%zu", vm->current_word_name, vm->here);
 }
 
+/**
+ * @brief Append a word reference (DictEntry*) to the current threaded body.
+ *
+ * Aligns @c HERE, then allots one @c cell_t slot and stores the
+ * @c DictEntry* as a cell. This is the fundamental compilation step used
+ * by the inner interpreter: each slot in the threaded body is a pointer
+ * to the @c DictEntry of the word to call.
+ *
+ * Sets @c vm->error if the VM is not in compile mode, @p entry is NULL,
+ * or allotment fails.
+ *
+ * @param vm     VM instance in compile mode.
+ * @param entry  Dictionary entry of the word to compile; must not be NULL.
+ */
 void vm_compile_word(VM* vm, DictEntry* entry)
 {
     if (!vm || vm->mode != MODE_COMPILE) return;
@@ -229,6 +295,18 @@ void vm_compile_word(VM* vm, DictEntry* entry)
     entry; /* threaded code stores DictEntry* as cell */
 }
 
+/**
+ * @brief Compile a literal value into the current threaded body (or push it).
+ *
+ * In compile mode, appends the @c LIT word reference followed by the
+ * literal value so the inner interpreter will push @p value at runtime.
+ * In interpret mode, pushes @p value directly onto the data stack.
+ *
+ * Sets @c vm->error if @c LIT cannot be found in the dictionary.
+ *
+ * @param vm     VM instance.
+ * @param value  Cell value to compile or push.
+ */
 void vm_compile_literal(VM* vm, cell_t value)
 {
     if (!vm) return;
@@ -257,6 +335,19 @@ void vm_compile_literal(VM* vm, cell_t value)
     *val = value;
 }
 
+/**
+ * @brief Compile a call to a word identified by its C function pointer.
+ *
+ * Looks up the @c DictEntry whose @c func field matches @p func via
+ * @c vm_dictionary_find_by_func(), then delegates to @c vm_compile_word().
+ * Used by generating words (e.g., @c DOES>) that need to embed a specific
+ * runtime routine into a compiled definition without knowing its name.
+ *
+ * Sets @c vm->error if not in compile mode or if no matching entry is found.
+ *
+ * @param vm    VM instance in compile mode.
+ * @param func  C function pointer identifying the word to compile.
+ */
 void vm_compile_call(VM* vm, word_func_t func)
 {
     if (!vm || vm->mode != MODE_COMPILE)
@@ -274,6 +365,18 @@ void vm_compile_call(VM* vm, word_func_t func)
     vm_compile_word(vm, entry);
 }
 
+/**
+ * @brief Compile an @c EXIT reference into the current threaded body.
+ *
+ * Appends the @c EXIT word entry so that when the threaded body is
+ * executed, @c execute_colon_word() sets @c vm->exit_colon and unwinds
+ * the inner loop. Used by control-flow generating words (e.g., @c IF
+ * optimisation paths) that need an explicit early-return.
+ *
+ * Sets @c vm->error if not in compile mode or if @c EXIT is not found.
+ *
+ * @param vm  VM instance in compile mode.
+ */
 void vm_compile_exit(VM* vm)
 {
     if (!vm || vm->mode != MODE_COMPILE) return;
@@ -287,6 +390,22 @@ void vm_compile_exit(VM* vm)
     vm_compile_word(vm, EXIT);
 }
 
+/**
+ * @brief Finalise a colon definition and return to interpret mode.
+ *
+ * Appends a final @c EXIT reference, clears the @c WORD_SMUDGED flag so
+ * the new word becomes visible in the dictionary, and sets @c WORD_COMPILED.
+ * Also computes the word's mass (header + body bytes) for the physics
+ * engine and calls @c physics_metadata_refresh_state().
+ *
+ * Resets @c vm->mode to @c MODE_INTERPRET, clears @c vm->state_var,
+ * and NULLs @c vm->compiling_word.
+ *
+ * Sets @c vm->error if @p vm has no active @c compiling_word or if
+ * @c EXIT cannot be found.
+ *
+ * @param vm  VM instance currently in compile mode.
+ */
 void vm_exit_compile_mode(VM* vm)
 {
     if (!vm || !vm->compiling_word)
@@ -348,13 +467,24 @@ void vm_exit_compile_mode(VM* vm)
      without disturbing the caller’s R-stack frame.
 */
 
-/*
- * acl_recheck — cold-path ACL enforcement.
+/**
+ * @brief Cold-path ACL enforcement called when a word's TTL counter hits zero.
  *
- * Called only when entry->acl_ttl hits 0.  Looks up the FORTH word
- * ACL-RECHECK; if it exists, calls it with emergency_console=1 so the
- * check itself bypasses ACL.  If ACL-RECHECK is not yet loaded (early
- * boot), fails open: sets acl_allow=1 and acl_ttl=ACL_TTL_OPEN.
+ * Looks up the FORTH word @c ACL-RECHECK in the dictionary. If found,
+ * calls it with @c emergency_console temporarily set to 1 so the recheck
+ * itself cannot be denied by the ACL system. The FORTH word is expected
+ * to update @c entry->acl_allow and @c entry->acl_ttl before returning.
+ *
+ * If @c ACL-RECHECK is not yet loaded (early boot before @c ACL.4th runs),
+ * the function **fails open**: sets @c acl_allow=1 and @c acl_ttl=ACL_TTL_OPEN
+ * so execution continues unimpeded. The same fail-open behaviour applies
+ * if @c ACL-RECHECK itself raises an error (error flag is cleared).
+ *
+ * This function is the cold path; the hot path in @c execute_colon_word()
+ * and @c vm_interpret_word() simply decrements @c acl_ttl.
+ *
+ * @param vm     VM instance.
+ * @param entry  Dictionary entry whose TTL has expired and needs rechecking.
  */
 static void acl_recheck(VM *vm, DictEntry *entry)
 {
@@ -386,10 +516,32 @@ static void acl_recheck(VM *vm, DictEntry *entry)
     }
 }
 
-/*
- * execute_colon_word - Inner interpreter for threaded code
+/**
+ * @brief Inner interpreter for threaded colon definitions.
  *
- * Clean execution loop. Physics is abstracted behind hooks.
+ * Runs the body of a colon-defined word whose @c DictEntry points to a
+ * sequence of @c DictEntry* cells in VM memory (indirect threaded code).
+ * The interpreter pointer (IP) is maintained on the return stack so that
+ * runtime control-flow words (@c (BRANCH), @c (0BRANCH), @c (DO), etc.)
+ * can redirect execution by modifying the top-of-return-stack IP.
+ *
+ * **Execution loop per iteration:**
+ *  1. Read @c DictEntry* @c w from @c *ip.
+ *  2. Run physics pre-execute hooks (heat, decay, pipelining).
+ *  3. ACL hot-path check (decrement TTL; call @c acl_recheck() on zero).
+ *  4. Push @c ip+1 onto the return stack as the resume point.
+ *  5. Call @c w->func(vm).
+ *  6. Run physics post-execute hooks.
+ *  7. Check @c vm->exit_colon (set by @c EXIT): pop and discard the saved
+ *     IP, then return to caller.
+ *  8. Check @c vm->abort_requested: unwind and return immediately.
+ *  9. Pop the (possibly modified) IP from the return stack and repeat.
+ *
+ * @c vm->ecw_nesting is incremented on entry and decremented on every
+ * return path to enable recursive colon calls.
+ *
+ * @param vm  VM instance; @c vm->current_executing_entry must point to
+ *            the @c DictEntry being executed.
  */
 void execute_colon_word(VM* vm)
 {
@@ -480,6 +632,26 @@ void execute_colon_word(VM* vm)
 
 /* ====================== Outer interpreter ======================= */
 
+/**
+ * @brief Interpret or compile a single word token.
+ *
+ * This is the outer interpreter's per-token dispatch:
+ *
+ *  1. **Dictionary lookup**: vocabulary-aware search, falling back to the
+ *     canonical flat dictionary. Physics heat is recorded via
+ *     @c physics_on_lookup().
+ *  2. **Compile mode, non-immediate**: append the entry to the current
+ *     threaded body via @c vm_compile_word().
+ *  3. **Interpret mode, or immediate in compile mode**: ACL check (hot-path
+ *     TTL decrement / cold-path @c acl_recheck()), then call @c entry->func().
+ *  4. **Number literal**: if no dictionary match, attempt @c vm_parse_number().
+ *     In compile mode, compile as a literal; in interpret mode, push directly.
+ *  5. **Error**: unknown token — sets @c vm->error.
+ *
+ * @param vm        VM instance.
+ * @param word_str  Token string (need not be NUL-terminated).
+ * @param len       Length of @p word_str in bytes.
+ */
 void vm_interpret_word(VM* vm, const char* word_str, size_t len)
 {
     if (!vm || !word_str) return;
@@ -561,16 +733,19 @@ void vm_interpret_word(VM* vm, const char* word_str, size_t len)
 }
 
 /**
- * @brief Interpret a string of Forth code
+ * @brief Interpret a NUL-terminated string of FORTH source code.
  *
- * Main interpretation loop that:
- * - Loads input into VM buffer
- * - Parses words
- * - Executes or compiles each word
- * - Handles numbers
+ * Copies @p input into @c vm->input_buffer (capped at
+ * @c INPUT_BUFFER_SIZE − 1 bytes, NUL-terminated), then drives the
+ * word-parse / token-dispatch loop until the buffer is exhausted or
+ * @c vm->error is set. Each token is dispatched to @c vm_interpret_word().
  *
- * @param vm Pointer to VM instance
- * @param input String containing Forth code to interpret
+ * This is the top-level entry point used by the REPL, @c INCLUDE, and
+ * inline @c -c execution. It does not reset @c vm->error before running —
+ * the caller is responsible for clearing error state if desired.
+ *
+ * @param vm     VM instance.
+ * @param input  NUL-terminated FORTH source string to interpret.
  */
 void vm_interpret(VM* vm, const char* input)
 {
@@ -601,14 +776,17 @@ void vm_interpret(VM* vm, const char* input)
 /* ====================== VM memory helpers ======================= */
 
 /**
- * @brief Check if memory address range is valid
+ * @brief Validate that a VM address range lies within @c vm->memory.
  *
- * Validates that an address range falls within VM memory bounds.
+ * Checks that [addr, addr+len) is fully contained within the
+ * @c VM_MEMORY_SIZE-byte flat address space. The check is done with
+ * unsigned arithmetic to avoid UB on overflow: if @p len alone exceeds
+ * @c VM_MEMORY_SIZE the range is immediately rejected.
  *
- * @param vm Pointer to VM instance
- * @param addr Virtual address to check
- * @param len Length of memory range
- * @return 1 if range is valid, 0 if invalid
+ * @param vm    VM instance; returns 0 if NULL or memory not allocated.
+ * @param addr  Start of the range (inclusive).
+ * @param len   Number of bytes in the range.
+ * @return      1 if the full range [addr, addr+len) is in bounds; 0 otherwise.
  */
 int vm_addr_ok(struct VM* vm, vaddr_t addr, size_t len)
 {
@@ -617,6 +795,18 @@ int vm_addr_ok(struct VM* vm, vaddr_t addr, size_t len)
     return addr <= (vaddr_t)(VM_MEMORY_SIZE - len);
 }
 
+/**
+ * @brief Return a host C pointer into VM memory at @p addr.
+ *
+ * Validates the address with @c vm_addr_ok() (minimum 1-byte range) and
+ * returns @c NULL if the address is out of bounds or @p vm is uninitialised.
+ * The returned pointer is valid for at least one byte; callers that need
+ * multi-byte access should perform their own range check first.
+ *
+ * @param vm    VM instance.
+ * @param addr  VM byte offset to dereference.
+ * @return      Host pointer into @c vm->memory, or NULL on bounds failure.
+ */
 uint8_t* vm_ptr(struct VM* vm, vaddr_t addr)
 {
     if (!vm || !vm->memory) return NULL;
@@ -624,6 +814,16 @@ uint8_t* vm_ptr(struct VM* vm, vaddr_t addr)
     return vm->memory + (size_t)addr;
 }
 
+/**
+ * @brief Load an unsigned byte from VM memory.
+ *
+ * Resolves @p addr via @c vm_ptr(). Sets @c vm->error and returns 0 if
+ * the address is out of bounds.
+ *
+ * @param vm    VM instance.
+ * @param addr  VM byte offset to read.
+ * @return      Byte value at @p addr, or 0 on error.
+ */
 uint8_t vm_load_u8(struct VM* vm, vaddr_t addr)
 {
     uint8_t* p = vm_ptr(vm, addr);
@@ -635,6 +835,16 @@ uint8_t vm_load_u8(struct VM* vm, vaddr_t addr)
     return *p;
 }
 
+/**
+ * @brief Store an unsigned byte to VM memory.
+ *
+ * Resolves @p addr via @c vm_ptr(). Sets @c vm->error if the address
+ * is out of bounds; otherwise writes @p v.
+ *
+ * @param vm    VM instance.
+ * @param addr  VM byte offset to write.
+ * @param v     Byte value to store.
+ */
 void vm_store_u8(struct VM* vm, vaddr_t addr, uint8_t v)
 {
     uint8_t* p = vm_ptr(vm, addr);
@@ -646,6 +856,18 @@ void vm_store_u8(struct VM* vm, vaddr_t addr, uint8_t v)
     *p = v;
 }
 
+/**
+ * @brief Load an aligned cell from VM memory.
+ *
+ * Validates that @p addr is within bounds for a full @c cell_t read and
+ * that it is naturally aligned (addr % sizeof(cell_t) == 0). Uses
+ * @c memcpy() rather than a direct pointer dereference to avoid strict
+ * aliasing and alignment UB. Sets @c vm->error and returns 0 on failure.
+ *
+ * @param vm    VM instance.
+ * @param addr  Aligned VM byte offset to read.
+ * @return      Cell value at @p addr, or 0 on alignment or bounds error.
+ */
 cell_t vm_load_cell(struct VM* vm, vaddr_t addr)
 {
     if (!vm_addr_ok(vm, addr, sizeof(cell_t)) || (addr % sizeof(cell_t)) != 0)
@@ -658,6 +880,16 @@ cell_t vm_load_cell(struct VM* vm, vaddr_t addr)
     return out;
 }
 
+/**
+ * @brief Store an aligned cell to VM memory.
+ *
+ * Validates alignment and bounds, then copies @p v into VM memory via
+ * @c memcpy(). Sets @c vm->error on alignment or bounds failure.
+ *
+ * @param vm    VM instance.
+ * @param addr  Aligned VM byte offset to write.
+ * @param v     Cell value to store.
+ */
 void vm_store_cell(struct VM* vm, vaddr_t addr, cell_t v)
 {
     if (!vm_addr_ok(vm, addr, sizeof(cell_t)) || (addr % sizeof(cell_t)) != 0)
@@ -670,7 +902,19 @@ void vm_store_cell(struct VM* vm, vaddr_t addr, cell_t v)
 
 /* vm_bootstrap_scr moved to vm_bootstrap.c */
 
-/* Make the most recently created word immediate (FORTH-79) */
+/**
+ * @brief Mark the most recently created word as IMMEDIATE (FORTH-79).
+ *
+ * Sets @c WORD_IMMEDIATE on @c vm->latest so the word executes during
+ * compilation rather than being compiled into the current definition.
+ * Also calls @c physics_metadata_refresh_state() to update the physics
+ * engine's record of the entry's flags.
+ *
+ * Sets @c vm->error if @p vm has no @c latest entry (i.e., the dictionary
+ * is empty or no word has been created yet).
+ *
+ * @param vm  VM instance.
+ */
 void vm_make_immediate(VM* vm)
 {
     if (!vm) return;
