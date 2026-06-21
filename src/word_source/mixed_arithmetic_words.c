@@ -257,7 +257,7 @@ void mixed_math_word_slash_mod(VM *vm) {
 }
 
 /**
- * @brief STAR-SLASH aka */ ( n1 n2 n3 -- n4 )
+ * @brief STAR-SLASH (FORTH word: @c *-/ ) — multiply then divide. ( n1 n2 n3 -- n4 )
  *
  * Computes @c (n1 * n2) / n3 using a @c long long intermediate on 64-bit builds
  * to avoid intermediate overflow. On 32-bit builds falls back to @c long double.
@@ -292,7 +292,7 @@ void mixed_math_word_star_slash(VM *vm) {
 }
 
 /**
- * @brief STAR-SLASH-MOD aka */MOD ( n1 n2 n3 -- rem quot )
+ * @brief STAR-SLASH-MOD (FORTH word: @c *-/MOD ) — multiply then divide, leaving remainder. ( n1 n2 n3 -- rem quot )
  *
  * Computes @c (n1 * n2) / n3 and leaves both the remainder (deeper) and
  * quotient (TOS). Uses @c long long on 64-bit builds; falls back to
