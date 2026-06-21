@@ -69,9 +69,37 @@ typedef struct {
     uint8_t read_only;
 } blkio_file_state_t;
 
-/* Public helpers */
+/**
+ * @brief Return the byte size required for a @c blkio_file_state_t.
+ *
+ * Used by @c blkio_factory_open() to verify the caller's state buffer is
+ * large enough before calling @c blkio_file_init_state().
+ *
+ * @return sizeof(blkio_file_state_t)
+ */
 size_t blkio_file_state_size(void) { return sizeof(blkio_file_state_t); }
 
+/**
+ * @brief Initialise a @c blkio_file_state_t in caller-provided memory.
+ *
+ * Copies the path into state (truncated to PATH_MAX-1), sets @c fbs,
+ * @c total_blocks, and @c read_only, and writes the state pointer to
+ * @c *out_opaque. The file descriptor is initialised to -1; the actual
+ * @c open() call happens in @c file_open() (the vtable open method).
+ * @c create_if_missing and @c truncate_to_size are accepted for API
+ * compatibility but currently unused (creation is handled in @c file_open()).
+ *
+ * @param state_mem          Caller-allocated state buffer
+ * @param state_len          Size of @c state_mem (must be >= blkio_file_state_size())
+ * @param path               Path to the disk image file
+ * @param total_blocks       Total block count (0 = derive from file size at open)
+ * @param fbs                FORTH block size in bytes
+ * @param read_only          1 = open read-only, 0 = read-write
+ * @param create_if_missing  Ignored (reserved for future use)
+ * @param truncate_to_size   Ignored (reserved for future use)
+ * @param out_opaque         Output: set to @c state_mem on success
+ * @return @c BLKIO_OK on success, @c BLKIO_EINVAL on bad arguments
+ */
 int blkio_file_init_state(void *state_mem, size_t state_len,
                           const char *path,
                           uint32_t total_blocks,
@@ -106,9 +134,19 @@ int blkio_file_init_state(void *state_mem, size_t state_len,
     return BLKIO_OK;
 }
 
-/* Portable full-read/write at an absolute offset using lseek.
-   NOTE: not safe for concurrent writers/readers on the same fd.
-*/
+/**
+ * @brief Perform a complete read of @c len bytes at absolute offset @c off_abs.
+ *
+ * Uses @c lseek() + @c read() loops to handle short reads and EINTR.
+ * Not safe for concurrent readers/writers on the same file descriptor.
+ * Returns -1 on any I/O error or unexpected EOF.
+ *
+ * @param fd      Open file descriptor
+ * @param buf     Destination buffer (must be >= @c len bytes)
+ * @param len     Number of bytes to read
+ * @param off_abs Absolute byte offset within the file
+ * @return 0 on success, -1 on error (errno set)
+ */
 static int full_read_at(int fd, void *buf, size_t len, off_t off_abs) {
     uint8_t *p = (uint8_t *) buf;
     size_t done = 0;
@@ -128,6 +166,19 @@ static int full_read_at(int fd, void *buf, size_t len, off_t off_abs) {
     return 0;
 }
 
+/**
+ * @brief Perform a complete write of @c len bytes at absolute offset @c off_abs.
+ *
+ * Uses @c lseek() + @c write() loops to handle short writes and EINTR.
+ * Not safe for concurrent readers/writers on the same file descriptor.
+ * Returns -1 on any I/O error.
+ *
+ * @param fd      Open file descriptor
+ * @param buf     Source buffer (must be >= @c len bytes)
+ * @param len     Number of bytes to write
+ * @param off_abs Absolute byte offset within the file
+ * @return 0 on success, -1 on error (errno set)
+ */
 static int full_write_at(int fd, const void *buf, size_t len, off_t off_abs) {
     const uint8_t *p = (const uint8_t *) buf;
     size_t done = 0;
@@ -147,16 +198,22 @@ static int full_write_at(int fd, const void *buf, size_t len, off_t off_abs) {
     return 0;
 }
 
-/* Vtable impl */
+/** @brief Open the file and attach it to the device handle. */
 static int file_open(blkio_dev_t *dev, const blkio_params_t *p);
 
+/** @brief Close the file descriptor held by the device. */
 static int file_close(blkio_dev_t * dev);
 
+/** @brief Read one FORTH block from the file into @c dst. */
 static int file_read(blkio_dev_t *dev, uint32_t fblock, void *dst);
 
+/** @brief Write one FORTH block from @c src into the file. */
 static int file_write(blkio_dev_t *dev, uint32_t fblock, const void *src);
 
+/** @brief Flush (fsync) pending writes to the file. */
 static int file_flush(blkio_dev_t * dev);
+
+/** @brief Return device info (block size, count, physical size, read-only flag). */
 static int file_info(blkio_dev_t * dev, blkio_info_t * out);
 
 static const blkio_vtable_t BLKIO_FILE_VT = {
@@ -168,8 +225,24 @@ static const blkio_vtable_t BLKIO_FILE_VT = {
     .info = file_info
 };
 
+/**
+ * @brief Return the vtable for the file-backed block I/O backend.
+ * @return Pointer to the static @c blkio_vtable_t for file devices
+ */
 const blkio_vtable_t *blkio_file_vtable(void) { return &BLKIO_FILE_VT; }
 
+/**
+ * @brief Open the underlying file and populate the device handle.
+ *
+ * Opens @c st->path with @c O_RDONLY or @c O_RDWR|O_CREAT depending on
+ * @c st->read_only. Derives @c total_blocks from the file size if the state
+ * value is 0 — the file size must then be a multiple of @c fbs. Sets
+ * @c dev->state, @c dev->forth_block_size, and @c dev->total_blocks on success.
+ *
+ * @param dev Uninitialised device handle
+ * @param p   Parameters including the pre-initialised opaque state pointer
+ * @return @c BLKIO_OK on success, @c BLKIO_EIO or @c BLKIO_EINVAL on failure
+ */
 static int file_open(blkio_dev_t *dev, const blkio_params_t *p) {
     if (!dev || !p || !p->opaque) return BLKIO_EINVAL;
 
@@ -223,6 +296,12 @@ static int file_open(blkio_dev_t *dev, const blkio_params_t *p) {
     return BLKIO_OK;
 }
 
+/**
+ * @brief Close the file descriptor held by the device.
+ *
+ * @param dev Device handle (must have valid state)
+ * @return @c BLKIO_OK on success, @c BLKIO_EIO if @c close() fails
+ */
 static int file_close(blkio_dev_t *dev) {
     if (!dev || !dev->state) return BLKIO_EINVAL;
     blkio_file_state_t *st = (blkio_file_state_t *) dev->state;
@@ -234,6 +313,14 @@ static int file_close(blkio_dev_t *dev) {
     return BLKIO_OK;
 }
 
+/**
+ * @brief Read one FORTH block from the file backend.
+ *
+ * @param dev    Open file device
+ * @param fblock Logical block number (must be < @c dev->total_blocks)
+ * @param dst    Destination buffer (must be >= @c fbs bytes)
+ * @return @c BLKIO_OK, @c BLKIO_EINVAL if @c fblock is out of range, or @c BLKIO_EIO
+ */
 static int file_read(blkio_dev_t *dev, uint32_t fblock, void *dst) {
     if (!dev || !dst) return BLKIO_EINVAL;
     if (fblock >= dev->total_blocks) return BLKIO_EINVAL;
@@ -246,6 +333,15 @@ static int file_read(blkio_dev_t *dev, uint32_t fblock, void *dst) {
     return BLKIO_OK;
 }
 
+/**
+ * @brief Write one FORTH block to the file backend.
+ *
+ * @param dev    Open file device (must not be read-only)
+ * @param fblock Logical block number (must be < @c dev->total_blocks)
+ * @param src    Source buffer (must be >= @c fbs bytes)
+ * @return @c BLKIO_OK, @c BLKIO_ENOSUP if read-only, @c BLKIO_EINVAL if out of range,
+ *         or @c BLKIO_EIO on write failure
+ */
 static int file_write(blkio_dev_t *dev, uint32_t fblock, const void *src) {
     if (!dev || !src) return BLKIO_EINVAL;
     if (fblock >= dev->total_blocks) return BLKIO_EINVAL;
@@ -259,6 +355,12 @@ static int file_write(blkio_dev_t *dev, uint32_t fblock, const void *src) {
     return BLKIO_OK;
 }
 
+/**
+ * @brief Flush pending writes via @c fsync() on Linux/POSIX; no-op elsewhere.
+ *
+ * @param dev Open file device
+ * @return @c BLKIO_OK on success, @c BLKIO_EIO if @c fsync() fails
+ */
 static int file_flush(blkio_dev_t *dev) {
     if (!dev) return BLKIO_EINVAL;
     blkio_file_state_t *st = (blkio_file_state_t *) dev->state;
@@ -272,6 +374,16 @@ static int file_flush(blkio_dev_t *dev) {
 #endif
 }
 
+/**
+ * @brief Return device info for the file backend.
+ *
+ * Physical sector size is reported as 512 (best-effort guess; no ioctl used).
+ * Physical size in bytes comes from @c fstat().
+ *
+ * @param dev Open file device
+ * @param out Output struct to populate
+ * @return @c BLKIO_OK on success, @c BLKIO_EIO if @c fstat() fails
+ */
 static int file_info(blkio_dev_t *dev, blkio_info_t *out) {
     if (!dev || !out) return BLKIO_EINVAL;
     blkio_file_state_t *st = (blkio_file_state_t *) dev->state;

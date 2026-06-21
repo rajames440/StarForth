@@ -54,9 +54,29 @@ typedef struct {
     uint8_t read_only;
 } blkio_ram_state_t;
 
-/* Public helpers */
+/**
+ * @brief Return the byte size required for a @c blkio_ram_state_t.
+ * @return sizeof(blkio_ram_state_t)
+ */
 size_t blkio_ram_state_size(void) { return sizeof(blkio_ram_state_t); }
 
+/**
+ * @brief Initialise a @c blkio_ram_state_t in caller-provided memory.
+ *
+ * Stores @c base, @c total_blocks, @c fbs (defaulting to
+ * @c BLKIO_FORTH_BLOCK_SIZE if zero), and @c read_only into the state struct
+ * at @c state_mem. Sets @c *out_opaque to point to the state. The caller
+ * owns the @c base memory and must ensure it remains valid for the device lifetime.
+ *
+ * @param state_mem    Caller-allocated buffer (must be >= blkio_ram_state_size())
+ * @param state_len    Size of @c state_mem in bytes
+ * @param base         Pointer to the RAM block array
+ * @param total_blocks Number of FORTH blocks in @c base
+ * @param fbs          FORTH block size in bytes (0 = use default)
+ * @param read_only    1 = deny writes, 0 = allow reads and writes
+ * @param out_opaque   Output: set to @c state_mem on success
+ * @return @c BLKIO_OK on success, @c BLKIO_EINVAL on bad arguments
+ */
 int blkio_ram_init_state(void *state_mem, size_t state_len,
                          uint8_t *base, uint32_t total_blocks,
                          uint32_t fbs, uint8_t read_only,
@@ -73,16 +93,22 @@ int blkio_ram_init_state(void *state_mem, size_t state_len,
     return BLKIO_OK;
 }
 
-/* Vtable impl */
+/** @brief Attach state to the device handle and validate parameters. */
 static int ram_open(blkio_dev_t *dev, const blkio_params_t *p);
 
+/** @brief Close the RAM device (no-op; caller owns the memory). */
 static int ram_close(blkio_dev_t * dev);
 
+/** @brief Read one FORTH block from the RAM array into @c dst. */
 static int ram_read(blkio_dev_t *dev, uint32_t fblock, void *dst);
 
+/** @brief Write one FORTH block from @c src into the RAM array. */
 static int ram_write(blkio_dev_t *dev, uint32_t fblock, const void *src);
 
+/** @brief Flush the RAM device — always a no-op since data is in memory. */
 static int ram_flush(blkio_dev_t * dev);
+
+/** @brief Return device info (block size, count, physical size, read-only flag). */
 static int ram_info(blkio_dev_t * dev, blkio_info_t * out);
 
 static const blkio_vtable_t BLKIO_RAM_VT = {
@@ -94,14 +120,32 @@ static const blkio_vtable_t BLKIO_RAM_VT = {
     .info = ram_info
 };
 
+/**
+ * @brief Return the vtable for the RAM block I/O backend.
+ * @return Pointer to the static @c blkio_vtable_t for RAM devices
+ */
 const blkio_vtable_t *blkio_ram_vtable(void) { return &BLKIO_RAM_VT; }
 
-/* Helpers */
+/**
+ * @brief Test whether @c fb is a valid block number for the RAM device.
+ * @param st RAM state (may be NULL)
+ * @param fb Block number to test
+ * @return 1 if in bounds, 0 otherwise
+ */
 static inline int in_bounds(const blkio_ram_state_t *st, uint32_t fb) {
     return st && (fb < st->total_blocks);
 }
 
-/* Methods */
+/**
+ * @brief Attach the RAM state to the device handle.
+ *
+ * Validates that @c base and @c fbs are non-zero, then sets
+ * @c dev->state, @c dev->forth_block_size, and @c dev->total_blocks.
+ *
+ * @param dev Uninitialised device handle
+ * @param p   Parameters with pre-initialised opaque RAM state pointer
+ * @return @c BLKIO_OK on success, @c BLKIO_EINVAL on bad arguments
+ */
 static int ram_open(blkio_dev_t *dev, const blkio_params_t *p) {
     if (!dev || !p || !p->opaque) return BLKIO_EINVAL;
     blkio_ram_state_t *st = (blkio_ram_state_t *) p->opaque;
@@ -113,11 +157,25 @@ static int ram_open(blkio_dev_t *dev, const blkio_params_t *p) {
     return BLKIO_OK;
 }
 
+/**
+ * @brief Close the RAM device — caller retains ownership of the RAM buffer.
+ *
+ * @param dev Device handle
+ * @return @c BLKIO_OK always (no resources to release)
+ */
 static int ram_close(blkio_dev_t *dev) {
     if (!dev || !dev->state) return BLKIO_EINVAL;
     return BLKIO_OK; /* caller owns memory */
 }
 
+/**
+ * @brief Copy one FORTH block from the RAM array to @c dst.
+ *
+ * @param dev    Open RAM device
+ * @param fblock Logical block number (must be < @c total_blocks)
+ * @param dst    Destination buffer (must be >= @c fbs bytes)
+ * @return @c BLKIO_OK on success, @c BLKIO_EINVAL if out of range or NULL pointer
+ */
 static int ram_read(blkio_dev_t *dev, uint32_t fblock, void *dst) {
     if (!dev || !dst) return BLKIO_EINVAL;
     blkio_ram_state_t *st = (blkio_ram_state_t *) dev->state;
@@ -127,6 +185,15 @@ static int ram_read(blkio_dev_t *dev, uint32_t fblock, void *dst) {
     return BLKIO_OK;
 }
 
+/**
+ * @brief Copy one FORTH block from @c src into the RAM array.
+ *
+ * @param dev    Open RAM device (must not be read-only)
+ * @param fblock Logical block number (must be < @c total_blocks)
+ * @param src    Source buffer (must be >= @c fbs bytes)
+ * @return @c BLKIO_OK on success, @c BLKIO_ENOSUP if read-only,
+ *         @c BLKIO_EINVAL if out of range or NULL pointer
+ */
 static int ram_write(blkio_dev_t *dev, uint32_t fblock, const void *src) {
     if (!dev || !src) return BLKIO_EINVAL;
     blkio_ram_state_t *st = (blkio_ram_state_t *) dev->state;
@@ -137,11 +204,27 @@ static int ram_write(blkio_dev_t *dev, uint32_t fblock, const void *src) {
     return BLKIO_OK;
 }
 
+/**
+ * @brief Flush the RAM device — no-op since data is always in memory.
+ *
+ * @param dev Device handle (unused)
+ * @return @c BLKIO_OK always
+ */
 static int ram_flush(blkio_dev_t *dev) {
     (void) dev;
     return BLKIO_OK;
 }
 
+/**
+ * @brief Return device info for the RAM backend.
+ *
+ * Physical sector size equals @c fbs (RAM has no physical sector constraint).
+ * Physical size in bytes = @c fbs * @c total_blocks.
+ *
+ * @param dev Open RAM device
+ * @param out Output struct to populate
+ * @return @c BLKIO_OK on success, @c BLKIO_EINVAL if @c dev or @c out is NULL
+ */
 static int ram_info(blkio_dev_t *dev, blkio_info_t *out) {
     if (!dev || !out) return BLKIO_EINVAL;
     blkio_ram_state_t *st = (blkio_ram_state_t *) dev->state;
