@@ -57,11 +57,17 @@
 #include "platform_time.h"
 #include "dictionary_heat_optimization.h"
 
-/* ============================================================================
- * HEAT-PERCENTILES ( -- 25th 50th 75th )
+/**
+ * @brief HEAT-PERCENTILES ( -- 25th 50th 75th )
  *
- * Return current heat percentile thresholds used in heat-aware lookup
- * ============================================================================
+ * Pushes the three heat percentile thresholds currently used by the
+ * heat-aware dictionary lookup strategy: @c heat_threshold_25th,
+ * @c heat_threshold_50th, and @c heat_threshold_75th. These are updated
+ * by @c dict_update_heat_percentiles() during bucket reorganisation.
+ *
+ * Stack effect: ( -- 25th 50th 75th )   TOS = 75th
+ *
+ * @param vm Active VM; sets @c vm->error = 1 on stack overflow
  */
 void forth_HEAT_PERCENTILES(VM *vm) {
     if (vm->error) return;
@@ -76,11 +82,15 @@ void forth_HEAT_PERCENTILES(VM *vm) {
     vm->data_stack[vm->dsp++] = vm->heat_threshold_75th;
 }
 
-/* ============================================================================
- * LOOKUP-STRATEGY@ ( -- strategy )
+/**
+ * @brief LOOKUP-STRATEGY@ ( -- strategy )
  *
- * Return current lookup strategy (0=naive, 1=heat-aware)
- * ============================================================================
+ * Pushes the current dictionary lookup strategy: 0 = naive (newest-first
+ * linear scan), 1 = heat-aware (hot-bucket-first).
+ *
+ * Stack effect: ( -- strategy )
+ *
+ * @param vm Active VM; sets @c vm->error = 1 on stack overflow
  */
 void forth_LOOKUP_STRATEGY_FETCH(VM *vm) {
     if (vm->error) return;
@@ -93,11 +103,15 @@ void forth_LOOKUP_STRATEGY_FETCH(VM *vm) {
     vm->data_stack[vm->dsp++] = (cell_t)vm->lookup_strategy;
 }
 
-/* ============================================================================
- * LOOKUP-STRATEGY! ( strategy -- )
+/**
+ * @brief LOOKUP-STRATEGY! ( strategy -- )
  *
- * Force lookup strategy (0=naive, 1=heat-aware)
- * ============================================================================
+ * Sets @c vm->lookup_strategy to @c strategy. Only values 0 (naive) and
+ * 1 (heat-aware) are accepted; out-of-range values are silently discarded.
+ *
+ * Stack effect: ( strategy -- )
+ *
+ * @param vm Active VM; sets @c vm->error = 1 on stack underflow
  */
 void forth_LOOKUP_STRATEGY_STORE(VM *vm) {
     if (vm->error) return;
@@ -113,11 +127,18 @@ void forth_LOOKUP_STRATEGY_STORE(VM *vm) {
     }
 }
 
-/* ============================================================================
- * REORG-BUCKETS ( -- )
+/**
+ * @brief REORG-BUCKETS ( -- )
  *
- * Force immediate bucket reorganization by heat
- * ============================================================================
+ * Immediately triggers @c dict_reorganize_buckets_by_heat() followed by
+ * @c dict_update_heat_percentiles() to re-sort the dictionary's lookup
+ * buckets by current execution heat and refresh the percentile thresholds.
+ * Normally this happens automatically on a heartbeat cycle; this word forces
+ * it on-demand for testing or after a large batch of @c HEAT! assignments.
+ *
+ * Stack effect: ( -- )
+ *
+ * @param vm Active VM; no-op if @c vm->error is set
  */
 void forth_REORG_BUCKETS(VM *vm) {
     if (vm->error) return;
@@ -126,11 +147,17 @@ void forth_REORG_BUCKETS(VM *vm) {
     dict_update_heat_percentiles(vm);
 }
 
-/* ============================================================================
- * SHOW-HEAT-OPTIMIZATION ( -- )
+/**
+ * @brief SHOW-HEAT-OPTIMIZATION ( -- )
  *
- * Display current heat optimization status and strategy
- * ============================================================================
+ * Prints a summary of the current dictionary heat optimization state to
+ * @c stdout: the active lookup strategy (naive or heat-aware), the three
+ * percentile threshold values, and the resulting hot/warm/cool heat zones.
+ * Intended for interactive diagnostics.
+ *
+ * Stack effect: ( -- )
+ *
+ * @param vm Active VM; no-op if @c vm->error is set
  */
 void forth_SHOW_HEAT_OPTIMIZATION(VM *vm) {
     if (vm->error) return;
@@ -160,12 +187,19 @@ void forth_SHOW_HEAT_OPTIMIZATION(VM *vm) {
     printf("\n");
 }
 
-/* ============================================================================
- * COMPARE-LOOKUPS ( iterations -- )
+/**
+ * @brief COMPARE-LOOKUPS ( iterations -- )
  *
- * Quick benchmark: compare naive vs heat-aware lookup performance
- * Measures time to find frequently used words
- * ============================================================================
+ * Micro-benchmark that measures naive vs heat-aware dictionary lookup
+ * performance over @c iterations passes through six common test words
+ * (DUP, DROP, SWAP, @, !, EMIT). Prints elapsed time in milliseconds and
+ * the percentage speedup (or slowdown) for heat-aware vs naive. Restores
+ * the original @c vm->lookup_strategy on completion. Intended for
+ * interactive diagnostics; not used in DoE mode.
+ *
+ * Stack effect: ( iterations -- )
+ *
+ * @param vm Active VM; sets @c vm->error = 1 on underflow or non-positive @c iterations
  */
 void forth_COMPARE_LOOKUPS(VM *vm) {
     if (vm->error) return;
@@ -233,9 +267,14 @@ void forth_COMPARE_LOOKUPS(VM *vm) {
     printf("\n");
 }
 
-/* ============================================================================
- * Word Registration
- * ============================================================================
+/**
+ * @brief Register all dictionary heat diagnostic words with the VM dictionary.
+ *
+ * Registers: @c HEAT-PERCENTILES, @c LOOKUP-STRATEGY@, @c LOOKUP-STRATEGY!,
+ * @c REORG-BUCKETS, @c SHOW-HEAT-OPTIMIZATION, @c COMPARE-LOOKUPS.
+ * Called during VM bootstrap.
+ *
+ * @param vm Active VM to register words into
  */
 void register_dictionary_heat_diagnostic_words(VM *vm) {
     register_word(vm, "HEAT-PERCENTILES", forth_HEAT_PERCENTILES);
