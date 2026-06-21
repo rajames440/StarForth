@@ -66,6 +66,24 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/**
+ * @brief Immutable snapshot view of a @c RollingWindowOfTruth.
+ *
+ * Provides a read-only window into one of the two double-buffered snapshot
+ * arrays. Reader threads (the heartbeat, pipelining, and diversity subsystems)
+ * obtain a @c rolling_window_view_t via @c rolling_window_snapshot_view()
+ * rather than accessing the live @c RollingWindowOfTruth fields directly;
+ * this avoids TOCTOU races with the writer thread that calls
+ * @c rolling_window_record_execution().
+ *
+ * Fields mirror the snapshot-time copies of the corresponding
+ * @c RollingWindowOfTruth members:
+ * - @c history — pointer into @c snapshot_buffers[idx]; size @c ROLLING_WINDOW_SIZE.
+ * - @c window_pos — write cursor at snapshot time.
+ * - @c total_executions — monotonic execution count at snapshot time.
+ * - @c effective_window_size — adaptive window width at snapshot time.
+ * - @c is_warm — whether the window had reached ≥ 1024 executions at snapshot.
+ */
 typedef struct
 {
     const uint32_t* history;
@@ -75,6 +93,26 @@ typedef struct
     int is_warm;
 } rolling_window_view_t;
 
+/**
+ * @brief Count unique consecutive-pair transitions in a snapshot view.
+ *
+ * Scans the @p view's history buffer over the most recent
+ * @c effective_window_size entries (when warm) or all @c ROLLING_WINDOW_SIZE
+ * entries (when cold) and counts the number of adjacent pairs
+ * @c (history[i], history[i+1]) where @c history[i+1] ≠ @c history[i].
+ *
+ * This is the primary pattern-diversity metric used by:
+ * - @c dict_adaptive_optimization_pass() — to choose between heat-aware and
+ *   naive lookup strategies (diversity > 70 → heat-aware).
+ * - @c rolling_window_run_adaptive_pass() — to decide whether to shrink or
+ *   grow @c effective_window_size.
+ *
+ * Returns 0 if @p view is NULL, has no history, or has fewer than 2
+ * total executions.
+ *
+ * @param view  Immutable snapshot view; must have @c history != NULL.
+ * @return      Count of unique adjacent-pair transitions in the active window.
+ */
 static uint64_t rolling_window_measure_diversity_view(const rolling_window_view_t* view)
 {
     if (!view || !view->history || view->total_executions < 2)
@@ -102,6 +140,23 @@ static uint64_t rolling_window_measure_diversity_view(const rolling_window_view_
     return unique_transitions;
 }
 
+/**
+ * @brief Populate a @c rolling_window_view_t from the current double-buffer snapshot.
+ *
+ * Reads @c window->snapshot_index with @c __ATOMIC_ACQUIRE to determine which
+ * of the two snapshot buffers (@c snapshot_buffers[0] or @c [1]) is the most
+ * recently published. Fills @p view with the corresponding history pointer and
+ * metadata fields (@c window_pos, @c total_executions, @c effective_window_size,
+ * @c is_warm). If @p window or @p view is NULL, @p view is zeroed and the
+ * function returns early.
+ *
+ * Callers hold no lock — the acquire barrier on @c snapshot_index ensures they
+ * see a coherent snapshot that was fully written before
+ * @c rolling_window_publish_snapshot() released it via @c __ATOMIC_RELEASE.
+ *
+ * @param window  The @c RollingWindowOfTruth to sample.
+ * @param view    Output @c rolling_window_view_t; zeroed on NULL @p window.
+ */
 static void rolling_window_snapshot_view(const RollingWindowOfTruth* window,
                                          rolling_window_view_t* view)
 {
@@ -120,6 +175,25 @@ static void rolling_window_snapshot_view(const RollingWindowOfTruth* window,
     view->is_warm = window->snapshot_is_warm[idx];
 }
 
+/**
+ * @brief Publish the live execution history into the inactive double-buffer slot.
+ *
+ * Implements the write side of the lock-free double buffer:
+ * 1. Identifies the inactive slot as @c write_idx = @c snapshot_index XOR 1.
+ * 2. Copies @c window->execution_history (the live circular buffer) into
+ *    @c snapshot_buffers[write_idx] via @c memcpy.
+ * 3. Copies the current @c window_pos, @c total_executions,
+ *    @c effective_window_size, and @c is_warm into the corresponding
+ *    @c snapshot_* parallel arrays.
+ * 4. Flips @c snapshot_index to @p write_idx with @c __ATOMIC_RELEASE, making
+ *    the new snapshot visible to readers.
+ * 5. Clears @c snapshot_pending with @c __ATOMIC_RELEASE.
+ *
+ * Must only be called from the writer (main VM thread). No-op if @p window,
+ * @c window->execution_history, or @c snapshot_buffers[0] are NULL.
+ *
+ * @param window  The @c RollingWindowOfTruth to snapshot.
+ */
 static void rolling_window_publish_snapshot(RollingWindowOfTruth* window)
 {
     if (!window || !window->execution_history || !window->snapshot_buffers[0])
@@ -140,6 +214,24 @@ static void rolling_window_publish_snapshot(RollingWindowOfTruth* window)
     __atomic_store_n(&window->snapshot_pending, 0, __ATOMIC_RELEASE);
 }
 
+/**
+ * @brief Publish a new snapshot only if the @c snapshot_pending flag is set.
+ *
+ * Atomically exchanges @c window->snapshot_pending with 0 using
+ * @c __ATOMIC_ACQ_REL. If the exchanged value was non-zero (meaning
+ * @c rolling_window_record_execution() has written new data since the last
+ * publish), calls @c rolling_window_publish_snapshot() to make the current
+ * state visible to readers. Otherwise returns without copying.
+ *
+ * This is the lazy-publish counterpart to @c rolling_window_record_execution()'s
+ * eager flag set. By batching publish work to read-side call sites (
+ * @c rolling_window_get_recent_sequence(), @c rolling_window_find_hottest_word(),
+ * etc.), unnecessary @c memcpy of the full @c ROLLING_WINDOW_SIZE buffer is
+ * avoided when no new data has arrived.
+ *
+ * @param window  The @c RollingWindowOfTruth to conditionally snapshot.
+ *                No-op if NULL.
+ */
 static void rolling_window_publish_snapshot_if_needed(RollingWindowOfTruth* window)
 {
     if (!window)
@@ -157,6 +249,30 @@ static void rolling_window_publish_snapshot_if_needed(RollingWindowOfTruth* wind
  * ============================================================================
  */
 
+/**
+ * @brief Initialise a @c RollingWindowOfTruth, allocating its three heap buffers.
+ *
+ * Allocates and zero-initialises three @c uint32_t arrays, each of
+ * @c ROLLING_WINDOW_SIZE elements, via @c sf_calloc:
+ * - @c window->execution_history — the live circular write buffer.
+ * - @c window->snapshot_buffers[0] — first double-buffer read slot.
+ * - @c window->snapshot_buffers[1] — second double-buffer read slot.
+ *
+ * If any allocation fails, all previously allocated buffers are freed and
+ * nulled before returning −1. Initialises scalar state:
+ * - @c window_pos = 0, @c total_executions = 0, @c is_warm = 0 (cold start).
+ * - @c effective_window_size = @c ROLLING_WINDOW_SIZE (start at maximum).
+ * - @c snapshot_index = 0, @c snapshot_pending = 1.
+ * - All @c snapshot_window_pos[] / @c snapshot_total_executions[] / etc. = 0.
+ * - @c adaptive_check_accumulator = 0, @c adaptive_pending = 0.
+ *
+ * Immediately calls @c rolling_window_publish_snapshot() to push the zeroed
+ * state into both snapshot slots so that any early read-side call before the
+ * first @c rolling_window_record_execution() gets a coherent (empty) view.
+ *
+ * @param window  The @c RollingWindowOfTruth to initialise; must not be NULL.
+ * @return        0 on success; −1 on NULL @p window or allocation failure.
+ */
 int rolling_window_init(RollingWindowOfTruth* window)
 {
     if (!window) return -1;
@@ -201,6 +317,30 @@ int rolling_window_init(RollingWindowOfTruth* window)
     return 0;
 }
 
+/**
+ * @brief Record one word execution in the circular history buffer.
+ *
+ * Writes @p word_id into @c window->execution_history[window_pos], advances
+ * @c window_pos modulo @c ROLLING_WINDOW_SIZE (circular wrap), increments
+ * @c total_executions, and checks the warm threshold:
+ * - Once @c total_executions ≥ 1024 and @c is_warm is still 0, sets
+ *   @c is_warm = 1. The 1024-execution threshold is calibrated to the POST
+ *   harness which generates approximately 1450 executions; reaching 1024
+ *   guarantees a statistically meaningful execution distribution before
+ *   diversity or percentile analysis begins.
+ *
+ * Sets @c snapshot_pending = 1 to signal that a new snapshot should be
+ * published on the next read-side access. When the window is warm and
+ * @c adaptive_check_accumulator reaches @c ADAPTIVE_CHECK_FREQUENCY, also sets
+ * @c adaptive_pending = 1 to request an @c effective_window_size update.
+ *
+ * Called from the interpreter hot path on every word dispatch. All operations
+ * are O(1) with no locks and no allocations.
+ *
+ * @param window   The @c RollingWindowOfTruth to record into.
+ * @param word_id  Stable numeric ID of the word just executed.
+ * @return         0 on success; −1 if @p window or @c execution_history are NULL.
+ */
 int rolling_window_record_execution(RollingWindowOfTruth* window, uint32_t word_id)
 {
     if (!window || !window->execution_history)
@@ -239,6 +379,33 @@ int rolling_window_record_execution(RollingWindowOfTruth* window, uint32_t word_
     return 0;
 }
 
+/**
+ * @brief Copy the most recent @p depth word IDs from the rolling window into @p out_sequence.
+ *
+ * Calls @c rolling_window_publish_snapshot_if_needed() then reads the current
+ * double-buffer snapshot via @c rolling_window_snapshot_view(). Copies at most
+ * @c min(@p depth, available) entries from the most recent portion of the
+ * circular buffer into @p out_sequence in chronological order (oldest entry at
+ * index 0, most recent at index @c actual_depth - 1).
+ *
+ * The available count is capped at @c min(@c total_executions, @c ROLLING_WINDOW_SIZE)
+ * so callers requesting more history than has been recorded get what is available
+ * rather than stale zeros.
+ *
+ * Entries are addressed via:
+ * @code
+ *   idx = (window_pos - actual_depth + i + ROLLING_WINDOW_SIZE) % ROLLING_WINDOW_SIZE
+ * @endcode
+ *
+ * Returns 0 immediately if @p window, @p out_sequence are NULL or @p depth is 0.
+ *
+ * @param window       The @c RollingWindowOfTruth to sample.
+ * @param depth        Maximum number of recent word IDs to copy.
+ * @param out_sequence Caller-allocated output buffer of at least @p depth
+ *                     @c uint32_t entries.
+ * @return             Actual number of entries written to @p out_sequence;
+ *                     ≤ @p depth.
+ */
 uint32_t rolling_window_get_recent_sequence(const RollingWindowOfTruth* window,
                                             uint32_t depth,
                                             uint32_t* out_sequence)
@@ -273,6 +440,31 @@ uint32_t rolling_window_get_recent_sequence(const RollingWindowOfTruth* window,
     return actual_depth;
 }
 
+/**
+ * @brief Return the word ID that appears most frequently in the rolling window.
+ *
+ * Obtains the current snapshot, allocates a zero-filled frequency array of
+ * @p dict_size @c uint32_t counters via @c sf_calloc, and scans all
+ * @c ROLLING_WINDOW_SIZE history slots to tally occurrences. Then performs a
+ * linear scan for the maximum and frees the frequency array before returning.
+ *
+ * Returns 0 immediately (without allocating) if:
+ * - @p window is NULL.
+ * - @c window->is_warm is 0 (not enough history to be meaningful).
+ * - The snapshot's @c is_warm flag is 0.
+ * - @c sf_calloc fails.
+ *
+ * The returned word ID is the zero-based index into the dictionary's word-ID
+ * space. Word ID 0 may be returned both as a legitimate hottest word and as
+ * the not-warm sentinel; callers should check @c rolling_window_is_warm()
+ * before relying on the result.
+ *
+ * @param window     The @c RollingWindowOfTruth to analyse.
+ * @param dict_size  Size of the dictionary's word-ID space; bounds the
+ *                   frequency array and the scan of the history.
+ * @return           Word ID of the most-frequently-executed word; 0 if
+ *                   the window is not warm or allocation fails.
+ */
 uint32_t rolling_window_find_hottest_word(const RollingWindowOfTruth* window,
                                           uint32_t dict_size)
 {
@@ -316,6 +508,29 @@ uint32_t rolling_window_find_hottest_word(const RollingWindowOfTruth* window,
     return hottest_id;
 }
 
+/**
+ * @brief Count how many times the transition (word_a → word_b) occurs in the history.
+ *
+ * Scans all @c ROLLING_WINDOW_SIZE consecutive adjacent pairs in the current
+ * snapshot (wrapping at the buffer end: pair @c i is
+ * @c (history[i], history[(i+1) % ROLLING_WINDOW_SIZE])) and counts how many
+ * pairs match @p word_a followed by @p word_b.
+ *
+ * Returns 0 if:
+ * - @p window is NULL.
+ * - @c window->is_warm is 0 (the history is too short to be meaningful).
+ * - The snapshot's @c is_warm flag is 0.
+ *
+ * Note: because the history is circular and the scan is linear across all
+ * slots regardless of @c effective_window_size, the count includes transitions
+ * that span the buffer wrap-around boundary. This is intentional: the full
+ * @c ROLLING_WINDOW_SIZE is used for transition counting.
+ *
+ * @param window  The @c RollingWindowOfTruth to query.
+ * @param word_a  ID of the predecessor word.
+ * @param word_b  ID of the successor word.
+ * @return        Count of (word_a → word_b) transitions; 0 if not warm.
+ */
 uint64_t rolling_window_count_transition(const RollingWindowOfTruth* window,
                                          uint32_t word_a,
                                          uint32_t word_b)
@@ -347,12 +562,47 @@ uint64_t rolling_window_count_transition(const RollingWindowOfTruth* window,
     return count;
 }
 
+/**
+ * @brief Return whether the rolling window has accumulated enough history to be useful.
+ *
+ * Returns @c window->is_warm, which is set to 1 by
+ * @c rolling_window_record_execution() once @c total_executions ≥ 1024.
+ * Before that threshold the window is considered "cold" — its contents do not
+ * yet represent a stable distribution of the program's word usage, and
+ * analysis functions (@c rolling_window_find_hottest_word(),
+ * @c rolling_window_count_transition(), adaptive sizing) return early with
+ * conservative defaults when @c is_warm is 0.
+ *
+ * @param window  The @c RollingWindowOfTruth to query; NULL → returns 0.
+ * @return        1 if the window is warm (≥ 1024 executions); 0 otherwise.
+ */
 int rolling_window_is_warm(const RollingWindowOfTruth* window)
 {
     if (!window) return 0;
     return window->is_warm;
 }
 
+/**
+ * @brief Allocate and return a one-page status summary for a @c RollingWindowOfTruth.
+ *
+ * Allocates a 1024-byte buffer via @c sf_malloc and fills it with a
+ * multi-line report covering:
+ * - @c total_executions — lifetime word-execution count.
+ * - @c ROLLING_WINDOW_SIZE — compile-time capacity constant.
+ * - Warm/cold status: "WARM (representative)" or "COLD (warming up)".
+ * - @c window_pos / @c ROLLING_WINDOW_SIZE — current write-cursor position.
+ *
+ * Values are read from the current double-buffer snapshot obtained via
+ * @c rolling_window_snapshot_view(); a lazy publish is triggered first by
+ * @c rolling_window_publish_snapshot_if_needed().
+ *
+ * The caller is responsible for calling @c sf_free() on the returned pointer.
+ * Returns NULL if @p window is NULL or @c sf_malloc fails.
+ *
+ * @param window  The @c RollingWindowOfTruth to describe.
+ * @return        Heap-allocated NUL-terminated summary string; caller must
+ *                @c sf_free() it. NULL on failure.
+ */
 char* rolling_window_stats_string(const RollingWindowOfTruth* window)
 {
     if (!window) return NULL;
@@ -379,6 +629,21 @@ char* rolling_window_stats_string(const RollingWindowOfTruth* window)
     return buf;
 }
 
+/**
+ * @brief Reset the rolling window to an empty cold state without freeing heap memory.
+ *
+ * Zeros @c execution_history via @c memset and resets the scalar fields:
+ * @c window_pos = 0, @c total_executions = 0, @c is_warm = 0. Sets
+ * @c snapshot_pending = 1 so that the next read will publish an empty snapshot.
+ *
+ * The three heap buffers (@c execution_history, @c snapshot_buffers[0/1]) are
+ * preserved; only their contents are zeroed. Intended for benchmark harnesses
+ * that need a clean baseline between test runs without the overhead of
+ * @c rolling_window_cleanup() + @c rolling_window_init().
+ *
+ * @param window  The @c RollingWindowOfTruth to reset; no-op if NULL or
+ *                @c execution_history is NULL.
+ */
 void rolling_window_reset(RollingWindowOfTruth* window)
 {
     if (!window || !window->execution_history)
@@ -393,6 +658,20 @@ void rolling_window_reset(RollingWindowOfTruth* window)
     window->snapshot_pending = 1;
 }
 
+/**
+ * @brief Free all heap memory held by a @c RollingWindowOfTruth.
+ *
+ * Calls @c sf_free() on @c execution_history and both @c snapshot_buffers[],
+ * setting each to NULL after freeing. Does not zero the scalar fields; the
+ * caller must not use @p window after this call without a subsequent
+ * @c rolling_window_init().
+ *
+ * No-op if @p window is NULL. Each buffer pointer is individually NULL-checked
+ * before freeing (defensive against partial-init failures from
+ * @c rolling_window_init()).
+ *
+ * @param window  The @c RollingWindowOfTruth to clean up; no-op if NULL.
+ */
 void rolling_window_cleanup(RollingWindowOfTruth* window)
 {
     if (!window) return;
@@ -420,14 +699,31 @@ void rolling_window_cleanup(RollingWindowOfTruth* window)
  */
 
 /**
- * Seed the hot-words cache from rolling window execution history.
+ * @brief Warm-start the hot-words cache from POST execution history.
  *
- * Called after POST completes, before REPL starts.
- * Analyzes which words appeared most frequently in POST and promotes them
- * to the cache immediately (warm-start optimization).
+ * Called exactly once after POST completes and before the REPL begins, so
+ * that the first interactive command benefits from cache entries derived from
+ * real POST execution data rather than starting cold. The algorithm:
  *
- * This ensures that the first user command benefits from knowing which
- * words are "hot" based on representative execution data.
+ * 1. Allocates a zero-filled frequency array of @c DICTIONARY_SIZE @c uint32_t
+ *    counters via @c sf_calloc.
+ * 2. Obtains the current snapshot and tallies occurrences of each word ID
+ *    over all @c ROLLING_WINDOW_SIZE history slots.
+ * 3. Computes a promotion threshold: words appearing more than the average
+ *    frequency across all non-zero-frequency words are considered "hot".
+ * 4. Iterates over the frequency array; for each word above the threshold,
+ *    looks up the live @c DictEntry via @c vm_dictionary_lookup_by_word_id()
+ *    (under @c vm->dict_lock), updates @c entry->execution_heat to the
+ *    observed frequency count, and calls @c hotwords_cache_promote() to insert
+ *    it into the cache.
+ * 5. Logs the count of promoted words at @c LOG_INFO.
+ *
+ * No-op if @p window is NULL, not warm, @p vm is NULL, or @c vm->hotwords_cache
+ * is NULL. Also no-op if the snapshot's @c is_warm flag is 0.
+ *
+ * @param window  Warm @c RollingWindowOfTruth containing POST execution data.
+ * @param vm      The VM whose @c hotwords_cache is seeded and whose
+ *                @c dict_lock is held during @c DictEntry updates.
  */
 void rolling_window_seed_hotwords_cache(const RollingWindowOfTruth* window,
                                         struct VM* vm)
@@ -503,14 +799,33 @@ void rolling_window_seed_hotwords_cache(const RollingWindowOfTruth* window,
 }
 
 /**
- * Seed pipelining context windows from rolling window.
+ * @brief Warm-start pipelining context windows from POST execution history.
  *
- * Called after POST completes, before REPL starts.
- * Populates the context_window for each word with actual predecessor
- * data from POST execution.
+ * Called exactly once after POST completes and before the REPL begins,
+ * to populate each word's @c transition_metrics context window with real
+ * predecessor data so that speculative prefetch can begin making informed
+ * decisions on the first interactive command. The algorithm:
  *
- * This ensures that the first user command has contextual history
- * for transition prediction.
+ * 1. Allocates a sliding @p context[] buffer of @c context_window_size
+ *    @c uint32_t entries (max(@c TRANSITION_WINDOW_SIZE, 2)) and initialises
+ *    it with the first @c context_window_size entries from the history.
+ * 2. Scans all @c ROLLING_WINDOW_SIZE consecutive adjacent pairs in the
+ *    snapshot:
+ *    - Looks up @c current_entry = @c vm_dictionary_lookup_by_word_id(current_id)
+ *      (under @c vm->dict_lock, released immediately).
+ *    - If @c current_entry->transition_metrics is set, calls
+ *      @c transition_metrics_record_context() with the current @p context[]
+ *      and @c next_id to populate the Phase 1 context-transition counter.
+ *    - Shifts the @p context[] buffer left by one, appending @c next_id at
+ *      the right end (sliding window advance).
+ * 3. Logs seeded-words and seeded-transitions counts at @c LOG_INFO.
+ *
+ * No-op if @p window is NULL, not warm, @p vm is NULL, @c ENABLE_PIPELINING
+ * is 0, or the context buffer allocation fails.
+ *
+ * @param window  Warm @c RollingWindowOfTruth containing POST execution data.
+ * @param vm      The VM whose per-word @c transition_metrics structures are
+ *                seeded; @c dict_lock is briefly held per lookup.
  */
 void rolling_window_seed_pipelining_context(const RollingWindowOfTruth* window,
                                             struct VM* vm)
@@ -596,6 +911,33 @@ void rolling_window_seed_pipelining_context(const RollingWindowOfTruth* window,
  * ============================================================================
  */
 
+/**
+ * @brief Export up to @p max_count entries from the execution history in chronological order.
+ *
+ * Linearises the internal circular buffer so callers get entries from oldest
+ * to newest without knowing the internal @c window_pos cursor. Two cases:
+ *
+ * - **Pre-wrap** (@c total_executions < @c ROLLING_WINDOW_SIZE): the buffer
+ *   has not yet wrapped; entries 0..@c total_executions-1 are valid and are
+ *   copied contiguously from @c history[0].
+ *
+ * - **Post-wrap** (@c total_executions ≥ @c ROLLING_WINDOW_SIZE): the oldest
+ *   entry is at @c history[window_pos]. Two @c memcpy calls stitch the
+ *   two halves together:
+ *   1. @c history[window_pos .. ROLLING_WINDOW_SIZE-1] (first part)
+ *   2. @c history[0 .. window_pos-1] (second part, if @p export_count >
+ *      @c first_part)
+ *
+ * @p export_count is @c min(@c total_executions, @p max_count). Returns 0 if
+ * @p window, @p out_sequence are NULL, @p max_count is 0, the snapshot has no
+ * history, or @c export_count is 0.
+ *
+ * @param window       The @c RollingWindowOfTruth to export.
+ * @param out_sequence Caller-allocated output buffer of at least @p max_count
+ *                     @c uint32_t entries.
+ * @param max_count    Maximum number of entries to export.
+ * @return             Actual number of entries written to @p out_sequence.
+ */
 uint64_t rolling_window_export_execution_history(const RollingWindowOfTruth* window,
                                                   uint32_t* out_sequence,
                                                   uint64_t max_count)
@@ -645,6 +987,34 @@ uint64_t rolling_window_export_execution_history(const RollingWindowOfTruth* win
     return export_count;
 }
 
+/**
+ * @brief Estimate the fraction of transitions that carry unique contextual information.
+ *
+ * Measures how many of the recorded adjacent-pair transitions produce a non-zero
+ * hash when the preceding @p test_window_size word IDs are incorporated:
+ * @code
+ *   pattern_hash = (... ((word[i-ws] × 31 + word[i-ws+1]) × 31 + ...) × 31 + word[i+1])
+ *                  mod 0x7FFFFFFF
+ * @endcode
+ * A non-zero hash is counted as a "captured" pattern. The capture rate is:
+ * @code
+ *   rate = patterns_seen / total_transitions × 100  (clamped to [0, 100])
+ * @endcode
+ *
+ * In practice, hash collisions with the zero sentinel are extraordinarily rare
+ * (probability ~1/2^31), so nearly all transitions contribute to @c patterns_seen.
+ * The function thus measures whether @p test_window_size is wide enough to produce
+ * a non-trivial hash — a proxy for whether the window introduces meaningful context
+ * beyond a single predecessor.
+ *
+ * Linearises the circular buffer via @c rolling_window_export_execution_history()
+ * before scanning. Returns 0.0 if @p window or @p test_window_size < 1, if the
+ * linearised history has fewer than 2 entries, or if @c sf_malloc fails.
+ *
+ * @param window           The @c RollingWindowOfTruth to analyse.
+ * @param test_window_size Number of preceding word IDs to fold into each pattern hash.
+ * @return                 Capture rate as a percentage in [0.0, 100.0].
+ */
 double rolling_window_pattern_capture_rate(const RollingWindowOfTruth* window,
                                             uint32_t test_window_size)
 {
@@ -724,12 +1094,26 @@ double rolling_window_pattern_capture_rate(const RollingWindowOfTruth* window,
  */
 
 /**
- * Measure pattern diversity in current window.
- * Used by adaptive sizing to decide if shrinking is beneficial.
+ * @brief Return the current pattern diversity score for the rolling window.
  *
- * Simple heuristic: count unique word transitions observed.
- * Higher diversity = more patterns = window is capturing something meaningful.
- * If diversity plateaus, shrinking won't lose important data.
+ * Triggers a lazy snapshot publish via @c rolling_window_publish_snapshot_if_needed(),
+ * acquires a read-side view via @c rolling_window_snapshot_view(), and delegates
+ * to the internal @c rolling_window_measure_diversity_view() to count the number
+ * of unique adjacent-pair transitions in the active window.
+ *
+ * Higher diversity means the window is observing a wide variety of word sequences,
+ * indicating that the execution pattern is volatile and heat-stratified lookup is
+ * more beneficial than stable-pattern nearest-first lookup. Lower diversity means
+ * the program is executing a narrow, repetitive sequence — pattern knowledge is
+ * concentrated and reliable.
+ *
+ * Used by @c dict_adaptive_optimization_pass() to select lookup strategy
+ * (threshold = 70 unique transitions) and by @c rolling_window_run_adaptive_pass()
+ * to calibrate @c effective_window_size.
+ *
+ * @param window  The @c RollingWindowOfTruth to measure.
+ * @return        Count of unique adjacent-pair transitions in the active window;
+ *                0 if the window has fewer than 2 executions or @p window is NULL.
  */
 uint64_t rolling_window_measure_diversity(const RollingWindowOfTruth* window)
 {
@@ -739,6 +1123,47 @@ uint64_t rolling_window_measure_diversity(const RollingWindowOfTruth* window)
     return rolling_window_measure_diversity_view(&view);
 }
 
+/**
+ * @brief Adjust @c effective_window_size based on pattern diversity growth rate.
+ *
+ * Runs the core adaptive window logic using the snapshot @p view. Measures the
+ * current diversity via @c rolling_window_measure_diversity_view(), computes the
+ * fractional growth rate relative to @c window->last_pattern_diversity in Q16.16
+ * fixed-point:
+ * @code
+ *   growth_rate_q48 = (diversity_delta << 16) / last_pattern_diversity
+ * @endcode
+ * and compares it against a threshold:
+ * @code
+ *   threshold_q48 = (ADAPTIVE_GROWTH_THRESHOLD << 16) / 100
+ * @endcode
+ *
+ * **Shrink path** (@c growth_rate_q48 < @c threshold_q48): diversity is
+ * plateauing; reducing the window saves scan work. The new size is:
+ * @code
+ *   new_size = max(effective_window_size × ADAPTIVE_SHRINK_RATE / 100,
+ *                  ADAPTIVE_MIN_WINDOW_SIZE)
+ * @endcode
+ * Already at @c ADAPTIVE_MIN_WINDOW_SIZE → no change (logs "Floor Reached").
+ *
+ * **Grow path** (@c growth_rate_q48 ≥ @c threshold_q48): diversity is still
+ * increasing; the larger window is capturing new patterns. The new size is:
+ * @code
+ *   new_size = min(effective_window_size × 100 / ADAPTIVE_SHRINK_RATE,
+ *                  ROLLING_WINDOW_SIZE)
+ * @endcode
+ * Already at @c ROLLING_WINDOW_SIZE → no change (logs "Ceiling Reached").
+ *
+ * On the very first call after init, @c last_pattern_diversity == 0; only the
+ * baseline is recorded and the function returns without resizing. All decisions
+ * are logged at @c LOG_DEBUG for offline analysis.
+ *
+ * No-op if @p window or @p view are NULL or the view is not warm.
+ *
+ * @param window  The @c RollingWindowOfTruth whose @c effective_window_size
+ *                and @c last_pattern_diversity are updated.
+ * @param view    Current immutable snapshot; must be warm.
+ */
 static void rolling_window_run_adaptive_pass(RollingWindowOfTruth* window,
                                              const rolling_window_view_t* view)
 {
@@ -853,6 +1278,20 @@ static void rolling_window_run_adaptive_pass(RollingWindowOfTruth* window,
     window->last_pattern_diversity = current_diversity;
 }
 
+/**
+ * @brief Drain both pending flags — snapshot and adaptive — in one call.
+ *
+ * Called from both @c rolling_window_check_adaptive_shrink() and
+ * @c rolling_window_service() as the single internal dispatch point:
+ * 1. Calls @c rolling_window_publish_snapshot_if_needed() to flush any pending
+ *    execution history into the double-buffer snapshot.
+ * 2. Checks @c window->adaptive_pending; if set, acquires a view, runs
+ *    @c rolling_window_run_adaptive_pass(), then clears @c adaptive_pending.
+ *
+ * No-op if @p window is NULL.
+ *
+ * @param window  The @c RollingWindowOfTruth to service.
+ */
 static void rolling_window_service_internal(RollingWindowOfTruth* window)
 {
     if (!window)
@@ -869,6 +1308,19 @@ static void rolling_window_service_internal(RollingWindowOfTruth* window)
     window->adaptive_pending = 0;
 }
 
+/**
+ * @brief Force an immediate adaptive window check, bypassing the accumulator gate.
+ *
+ * Sets @c window->adaptive_pending = 1 unconditionally and then calls
+ * @c rolling_window_service_internal() to drain it immediately. This allows
+ * external callers (e.g. the heartbeat timer or a FORTH word) to trigger a
+ * window-size evaluation outside the normal @c ADAPTIVE_CHECK_FREQUENCY cadence
+ * — for example, after a major workload transition or at benchmark checkpoints.
+ *
+ * If the window is not warm the adaptive pass is a no-op internally.
+ *
+ * @param window  The @c RollingWindowOfTruth to check; no-op if NULL.
+ */
 void rolling_window_check_adaptive_shrink(RollingWindowOfTruth* window)
 {
     if (!window)
@@ -878,6 +1330,23 @@ void rolling_window_check_adaptive_shrink(RollingWindowOfTruth* window)
     rolling_window_service_internal(window);
 }
 
+/**
+ * @brief Service the rolling window — publish pending snapshots and run adaptive sizing.
+ *
+ * The public entry point for the rolling window's periodic maintenance. Intended
+ * to be called from the heartbeat tick handler or the REPL idle loop at a rate
+ * determined by the caller (typically 100 Hz from the APIC timer ISR via
+ * @c heartbeat_tick()). Delegates entirely to @c rolling_window_service_internal():
+ * - Flushes the pending snapshot if @c snapshot_pending is set.
+ * - Runs @c rolling_window_run_adaptive_pass() if @c adaptive_pending is set.
+ *
+ * Unlike @c rolling_window_check_adaptive_shrink(), this function does NOT force
+ * @c adaptive_pending = 1; it only services flags that the record path has already
+ * set. The normal adaptive-pass cadence is therefore governed entirely by
+ * @c ADAPTIVE_CHECK_FREQUENCY executions between checks.
+ *
+ * @param window  The @c RollingWindowOfTruth to service; no-op if NULL.
+ */
 void rolling_window_service(RollingWindowOfTruth* window)
 {
     rolling_window_service_internal(window);
