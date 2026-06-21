@@ -46,7 +46,7 @@
 /**
  * @brief Module 7 test-suite table for mixed-arithmetic FORTH-79 words.
  *
- * Covers the five combined multiply-divide words: @c */ , @c */MOD ,
+ * Covers the five combined multiply-divide words: @c *-/ , @c *-/MOD ,
  * @c M+ , @c M* , and @c M/MOD . Each suite exercises normal cases,
  * edge cases (overflow, large products), and error cases (division by
  * zero, stack underflow). The table is terminated with a NULL sentinel.
@@ -142,8 +142,8 @@ static WordTestSuite mixed_arithmetic_word_suites[] = {
  * Iterates @c mixed_arithmetic_word_suites and delegates each to
  * @c run_test_suite(). Covers five word families:
  *
- *  - @c */     ( n1 n2 n3 -- n4 ) — scale: n1*n2/n3 in 64-bit intermediate
- *  - @c */MOD  ( n1 n2 n3 -- rem quot ) — scale with remainder
+ *  - @c *-/     ( n1 n2 n3 -- n4 ) — scale: n1*n2/n3 in 64-bit intermediate
+ *  - @c *-/MOD  ( n1 n2 n3 -- rem quot ) — scale with remainder
  *  - @c M+     ( d n -- d' ) — add single to double
  *  - @c M*     ( n1 n2 -- d ) — signed multiply to double
  *  - @c M/MOD  ( d n -- rem quot ) — double divided by single

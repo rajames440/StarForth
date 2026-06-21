@@ -126,7 +126,7 @@ static size_t align_up(size_t value, size_t alignment) {
  * floating-point value, and returns it scaled to millipercentage (×1000).
  * Returns 0 on parse failure or negative value.
  *
- * @param line Raw text line from a @c /proc/pressure/* file
+ * @param line Raw text line from a @c /proc/pressure/ PSI file (cpu, memory, or io)
  * @param tag  Field prefix to locate (e.g. @c "avg10=")
  * @return Scaled value in milli-units, or 0 on failure
  */
