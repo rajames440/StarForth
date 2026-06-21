@@ -74,8 +74,36 @@ extern int blkio_ram_init_state(void *state_mem, size_t state_len,
                                 uint32_t fbs, uint8_t read_only,
                                 void **out_opaque);
 
+/** @brief Return 1 if string @c s is non-NULL and non-empty. */
 static int nonempty(const char *s) { return (s && *s); }
 
+/**
+ * @brief Open a block I/O device using the best available backend.
+ *
+ * Selects the file backend when @c disk_img_path is non-empty, otherwise
+ * falls back to the RAM backend using @c ram_base / @c ram_blocks.
+ *
+ * File backend behaviour:
+ * - Creates the file if it does not exist (unless @c read_only is set).
+ * - Derives @c total_blocks from the file size when @c total_blocks == 0.
+ * - Sets @c *out_used_file = 1 on success.
+ *
+ * RAM backend behaviour:
+ * - @c ram_base must point to at least @c ram_blocks * @c fbs bytes of
+ *   caller-owned memory that outlives the device.
+ *
+ * @param dev           Output device handle to populate
+ * @param disk_img_path Path to disk image file, or NULL/empty for RAM
+ * @param read_only     1 = open read-only, 0 = read-write
+ * @param total_blocks  Desired block count (0 = derive from file size)
+ * @param fbs           FORTH block size in bytes (0 = use @c BLKIO_FORTH_BLOCK_SIZE)
+ * @param state_mem     Caller-allocated state buffer (must be large enough)
+ * @param state_len     Size of @c state_mem in bytes
+ * @param ram_base      Base of RAM block array (used only when no disk path)
+ * @param ram_blocks    Number of blocks in @c ram_base
+ * @param out_used_file Optional output: set to 1 if the file backend was used
+ * @return @c BLKIO_OK on success, or a @c BLKIO_E* error code
+ */
 int blkio_factory_open(blkio_dev_t *dev,
                        const char *disk_img_path,
                        uint8_t read_only,
