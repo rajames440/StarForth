@@ -38,10 +38,16 @@
 #include "../../include/word_registry.h"
 #include "../../include/log.h"
 
-/* ------------------------------------------------------------------
- * Helper: pop XT from stack and return DictEntry*.
- * Returns NULL and sets vm->error on underflow or null pointer.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Pop an execution token (XT) from the data stack and return the
+ *        corresponding DictEntry pointer.
+ *
+ * Sets @c vm->error and returns NULL on stack underflow or if the XT is zero.
+ * All ACL word implementations call this before accessing DictEntry fields.
+ *
+ * @param vm Pointer to the VM structure
+ * @return Pointer to the DictEntry, or NULL on error
+ */
 static DictEntry *pop_xt(VM *vm)
 {
     if (!vm || vm->dsp < 0) {
@@ -59,10 +65,15 @@ static DictEntry *pop_xt(VM *vm)
     return entry;
 }
 
-/* ------------------------------------------------------------------
- * ACL-MODE@ ( xt -- mode )
- * Push the enforcement mode: 0=STRICT, 1=TTL.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-MODE@ — fetch ACL enforcement mode
+ *
+ * Stack effect: ( xt -- mode )
+ * Pushes the enforcement mode of the word identified by @c xt:
+ * 0 = STRICT (allow/deny is permanent), 1 = TTL (expires after countdown).
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_mode_fetch(VM *vm)
 {
     DictEntry *e = pop_xt(vm);
@@ -70,10 +81,15 @@ static void forth_acl_mode_fetch(VM *vm)
     vm_push(vm, (cell_t)e->acl_mode);
 }
 
-/* ------------------------------------------------------------------
- * ACL-MODE! ( mode xt -- )
- * Set enforcement mode. No-op if word is pinned.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-MODE! — store ACL enforcement mode
+ *
+ * Stack effect: ( mode xt -- )
+ * Sets the enforcement mode of the word identified by @c xt.
+ * No-op if the word is pinned — pinned entries are immutable.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_mode_store(VM *vm)
 {
     if (!vm || vm->dsp < 1) {
@@ -88,10 +104,15 @@ static void forth_acl_mode_store(VM *vm)
     e->acl_mode = (uint8_t)(mode & 0xFF);
 }
 
-/* ------------------------------------------------------------------
- * ACL-PINNED? ( xt -- flag )
- * Push 1 if pinned, 0 otherwise.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-PINNED? — query pin status
+ *
+ * Stack effect: ( xt -- flag )
+ * Pushes -1 (true) if the word is pinned, 0 (false) otherwise.
+ * A pinned word's ACL fields cannot be modified by any FORTH operation.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_pinned_query(VM *vm)
 {
     DictEntry *e = pop_xt(vm);
@@ -99,10 +120,16 @@ static void forth_acl_pinned_query(VM *vm)
     vm_push(vm, e->acl_pinned ? -1 : 0);
 }
 
-/* ------------------------------------------------------------------
- * ACL-PIN ( xt -- )
- * Set acl_pinned=1. One-way ratchet: never clears.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-PIN — pin a word's ACL entry
+ *
+ * Stack effect: ( xt -- )
+ * Sets @c acl_pinned = 1 on the word identified by @c xt.
+ * This is a one-way ratchet: once set it can never be cleared, even by
+ * ACL-INHERIT. Use with @c ' WORD ACL-PIN in FORTH, never from C policy code.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_pin(VM *vm)
 {
     DictEntry *e = pop_xt(vm);
@@ -110,10 +137,15 @@ static void forth_acl_pin(VM *vm)
     e->acl_pinned = 1;
 }
 
-/* ------------------------------------------------------------------
- * ACL-TTL@ ( xt -- n )
- * Push the current TTL countdown value.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-TTL@ — fetch TTL countdown value
+ *
+ * Stack effect: ( xt -- n )
+ * Pushes the current TTL (time-to-live) countdown of the word's ACL entry.
+ * When TTL reaches zero in TTL mode the interpreter calls @c acl_recheck().
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_ttl_fetch(VM *vm)
 {
     DictEntry *e = pop_xt(vm);
@@ -121,10 +153,16 @@ static void forth_acl_ttl_fetch(VM *vm)
     vm_push(vm, (cell_t)e->acl_ttl);
 }
 
-/* ------------------------------------------------------------------
- * ACL-TTL! ( n xt -- )
- * Set the TTL counter. No-op if pinned.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-TTL! — store TTL countdown value
+ *
+ * Stack effect: ( n xt -- )
+ * Sets the TTL countdown on the word's ACL entry. Negative values are
+ * clamped to 0; values above UINT32_MAX are clamped to UINT32_MAX.
+ * No-op if the word is pinned.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_ttl_store(VM *vm)
 {
     if (!vm || vm->dsp < 1) {
@@ -139,10 +177,16 @@ static void forth_acl_ttl_store(VM *vm)
     e->acl_ttl = (uint32_t)(n < 0 ? 0 : (uint64_t)n > UINT32_MAX ? UINT32_MAX : (uint32_t)n);
 }
 
-/* ------------------------------------------------------------------
- * ACL-ALLOW@ ( xt -- flag )
- * Push the cached allow/deny decision: -1=allow, 0=deny.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-ALLOW@ — fetch cached allow/deny flag
+ *
+ * Stack effect: ( xt -- flag )
+ * Pushes the cached ACL decision for the word: -1 = allowed, 0 = denied.
+ * This cached value is checked on every execution in TTL mode; the cache is
+ * refreshed by @c acl_recheck() when TTL expires.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_allow_fetch(VM *vm)
 {
     DictEntry *e = pop_xt(vm);
@@ -150,10 +194,15 @@ static void forth_acl_allow_fetch(VM *vm)
     vm_push(vm, e->acl_allow ? -1 : 0);
 }
 
-/* ------------------------------------------------------------------
- * ACL-ALLOW! ( flag xt -- )
- * Set the cached allow/deny decision. No-op if pinned.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-ALLOW! — store cached allow/deny flag
+ *
+ * Stack effect: ( flag xt -- )
+ * Sets the cached ACL decision: any non-zero @c flag = allowed, 0 = denied.
+ * No-op if the word is pinned.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_allow_store(VM *vm)
 {
     if (!vm || vm->dsp < 1) {
@@ -168,10 +217,16 @@ static void forth_acl_allow_store(VM *vm)
     e->acl_allow = (flag != 0) ? 1 : 0;
 }
 
-/* ------------------------------------------------------------------
- * ACL-HEAT@ ( xt -- heat )
- * Push execution_heat for this word (used by ACL-TTL-COMPUTE in FORTH).
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-HEAT@ — fetch execution heat
+ *
+ * Stack effect: ( xt -- heat )
+ * Pushes the @c execution_heat counter for the word identified by @c xt.
+ * Used by @c ACL-TTL-COMPUTE in @c ACL.4th to calibrate the TTL value based
+ * on how frequently the word is executed.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_heat_fetch(VM *vm)
 {
     DictEntry *e = pop_xt(vm);
@@ -179,10 +234,16 @@ static void forth_acl_heat_fetch(VM *vm)
     vm_push(vm, (cell_t)e->execution_heat);
 }
 
-/* ------------------------------------------------------------------
- * ACL-WORD-ID ( xt -- n )
- * Push the stable word_id (used by ACL-ENTRY for table indexing).
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-WORD-ID — fetch stable word identifier
+ *
+ * Stack effect: ( xt -- n )
+ * Pushes the stable @c word_id for the entry identified by @c xt. Unlike
+ * dictionary positions, @c word_id is assigned at registration and never
+ * changes, making it safe to use as a persistent table index in @c ACL.4th.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_word_id(VM *vm)
 {
     DictEntry *e = pop_xt(vm);
@@ -190,11 +251,17 @@ static void forth_acl_word_id(VM *vm)
     vm_push(vm, (cell_t)e->word_id);
 }
 
-/* ------------------------------------------------------------------
- * ACL-INHERIT ( src dst -- )
- * Copy acl_mode from src to dst; clear pin; reset ttl and allow.
- * This is a C primitive because FORTH cannot clear acl_pinned.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-INHERIT — inherit ACL policy from parent
+ *
+ * Stack effect: ( src dst -- )
+ * Copies @c acl_mode from @c src to @c dst, then clears @c dst->acl_pinned,
+ * resets @c acl_ttl to 0, and sets @c acl_allow to 1 (optimistic default).
+ * This is a C primitive because FORTH code cannot clear @c acl_pinned — pin
+ * is a one-way ratchet that only C can reset during inheritance.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_inherit(VM *vm)
 {
     if (!vm || vm->dsp < 1) {
@@ -209,11 +276,18 @@ static void forth_acl_inherit(VM *vm)
     acl_inherit_entry(src, dst);
 }
 
-/* ------------------------------------------------------------------
- * ACL-INIT-PRIMITIVES ( -- )
- * Walk the dictionary and reset ACL fields on every unpinned entry.
- * Called from ACL-BOOT after ACL.4th loads.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Implements FORTH word @c ACL-INIT-PRIMITIVES — reset ACL fields on all
+ *        unpinned dictionary entries
+ *
+ * Stack effect: ( -- )
+ * Walks the entire dictionary and resets ACL fields on every entry that is not
+ * pinned: sets @c acl_ttl = 0 (force recheck on first execution), @c acl_allow
+ * = 1 (optimistic default), @c acl_mode = ACL_MODE_TTL. Called by @c ACL-BOOT
+ * in @c ACL.4th immediately after the ACL capsule finishes loading.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_init_primitives(VM *vm)
 {
     if (!vm) return;
@@ -227,10 +301,16 @@ static void forth_acl_init_primitives(VM *vm)
     }
 }
 
-/* ------------------------------------------------------------------
- * acl_inherit_entry — direct C entry point for birth path.
- * No stack manipulation; called directly from capsule birth code.
- * ------------------------------------------------------------------ */
+/**
+ * @brief Direct C entry point for ACL policy inheritance on the capsule birth path.
+ *
+ * Copies @c acl_mode from @c src to @c dst, clears @c acl_pinned, resets
+ * @c acl_ttl to 0, and sets @c acl_allow to 1. Called from capsule birth code
+ * (not from FORTH) — no stack manipulation is performed.
+ *
+ * @param src Source DictEntry whose @c acl_mode is inherited
+ * @param dst Destination DictEntry whose ACL fields are updated
+ */
 void acl_inherit_entry(DictEntry *src, DictEntry *dst)
 {
     if (!src || !dst) return;
@@ -252,16 +332,31 @@ void acl_inherit_entry(DictEntry *src, DictEntry *dst)
  * Policy logic (TTL formula, slope application) lives in ACL.4th.
  * ================================================================== */
 
-/* ACL-RWT-TICK@ ( -- tick )
- * Push the current heartbeat tick count (low 32 bits).            */
+/**
+ * @brief Implements FORTH word @c ACL-RWT-TICK@ — fetch current heartbeat tick
+ *
+ * Stack effect: ( -- tick )
+ * Pushes the low 32 bits of @c vm->heartbeat.tick_count. Used by @c ACL.4th
+ * as a timestamp when recording ACL recheck events into the per-word ring buffer.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_rwt_tick_fetch(VM *vm)
 {
     if (!vm) return;
     vm_push(vm, (cell_t)(uint32_t)(vm->heartbeat.tick_count & 0xFFFFFFFFu));
 }
 
-/* ACL-RWT-PUSH ( tick xt -- )
- * Push tick stamp into xt's ring buffer; advance head; cap count.  */
+/**
+ * @brief Implements FORTH word @c ACL-RWT-PUSH — push tick stamp into per-word ring
+ *
+ * Stack effect: ( tick xt -- )
+ * Records @c tick in the 8-entry circular ring buffer of the word identified by
+ * @c xt, advances the head pointer, and caps @c acl_rwt_count at 8. Older
+ * entries are silently overwritten once the ring is full.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_rwt_push(VM *vm)
 {
     if (!vm || vm->dsp < 1) { if (vm) vm->error = 1; return; }
@@ -273,8 +368,16 @@ static void forth_acl_rwt_push(VM *vm)
     if (e->acl_rwt_count < 8) e->acl_rwt_count++;
 }
 
-/* ACL-RWT-COUNT@ ( xt -- n )
- * Push the number of valid tick stamps in the ring buffer (0..8).  */
+/**
+ * @brief Implements FORTH word @c ACL-RWT-COUNT@ — fetch ring buffer fill count
+ *
+ * Stack effect: ( xt -- n )
+ * Pushes the number of valid tick stamps currently in the per-word ring buffer
+ * (0 to 8). Used by @c ACL.4th to guard interval computations that require
+ * at least 2 stamps.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_rwt_count_fetch(VM *vm)
 {
     DictEntry *e = pop_xt(vm);
@@ -282,11 +385,17 @@ static void forth_acl_rwt_count_fetch(VM *vm)
     vm_push(vm, (cell_t)e->acl_rwt_count);
 }
 
-/* ACL-RWT-INTERVAL@ ( xt n -- interval )
- * Return the nth most-recent inter-recheck interval (0=newest).
- * interval[n] = stamp[n] - stamp[n+1] where stamps are in reverse
- * chronological order from the ring buffer head.
- * Returns 0 if n >= count-1 (insufficient history).               */
+/**
+ * @brief Implements FORTH word @c ACL-RWT-INTERVAL@ — fetch inter-recheck interval
+ *
+ * Stack effect: ( xt n -- interval )
+ * Returns the @c n th most-recent inter-recheck tick interval for the word
+ * identified by @c xt (0 = newest pair). Computed as stamp[n] - stamp[n+1]
+ * in reverse-chronological order from the ring buffer head. Pushes 0 if
+ * @c n >= count-1 (insufficient history for the requested pair).
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_rwt_interval_fetch(VM *vm)
 {
     if (!vm || vm->dsp < 1) { if (vm) vm->error = 1; return; }
@@ -304,8 +413,16 @@ static void forth_acl_rwt_interval_fetch(VM *vm)
     vm_push(vm, (cell_t)interval);
 }
 
-/* ACL-RWT-SLOPE@ ( xt -- slope )
- * Push the cached Q8 slope for this word's recheck interval series. */
+/**
+ * @brief Implements FORTH word @c ACL-RWT-SLOPE@ — fetch cached interval slope
+ *
+ * Stack effect: ( xt -- slope )
+ * Pushes the cached Q8 slope value for the word's recheck interval series.
+ * Slope is computed by @c ACL-TTL-COMPUTE-RW in @c ACL.4th using the ring
+ * buffer history and stored here between rechecks.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_rwt_slope_fetch(VM *vm)
 {
     DictEntry *e = pop_xt(vm);
@@ -313,8 +430,15 @@ static void forth_acl_rwt_slope_fetch(VM *vm)
     vm_push(vm, (cell_t)e->acl_rwt_slope);
 }
 
-/* ACL-RWT-SLOPE! ( slope xt -- )
- * Store slope. No-op if pinned.                                    */
+/**
+ * @brief Implements FORTH word @c ACL-RWT-SLOPE! — store cached interval slope
+ *
+ * Stack effect: ( slope xt -- )
+ * Stores the Q8 slope into the word's @c acl_rwt_slope field. No-op if the
+ * word is pinned. The pending slope stack value is consumed even on no-op.
+ *
+ * @param vm Pointer to the VM structure
+ */
 static void forth_acl_rwt_slope_store(VM *vm)
 {
     if (!vm || vm->dsp < 1) { if (vm) vm->error = 1; return; }
@@ -324,9 +448,19 @@ static void forth_acl_rwt_slope_store(VM *vm)
     e->acl_rwt_slope = (int32_t)slope;
 }
 
-/* ------------------------------------------------------------------
- * register_acl_words
- * ------------------------------------------------------------------ */
+/**
+ * @brief Register all ACL C-primitive words with the VM dictionary.
+ *
+ * Registers: field accessors (@c ACL-MODE@ / @c ACL-MODE! / @c ACL-PINNED? /
+ * @c ACL-TTL@ / @c ACL-TTL! / @c ACL-ALLOW@ / @c ACL-ALLOW! / @c ACL-HEAT@ /
+ * @c ACL-WORD-ID), mutation words (@c ACL-PIN / @c ACL-INHERIT /
+ * @c ACL-INIT-PRIMITIVES), and the ACL Rolling Window of Truth primitives
+ * (@c ACL-RWT-TICK@ / @c ACL-RWT-PUSH / @c ACL-RWT-COUNT@ /
+ * @c ACL-RWT-INTERVAL@ / @c ACL-RWT-SLOPE@ / @c ACL-RWT-SLOPE!).
+ * Called from @c vm_bootstrap.c during VM initialisation.
+ *
+ * @param vm Pointer to the VM structure
+ */
 void register_acl_words(VM *vm)
 {
     /* Field accessors — read */

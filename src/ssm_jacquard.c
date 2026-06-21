@@ -49,6 +49,16 @@
  * ============================================================================
  */
 
+/**
+ * @brief Initialise the L8 Jacquard steady-state machine.
+ *
+ * Sets @c current_mode and @c pending_mode to @c initial_mode, zeroes
+ * @c hysteresis_counter, and sets @c table to NULL. Callers must invoke
+ * @c ssm_l8_init_table() separately if the adaptive UCB table is required.
+ *
+ * @param state        Pointer to the L8 state to initialise
+ * @param initial_mode Starting mode (typically @c SSM_MODE_C0)
+ */
 void ssm_l8_init(ssm_l8_state_t *state, ssm_l8_mode_t initial_mode)
 {
     if (!state) return;
@@ -64,6 +74,17 @@ void ssm_l8_init(ssm_l8_state_t *state, ssm_l8_mode_t initial_mode)
  * ============================================================================
  */
 
+/**
+ * @brief Update the L8 mode selector using current runtime metrics.
+ *
+ * Classifies @c metrics into four binary feature bits (L2/L3/L5/L6) derived
+ * from DoE top-5% analysis and computes a target mode. Applies hysteresis:
+ * the mode only commits after @c SSM_HYSTERESIS_TICKS consecutive ticks with
+ * the same target. Called by the heartbeat thread on every tick.
+ *
+ * @param metrics Runtime metrics snapshot (entropy, CV, temporal decay)
+ * @param state   L8 state to update; @c current_mode is written on commit
+ */
 void ssm_l8_update(const ssm_l8_metrics_t *metrics, ssm_l8_state_t *state)
 {
     if (!metrics || !state) return;
@@ -116,6 +137,16 @@ void ssm_l8_update(const ssm_l8_metrics_t *metrics, ssm_l8_state_t *state)
  * ============================================================================
  */
 
+/**
+ * @brief Apply the current L8 mode to a runtime configuration struct.
+ *
+ * Extracts the four loop-enable bits (L2/L3/L5/L6) from
+ * @c state->current_mode and writes them into @c config. Used by the
+ * legacy (non-table) L8 path when the adaptive UCB table is not present.
+ *
+ * @param state  L8 state containing the committed current mode
+ * @param config Runtime configuration to update
+ */
 void ssm_apply_mode(const ssm_l8_state_t *state, ssm_config_t *config)
 {
     if (!state || !config) return;
@@ -134,6 +165,16 @@ void ssm_apply_mode(const ssm_l8_state_t *state, ssm_config_t *config)
  * ============================================================================
  */
 
+/**
+ * @brief Return a human-readable name string for the given L8 mode.
+ *
+ * Returns a static string such as @c "C4_TEMPORAL" or @c "C15_FULL_ADAPTIVE".
+ * Modes marked ✅ TOP 5% are the configurations favoured by the DoE study.
+ * Returns @c "UNKNOWN" for out-of-range values.
+ *
+ * @param mode L8 mode enumeration value
+ * @return Pointer to a static null-terminated string (never NULL)
+ */
 const char* ssm_l8_mode_name(ssm_l8_mode_t mode)
 {
     switch (mode) {
@@ -162,7 +203,14 @@ const char* ssm_l8_mode_name(ssm_l8_mode_t mode)
  * ============================================================================
  */
 
-/* Newton's method integer square root, converges in ≤ 6 iterations for uint32_t */
+/**
+ * @brief Integer square root for uint32_t via Newton's method.
+ *
+ * Converges in at most 6 iterations. Returns 0 for input 0.
+ *
+ * @param n Input value
+ * @return Floor of sqrt(n)
+ */
 static uint32_t isqrt32(uint32_t n)
 {
     uint32_t x, y;
@@ -176,7 +224,14 @@ static uint32_t isqrt32(uint32_t n)
     return x;
 }
 
-/* Newton's method integer square root for uint64_t */
+/**
+ * @brief Integer square root for uint64_t via Newton's method.
+ *
+ * Returns 0 for input 0.
+ *
+ * @param n Input value
+ * @return Floor of sqrt(n)
+ */
 static uint64_t isqrt64(uint64_t n)
 {
     uint64_t x, y;
@@ -190,8 +245,16 @@ static uint64_t isqrt64(uint64_t n)
     return x;
 }
 
-/* Integer approximation: ln(n) in Q16 via floor(log2(n)) * ln(2) * 65536.
- * Accurate within a factor of e/1 ≈ 2.7 — sufficient for UCB balancing. */
+/**
+ * @brief Approximate natural logarithm in Q16 fixed-point.
+ *
+ * Computes floor(log2(n)) * ln(2) * 65536 using only integer shifts.
+ * Accurate within a factor of e (~2.7×) — sufficient for UCB bonus
+ * balancing where only relative ordering matters. Returns 0 for n <= 1.
+ *
+ * @param n Positive integer input
+ * @return ln(n) approximation in Q16 format
+ */
 static uint32_t ln_approx_q16(uint32_t n)
 {
     uint32_t bits, tmp;
@@ -218,6 +281,18 @@ static uint32_t ln_approx_q16(uint32_t n)
  *   C9  (L2+L6):          1001 → 0 1 0 0 0 1 1 = 0x23 = 35
  *   C11 (L2+L5+L6):       1011 → 0 1 0 0 1 1 1 = 0x27 = 39
  *   C12 (L2+L3):          1100 → 0 1 1 0 0 0 1 = 0x31 = 49
+ */
+/**
+ * @brief Seed the adaptive UCB config table with DoE prior scores.
+ *
+ * Initialises all 128 config entries with benefit scores derived from the
+ * DoE top-5% analysis. The five top-5% configs (C4/C7/C9/C11/C12 in 4-bit
+ * space → indices 17/23/35/39/49 in 7-bit space) receive 80% of
+ * @c SSM_SCORE_MAX; configs involving L1 or L4 (known expensive loops)
+ * receive 5–10%; all others receive 40%. Sets the starting config to index
+ * 17 (C4-equivalent: L3+L7 only).
+ *
+ * @param table Pointer to the SsmConfigTable to initialise
  */
 static void ssm_l8_seed_from_doe(SsmConfigTable *table)
 {
@@ -273,6 +348,21 @@ static void ssm_l8_seed_from_doe(SsmConfigTable *table)
 /* ============================================================================
  * Adaptive Table: Trial-End Reward + UCB Selection (static)
  * ============================================================================ */
+/**
+ * @brief End the current trial, update scores, and UCB-select the next config.
+ *
+ * Computes a joint convergence signal from ANOVA stability and the relative
+ * delta between the current and previous (window, slope) pair. Updates the
+ * regime-specific benefit score for the current config using exponential decay
+ * plus a signed delta. Then runs UCB1 over all 128 configs for the current
+ * regime, selecting the one with the highest upper confidence bound as the
+ * next trial's config. Finally resets trial accumulators.
+ *
+ * @param table          Adaptive config table
+ * @param config         Runtime config to update with the newly selected bits
+ * @param current_window Current rolling window width at trial end
+ * @param current_slope  Current decay slope at trial end (Q16)
+ */
 static void ssm_l8_trial_end(SsmConfigTable *table, ssm_config_t *config,
                               uint32_t current_window, uint64_t current_slope)
 {
@@ -399,6 +489,15 @@ static void ssm_l8_trial_end(SsmConfigTable *table, ssm_config_t *config,
  * ============================================================================
  */
 
+/**
+ * @brief Allocate and initialise the adaptive UCB config table.
+ *
+ * Mallocs a @c SsmConfigTable, zeroes it, seeds it with @c ssm_l8_seed_from_doe(),
+ * and attaches it to @c state->table. If malloc fails, @c state->table is set
+ * to NULL and the system falls back to legacy mode (@c ssm_apply_mode()).
+ *
+ * @param state L8 state that will own the table
+ */
 void ssm_l8_init_table(ssm_l8_state_t *state)
 {
     SsmConfigTable *table;
@@ -414,6 +513,14 @@ void ssm_l8_init_table(ssm_l8_state_t *state)
     state->table = table;
 }
 
+/**
+ * @brief Free the adaptive UCB config table owned by @c state.
+ *
+ * Safe to call with @c state->table == NULL. Sets @c state->table to NULL
+ * after freeing so the state falls back to legacy mode.
+ *
+ * @param state L8 state whose table is freed
+ */
 void ssm_l8_free_table(ssm_l8_state_t *state)
 {
     if (!state || !state->table) return;
@@ -421,6 +528,22 @@ void ssm_l8_free_table(ssm_l8_state_t *state)
     state->table = NULL;
 }
 
+/**
+ * @brief Tick the adaptive UCB table and end the trial when ready.
+ *
+ * Classifies the current @c metrics into one of 8 regimes (entropy × CV ×
+ * temporal), increments the trial tick counter, and tallies inference/ANOVA
+ * events. When @c trial_tick_count reaches @c SSM_MIN_TRIAL_TICKS, calls
+ * @c ssm_l8_trial_end() to score the current config and UCB-select the next.
+ * Also mirrors the winning L2/L3/L5/L6 bits back into @c state->current_mode
+ * for diagnostic display. No-op if @c state->table is NULL.
+ *
+ * @param state          L8 state with attached adaptive table
+ * @param metrics        Current runtime metrics snapshot
+ * @param config         Runtime config updated on trial-end
+ * @param current_window Current rolling window width
+ * @param current_slope  Current decay slope (Q16)
+ */
 void ssm_l8_update_table(ssm_l8_state_t *state, const ssm_l8_metrics_t *metrics,
                          ssm_config_t *config,
                          uint32_t current_window, uint64_t current_slope)
@@ -464,6 +587,16 @@ void ssm_l8_update_table(ssm_l8_state_t *state, const ssm_l8_metrics_t *metrics,
     }
 }
 
+/**
+ * @brief Apply the UCB-selected config bits to a runtime configuration struct.
+ *
+ * Reads the current winning config entry from the adaptive table and writes
+ * its L2/L3/L5/L6 bits into @c config. Use this instead of @c ssm_apply_mode()
+ * when the adaptive table is present (@c state->table != NULL).
+ *
+ * @param state  L8 state with an attached, initialised adaptive table
+ * @param config Runtime configuration to update
+ */
 void ssm_apply_mode_from_table(const ssm_l8_state_t *state, ssm_config_t *config)
 {
     const SsmConfigTable *table;

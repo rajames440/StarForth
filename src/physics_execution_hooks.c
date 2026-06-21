@@ -57,15 +57,21 @@
 #include "../include/physics_pipelining_metrics.h"
 #include "../include/rolling_window_of_truth.h"
 
-/*
- * physics_pre_execute - Called before word execution
+/**
+ * @brief Pre-execution physics hook — called before every word dispatch.
  *
- * Consolidates:
- *   - Linear decay application
- *   - Heat increment
- *   - Rolling window recording
- *   - Pipelining hit detection and speculation
- *   - Profiler entry
+ * Consolidates all physics work that must happen before a word runs:
+ * - Loop #3: applies linear decay based on elapsed time since last execution
+ * - Loop #1: increments @c execution_heat for the word
+ * - Loop #2: records the word-id into the rolling window of truth
+ * - Loop #4: detects a pipelining prefetch hit (if @c prev's speculation
+ *            matched @c word), records the transition from @c prev to @c word,
+ *            updates the probability cache, and issues a speculative hotwords
+ *            cache promotion for the most likely next word
+ *
+ * @param vm   Pointer to the VM structure
+ * @param word DictEntry being executed
+ * @param prev DictEntry executed immediately before @c word (may be NULL)
  */
 void physics_pre_execute(VM* vm, DictEntry* word, DictEntry* prev)
 {
@@ -125,14 +131,20 @@ void physics_pre_execute(VM* vm, DictEntry* word, DictEntry* prev)
     }
 }
 
-/*
- * physics_post_execute - Called after word execution
+/**
+ * @brief Post-execution physics hook — called after every word dispatch.
  *
- * Consolidates:
- *   - Physics metadata touch
- *   - Profiler exit
- *   - DoE counter increment
- *   - Heartbeat cycle check (when no background thread)
+ * Consolidates all physics work that must happen after a word completes:
+ * - Updates physics metadata (@c temperature_q8, @c last_active_ns) via
+ *   @c physics_metadata_touch()
+ * - Notifies the profiler (@c profiler_word_exit())
+ * - Increments @c vm->heartbeat.words_executed
+ * - When running without a background heartbeat thread, checks whether
+ *   enough words have been executed to trigger a heartbeat cycle
+ *   (@c vm_heartbeat_run_cycle())
+ *
+ * @param vm   Pointer to the VM structure
+ * @param word DictEntry that just finished executing
  */
 void physics_post_execute(VM* vm, DictEntry* word)
 {
@@ -151,11 +163,18 @@ void physics_post_execute(VM* vm, DictEntry* word)
     }
 }
 
-/*
- * physics_on_lookup - Called when outer interpreter finds a word
+/**
+ * @brief Physics hook for the outer interpreter word-lookup path.
  *
- * Handles physics for the lookup path (not inner threaded execution).
- * Thread-safe: acquires dict_lock.
+ * Called when the outer interpreter successfully finds a word by name,
+ * before executing it. Applies linear decay and increments heat on both
+ * the found entry and the canonical entry (if different), and updates
+ * @c last_active_ns / @c last_decay_ns on both. Acquires @c vm->dict_lock
+ * for the entire operation to ensure thread safety.
+ *
+ * @param vm    Pointer to the VM structure
+ * @param entry DictEntry found by name search
+ * @param canon Canonical DictEntry (may equal @c entry or be the smudge target)
  */
 void physics_on_lookup(VM* vm, DictEntry* entry, DictEntry* canon)
 {
