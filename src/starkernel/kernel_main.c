@@ -31,11 +31,21 @@
 #include "kmalloc.h"
 #include "starkernel/kernel_args.h"
 
-/*
- * Runtime services pointer — set once from boot_info before REPL starts.
- * Accessible to kernel FORTH words (e.g. REBOOT) via extern declaration.
- * Valid after ExitBootServices on OVMF; on real hardware depends on
- * SetVirtualAddressMap — this kernel does not call it, so physical-mode RS.
+/**
+ * @brief UEFI Runtime Services pointer — set once at M6 init, valid for kernel lifetime.
+ *
+ * Populated from @c boot_info->runtime_services just before the kernel heap is
+ * initialised (between the M5 timer init and @c kernel_main_deep()). Declared
+ * @c extern in the UEFI header so kernel FORTH words (e.g. @c REBOOT) can
+ * access it without including the full @c kernel_main.c translation unit.
+ *
+ * Validity note: UEFI Runtime Services remain valid in physical mode after
+ * @c ExitBootServices(). This kernel does not call @c SetVirtualAddressMap(),
+ * so the pointer is the raw physical address returned by firmware. On QEMU/OVMF
+ * this is always usable; on real hardware it is valid as long as the CPU is in
+ * physical mode (identity-mapped) — which it is for the duration of LithosAnanke,
+ * since the VMM uses a separate TTBR/CR3 but does not remap the EFI reserved
+ * regions.
  */
 EFI_RUNTIME_SERVICES *g_sk_runtime_services = NULL;
 
@@ -55,7 +65,26 @@ EFI_RUNTIME_SERVICES *g_sk_runtime_services = NULL;
  * kernel_main_impl is called, so no further stack switch is needed. */
 static void kernel_main_deep(BootInfo *boot_info);
 
-/* Helper: check if memory type is RAM */
+/**
+ * @brief Return non-zero if the EFI memory type represents usable or reclaimable RAM.
+ *
+ * Covers all UEFI memory types that either are immediately usable by the PMM or
+ * can be reclaimed once Boot Services have exited:
+ * - @c EfiConventionalMemory — general purpose RAM.
+ * - @c EfiLoaderCode / @c EfiLoaderData — UEFI loader pages (reclaimed post-EBS).
+ * - @c EfiBootServicesCode / @c EfiBootServicesData — boot-service pages (reclaimed post-EBS).
+ * - @c EfiRuntimeServicesCode / @c EfiRuntimeServicesData — pages the firmware
+ *   still uses for runtime calls (kept mapped, counted as physical RAM).
+ * - @c EfiACPIReclaimMemory — ACPI tables; may be freed after OS has parsed them.
+ * - @c EfiACPIMemoryNVS — non-volatile ACPI storage; kept reserved but is RAM.
+ *
+ * Returns 0 for all device-memory, MMIO, persistent-memory, and special types.
+ * Used by @c print_boot_info() to compute the total physical RAM visible in the
+ * EFI memory map.
+ *
+ * @param type  @c EFI_MEMORY_TYPE value from an @c EFI_MEMORY_DESCRIPTOR.
+ * @return      Non-zero if the type is RAM; 0 otherwise.
+ */
 static int is_ram_type(uint32_t type) {
     return type == EfiConventionalMemory ||
            type == EfiLoaderCode ||
@@ -68,7 +97,24 @@ static int is_ram_type(uint32_t type) {
            type == EfiACPIMemoryNVS;
 }
 
-/* Simple integer to string conversion */
+/**
+ * @brief Convert a @c uint64_t to a NUL-terminated string in the given base.
+ *
+ * Produces a freestanding (no libc) integer-to-string conversion for the
+ * kernel console paths. Handles bases 2–16; digits above 9 are lowercase
+ * alphabetic (@c 'a'–@c 'f' for hex). Special case: @p value == 0 writes
+ * the string @c "0" and returns immediately.
+ *
+ * The algorithm builds the digit string in reverse order into a 64-byte
+ * local @c temp[] buffer, then reverses it into @p buf. @p buf must be at
+ * least 65 bytes to hold a 64-bit binary string plus NUL; in practice all
+ * callers pass 64-byte buffers and use base 10 or 16, where the maximum
+ * length is 20 or 16 digits respectively.
+ *
+ * @param value  Non-negative integer to convert.
+ * @param buf    Caller-allocated output buffer (minimum 65 bytes for binary).
+ * @param base   Numeric base (2–16).
+ */
 static void itoa_simple(uint64_t value, char *buf, int base) {
     char temp[64];
     int i = 0;
@@ -92,6 +138,18 @@ static void itoa_simple(uint64_t value, char *buf, int base) {
     buf[j] = '\0';
 }
 
+/**
+ * @brief Print an optional label followed by a @c uint64_t in decimal to the console.
+ *
+ * Converts @p value to a decimal string via @c itoa_simple() and emits it with
+ * a trailing newline via @c console_println(). If @p label is non-NULL, it is
+ * emitted first via @c console_puts() (no newline between label and value).
+ * Used by @c print_pmm_stats() and @c print_heap_stats() to avoid repeating
+ * the convert-and-print pattern for each statistic line.
+ *
+ * @param label  Optional NUL-terminated prefix string; NULL to omit.
+ * @param value  64-bit unsigned integer to display in decimal.
+ */
 static void print_uint(const char *label, uint64_t value) {
     char buf[64];
     if (label) {
@@ -101,7 +159,28 @@ static void print_uint(const char *label, uint64_t value) {
     console_println(buf);
 }
 
-/* Print boot information summary */
+/**
+ * @brief Print a boot-information summary from the UEFI memory map to the console.
+ *
+ * Iterates over every @c EFI_MEMORY_DESCRIPTOR in @c boot_info->memory_map and
+ * accumulates:
+ * - @c total_memory — sum of page sizes for all RAM-type regions
+ *   (via @c is_ram_type()).
+ * - @c usable_memory — sum of page sizes for @c EfiConventionalMemory only.
+ *
+ * Emits a three-field report box to the kernel serial console:
+ * - "Memory map entries: N"
+ * - "Total memory: N MB" (rounds down to whole MiB)
+ * - "Usable memory: N MB"
+ *
+ * Called from @c kernel_main_impl() / @c kernel_main() immediately after M1
+ * console initialisation, so the memory map must still be intact (it always
+ * is — the map was captured by @c uefi_loader.c before @c ExitBootServices()).
+ *
+ * @param boot_info  @c BootInfo structure populated by @c uefi_loader.c; provides
+ *                   @c memory_map, @c memory_map_size, and
+ *                   @c memory_map_descriptor_size.
+ */
 static void print_boot_info(BootInfo *boot_info) {
     char buf[64];
     UINTN num_entries;
@@ -145,6 +224,18 @@ static void print_boot_info(BootInfo *boot_info) {
     console_println("===================================\n");
 }
 
+/**
+ * @brief Print Physical Memory Manager statistics to the kernel console.
+ *
+ * Calls @c pmm_get_stats() to obtain a @c pmm_stats_t snapshot and then emits
+ * six lines via @c print_uint():
+ * - Total pages, free pages, used pages (in 4 KiB page units).
+ * - Total MB, free MB, used MB (bytes ÷ 1 MiB, truncated).
+ *
+ * Called from @c kernel_main_impl() / @c kernel_main() immediately after
+ * @c pmm_init() completes (M2), providing a sanity check that the PMM saw the
+ * expected quantity of physical RAM.
+ */
 static void print_pmm_stats(void) {
     pmm_stats_t stats = pmm_get_stats();
 
@@ -158,6 +249,20 @@ static void print_pmm_stats(void) {
     console_println("");
 }
 
+/**
+ * @brief Print kernel heap (kmalloc) statistics to the kernel console.
+ *
+ * Calls @c kmalloc_get_stats() to obtain a @c kmalloc_stats_t snapshot and
+ * emits four lines via @c print_uint():
+ * - Total bytes allocated to the heap arena.
+ * - Free bytes currently available.
+ * - Used bytes currently allocated by callers.
+ * - Peak bytes — the high-water mark since @c kmalloc_init().
+ *
+ * Called from @c kernel_main_impl() / @c kernel_main() immediately after
+ * @c kmalloc_init() (M6) to confirm that the heap was sized correctly from the
+ * @c --heap= boot argument or its 2 GiB default.
+ */
 static void print_heap_stats(void) {
     kmalloc_stats_t stats = kmalloc_get_stats();
 
@@ -169,7 +274,22 @@ static void print_heap_stats(void) {
     console_println("");
 }
 
-/* Print the StarKernel banner */
+/**
+ * @brief Print the StarKernel ASCII-art banner and build metadata to the console.
+ *
+ * Emits:
+ * - The "StarKernel" ASCII-art logotype (six-line block font).
+ * - @c LITHOS_VERSION_STR — the @c LithosAnanke version string from @c version.h.
+ * - Target ISA: "amd64", "aarch64", "riscv64", or "unknown", selected by
+ *   compile-time @c ARCH_* / @c __riscv preprocessor guards.
+ * - Build date and time from @c __DATE__ / @c __TIME__ (compiler intrinsics).
+ * - "UEFI BootServices: EXITED" — confirmation that the kernel is running
+ *   after @c ExitBootServices() and owns all hardware.
+ *
+ * Called first in @c kernel_main_impl() / @c kernel_main() after
+ * @c console_init() so the banner is the first visible output on the serial
+ * port, matching the @c QEMU_BASELINE.log reference.
+ */
 static void print_banner(void) {
     console_println("");
     console_println("");
@@ -199,11 +319,39 @@ static void print_banner(void) {
 }
 
 /**
- * kernel_main / kernel_main_impl - Main kernel entry after UEFI handoff.
+ * @brief Main kernel entry point after UEFI handoff — executes milestones M0–M6.
  *
- * On amd64, kernel_entry.S switches to a 2 MiB BSS stack and tail-calls this
- * function as kernel_main_impl.  On other arches the C function IS kernel_main
- * (the assembly trampoline does not exist there yet).
+ * On amd64, @c kernel_entry.S switches the stack from UEFI's default to a 2 MiB
+ * zero-initialised BSS stack and tail-calls this function as @c kernel_main_impl.
+ * On aarch64 and riscv64 the assembly trampoline is not yet implemented and the
+ * UEFI loader calls @c kernel_main directly.
+ *
+ * Milestone sequence:
+ * - **M0 — Architecture early init** (@c arch_early_init()): On amd64, installs a
+ *   minimal GDT with a proper 64-bit code segment at selector 0x08 and reloads CS
+ *   via @c lretq. Without this, UEFI's 64-bit segment at 0x38 is in scope and the
+ *   ISR's @c INT gate (which expects CS 0x08) would fault silently.
+ * - **M1 — Console** (@c console_init()): brings up UART 16550 at 115200 8N1 and
+ *   the framebuffer VT100 terminal. Then prints banner and memory map.
+ * - **M2 — PMM** (@c pmm_init()): initialises the physical memory manager's 4 KiB
+ *   page bitmap from the EFI memory map.
+ * - **M3 — VMM** (@c vmm_init()): builds 4-level x86-64 page tables, maps all
+ *   conventional RAM at the kernel virtual base, and loads CR3.
+ * - **M4 — IDT + APIC** (@c arch_interrupts_init() + @c apic_init()): programs the
+ *   64-entry IDT, masks the legacy 8259A PIC, and initialises the Local APIC in
+ *   xAPIC MMIO mode at 0xFEE00000.
+ * - **M5 — Timer** (@c timer_init()): calibrates the TSC and HPET.
+ * - **M6 — Heap** (@c kmalloc_init()): initialises the kernel slab allocator with
+ *   @c heap_size from the boot args or @c KARGS_DEFAULT_HEAP_SIZE (2 GiB).
+ *
+ * Stashes @c boot_info->runtime_services in @c g_sk_runtime_services for later
+ * use by kernel FORTH words (e.g. @c REBOOT). Then tail-calls
+ * @c kernel_main_deep() for M7 and the REPL.
+ *
+ * @param boot_info  @c BootInfo populated by @c uefi_loader.c before
+ *                   @c ExitBootServices(); provides the memory map, ACPI pointer,
+ *                   framebuffer descriptor, runtime services pointer, and parsed
+ *                   kernel command-line arguments.
  */
 #if defined(__x86_64__)
 void kernel_main_impl(BootInfo *boot_info) {
@@ -269,8 +417,49 @@ void kernel_main(BootInfo *boot_info) {
     kernel_main_deep(boot_info);
 }
 
-/* Everything below runs on the 2 MiB BSS stack (amd64, set up by
- * kernel_entry.S) or the UEFI-provided stack (aarch64/riscv64). */
+/**
+ * @brief Deep kernel initialisation — M5 heartbeat, M7 VM bootstrap, and REPL.
+ *
+ * Called as the final act of @c kernel_main_impl() / @c kernel_main() after
+ * all hardware milestones M0–M6 are complete. Runs on the 2 MiB BSS stack on
+ * amd64 (set up by @c kernel_entry.S before @c kernel_main_impl() was called)
+ * or the UEFI-provided stack on aarch64 and riscv64.
+ *
+ * **M5 — Heartbeat subsystem:**
+ * Calls @c apic_timer_init(tsc_hz, 100) to configure the APIC timer for 100 Hz
+ * periodic delivery to vector 32, then @c heartbeat_init(tsc_hz, 100) to
+ * initialise the rolling-window heartbeat state.
+ *
+ * **M7 — VM bootstrap (when @c STARFORTH_ENABLE_VM is defined):**
+ * 1. @c sk_vm_bootstrap_parity() — allocates the Mama VM and validates the
+ *    capsule directory parity.
+ * 2. Allocates 1 MiB @c blk_ram_buf (LBN 0–991) and 1 MiB @c krd_buf
+ *    (LBN 2048–3071 = capsule ramdrive) from @c kmalloc, then calls
+ *    @c capsule_blk_init() to wire them into the Mama VM's block subsystem.
+ * 3. Copies the read-only @c capsule_arena to heap and calls
+ *    @c capsule_exec_init() to load and execute @c init.4th.
+ * 4. Pins @c CAPSULE-BIRTH and @c BIRTH with @c ACL_MODE_STRICT via
+ *    @c vm_find_word() so that ACL policy cannot downgrade them.
+ *
+ * After M7, the APIC timer is started via @c apic_timer_start() and
+ * @c arch_enable_interrupts() enables IRQs.
+ *
+ * **REPL (when @c STARFORTH_ENABLE_VM is defined):**
+ * - If @c boot_info->args.run_doe is set, injects @c "12345 3 EXEC-DOE BYE"
+ *   before the interactive REPL.
+ * - If @c SK_STARTUP_FORTH is defined at build time, executes it as a
+ *   compile-time startup script (lowest priority — overridden by @c --doe).
+ * - Activates the framebuffer VT100 terminal (if the framebuffer descriptor
+ *   is valid) so the REPL output appears on screen as well as the serial port.
+ * - Clears the @c StarForthRebootTries NVRAM variable to signal a clean boot.
+ * - Calls @c sk_repl() — the interactive FORTH REPL loop. Returns when the
+ *   user executes @c BYE or @c vm->halted is set.
+ *
+ * Terminates with an infinite @c arch_halt() idle loop regardless of the
+ * @c STARFORTH_ENABLE_VM build configuration.
+ *
+ * @param boot_info  The @c BootInfo passed from @c kernel_main_impl().
+ */
 static void kernel_main_deep(BootInfo *boot_info) {
     /* M5: Initialize heartbeat subsystem */
     console_println("Heartbeat: init...");
