@@ -1,0 +1,183 @@
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: StarForth
+DocumentNamespace: https://anchore.com/syft/dir/StarForth-902d0c06-5415-49bf-b39b-498553f49c6f
+LicenseListVersion: 3.28
+Creator: Organization: Anchore, Inc
+Creator: Tool: syft-1.45.1
+Created: 2026-06-21T13:00:46Z
+
+##### Unpackaged files
+
+FileName: build/aarch64/kernel/starkernel_kernel.elf
+SPDXID: SPDXRef-File-...aarch64-kernel-starkernel-kernel.elf-0cffd118d4c9784f
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/aarch64/kernel/starkernel_loader.efi
+SPDXID: SPDXRef-File-...aarch64-kernel-starkernel-loader.efi-0164edee157474b7
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/amd64/kernel/starkernel_kernel.elf
+SPDXID: SPDXRef-File-...amd64-kernel-starkernel-kernel.elf-395c96157330c7b5
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/amd64/kernel/starkernel_loader.efi
+SPDXID: SPDXRef-File-...amd64-kernel-starkernel-loader.efi-791abd66a8ce5716
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/aarch64/kernel/iso/EFI/BOOT/BOOTAA64.EFI
+SPDXID: SPDXRef-File-...kernel-iso-EFI-BOOT-BOOTAA64.EFI-8ac1afe5131b5b16
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/riscv64/kernel/starkernel_loader_patched.elf
+SPDXID: SPDXRef-File-...kernel-starkernel-loader-patched.elf-3b61a24dfa183731
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/riscv64/kernel/starkernel_loader_stripped.elf
+SPDXID: SPDXRef-File-...kernel-starkernel-loader-stripped.elf-d873b13cd2e296ae
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/riscv64/kernel/starkernel_loader_tmp.elf
+SPDXID: SPDXRef-File-...kernel-starkernel-loader-tmp.elf-78ea20daffb5e979
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/riscv64/kernel/starkernel_kernel.elf
+SPDXID: SPDXRef-File-...riscv64-kernel-starkernel-kernel.elf-4eb358e4ba73d4c5
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/riscv64/kernel/starkernel_loader.efi
+SPDXID: SPDXRef-File-...riscv64-kernel-starkernel-loader.efi-d278be3f4856bc0f
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/aarch64/kernel/tools/mkcapsule
+SPDXID: SPDXRef-File-build-aarch64-kernel-tools-mkcapsule-22322f2334ee5d2e
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/amd64/kernel/tools/mkcapsule
+SPDXID: SPDXRef-File-build-amd64-kernel-tools-mkcapsule-835281b6c8b00ffe
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/amd64/standard/starforth
+SPDXID: SPDXRef-File-build-amd64-standard-starforth-05a6b77cdbe0e767
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/host/fbtest
+SPDXID: SPDXRef-File-build-host-fbtest-7e60a51d15734312
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: build/riscv64/kernel/tools/mkcapsule
+SPDXID: SPDXRef-File-build-riscv64-kernel-tools-mkcapsule-0ed079baf53028fe
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: lfs/amd64/starforth
+SPDXID: SPDXRef-File-lfs-amd64-starforth-61e983295223f075
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: lfs/arm64/starforth
+SPDXID: SPDXRef-File-lfs-arm64-starforth-1b0ce26643de8d76
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: lfs/riscv64/starforth
+SPDXID: SPDXRef-File-lfs-riscv64-starforth-619b07683e31fae9
+FileChecksum: SHA1: 0000000000000000000000000000000000000000
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: tools/mkcapsule
+SPDXID: SPDXRef-File-tools-mkcapsule-2a567c5c4d049551
+FileType: APPLICATION
+FileType: BINARY
+FileChecksum: SHA1: 393f8135ad25eb8ed9a142f49d70b0949f3907c9
+FileChecksum: SHA256: c83730c4ce3f595269d6096436d1e9f5470c11390e7ef944631b7853c8be09e6
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+##### Package: StarForth
+
+PackageName: StarForth
+SPDXID: SPDXRef-DocumentRoot-Directory-StarForth
+PackageVersion: v1.5.3-39-g431d398
+PackageSupplier: NOASSERTION
+PackageDownloadLocation: NOASSERTION
+PrimaryPackagePurpose: FILE
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+##### Package: glibc
+
+PackageName: glibc
+SPDXID: SPDXRef-Package-deb-glibc-c11712a3abbe6176
+PackageVersion: 2.41-6ubuntu1.2
+PackageSupplier: NOASSERTION
+PackageDownloadLocation: NOASSERTION
+FilesAnalyzed: false
+PackageSourceInfo: acquired package info from DPKG DB: /tools/mkcapsule
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+ExternalRef: SECURITY cpe23Type cpe:2.3:a:glibc:glibc:2.41-6ubuntu1.2:*:*:*:*:*:*:*
+ExternalRef: PACKAGE-MANAGER purl pkg:deb/ubuntu/glibc@2.41-6ubuntu1.2?distro=ubuntu
+
+##### Relationships
+
+Relationship: SPDXRef-Package-deb-glibc-c11712a3abbe6176 OTHER SPDXRef-File-tools-mkcapsule-2a567c5c4d049551
+RelationshipComment: evident-by: indicates the package's existence is evident by the given file
+Relationship: SPDXRef-DocumentRoot-Directory-StarForth CONTAINS SPDXRef-Package-deb-glibc-c11712a3abbe6176
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-DocumentRoot-Directory-StarForth
+
