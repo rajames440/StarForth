@@ -33,12 +33,31 @@
 /* Statistics tracking */
 static sf_alloc_stats_t g_stats = {0};
 
+/**
+ * @brief Initialise the host allocator statistics.
+ *
+ * Resets the @c g_stats struct to zero. Safe to call multiple times;
+ * subsequent calls simply reset the counters. No heap memory is allocated
+ * by this function — the underlying allocator is the system @c malloc.
+ *
+ * @return 0 always (cannot fail on the hosted path)
+ */
 int sf_alloc_init(void)
 {
     memset(&g_stats, 0, sizeof(g_stats));
     return 0;
 }
 
+/**
+ * @brief Allocate @c size bytes from the system heap.
+ *
+ * Delegates to @c malloc(). On success, increments @c g_stats.used_bytes
+ * and @c g_stats.alloc_count, and updates @c g_stats.peak_bytes if the
+ * new used total exceeds the recorded peak.
+ *
+ * @param size Number of bytes to allocate; 0 returns NULL
+ * @return Pointer to allocated memory, or NULL on allocation failure or zero size
+ */
 void* sf_malloc(size_t size)
 {
     if (size == 0) return NULL;
@@ -56,6 +75,17 @@ void* sf_malloc(size_t size)
     return ptr;
 }
 
+/**
+ * @brief Allocate a zero-initialised array of @c count elements of @c size bytes each.
+ *
+ * Delegates to @c calloc(). Updates statistics the same way as @c sf_malloc():
+ * adds @c count*size to @c used_bytes, increments @c alloc_count, and updates
+ * @c peak_bytes.
+ *
+ * @param count Number of elements; 0 returns NULL
+ * @param size  Size of each element in bytes; 0 returns NULL
+ * @return Pointer to zero-filled memory, or NULL on allocation failure or zero arguments
+ */
 void* sf_calloc(size_t count, size_t size)
 {
     if (count == 0 || size == 0) return NULL;
@@ -74,6 +104,19 @@ void* sf_calloc(size_t count, size_t size)
     return ptr;
 }
 
+/**
+ * @brief Resize a previously allocated block to @c new_size bytes.
+ *
+ * Delegates to @c realloc(). On success, increments @c g_stats.alloc_count.
+ * The exact byte delta is not tracked because the original allocation size is
+ * not stored alongside the pointer — @c used_bytes is therefore approximate
+ * after any @c sf_realloc() call. For accurate accounting, wrap allocations
+ * with size-tracking headers.
+ *
+ * @param ptr      Pointer to an existing allocation, or NULL (behaves like @c sf_malloc)
+ * @param new_size Desired new size in bytes; 0 may free the block (platform-defined)
+ * @return Pointer to resized memory, or NULL on failure (original block unchanged)
+ */
 void* sf_realloc(void* ptr, size_t new_size)
 {
     void* new_ptr = realloc(ptr, new_size);
@@ -85,6 +128,15 @@ void* sf_realloc(void* ptr, size_t new_size)
     return new_ptr;
 }
 
+/**
+ * @brief Release a previously allocated block back to the system heap.
+ *
+ * Delegates to @c free(). Increments @c g_stats.free_count on non-NULL @c ptr.
+ * The freed byte count is not subtracted from @c used_bytes because the
+ * original size is not tracked — see @c sf_realloc() note.
+ *
+ * @param ptr Pointer to free; NULL is a safe no-op
+ */
 void sf_free(void* ptr)
 {
     if (!ptr) return;
@@ -96,6 +148,15 @@ void sf_free(void* ptr)
     free(ptr);
 }
 
+/**
+ * @brief Copy the current allocator statistics into @c stats.
+ *
+ * Fills @c *stats with a snapshot of @c g_stats. Note that @c used_bytes
+ * overstates the live total when blocks have been freed or reallocated,
+ * because freed sizes are not tracked. @c free_count is accurate.
+ *
+ * @param stats Output buffer to populate; no-op if NULL
+ */
 void sf_alloc_get_stats(sf_alloc_stats_t* stats)
 {
     if (!stats) return;
