@@ -58,14 +58,34 @@
 #include "math_portable.h"
 
 /**
- * Portable exponential function via Taylor series in Q48.16 fixed-point
- * exp(x) = 1 + x + x^2/2! + x^3/3! + ...
+ * @brief Compute exp(@p x) via Taylor series in Q48.16 fixed-point.
  *
- * Input: x in Q48.16 format
- * Output: exp(x) in Q48.16 format
+ * Evaluates the classic Taylor expansion:
+ * @code
+ *   exp(x) = 1 + x + x²/2! + x³/3! + … (up to 40 terms)
+ * @endcode
+ * entirely in 64-bit integer arithmetic using the Q48.16 representation
+ * (1.0 = 65536 = 2^16).
  *
- * Handles only reasonable inputs (-20 to 0) for our use case (exp(-Z^2) in erf).
- * Returns Q48_SCALE (65536) for x=0, approaches 0 for x<-20, saturates for x>0.
+ * The function is intentionally scoped to the range the physics engine
+ * actually uses — the argument to @c erf_q48() is @c -x² times a ratio
+ * near 1, yielding values in roughly the @c [-20, 0] interval. Outside
+ * this range the implementation provides coarse-grained clamping:
+ * - @p x == 0      → returns @c Q48 (1.0 exactly)
+ * - @p x > 20.0    → saturates at @c Q48 << 8 (approx e^20, avoids overflow)
+ * - @p x < -100.0  → underflows to 0 (result is negligible)
+ *
+ * The term loop exits early on the first term smaller than 1 ULP (the
+ * series has converged) and guards against intermediate overflow by
+ * clamping @c result at @c INT64_MAX-1.
+ *
+ * @note This is a file-local (@c static) helper; callers are
+ *       @c erf_q48() only.
+ *
+ * @param x  Input value in Q48.16 format (1.0 = 65536). Intended range:
+ *           approximately [-100×65536, +20×65536].
+ * @return   exp(@p x) in Q48.16 format; 0 on underflow; saturated at
+ *           @c INT64_MAX-1 on overflow.
  */
 static int64_t exp_q48(int64_t x) {
     const int64_t Q48 = 65536LL;  /* 2^16 */
@@ -100,14 +120,34 @@ static int64_t exp_q48(int64_t x) {
 }
 
 /**
- * Square root in Q48.16 fixed-point via Newton-Raphson
+ * @brief Compute sqrt(@p x) via Newton-Raphson in Q48.16 fixed-point.
  *
- * Input: x in Q48.16 format
- * Output: sqrt(x) in Q48.16 format
+ * Applies the Newton-Raphson recurrence:
+ * @code
+ *   r_{n+1} = (r_n² + x) / (2 × r_n)
+ * @endcode
+ * for up to 20 iterations, with all arithmetic scaled to the Q48.16
+ * representation (1.0 = 65536). Intermediate products use 8-bit right
+ * shifts on both operands before squaring to prevent 64-bit overflow:
+ * @code
+ *   guess_squared = (guess >> 8) * (guess >> 8)
+ * @endcode
+ * This sacrifices 16 bits of precision in the squared term, which is
+ * acceptable because the division by @c 2*guess restores the correct
+ * order of magnitude. Convergence is declared when successive iterates
+ * differ by at most 1 in Q48.16 units (sub-nanosecond for timing uses).
  *
- * Newton-Raphson: r_{n+1} = (r_n^2 + x) / (2 * r_n)
- * Where multiply/divide preserve Q48.16 scaling.
- * Converges in ~10-15 iterations.
+ * Special cases handled without iteration:
+ * - @p x ≤ 0 → returns 0 (no imaginary results)
+ * - @p x == 65536 (1.0) → returns 65536 exactly
+ *
+ * Initial guess: @c x/2 for @p x > 1.0, else @c 1.0. Values above 1.0
+ * converge from above; values in (0, 1.0) converge from the 1.0 initial
+ * guess.
+ *
+ * @param x  Non-negative value in Q48.16 format (1.0 = 65536).
+ *           Negative values are treated as zero.
+ * @return   sqrt(@p x) in Q48.16 format; 0 for @p x ≤ 0.
  */
 int64_t sqrt_q48(int64_t x) {
     const int64_t Q48 = 65536LL;
@@ -139,14 +179,43 @@ int64_t sqrt_q48(int64_t x) {
 }
 
 /**
- * Error function in Q48.16 fixed-point
- * erf(x) ≈ sign(x) * sqrt(1 - exp(-x^2 * (4/π + ax^2) / (1 + ax^2)))
+ * @brief Compute erf(@p x) via Abramowitz & Stegun 7.1.26 in Q48.16 fixed-point.
  *
- * Uses Abramowitz & Stegun approximation (7.1.26)
- * Input: x in Q48.16 format (dimensionless Z-score)
- * Output: erf(x) in Q48.16 format, clamped to [-Q48_SCALE, +Q48_SCALE]
+ * Implements the rational approximation from Abramowitz & Stegun, formula 7.1.26:
+ * @code
+ *   erf(x) ≈ sign(x) × sqrt(1 − exp(−x² × (4/π + a·x²) / (1 + a·x²)))
+ * @endcode
+ * where @c a ≈ 0.147 (in Q48.16: 9633). The maximum error of the true
+ * mathematical approximation is @c |ε| < 1.5×10⁻⁷; the fixed-point
+ * encoding introduces additional rounding of approximately 1 ULP in Q48.16.
  *
- * Maximum error: ~1.5e-7 relative to true erf
+ * All arithmetic is performed in 64-bit integer Q48.16 format — no
+ * floating-point operations. The computation sequence:
+ * 1. Extract sign; work with @c |x|.
+ * 2. Compute @c x² with 8-bit prescaling to prevent overflow:
+ *    @c x_sq = (x >> 8) * (x >> 8).
+ * 3. Evaluate the A&S numerator @c (4/π + a·x²) and denominator @c (1 + a·x²).
+ * 4. Compute @c ratio = numerator / denominator (shift to preserve Q48.16 scale).
+ * 5. Compute @c exp_arg = −x² × ratio and evaluate @c exp_q48(exp_arg).
+ * 6. Compute @c base = 1 − exp_val, clamp to [0, 1].
+ * 7. Return @c sign × sqrt_q48(base).
+ *
+ * Q48.16 constants used:
+ * - @c a_q48 = 9633 (0.147 × 65536)
+ * - @c four_over_pi_q48 = 83328 (4/π × 65536 ≈ 1.2732 × 65536)
+ *
+ * Consumed by @c hotwords_speedup_estimate() to compute P(speedup > 1.1×)
+ * and P(speedup > 2.0×) via the normal CDF identity:
+ * @code
+ *   P(Z ≤ z) = 0.5 × (1 + erf(z / √2))
+ * @endcode
+ * where @c √2 in Q48.16 = 92681.
+ *
+ * @param x  Input value in Q48.16 format (dimensionless Z-score;
+ *           1.0 = 65536). May be negative; sign determines the sign
+ *           of the result.
+ * @return   erf(@p x) in Q48.16 format, in the range [−65536, +65536]
+ *           corresponding to (−1.0, +1.0).
  */
 int64_t erf_q48(int64_t x) {
     const int64_t Q48 = 65536LL;

@@ -68,7 +68,17 @@
  */
 
 /**
- * Compare function for qsort (ascending order)
+ * @brief qsort comparator for @c cell_t execution-heat values in ascending order.
+ *
+ * Compares two @c cell_t values passed as @c const @c void* pointers (the
+ * signature required by @c qsort). Returns −1, 0, or +1 following C standard
+ * three-way comparison convention. Used exclusively by
+ * @c dict_update_heat_percentiles() to sort the scratch @c heats[] array
+ * before computing the 25th, 50th, and 75th percentile thresholds.
+ *
+ * @param a  Pointer to the first @c cell_t value.
+ * @param b  Pointer to the second @c cell_t value.
+ * @return   −1 if @p *a < @p *b; +1 if @p *a > @p *b; 0 if equal.
  */
 static int compare_heat_ascending(const void *a, const void *b) {
     cell_t heat_a = *(const cell_t *)a;
@@ -78,6 +88,34 @@ static int compare_heat_ascending(const void *a, const void *b) {
     return 0;
 }
 
+/**
+ * @brief Collect dictionary execution heats and compute the 25th, 50th, and 75th percentiles.
+ *
+ * Traverses the full linked-list dictionary under @c vm->dict_lock to snapshot
+ * every word's @c execution_heat into a stack-allocated scratch array (up to
+ * @c DICTIONARY_SIZE entries). After releasing the lock it sorts the snapshot
+ * with @c qsort + @c compare_heat_ascending and computes percentile indices
+ * using integer arithmetic:
+ * @code
+ *   vm->heat_threshold_25th = heats[(count * 25) / 100];
+ *   vm->heat_threshold_50th = heats[(count * 50) / 100];
+ *   vm->heat_threshold_75th = heats[(count * 75) / 100];
+ * @endcode
+ *
+ * If the dictionary contains no words all three thresholds are set to 0.
+ * The lock is held only during traversal; sorting is performed outside the
+ * critical section to minimise contention with the concurrent heartbeat decay
+ * sweep that also walks the word list.
+ *
+ * The resulting thresholds are consumed by @c dict_find_word_heat_aware()
+ * (which stratifies its search by heat tier) and by
+ * @c dict_adaptive_optimization_pass() (which calls this function as its
+ * first step every ~1 Hz).
+ *
+ * @param vm  The VM whose dictionary is sampled and whose
+ *            @c heat_threshold_25th / @c heat_threshold_50th /
+ *            @c heat_threshold_75th fields are updated.  No-op if NULL.
+ */
 void dict_update_heat_percentiles(VM *vm) {
     if (!vm) return;
 
@@ -120,6 +158,41 @@ void dict_update_heat_percentiles(VM *vm) {
  * ============================================================================
  */
 
+/**
+ * @brief Three-pass heat-stratified dictionary lookup, hottest tier first.
+ *
+ * Searches the first-character bucket @c sf_fc_list[(unsigned char)name[0]]
+ * for a word whose @c name and @c name_len match @p name / @p len, scanning
+ * in three priority tiers ordered by execution heat:
+ *
+ * -# **Hot pass** (heat ≥ @c heat_threshold_75th):  words in the top 25%
+ *    by execution frequency. Most FORTH programs spend the vast majority of
+ *    ticks in a handful of hot primitives; checking this tier first yields a
+ *    near-constant-time hit on steady-state workloads.
+ * -# **Medium pass** (heat in [threshold_25th, threshold_75th)):  the middle
+ *    50% of words. These are occasionally-called words that still appear often
+ *    enough to warrant a dedicated pass before touching the long tail.
+ * -# **Cold pass** (heat < @c heat_threshold_25th):  the rarely-executed
+ *    bottom quartile. Words that have never been called also live here.
+ *
+ * Within each pass, matching uses the same cheap-first filter chain as the
+ * standard lookup: @c name_len comparison → last-character byte check →
+ * full @c memcmp. The last-character pre-filter is skipped for single-character
+ * names.
+ *
+ * Returns @c NULL only if the word is absent from the bucket; all three passes
+ * exhausted without a hit. Also returns @c NULL immediately if @p vm, @p name,
+ * or @p len are invalid.
+ *
+ * Heat thresholds are updated lazily by @c dict_adaptive_optimization_pass()
+ * (≈1 Hz); stale thresholds degrade to a full three-pass scan without
+ * affecting correctness.
+ *
+ * @param vm    The VM; provides @c heat_threshold_* fields and the bucket table.
+ * @param name  Word name to search for (not NUL-terminated; length in @p len).
+ * @param len   Length of @p name in bytes; must be ≥ 1.
+ * @return      Pointer to the matching @c DictEntry, or @c NULL if not found.
+ */
 DictEntry *dict_find_word_heat_aware(VM *vm, const char *name, size_t len) {
     if (!vm || !name || len == 0) return NULL;
 
@@ -176,7 +249,19 @@ DictEntry *dict_find_word_heat_aware(VM *vm, const char *name, size_t len) {
  */
 
 /**
- * Compare function for bucket reordering (descending heat order)
+ * @brief qsort comparator for @c DictEntry* pointers in descending execution-heat order.
+ *
+ * Dereferences two @c DictEntry** pointers and compares their
+ * @c execution_heat fields, returning −1 if the first entry is hotter,
+ * +1 if the second is hotter, or 0 on a tie. Used exclusively by
+ * @c dict_reorganize_buckets_by_heat() to sort each of the 256 first-character
+ * hash buckets so that hot words appear at lower array indices, reducing the
+ * average scan depth during the medium and cold passes of
+ * @c dict_find_word_heat_aware().
+ *
+ * @param a  Pointer to a @c DictEntry* (first element).
+ * @param b  Pointer to a @c DictEntry* (second element).
+ * @return   −1 if @p a is hotter; +1 if @p b is hotter; 0 if equal.
  */
 static int compare_dict_entry_heat_desc(const void *a, const void *b) {
     DictEntry *entry_a = *(DictEntry * const *)a;
@@ -187,6 +272,31 @@ static int compare_dict_entry_heat_desc(const void *a, const void *b) {
     return 0;
 }
 
+/**
+ * @brief Sort all 256 first-character hash buckets by descending execution heat.
+ *
+ * Holds @c vm->dict_lock for the entire operation to prevent concurrent
+ * @c DictEntry frees (from word redefinition or GC) from invalidating the
+ * pointer array while it is being sorted. For each non-empty bucket in
+ * @c sf_fc_list[0..255]:
+ *
+ * 1. Reads @c sf_fc_count[bucket_id] and @c sf_fc_cap[bucket_id]; skips the
+ *    bucket if @c count > @c cap (indicates a TOCTOU race — logs a warning).
+ * 2. Allocates a temporary copy of the bucket pointer array.
+ * 3. Re-verifies @c count has not changed (TOCTOU double-check); if it has,
+ *    frees the copy and skips.
+ * 4. Sorts the copy with @c qsort + @c compare_dict_entry_heat_desc so that
+ *    the hottest @c DictEntry* comes first.
+ * 5. Copies the sorted array back over the original bucket.
+ * 6. Frees the temporary copy.
+ *
+ * After returning, @c vm->last_bucket_reorg_ns is updated to the completion
+ * timestamp so that @c dict_adaptive_optimization_pass() can enforce its 1 Hz
+ * throttle. The elapsed reorganization time is emitted at @c LOG_DEBUG.
+ *
+ * @param vm  The VM whose first-character hash buckets are reorganized.
+ *            No-op if NULL. @c dict_lock is held during the entire scan.
+ */
 void dict_reorganize_buckets_by_heat(VM *vm) {
     if (!vm) return;
 
@@ -252,6 +362,37 @@ void dict_reorganize_buckets_by_heat(VM *vm) {
  * ============================================================================
  */
 
+/**
+ * @brief Throttled adaptive optimization pass — runs at most once per second.
+ *
+ * Called from the interpreter loop (or heartbeat) on every word dispatch; the
+ * 1 Hz gate (@c now_ns - @c vm->last_bucket_reorg_ns < 1,000,000,000) ensures
+ * the three expensive sub-steps run at a rate that is imperceptible to FORTH
+ * execution while still keeping the dictionary layout fresh:
+ *
+ * 1. **Update heat percentiles** — calls @c dict_update_heat_percentiles() to
+ *    re-sample @c execution_heat across all words and compute the 25th / 50th /
+ *    75th thresholds used by the stratified lookup.
+ *
+ * 2. **Reorganize buckets** — calls @c dict_reorganize_buckets_by_heat() to
+ *    sort each of the 256 first-character hash buckets so that the hottest
+ *    words sit at the lowest array indices, shortening the average scan depth
+ *    during the hot-tier pass.
+ *
+ * 3. **Select lookup strategy** — queries the rolling window for the current
+ *    pattern-diversity score via @c rolling_window_measure_diversity():
+ *    - Diversity > 70 (high churn in which words are called) → strategy 1
+ *      (@c heat-aware lookup, @c dict_find_word_heat_aware()), where the heat
+ *      stratification most pays off.
+ *    - Diversity ≤ 70 (stable repetitive pattern) → strategy 0 (naive
+ *      newest-first bucket scan), which is already nearly O(1) for programs
+ *      that call the same small word set repeatedly.
+ *    The chosen strategy is stored in @c vm->lookup_strategy and read by the
+ *    interpreter's dictionary lookup dispatch.
+ *
+ * @param vm  The VM to optimise. No-op if NULL or if less than 1 second has
+ *            elapsed since the last pass (@c vm->last_bucket_reorg_ns).
+ */
 void dict_adaptive_optimization_pass(VM *vm) {
     if (!vm) return;
 
