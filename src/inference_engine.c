@@ -62,6 +62,18 @@
  * Cost if unstable: Full inference run (~5-10k cycles)
  */
 
+/**
+ * @brief ANOVA early-exit check: test whether variance has stabilised.
+ *
+ * Computes |current - last| / last. If the relative change is <= 5%
+ * (threshold = 3276 in Q48.16), the variance is considered stable and
+ * full inference can be skipped (~100 cycles vs ~5–10k for a full run).
+ * Always returns 0 (unstable) on the first call when @c last_variance == 0.
+ *
+ * @param current_variance Variance from the current snapshot (Q48.16)
+ * @param last_variance    Variance from the previous inference run (Q48.16)
+ * @return 1 if variance is stable (skip inference), 0 if full run needed
+ */
 static int has_variance_stabilized(
     q48_16_t current_variance,
     q48_16_t last_variance
@@ -108,6 +120,21 @@ static int has_variance_stabilized(
  * and convert the most recent entries into execution_heat samples by consulting the
  * stable word-id map protected by dict_lock. This keeps the inference engine fully
  * thread-safe while still operating on real heat values instead of raw IDs.
+ */
+/**
+ * @brief Build a heat trajectory array from the rolling window of truth.
+ *
+ * Linearises the rolling window via @c rolling_window_export_execution_history(),
+ * then translates each word-id slot to its current @c execution_heat by
+ * looking up the entry under @c vm->dict_lock. The result is a freshly
+ * allocated array of @c *out_length uint64_t values in chronological order.
+ * The caller is responsible for freeing the returned pointer. Returns NULL
+ * (and sets @c *out_length = 0) on allocation failure or empty window.
+ *
+ * @param window     Rolling window to export from
+ * @param vm         VM whose dictionary is consulted for heat values
+ * @param out_length Output: number of elements in the returned array
+ * @return Heap-allocated trajectory array, or NULL on failure
  */
 static uint64_t* extract_heat_trajectory(
     RollingWindowOfTruth *window,
@@ -188,6 +215,17 @@ static uint64_t* extract_heat_trajectory(
  * 3. Clamp to [ADAPTIVE_MIN_WINDOW_SIZE, ROLLING_WINDOW_SIZE]
  */
 
+/**
+ * @brief Compute the variance of a heat trajectory in Q48.16 fixed-point.
+ *
+ * Computes the population variance: Σ(heat[i] - mean)² / N.
+ * All intermediate calculations use Q48.16 arithmetic. Returns 0 for
+ * an empty array.
+ *
+ * @param heat_data Array of execution heat values (raw uint64_t counts)
+ * @param length    Number of elements in @c heat_data
+ * @return Population variance in Q48.16 format
+ */
 q48_16_t compute_variance_q48(
     const uint64_t *heat_data,
     uint64_t length
@@ -224,6 +262,17 @@ q48_16_t compute_variance_q48(
  * Note: Uses simple selection algorithm (O(n) expected, O(n²) worst case)
  */
 
+/**
+ * @brief Compute the median of a Q48.16 array.
+ *
+ * Makes a temporary copy, sorts it with bubble sort (acceptable for the
+ * small chunk counts used in Levene's test, typically K <= 16), and
+ * returns the middle element. Returns 0 for an empty array.
+ *
+ * @param data   Array of Q48.16 values
+ * @param length Number of elements
+ * @return Median value in Q48.16 format
+ */
 static q48_16_t compute_median_q48(
     const q48_16_t *data,
     uint32_t length
@@ -261,6 +310,16 @@ static q48_16_t compute_median_q48(
  * Purpose: Calculate arithmetic mean of Q48.16 values
  */
 
+/**
+ * @brief Compute the arithmetic mean of a Q48.16 array.
+ *
+ * Sums the integer parts of each element (>> 16) and returns the result
+ * converted back to Q48.16. Returns 0 for an empty array.
+ *
+ * @param data   Array of Q48.16 values
+ * @param length Number of elements
+ * @return Arithmetic mean in Q48.16 format
+ */
 static q48_16_t compute_mean_q48(
     const q48_16_t *data,
     uint32_t length
@@ -299,6 +358,21 @@ static q48_16_t compute_mean_q48(
  *   - Compare result to LEVENE_CRITICAL_VALUE_Q48
  */
 
+/**
+ * @brief Compute Levene's W statistic for equality of variance.
+ *
+ * Tests the null hypothesis H₀: all chunk variances are equal.
+ * Uses the median-based variant for robustness: z_i = |var_i - median_var|,
+ * then W = (K-1)*N*Σ(z_i - z_bar)² / (K*N * var(z)).
+ * Returns 0 for fewer than 2 chunks. Compare result to
+ * @c LEVENE_CRITICAL_VALUE_Q48 (≈ 6.5 at α=0.05): W > critical means
+ * variances differ significantly.
+ *
+ * @param chunk_variances Array of K per-chunk variance values (Q48.16)
+ * @param num_chunks      Number of chunks K (must be >= 2)
+ * @param chunk_size      Number of samples N per chunk
+ * @return Levene's W statistic in Q48.16 format
+ */
 static q48_16_t compute_levene_statistic(
     const q48_16_t *chunk_variances,
     uint32_t num_chunks,
@@ -348,6 +422,21 @@ static q48_16_t compute_levene_statistic(
     return W;
 }
 
+/**
+ * @brief Find the minimum window size where heat variance is statistically stable.
+ *
+ * Implements Loop #5 (window width inference). Scans candidate window sizes from
+ * @c ADAPTIVE_MIN_WINDOW_SIZE to the full trajectory in steps of 64, divides the
+ * trajectory into disjoint chunks of that size, and applies Levene's test. Returns
+ * the first size where W <= 6.5 (α=0.05 critical value). Falls back to the full
+ * trajectory length if no size passes. @c full_variance is unused (retained for
+ * API compatibility with callers that pre-compute it).
+ *
+ * @param heat_data         Heat trajectory array
+ * @param trajectory_length Number of elements in @c heat_data
+ * @param full_variance     Unused; retained for API compatibility
+ * @return Minimum sufficient window width in [ADAPTIVE_MIN_WINDOW_SIZE, ROLLING_WINDOW_SIZE]
+ */
 uint32_t find_variance_inflection(
     const uint64_t *heat_data,
     uint64_t trajectory_length,
@@ -455,6 +544,20 @@ uint32_t find_variance_inflection(
  *   slope = numerator / denominator
  */
 
+/**
+ * @brief Infer the decay slope from a heat trajectory via log-linear regression.
+ *
+ * Implements Loop #6 (decay slope inference). Fits the model
+ * ln(heat[t]) = ln(h₀) - slope*t using the closed-form OLS solution:
+ * slope = (n*Σ(t·ln(h)) - Σt·Σln(h)) / (n·Σt² - (Σt)²).
+ * The sign of the numerator is taken as absolute value since decay rate
+ * is always positive. Zero heat values are skipped. Returns 0 if fewer
+ * than 2 samples are available.
+ *
+ * @param heat_data Array of execution heat values (raw counts)
+ * @param length    Number of elements in @c heat_data
+ * @return Inferred decay slope in Q48.16 format (0 = insufficient data)
+ */
 uint64_t infer_decay_slope_q48(
     const uint64_t *heat_data,
     uint64_t length
@@ -511,7 +614,18 @@ uint64_t infer_decay_slope_q48(
  * Purpose: Compute R² or residual metric for diagnostics
  * Simplified: Use residual sum of squares / total sum of squares
  */
-/* L8 FINAL INTEGRATION: Loop #6 always-on */
+/**
+ * @brief Compute R²-style fit quality for the inferred decay slope.
+ *
+ * Currently returns a fixed placeholder of 0.8 in Q48.16 (52429). A full
+ * residual-sum-of-squares implementation is planned but deferred — the
+ * placeholder is sufficient for the DoE convergence signal.
+ *
+ * @param heat_data Array of heat values (unused in current implementation)
+ * @param length    Array length (unused in current implementation)
+ * @param slope_q48 Inferred slope in Q48.16 (unused in current implementation)
+ * @return Fit quality in Q48.16; currently always 0.8 (52429)
+ */
 static uint64_t compute_fit_quality(
     const uint64_t *heat_data,
     uint64_t length,
@@ -534,6 +648,24 @@ static uint64_t compute_fit_quality(
  * High-level orchestrator that coordinates all inference phases
  */
 
+/**
+ * @brief Run the full inference engine pipeline.
+ *
+ * High-level orchestrator for Loops #5 and #6. In order:
+ * 1. Extract the heat trajectory from the rolling window (Phase 2B).
+ * 2. ANOVA early-exit check — if variance is stable, skip and set
+ *    @c outputs->early_exited = 1 (Phase 2A).
+ * 3. Window width inference via Levene's test — gated by L5 flag in
+ *    @c vm->ssm_config (Phase 2C).
+ * 4. Decay slope inference via log-linear regression — gated by L6 flag
+ *    (Phase 2D).
+ * 5. Fit quality assessment (Phase 2E).
+ * Writes all results into @c outputs and frees the trajectory. No-op if
+ * any required pointer is NULL.
+ *
+ * @param inputs  Input pointers: rolling window and VM reference
+ * @param outputs Output struct updated with window, slope, variance, fit quality
+ */
 void inference_engine_run(InferenceInputs *inputs, InferenceOutputs *outputs)
 {
     if (!inputs || !outputs || !inputs->window || !inputs->vm) {
@@ -618,6 +750,15 @@ void inference_engine_run(InferenceInputs *inputs, InferenceOutputs *outputs)
  * ============================================================================
  */
 
+/**
+ * @brief Format inference outputs as a human-readable string.
+ *
+ * Writes into a static 256-byte buffer — not thread-safe, for diagnostics only.
+ * Format: @c "window=N var=F slope=F quality=F (cached|full)".
+ *
+ * @param outputs Inference outputs to format (NULL produces @c "(null)")
+ * @return Pointer to a static string buffer
+ */
 const char* inference_outputs_to_string(const InferenceOutputs *outputs)
 {
     static char buf[256];
@@ -642,6 +783,17 @@ const char* inference_outputs_to_string(const InferenceOutputs *outputs)
     return buf;
 }
 
+/**
+ * @brief Validate inference outputs for sanity.
+ *
+ * Checks that @c adaptive_window_width is in
+ * [@c ADAPTIVE_MIN_WINDOW_SIZE, @c ROLLING_WINDOW_SIZE], that
+ * @c adaptive_decay_slope is non-zero and <= 100.0 in Q48.16, and that
+ * @c slope_fit_quality_q48 is in [0.0, 1.0].
+ *
+ * @param outputs Inference outputs to validate (NULL returns 0)
+ * @return 1 if all fields are within acceptable ranges, 0 otherwise
+ */
 int inference_outputs_validate(const InferenceOutputs *outputs)
 {
     if (!outputs) {

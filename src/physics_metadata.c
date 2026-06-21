@@ -59,10 +59,27 @@
 
 /* L8 FINAL INTEGRATION: L1 heat tracking is always-on (internal physics signal) */
 
+/**
+ * @brief Clamp a uint64_t value to the uint32_t range.
+ *
+ * @param value Input value to clamp
+ * @return @c UINT32_MAX if @c value > UINT32_MAX, else @c (uint32_t)value
+ */
 static uint32_t clamp_u32(uint64_t value) {
     return (value > UINT32_MAX) ? UINT32_MAX : (uint32_t) value;
 }
 
+/**
+ * @brief Derive a smoothed Q8 temperature from raw execution heat.
+ *
+ * Converts @c execution_heat to Q8 by left-shifting 8 bits, clamps to
+ * UINT16_MAX, then applies a 1/4 EMA blend with @c prior_q8 to suppress
+ * jitter: result = (3*prior + target) / 4. Returns 0 for non-positive heat.
+ *
+ * @param execution_heat Raw execution heat counter for the word
+ * @param prior_q8       Previous smoothed temperature in Q8 format
+ * @return Updated smoothed temperature in Q8 format
+ */
 static uint16_t temperature_from_execution_heat(cell_t execution_heat, uint16_t prior_q8) {
     if (execution_heat <= 0) return 0;
     uint64_t scaled = ((uint64_t) execution_heat) << 8; /* convert to Q8 */
@@ -71,6 +88,17 @@ static uint16_t temperature_from_execution_heat(cell_t execution_heat, uint16_t 
     return (uint16_t)((3u * prior_q8 + target) / 4u);
 }
 
+/**
+ * @brief Derive the physics state flags bitmask from a DictEntry's word flags.
+ *
+ * Maps @c WORD_IMMEDIATE → @c PHYSICS_STATE_IMMEDIATE,
+ * @c WORD_PINNED → @c PHYSICS_STATE_PINNED,
+ * @c WORD_HIDDEN → @c PHYSICS_STATE_HIDDEN, and
+ * @c WORD_COMPILED → @c PHYSICS_STATE_COMPILED.
+ *
+ * @param entry DictEntry to inspect (NULL returns 0)
+ * @return Bitmask of @c PHYSICS_STATE_* flags
+ */
 static uint8_t derive_state_flags(const DictEntry *entry) {
     if (!entry) return 0;
     uint8_t flags = 0;
@@ -81,6 +109,17 @@ static uint8_t derive_state_flags(const DictEntry *entry) {
     return flags;
 }
 
+/**
+ * @brief Initialise physics metadata for a newly registered DictEntry.
+ *
+ * Zeroes all @c DictPhysics fields, sets @c mass_bytes to @c header_bytes
+ * (the byte size of the entry header), and derives initial @c state_flags
+ * from the entry's word flags. Called from @c register_word() immediately
+ * after the entry is linked into the dictionary.
+ *
+ * @param entry        DictEntry to initialise
+ * @param header_bytes Byte size of the entry's header region (for mass)
+ */
 void physics_metadata_init(DictEntry *entry, uint32_t header_bytes) {
     if (!entry) return;
     entry->physics.temperature_q8 = 0;
@@ -93,6 +132,15 @@ void physics_metadata_init(DictEntry *entry, uint32_t header_bytes) {
     entry->physics.pubsub_mask = 0;
 }
 
+/**
+ * @brief Update the mass (byte footprint) of a DictEntry's physics metadata.
+ *
+ * Called after a colon definition or CREATE body is fully compiled so the
+ * mass reflects the total compiled size, not just the header.
+ *
+ * @param entry       DictEntry to update
+ * @param total_bytes Total compiled byte size (header + body)
+ */
 void physics_metadata_set_mass(DictEntry *entry, uint32_t total_bytes) {
     if (!entry) return;
     entry->physics.mass_bytes = total_bytes;
@@ -105,6 +153,17 @@ void physics_metadata_set_mass(DictEntry *entry, uint32_t total_bytes) {
  * WHY: Atomic heat increment (FL1) happens in execution loop; this function
  *      derives secondary metrics (temperature, timestamps) for observability
  * ============================================================================ */
+/**
+ * @brief Update physics metadata after a word execution completes.
+ *
+ * Derives and stores a new smoothed @c temperature_q8 from @c execution_heat,
+ * and updates both @c last_active_ns and @c last_decay_ns to @c now_ns.
+ * Called by @c physics_post_execute() on the post-execution path.
+ *
+ * @param entry          DictEntry that was just executed
+ * @param execution_heat Current raw execution heat counter
+ * @param now_ns         Current monotonic timestamp in nanoseconds
+ */
 void physics_metadata_touch(DictEntry *entry, cell_t execution_heat, uint64_t now_ns) {
     if (!entry) return;
     entry->physics.temperature_q8 = temperature_from_execution_heat(execution_heat, entry->physics.temperature_q8);
@@ -112,11 +171,29 @@ void physics_metadata_touch(DictEntry *entry, cell_t execution_heat, uint64_t no
     entry->physics.last_decay_ns = now_ns;
 }
 
+/**
+ * @brief Re-derive and update @c state_flags for a DictEntry.
+ *
+ * Called after word flags change (e.g. IMMEDIATE is set during compilation)
+ * to keep the physics state flags in sync with the word flags.
+ *
+ * @param entry DictEntry whose state flags are to be refreshed
+ */
 void physics_metadata_refresh_state(DictEntry *entry) {
     if (!entry) return;
     entry->physics.state_flags = derive_state_flags(entry);
 }
 
+/**
+ * @brief Record an execution latency sample into the per-word EMA.
+ *
+ * Clamps @c sample_ns to uint32_t, then blends it into @c avg_latency_ns
+ * with a 1/4 EMA: new = (3*prior + sample) / 4. Seeds @c avg_latency_ns
+ * directly from the first sample.
+ *
+ * @param entry     DictEntry whose latency EMA is updated
+ * @param sample_ns Measured execution duration in nanoseconds
+ */
 void physics_metadata_record_latency(DictEntry *entry, uint64_t sample_ns) {
     if (!entry) return;
     uint32_t sample = clamp_u32(sample_ns);
@@ -160,6 +237,17 @@ static const physics_seed_definition_t physics_seed_table[] = {
     {NULL, 0, 0, 0, 0}
 };
 
+/**
+ * @brief Apply DoE-derived prior physics values to a named DictEntry.
+ *
+ * Searches the static @c physics_seed_table for an entry matching
+ * @c entry->name. If found, seeds @c temperature_q8, @c avg_latency_ns,
+ * @c acl_hint, and @c pubsub_mask with values derived from the 2^7
+ * factorial DoE analysis. Only non-zero seed fields overwrite the current
+ * value. Called from @c register_word() for built-in primitives.
+ *
+ * @param entry DictEntry to seed (no-op if NULL or no matching table entry)
+ */
 void physics_metadata_apply_seed(DictEntry *entry) {
     if (!entry || !entry->name_len) return;
     for (const physics_seed_definition_t *seed = physics_seed_table; seed->name; ++seed) {
@@ -196,7 +284,24 @@ void physics_metadata_apply_seed(DictEntry *entry) {
  * ============================================================================
  */
 
-/* L8 FINAL INTEGRATION: L3 linear decay - runtime gated by Jacquard mode selector */
+/**
+ * @brief Apply Loop #3 linear heat decay to a DictEntry.
+ *
+ * Implements the thermodynamic dissipation model: H(t) = max(0, H₀ - d*t).
+ * The decay amount is computed as (elapsed_us * slope_q48) >> 16 using the
+ * Q48.16 adaptive decay slope stored in the VM's heartbeat state.
+ * Uses a GCC CAS loop for atomic heat update when @c __GNUC__ is defined,
+ * falling back to a plain subtraction otherwise.
+ *
+ * No-op when:
+ * - @c WORD_FROZEN flag is set on the entry
+ * - @c elapsed_ns < @c DECAY_MIN_INTERVAL (insignificant interval)
+ * - @c vm->ssm_config has L3 disabled by the Jacquard mode selector
+ *
+ * @param entry      DictEntry whose heat is decayed
+ * @param elapsed_ns Nanoseconds elapsed since last execution
+ * @param vm         VM providing the adaptive decay slope and L3 gate flag
+ */
 void physics_metadata_apply_linear_decay(DictEntry *entry, uint64_t elapsed_ns, VM *vm) {
     if (!entry || !vm) {
         return;
