@@ -73,6 +73,17 @@ extern char __data_end[];
 extern char __bss_start[];
 extern char __bss_end[];
 
+/**
+ * @brief Print a 64-bit value as "0xNNNNNNNNNNNNNNNN" to the kernel console.
+ *
+ * Used by @c sk_bootstrap_debug_log_xt() when @c SK_PARITY_DEBUG is enabled
+ * to dump raw pointer values during XT validation. Formats directly into a
+ * 19-byte stack buffer; no libc dependency.
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param value 64-bit value to format as uppercase-nibble hex.
+ */
 static void sk_bootstrap_debug_print_hex(uint64_t value) {
     char buf[19];
     buf[0] = '0';
@@ -85,11 +96,43 @@ static void sk_bootstrap_debug_print_hex(uint64_t value) {
     console_puts(buf);
 }
 
+/**
+ * @brief Test whether a 64-bit address is a canonical x86-64 virtual address.
+ *
+ * Checks that bits [63:48] are all 0x0000 (user-space range) or all 0xFFFF
+ * (kernel-space range). A non-canonical address indicates a corrupt function
+ * pointer and triggers a @c sk_hal_panic() in the calling debug log function.
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param addr 64-bit address to test.
+ * @return Non-zero if canonical, 0 if non-canonical.
+ */
 static int sk_bootstrap_xt_is_canonical(uint64_t addr) {
     uint64_t upper = addr >> 48;
     return (upper == 0x0000ULL) || (upper == 0xFFFFULL);
 }
 
+/**
+ * @brief Return a short string naming the memory region containing @p addr.
+ *
+ * Classifies @p addr into:
+ * - @c "null" — zero address
+ * - @c "text" — within the kernel .text section [@c sk_hal_text_start(),
+ *   @c sk_hal_text_end())
+ * - @c "directmap" — ≥ @c 0xffff800000000000 (kernel direct-map range)
+ * - @c "unknown" — anything else
+ *
+ * Used by @c sk_bootstrap_debug_log_xt() to label XTs for diagnostic output.
+ * Rodata/data/bss are not checked because XTs should only reside in .text.
+ * Uses @c sk_hal_text_start() / @c sk_hal_text_end() to avoid GOT-relative
+ * accesses under @c -fPIC.
+ *
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param addr 64-bit address to classify.
+ * @return Static string literal naming the region.
+ */
 static const char *sk_bootstrap_region_name(uint64_t addr) {
     if (addr == 0) return "null";
     /* Use HAL getters to avoid GOT indirection issues with -fPIC */
@@ -107,6 +150,21 @@ static const char *sk_bootstrap_region_name(uint64_t addr) {
     return "unknown";
 }
 
+/**
+ * @brief Log a dictionary entry's XT pointer and panic if it is invalid.
+ *
+ * Prints a @c "[SK_BOOTDBG] <label> entry=ADDR xt=ADDR region=NAME" line to
+ * the kernel console. If the XT address is non-canonical or in the "unknown"
+ * region, prints an additional error line and calls @c sk_hal_panic() —
+ * never returns in that case.
+ *
+ * Marked @c __attribute__((unused)) because call sites are conditionally
+ * compiled; the function exists for use during active debug sessions.
+ * Only compiled when @c SK_PARITY_DEBUG is non-zero.
+ *
+ * @param label Short label string (e.g., the word name) for diagnostic output.
+ * @param entry Dictionary entry whose XT pointer to validate.
+ */
 static void __attribute__((unused)) sk_bootstrap_debug_log_xt(const char *label, const DictEntry *entry) {
     console_puts("[SK_BOOTDBG] ");
     console_puts(label ? label : "(word)");
@@ -143,10 +201,50 @@ static VM sk_mama_vm;  /* Mama's VM — persists after bootstrap */
 /* 1 MB POST block RAM — mirrors hosted blk_ram in main.c (BSS, no PE file bloat) */
 static uint8_t sk_post_blk_ram[BLK_RAM_BLOCKS * BLK_FORTH_SIZE];
 
+/**
+ * @brief Return a pointer to the Mama VM instance.
+ *
+ * The Mama VM (@c sk_mama_vm) is a file-scope static that persists for the
+ * lifetime of the kernel. This accessor is used by the capsule subsystem and
+ * other kernel components that need to call back into the VM after bootstrap
+ * without holding a direct reference to the static variable.
+ *
+ * Only compiled when @c STARFORTH_ENABLE_VM is non-zero.
+ *
+ * @return Pointer to @c sk_mama_vm cast to @c void*.
+ */
 void *sk_get_mama_vm(void) {
     return (void *)&sk_mama_vm;
 }
 
+/**
+ * @brief Bootstrap the Mama VM, run POST, collect parity, and print it.
+ *
+ * This is the top-level M7 entry point called from @c kernel_main() after all
+ * hardware milestones (M0–M6) are complete. Execution order:
+ *
+ * 1. @c sk_hal_init() + @c sf_time_init() — initialise HAL and time shim.
+ * 2. @c vm_init_with_host() — initialise Mama VM using HAL host services.
+ *    On failure, collects and prints the parity packet and returns -1.
+ * 3. Capsule subsystem setup: @c capsule_vm_hooks_register(),
+ *    @c capsule_vm_registry_init(), @c capsule_run_log_init().
+ * 4. @c register_mama_forth_words() — BIRTH, KILL, START, STOP, USE + capsule words.
+ * 5. @c vm_enable_interpreter() — required for POST @c vm_interpret() calls.
+ * 6. @c blk_subsys_init() — POST block RAM (mirrors hosted main.c init order).
+ * 7. @c run_all_tests() — full POST (936+ test cases).
+ * 8. @c sk_parity_collect() + @c sk_parity_print() — emit M7.1a/M7.1b lines.
+ * 9. @c sk_hal_freeze_exec_range() — lock the XT whitelist.
+ *
+ * The PARITY:OK / PARITY:FAIL verdict and the POST: PASSED / FAILED lines are
+ * the normative acceptance signals visible in the QEMU serial log.
+ *
+ * Only compiled when @c STARFORTH_ENABLE_VM is non-zero.
+ *
+ * @param out Optional caller-supplied @c ParityPacket to receive the parity
+ *            data. If @c NULL, a local @c ParityPacket is used (data is
+ *            printed but not returned to the caller).
+ * @return 0 if bootstrap and POST succeeded, -1 on any failure.
+ */
 int sk_vm_bootstrap_parity(ParityPacket *out) {
     VM *vm = &sk_mama_vm;
     ParityPacket local_pkt;
