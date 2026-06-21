@@ -34,9 +34,8 @@ experiments/**/results/*.log
 Thumbs.db
 qemu.log
 
-# Serial acceptance logs tracked normally
-logs/*.log
-# logs2/*.log — tracked; do not ignore
+# Serial acceptance logs and session directories are audit artifacts — tracked in git
+# logs/ and logs2/ are intentionally NOT ignored
 
 # Retired data directories (replaced by experiments/bare_metal/)
 doe/

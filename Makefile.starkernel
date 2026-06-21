@@ -76,7 +76,7 @@ KERNEL_SRC         := src/starkernel
 KERNEL_INC         := include/starkernel
 STARFORTH_CONFIG_HEADER := include/starforth_config.h
 
-QEMU_LOG_DIR       := logs2
+QEMU_LOG_DIR       := logs
 QEMU_ISO           := $(BUILD_DIR)/starkernel.iso
 DOE_RUNS_DIR       := experiments/bare_metal/runs
 DOE_LATEST_DIR     := experiments/bare_metal/latest
@@ -643,7 +643,9 @@ ifeq ($(ARCH),amd64)
 	@cp $(OVMF_VARS_RO) $(BUILD_DIR)/OVMF_VARS.fd
 	@mkdir -p $(QEMU_LOG_DIR) $(DOE_RUNS_DIR) $(DOE_LATEST_DIR)
 	@TS=$$(date +%Y%m%d-%H%M%S); \
-	LOG=$(QEMU_LOG_DIR)/qemu-amd64-$$TS.log; \
+	SESSION=$(QEMU_LOG_DIR)/$$TS; \
+	mkdir -p $$SESSION/amd64; \
+	LOG=$$SESSION/amd64/qemu-amd64-$$TS.log; \
 	CSV=$(DOE_RUNS_DIR)/doe-amd64-$$TS.csv; \
 	SERIAL_SOCK=$(BUILD_DIR)/qemu-serial-amd64-$$TS.sock; \
 	echo "=== Launching QEMU (amd64) ==="; \
@@ -691,18 +693,6 @@ ifeq ($(ARCH),amd64)
 	echo "=== Extracting DOE CSV ==="; \
 	bash scripts/extract_doe.sh $$LOG $$CSV || true; \
 	cp $$CSV $(DOE_LATEST_DIR)/amd64.csv 2>/dev/null || true
-	@echo ""
-	@echo "=== Framebuffer screendump (amd64 acceptance) ==="
-	@echo "  (screendump disabled — set SCREENSHOT=1 to enable)"
-	@if [ "$(SCREENSHOT)" = "1" ]; then \
-		bash scripts/qemu_screenshot.sh \
-			"$(LOADER_EFI)" \
-			"$(OVMF_CODE)" \
-			"$(OVMF_VARS_RO)" \
-			"$(BUILD_DIR)" \
-			"$(QEMU_LOG_DIR)" \
-			"$(QEMU_ISO)"; \
-	fi
 
 else ifeq ($(ARCH),aarch64)
 	@echo "=== Building ISO (aarch64) ==="
@@ -732,7 +722,9 @@ else ifeq ($(ARCH),aarch64)
 		exit 1; \
 	fi; \
 	TS=$$(date +%Y%m%d-%H%M%S); \
-	LOG=$(QEMU_LOG_DIR)/qemu-aarch64-$$TS.log; \
+	SESSION=$(QEMU_LOG_DIR)/$$TS; \
+	mkdir -p $$SESSION/aarch64; \
+	LOG=$$SESSION/aarch64/qemu-aarch64-$$TS.log; \
 	CSV=$(DOE_RUNS_DIR)/doe-aarch64-$$TS.csv; \
 	SERIAL_SOCK=$(BUILD_DIR)/qemu-serial-aarch64-$$TS.sock; \
 	echo "=== Launching QEMU (aarch64) ==="; \
@@ -825,7 +817,9 @@ else ifeq ($(ARCH),riscv64)
 		PFLASH_VARS_ARG="-drive if=pflash,format=raw,unit=1,file=$$EDK2_RISCV_VARS"; \
 	fi; \
 	TS=$$(date +%Y%m%d-%H%M%S); \
-	LOG=$(QEMU_LOG_DIR)/qemu-riscv64-$$TS.log; \
+	SESSION=$(QEMU_LOG_DIR)/$$TS; \
+	mkdir -p $$SESSION/riscv64; \
+	LOG=$$SESSION/riscv64/qemu-riscv64-$$TS.log; \
 	CSV=$(DOE_RUNS_DIR)/doe-riscv64-$$TS.csv; \
 	SERIAL_SOCK=$(BUILD_DIR)/qemu-serial-riscv64-$$TS.sock; \
 	echo "=== Launching QEMU (riscv64) ==="; \
@@ -990,27 +984,6 @@ fbtest: $(FBTEST_BIN)
 	@echo "=== Running framebuffer console host render test ==="
 	@$(FBTEST_BIN) && echo "" && echo "Images written to build/host/"
 
-# ==============================================================================
-# QEMU screendump — end-to-end framebuffer capture (amd64 only)
-# Boots the real kernel under QEMU + QMP monitor, waits for ok>, and captures
-# the GOP framebuffer surface to a PNG via screendump.
-# Requires: socat, imagemagick (convert), amd64 OVMF
-# ==============================================================================
-
-.PHONY: qemu-screenshot
-qemu-screenshot: all
-ifeq ($(ARCH),amd64)
-	@echo "=== Framebuffer screendump (amd64) ==="
-	@bash scripts/qemu_screenshot.sh \
-	    "$(LOADER_EFI)" \
-	    "$(OVMF_CODE)" \
-	    "$(OVMF_VARS_RO)" \
-	    "$(BUILD_DIR)" \
-	    "$(QEMU_LOG_DIR)"
-else
-	@echo "qemu-screenshot is only supported for amd64"; exit 1
-endif
-
 info:
 	@echo "StarKernel Build Configuration"
 	@echo "==============================="
@@ -1051,7 +1024,7 @@ help:
 	@echo "  rpi4-image    — Raspberry Pi 4B SD image (aarch64)"
 	@echo ""
 	@echo "QEMU goals:"
-	@echo "  qemu          — clean boot, serial → logs2/ + DOE CSV → doe/ (all arches)"
+	@echo "  qemu          — clean boot, serial → logs/<session>/<arch>/ + DOE CSV → doe/ (all arches)"
 	@echo "  qemu-esp      — quick boot from FAT directory (amd64, aarch64)"
 	@echo "  qemu-gdb      — boot with GDB stub on :1234"
 	@echo ""

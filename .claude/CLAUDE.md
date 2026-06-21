@@ -240,14 +240,13 @@ during long runs (30-rep DoE ≈ 25–30 min per ISA).
 Always pass `clean` before `qemu` — never build-only without clean.
 Serial output is automatically captured to:
 ```
-logs2/qemu-amd64-YYYYMMDD-HHMMSS.log
-logs2/qemu-aarch64-YYYYMMDD-HHMMSS.log
-logs2/qemu-riscv64-YYYYMMDD-HHMMSS.log
+logs/YYYYMMDD-HHMMSS/amd64/qemu-amd64-YYYYMMDD-HHMMSS.log
+logs/YYYYMMDD-HHMMSS/aarch64/qemu-aarch64-YYYYMMDD-HHMMSS.log
+logs/YYYYMMDD-HHMMSS/riscv64/qemu-riscv64-YYYYMMDD-HHMMSS.log
 ```
-These logs are for Captain Bob's manual inspection. Do not delete them.
-`logs2/` is gitignored — logs are local artifacts, not committed to the repo.
+These logs are audit artifacts — they are committed to the repo. Do not delete them.
 Do not claim a change is accepted until all three architectures have booted
-to `zuse)ok>` and their logs are present in `logs2/`.
+to `zuse)ok>` and their logs are present in `logs/`.
 
 ---
 
