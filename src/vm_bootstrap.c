@@ -73,6 +73,17 @@
 
 /* ====================== Bootstrap helpers ======================= */
 
+/**
+ * @brief Ensure the SCR (Screen) system variable cell is allocated and zeroed.
+ *
+ * If @c vm->scr_addr does not point to a valid, aligned cell inside the VM
+ * memory array, aligns the allocation pointer and allots a new cell.
+ * Always writes 0 to the SCR cell on exit. Called at the end of @c vm_init()
+ * to guarantee a clean SCR state regardless of how the initial allot
+ * sequence progressed.
+ *
+ * @param vm Active VM; sets @c vm->error = 1 and logs if allot fails
+ */
 static void vm_bootstrap_scr(VM* vm)
 {
     if (!vm) return;
