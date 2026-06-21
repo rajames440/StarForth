@@ -6,7 +6,6 @@
 #   make                          - Standard optimized build (auto ARCH, TARGET=standard)
 #   make TARGET=fastest           - Maximum performance build
 #   make ARCH=arm64 TARGET=fastest - Build for arm64 (e.g., Raspberry Pi 4)
-#   make test                     - Run test suite for current ARCH/TARGET
 #   make help                     - Show all available targets
 #
 # ==============================================================================
@@ -658,12 +657,6 @@ $(BUILD_DIR)/word_source/starforth_words.o: include/version.h
 # TESTING & BENCHMARKING
 # ==============================================================================
 
-# Run full test suite
-test: $(BINARY)
-	@echo "🧪 Running test suite..."
-	@printf 'BYE\n' | ./$(BINARY) --run-tests $(PROFILE_ARGS)
-
-
 # Quick benchmark
 bench: $(BINARY)
 	@echo ""
@@ -1314,7 +1307,6 @@ help:
 	@echo "  make fastest                    # Fastest build for current platform"
 	@echo "  make rpi4-cross                 # Cross-compile for Raspberry Pi 4"
 	@echo "  make pgo                        # Profile-guided optimization"
-	@echo "  make test                       # Run test suite"
 	@echo "  make asm                        # Generate assembly for inspection"
 	@echo "  make debug                      # Debug build"
 	@echo "  make PREFIX=/usr/local install  # Install system-wide"
