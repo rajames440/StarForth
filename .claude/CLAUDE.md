@@ -34,7 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### On the Two Production Targets
 - **Every change to shared VM code must compile and behave on both targets.** `src/vm.c`, `include/vm.h`, `capsules/`, `src/word_source/` are shared. Gate with `#ifdef __STARKERNEL__` or `#ifdef STARFORTH_ENABLE_VM`.
-- **`make test` is the hosted acceptance test.** It must pass before touching anything else.
+- **The only valid acceptance test is the three-arch QEMU boot** (see QEMU section below). Tests run automatically at binary startup — no separate test target exists.
 - **`INPUT_BUFFER_SIZE` must be >= 1025** to hold a full 1024-byte FORTH block + null terminator. 256 is too small and silently truncates block content mid-word.
 
 ### On Working Style
@@ -142,9 +142,6 @@ make pgo
 
 # Debug build with symbols
 make debug
-
-# Run full test suite (936+ tests)
-make test
 
 # Quick benchmark
 make bench
@@ -469,12 +466,6 @@ Tests are organized in POST (Power-On Self Test) order:
 1. **Unit tests:** Q48.16 fixed-point, inference statistics, decay slope inference
 2. **Dictionary tests:** FORTH-79 word validation across 22 categories (not 18)
 3. **Integration tests, stress tests, adversarial/fuzzing tests** (break_me_tests.c)
-
-```bash
-make test                     # Run all 936+ tests
-make test PROFILE=1           # With basic profiling
-make test FAIL_FAST=1         # Stop on first failure
-```
 
 Test files: `src/test_runner/modules/` — 22 `*_test.c` files (including
 `mama_forth_words_test.c`, `integration_tests.c`, `stress_tests.c`, `break_me_tests.c`).
