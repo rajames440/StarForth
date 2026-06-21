@@ -68,11 +68,36 @@ extern void kernel_main(BootInfo *boot_info);
 
 #if defined(ARCH_AMD64)
 #define COM1_BASE 0x3F8
+/**
+ * @brief Write a byte to an x86 I/O port via @c OUT (early-boot raw path).
+ *
+ * Used exclusively by the amd64 early-boot serial helper functions
+ * (@c raw_serial_init(), @c raw_serial_putc()) before the kernel console
+ * subsystem is initialised. Operates identically to @c outb() in
+ * @c interrupts.c but is a separate inline to avoid a cross-unit dependency
+ * in the UEFI loader compilation unit.
+ *
+ * Only compiled when @c ARCH_AMD64 is defined.
+ *
+ * @param port 16-bit I/O port address (e.g., @c COM1_BASE + 0 = 0x3F8).
+ * @param val  Byte value to write.
+ */
 static inline void raw_outb(uint16_t port, uint8_t val)
 {
     __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
+/**
+ * @brief Read a byte from an x86 I/O port via @c IN (early-boot raw path).
+ *
+ * Used by @c raw_serial_putc() to poll the UART Line Status Register
+ * (COM1 + 5) for the Transmitter Holding Register Empty (THRE) bit
+ * before writing a character, preventing serial output corruption.
+ * Only compiled when @c ARCH_AMD64 is defined.
+ *
+ * @param port 16-bit I/O port address (e.g., @c COM1_BASE + 5 = 0x3FD).
+ * @return Byte value read from the port.
+ */
 static inline uint8_t raw_inb(uint16_t port)
 {
     uint8_t ret;
@@ -80,6 +105,23 @@ static inline uint8_t raw_inb(uint16_t port)
     return ret;
 }
 
+/**
+ * @brief Initialise COM1 (0x3F8) to 115200 8N1 before UEFI console exits.
+ *
+ * Programs the 16550-compatible UART at base address @c COM1_BASE using
+ * direct port I/O. Sequence:
+ * 1. Disable all UART interrupts (IER = 0x00).
+ * 2. Assert DLAB (Divisor Latch Access Bit) to access the divisor registers.
+ * 3. Write divisor = 1 (115200 baud at 115200 Hz base clock) to DLL and DLH.
+ * 4. Clear DLAB; configure 8N1 (8 data bits, no parity, 1 stop bit; LCR=0x03).
+ * 5. Enable FIFO, clear TX/RX FIFOs, set 14-byte interrupt threshold (FCR=0xC7).
+ * 6. Assert RTS and DSR (MCR=0x0B).
+ *
+ * Called once at the beginning of @c efi_main() on amd64 to ensure the
+ * @c RAW_LOG() macro can emit diagnostic messages throughout the boot
+ * sequence, including phases where the UEFI console is no longer available.
+ * Only compiled when @c ARCH_AMD64 is defined.
+ */
 static void raw_serial_init(void)
 {
     /* Disable interrupts */
@@ -97,12 +139,37 @@ static void raw_serial_init(void)
     raw_outb(COM1_BASE + 4, 0x0B);
 }
 
+/**
+ * @brief Write a single character to COM1 with THRE polling.
+ *
+ * Spins on bit 5 (Transmitter Holding Register Empty) of the Line Status
+ * Register (COM1 + 5) until the UART is ready to accept a new byte, then
+ * writes @p c to the Transmitter Holding Register (COM1 + 0). This busy-
+ * wait is acceptable in the UEFI loader phase because interrupts are
+ * either managed by UEFI or not yet configured by the kernel.
+ *
+ * Only compiled when @c ARCH_AMD64 is defined.
+ *
+ * @param c Character to transmit.
+ */
 static void raw_serial_putc(char c)
 {
     while ((raw_inb(COM1_BASE + 5) & 0x20) == 0) { }
     raw_outb(COM1_BASE + 0, (uint8_t)c);
 }
 
+/**
+ * @brief Write a NUL-terminated string to COM1 with implicit LF→CRLF conversion.
+ *
+ * Iterates over @p s and calls @c raw_serial_putc() for each character.
+ * A bare @c '\\n' is preceded by a @c '\\r' to produce proper CRLF line
+ * endings expected by serial terminals. Used via the @c RAW_LOG() macro
+ * for diagnostic output before the kernel console subsystem is live.
+ *
+ * Only compiled when @c ARCH_AMD64 is defined.
+ *
+ * @param s NUL-terminated string to transmit.
+ */
 static void raw_serial_puts(const char *s)
 {
     while (*s)
@@ -119,6 +186,22 @@ static void raw_serial_puts(const char *s)
 
 static BootInfo g_boot_info = {0};
 
+/**
+ * @brief Compare two EFI GUIDs for equality.
+ *
+ * Compares all 128 bits of the two GUIDs field by field:
+ * @c Data1 (32-bit), @c Data2 (16-bit), @c Data3 (16-bit), and all
+ * 8 bytes of @c Data4. Returns non-zero only if every field matches.
+ *
+ * Used by @c efi_main() to search the UEFI @c ConfigurationTable for
+ * the ACPI 2.0 and ACPI 1.0 table GUIDs (@c EFI_ACPI_20_TABLE_GUID and
+ * @c EFI_ACPI_TABLE_GUID) to populate @c g_boot_info.acpi_table before
+ * calling @c ExitBootServices().
+ *
+ * @param a Pointer to the first EFI GUID.
+ * @param b Pointer to the second EFI GUID.
+ * @return Non-zero if the GUIDs are equal, 0 otherwise.
+ */
 static int guid_equals(const EFI_GUID* a, const EFI_GUID* b)
 {
     return a->Data1 == b->Data1 &&
@@ -134,11 +217,32 @@ static int guid_equals(const EFI_GUID* a, const EFI_GUID* b)
            a->Data4[7] == b->Data4[7];
 }
 
-/*
- * Try to read /starforth.cfg from the ESP.
- * Returns 1 on success (buf contains a NUL-terminated ASCII cmdline), 0 otherwise.
- * buf must be at least buflen bytes; buflen should equal KERNEL_ARGS_CMDLINE_MAX.
- * Trailing CR/LF stripped.  Available in both MONOLITHIC and split builds.
+/**
+ * @brief Read @c /starforth.cfg from the EFI System Partition.
+ *
+ * Opens the ESP root directory using @c EFI_SIMPLE_FILE_SYSTEM_PROTOCOL
+ * via the device handle of the loaded image, then reads the file
+ * @c "starforth.cfg" into @p buf. On success, @p buf contains a
+ * NUL-terminated ASCII command-line string (at most @p buflen - 1 bytes)
+ * with trailing CR and LF characters stripped.
+ *
+ * This is the second-priority command-line source in @c efi_main() (after
+ * the NVRAM one-shot variable @c StarForthBootArgs). It is intended for
+ * installer-supplied or build-time-configured boot options that persist
+ * across reboots, unlike the ephemeral NVRAM variable.
+ *
+ * Both @c MONOLITHIC_BUILD and split-build paths call this function;
+ * it is not gated by a preprocessor condition.
+ *
+ * @param ImageHandle UEFI image handle for the current application;
+ *                    used to retrieve @c EFI_LOADED_IMAGE_PROTOCOL.
+ * @param BS          UEFI Boot Services table pointer; must not be NULL.
+ * @param buf         Caller-supplied buffer; receives the NUL-terminated
+ *                    ASCII config string on success.
+ * @param buflen      Size of @p buf in bytes; at most @p buflen-1 bytes
+ *                    of the file are read.
+ * @return 1 if the file was read and contained non-empty content;
+ *         0 on any UEFI error or if the file is empty after stripping.
  */
 static int load_cfg_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES *BS,
                               char *buf, UINTN buflen)
@@ -199,7 +303,36 @@ typedef void (*KernelEntry)(BootInfo *boot_info);
 static uint8_t *kernel_elf_buffer = NULL;
 static uint64_t kernel_elf_size = 0;
 
-/* Load kernel.elf from ESP using Simple File System Protocol */
+/**
+ * @brief Load @c kernel.elf from the ESP into UEFI-allocated memory (split build).
+ *
+ * Used only in the split-build path (@c !MONOLITHIC_BUILD) where the kernel
+ * is a separate ELF file on the EFI System Partition rather than being
+ * linked directly into the loader image. Execution order:
+ *
+ * 1. Allocates @c KERNEL_MAX_SIZE (8 MB) of @c EfiLoaderData pages via
+ *    @c AllocatePages. Stores the result in the module-static
+ *    @c kernel_elf_buffer pointer.
+ * 2. Retrieves @c EFI_LOADED_IMAGE_PROTOCOL from @p ImageHandle to obtain
+ *    the boot device handle.
+ * 3. Opens @c EFI_SIMPLE_FILE_SYSTEM_PROTOCOL on the device handle and
+ *    opens the ESP volume root directory.
+ * 4. Opens @c "kernel.elf" for read-only access.
+ * 5. Queries file size via @c EFI_FILE_INFO; returns
+ *    @c EFI_BUFFER_TOO_SMALL if the file exceeds @c KERNEL_MAX_SIZE.
+ * 6. Reads the entire file into @c kernel_elf_buffer and stores the byte
+ *    count in @c kernel_elf_size.
+ *
+ * Must be called before @c ExitBootServices() — file system access via
+ * Boot Services is unavailable after EBS. The allocated buffer and size
+ * are then passed to @c elf_load_kernel() in Phase C.
+ *
+ * Only compiled when @c MONOLITHIC_BUILD is not defined.
+ *
+ * @param ImageHandle UEFI image handle for the current application.
+ * @param BS          UEFI Boot Services table pointer.
+ * @return @c EFI_SUCCESS on success, or a UEFI status code on failure.
+ */
 static EFI_STATUS load_kernel_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES *BS)
 {
     EFI_STATUS status;
@@ -297,6 +430,66 @@ static EFI_STATUS load_kernel_from_esp(EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES
 }
 #endif /* !MONOLITHIC_BUILD */
 
+/**
+ * @brief UEFI application entry point — boot loader for StarKernel.
+ *
+ * @c efi_main() is the UEFI PE32+ entry point called by the firmware
+ * immediately after the image is loaded and validated. It drives the full
+ * boot sequence in two phases:
+ *
+ * **Phase A — UEFI Boot Services are active:**
+ *
+ * A-0. Resets the UEFI ConOut console and emits an identification banner.
+ *      On amd64, initialises COM1 via @c raw_serial_init() for raw-serial
+ *      boot logging (@c RAW_LOG() macro).
+ *
+ * A-1. Assembles the ASCII kernel command line from three sources in
+ *      priority order:
+ *      1. @c StarForthBootArgs NVRAM variable (one-shot, set by REBOOT word;
+ *         immediately cleared after reading to prevent re-use on next boot).
+ *      2. @c /starforth.cfg on the ESP (installer / build-time config).
+ *      3. @c LoadOptions from the UEFI boot manager (typically the EFI shell
+ *         command line or boot entry options).
+ *      Parses the result via @c cmdline_parse_ascii() into
+ *      @c g_boot_info.args.
+ *
+ * A-2. If @c --stack=@<size@> was given, allocates @p stack_size bytes of
+ *      @c EfiLoaderData pages for the kernel stack and stores the base
+ *      address and size in @c g_boot_info.
+ *
+ * A-3. Pre-fills non-EBS-dependent @c BootInfo fields: runtime services
+ *      pointer, ACPI table (found in @c ConfigurationTable by GUID),
+ *      and GOP framebuffer geometry.
+ *
+ * A-4. (Split build only) Loads @c kernel.elf from the ESP via
+ *      @c load_kernel_from_esp() into the pre-allocated 8 MB buffer.
+ *
+ * **Phase B — ExitBootServices:**
+ *
+ * Calls @c GetMemoryMap() to obtain the current map key, then immediately
+ * calls @c ExitBootServices(). Retries up to 16 times on
+ * @c EFI_INVALID_PARAMETER (map key stale) as required by the UEFI spec.
+ * No UEFI Boot Services calls are made between @c GetMemoryMap and
+ * @c ExitBootServices — this is the UEFI "golden path" requirement.
+ *
+ * **Phase C — Post-ExitBootServices:**
+ *
+ * - **Monolithic build**: calls @c kernel_main(@c &g_boot_info) directly
+ *   (kernel is linked into the same PE image).
+ * - **Split build**: parses and loads the kernel ELF via
+ *   @c elf_load_kernel(), then performs an indirect call to the resolved
+ *   @c kernel_main() entry point address.
+ *
+ * If the kernel returns (which it must not), @c efi_main() halts the
+ * processor in an infinite @c arch_halt() loop.
+ *
+ * @param ImageHandle  UEFI handle for this loaded application image.
+ * @param SystemTable  Pointer to the UEFI system table (Boot/Runtime
+ *                     Services, ConOut, ConfigurationTable, etc.).
+ * @return @c EFI_SUCCESS if the sequence completes without a fatal error
+ *         before @c ExitBootServices (in practice, control never returns
+ *         here because the kernel takes over permanently).
+ */
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
     EFI_STATUS status;
