@@ -31,6 +31,9 @@
 #include "word_registry.h"
 #include "platform_alloc.h"
 #include "word_source/include/mama_forth_words.h"
+#ifdef __STARKERNEL__
+#include "starkernel/hal/hal.h"  /* sk_hal_host_services() */
+#endif
 
 /*===========================================================================
  * exec hook  ( vm_ctx, code, code_len ) -> 0 on success
@@ -80,7 +83,11 @@ static void *capsule_vm_alloc_hook(void) {
     VM *vm = (VM *)sf_malloc(sizeof(VM));
     if (!vm) return (void *)0;
 
+#ifdef __STARKERNEL__
+    vm_init_with_host(vm, sk_hal_host_services());
+#else
     vm_init(vm);
+#endif
 
     /* vm_init sets vm->error if memory allocation failed internally */
     if (vm->error) {
