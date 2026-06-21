@@ -53,7 +53,21 @@ static int tests_failed = 0;
 
 /* ------------------------------------------------------------------ */
 
-/* Test 1: ACL-PIN is a one-way ratchet */
+/**
+ * @brief Test 1 — ACL-PIN is a one-way ratchet.
+ *
+ * Creates a temporary word and pins it via @c ACL-PIN. Verifies that
+ * subsequent calls to @c ACL-MODE!, @c ACL-TTL!, and @c ACL-ALLOW! are
+ * all no-ops while the word is pinned. The pin flag itself must remain 1.
+ *
+ * Expected assertions (4):
+ *  - @c acl_pinned == 1 after ACL-PIN
+ *  - @c acl_mode unchanged after ACL-MODE! on pinned entry
+ *  - @c acl_ttl unchanged after ACL-TTL! on pinned entry
+ *  - @c acl_allow unchanged after ACL-ALLOW! on pinned entry
+ *
+ * @param vm  VM instance (shared state; caller restores after this function).
+ */
 static void test_acl_pin_immutable(VM *vm)
 {
     DictEntry *e = vm_create_word(vm, "__acl_pin_test__", 16, NULL);
@@ -94,7 +108,22 @@ static void test_acl_pin_immutable(VM *vm)
     ACL_ASSERT(e->acl_allow == 1, "ACL-ALLOW! is no-op when pinned");
 }
 
-/* Test 2: ACL-INHERIT copies mode, clears pin, resets TTL and allow */
+/**
+ * @brief Test 2 — ACL-INHERIT copies mode, clears pin, and resets TTL/allow.
+ *
+ * Constructs a source entry with STRICT mode, pinned, TTL=5000, allow=0,
+ * and a destination entry with a different mode and also pinned. Calls
+ * @c acl_inherit_entry() directly and checks the resulting destination
+ * state. Verifies the Isabelle/HOL lemma @c ACL_Inherit_Clears_Pin.
+ *
+ * Expected assertions (4):
+ *  - @c dst->acl_mode == ACL_MODE_STRICT (mode copied from src)
+ *  - @c dst->acl_pinned == 0 (pin cleared regardless of dst's original pin)
+ *  - @c dst->acl_ttl == 0 (TTL reset to 0)
+ *  - @c dst->acl_allow == 1 (allow reset to 1)
+ *
+ * @param vm  VM instance (used for word creation; not modified beyond that).
+ */
 static void test_acl_inherit(VM *vm)
 {
     DictEntry *src = vm_create_word(vm, "__acl_src__", 11, NULL);
@@ -116,7 +145,21 @@ static void test_acl_inherit(VM *vm)
     ACL_ASSERT(dst->acl_allow  == 1,               "ACL-INHERIT resets acl_allow to 1");
 }
 
-/* Test 3: emergency_console bypasses denied word */
+/**
+ * @brief Test 3 — emergency_console flag bypasses a denied word.
+ *
+ * Defines a FORTH word that pushes 42, then sets its @c acl_allow to 0
+ * to simulate a policy denial. Executes the word with @c emergency_console=1
+ * and verifies that the word body ran (stack depth increased by 1).
+ *
+ * The @c emergency_console bypass is required by the bare-metal fault
+ * handler so that critical recovery words can always execute.
+ *
+ * Expected assertions (1):
+ *  - @c vm->dsp == saved_dsp + 1 (word ran despite deny)
+ *
+ * @param vm  VM instance.
+ */
 static void test_emergency_console_bypass(VM *vm)
 {
     /* Define a simple FORTH word that pushes a marker */
@@ -145,7 +188,24 @@ static void test_emergency_console_bypass(VM *vm)
     e->acl_allow = 1;
 }
 
-/* Test 4: ACL deny aborts execution (word body does not run) */
+/**
+ * @brief Test 4 — ACL denial aborts execution without running the word body.
+ *
+ * Defines a word that pushes a sentinel (99), then denies it with
+ * @c acl_allow=0 and @c acl_ttl=1 (hot-path decrement triggers the deny
+ * check without invoking @c acl_recheck()). Verifies that executing the
+ * word sets either @c vm->abort_requested, @c vm->error, or leaves the
+ * stack depth unchanged — and that the sentinel was never pushed.
+ *
+ * @c acl_ttl=1 is used rather than 0 to stay on the hot path (TTL
+ * decrements to 0 → check; avoids the fail-open cold-path recheck).
+ *
+ * Expected assertions (2):
+ *  - Execution was aborted (abort_requested || error || stack unchanged)
+ *  - Stack depth is unchanged (sentinel was not pushed)
+ *
+ * @param vm  VM instance.
+ */
 static void test_acl_deny_aborts(VM *vm)
 {
     /* Define a word that pushes a sentinel value */
@@ -173,7 +233,21 @@ static void test_acl_deny_aborts(VM *vm)
     e->acl_allow = 1;
 }
 
-/* Test 5: TTL hot path — decrements without calling recheck */
+/**
+ * @brief Test 5 — ACL TTL hot-path decrements without invoking recheck.
+ *
+ * Defines a word with @c acl_ttl=10 and @c acl_allow=1, then executes
+ * it three times via the outer interpreter. Each outer-interpreter
+ * execution decrements @c acl_ttl by 1, so the expected final value is 7.
+ *
+ * This confirms the hot-path optimisation: the interpreter only calls
+ * @c acl_recheck() when @c acl_ttl reaches 0, not on every invocation.
+ *
+ * Expected assertions (1):
+ *  - @c e->acl_ttl == 7 after three executions (10 → 9 → 8 → 7)
+ *
+ * @param vm  VM instance.
+ */
 static void test_acl_ttl_hot_path(VM *vm)
 {
     vm_interpret(vm, ": __acl_ttl_test__ 1 DROP ;");
@@ -199,7 +273,22 @@ static void test_acl_ttl_hot_path(VM *vm)
     ACL_ASSERT(e->acl_ttl == 7, "TTL hot path: TTL decrements from 10 to 7 after 3 execs");
 }
 
-/* Test 6: STRICT mode keeps TTL at 0 after each ACL-RECHECK */
+/**
+ * @brief Test 6 — STRICT mode keeps TTL at 0 after every recheck.
+ *
+ * In @c ACL_MODE_STRICT, @c ACL-RECHECK must reset @c acl_ttl to 0 after
+ * each allow decision so the recheck fires on every subsequent execution.
+ *
+ * If @c ACL.4th is not loaded, @c ACL-RECHECK is absent and @c acl_recheck()
+ * fails open (@c acl_ttl = @c ACL_TTL_OPEN). In that case the test is
+ * conditionally skipped (counted as a pass) since the ACL system is not
+ * yet active.
+ *
+ * Expected assertions (1, or skip counted as 1 pass):
+ *  - @c e->acl_ttl == 0 after one execution in STRICT mode with ACL loaded.
+ *
+ * @param vm  VM instance.
+ */
 static void test_acl_strict_mode(VM *vm)
 {
     vm_interpret(vm, ": __acl_strict_test__ DROP ;");
@@ -236,7 +325,21 @@ static void test_acl_strict_mode(VM *vm)
     }
 }
 
-/* Test 7: adaptive TTL scales with heat via ACL-TTL-COMPUTE */
+/**
+ * @brief Test 7 — Adaptive TTL scales with execution heat via ACL-TTL-COMPUTE.
+ *
+ * Sets @c execution_heat=2560 on a temporary entry and invokes
+ * @c ACL-TTL-COMPUTE if the word is present (i.e., @c ACL.4th is loaded).
+ * The expected formula is @c ttl = heat/4 + 256 = 640 + 256 = 896.
+ *
+ * If @c ACL-TTL-COMPUTE is not present (ACL.4th not yet loaded), the test
+ * is conditionally skipped and counted as a pass.
+ *
+ * Expected assertions (1, or skip):
+ *  - @c ACL-TTL-COMPUTE returns 896 for heat=2560.
+ *
+ * @param vm  VM instance.
+ */
 static void test_acl_adaptive_ttl(VM *vm)
 {
     DictEntry *e = vm_create_word(vm, "__acl_heat_test__", 17, NULL);
@@ -267,7 +370,24 @@ static void test_acl_adaptive_ttl(VM *vm)
     vm->error = 0;
 }
 
-/* Test 8: Pin blocks shadowing — pinned word cannot be redefined by anyone */
+/**
+ * @brief Test 8 — A pinned word cannot be shadowed by redefinition.
+ *
+ * Creates a word, pins it, then attempts to create another word with
+ * the same name via @c vm_create_word(). Verifies that the second create
+ * returns NULL and sets @c vm->error, and that the original pinned entry
+ * is still the one returned by @c vm_find_word().
+ *
+ * This enforces the Isabelle/HOL lemma @c ACL_Pin_Monotone: pin is
+ * permanent and cannot be overridden even by a new definition.
+ *
+ * Expected assertions (3):
+ *  - @c vm_create_word() returns NULL for the shadowed name
+ *  - @c vm->error is non-zero after the blocked create
+ *  - @c vm_find_word() still returns the original pinned entry
+ *
+ * @param vm  VM instance.
+ */
 static void test_acl_pin_blocks_shadow(VM *vm)
 {
     DictEntry *orig = vm_create_word(vm, "__acl_shadow_target__", 21, NULL);
@@ -286,6 +406,29 @@ static void test_acl_pin_blocks_shadow(VM *vm)
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * @brief Module 24 entry point — run all word-level ACL POST tests.
+ *
+ * Saves the current VM state (dsp, rsp, error, mode, emergency_console)
+ * before each sub-test and restores it between tests so failures do not
+ * cascade. Runs eight tests covering:
+ *
+ *  1. ACL-PIN one-way ratchet (4 assertions)
+ *  2. ACL-INHERIT semantics (4 assertions)
+ *  3. emergency_console bypass (1 assertion)
+ *  4. ACL denial aborts word execution (2 assertions)
+ *  5. TTL hot-path decrement (1 assertion)
+ *  6. STRICT mode — TTL stays 0 (1 assertion or conditional skip)
+ *  7. Adaptive TTL via ACL-TTL-COMPUTE (1 assertion or conditional skip)
+ *  8. Pin blocks shadowing (3 assertions)
+ *
+ * Tests that depend on @c ACL.4th being loaded are conditionally skipped
+ * during bare POST (before @c ACL.4th runs) and counted as passes so the
+ * POST score is not penalised by load-order.
+ *
+ * @param vm  VM instance; must be initialised and have the standard
+ *            word vocabulary available.
+ */
 void run_acl_words_tests(VM *vm)
 {
     log_message(LOG_INFO, "Running ACL Words Tests (Module 24)...");
