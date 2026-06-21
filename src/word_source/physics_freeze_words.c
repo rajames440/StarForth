@@ -68,16 +68,16 @@
 #include "physics_metadata.h"
 #include "word_registry.h"
 
-/* ============================================================================
- * FREEZE-WORD ( caddr u -- )
+/**
+ * @brief FREEZE-WORD ( caddr u -- )
  *
- * Freeze a word by name: prevent its execution heat from decaying.
- * Useful for system-critical words that must stay in cache.
+ * Set the @c WORD_FROZEN flag on the named word, preventing @c physics_metadata_apply_linear_decay()
+ * from reducing its @c execution_heat. Frozen words stay hot across OS context switches indefinitely.
+ * Silently succeeds if the word is not found (lenient policy).
  *
- * Example:
- *   S" DUP" FREEZE-WORD
- *   S" DROP" FREEZE-WORD
- * ============================================================================
+ * Stack effect: ( caddr u -- )
+ *
+ * @param vm Active VM; @c vm->error is set and returns early on underflow
  */
 void forth_FREEZE_WORD(VM *vm) {
     if (vm->error) return;
@@ -107,14 +107,16 @@ void forth_FREEZE_WORD(VM *vm) {
     /* Silently succeed even if word not found (lenient) */
 }
 
-/* ============================================================================
- * UNFREEZE-WORD ( caddr u -- )
+/**
+ * @brief UNFREEZE-WORD ( caddr u -- )
  *
- * Unfreeze a word by name: allow its execution heat to decay normally.
+ * Clears the @c WORD_FROZEN flag on the named word, allowing its @c execution_heat
+ * to decay normally via Loop #3. Does not alter @c WORD_PINNED. Silently succeeds
+ * if the word is not found or @c u is out of range.
  *
- * Example:
- *   S" MY-TEMP-WORD" UNFREEZE-WORD
- * ============================================================================
+ * Stack effect: ( caddr u -- )
+ *
+ * @param vm Active VM; @c vm->error is set and returns early on underflow
  */
 void forth_UNFREEZE_WORD(VM *vm) {
     if (vm->error) return;
@@ -140,15 +142,17 @@ void forth_UNFREEZE_WORD(VM *vm) {
     }
 }
 
-/* ============================================================================
- * FROZEN? ( caddr u -- flag )
+/**
+ * @brief FROZEN? ( caddr u -- flag )
  *
- * Query freeze status of a word.
- * Returns: -1 (true) if word is frozen, 0 (false) otherwise.
+ * Tests whether the @c WORD_FROZEN flag is set on the named word. Pushes
+ * -1 (FORTH true) if frozen, 0 otherwise. Also pushes 0 when the word is
+ * not found or @c u is out of range, so callers need not distinguish "not frozen"
+ * from "not found".
  *
- * Example:
- *   S" DUP" FROZEN? IF ." DUP is frozen" THEN
- * ============================================================================
+ * Stack effect: ( caddr u -- flag )
+ *
+ * @param vm Active VM; @c vm->error is set and returns early on underflow
  */
 void forth_FROZEN_QUERY(VM *vm) {
     if (vm->error) return;
@@ -177,14 +181,17 @@ void forth_FROZEN_QUERY(VM *vm) {
     }
 }
 
-/* ============================================================================
- * HEAT! ( heat caddr u -- )
+/**
+ * @brief HEAT! ( heat caddr u -- )
  *
- * Set execution heat for a word manually (diagnostic/testing).
+ * Directly writes @c heat into @c entry->execution_heat for the named word.
+ * Intended for diagnostics and testing; bypasses Loop #1 accumulation and
+ * Loop #3 decay. Silently succeeds if the word is not found or @c u is out
+ * of range.
  *
- * Example:
- *   100 S" MY-WORD" HEAT!   \ Set MY-WORD heat to 100
- * ============================================================================
+ * Stack effect: ( heat caddr u -- )
+ *
+ * @param vm Active VM; @c vm->error is set and returns early on underflow
  */
 void forth_HEAT_STORE(VM *vm) {
     if (vm->error) return;
@@ -211,14 +218,15 @@ void forth_HEAT_STORE(VM *vm) {
     }
 }
 
-/* ============================================================================
- * HEAT@ ( caddr u -- heat )
+/**
+ * @brief HEAT@ ( caddr u -- heat )
  *
- * Read current execution heat for a word.
+ * Pushes the current @c execution_heat of the named word. Pushes 0 when the
+ * word is not found, @c u is out of range, or the word genuinely has zero heat.
  *
- * Example:
- *   S" DUP" HEAT@ . \ Print DUP's current heat
- * ============================================================================
+ * Stack effect: ( caddr u -- heat )
+ *
+ * @param vm Active VM; @c vm->error is set and returns early on underflow
  */
 void forth_HEAT_FETCH(VM *vm) {
     if (vm->error) return;
@@ -247,16 +255,17 @@ void forth_HEAT_FETCH(VM *vm) {
     }
 }
 
-/* ============================================================================
- * SHOW-HEAT ( caddr u -- )
+/**
+ * @brief SHOW-HEAT ( caddr u -- )
  *
- * Display execution heat for a single word.
- * Shows heat value and freeze status.
+ * Prints the @c execution_heat of the named word to @c stdout along with its
+ * freeze and pinned status flags. Output format: @c "NAME: HEAT (frozen) (pinned)".
+ * Prints @c "Word not found: NAME" when the dictionary lookup fails. Intended for
+ * interactive diagnostics.
  *
- * Example:
- *   S" DUP" SHOW-HEAT
- *   Output: DUP: 523 (frozen)
- * ============================================================================
+ * Stack effect: ( caddr u -- )
+ *
+ * @param vm Active VM; @c vm->error is set and returns early on underflow
  */
 void forth_SHOW_HEAT(VM *vm) {
     if (vm->error) return;
@@ -292,20 +301,18 @@ void forth_SHOW_HEAT(VM *vm) {
     }
 }
 
-/* ============================================================================
- * ALL-HEATS ( -- )
+/**
+ * @brief ALL-HEATS ( -- )
  *
- * Display execution heat for all words in dictionary.
- * Sorted by descending heat (hottest first).
+ * Iterates the entire dictionary, collects up to 1024 entries, sorts them by
+ * descending @c execution_heat using an O(n²) bubble sort, then prints a
+ * formatted table to @c stdout with columns for word name, heat value, and
+ * status (frozen/pinned). Intended for interactive diagnostics; the O(n²) sort
+ * is acceptable for dictionary sizes below 1000 words.
  *
- * Example:
- *   ALL-HEATS
- *   Output:
- *     DUP: 1523 (frozen)
- *     EMIT: 892 (frozen)
- *     TYPE: 456
- *     ...
- * ============================================================================
+ * Stack effect: ( -- )
+ *
+ * @param vm Active VM; no-op if @c vm->error is set
  */
 void forth_ALL_HEATS(VM *vm) {
     if (vm->error) return;
@@ -353,12 +360,17 @@ void forth_ALL_HEATS(VM *vm) {
     printf("\n");
 }
 
-/* ============================================================================
- * DECAY-RATE@ ( -- rate )
+/**
+ * @brief DECAY-RATE@ ( -- rate )
  *
- * Get current decay rate (Q48.16 fixed-point format, per microsecond).
- * Returns the scaled decay rate for introspection and diagnostics.
- * ============================================================================
+ * Pushes the compile-time constant @c DECAY_RATE_PER_US_Q16 as a Q48.16
+ * fixed-point value. This is the base heat decay rate per microsecond used
+ * by Loop #3 before adaptive tuning by Loop #6. Intended for introspection
+ * and diagnostics.
+ *
+ * Stack effect: ( -- rate )
+ *
+ * @param vm Active VM; no-op if @c vm->error is set
  */
 void forth_DECAY_RATE_FETCH(VM *vm) {
     if (vm->error) return;
@@ -367,15 +379,18 @@ void forth_DECAY_RATE_FETCH(VM *vm) {
     vm->data_stack[vm->dsp++] = (cell_t)DECAY_RATE_PER_US_Q16;
 }
 
-/* ============================================================================
- * FREEZE-CRITICAL ( -- )
+/**
+ * @brief FREEZE-CRITICAL ( -- )
  *
- * Freeze all system-critical words that must remain in cache.
- * Recommended to call once at startup.
+ * Sets @c WORD_FROZEN on a hard-coded list of 21 system-critical words
+ * (DUP, DROP, SWAP, OVER, ROT, @, !, C@, C!, EXECUTE, IF, THEN, ELSE, DO,
+ * LOOP, BEGIN, UNTIL, REPEAT, ., EMIT, CR). Silently skips any word not found
+ * in the current dictionary. Intended to be called once at startup to prevent
+ * essential words from decaying out of the hot-words cache.
  *
- * Example:
- *   FREEZE-CRITICAL
- * ============================================================================
+ * Stack effect: ( -- )
+ *
+ * @param vm Active VM; no-op if @c vm->error is set
  */
 void forth_FREEZE_CRITICAL(VM *vm) {
     if (vm->error) return;
@@ -417,9 +432,14 @@ void forth_FREEZE_CRITICAL(VM *vm) {
     }
 }
 
-/* ============================================================================
- * Word Registration: Phase 2 Freeze/Decay Control Words
- * ============================================================================
+/**
+ * @brief Register all Phase 2 freeze/decay control words with the VM dictionary.
+ *
+ * Registers: @c FREEZE-WORD, @c UNFREEZE-WORD, @c FROZEN?, @c HEAT!,
+ * @c HEAT@, @c SHOW-HEAT, @c ALL-HEATS, @c DECAY-RATE@, @c FREEZE-CRITICAL.
+ * Called during VM bootstrap by the word registration subsystem.
+ *
+ * @param vm Active VM to register words into
  */
 void register_physics_freeze_words(VM *vm) {
     register_word(vm, "FREEZE-WORD", forth_FREEZE_WORD);
