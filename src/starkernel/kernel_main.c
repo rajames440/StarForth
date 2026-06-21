@@ -54,6 +54,7 @@ EFI_RUNTIME_SERVICES *g_sk_runtime_services = NULL;
 #include "starkernel/vm/parity.h"
 #include "starkernel/capsule_generated.h"
 #include "starkernel/capsule_loader.h"
+#include "starkernel/capsule_birth.h"  /* capsule_birth_mama, capsule_find_mama_init */
 #include "starkernel/kmalloc.h"
 #include "starkernel/repl.h"
 #include "vm.h"          /* DictEntry, vm_find_word, ACL_MODE_STRICT */
@@ -484,7 +485,10 @@ static void kernel_main_deep(BootInfo *boot_info) {
         console_println("VM: parity bootstrap complete");
     }
 
-    /* M7.1: Execute init.4th via capsule loader.
+    /* Wire parity log so PARITY:MAMA_INIT/BIRTH/RUN/KILL reach serial */
+    capsule_parity_set_output(NULL, console_puts);
+
+    /* M7.1: Execute init.4th via the proper Mama birth protocol.
      * capsule_arena lives in .rodata; copy to heap so the interpreter
      * can safely read payload bytes after VMM takeover. */
     void *mama_vm = sk_get_mama_vm();
@@ -530,18 +534,23 @@ static void kernel_main_deep(BootInfo *boot_info) {
             while (n--) *dst++ = *src++;
             live_dir->arena_base = (uint64_t)(uintptr_t)arena_copy;
 
-            console_println("Init: loading init.4th...");
-            CapsuleRunResult cr = capsule_exec_init(
+            console_println("Init: Mama birth...");
+            CapsuleRunResult cr = capsule_birth_mama(
                 mama_vm,
-                "init.4th",
                 live_dir,
                 capsule_descriptors,
                 capsule_names,
                 arena_copy);
             if (cr == CAPSULE_RUN_OK) {
-                console_println("Init: init.4th OK");
+                console_println("Init: Mama birth OK");
+                /* Free ramdrive slots so init.4th blocks are available for userspace */
+                const CapsuleDesc *mama_cap =
+                    capsule_find_mama_init(live_dir, capsule_descriptors);
+                if (mama_cap)
+                    capsule_clear_blocks(arena_copy + mama_cap->offset,
+                                        mama_cap->length);
             } else {
-                console_println("Init: init.4th FAILED");
+                console_println("Init: Mama birth FAILED");
             }
 
             /* Pin kernel-only privileged words that ACL.4th cannot reach

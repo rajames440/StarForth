@@ -667,7 +667,6 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "MAMA-VM-ID", mama_word_mama_vm_id);
     register_word(vm, "VM-COUNT", mama_word_vm_count);
     register_word(vm, "CAPSULE-TEST", mama_word_capsule_test);
-    register_word(vm, "EXEC", mama_word_exec);
 
     /* Create and switch to MAMA vocabulary */
     vm_bootstrap_root_vocabulary(vm, "MAMA");

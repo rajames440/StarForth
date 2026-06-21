@@ -100,13 +100,10 @@ CapsuleValidateResult capsule_validate(
         return CAPSULE_ERR_MODE_INVALID;
     }
 
-    /* 6. Warn/error if REVOKED and ACTIVE are both set
-     * (REVOKED should override, but this is a data consistency issue) */
+    /* 6. Reject if REVOKED and ACTIVE are both set — data inconsistency */
     if ((desc->flags & CAPSULE_FLAG_REVOKED) &&
         (desc->flags & CAPSULE_FLAG_ACTIVE)) {
-        /* This is allowed but suspicious - REVOKED overrides ACTIVE.
-         * For strict validation, we could return an error here.
-         * For now, just allow it (REVOKED wins at runtime). */
+        return CAPSULE_ERR_REVOKED_ACTIVE;
     }
 
     /* 7. Verify content hash if requested */
