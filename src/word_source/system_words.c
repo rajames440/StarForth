@@ -564,6 +564,16 @@ static void system_word_reboot(VM *vm) {
 #endif
 }
 
+/* EXECUTE ( xt -- )  FORTH-79: execute the word whose xt is on the stack */
+static void system_word_execute(VM *vm) {
+    if (vm->dsp < 0) { vm->error = 1; return; }
+    cell_t xt = vm_pop(vm);
+    DictEntry *entry = (DictEntry *)(uintptr_t)xt;
+    if (!entry || !entry->func) { vm->error = 1; return; }
+    vm->current_executing_entry = entry;
+    entry->func(vm);
+}
+
 /* ───────────────────────────── API helpers ─────────────────────────── */
 int system_is_running(void) { return system_running; }
 void set_forth_79_compliance(int enabled) { forth_79_standard = enabled; }
@@ -586,6 +596,7 @@ void register_system_words(VM *vm) {
     register_word(vm, "VLIST", system_word_vlist);
     register_word(vm, "SEE", system_word_see);
     register_word(vm, "PAGE", system_word_page);
+    register_word(vm, "EXECUTE", system_word_execute);
     register_word(vm, "NOP", system_word_nop);
     register_word(vm, "79-STANDARD", system_word_79_standard);
 

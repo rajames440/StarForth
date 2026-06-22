@@ -108,7 +108,7 @@ static void logical_word_xor(VM *vm) {
     log_message(LOG_DEBUG, "XOR: %ld XOR %ld = %ld", (long) n1, (long) n2, (long) result);
 }
 
-/* NOT - Bitwise NOT ( n1 -- n2 ) */
+/* NOT ( flag -- flag )  FORTH-79 logical NOT: 0 -> TRUE, non-zero -> FALSE */
 static void logical_word_not(VM *vm) {
     if (vm->dsp < 0) {
         log_message(LOG_ERROR, "NOT: Stack underflow");
@@ -117,11 +117,23 @@ static void logical_word_not(VM *vm) {
     }
 
     cell_t n1 = vm_pop(vm);
-    cell_t result = ~n1;
+    cell_t result = (n1 == 0) ? FORTH_TRUE : FORTH_FALSE;
 
     vm_push(vm, result);
 
-    log_message(LOG_DEBUG, "NOT: NOT %ld = %ld", (long) n1, (long) result);
+    log_message(LOG_DEBUG, "NOT: %ld -> %ld", (long) n1, (long) result);
+}
+
+/* INVERT ( n1 -- n2 )  Bitwise complement (FORTH-83 extension) */
+static void logical_word_invert(VM *vm) {
+    if (vm->dsp < 0) {
+        log_message(LOG_ERROR, "INVERT: Stack underflow");
+        vm->error = 1;
+        return;
+    }
+
+    cell_t n1 = vm_pop(vm);
+    vm_push(vm, ~n1);
 }
 
 /* 0= - Test for zero ( n -- flag ) */
@@ -363,6 +375,7 @@ void register_logical_words(VM *vm) {
     register_word(vm, "OR", logical_word_or);
     register_word(vm, "XOR", logical_word_xor);
     register_word(vm, "NOT", logical_word_not);
+    register_word(vm, "INVERT", logical_word_invert);
 
     /* Zero comparisons */
     register_word(vm, "0=", logical_word_zero_equals);

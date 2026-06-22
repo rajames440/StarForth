@@ -306,55 +306,31 @@ void string_word_source(VM *vm) {
 /* BL ( -- c )  ASCII space character (32) */
 void string_word_bl(VM *vm) { vm_push(vm, 32); }
 
-/* ' ( -- xt )  Get execution token of next word (Forth-79) */
-void string_word_tick(VM *vm) {
-    /* Parse the next word using WORD with BL (32) as delimiter */
-    vm_push(vm, 32); /* BL */
-    string_word_word(vm);
-    if (vm->error) return;
-
-    /* The counted string addr is now on TOS */
-    if (vm->dsp < 0) {
-        vm->error = 1;
-        return;
-    }
-    cell_t addr = vm->data_stack[vm->dsp];
-    vaddr_t a = VM_ADDR(addr);
-    if (!vm_addr_ok(vm, a, 1)) {
+/* ['] ( -- xt )  IMMEDIATE — parse next word from input stream, compile XT as literal.
+ * In interpret mode behaves like ' (pushes XT). Uses input_buffer, not TIB. */
+void string_word_bracket_tick(VM *vm) {
+    char namebuf[128];
+    int nlen = vm_parse_word(vm, namebuf, sizeof namebuf);
+    if (nlen <= 0) {
+        log_message(LOG_ERROR, "[']': unable to parse word");
         vm->error = 1;
         return;
     }
 
-    uint8_t *counted = vm_ptr(vm, a);
-    if (!counted) {
+    DictEntry *e = vm_find_word(vm, namebuf, (size_t) nlen);
+    if (!e) {
+        log_message(LOG_ERROR, "[']': word '%.*s' not found", nlen, namebuf);
         vm->error = 1;
         return;
     }
-    uint8_t name_len = counted[0];
-    if (!vm_addr_ok(vm, a + 1, name_len)) {
-        vm->error = 1;
-        return;
-    }
-    const char *name = (const char *) &counted[1];
 
-    /* Local search (same criteria as FIND) */
-    DictEntry *entry = vm->latest;
-    while (entry != NULL) {
-        if (entry->name_len == name_len && memcmp(entry->name, name, name_len) == 0) {
-            /* Replace counted-string addr with xt; drop flag semantics (tick returns xt) */
-            vm->data_stack[vm->dsp] = (cell_t)(uintptr_t)
-            entry;
-            return;
-        }
-        entry = entry->link;
+    cell_t xt = (cell_t)(uintptr_t)e;
+    if (vm->mode == MODE_COMPILE) {
+        vm_compile_literal(vm, xt);
+    } else {
+        vm_push(vm, xt);
     }
-
-    /* Not found → error (79 semantics: tick must succeed) */
-    vm->error = 1;
 }
-
-/* ['] ( -- xt )  Compile execution token (immediate) */
-void string_word_bracket_tick(VM *vm) { string_word_tick(vm); }
 
 /* LITERAL / [LITERAL] are placeholders here */
 void string_word_literal(VM *vm) {
@@ -1028,6 +1004,7 @@ void register_string_words(VM *vm) {
     register_word(vm, "BL", string_word_bl);
     // ' (tick) word is registered in dictionary_manipulation_words.c
     register_word(vm, "[']", string_word_bracket_tick);
+    vm_make_immediate(vm); /* ['] is IMMEDIATE: compiles XT as literal at define time */
     register_word(vm, "LITERAL", string_word_literal);
     register_word(vm, "[LITERAL]", string_word_bracket_literal);
     register_word(vm, "CONVERT", string_word_convert);
