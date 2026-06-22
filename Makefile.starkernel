@@ -192,7 +192,7 @@ LOADER_BASE_CFLAGS := $(COMMON_CFLAGS)
 endif
 
 HEARTBEAT_DOE_LOG         ?= 1
-DOE_INJECT                ?= 1
+DOE_INJECT                ?= 0
 DOE_REPS                  ?= 3
 DOE_SEED                  ?= 12345
 EMERGENCY_CONSOLE_ENABLED ?= 1

@@ -64,11 +64,11 @@ Block 4005
 ( load instead, so this file stays host-portable.      )
 : ACL-BOOT ( -- )
   ACL-INIT-PRIMITIVES
-  ' EXEC   ACL-STRICT  ' EXEC   ACL-PIN
-  ' BYE    ACL-STRICT  ' BYE    ACL-PIN
-  ' ACL-RECHECK        ACL-PIN
-  ' ACL-INIT-PRIMITIVES ACL-PIN
-  ' ACL-BOOT           ACL-PIN ;
+  ['] EXEC   ACL-STRICT  ['] EXEC   ACL-PIN
+  ['] BYE    ACL-STRICT  ['] BYE    ACL-PIN
+  ['] ACL-RECHECK        ACL-PIN
+  ['] ACL-INIT-PRIMITIVES ACL-PIN ;
+' ACL-BOOT ACL-PIN
 
 Block 4006
 ( CA ROOT - Ed25519 public key of system CA.          )
@@ -162,11 +162,11 @@ Block 4014
 
 : ACL-BOOT-RW ( -- )
   ACL-INIT-PRIMITIVES
-  ' EXEC   ACL-STRICT  ' EXEC   ACL-PIN
-  ' BYE    ACL-STRICT  ' BYE    ACL-PIN
-  ' ACL-RECHECK-RW      ACL-PIN
-  ' ACL-INIT-PRIMITIVES ACL-PIN
-  ' ACL-BOOT-RW         ACL-PIN ;
+  ['] EXEC   ACL-STRICT  ['] EXEC   ACL-PIN
+  ['] BYE    ACL-STRICT  ['] BYE    ACL-PIN
+  ['] ACL-RECHECK-RW      ACL-PIN
+  ['] ACL-INIT-PRIMITIVES ACL-PIN ;
+' ACL-BOOT-RW ACL-PIN
 
 Block 4015
 ( Self-activation - runs after all ACL words are defined )
