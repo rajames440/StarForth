@@ -29,6 +29,26 @@
 
 #include "starkernel/capsule_run.h"
 #include "starkernel/capsule.h"
+#ifdef __STARKERNEL__
+#include "starkernel/console.h"  /* parity output goes straight to the console */
+#endif
+
+/* Parity output sink.
+ *
+ * In the monolithic kernel/PE build, taking the address of a cross-translation-
+ * unit function (e.g. &console_puts) is resolved through an absolute
+ * R_X86_64_32S relocation that the PE base-relocator cannot fix up, so a stored
+ * console function pointer holds a garbage address and faults #GP when called.
+ * Direct calls to console_puts/console_putc are PC-relative and always valid, so
+ * the kernel parity path calls the console directly rather than via a pointer.
+ * The hosted build keeps the redirectable function-pointer hooks. */
+#ifdef __STARKERNEL__
+#define PARITY_HAVE_SINK   1
+#define PARITY_EMIT(s)     console_puts(s)
+#else
+#define PARITY_HAVE_SINK   (parity_puts != 0)
+#define PARITY_EMIT(s)     do { if (parity_puts) parity_puts(s); } while (0)
+#endif
 
 /*===========================================================================
  * Run Log Ring Buffer
@@ -135,7 +155,7 @@ static void parity_put_hex64(uint64_t val) {
         buf[2 + (15 - i)] = hex[(val >> (i * 4)) & 0xF];
     }
     buf[18] = '\0';
-    if (parity_puts) parity_puts(buf);
+    PARITY_EMIT(buf);
 }
 
 static void parity_put_u32(uint32_t val) {
@@ -150,7 +170,7 @@ static void parity_put_u32(uint32_t val) {
             val /= 10;
         }
     }
-    if (parity_puts) parity_puts(&buf[i + 1]);
+    PARITY_EMIT(&buf[i + 1]);
 }
 
 static void parity_put_u64(uint64_t val) {
@@ -165,7 +185,7 @@ static void parity_put_u64(uint64_t val) {
             val /= 10;
         }
     }
-    if (parity_puts) parity_puts(&buf[i + 1]);
+    PARITY_EMIT(&buf[i + 1]);
 }
 
 void capsule_parity_log_birth(
@@ -174,17 +194,17 @@ void capsule_parity_log_birth(
     uint64_t capsule_hash,
     uint64_t dict_hash)
 {
-    if (!parity_puts) return;
+    if (!PARITY_HAVE_SINK) return;
 
-    parity_puts("PARITY:BIRTH vm_id=");
+    PARITY_EMIT("PARITY:BIRTH vm_id=");
     parity_put_u32(vm_id);
-    parity_puts(" capsule_id=");
+    PARITY_EMIT(" capsule_id=");
     parity_put_hex64(capsule_id);
-    parity_puts(" mode=p capsule_hash=");
+    PARITY_EMIT(" mode=p capsule_hash=");
     parity_put_hex64(capsule_hash);
-    parity_puts(" dict_hash=");
+    PARITY_EMIT(" dict_hash=");
     parity_put_hex64(dict_hash);
-    parity_puts("\n");
+    PARITY_EMIT("\n");
 }
 
 void capsule_parity_log_birth_failed(
@@ -193,17 +213,17 @@ void capsule_parity_log_birth_failed(
     CapsuleRunResult error,
     uint64_t partial_dict_hash)
 {
-    if (!parity_puts) return;
+    if (!PARITY_HAVE_SINK) return;
 
-    parity_puts("PARITY:BIRTH_FAILED vm_id=");
+    PARITY_EMIT("PARITY:BIRTH_FAILED vm_id=");
     parity_put_u32(vm_id);
-    parity_puts(" capsule_id=");
+    PARITY_EMIT(" capsule_id=");
     parity_put_hex64(capsule_id);
-    parity_puts(" error=");
+    PARITY_EMIT(" error=");
     parity_put_u32((uint32_t)error);
-    parity_puts(" partial_dict_hash=");
+    PARITY_EMIT(" partial_dict_hash=");
     parity_put_hex64(partial_dict_hash);
-    parity_puts("\n");
+    PARITY_EMIT("\n");
 }
 
 void capsule_parity_log_run(
@@ -213,19 +233,19 @@ void capsule_parity_log_run(
     uint64_t pre_dict_hash,
     uint64_t post_dict_hash)
 {
-    if (!parity_puts) return;
+    if (!PARITY_HAVE_SINK) return;
 
-    parity_puts("PARITY:RUN vm_id=");
+    PARITY_EMIT("PARITY:RUN vm_id=");
     parity_put_u32(vm_id);
-    parity_puts(" run_id=");
+    PARITY_EMIT(" run_id=");
     parity_put_u64(run_id);
-    parity_puts(" capsule_id=");
+    PARITY_EMIT(" capsule_id=");
     parity_put_hex64(capsule_id);
-    parity_puts(" mode=e pre_dict=");
+    PARITY_EMIT(" mode=e pre_dict=");
     parity_put_hex64(pre_dict_hash);
-    parity_puts(" post_dict=");
+    PARITY_EMIT(" post_dict=");
     parity_put_hex64(post_dict_hash);
-    parity_puts("\n");
+    PARITY_EMIT("\n");
 }
 
 /*===========================================================================
@@ -237,24 +257,24 @@ void capsule_parity_log_mama_init(
     uint64_t capsule_hash,
     uint64_t dict_hash)
 {
-    if (!parity_puts) return;
+    if (!PARITY_HAVE_SINK) return;
 
-    parity_puts("PARITY:MAMA_INIT capsule_id=");
+    PARITY_EMIT("PARITY:MAMA_INIT capsule_id=");
     parity_put_hex64(capsule_id);
-    parity_puts(" mode=m capsule_hash=");
+    PARITY_EMIT(" mode=m capsule_hash=");
     parity_put_hex64(capsule_hash);
-    parity_puts(" dict_hash=");
+    PARITY_EMIT(" dict_hash=");
     parity_put_hex64(dict_hash);
-    parity_puts("\n");
+    PARITY_EMIT("\n");
 }
 
 void capsule_parity_log_kill(uint32_t vm_id, const char *name)
 {
-    if (!parity_puts) return;
+    if (!PARITY_HAVE_SINK) return;
 
-    parity_puts("PARITY:KILL vm_id=");
+    PARITY_EMIT("PARITY:KILL vm_id=");
     parity_put_u32(vm_id);
-    parity_puts(" name=");
-    if (name) parity_puts(name);
-    parity_puts("\n");
+    PARITY_EMIT(" name=");
+    if (name) PARITY_EMIT(name);
+    PARITY_EMIT("\n");
 }
