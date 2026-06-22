@@ -16,9 +16,9 @@ Block 4011
 ( god-mode except through this boot sequence.        )
 : ACL-ZUSE-BOOT ( -- )
   ZUSE-AUTHENTICATE
-  ' ZUSE-CERT-LO  ACL-PIN
-  ' ZUSE-CERT-HI  ACL-PIN
-  ' ACL-ZUSE-BOOT ACL-PIN ;
+  ['] ZUSE-CERT-LO  ACL-PIN
+  ['] ZUSE-CERT-HI  ACL-PIN
+  ['] ACL-ZUSE-BOOT ACL-PIN ;
 
 Block 4012
 ( Self-activation )
