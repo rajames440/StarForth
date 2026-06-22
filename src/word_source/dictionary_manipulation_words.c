@@ -411,6 +411,9 @@ static void dictionary_m_word_find(VM *vm) {
     }
 }
 
+/* ' ( -- xt )  FORTH-79 tick: parse next word, push its execution token.
+ * Non-immediate — in compile mode the interpreter compiles a call to ',
+ * so this function only ever runs in interpret mode. */
 static void dictionary_m_word_tick(VM *vm) {
     char namebuf[128];
     int nlen = vm_parse_word(vm, namebuf, sizeof namebuf);
@@ -427,18 +430,8 @@ static void dictionary_m_word_tick(VM *vm) {
         return;
     }
 
-    cell_t xt = (cell_t)(uintptr_t)e;
     log_message(LOG_DEBUG, "': found '%.*s' xt=%p", nlen, namebuf, (void *) e);
-
-    if (vm->mode == MODE_COMPILE) {
-        // Compile mode: compile LIT <xt>
-        log_message(LOG_DEBUG, "': compile mode - compiling literal");
-        vm_compile_literal(vm, xt);
-    } else {
-        // Interpret mode: push execution token
-        log_message(LOG_DEBUG, "': interpret mode - pushing xt=%ld", (long) xt);
-        vm_push(vm, xt);
-    }
+    vm_push(vm, (cell_t)(uintptr_t)e);
 }
 
 // in src/word_source/dictionary_manipulation_words.c
@@ -498,5 +491,4 @@ void register_dictionary_manipulation_words(VM *vm) {
     register_word(vm, "INTERPRET", dictionary_m_word_interpret);
     register_word(vm, "FIND", dictionary_m_word_find);
     register_word(vm, "'", dictionary_m_word_tick);
-    vm_make_immediate(vm); /* ' is IMMEDIATE: compiles literal XT inside defs */
 }

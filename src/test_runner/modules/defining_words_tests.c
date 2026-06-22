@@ -160,6 +160,16 @@ static WordTestSuite defining_word_suites[] = {
         2
     },
 
+    {
+        "[']", {
+            {"compile_xt", ": BKT1 ['] DUP ; 77 BKT1 EXECUTE . . CR", "Should print: 77 77", TEST_NORMAL, 0, 1},
+            {"pin_like",   ": BKT2 ['] DROP ; 1 2 BKT2 EXECUTE . CR",  "Should print: 1",    TEST_NORMAL, 0, 1},
+            {"not_found",  ": BKT3 ['] NOSUCHWORD ;",                   "Should error: word not found", TEST_ERROR_CASE, 1, 1},
+            {NULL, NULL, NULL, TEST_NORMAL, 0, 0}
+        },
+        3
+    },
+
     /* End marker */
     {NULL, {{NULL, NULL, NULL, TEST_NORMAL, 0, 0}}, 0}
 };
