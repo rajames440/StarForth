@@ -149,6 +149,13 @@ void mama_word_stop(VM *vm);
 void mama_word_use(VM *vm);
 
 /**
+ * @brief EXEC ( c-addr u -- )
+ * Execute a named capsule on the current VM.  Registered in both Mama
+ * and all child VMs so any VM can load a capsule (e.g. doe.4th).
+ */
+void mama_word_exec(VM *vm);
+
+/**
  * @brief CAPSULE-TEST ( -- )
  * Print diagnostic message confirming capsule system is active.
  */

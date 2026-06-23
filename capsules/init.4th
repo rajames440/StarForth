@@ -21,3 +21,4 @@ S" lib.4th" EXEC
 S" doe-campaign.4th" EXEC
 \ S" doe.4th" EXEC
 BOOT-BANNER
+SMOKE-CAMPAIGN

@@ -44,3 +44,17 @@ Block 4062
   ." Phase 2: 30 CD-governed ticks" CR
   30 CD-DOE
   CAMPAIGN-STATUS ;
+: SMOKE-CAMPAIGN ( -- )
+  ." === Smoke: 1 rep seed 1959 ===" CR
+  VM-INIT
+  SETUP-VMS
+  ." Hermes 1 rep..." CR
+  S" 1959 1 EXEC-DOE" S" Hermes" VM-EXEC
+  ." Artemis 1 rep..." CR
+  S" 1959 1 EXEC-DOE" S" Artemis" VM-EXEC
+  VM-INIT
+  Q.1 VM-HERMES VM-HEAT!
+  Q.1 VM-ARTEMIS VM-HEAT!
+  ." 16 CD ticks..." CR
+  16 CD-DOE
+  CAMPAIGN-STATUS ;

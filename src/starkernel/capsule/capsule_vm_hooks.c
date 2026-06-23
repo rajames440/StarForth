@@ -102,6 +102,9 @@ static void *capsule_vm_alloc_hook(void) {
     /* Give every child VM the STOP word so it can self-stop */
     register_word(vm, "STOP", mama_word_stop);
 
+    /* Give every child VM EXEC so it can load capsules (e.g. doe.4th) */
+    register_word(vm, "EXEC", mama_word_exec);
+
     return (void *)vm;
 }
 
