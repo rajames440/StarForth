@@ -64,11 +64,11 @@ Block 4005
 ( load instead, so this file stays host-portable.      )
 : ACL-BOOT ( -- )
   ACL-INIT-PRIMITIVES
-  ' EXEC   ACL-STRICT  ' EXEC   ACL-PIN
-  ' BYE    ACL-STRICT  ' BYE    ACL-PIN
-  ' ACL-RECHECK        ACL-PIN
-  ' ACL-INIT-PRIMITIVES ACL-PIN
-  ' ACL-BOOT           ACL-PIN ;
+  ['] EXEC   ACL-STRICT  ['] EXEC   ACL-PIN
+  ['] BYE    ACL-STRICT  ['] BYE    ACL-PIN
+  ['] ACL-RECHECK        ACL-PIN
+  ['] ACL-INIT-PRIMITIVES ACL-PIN ;
+' ACL-BOOT ACL-PIN
 
 Block 4006
 ( CA ROOT - Ed25519 public key of system CA.          )
@@ -131,9 +131,7 @@ Block 4012
   ACL-BASE-TTL MAX ACL-MAX-TTL MIN ;
 
 Block 4013
-( ACL-RECHECK-RW ( xt -- )                                        )
-( Rolling-window recheck: push current tick, update slope, set TTL.)
-( Pin-guarded. STRICT mode resets TTL to 0 always.                )
+( ACL-RECHECK-RW: pin-guarded rolling-window recheck )
 : ACL-RECHECK-RW ( xt -- )
   DUP ACL-PINNED? IF DROP EXIT THEN
   DUP ACL-MODE@ ACL-STRICT-MODE = IF
@@ -141,13 +139,10 @@ Block 4013
     0 SWAP ACL-TTL!
     EXIT
   THEN
-  ( Push current tick stamp into ring buffer )
   ACL-RWT-TICK@ OVER ACL-RWT-PUSH
-  ( Update slope if we have enough history )
   DUP ACL-RWT-COUNT@ 3 >= IF
     DUP ACL-RWT-SLOPE-COMPUTE OVER ACL-RWT-SLOPE!
   THEN
-  ( Compute and apply new TTL )
   DUP ACL-TTL-COMPUTE-RW OVER ACL-TTL!
   1 SWAP ACL-ALLOW! ;
 
@@ -162,11 +157,11 @@ Block 4014
 
 : ACL-BOOT-RW ( -- )
   ACL-INIT-PRIMITIVES
-  ' EXEC   ACL-STRICT  ' EXEC   ACL-PIN
-  ' BYE    ACL-STRICT  ' BYE    ACL-PIN
-  ' ACL-RECHECK-RW      ACL-PIN
-  ' ACL-INIT-PRIMITIVES ACL-PIN
-  ' ACL-BOOT-RW         ACL-PIN ;
+  ['] EXEC   ACL-STRICT  ['] EXEC   ACL-PIN
+  ['] BYE    ACL-STRICT  ['] BYE    ACL-PIN
+  ['] ACL-RECHECK-RW      ACL-PIN
+  ['] ACL-INIT-PRIMITIVES ACL-PIN ;
+' ACL-BOOT-RW ACL-PIN
 
 Block 4015
 ( Self-activation - runs after all ACL words are defined )
