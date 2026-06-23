@@ -41,6 +41,19 @@ void sk_repl(VM *vm);
 void sk_repl_run(VM *vm);
 
 /**
+ * sk_repl_step - Execute one REPL turn on a VM and return.
+ *
+ * Prints the VM's prompt, reads one line, interprets it, prints ok/ERROR,
+ * then returns.  Used by the Compudynamics VM-STEP primitive so Hera can
+ * give a single REPL quantum to a child VM without surrendering control
+ * for the full sk_repl_run() loop.
+ *
+ * @param vm  Fully initialised VM instance
+ * @return 1 if the VM is still running, 0 if it halted during this turn
+ */
+int sk_repl_step(VM *vm);
+
+/**
  * sk_repl_set_active_vm - Redirect REPL input to a different VM (USE word).
  *
  * Pass NULL to restore default dispatch (Mama's VM).

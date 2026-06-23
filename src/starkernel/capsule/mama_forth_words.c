@@ -470,6 +470,61 @@ void mama_word_kill(VM *vm)
 }
 
 /**
+ * @brief VM-STEP ( c-addr u -- )
+ * Give one REPL quantum to a named VM.
+ * Prints the VM's prompt, reads one line, executes it, returns to caller.
+ * This is the Compudynamics context-switch primitive — Hera yields one
+ * REPL turn to the named VM without surrendering the outer loop.
+ */
+static void mama_word_vm_step(VM *vm)
+{
+    char        name_buf[VM_NAME_MAX];
+    uint32_t    i;
+    cell_t      u, caddr;
+    const char *src;
+    VMRegistryEntry entry;
+    VM         *target;
+    const char *saved_name;
+
+    if (vm->dsp < 1) { vm->error = 1; return; }
+
+    u     = vm_pop(vm);
+    caddr = vm_pop(vm);
+
+    if (u <= 0 || (uint32_t)u >= VM_NAME_MAX) {
+        console_println("VM-STEP: name too long or empty");
+        return;
+    }
+
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)u; i++) name_buf[i] = src[i];
+    name_buf[u] = '\0';
+
+    if (capsule_vm_find_by_name_nocase(name_buf, &entry) != 0) {
+        console_puts("VM-STEP: VM not found: ");
+        console_println(name_buf);
+        return;
+    }
+
+    target = (VM *)entry.vm_ptr;
+    if (!target || entry.state == VM_STATE_DEAD || entry.state == VM_STATE_STILLBORN) {
+        console_puts("VM-STEP: VM not available: ");
+        console_println(name_buf);
+        return;
+    }
+
+    saved_name = console_get_vm_name();
+    console_set_vm_name(entry.name);
+    sk_repl_step(target);
+    console_set_vm_name(saved_name);
+    /* Stack clean on exit */
+}
+
+/**
  * @brief CAPSULE-BIRTH ( capsule-id -- vm-id )
  * Birth a baby VM from a production (p) capsule.
  * Returns the new VM's ID, or -1 on failure.
@@ -794,6 +849,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "CAPSULE-RUN", mama_word_capsule_run);
     register_word(vm, "MAMA-VM-ID", mama_word_mama_vm_id);
     register_word(vm, "VM-COUNT", mama_word_vm_count);
+    register_word(vm, "VM-STEP", mama_word_vm_step);
     register_word(vm, "CAPSULE-TEST", mama_word_capsule_test);
 
     /* Create and switch to MAMA vocabulary */
@@ -818,6 +874,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "CAPSULE-RUN", mama_word_capsule_run);
     register_word(vm, "MAMA-VM-ID", mama_word_mama_vm_id);
     register_word(vm, "VM-COUNT", mama_word_vm_count);
+    register_word(vm, "VM-STEP", mama_word_vm_step);
     register_word(vm, "CAPSULE-TEST", mama_word_capsule_test);
     register_word(vm, "EXEC", mama_word_exec);
 

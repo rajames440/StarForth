@@ -150,6 +150,55 @@ static void sk_fault_handler(VM *vm) {
 }
 #endif
 
+/*===========================================================================
+ * sk_repl_step - Execute one REPL turn on a VM and return.
+ *
+ * Prints the VM's prompt, reads one input line, interprets it, prints
+ * ok/ERROR, then returns.  Used by the Compudynamics VM-STEP primitive
+ * so Hera can give a single REPL quantum to any child VM without
+ * surrendering control for the full sk_repl_run() loop.
+ *
+ * Returns 1 if the VM is still running, 0 if it halted during this turn.
+ *===========================================================================*/
+
+int sk_repl_step(VM *vm)
+{
+    char input[256];
+
+    if (!vm || vm->halted) return 0;
+
+    {
+        const char *vn = console_get_vm_name();
+        int is_hera = (!vn || (vn[0]=='H' && vn[1]=='e' && vn[2]=='r' && vn[3]=='a' && vn[4]=='\0'));
+        if (is_hera) {
+            vm->emergency_console = vm->zuse_session ? 0 : 1;
+            console_puts(vm->zuse_session ? "zuse)ok> " : "ok> ");
+        } else {
+            vm->emergency_console = 0;
+            console_puts(vn);
+            console_puts(")ok> ");
+        }
+    }
+
+    sk_readline(input, sizeof(input));
+
+    if (input[0] == '\0') {
+        console_puts(" ok\n");
+        return vm->halted ? 0 : 1;
+    }
+
+    vm_interpret(vm, input);
+
+    if (vm->error) {
+        console_puts(" ERROR\n");
+        vm->error = 0;
+    } else {
+        console_puts(" ok\n");
+    }
+
+    return vm->halted ? 0 : 1;
+}
+
 void sk_repl_run(VM *vm)
 {
     char input[256];
