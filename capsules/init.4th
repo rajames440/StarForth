@@ -17,5 +17,7 @@ Block 2049
 S" ACL.4th" EXEC
 S" compudynamics.4th" EXEC
 VM-INIT
+S" lib.4th" EXEC
+S" doe-campaign.4th" EXEC
 \ S" doe.4th" EXEC
 BOOT-BANNER

@@ -6,4 +6,5 @@ Block 4100
 : MSG-RECV  ( -- msg ) 0 ;
 : EVENT-EMIT ( event -- ) DROP ;
 : EVENT-WAIT ( -- event ) 0 ;
+: LOAD-DOE ( -- ) S" doe.4th" EXEC ;
 WELCOME

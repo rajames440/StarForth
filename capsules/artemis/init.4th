@@ -6,4 +6,5 @@ Block 4110
 : BLK-FREE    ( blk -- ) DROP ;
 : BLK-PERSIST ( blk -- ) DROP ;
 : BLK-FETCH   ( blk -- ) DROP ;
+: LOAD-DOE ( -- ) S" doe.4th" EXEC ;
 WELCOME
