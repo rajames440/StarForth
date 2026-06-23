@@ -1,5 +1,4 @@
-Block 2050
-VOCABULARY HERMES
-HERMES DEFINITIONS
-: UP ." Hermes Up" CR ;
-UP
+Block 4100
+: WELCOME ." Welcome to Hermes" CR ;
+: CONNECT-HERA BYE ;
+WELCOME

@@ -76,6 +76,18 @@ void arch_halt(void)
     __asm__ volatile ("wfi" ::: "memory");
 }
 
+void arch_cold_reset(void)
+{
+    arch_disable_interrupts();
+    /* SBI SRST extension (0x53525354): sbi_system_reset, cold reboot = type 1 */
+    register unsigned long a7 __asm__("a7") = 0x53525354UL;
+    register unsigned long a6 __asm__("a6") = 0UL;
+    register unsigned long a0 __asm__("a0") = 1UL; /* cold reboot */
+    register unsigned long a1 __asm__("a1") = 0UL; /* no reason */
+    __asm__ volatile ("ecall" : "+r"(a0) : "r"(a1), "r"(a6), "r"(a7) : "memory");
+    for (;;) __asm__ volatile ("wfi" ::: "memory");
+}
+
 /**
  * @brief Read the RISC-V CPU cycle counter (@c rdcycle).
  *

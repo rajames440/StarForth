@@ -63,6 +63,9 @@ void arch_interrupts_init(void);
 /* Halt/idle CPU until the next interrupt */
 void arch_halt(void);
 
+/* Hard reset the system (does not return) */
+void arch_cold_reset(void) __attribute__((noreturn));
+
 /* Low-overhead timestamp counter (architecture-specific source) */
 uint64_t arch_read_timestamp(void);
 

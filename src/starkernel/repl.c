@@ -161,14 +161,23 @@ void sk_repl_run(VM *vm)
         /* USE may redirect input to a different VM each iteration */
         active = g_repl_active_vm ? g_repl_active_vm : vm;
 
-        /* emergency_console bypasses ACL — only active at the bare ok> prompt.
-         * zuse)ok> is authenticated, not emergency: ACL applies normally. */
-        active->emergency_console = active->zuse_session ? 0 : 1;
-
-        if (active->zuse_session)
-            console_puts("zuse)ok> ");
-        else
-            console_puts("ok> ");
+        /* Named prompt: child VMs show <Name>)ok>, Hera shows zuse)ok>/ok>.
+         * emergency_console bypass applies only to Hera's bare ok> prompt. */
+        {
+            const char *vn = console_get_vm_name();
+            int is_hera = (!vn || (vn[0]=='H' && vn[1]=='e' && vn[2]=='r' && vn[3]=='a' && vn[4]=='\0'));
+            if (is_hera) {
+                active->emergency_console = active->zuse_session ? 0 : 1;
+                if (active->zuse_session)
+                    console_puts("zuse)ok> ");
+                else
+                    console_puts("ok> ");
+            } else {
+                active->emergency_console = 0;
+                console_puts(vn);
+                console_puts(")ok> ");
+            }
+        }
 
         sk_readline(input, sizeof(input));
 

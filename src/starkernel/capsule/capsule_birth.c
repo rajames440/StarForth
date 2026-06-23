@@ -58,6 +58,7 @@ void capsule_birth_set_hooks(
 
 typedef struct vm_node {
     VMRegistryEntry  entry;
+    uint32_t         parent_vm_id;  /* VM 0 = Hera for direct children */
     struct vm_node  *next;
 } vm_node_t;
 
@@ -124,6 +125,7 @@ void capsule_vm_registry_init(void *mama_vm_ptr) {
     mama->entry.vm_ptr             = mama_vm_ptr;
     for (i = 0; i < VM_NAME_MAX; i++) mama->entry.name[i] = '\0';
     vm_name_copy(mama->entry.name, "Hera");
+    mama->parent_vm_id = 0;
     mama->next = (void *)0;
 
     vm_registry_head  = mama;
@@ -150,6 +152,7 @@ static VMRegistryEntry *vm_registry_alloc(void) {
     node->entry.reserved           = 0;
     node->entry.vm_ptr             = (void *)0;
     for (i = 0; i < VM_NAME_MAX; i++) node->entry.name[i] = '\0';
+    node->parent_vm_id = 0;
     node->next = (void *)0;
 
     /* Append to tail */
@@ -314,6 +317,31 @@ int capsule_vm_kill(const char *name) {
     console_println(" dead");
 
     return 0;
+}
+
+void capsule_vm_kill_all_nonmama(void) {
+    vm_node_t *node;
+    VM        *vm;
+    uint32_t   vm_id;
+
+    node = vm_registry_head;
+    while (node) {
+        if (node->entry.vm_id == 0 || node->entry.state == VM_STATE_DEAD) {
+            node = node->next;
+            continue;
+        }
+        vm_id = node->entry.vm_id;
+        vm    = (VM *)node->entry.vm_ptr;
+        if (vm) {
+            vm->halted = 1;
+            vm_cleanup(vm);
+            sf_free(vm);
+        }
+        node->entry.vm_ptr = (void *)0;
+        node->entry.state  = VM_STATE_DEAD;
+        capsule_parity_log_kill(vm_id, node->entry.name);
+        node = node->next;
+    }
 }
 
 /*===========================================================================

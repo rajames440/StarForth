@@ -44,6 +44,7 @@
 #include "starkernel/repl.h"
 #include "starkernel/capsule_generated.h"
 #include "starkernel/console.h"
+#include "starkernel/arch.h"
 #include "vm.h"
 #include "word_registry.h"
 #include "word_source/include/vocabulary_words.h"
@@ -642,6 +643,77 @@ void mama_word_exec(VM *vm)
 }
 
 /**
+ * @brief BYE ( -- ) — Hera-only: reap all children then cold-restart the machine.
+ *
+ * In child VMs this word is never registered; children use the standard
+ * system_word_bye which sets vm->halted and returns to the parent's REPL.
+ */
+static void mama_word_bye(VM *vm __attribute__((unused)))
+{
+    console_println("BYE: reaping children");
+    capsule_vm_kill_all_nonmama();
+    console_println("BYE: cold restart");
+    arch_cold_reset();
+}
+
+/**
+ * @brief CONNECT-HERMES ( -- ) — Enter Hermes's REPL, birthing it first if needed.
+ *
+ * Idempotent: if Hermes is already born (LIVE or STOPPED) it is entered
+ * directly without re-birthing.  On BYE from Hermes, control returns here.
+ */
+static void mama_word_connect_hermes(VM *vm __attribute__((unused)))
+{
+    VMRegistryEntry  entry;
+    VM              *hermes;
+    const char      *saved_name;
+
+    /* Birth if not found or previously dead/stillborn */
+    if (capsule_vm_find_by_name_nocase("Hermes", &entry) != 0 ||
+        entry.state == VM_STATE_DEAD ||
+        entry.state == VM_STATE_STILLBORN) {
+        uint32_t new_vm_id = 0;
+        const char *saved = console_get_vm_name();
+        CapsuleRunResult r;
+
+        console_set_vm_name("Hermes");
+        r = capsule_birth_baby(
+            "hermes:init.4th",
+            capsule_get_directory(),
+            capsule_get_descriptors(),
+            capsule_get_names(),
+            capsule_get_arena(),
+            &new_vm_id, (void **)0);
+        console_set_vm_name(saved);
+
+        if (r != CAPSULE_RUN_OK) {
+            console_println("CONNECT-HERMES: birth failed");
+            return;
+        }
+        capsule_vm_registry_set_name(new_vm_id, "Hermes");
+        if (capsule_vm_find_by_name_nocase("Hermes", &entry) != 0) {
+            console_println("CONNECT-HERMES: registry error");
+            return;
+        }
+    }
+
+    hermes = (VM *)entry.vm_ptr;
+    if (!hermes) {
+        console_println("CONNECT-HERMES: no VM pointer");
+        return;
+    }
+
+    saved_name = console_get_vm_name();
+    console_set_vm_name(entry.name);
+    capsule_vm_set_state(entry.vm_id, VM_STATE_LIVE);
+
+    sk_repl_run(hermes);
+
+    capsule_vm_set_state(entry.vm_id, VM_STATE_STOPPED);
+    console_set_vm_name(saved_name);
+}
+
+/**
  * @brief Register Mama FORTH vocabulary words with the VM
  *
  * Creates the MAMA vocabulary and registers all capsule-related words.
@@ -651,6 +723,8 @@ void mama_word_exec(VM *vm)
 void register_mama_forth_words(VM *vm)
 {
     /* Register words in FORTH vocabulary first */
+    register_word(vm, "BYE", mama_word_bye);
+    register_word(vm, "CONNECT-HERMES", mama_word_connect_hermes);
     register_word(vm, "BIRTH", mama_word_birth);
     register_word(vm, "KILL", mama_word_kill);
     register_word(vm, "START", mama_word_start);
@@ -672,6 +746,8 @@ void register_mama_forth_words(VM *vm)
     vm_bootstrap_root_vocabulary(vm, "MAMA");
 
     /* Re-register in MAMA vocabulary context */
+    register_word(vm, "BYE", mama_word_bye);
+    register_word(vm, "CONNECT-HERMES", mama_word_connect_hermes);
     register_word(vm, "BIRTH", mama_word_birth);
     register_word(vm, "KILL", mama_word_kill);
     register_word(vm, "START", mama_word_start);

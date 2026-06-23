@@ -264,6 +264,14 @@ void capsule_vm_set_state(uint32_t vm_id, uint32_t state);
  */
 void capsule_vm_registry_set_name(uint32_t vm_id, const char *name);
 
+/**
+ * capsule_vm_kill_all_nonmama - Kill every non-Mama VM in the registry.
+ *
+ * Sets halted, calls vm_cleanup + sf_free, marks state DEAD. Used by
+ * Hera's BYE immediately before arch_cold_reset() to reap all children.
+ */
+void capsule_vm_kill_all_nonmama(void);
+
 #ifdef __cplusplus
 }
 #endif

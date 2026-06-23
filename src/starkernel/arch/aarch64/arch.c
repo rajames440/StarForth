@@ -84,6 +84,19 @@ void arch_halt(void)
     __asm__ volatile ("wfi" ::: "memory");
 }
 
+void arch_cold_reset(void)
+{
+    arch_disable_interrupts();
+    /* PSCI SYSTEM_RESET (SMC64 function 0xC4000009) */
+    __asm__ volatile (
+        "mov x0, #0xC4000000\n"
+        "movk x0, #0x0009\n"
+        "smc #0\n"
+        ::: "x0", "memory"
+    );
+    for (;;) __asm__ volatile ("wfi" ::: "memory");
+}
+
 /**
  * @brief Read the AArch64 system counter (CNTPCT_EL0).
  *

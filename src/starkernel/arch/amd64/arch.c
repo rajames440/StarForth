@@ -209,6 +209,15 @@ void arch_halt(void)
     __asm__ volatile ("hlt");
 }
 
+void arch_cold_reset(void)
+{
+    arch_disable_interrupts();
+    /* Pulse keyboard controller reset line — standard bare-metal amd64 reset */
+    __asm__ volatile ("outb %0, %1" : : "a"((uint8_t)0xFE), "Nd"((uint16_t)0x64));
+    /* Should not reach here; spin as fallback */
+    for (;;) __asm__ volatile ("cli; hlt");
+}
+
 /**
  * @brief Read the x86-64 Time Stamp Counter (RDTSC).
  *
