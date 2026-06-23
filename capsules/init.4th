@@ -15,5 +15,7 @@ Block 2049
 : VM-CHILDREN ( -- ) ." VM-CHILDREN: not yet implemented" CR ;
 
 S" ACL.4th" EXEC
+S" compudynamics.4th" EXEC
+VM-INIT
 \ S" doe.4th" EXEC
 BOOT-BANNER
