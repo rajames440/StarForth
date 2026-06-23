@@ -525,6 +525,86 @@ static void mama_word_vm_step(VM *vm)
 }
 
 /**
+ * @brief VM-EXEC ( cmd-caddr cmd-u vm-name-caddr vm-name-u -- )
+ * Inject a command string into a named VM and execute it immediately —
+ * no readline, no blocking.  This is the autonomous Compudynamics primitive:
+ * Hera can drive a FORTH command into any child VM without surrendering the
+ * outer loop.  Console prefix is saved/restored around the call.
+ *
+ * Stack order: push cmd string first, then VM name.  Example:
+ *   S" DOE-WORK" S" Hermes" VM-EXEC
+ */
+static void mama_word_vm_exec(VM *vm)
+{
+    char        vm_name[VM_NAME_MAX];
+    char        cmd_buf[1025];
+    uint32_t    i;
+    cell_t      vm_u, vm_caddr, cmd_u, cmd_caddr;
+    const char *src;
+    VMRegistryEntry entry;
+    VM         *target;
+    const char *saved_name;
+
+    if (vm->dsp < 3) { vm->error = 1; return; }
+
+    /* TOS: vm-name-u, vm-name-caddr, cmd-u, cmd-caddr */
+    vm_u     = vm_pop(vm);
+    vm_caddr = vm_pop(vm);
+    cmd_u    = vm_pop(vm);
+    cmd_caddr = vm_pop(vm);
+
+    if (vm_u <= 0 || (uint32_t)vm_u >= VM_NAME_MAX) {
+        console_println("VM-EXEC: VM name too long or empty");
+        return;
+    }
+    if (cmd_u < 0 || (uint32_t)cmd_u > 1024) {
+        console_println("VM-EXEC: command too long");
+        return;
+    }
+
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)vm_caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)vm_u; i++) vm_name[i] = src[i];
+    vm_name[vm_u] = '\0';
+
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)cmd_caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)cmd_u; i++) cmd_buf[i] = src[i];
+    cmd_buf[cmd_u] = '\0';
+
+    if (capsule_vm_find_by_name_nocase(vm_name, &entry) != 0) {
+        console_puts("VM-EXEC: VM not found: ");
+        console_println(vm_name);
+        return;
+    }
+
+    target = (VM *)entry.vm_ptr;
+    if (!target || entry.state == VM_STATE_DEAD || entry.state == VM_STATE_STILLBORN) {
+        console_puts("VM-EXEC: VM not available: ");
+        console_println(vm_name);
+        return;
+    }
+
+    saved_name = console_get_vm_name();
+    console_set_vm_name(entry.name);
+    vm_interpret(target, cmd_buf);
+    console_set_vm_name(saved_name);
+
+    if (target->error) {
+        console_puts("VM-EXEC: ERROR in ");
+        console_println(vm_name);
+        target->error = 0;
+    }
+    /* Stack clean on exit */
+}
+
+/**
  * @brief CAPSULE-BIRTH ( capsule-id -- vm-id )
  * Birth a baby VM from a production (p) capsule.
  * Returns the new VM's ID, or -1 on failure.
@@ -850,6 +930,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "MAMA-VM-ID", mama_word_mama_vm_id);
     register_word(vm, "VM-COUNT", mama_word_vm_count);
     register_word(vm, "VM-STEP", mama_word_vm_step);
+    register_word(vm, "VM-EXEC", mama_word_vm_exec);
     register_word(vm, "CAPSULE-TEST", mama_word_capsule_test);
 
     /* Create and switch to MAMA vocabulary */
@@ -875,6 +956,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "MAMA-VM-ID", mama_word_mama_vm_id);
     register_word(vm, "VM-COUNT", mama_word_vm_count);
     register_word(vm, "VM-STEP", mama_word_vm_step);
+    register_word(vm, "VM-EXEC", mama_word_vm_exec);
     register_word(vm, "CAPSULE-TEST", mama_word_capsule_test);
     register_word(vm, "EXEC", mama_word_exec);
 
