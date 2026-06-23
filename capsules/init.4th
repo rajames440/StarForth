@@ -9,6 +9,10 @@ Block 2057
   .SEP CR ;
 Block 2049
 ( Hera init — Mama VM personality )
+\ Hera role: VM lifecycle and tree management
+: VM-TREE     ( -- ) ." VM-TREE: not yet implemented" CR ;
+: VM-PARENT   ( -- id ) 0 ;
+: VM-CHILDREN ( -- ) ." VM-CHILDREN: not yet implemented" CR ;
 
 S" ACL.4th" EXEC
 \ S" doe.4th" EXEC
