@@ -5,9 +5,7 @@ Block 2057
   CR .SEP
   ." LithosAnanke — FORTH-79 bare-metal kernel" CR
   .SEP
-  ." Children: CONNECT-HERMES" CR
-  ."   ( use CONNECT-HERMES to enter Hermes )" CR
-  ." Docs: experiments/bare_metal/README.md" CR
+  ." Children: CONNECT-HERMES   CONNECT-ARTEMIS" CR
   .SEP CR ;
 Block 2049
 ( Hera init — Mama VM personality )

@@ -643,6 +643,59 @@ void mama_word_exec(VM *vm)
 }
 
 /**
+ * @brief CONNECT-ARTEMIS ( -- ) — Enter Artemis's REPL, birthing it first if needed.
+ */
+static void mama_word_connect_artemis(VM *vm __attribute__((unused)))
+{
+    VMRegistryEntry  entry;
+    VM              *artemis;
+    const char      *saved_name;
+
+    if (capsule_vm_find_by_name_nocase("Artemis", &entry) != 0 ||
+        entry.state == VM_STATE_DEAD ||
+        entry.state == VM_STATE_STILLBORN) {
+        uint32_t new_vm_id = 0;
+        const char *saved = console_get_vm_name();
+        CapsuleRunResult r;
+
+        console_set_vm_name("Artemis");
+        r = capsule_birth_baby(
+            "artemis:init.4th",
+            capsule_get_directory(),
+            capsule_get_descriptors(),
+            capsule_get_names(),
+            capsule_get_arena(),
+            &new_vm_id, (void **)0);
+        console_set_vm_name(saved);
+
+        if (r != CAPSULE_RUN_OK) {
+            console_println("CONNECT-ARTEMIS: birth failed");
+            return;
+        }
+        capsule_vm_registry_set_name(new_vm_id, "Artemis");
+        if (capsule_vm_find_by_name_nocase("Artemis", &entry) != 0) {
+            console_println("CONNECT-ARTEMIS: registry error");
+            return;
+        }
+    }
+
+    artemis = (VM *)entry.vm_ptr;
+    if (!artemis) {
+        console_println("CONNECT-ARTEMIS: no VM pointer");
+        return;
+    }
+
+    saved_name = console_get_vm_name();
+    console_set_vm_name(entry.name);
+    capsule_vm_set_state(entry.vm_id, VM_STATE_LIVE);
+
+    sk_repl_run(artemis);
+
+    capsule_vm_set_state(entry.vm_id, VM_STATE_STOPPED);
+    console_set_vm_name(saved_name);
+}
+
+/**
  * @brief BYE ( -- ) — Hera-only: reap all children then cold-restart the machine.
  *
  * In child VMs this word is never registered; children use the standard
@@ -725,6 +778,7 @@ void register_mama_forth_words(VM *vm)
     /* Register words in FORTH vocabulary first */
     register_word(vm, "BYE", mama_word_bye);
     register_word(vm, "CONNECT-HERMES", mama_word_connect_hermes);
+    register_word(vm, "CONNECT-ARTEMIS", mama_word_connect_artemis);
     register_word(vm, "BIRTH", mama_word_birth);
     register_word(vm, "KILL", mama_word_kill);
     register_word(vm, "START", mama_word_start);
@@ -748,6 +802,7 @@ void register_mama_forth_words(VM *vm)
     /* Re-register in MAMA vocabulary context */
     register_word(vm, "BYE", mama_word_bye);
     register_word(vm, "CONNECT-HERMES", mama_word_connect_hermes);
+    register_word(vm, "CONNECT-ARTEMIS", mama_word_connect_artemis);
     register_word(vm, "BIRTH", mama_word_birth);
     register_word(vm, "KILL", mama_word_kill);
     register_word(vm, "START", mama_word_start);

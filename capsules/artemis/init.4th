@@ -1,3 +1,4 @@
-Block 2051
-: UP ." Artemis Up" CR ;
-UP
+Block 4110
+: WELCOME ." Welcome to Artemis" CR ;
+: CONNECT-HERA BYE ;
+WELCOME
