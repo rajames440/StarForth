@@ -531,6 +531,14 @@ void vm_exit_compile_mode(VM* vm)
     vm->compiling_word->flags &= ~WORD_SMUDGED;
     vm->compiling_word->flags |= WORD_COMPILED;
 
+    /* Inherit creator's ACL from session context:
+     * zuse-compiled words bypass ACL-RECHECK on first execution (ACL_TTL_OPEN).
+     * Non-zuse words keep ttl=0, triggering ACL-RECHECK on first execution. */
+    if (vm->zuse_session) {
+        vm->compiling_word->acl_ttl   = ACL_TTL_OPEN;
+        vm->compiling_word->acl_allow = 1;
+    }
+
     cell_t* df = vm_dictionary_get_data_field(vm->compiling_word);
     if (df)
     {
