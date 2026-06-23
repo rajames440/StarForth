@@ -45,6 +45,7 @@
 #include "starkernel/capsule_generated.h"
 #include "starkernel/console.h"
 #include "starkernel/arch.h"
+#include "log.h"
 #include "vm.h"
 #include "word_registry.h"
 #include "word_source/include/vocabulary_words.h"
@@ -537,7 +538,7 @@ static void mama_word_vm_step(VM *vm)
 static void mama_word_vm_exec(VM *vm)
 {
     char        vm_name[VM_NAME_MAX];
-    char        cmd_buf[1025];
+    char        cmd_buf[INPUT_BUFFER_SIZE];
     uint32_t    i;
     cell_t      vm_u, vm_caddr, cmd_u, cmd_caddr;
     const char *src;
@@ -557,7 +558,7 @@ static void mama_word_vm_exec(VM *vm)
         console_println("VM-EXEC: VM name too long or empty");
         return;
     }
-    if (cmd_u < 0 || (uint32_t)cmd_u > 1024) {
+    if (cmd_u < 0 || (uint32_t)cmd_u >= INPUT_BUFFER_SIZE) {
         console_println("VM-EXEC: command too long");
         return;
     }
@@ -591,6 +592,7 @@ static void mama_word_vm_exec(VM *vm)
         return;
     }
 
+    log_message(LOG_DEBUG, "VM-EXEC: '%s' -> '%s'", cmd_buf, vm_name);
     saved_name = console_get_vm_name();
     console_set_vm_name(entry.name);
     vm_interpret(target, cmd_buf);
@@ -756,6 +758,7 @@ void mama_word_exec(VM *vm)
     saved_dsp = vm->dsp;
     saved_rsp = vm->rsp;
 
+    log_message(LOG_DEBUG, "EXEC: capsule '%s'", name_buf);
     result = capsule_exec_init(
         vm,
         name_buf,
