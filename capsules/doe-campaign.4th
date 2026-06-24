@@ -22,7 +22,7 @@ Block 4061
   CASE
     VM-HERMES  OF S" DOE-WORK" S" Hermes"  VM-EXEC ENDOF
     VM-ARTEMIS OF S" DOE-WORK" S" Artemis" VM-EXEC ENDOF
-    VM-HERA    OF VM-STATUS ENDOF
+    VM-HERA    OF S" DOE-WORK" S" Hera"    VM-EXEC ENDOF
   ENDCASE ;
 : CD-TICK ( -- )
   VM-DECAY-ALL
@@ -57,4 +57,18 @@ Block 4062
   Q.1 VM-ARTEMIS VM-HEAT!
   ." 16 CD ticks..." CR
   16 CD-DOE
+  CAMPAIGN-STATUS ;
+Block 4063
+( THREE-VM-CAMPAIGN: all three VMs as Compudynamics peers. )
+( Differentiated initial heat: physics governs from tick 1. )
+: THREE-VM-CAMPAIGN ( -- )
+  ." === Three-VM Campaign ===" CR
+  S" doe.4th" EXEC
+  SETUP-VMS
+  VM-INIT
+  Q.1                       VM-HERA    VM-HEAT!
+  Q.1 Q.1 Q.+               VM-HERMES  VM-HEAT!
+  Q.1 Q.1 Q.+ Q.1 Q.+       VM-ARTEMIS VM-HEAT!
+  ." 48 CD ticks..." CR
+  48 CD-DOE
   CAMPAIGN-STATUS ;
