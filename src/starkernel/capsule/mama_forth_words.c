@@ -592,7 +592,7 @@ static void mama_word_vm_exec(VM *vm)
         return;
     }
 
-    log_message(LOG_DEBUG, "VM-EXEC: '%s' -> '%s'", cmd_buf, vm_name);
+    log_message(LOG_INFO, "VM-EXEC: '%s' -> '%s'", cmd_buf, vm_name);
     saved_name = console_get_vm_name();
     console_set_vm_name(entry.name);
     vm_interpret(target, cmd_buf);
@@ -758,7 +758,7 @@ void mama_word_exec(VM *vm)
     saved_dsp = vm->dsp;
     saved_rsp = vm->rsp;
 
-    log_message(LOG_DEBUG, "EXEC: capsule '%s'", name_buf);
+    log_message(LOG_INFO, "EXEC: capsule '%s'", name_buf);
     result = capsule_exec_init(
         vm,
         name_buf,

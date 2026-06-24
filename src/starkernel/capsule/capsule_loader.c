@@ -537,7 +537,7 @@ int capsule_exec_payload(void *vm_opaque, const uint8_t *payload, uint64_t lengt
             copy_block_to_ram(current_block_num);
 
             /* 2. Execute with forward-reference retry (up to 16 deferred lines) */
-            log_message(LOG_DEBUG, "exec_block: block %u len %zu", current_block_num, block_len);
+            log_message(LOG_INFO, "exec_block: block %u len %zu", current_block_num, block_len);
             if (exec_block_with_retry(vm, block_start, block_len,
                                       current_block_num) != 0)
                 return -1;
