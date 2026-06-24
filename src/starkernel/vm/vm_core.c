@@ -57,6 +57,7 @@
 #ifdef __STARKERNEL__
 #include "starkernel/vm/arena.h"
 #include "starkernel/console.h"  /* g_sk_fault_word */
+#include "platform_alloc.h"      /* sf_free for call_stack */
 #endif
 #include "word_source/include/vocabulary_words.h"
 #include "vm_internal.h"
@@ -312,6 +313,11 @@ void vm_cleanup(VM* vm)
 
     sf_mutex_destroy(&vm->tuning_lock);
     sf_mutex_destroy(&vm->dict_lock);
+
+#ifdef __STARKERNEL__
+    sf_free(vm->call_stack);
+    vm->call_stack = NULL;
+#endif
 }
 
 /* ====================== Parser / number ======================= */

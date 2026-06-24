@@ -36,6 +36,7 @@
 
 #ifdef __STARKERNEL__
 
+#include "platform_alloc.h"
 #include "starkernel/capsule.h"
 #include "starkernel/capsule_birth.h"
 #include "starkernel/capsule_loader.h"
@@ -158,6 +159,47 @@ void mama_word_capsule_len_fetch(VM *vm)
 }
 
 /* ============================================================================
+ * VM Lifecycle State Stack
+ *
+ * Save/restore Hera's ECW interpreter state around lifecycle primitives
+ * (BIRTH, VM-EXEC, START).  ECW pushes a resume IP onto vm->rsp before
+ * each word call and pops it after; if any lifecycle primitive corrupts
+ * vm->rsp the pop returns garbage and ip → fault.  The state stack is
+ * dynamically allocated (sf_realloc) so its depth is unbounded.
+ * ============================================================================ */
+
+static int vm_state_push(VM *vm)
+{
+    if (vm->call_sp >= vm->call_stack_cap) {
+        int new_cap = vm->call_stack_cap ? vm->call_stack_cap * 2 : 8;
+        VMCallState *ns = (VMCallState *)sf_realloc(vm->call_stack,
+                                                     (size_t)new_cap * sizeof(VMCallState));
+        if (!ns) {
+            log_message(LOG_ERROR, "vm_state_push: allocation failed at depth %d", vm->call_sp);
+            return 0;
+        }
+        vm->call_stack     = ns;
+        vm->call_stack_cap = new_cap;
+    }
+    VMCallState *s  = &vm->call_stack[vm->call_sp++];
+    s->rsp          = vm->rsp;
+    s->exit_colon   = vm->exit_colon;
+    s->ecw_nesting  = vm->ecw_nesting;
+    if (vm->call_sp > vm->call_stack_max)
+        vm->call_stack_max = vm->call_sp;
+    return 1;
+}
+
+static void vm_state_pop(VM *vm)
+{
+    if (vm->call_sp <= 0) return;
+    VMCallState *s  = &vm->call_stack[--vm->call_sp];
+    vm->rsp         = s->rsp;
+    vm->exit_colon  = s->exit_colon;
+    vm->ecw_nesting = s->ecw_nesting;
+}
+
+/* ============================================================================
  * VM Birth and Experiment Words
  * ============================================================================ */
 
@@ -240,6 +282,7 @@ void mama_word_birth(VM *vm)
         const char *saved_prefix = console_get_vm_name();
         console_set_vm_name(name_buf);
 
+        vm_state_push(vm);
         result = capsule_birth_baby(
             capsule_name,
             capsule_get_directory(),
@@ -249,6 +292,7 @@ void mama_word_birth(VM *vm)
             &new_vm_id,
             (void **)0
         );
+        vm_state_pop(vm);
 
         console_set_vm_name(saved_prefix);  /* restore [Hera] (or whoever called BIRTH) */
     }
@@ -343,7 +387,9 @@ void mama_word_start(VM *vm)
     console_println(entry.name);
 
     /* Run target's REPL — blocks until target->halted */
+    vm_state_push(vm);
     sk_repl_run(target);
+    vm_state_pop(vm);
 
     /* Target halted (STOP or BYE) — restore caller's context */
     capsule_vm_set_state(entry.vm_id, VM_STATE_STOPPED);
@@ -595,7 +641,9 @@ static void mama_word_vm_exec(VM *vm)
     log_message(LOG_INFO, "VM-EXEC: '%s' -> '%s'", cmd_buf, vm_name);
     saved_name = console_get_vm_name();
     console_set_vm_name(entry.name);
+    vm_state_push(vm);
     vm_interpret(target, cmd_buf);
+    vm_state_pop(vm);
     console_set_vm_name(saved_name);
 
     if (target->error) {

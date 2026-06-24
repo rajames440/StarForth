@@ -53,12 +53,10 @@ static const char *doe_header =
     "cache_hits_delta,bucket_hits_delta,word_executions_delta,"
     "hot_word_count,avg_word_heat_q48,"
     "window_width,actual_window_size,predicted_label_hits,jitter_bits,"
-    "apic_ticks,time_trust_q48,variance_q48";
+    "apic_ticks,time_trust_q48,variance_q48,vm_call_depth_max";
 
 void doe_log_tick_row(VM *vm, const HeartbeatTickSnapshot *snap)
 {
-    (void)vm;
-
     if (!snap)
         return;
 
@@ -86,9 +84,11 @@ void doe_log_tick_row(VM *vm, const HeartbeatTickSnapshot *snap)
     /* Format the 15-column CSV row into a local buffer.
      * Use %llu (unsigned long long) for all uint64_t fields — %lu is unreliable
      * for values > 2^32 on aarch64 due to mixed-width varargs ABI behaviour. */
+    unsigned vm_call_depth_max = (vm && vm->call_stack_max > 0) ? (unsigned)vm->call_stack_max : 0;
+
     char buf[DOE_BUF_SIZE];
     snprintf(buf, sizeof(buf),
-             "%u,%llu,%llu,%u,%u,%u,%llu,%llu,%u,%u,%u,%llu,%llu,%llu,%llu",
+             "%u,%llu,%llu,%u,%u,%u,%llu,%llu,%u,%u,%u,%llu,%llu,%llu,%llu,%u",
              snap->tick_number,
              (unsigned long long)snap->elapsed_ns,
              (unsigned long long)snap->tick_interval_ns,
@@ -103,7 +103,8 @@ void doe_log_tick_row(VM *vm, const HeartbeatTickSnapshot *snap)
              (unsigned long long)jitter_raw,
              (unsigned long long)apic_ticks,
              (unsigned long long)time_trust_q48,
-             (unsigned long long)variance_q48);
+             (unsigned long long)variance_q48,
+             vm_call_depth_max);
 
     console_puts(DOE_PREFIX);
     console_puts(buf);

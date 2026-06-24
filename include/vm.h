@@ -353,6 +353,16 @@ typedef enum
     MODE_COMPILE = 1
 } vm_mode_t;
 
+#ifdef __STARKERNEL__
+/* Saved interpreter state for VM lifecycle calls (BIRTH, VM-EXEC, START).
+ * Dynamically allocated; grows on demand via sf_realloc. */
+typedef struct {
+    int rsp;
+    int exit_colon;
+    int ecw_nesting;
+} VMCallState;
+#endif
+
 /**
  * @struct VM
  * @brief Main virtual machine state container
@@ -495,6 +505,17 @@ typedef struct VM
     void* ssm_l8_state;     /**< Opaque pointer to ssm_l8_state_t (avoid circular include) */
     void* ssm_config;       /**< Opaque pointer to ssm_config_t (L3/L4 mode bits) */
     /** @} */
+
+#ifdef __STARKERNEL__
+    /** @name VM Lifecycle Call State Stack
+     * @{
+     */
+    VMCallState *call_stack;  /**< Dynamically-allocated lifecycle state stack */
+    int          call_sp;     /**< Current depth (0 = empty) */
+    int          call_stack_cap; /**< Allocated capacity in entries */
+    int          call_stack_max; /**< High-water mark depth (DoE metric) */
+    /** @} */
+#endif
 } VM;
 
 /** @name Core VM Functions
