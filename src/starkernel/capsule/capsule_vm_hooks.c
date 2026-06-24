@@ -30,6 +30,7 @@
 #include "vm.h"
 #include "word_registry.h"
 #include "platform_alloc.h"
+#include "log.h"
 #include "word_source/include/mama_forth_words.h"
 #ifdef __STARKERNEL__
 #include "starkernel/hal/hal.h"  /* sk_hal_host_services() */
@@ -104,6 +105,17 @@ static void *capsule_vm_alloc_hook(void) {
 
     /* Give every child VM EXEC so it can load capsules (e.g. doe.4th) */
     register_word(vm, "EXEC", mama_word_exec);
+
+    /* Diagnostic: verify EXEC DictEntry func matches mama_word_exec address */
+    {
+        DictEntry *exec_de = vm_find_word(vm, "EXEC", 4);
+        log_message(LOG_INFO,
+            "ALLOC-HOOK: mama_word_exec=%p  exec_de=%p  exec_de->func=%p  match=%d",
+            (void *)(uintptr_t)mama_word_exec,
+            (void *)exec_de,
+            exec_de ? (void *)(uintptr_t)exec_de->func : (void *)0,
+            exec_de ? (exec_de->func == mama_word_exec ? 1 : 0) : -1);
+    }
 
     return (void *)vm;
 }
