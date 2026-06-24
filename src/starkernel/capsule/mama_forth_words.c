@@ -240,7 +240,6 @@ void mama_word_birth(VM *vm)
         const char *saved_prefix = console_get_vm_name();
         console_set_vm_name(name_buf);
 
-        arch_disable_interrupts();
         result = capsule_birth_baby(
             capsule_name,
             capsule_get_directory(),
@@ -250,7 +249,6 @@ void mama_word_birth(VM *vm)
             &new_vm_id,
             (void **)0
         );
-        arch_enable_interrupts();
 
         console_set_vm_name(saved_prefix);  /* restore [Hera] (or whoever called BIRTH) */
     }
@@ -761,7 +759,6 @@ void mama_word_exec(VM *vm)
     saved_rsp = vm->rsp;
 
     log_message(LOG_DEBUG, "EXEC: capsule '%s'", name_buf);
-    arch_disable_interrupts();
     result = capsule_exec_init(
         vm,
         name_buf,
@@ -769,7 +766,6 @@ void mama_word_exec(VM *vm)
         capsule_get_descriptors(),
         capsule_get_names(),
         capsule_get_arena());
-    arch_enable_interrupts();
 
     /* Restore stacks and clear error/exit flags so the DoE loop survives
      * a workload crash and continues cleanly to the next run. */
