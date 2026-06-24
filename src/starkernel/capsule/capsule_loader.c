@@ -27,17 +27,14 @@
  * the full init sequence:
  *
  *   1. Write blocks to ramdrive (2048+) — establishes device content
- *   2. Copy from ramdrive N to dedicated RAM N-2048
- *   3. Execute entry block from dedicated RAM via LOAD
- *   4. Zero dedicated RAM blocks to free them for userspace
+ *      so FORTH can call LOAD N later if needed.
+ *   2. Execute each block directly from payload bytes via exec_block_with_retry.
+ *      exec_block_with_retry receives a C pointer into the payload; it does
+ *      NOT use the block device, so no dedicated-RAM copy is needed here.
+ *   3. Zero dedicated RAM slots so userspace can reuse them.
  *
  * The ramdrive (2048+) is the fallback device when no physical block
- * device is mounted.  Execution always runs from the dedicated RAM
- * region (0–2047).
- *
- * Block number mapping: dest = source - CAPSULE_RAM_OFFSET (2048).
- * Conflicts and out-of-range sources are silently swallowed.
- * TODO: proper conflict and bounds handling in a future enhancement.
+ * device is mounted.
  */
 
 #include "starkernel/capsule_loader.h"
@@ -184,34 +181,6 @@ static void write_ramdrive_block(uint32_t block_num,
 #endif
 }
 
-/*===========================================================================
- * Internal: copy one ramdrive block to its dedicated RAM slot (N-2048)
- *
- * Source block N must be > CAPSULE_RAM_OFFSET.
- * Conflicts and failures are silently swallowed.
- * TODO: proper conflict and bounds handling.
- *===========================================================================*/
-
-static void copy_block_to_ram(uint32_t source_block_num)
-{
-    if (source_block_num <= CAPSULE_RAM_OFFSET) return; /* TODO */
-
-    uint32_t dest = source_block_num - CAPSULE_RAM_OFFSET;
-
-#ifdef __STARKERNEL__
-    uint8_t *src = krd_ptr(source_block_num);
-#else
-    uint8_t *src = blk_get_buffer(source_block_num, 0);
-#endif
-    uint8_t *dst = blk_get_buffer(dest, 1);
-    if (!src || !dst) return; /* TODO */
-
-    uint32_t i;
-    for (i = 0; i < LOADER_BLOCK_SIZE; i++) dst[i] = 0;
-    for (i = 0; i < LOADER_BLOCK_SIZE; i++) dst[i] = src[i];
-
-    blk_update(dest);
-}
 
 /*===========================================================================
  * Internal: uint32 to decimal string
@@ -532,9 +501,8 @@ int capsule_exec_payload(void *vm_opaque, const uint8_t *payload, uint64_t lengt
                 block_len = LOADER_BLOCK_SIZE;
             }
 
-            /* 1. Populate block device */
+            /* 1. Populate ramdrive (needed if FORTH later calls LOAD N) */
             write_ramdrive_block(current_block_num, block_start, (uint32_t)block_len);
-            copy_block_to_ram(current_block_num);
 
             /* 2. Execute with forward-reference retry (up to 16 deferred lines) */
             log_message(LOG_INFO, "exec_block: block %u len %zu", current_block_num, block_len);
