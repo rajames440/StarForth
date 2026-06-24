@@ -5,7 +5,7 @@ Block 2057
   CR .SEP
   ." LithosAnanke — FORTH-79 bare-metal kernel" CR
   .SEP
-  ." Children: CONNECT-HERMES   CONNECT-ARTEMIS" CR
+  ." Tripod: Hera  Hermes  Artemis  [live]" CR
   .SEP CR ;
 Block 2049
 ( Hera init — Mama VM personality )
@@ -19,6 +19,10 @@ S" compudynamics.4th" EXEC
 VM-INIT
 S" lib.4th" EXEC
 S" doe-campaign.4th" EXEC
-\ S" doe.4th" EXEC
+\ Tripod boot: storage → events → process manager (Hera)
+S" Artemis" BIRTH
+S" LOAD-DOE" S" Artemis" VM-EXEC
+S" Hermes"  BIRTH
+S" LOAD-DOE" S" Hermes"  VM-EXEC
 BOOT-BANNER
 SMOKE-CAMPAIGN
