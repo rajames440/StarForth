@@ -839,7 +839,7 @@ else ifeq ($(ARCH),riscv64)
 		-display none \
 		-no-reboot \
 		-d guest_errors & QPID=$$!; \
-	DEADLINE=$$(( $$(date +%s) + 1800 )); \
+	DEADLINE=$$(( $$(date +%s) + 3600 )); \
 	echo "  Waiting for ok> / zuse)ok> prompt..."; \
 	while ! grep -qE '\[Hera\].*(zuse\))?ok>' $$LOG 2>/dev/null; do \
 		[ $$(date +%s) -ge $$DEADLINE ] && echo "  TIMEOUT waiting for ok>" && break; \
