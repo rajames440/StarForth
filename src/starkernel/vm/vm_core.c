@@ -749,6 +749,10 @@ void execute_colon_word(VM* vm)
         {
 #ifdef __STARKERNEL__
             g_sk_fault_word = (w->name_len > 0) ? w->name : "?";
+            log_message(LOG_INFO, "ECW: w=%p func=%p '%.*s'",
+                        (void *)(uintptr_t)w,
+                        (void *)(uintptr_t)(w->func),
+                        (int)w->name_len, w->name);
 #endif
             profiler_word_enter(w);
             w->func(vm);
