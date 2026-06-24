@@ -83,12 +83,23 @@ static void* kernel_alloc(size_t size, size_t align) {
     size_t arena_size = sk_vm_arena_size();
     if (size == arena_size) {
         if (!sk_vm_arena_is_initialized()) {
+            /* Hera (first call): use the PMM-backed arena singleton */
             if (sk_vm_arena_alloc() == 0) {
                 return NULL;
             }
+            return sk_vm_arena_ptr();
         }
-        void *ptr = sk_vm_arena_ptr();
-        return ptr;
+        /* Baby VM: each needs its own isolated region; returning the singleton
+         * here causes all VMs to share Hera's memory, overwriting her compiled
+         * word bodies when the baby registers its dictionary. */
+        void *p = (align <= sizeof(void*)) ? kmalloc(size)
+                                           : kmalloc_aligned(size, align);
+        if (p) {
+            uint8_t *b = (uint8_t *)p;
+            size_t   i;
+            for (i = 0; i < size; i++) b[i] = 0;
+        }
+        return p;
     }
 
     void *ptr;
