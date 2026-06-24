@@ -968,4 +968,21 @@ void register_mama_forth_words(VM *vm)
     vocabulary_word_definitions(vm);
 }
 
+/**
+ * register_child_vm_words - Register the minimal word set needed by child VMs.
+ *
+ * Child VMs are not bootstrapped through sk_vm_bootstrap_parity, so they
+ * do not get register_mama_forth_words().  They only need STOP (self-halt)
+ * and EXEC (load a capsule).  Keeping the registrations here — in the same
+ * translation unit as the word functions — avoids cross-TU function-pointer
+ * loads that produce R_X86_64_REX_GOTPCRELX relocations; those are not
+ * relaxed by the PE32+ linker, causing the function code bytes to be read
+ * as the pointer value instead of the actual address.
+ */
+void register_child_vm_words(VM *vm)
+{
+    register_word(vm, "STOP", mama_word_stop);
+    register_word(vm, "EXEC", mama_word_exec);
+}
+
 #endif /* __STARKERNEL__ */

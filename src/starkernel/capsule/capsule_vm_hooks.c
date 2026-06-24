@@ -28,9 +28,7 @@
 #include "starkernel/capsule_loader.h"
 #include "starkernel/xxhash64.h"
 #include "vm.h"
-#include "word_registry.h"
 #include "platform_alloc.h"
-#include "log.h"
 #include "word_source/include/mama_forth_words.h"
 #ifdef __STARKERNEL__
 #include "starkernel/hal/hal.h"  /* sk_hal_host_services() */
@@ -100,22 +98,12 @@ static void *capsule_vm_alloc_hook(void) {
     /* Enable interpreter — child VMs skip sk_vm_bootstrap_parity, must set manually */
     vm_enable_interpreter(vm);
 
-    /* Give every child VM the STOP word so it can self-stop */
-    register_word(vm, "STOP", mama_word_stop);
-
-    /* Give every child VM EXEC so it can load capsules (e.g. doe.4th) */
-    register_word(vm, "EXEC", mama_word_exec);
-
-    /* Diagnostic: verify EXEC DictEntry func matches mama_word_exec address */
-    {
-        DictEntry *exec_de = vm_find_word(vm, "EXEC", 4);
-        log_message(LOG_INFO,
-            "ALLOC-HOOK: mama_word_exec=%p  exec_de=%p  exec_de->func=%p  match=%d",
-            (void *)(uintptr_t)mama_word_exec,
-            (void *)exec_de,
-            exec_de ? (void *)(uintptr_t)exec_de->func : (void *)0,
-            exec_de ? (exec_de->func == mama_word_exec ? 1 : 0) : -1);
-    }
+    /* Register STOP + EXEC via the dedicated function in mama_forth_words.c.
+     * Do NOT pass mama_word_stop / mama_word_exec as function-pointer arguments
+     * here: cross-TU function-pointer loads generate R_X86_64_REX_GOTPCRELX,
+     * which the PE32+ linker resolves by dereferencing the function address
+     * (reading machine-code bytes) instead of loading the address itself. */
+    register_child_vm_words(vm);
 
     return (void *)vm;
 }

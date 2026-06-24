@@ -161,6 +161,15 @@ void mama_word_exec(VM *vm);
  */
 void mama_word_capsule_test(VM *vm);
 
+/**
+ * @brief Register minimal word set for child VMs: STOP and EXEC.
+ *
+ * Call from capsule_vm_alloc_hook() instead of passing mama_word_stop /
+ * mama_word_exec as cross-TU function pointers (which generate
+ * R_X86_64_REX_GOTPCRELX relocations not relaxed by the PE32+ linker).
+ */
+void register_child_vm_words(VM *vm);
+
 #else /* !__STARKERNEL__ */
 
 /**
