@@ -444,6 +444,8 @@ typedef struct VM
     vaddr_t scr_addr;
     vaddr_t state_addr; /* VM cell holding STATE (0=interp, -1=compile) */
     vaddr_t base_addr; /* VM cell: numeric base (2..36), default 10 */
+    vaddr_t hold_addr; /* VM memory offset of the 64-byte pictured-number hold buffer */
+    int     hold_pos;  /* Current fill count in hold buffer (<# ... #> state) */
 
     /** @name Physics Hot-Words Cache
      * @{

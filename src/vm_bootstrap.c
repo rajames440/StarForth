@@ -222,6 +222,20 @@ void vm_init(VM* vm)
         vm_set_base(vm, 10);
     }
 
+    /* Pictured-number hold buffer (64 bytes, per-VM so child VMs are independent) */
+    {
+        void* p = vm_allot(vm, 64);
+        if (!p)
+        {
+            vm->error = 1;
+            log_message(LOG_ERROR, "vm_init: hold buffer allot failed");
+            return;
+        }
+        vm->hold_addr = (vaddr_t)((uint8_t*)p - vm->memory);
+        vm->hold_pos  = 0;
+        memset(p, 0, 64);
+    }
+
     vm_bootstrap_scr(vm);
 
     vm->mode = MODE_INTERPRET;

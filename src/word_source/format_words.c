@@ -51,25 +51,11 @@
 #include <stdio.h>
 
 
-/** @brief Picture number buffer for numeric conversion */
-static unsigned char *pn_buf = NULL;
-/** @brief Capacity of picture number buffer */
-static size_t pn_cap = 0;
-/** @brief Current position in picture number buffer */
-static int conversion_pos = 0;
-
-/** @brief Ensures picture number buffer is allocated */
-static void ensure_pn(VM *vm) {
-    if (!pn_buf) {
-        pn_buf = (unsigned char *) vm_allot(vm, 64); /* same size as before */
-        if (!pn_buf) {
-            vm->error = 1;
-            return;
-        }
-        pn_cap = 64;
-        memset(pn_buf, 0, pn_cap);
-    }
-}
+/* Pictured-number hold buffer lives in each VM's own memory (hold_addr / hold_pos).
+ * These macros provide the same interface as the old static globals but are per-VM,
+ * so child VMs never alias Hera's buffer. */
+#define PN_CAP       64
+#define PN_BUF(vm)   ((unsigned char *)((vm)->memory + (vm)->hold_addr))
 
 #define CELL_BITS   ((int)(sizeof(cell_t) * CHAR_BIT))
 #define CHUNK_BITS  16
@@ -188,10 +174,8 @@ void format_word_octal(VM *vm) {
 
 /* <# ( -- ) */
 void format_word_begin_conversion(VM *vm) {
-    ensure_pn(vm);
-    if (vm->error) return;
-    conversion_pos = 0;
-    memset(pn_buf, 0, pn_cap);
+    vm->hold_pos = 0;
+    memset(PN_BUF(vm), 0, PN_CAP);
 }
 
 /* HOLD ( c -- ) */
@@ -210,20 +194,17 @@ void format_word_hold(VM *vm) {
         return;
     }
 
-    ensure_pn(vm);
-    if (vm->error) return;
-
-    /* keep 1 byte of headroom (null safety), like before */
-    if ((size_t) conversion_pos >= pn_cap - 1) {
+    /* keep 1 byte of headroom (null safety) */
+    if (vm->hold_pos >= PN_CAP - 1) {
         vm->error = 1;
-        log_message(LOG_ERROR, "HOLD: conversion buffer full (pos=%d cap=%zu)", conversion_pos, pn_cap);
+        log_message(LOG_ERROR, "HOLD: conversion buffer full (pos=%d cap=%d)", vm->hold_pos, PN_CAP);
         return;
     }
 
     /* Prepend the byte */
-    memmove(&pn_buf[1], &pn_buf[0], (size_t) conversion_pos);
-    pn_buf[0] = (unsigned char) c;
-    conversion_pos++;
+    memmove(&PN_BUF(vm)[1], &PN_BUF(vm)[0], (size_t) vm->hold_pos);
+    PN_BUF(vm)[0] = (unsigned char) c;
+    vm->hold_pos++;
 }
 
 
@@ -316,13 +297,9 @@ void format_word_end_conversion(VM *vm) {
         (void) vm_pop(vm);
     }
 
-    ensure_pn(vm);
-    if (vm->error) return;
-
-    /* Push VM address (byte offset), not a host pointer */
-    vaddr_t v = (vaddr_t)((uint8_t *) pn_buf - vm->memory);
-    vm_push(vm, CELL(v));
-    vm_push(vm, (cell_t) conversion_pos);
+    /* Push VM address (offset) of the hold buffer and its fill count */
+    vm_push(vm, CELL(vm->hold_addr));
+    vm_push(vm, (cell_t) vm->hold_pos);
 }
 
 /* . ( n -- ) */
