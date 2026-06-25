@@ -26,6 +26,9 @@ Block 4101
 : EVENT-DRAIN ( -- )
   BEGIN MSG-EMPTY? NOT WHILE MSG-RECV DROP REPEAT ;
 : LOAD-DOE ( -- ) S" doe.4th" EXEC ;
+: CD-INIT ( -- )
+  0 MSG-HEAD ! 0 MSG-TAIL !
+  ." Hermes: ready" CR ;
 WELCOME
 Block 4102
 ( Hermes typed event dispatch )

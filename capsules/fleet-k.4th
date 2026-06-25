@@ -1,7 +1,7 @@
 Block 4400
 ( fleet-k.4th: per-VM rolling window + K conservation )
 ( K-REBALANCE K-SPAWN-HOOK K-KILL-HOOK K-CONSERVED? )
-( sum(K-LOCAL all VMs) = Q.1 — one Q.1 per CD-TICK )
+( sum(K-LOCAL all VMs) = Q.1 — K-TARGET[idx] per CD-TICK )
 8 CONSTANT K-WINDOW-DEPTH
 CREATE K-WINDOWS VM-COUNT K-WINDOW-DEPTH * CELLS ALLOT
 CREATE K-HEADS   VM-COUNT CELLS ALLOT
@@ -52,8 +52,8 @@ Block 4403
   K-FLEET Q.1 -
   DUP 0 < IF NEGATE THEN
   K-EPSILON < ;
-( K-BUMP: push Q.1 into VM idx window — once per CD-TICK )
-: K-BUMP ( idx -- ) Q.1 SWAP K-PUSH ;
+( K-BUMP: push K-TARGET[idx] into window — once per CD-TICK )
+: K-BUMP ( idx -- ) DUP CELLS K-TARGET + @ SWAP K-PUSH ;
 Block 4404
 ( K-STATUS: conservation report; unrolled for VM-COUNT=3 )
 : K-STATUS ( -- )

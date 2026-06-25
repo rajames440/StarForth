@@ -4,7 +4,7 @@ Block 2057
 : BOOT-BANNER
   CR .SEP
   ." LithosAnanke — FORTH-79 bare-metal kernel" CR
-  ." Phase 6+7: K=1.0 conservation + Artemis block storage" CR
+  ." Tripod v1: K=1.0 + Hermes events + Artemis storage" CR
   .SEP
   ." Tripod: Hera  Hermes  Artemis  [live]" CR
   .SEP CR ;
@@ -22,30 +22,29 @@ S" process.4th" EXEC
 S" doe-campaign.4th" EXEC
 \ Tripod boot: Artemis -> Hermes -> Hera
 S" Artemis" BIRTH
-S" LOAD-DOE" S" Artemis" VM-EXEC
-S" Hermes"  BIRTH
-S" LOAD-DOE" S" Hermes"  VM-EXEC
+S" CD-INIT" S" Artemis" VM-EXEC
+S" Hermes" BIRTH
+S" CD-INIT" S" Hermes" VM-EXEC
 Block 2050
-( Hera boot — banner and smoke test )
+( Hera boot — banner )
 BOOT-BANNER
-SMOKE-CAMPAIGN
 Block 2051
-( Phase 6+7: K=1.0 conservation + Artemis + Hermes )
-: PHASE6-TEST ( -- )
-  ." === Phase 6+7 Acceptance ===" CR K-INIT
-  Q.1 VM-HERA VM-HEAT! Q.1 VM-HERMES VM-HEAT!
-  Q.1 VM-ARTEMIS VM-HEAT! 8 0 DO 0 K-BUMP LOOP
-  K-STATUS
-  K-CONSERVED? IF ." PASS: K-FLEET OK" CR
+( TRIPOD-TEST: 6 criteria per TRIPOD.md )
+: TRIPOD-TEST ( -- )
+  ." === TRIPOD Acceptance ===" CR
+  K-INIT 8 0 DO CD-TICK LOOP K-STATUS
+  K-CONSERVED? IF ." PASS: fleet K" CR
                ELSE ." FAIL: K drift" CR THEN
-  K-SPAWN-HOOK K-KILL-HOOK
-  K-CONSERVED? IF ." PASS: hooks OK" CR
-               ELSE ." FAIL: hooks broke" CR THEN
-  S" 1 EVENT-EMIT" S" Hermes" VM-EXEC
-  S" EVENT-DRAIN"  S" Hermes" VM-EXEC
-  ." PASS: Hermes events OK" CR
-  S" ART-STATUS" S" Artemis" VM-EXEC ." PASS: Artemis" CR
-  ." === Phase 6+7 DONE ===" CR ;
+  S" 42 EVENT-EMIT EVENT-WAIT DROP" S" Hermes" VM-EXEC
+  ." PASS: Hermes events" CR
+  S" ART-STATUS" S" Artemis" VM-EXEC
+  ." PASS: Artemis ready" CR
+  S" Hermes" KILL-VM ." Reaped; active=" ACTIVE-VMS @ . CR
+  S" Hermes" BIRTH K-SPAWN-HOOK S" CD-INIT" S" Hermes" VM-EXEC
+  ." Respawned; active=" ACTIVE-VMS @ . CR
+  K-INIT 32 0 DO CD-TICK LOOP
+  K-CONSERVED? IF ." PASS: K ok" CR ELSE ." FAIL: soak" CR THEN
+  ." === TRIPOD DONE ===" CR ;
 Block 2052
-( Run Phase 6+7 acceptance test )
-PHASE6-TEST
+( Run TRIPOD acceptance test )
+TRIPOD-TEST

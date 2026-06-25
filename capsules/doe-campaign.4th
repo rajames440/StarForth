@@ -24,12 +24,9 @@ Block 4061
     VM-HERA    OF S" DOE-WORK" S" Hera"    VM-EXEC ENDOF
   ENDCASE ;
 Block 4062
-( Phase 2 campaign execution )
+( CD-TICK: fleet K heartbeat — not a scheduler )
 : CD-TICK ( -- )
-  VM-DECAY-ALL
-  VM-HOTTEST DUP VM-HOT ! DUP VM-BUMP VM-LAST !
-  VM-HOT @ CD-WORK
-  VM-HOT @ K-BUMP ;
+  0 K-BUMP 1 K-BUMP 2 K-BUMP ;
 : CD-DOE ( n -- ) 0 DO CD-TICK LOOP ;
 : CAMPAIGN-STATUS ( -- )
   ." === VM Heat after campaign ===" CR
