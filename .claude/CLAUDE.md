@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Note:** There is also a `docs/CLAUDE.md` (older, hosted-only snapshot). This file at `.claude/CLAUDE.md` is the authoritative reference.
 
+> **Tripod:** `.claude/TRIPOD.md` is authoritative for all Tripod VM (Hera/Hermes/Artemis) work. Read it completely before touching any Tripod code.
+
 ---
 
 ## Hard Rules — Captain Bob's Law
