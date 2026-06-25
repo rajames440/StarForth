@@ -685,6 +685,7 @@ ifeq ($(ARCH),amd64)
 	rm -f $$SERIAL_SOCK; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
+	{ LCOUNT=$$(wc -l < $$LOG); if [ "$$LCOUNT" -gt 100 ]; then head -50 $$LOG; echo "--- POST REDACTED ---"; tail -50 $$LOG; else cat $$LOG; fi; } > $$LOG.tmp && mv $$LOG.tmp $$LOG; \
 	cat $$LOG; \
 	echo ""; \
 	echo "=== Extracting DOE CSV ==="; \
@@ -765,6 +766,7 @@ else ifeq ($(ARCH),aarch64)
 	rm -f $$SERIAL_SOCK; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
+	{ LCOUNT=$$(wc -l < $$LOG); if [ "$$LCOUNT" -gt 100 ]; then head -50 $$LOG; echo "--- POST REDACTED ---"; tail -50 $$LOG; else cat $$LOG; fi; } > $$LOG.tmp && mv $$LOG.tmp $$LOG; \
 	cat $$LOG; \
 	echo ""; \
 	echo "=== Extracting DOE CSV ==="; \
@@ -861,6 +863,7 @@ else ifeq ($(ARCH),riscv64)
 	rm -f $$SERIAL_SOCK; \
 	echo ""; \
 	echo "=== Serial log: $$LOG ==="; \
+	{ LCOUNT=$$(wc -l < $$LOG); if [ "$$LCOUNT" -gt 100 ]; then head -50 $$LOG; echo "--- POST REDACTED ---"; tail -50 $$LOG; else cat $$LOG; fi; } > $$LOG.tmp && mv $$LOG.tmp $$LOG; \
 	cat $$LOG; \
 	echo ""; \
 	echo "=== Extracting DOE CSV ==="; \
