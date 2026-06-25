@@ -2,9 +2,22 @@ Block 4100
 : WELCOME ." Welcome to Hermes" CR ;
 : CONNECT-HERA BYE ;
 \ Hermes role: message and event management
-: MSG-SEND  ( msg -- ) DROP ;
-: MSG-RECV  ( -- msg ) 0 ;
-: EVENT-EMIT ( event -- ) DROP ;
-: EVENT-WAIT ( -- event ) 0 ;
+16 CONSTANT MSG-DEPTH
+CREATE MSG-BUF MSG-DEPTH CELLS ALLOT
+VARIABLE MSG-HEAD  VARIABLE MSG-TAIL
+: MSG-FULL?  ( -- f ) MSG-TAIL @ 1+ MSG-DEPTH MOD MSG-HEAD @ = ;
+: MSG-EMPTY? ( -- f ) MSG-HEAD @ MSG-TAIL @ = ;
+: MSG-SEND ( msg -- )
+  MSG-FULL? IF DROP EXIT THEN
+  MSG-TAIL @ CELLS MSG-BUF + !
+  MSG-TAIL @ 1+ MSG-DEPTH MOD MSG-TAIL ! ;
+: MSG-RECV ( -- msg )
+  MSG-EMPTY? IF 0 EXIT THEN
+  MSG-HEAD @ CELLS MSG-BUF + @
+  MSG-HEAD @ 1+ MSG-DEPTH MOD MSG-HEAD ! ;
+: EVENT-EMIT ( event -- ) MSG-SEND ;
+: EVENT-WAIT ( -- event ) MSG-RECV ;
+: EVENT-DRAIN ( -- )
+  BEGIN MSG-EMPTY? NOT WHILE MSG-RECV DROP REPEAT ;
 : LOAD-DOE ( -- ) S" doe.4th" EXEC ;
 WELCOME
