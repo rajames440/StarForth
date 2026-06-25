@@ -1,8 +1,7 @@
 Block 4100
-( Hermes — event substrate Phase 5+6 )
+( Hermes — event substrate )
 : WELCOME ." Welcome to Hermes" CR ;
 : CONNECT-HERA BYE ;
-\ Event codes — must match process.4th
 1 CONSTANT SPAWN-EVENT
 2 CONSTANT PAUSE-EVENT
 3 CONSTANT RESUME-EVENT
@@ -10,12 +9,14 @@ Block 4100
 16 CONSTANT MSG-DEPTH
 CREATE MSG-BUF MSG-DEPTH CELLS ALLOT
 VARIABLE MSG-HEAD  VARIABLE MSG-TAIL
-: MSG-FULL?  ( -- f ) MSG-TAIL @ 1+ MSG-DEPTH MOD MSG-HEAD @ = ;
-: MSG-EMPTY? ( -- f ) MSG-HEAD @ MSG-TAIL @ = ;
+: MSG-FULL? MSG-TAIL @ 1+ MSG-DEPTH MOD MSG-HEAD @ = ;
+: MSG-EMPTY? MSG-HEAD @ MSG-TAIL @ = ;
 : MSG-SEND ( msg -- )
   MSG-FULL? IF DROP EXIT THEN
   MSG-TAIL @ CELLS MSG-BUF + !
   MSG-TAIL @ 1+ MSG-DEPTH MOD MSG-TAIL ! ;
+Block 4101
+( Hermes — receive and event interface )
 : MSG-RECV ( -- msg )
   MSG-EMPTY? IF 0 EXIT THEN
   MSG-HEAD @ CELLS MSG-BUF + @
@@ -26,16 +27,17 @@ VARIABLE MSG-HEAD  VARIABLE MSG-TAIL
   BEGIN MSG-EMPTY? NOT WHILE MSG-RECV DROP REPEAT ;
 : LOAD-DOE ( -- ) S" doe.4th" EXEC ;
 WELCOME
-Block 4101
-( Hermes typed event dispatch — routes lifecycle events back to Hera )
-( HERA-DISPATCH-ONE runs in Hermes context; callbacks fire in Hera via VM-EXEC )
-: HERA-NOTIFY-SPAWN ( -- ) S" K-SPAWN-HOOK" S" Hera" VM-EXEC ;
-: HERA-NOTIFY-KILL  ( -- ) S" K-KILL-HOOK"  S" Hera" VM-EXEC ;
+Block 4102
+( Hermes typed event dispatch )
+: HERA-NOTIFY-SPAWN ( -- )
+  S" K-SPAWN-HOOK" S" Hera" VM-EXEC ;
+: HERA-NOTIFY-KILL  ( -- )
+  S" K-KILL-HOOK"  S" Hera" VM-EXEC ;
 : HERA-DISPATCH-ONE ( event -- )
   DUP SPAWN-EVENT = IF HERA-NOTIFY-SPAWN DROP EXIT THEN
   DUP KILL-EVENT  = IF HERA-NOTIFY-KILL  DROP EXIT THEN
   DROP ;
-( HERA-DISPATCH: drain the event queue and dispatch each event to Hera )
+( HERA-DISPATCH: drain queue, dispatch each event to Hera )
 : HERA-DISPATCH ( -- )
   BEGIN MSG-EMPTY? NOT WHILE
     MSG-RECV HERA-DISPATCH-ONE

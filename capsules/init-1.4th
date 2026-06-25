@@ -32,7 +32,6 @@ Block 3010
 20 SQUARE-WAVE
 
 Block 3020
-
 ( Second burst pattern - random selection via CASE )
 
 12345 SEED

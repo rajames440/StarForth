@@ -1,6 +1,6 @@
 Block 4000
 ( ACL.4th - Word-Level Access Control for StarForth )
-( C fields per DictEntry: acl_ttl acl_allow acl_mode acl_pinned )
+( DictEntry fields: acl_ttl acl_allow acl_mode acl_pinned )
 ( C prims: ACL-MODE@ ACL-MODE! ACL-PINNED? ACL-PIN )
 ( ACL-TTL@ ACL-TTL! ACL-ALLOW@ ACL-ALLOW! )
 ( ACL-HEAT@ ACL-WORD-ID ACL-INHERIT ACL-INIT-PRIMITIVES )
@@ -87,23 +87,22 @@ Block 4007
 ( init.4th only needs: S" ACL.4th" EXEC                      )
 
 Block 4010
-( ACL Rolling Window of Truth — topology mirrors Loop #2+#3+#6    )
-( Ring buffer (depth 8) stores heartbeat tick stamps per recheck.  )
-( Slope inference drives TTL cooling rate. Negative feedback keeps )
-( the signal bounded. Starts OPEN (MAX TTL) and finds attractors. )
-( New C prims: ACL-RWT-TICK@ ACL-RWT-PUSH ACL-RWT-COUNT@          )
-(              ACL-RWT-INTERVAL@ ACL-RWT-SLOPE@ ACL-RWT-SLOPE!    )
-( Policy words: ACL-RWT-SLOPE-COMPUTE ACL-TTL-COMPUTE-RW          )
-(               ACL-RECHECK-RW ACL-RW-MODE ACL-BOOT-RW            )
+( ACL Rolling Window of Truth - mirrors Loop #2+#3+#6 )
+( Ring buffer depth=8; tick stamps per recheck. )
+( Slope inference drives TTL cooling; bounded. )
+( C prims: ACL-RWT-TICK@ ACL-RWT-PUSH )
+(          ACL-RWT-COUNT@ ACL-RWT-INTERVAL@ )
+(          ACL-RWT-SLOPE@ ACL-RWT-SLOPE! )
+( Policy: ACL-RWT-SLOPE-COMPUTE ACL-TTL-COMPUTE-RW )
+( ACL-RECHECK-RW ACL-RW-MODE ACL-BOOT-RW )
 
 Block 4011
-( ACL-RWT-SLOPE-COMPUTE ( xt -- slope_q8 )                        )
-( Compute Q8 slope from the interval series in the ring buffer.    )
-( slope_q8 = ( newest_interval - oldest_interval ) << 8           )
-(            / ( count - 2 )                                       )
-( Positive: intervals growing  = word heating up  -> TTL grows.    )
-( Negative: intervals shrinking = word cooling   -> TTL shrinks.   )
-( Requires count >= 3 (two intervals). Returns 0 if insufficient.  )
+( ACL-RWT-SLOPE-COMPUTE ( xt -- slope_q8 ) )
+( Q8 slope from ring buffer interval series. )
+( slope=(newest-oldest)<<8/(count-2) )
+( +: intervals growing -> TTL grows. )
+( -: intervals shrinking -> TTL shrinks. )
+( Returns 0 if count<3 (need 2 intervals). )
 : ACL-RWT-SLOPE-COMPUTE ( xt -- slope_q8 )
   DUP ACL-RWT-COUNT@ 3 < IF DROP 0 EXIT THEN
   DUP 0 SWAP ACL-RWT-INTERVAL@    ( xt newest )
@@ -147,10 +146,9 @@ Block 4013
   1 SWAP ACL-ALLOW! ;
 
 Block 4014
-( ACL-RW-MODE ( xt -- )                                           )
-( Switch a word to use the rolling-window recheck policy.         )
-( Pin-guarded. Sets mode to TTL (RW uses same TTL slot as heat).  )
-( ACL-BOOT-RW ( -- ) replaces ACL-BOOT for RW mode globally.     )
+( ACL-RW-MODE ( xt -- ) pin-guarded. )
+( Switch word to rolling-window recheck policy. )
+( Sets mode=TTL. ACL-BOOT-RW replaces ACL-BOOT. )
 : ACL-RW-MODE ( xt -- )
   DUP ACL-PINNED? IF DROP EXIT THEN
   ACL-TTL-MODE-VAL SWAP ACL-MODE! ;

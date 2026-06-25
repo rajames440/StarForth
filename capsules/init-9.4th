@@ -11,18 +11,14 @@ Block 3001
   50 * COMPUTE ;
 
 Block 3010
-
 ( Rising edge with random perturbation )
-
 42 SEED
-
 : RISING-EDGE ( steps -- )
   0 DO
     I 1+
     90 110 RANDOM 100 */ RAMP-STEP
     10 80 120 RANDOM 100 */ WAIT
   LOOP ;
-
 : FALLING-EDGE ( steps -- )
   DUP 0 DO
     OVER I -
@@ -48,11 +44,8 @@ Block 3020
 3 10 TRIANGLE-WAVE
 
 Block 3030
-
 ( Asymmetric triangles - fast rise, slow fall )
-
 7777 SEED
-
 : ASYM-TRIANGLE ( -- )
   8 0 DO
     I 1+ 80 120 RANDOM 100 */ RAMP-STEP
@@ -62,7 +55,6 @@ Block 3030
     8 I - 80 120 RANDOM 100 */ RAMP-STEP
     80 120 RANDOM WAIT
   LOOP ;
-
 : RUN-ASYM 4 0 DO ASYM-TRIANGLE LOOP ;
 RUN-ASYM
 

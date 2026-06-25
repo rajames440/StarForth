@@ -9,29 +9,18 @@ Block 3001
   0 SWAP 0 DO I 7 * + LOOP DROP ;
 
 Block 3010
-
-( Sine lookup - 16 steps per quarter wave via CASE )
-( sin values: 0,10,20,31,41,50,59,67,74,81,87,91,95,98,99,100 )
-
+( Sine lookup: 16 steps per quarter wave via CASE )
+( sin: 0,10,20,31,41,50,59,67,74,81,87,91,95,98,99,100 )
 : SIN-STEP ( phase -- intensity )
-  15 AND
-  CASE
-    0 OF 0 ENDOF
-    1 OF 10 ENDOF
-    2 OF 20 ENDOF
-    3 OF 31 ENDOF
-    4 OF 41 ENDOF
-    5 OF 50 ENDOF
-    6 OF 59 ENDOF
-    7 OF 67 ENDOF
-    8 OF 74 ENDOF
-    9 OF 81 ENDOF
-    10 OF 87 ENDOF
-    11 OF 91 ENDOF
-    12 OF 95 ENDOF
-    13 OF 98 ENDOF
-    14 OF 99 ENDOF
-    15 OF 100 ENDOF
+  15 AND CASE
+  0 OF 0 ENDOF  1 OF 10 ENDOF
+  2 OF 20 ENDOF  3 OF 31 ENDOF
+  4 OF 41 ENDOF  5 OF 50 ENDOF
+  6 OF 59 ENDOF  7 OF 67 ENDOF
+  8 OF 74 ENDOF  9 OF 81 ENDOF
+  10 OF 87 ENDOF  11 OF 91 ENDOF
+  12 OF 95 ENDOF  13 OF 98 ENDOF
+  14 OF 99 ENDOF  15 OF 100 ENDOF
   ENDCASE ;
 
 Block 3020
@@ -46,15 +35,11 @@ Block 3020
   63 SWAP - SIN-STEP ;
 
 Block 3030
-
 ( Sinusoidal wave with random amplitude/frequency modulation )
-
 42 SEED
-
 : SINE-PULSE ( phase amplitude -- )
   SWAP FULL-SIN * 100 / 1+
   COMPUTE ;
-
 : SINE-CYCLE ( steps base-amp base-wait -- )
   ROT 0 DO
     I
@@ -96,11 +81,8 @@ Block 3050
 RUN-DUAL
 
 Block 3060
-
 ( Damped sine - decaying amplitude )
-
 11111 SEED
-
 : DAMPED-SINE ( cycles -- )
   100 SWAP               ( starting amplitude )
   0 DO
@@ -109,7 +91,7 @@ Block 3060
       85 115 RANDOM 100 */ COMPUTE
       50 80 RANDOM WAIT
     LOOP
-    85 * 100 /           ( decay amplitude by 15% each cycle )
+    85 * 100 /           ( decay by 15% each cycle )
     DUP 10 < IF DROP 10 THEN
   LOOP DROP ;
 

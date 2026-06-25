@@ -1,7 +1,7 @@
 Block 4110
 ( Artemis — block storage manager Phase 7 )
-( Manages LBN 4501..4599 using FORTH block ABI: BLOCK BUFFER UPDATE FLUSH )
-( In-VM free map; persists for Artemis lifetime. ART-FLUSH writes dirty blocks. )
+( Manages LBN 4501..4599 via BLOCK BUFFER UPDATE FLUSH )
+( In-VM free map; ART-FLUSH writes dirty blocks. )
 : WELCOME ." Welcome to Artemis" CR ;
 : CONNECT-HERA BYE ;
 4501 CONSTANT ART-BASE
@@ -10,7 +10,7 @@ CREATE ART-FREE ART-CAP CELLS ALLOT
 : ART-INIT ( -- ) ART-FREE ART-CAP CELLS 0 FILL ;
 ART-INIT
 Block 4111
-( BLK-ALLOC: find first free slot, mark used, return LBN or -1 on full )
+( BLK-ALLOC: first free slot, mark used, return LBN or -1 )
 : BLK-ALLOC ( -- lbn )
   ART-CAP 0 DO
     I CELLS ART-FREE + @ 0= IF
@@ -24,28 +24,26 @@ Block 4111
   DUP 0 >= OVER ART-CAP < AND IF
     CELLS ART-FREE + 0 SWAP !
   ELSE DROP THEN ;
-( BLK-FETCH: load block into buffer, return address )
-: BLK-FETCH ( lbn -- addr ) BLOCK ;
-( BLK-PERSIST: mark most-recently-accessed block dirty for next FLUSH )
-: BLK-PERSIST ( lbn -- ) BLOCK DROP UPDATE ;
-( ART-FLUSH: write all dirty blocks to the virtual disk )
-: ART-FLUSH ( -- ) FLUSH ;
 Block 4112
-( ART-STATUS: report storage utilisation )
+( Artemis block operations and status )
+: BLK-FETCH ( lbn -- addr ) BLOCK ;
+: BLK-PERSIST ( lbn -- ) BLOCK DROP UPDATE ;
+: ART-FLUSH ( -- ) FLUSH ;
 : ART-STATUS ( -- )
   ." Artemis: " ART-CAP . ." blocks managed (LBN "
   ART-BASE . ." .." ART-BASE ART-CAP + 1- . ." )" CR
   0 ART-CAP 0 DO I CELLS ART-FREE + @ 0<> IF 1+ THEN LOOP
   ." In use: " . CR ;
-( ART-SELF-TEST: alloc/touch/persist/free one block — called from Hera )
+Block 4113
+( ART-SELF-TEST: alloc/touch/persist/free one block )
 : ART-SELF-TEST ( -- )
   ." Artemis storage self-test" CR
-  BLK-ALLOC DUP -1 = IF ." FAIL: no free blocks" CR DROP EXIT THEN
+  BLK-ALLOC DUP -1 = IF ." FAIL: no free" CR DROP EXIT THEN
   DUP . ." allocated" CR
   DUP BLK-FETCH DROP
   DUP BLK-PERSIST
   BLK-FREE
   ART-FLUSH
-  ." PASS: BLK-ALLOC/FETCH/PERSIST/FREE/FLUSH OK" CR ;
+  ." PASS: alloc/fetch/persist/free/flush OK" CR ;
 : LOAD-DOE ( -- ) S" doe.4th" EXEC ;
 WELCOME

@@ -35,13 +35,12 @@ Block 3003
     ELSE
       DROP 4
     THEN
-  THEN DROP
-;
+  THEN DROP ;
 
-: MAIN
+Block 3004
+: MAIN ( -- )
   1000 0 DO
     RAND 30 MOD NESTED-COND
     VOLATILE-BRANCH
-  LOOP
-;
+  LOOP ;
 MAIN

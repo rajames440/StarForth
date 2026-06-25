@@ -192,6 +192,57 @@ static int build_capsule_name(const char *relpath, char *out) {
 }
 
 /*
+ * validate_forth_blocks: enforce 64-byte x 16-line block format on .4th files.
+ * Any violation is reported to stderr and counted.
+ * Returns 0 if clean, >0 if violations were found.
+ */
+static int validate_forth_blocks(const char *fpath,
+                                 const uint8_t *data, size_t size)
+{
+    int errors = 0;
+    int block_num = -1;
+    int line_in_block = 0;
+    size_t pos = 0;
+
+    while (pos < size) {
+        size_t start = pos;
+        while (pos < size && data[pos] != '\n') pos++;
+
+        size_t line_len = pos - start;
+        if (line_len > 0 && data[start + line_len - 1] == '\r') line_len--;
+
+        const char *line = (const char *)(data + start);
+
+        if (line_len >= 7 &&
+            line[0]=='B' && line[1]=='l' && line[2]=='o' &&
+            line[3]=='c' && line[4]=='k' && line[5]==' ') {
+            block_num = (int)strtol(line + 6, NULL, 10);
+            line_in_block = 0;
+        } else if (block_num >= 0) {
+            if (line_len > 64) {
+                fprintf(stderr,
+                    "mkcapsule: ERROR: %s block %d line %d: "
+                    "%zu bytes (max 64)\n",
+                    fpath, block_num, line_in_block, line_len);
+                errors++;
+            }
+            line_in_block++;
+            if (line_in_block == 17) {
+                fprintf(stderr,
+                    "mkcapsule: ERROR: %s block %d: "
+                    "exceeds 16 lines (max 16)\n",
+                    fpath, block_num);
+                errors++;
+            }
+        }
+
+        if (pos < size) pos++;
+    }
+
+    return errors;
+}
+
+/*
  * nftw callback — called once per filesystem entry.
  * Incorporates every regular file found; skips names that are too long.
  */
@@ -262,6 +313,21 @@ static int process_file(const char *fpath, const struct stat *sb,
         return -1;
     }
     fclose(f);
+
+    /* Validate 64x16 block format for .4th capsule files */
+    {
+        size_t nlen = strlen(fpath);
+        if (nlen >= 4 && strcmp(fpath + nlen - 4, ".4th") == 0) {
+            int bv = validate_forth_blocks(fpath, data, (size_t)size);
+            if (bv > 0) {
+                free(data);
+                fprintf(stderr,
+                    "mkcapsule: ERROR: %s: %d block format violation(s) "
+                    "— fix before building\n", fpath, bv);
+                return -1;
+            }
+        }
+    }
 
     /* Fill entry */
     CapsuleEntry *e = &capsules[capsule_count];

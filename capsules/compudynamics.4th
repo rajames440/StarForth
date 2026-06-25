@@ -1,7 +1,6 @@
 Block 4200
 ( Compudynamics - VM-level physics governance )
-( Same 7-loop framework as word physics, lifted to VM granularity. )
-( Context switch at REPL-turn boundary. One shared heartbeat. )
+( 7-loop framework lifted to VM granularity. )
 0 CONSTANT VM-HERA
 1 CONSTANT VM-HERMES
 2 CONSTANT VM-ARTEMIS
@@ -14,26 +13,32 @@ VARIABLE VM-BEST-IDX
 VARIABLE VM-BEST-HEAT
 65208 CONSTANT Q-DECAY
 Block 4201
-( Compudynamics - heat and transition management )
+( Compudynamics - heat and transition )
 : VM-HEAT@ ( idx -- q48 ) CELLS VM-HEATS + @ ;
 : VM-HEAT! ( q48 idx -- ) CELLS VM-HEATS + ! ;
 : VM-DECAY-ONE ( idx -- )
   DUP VM-HEAT@ Q-DECAY Q.* SWAP VM-HEAT! ;
 : VM-DECAY-ALL ( -- )
-  VM-COUNT 0 DO I VM-DECAY-ONE LOOP ;
+  0 VM-DECAY-ONE 1 VM-DECAY-ONE 2 VM-DECAY-ONE ;
 : VM-BUMP ( idx -- )
   VM-LAST @ VM-COUNT * OVER + CELLS VM-TRANS + DUP @ 1+ SWAP !
   DUP VM-HEAT@ Q.1 Q.+ SWAP VM-HEAT! ;
 Block 4202
-( Compudynamics - selection, tick, control )
+( VM-HOTTEST: highest-heat VM; unrolled for VM-COUNT=3 )
 : VM-HOTTEST ( -- idx )
   Q.0 VM-BEST-HEAT ! 0 VM-BEST-IDX !
-  VM-COUNT 0 DO
-    I CELLS VM-HEATS + @
-    DUP VM-BEST-HEAT @ Q.>
-    IF VM-BEST-HEAT ! I VM-BEST-IDX !
-    ELSE DROP THEN
-  LOOP VM-BEST-IDX @ ;
+  0 CELLS VM-HEATS + @
+  DUP VM-BEST-HEAT @ Q.>
+  IF VM-BEST-HEAT ! 0 VM-BEST-IDX ! ELSE DROP THEN
+  1 CELLS VM-HEATS + @
+  DUP VM-BEST-HEAT @ Q.>
+  IF VM-BEST-HEAT ! 1 VM-BEST-IDX ! ELSE DROP THEN
+  2 CELLS VM-HEATS + @
+  DUP VM-BEST-HEAT @ Q.>
+  IF VM-BEST-HEAT ! 2 VM-BEST-IDX ! ELSE DROP THEN
+  VM-BEST-IDX @ ;
+Block 4203
+( Compudynamics - step, tick, run )
 : VM-STEP-IDX ( idx -- )
   CASE
     VM-HERA    OF S" Hera"    VM-STEP ENDOF
@@ -45,6 +50,8 @@ Block 4202
   VM-HOTTEST DUP VM-HOT ! DUP VM-BUMP VM-LAST !
   VM-HOT @ VM-STEP-IDX ;
 : VM-RUN ( n -- ) 0 DO VM-TICK LOOP ;
+Block 4204
+( Compudynamics - status and init )
 : VM-STATUS ( -- )
   ." Hera:    " VM-HERA    VM-HEAT@ Q.PRINT CR
   ." Hermes:  " VM-HERMES  VM-HEAT@ Q.PRINT CR
