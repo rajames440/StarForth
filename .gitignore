@@ -36,6 +36,12 @@ qemu.log
 
 # Serial acceptance logs and session directories are audit artifacts — tracked in git
 # logs/ and logs2/ are intentionally NOT ignored
+# EXCEPTION: ECW-trace sessions generate 500-638MB logs that exceed GitHub's 100MB
+# limit. Those specific sessions are excluded here.
+logs/20260625-183218/
+logs/20260625-183958/
+logs/20260625-184714/
+logs/20260625-190541/
 
 # Retired data directories (replaced by experiments/bare_metal/)
 doe/
