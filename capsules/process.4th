@@ -1,16 +1,31 @@
 Block 4300
-( process.4th — Compudynamic lifecycle phase operators )
-( SPAWN/KILL are phase perturbations, not scheduler decisions. )
-( Process unit = StarForth VM. Future: backed by sk_proc_create HAL. )
-: SPAWN  ( c-addr u -- )
+( process.4th — Compudynamic lifecycle phase operators Phase 6 )
+( Event codes must match hermes/init.4th )
+1 CONSTANT SPAWN-EVENT
+2 CONSTANT PAUSE-EVENT
+3 CONSTANT RESUME-EVENT
+4 CONSTANT KILL-EVENT
+( SPAWN: birth VM, rebalance K, notify Hermes )
+: SPAWN ( c-addr u -- )
   BIRTH
-  S" 0 EVENT-EMIT" S" Hermes" VM-EXEC ;
-: PAUSE  ( c-addr u -- )
+  K-SPAWN-HOOK
+  S" 1 EVENT-EMIT" S" Hermes" VM-EXEC ;
+( PAUSE: notify Hermes, send STOP to the named VM )
+: PAUSE ( c-addr u -- )
+  S" 2 EVENT-EMIT" S" Hermes" VM-EXEC
   S" STOP" 2SWAP VM-EXEC ;
+( RESUME: notify Hermes, START the named VM )
 : RESUME ( c-addr u -- )
+  S" 3 EVENT-EMIT" S" Hermes" VM-EXEC
   START ;
+( KILL-VM: notify Hermes, kill the named VM, rebalance K )
 : KILL-VM ( c-addr u -- )
+  S" 4 EVENT-EMIT" S" Hermes" VM-EXEC
   KILL
-  S" 0 EVENT-EMIT" S" Hermes" VM-EXEC ;
-: CD-PHASE@ ( idx -- phase )
-  VM-HEAT@ Q.1 Q.> IF 1 ELSE 0 THEN ;
+  K-KILL-HOOK ;
+Block 4301
+( CD-PHASE@: thermodynamic phase of VM idx — 0=COLD 1=WARM 2=HOT )
+: CD-PHASE@ ( idx -- n )
+  DUP VM-HEAT@ 0= IF DROP 0 EXIT THEN
+  DUP VM-HEAT@ SWAP CELLS K-TARGET + @ >
+  IF 2 ELSE 1 THEN ;

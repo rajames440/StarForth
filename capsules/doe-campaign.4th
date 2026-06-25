@@ -27,7 +27,8 @@ Block 4061
 : CD-TICK ( -- )
   VM-DECAY-ALL
   VM-HOTTEST DUP VM-HOT ! DUP VM-BUMP VM-LAST !
-  VM-HOT @ CD-WORK ;
+  VM-HOT @ CD-WORK
+  VM-HOT @ K-BUMP ;
 : CD-DOE ( n -- ) 0 DO CD-TICK LOOP ;
 Block 4062
 ( Campaign entry point )

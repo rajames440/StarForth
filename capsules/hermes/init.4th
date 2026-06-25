@@ -1,7 +1,12 @@
 Block 4100
+( Hermes — event substrate Phase 5+6 )
 : WELCOME ." Welcome to Hermes" CR ;
 : CONNECT-HERA BYE ;
-\ Hermes role: message and event management
+\ Event codes — must match process.4th
+1 CONSTANT SPAWN-EVENT
+2 CONSTANT PAUSE-EVENT
+3 CONSTANT RESUME-EVENT
+4 CONSTANT KILL-EVENT
 16 CONSTANT MSG-DEPTH
 CREATE MSG-BUF MSG-DEPTH CELLS ALLOT
 VARIABLE MSG-HEAD  VARIABLE MSG-TAIL
@@ -21,3 +26,17 @@ VARIABLE MSG-HEAD  VARIABLE MSG-TAIL
   BEGIN MSG-EMPTY? NOT WHILE MSG-RECV DROP REPEAT ;
 : LOAD-DOE ( -- ) S" doe.4th" EXEC ;
 WELCOME
+Block 4101
+( Hermes typed event dispatch — routes lifecycle events back to Hera )
+( HERA-DISPATCH-ONE runs in Hermes context; callbacks fire in Hera via VM-EXEC )
+: HERA-NOTIFY-SPAWN ( -- ) S" K-SPAWN-HOOK" S" Hera" VM-EXEC ;
+: HERA-NOTIFY-KILL  ( -- ) S" K-KILL-HOOK"  S" Hera" VM-EXEC ;
+: HERA-DISPATCH-ONE ( event -- )
+  DUP SPAWN-EVENT = IF HERA-NOTIFY-SPAWN DROP EXIT THEN
+  DUP KILL-EVENT  = IF HERA-NOTIFY-KILL  DROP EXIT THEN
+  DROP ;
+( HERA-DISPATCH: drain the event queue and dispatch each event to Hera )
+: HERA-DISPATCH ( -- )
+  BEGIN MSG-EMPTY? NOT WHILE
+    MSG-RECV HERA-DISPATCH-ONE
+  REPEAT ;
