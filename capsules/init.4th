@@ -19,6 +19,7 @@ S" compudynamics.4th" EXEC
 VM-INIT
 S" lib.4th" EXEC
 S" doe-campaign.4th" EXEC
+S" process.4th" EXEC
 \ Tripod boot: storage → events → process manager (Hera)
 S" Artemis" BIRTH
 S" LOAD-DOE" S" Artemis" VM-EXEC
