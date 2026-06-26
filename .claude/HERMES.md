@@ -1,0 +1,195 @@
+# HERMES.md — Hermes VM Architecture
+# StarshipOS / StarForth — Captain Bob (Robert Allan James)
+# This document constrains Claude Code behavior. Read it completely before touching Hermes.
+
+---
+
+## Language Constraint — Non-Negotiable
+
+All Hermes implementation is in StarForth dialect ONLY.
+
+This includes:
+- Data structures
+- Constants
+- Variables
+- Control flow
+- Everything
+
+C99 is forbidden unless explicitly blocked in StarForth AND explicit written permission
+is given by Captain Bob for that specific construct. "I could not figure out how to do
+this in StarForth" is not permission. Ask first. Wait for the answer.
+
+If you are about to write a C struct, a #define, or a C variable — stop.
+Implement it in StarForth or ask.
+
+---
+
+## What Hermes Is
+
+Hermes is the messenger. He moves messages between VMs and manages channels.
+That is his complete contract.
+
+Hermes does **not** store persistent data — that is Artemis.
+Hermes does **not** make lifecycle decisions — that is Hera.
+Hermes does **not** route by load or heat — dispatch is capability-based, always.
+
+Capsules are baked into the OS blob by mkcapsule.c at build time.
+Hermes has no capsule cache, no fetch logic, no repository concern.
+That is a future chapter.
+
+---
+
+## The Event Loop
+
+Hermes runs a compudynamic event loop. Every message is a compudynamic object:
+
+- Born hot (full heat at creation)
+- Cools each heartbeat tick
+- ACK received → clean death, K redistributed to fleet
+- NACK received → requeue with reduced heat, or reaped if heat floor reached
+- TTL expires (heat → 0) → Hermes reaps the message, K rebalanced
+
+There is no special timeout logic. The physics handles it.
+A message that nobody answers simply cools to death.
+
+---
+
+## Message Structure
+
+Every message carries:
+
+```
+type        — work type tag (determines recipient)
+sender      — originating VM identity
+recipient   — destination VM identity
+payload     — message body
+heat        — current thermal value (compudynamic)
+sequence    — monotonic sequence number
+```
+
+Point-to-point only. Sender addresses recipient directly.
+Hermes delivers and tracks thermal state. He does not inspect payload.
+
+---
+
+## ACK/NACK Protocol
+
+- ACK → message dies cleanly, K redistributed
+- NACK → message requeued with reduced heat
+- No response → message cools naturally to death via TTL
+
+The binary receipt of a response IS the ACK where applicable.
+No separate acknowledgement frame needed in those cases.
+
+---
+
+## PubSub — Channels
+
+Hermes implements a publish/subscribe model. Topics are called **channels**.
+
+### The Common Channel
+
+There is one permanent channel: `COMMON`.
+
+- Always exists, always hot
+- Any VM can publish to it
+- Used for negotiation and channel establishment only
+- Not for business transactions — those happen on ephemeral channels
+
+### Ephemeral Channels
+
+Ephemeral channels are compudynamic objects — born hot, reaped when cold or closed.
+
+**Channel structure:**
+
+```
+channel_id    — owner VM identity + monotonic sequence number
+owner         — VM that created the channel (always the responder)
+members[]     — participant list
+heat          — compudynamic, born hot at creation
+state         — NEGOTIATING | OPEN | CLOSING
+```
+
+### The Negotiation Protocol
+
+```
+1. X publishes request on COMMON — born hot, TTL ticking
+2. Y sees request, responds yes/no on COMMON
+   — No response → message cools to death → implicit NACK to X
+3. Y accepts → Y creates ephemeral channel
+             → Y publishes channel_id to X over COMMON
+4. X and Y conduct business on ephemeral channel
+5. Business concluded → owner Y reaps channel → K rebalanced
+```
+
+Y owns channel creation and destruction. Always the responder, never the requester.
+A channel dying of cold (abandoned transaction) is not an error — the physics handles it.
+
+### Multi-Party Channels
+
+Channels are bilateral by default. The owner may invite additional VMs:
+
+```
+1. Owner publishes invite to candidate VM on COMMON
+2. Candidate accepts or declines on COMMON — same TTL/cool protocol
+3. Accept → candidate added to members[]
+4. Decline or timeout → candidate never joins, channel continues bilateral
+```
+
+Multi-party is designed for but not implemented yet.
+Do not implement invite logic until explicitly instructed.
+The members[] structure must exist from the start to avoid future redesign.
+
+### Channel Identity
+
+`channel_id` = owner VM identity + monotonic sequence number.
+Unforgeable by non-owners. Hermes mints it. No VM constructs its own channel_id.
+
+### Compudynamic Invariant for Channels
+
+Channels participate in K≡1.0.
+An open channel with active messages holds heat.
+Channel reap must redistribute K correctly to the fleet.
+A channel cannot be reaped while messages on it are still in flight —
+drain first, then reap.
+
+---
+
+## What Is Not Hermes
+
+- **Capsule cache** — future chapter, not now
+- **Remote fetch** — future chapter, not now
+- **UDP server / client** — future chapter, not now
+- **Instance authentication** — future chapter, not now
+- **Persistent block storage** — that is Artemis
+- **VM lifecycle decisions** — that is Hera
+- **Heat-based routing** — wrong model, never implement
+
+---
+
+## Compudynamic Invariant
+
+Every object Hermes manages — messages and channels — participates in K≡1.0.
+Fleet K includes the thermal contribution of in-flight messages and open channels.
+Hermes reaping a message or channel must rebalance K correctly.
+
+Do not write code that breaks K≡1.0 and add a comment explaining why it's okay.
+
+---
+
+## Current Scope
+
+1. Compudynamic event loop — message emit, drain, TTL, ACK/NACK, reap
+2. COMMON channel — permanent, always hot, negotiation only
+3. Ephemeral channels — compudynamic lifecycle, owner=responder, bilateral default
+4. Channel negotiation protocol — request on COMMON, Y creates, Y reaps
+5. members[] structure — present from the start, multi-party invite not yet implemented
+
+Capsule management is a future chapter.
+Remote repository is a future chapter.
+Multi-party channel invite is a future chapter.
+
+---
+
+*This document is authoritative. If it conflicts with something in the codebase,
+the codebase is wrong.*

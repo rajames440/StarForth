@@ -5,6 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > **Note:** There is also a `docs/CLAUDE.md` (older, hosted-only snapshot). This file at `.claude/CLAUDE.md` is the authoritative reference.
 
 > **Tripod:** `.claude/TRIPOD.md` is authoritative for all Tripod VM (Hera/Hermes/Artemis) work. Read it completely before touching any Tripod code.
+> **Hermes:** `.claude/HERMES.md` is authoritative for all Hermes VM work. Read before touching Hermes.
+> **Artemis:** `.claude/ARTEMIS.md` is authoritative for all Artemis VM work. Read before touching Artemis.
 
 ---
 

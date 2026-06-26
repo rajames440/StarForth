@@ -149,3 +149,40 @@ Do not write code that breaks it and then add a comment explaining why it's okay
 
 *This document is authoritative. If it conflicts with something in the codebase,
 the codebase is wrong.*
+
+---
+
+## Language Constraint — Non-Negotiable
+
+All Tripod implementation is in StarForth dialect ONLY.
+
+This includes:
+- Data structures
+- Constants
+- Variables
+- Control flow
+- Everything
+
+C99 is forbidden unless explicitly blocked in StarForth AND explicit written permission
+is given by Captain Bob for that specific construct. "I could not figure out how to do
+this in StarForth" is not permission. Ask first. Wait for the answer.
+
+If you are about to write a C struct, a #define, or a C variable — stop.
+Implement it in StarForth or ask.
+
+---
+
+## When Stuck — Non-Negotiable
+
+If you are stuck, STOP.
+
+Do not confabulate.
+Do not invent dictionary words that do not exist.
+Do not fabricate primitives.
+Do not guess at behavior.
+Do not work around the problem silently.
+
+STOP. Report exactly what is blocking you. Wait for instruction.
+
+Silent confabulation has caused git resets on a project with a hard patent deadline.
+It is not acceptable under any circumstances.
