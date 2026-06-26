@@ -256,6 +256,15 @@ static int validate_forth_blocks(const char *fpath,
             block_num     = (int)strtol((const char *)(data + start + 6), NULL, 10);
             line_in_block = 0;
 
+            /* Block number must be in user space: [2048, 5120) */
+            if (block_num < 2048 || block_num >= 5120) {
+                fprintf(stderr,
+                    "mkcapsule: ERROR: %s:%d: block %d out of user range "
+                    "[2048, 5120)\n",
+                    fpath, file_line, block_num);
+                errors++;
+            }
+
         } else if (block_num >= 0) {
             if (line_len > 64) {
                 fprintf(stderr,
