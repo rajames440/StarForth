@@ -192,51 +192,90 @@ static int build_capsule_name(const char *relpath, char *out) {
 }
 
 /*
- * validate_forth_blocks: enforce 64-byte x 16-line block format on .4th files.
- * Any violation is reported to stderr and counted.
+ * validate_forth_blocks: enforce 64-char × 16-line block format on .4th files.
+ * Checks: block header "Block N", line length ≤ 64, ≤ 16 content lines/block,
+ * and that every line (including the last) is terminated with '\n'.
  * Returns 0 if clean, >0 if violations were found.
  */
 static int validate_forth_blocks(const char *fpath,
                                  const uint8_t *data, size_t size)
 {
-    int errors = 0;
-    int block_num = -1;
+    int errors       = 0;
+    int block_num    = -1;
     int line_in_block = 0;
-    size_t pos = 0;
+    int file_line    = 0;
+    size_t pos       = 0;
 
     while (pos < size) {
         size_t start = pos;
         while (pos < size && data[pos] != '\n') pos++;
 
+        int has_newline = (pos < size);  /* stopped at '\n', not EOF */
         size_t line_len = pos - start;
         if (line_len > 0 && data[start + line_len - 1] == '\r') line_len--;
 
-        const char *line = (const char *)(data + start);
+        file_line++;
 
+        /* Unterminated: non-empty content with no trailing '\n' */
+        if (!has_newline && line_len > 0) {
+            fprintf(stderr,
+                "mkcapsule: ERROR: %s:%d: unterminated line (missing newline)\n",
+                fpath, file_line);
+            errors++;
+        }
+
+        /* Build a printable snippet for diagnostics (first 40 chars) */
+        char snippet[44];
+        {
+            size_t slen = line_len < 40 ? line_len : 40;
+            size_t i;
+            for (i = 0; i < slen; i++) {
+                unsigned char c = data[start + i];
+                snippet[i] = (c >= 0x20 && c < 0x7F) ? (char)c : '?';
+            }
+            if (line_len > 40) {
+                snippet[40] = '.'; snippet[41] = '.';
+                snippet[42] = '.'; snippet[43] = '\0';
+            } else {
+                snippet[slen] = '\0';
+            }
+        }
+
+        /* Block header: "Block NNN" */
         if (line_len >= 7 &&
-            line[0]=='B' && line[1]=='l' && line[2]=='o' &&
-            line[3]=='c' && line[4]=='k' && line[5]==' ') {
-            block_num = (int)strtol(line + 6, NULL, 10);
+            data[start+0]=='B' && data[start+1]=='l' && data[start+2]=='o' &&
+            data[start+3]=='c' && data[start+4]=='k' && data[start+5]==' ') {
+
+            if (line_len > 64) {
+                fprintf(stderr,
+                    "mkcapsule: ERROR: %s:%d: block header %zu chars (max 64)"
+                    ": \"%s\"\n",
+                    fpath, file_line, line_len, snippet);
+                errors++;
+            }
+            block_num     = (int)strtol((const char *)(data + start + 6), NULL, 10);
             line_in_block = 0;
+
         } else if (block_num >= 0) {
             if (line_len > 64) {
                 fprintf(stderr,
-                    "mkcapsule: ERROR: %s block %d line %d: "
-                    "%zu bytes (max 64)\n",
-                    fpath, block_num, line_in_block, line_len);
+                    "mkcapsule: ERROR: %s:%d: block %d line %d: "
+                    "%zu chars (max 64): \"%s\"\n",
+                    fpath, file_line, block_num, line_in_block + 1,
+                    line_len, snippet);
                 errors++;
             }
             line_in_block++;
             if (line_in_block == 17) {
                 fprintf(stderr,
-                    "mkcapsule: ERROR: %s block %d: "
-                    "exceeds 16 lines (max 16)\n",
-                    fpath, block_num);
+                    "mkcapsule: ERROR: %s:%d: block %d: "
+                    "more than 16 content lines\n",
+                    fpath, file_line, block_num);
                 errors++;
             }
         }
 
-        if (pos < size) pos++;
+        if (has_newline) pos++;  /* advance past '\n' */
     }
 
     return errors;
@@ -349,6 +388,64 @@ static int process_file(const char *fpath, const struct stat *sb,
     fprintf(stderr, "  [%c] %s  (%" PRIu64 " bytes, hash=0x%016" PRIx64 ")\n",
             mode, e->name, (uint64_t)e->length, e->hash);
 
+    return 0;
+}
+
+/*===========================================================================
+ * Standalone Lint Mode
+ *===========================================================================*/
+
+static int lint_errors  = 0;
+static int lint_files   = 0;
+static int lint_failing = 0;
+
+static int lint_file(const char *fpath, const struct stat *sb,
+                     int typeflag, struct FTW *ftwbuf) {
+    (void)sb;
+    if (typeflag != FTW_F) return 0;
+    if (fpath[ftwbuf->base] == '.') return 0;
+
+    size_t nlen = strlen(fpath);
+    if (nlen < 4 || strcmp(fpath + nlen - 4, ".4th") != 0) return 0;
+
+    FILE *f = fopen(fpath, "rb");
+    if (!f) {
+        fprintf(stderr, "  ERROR: cannot open '%s'\n", fpath);
+        lint_errors++;
+        return 0;
+    }
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    lint_files++;
+
+    if (sz <= 0) {
+        fclose(f);
+        fprintf(stderr, "  PASS: %s  (empty)\n", fpath);
+        return 0;
+    }
+
+    uint8_t *data = malloc((size_t)sz);
+    if (!data || fread(data, 1, (size_t)sz, f) != (size_t)sz) {
+        free(data);
+        fclose(f);
+        fprintf(stderr, "  ERROR: read failed '%s'\n", fpath);
+        lint_errors++;
+        return 0;
+    }
+    fclose(f);
+
+    int errs = validate_forth_blocks(fpath, data, (size_t)sz);
+    free(data);
+
+    if (errs == 0) {
+        fprintf(stderr, "  PASS: %s\n", fpath);
+    } else {
+        fprintf(stderr, "  FAIL: %s  (%d violation%s)\n",
+                fpath, errs, errs == 1 ? "" : "s");
+        lint_errors  += errs;
+        lint_failing++;
+    }
     return 0;
 }
 
@@ -521,16 +618,36 @@ static void generate_output(FILE *out) {
  *===========================================================================*/
 
 int main(int argc, char **argv) {
+    /* --lint mode: validate all .4th files without generating C output */
+    if (argc == 3 && strcmp(argv[1], "--lint") == 0) {
+        base_dir     = argv[2];
+        base_dir_len = strlen(base_dir);
+        while (base_dir_len > 0 && base_dir[base_dir_len - 1] == '/') base_dir_len--;
+
+        fprintf(stderr, "mkcapsule lint: scanning %s\n", base_dir);
+        nftw(base_dir, lint_file, 20, FTW_PHYS);
+        fprintf(stderr,
+            "mkcapsule lint: %d file(s), %d failing, %d violation(s)  [%s]\n",
+            lint_files, lint_failing, lint_errors,
+            lint_errors == 0 ? "ALL PASS" : "FAIL");
+        return lint_errors > 0 ? 1 : 0;
+    }
+
     if (argc != 3) {
         fprintf(stderr,
-            "Usage: %s <capsules_dir> <output.c>\n"
+            "Usage:\n"
+            "  %s <capsules_dir> <output.c>   build capsule C source\n"
+            "  %s --lint <capsules_dir>        lint all .4th files\n"
             "\n"
-            "Walks capsules_dir recursively, incorporates every file found,\n"
-            "and writes a C source file with the compiled capsule directory.\n"
+            "Lint checks (per .4th file):\n"
+            "  - each block opens with 'Block N'\n"
+            "  - every line <= 64 chars\n"
+            "  - no more than 16 content lines per block\n"
+            "  - every line terminated with newline\n"
             "\n"
             "Names are colon-separated relative paths (e.g. core:init.4th).\n"
             "Files whose encoded name exceeds %d bytes are skipped with a warning.\n",
-            argv[0], CAPSULE_NAME_MAX - 1);
+            argv[0], argv[0], CAPSULE_NAME_MAX - 1);
         return 1;
     }
 
