@@ -1,0 +1,101 @@
+[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01HBdsDxe: loading Boot0001 "UEFI QEMU DVD-ROM QM00005 " from PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x2,0xFFFF,0x0)
+BdsDxe: starting Boot0001 "UEFI QEMU DVD-ROM QM00005 " from PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x2,0xFFFF,0x0)
+[2J[01;01H[=3h[2J[01;01HStarKernel UEFI Loader
+Loading kernel from ESP...
+RAW SERIAL UP
+Monolithic build - kernel linked directly
+Collecting boot information...
+CmdLine: parsed OK
+GOP: linear framebuffer found
+EBS...
+EBS OK
+Calling kernel_main (monolithic)...
+
+
+   _____ _             _  __                    _ 
+  / ____| |           | |/ /                   | |
+ | (___ | |_ __ _ _ __| ' / ___ _ __ _ __   ___| |
+  \___ \| __/ _` | '__|  < / _ \ '__| '_ \ / _ \ |
+  ____) | || (_| | |  | . \  __/ |  | | | |  __/ |
+ |_____/ \__\__,_|_|  |_|\_\___|_|  |_| |_|\___|_|
+
+LithosAnanke v1.5.3
+Architecture: amd64
+Build: Jun 27 2026 18:07:54
+
+UEFI BootServices: EXITED
+
+=== StarKernel Boot Information ===
+Memory map entries: 128
+Total memory: 1023 MB
+Usable memory: 967 MB
+===================================
+
+PMM initialized.
+PMM statistics:
+  Total pages: 249149
+  Free pages : 247622
+  Used pages : 1527
+  Total MB   : 973
+  Free  MB   : 967
+  Used  MB   : 5
+
+VMM initialized (mapped RAM, CR3 switched)
+VMM initialized (mapped RAM, CR3 switched)
+VMM self-test: mapped OK at 0xffff800000000000
+VMM self-test complete.
+
+IDT installed.
+
+APIC: init...
+--- POST REDACTED ---
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9443563510] ECW: w=0x3dab0740 func=0x3d6dda5e 'CELLS'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9443911394] ECW: w=0x3dab0850 func=0x3d6cf383 '+'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9444248326] ECW: w=0x3daafb90 func=0x3d6dd1ee '@'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9444586724] ECW: w=0x3dab0850 func=0x3d6cf383 '+'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9444914036] ECW: w=0x3daaf200 func=0x3d6e31c8 'OVER'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9445257612] ECW: w=0x3dabdd58 func=0x3d6d41a9 'LIT'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9445693416] ECW: w=0x3dab0740 func=0x3d6dda5e 'CELLS'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9446133840] ECW: w=0x3dab0850 func=0x3d6cf383 '+'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9446465414] ECW: w=0x3daafb90 func=0x3d6dd1ee '@'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9446801802] ECW: w=0x3dab0850 func=0x3d6cf383 '+'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9447129500] ECW: w=0x3daaf0f0 func=0x3d6e30f9 'SWAP'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9447560662] ECW: w=0x3daaedc0 func=0x3d6e2e7b 'DROP'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9447905752] ECW: w=0x3dae8a50 func=0x3d6d3f24 'K-WINDOW-DEPTH'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9448285412] ECW: w=0x3dab0b80 func=0x3d6cf5a9 '/'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9448691978] ECW: w=0x3dabfd48 func=0x3d6d1c00 'EXIT'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9449043726] ECW: w=0x3dab0850 func=0x3d6cf383 '+'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9449376452] ECW: w=0x3dabfd48 func=0x3d6d1c00 'EXIT'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9449711982] ECW: w=0x3dac7048 func=0x3d6e2450 'Q.1'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9450052940] ECW: w=0x3dab0960 func=0x3d6cf43c '-'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9450389744] ECW: w=0x3daaeed0 func=0x3d6e2f03 'DUP'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9450729310] ECW: w=0x3dabdd58 func=0x3d6d41a9 'LIT'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9451063030] ECW: w=0x3dab2720 func=0x3d6dc890 '<'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9451481124] ECW: w=0x3dabe5e0 func=0x3d6d1144 '(0BRANCH)'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9451857892] ECW: w=0x3dab1840 func=0x3d6cfee9 'NEGATE'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9452213626] ECW: w=0x3dae98e0 func=0x3d6d3f24 'K-EPSILON'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9452566284] ECW: w=0x3dab2720 func=0x3d6dc890 '<'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9452899178] ECW: w=0x3dabfd48 func=0x3d6d1c00 'EXIT'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9453239868] ECW: w=0x3dabe5e0 func=0x3d6d1144 '(0BRANCH)'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9453602516] ECW: w=0x3dab85c8 func=0x3d6dbabc '(do-string)'
+[Hera] PASS: K ok[32m[HADES][INFO ] [0m[KRELTSC: 9454028966] ECW: w=0x3dab7f60 func=0x3d6db7b7 'CR'
+
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9454418132] ECW: w=0x3dabe4c8 func=0x3d6d1088 '(BRANCH)'
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9454769984] ECW: w=0x3dab85c8 func=0x3d6dbabc '(do-string)'
+[Hera] === TRIPOD DONE ===[32m[HADES][INFO ] [0m[KRELTSC: 9455229910] ECW: w=0x3dab7f60 func=0x3d6db7b7 'CR'
+
+[Hera] [32m[HADES][INFO ] [0m[KRELTSC: 9455549126] ECW: w=0x3dabfd48 func=0x3d6d1c00 'EXIT'
+[Hera] PARITY:MAMA_INIT capsule_id=0x7c26d5c22a9831fb mode=m capsule_hash=0x7c26d5c22a9831fb dict_hash=0xf241dee54162da20
+[Hera] Init: Mama birth OK
+[Hera] ACL: CAPSULE-BIRTH pinned STRICT
+[Hera] ACL: BIRTH pinned STRICT
+[Hera] Starting heartbeat...
+[Hera] APIC Timer: started (LVT=0x00020020 ICR=3665060)
+[Hera] Heartbeat running.
+[Hera] LithosAnanke v1.5.3
+[Hera] StarForth Version 3.1.0
+
+[Hera] StarForth Emergency CLI
+[Hera] FORTH-79 interpreter — type BYE or power off to exit
+
+[Hera] zuse)ok> 
