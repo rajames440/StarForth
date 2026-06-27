@@ -39,7 +39,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### On the Two Production Targets
 - **Every change to shared VM code must compile and behave on both targets.** `src/vm.c`, `include/vm.h`, `capsules/`, `src/word_source/` are shared. Gate with `#ifdef __STARKERNEL__` or `#ifdef STARFORTH_ENABLE_VM`.
 - **The only valid acceptance test is the three-arch QEMU boot** (see QEMU section below). Tests run automatically at binary startup — no separate test target exists.
-- **`INPUT_BUFFER_SIZE` is a line buffer — do NOT increase it.** It is 256 and must stay 256. Block content is not fed through the line buffer; it has its own path. Changing this has been incorrectly attempted multiple times.
+- **`INPUT_BUFFER_SIZE` must be 1025.** `vm_interpret()` is the shared dispatch path for BOTH interactive REPL lines AND block content from LOAD. LOAD copies up to 1024 bytes from block RAM and calls `vm_interpret()` directly; with a 256-byte cap, everything past byte 255 is silently dropped. 1025 = 1024 content bytes + 1 NUL terminator.
 
 ### On Working Style
 - **When told to stop, stop immediately.** Do not make one more change. Do not commit "just to clean up". Stop.
