@@ -191,5 +191,60 @@ Multi-party channel invite is a future chapter.
 
 ---
 
+## v1 Block Map — LOCKED
+
+Blocks 4110–4113 are Artemis. NEVER touch them.
+
+```
+4100  Constants: event codes, channel states, node sizes, arena sizes
+4101  Arena CREATE: MSG-ARENA CH-ARENA MBR-ARENA; free-list vars; MSG-SEQ CH-ACTIVE
+4102  MSG-INIT-FREE + CH-INIT-FREE
+4103  MBR-INIT-FREE + MSG-ALLOC + MSG-FREE-NODE
+4104  CH-ALLOC + CH-FREE-NODE + MBR-ALLOC + MBR-FREE-NODE
+4105  Message field accessors: MSG-TYPE@/! MSG-FROM@/! MSG-TO@/! MSG-PADDR@/! MSG-PLEN@/! MSG-HEAT@/! MSG-SEQ@/!
+4106  Channel+member accessors: CH-ID@/! CH-OWNER@/! CH-STATE@/! CH-HEAT@/! CH-MBRS@/! CH-NEXT@/! MBR-NEXT@ MBR-VM@
+4107  IDX>NAME + MSG-DELIVER + MSG-SEND
+4108  VARIABLE MSG-SCAN + MSG-COOL-ONE + MSG-COOL-ALL
+4109  MSG-REAP
+---- 4110–4113: ARTEMIS — DO NOT TOUCH ----
+4114  VARIABLE CH-SCAN + CH-COOL-ALL
+4115  CH-REAP-SAFE
+4116  VARIABLE COMMON-CH + COMMON-INIT + HERMES-TICK
+4117  EVENT-EMIT + EVENT-WAIT + EVENT-DRAIN (backward compat)
+4118  HERA-NOTIFY-SPAWN + HERA-NOTIFY-KILL + HERA-DISPATCH-ONE + HERA-DISPATCH
+4119  CH-REQUEST + CH-ACCEPT + CH-CLOSE
+4120  WELCOME + CD-INIT
+```
+
+### Node layouts (cells)
+
+**Message node — 7 cells:**
+- 0: type (in-use) / next-free ptr (free)
+- 1: sender VM index
+- 2: recipient VM index
+- 3: payload addr (FORTH string addr)
+- 4: payload len
+- 5: heat (Q48.16)
+- 6: seq
+
+**Channel node — 6 cells:**
+- 0: channel-id (in-use) / next-free ptr (free)
+- 1: owner VM index
+- 2: state (0=NEGOTIATING 1=OPEN 2=CLOSING)
+- 3: heat (Q48.16)
+- 4: members-head (→ member list)
+- 5: next-active (active channel list link)
+
+**Member node — 2 cells:**
+- 0: next-ptr
+- 1: vm-id
+
+### Physics
+
+Cooling constant: Q-DECAY (65208) from compudynamics.4th — same as VM-DECAY-ONE.
+Messages and VMs cool at identical rates. Fleet is thermodynamically consistent.
+
+---
+
 *This document is authoritative. If it conflicts with something in the codebase,
 the codebase is wrong.*
