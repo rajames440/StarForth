@@ -72,4 +72,6 @@ Block 4405
   K-LOCAL   VM-COUNT CELLS 0 FILL
   VM-COUNT ACTIVE-VMS !
   K-REBALANCE ;
+( CD-TICK: K heartbeat - advances all VM windows )
+: CD-TICK ( -- ) 0 K-BUMP 1 K-BUMP 2 K-BUMP ;
 K-INIT

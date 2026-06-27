@@ -19,7 +19,6 @@ VM-INIT
 S" lib.4th" EXEC
 S" fleet-k.4th" EXEC
 S" process.4th" EXEC
-S" doe-campaign.4th" EXEC
 \ Tripod boot: Artemis -> Hermes -> Hera
 S" Artemis" BIRTH
 S" CD-INIT" S" Artemis" VM-EXEC
