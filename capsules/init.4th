@@ -13,7 +13,7 @@ Block 2049
 : VM-TREE     ( -- ) ." VM-TREE: not yet impl" CR ;
 : VM-PARENT   ( -- id ) 0 ;
 : VM-CHILDREN ( -- ) ." VM-CHILDREN: not yet impl" CR ;
-S" ACL.4th" EXEC
+\ S" ACL.4th" EXEC
 S" compudynamics.4th" EXEC
 VM-INIT
 S" lib.4th" EXEC
