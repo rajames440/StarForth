@@ -147,7 +147,7 @@ static inline cell_t CELL(vaddr_t a) { return (cell_t)(int64_t)a; }
 #define DICTIONARY_SIZE 1024
 #define WORD_ID_INVALID UINT32_MAX
 #define VM_MEMORY_SIZE (5 * 1024 * 1024)  /* 5 MB total VM memory */
-#define INPUT_BUFFER_SIZE 256
+#define INPUT_BUFFER_SIZE 1025
 #define WORD_NAME_MAX 31
 #define COMPILE_BUFFER_SIZE 1024
 
