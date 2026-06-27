@@ -55,6 +55,8 @@ Block 9999
 VARIABLE CH1 CH1 !
 CH-OPEN CH1 @ CH-STATE!
 Q.1 CH1 @ CH-HEAT!
+CH-ACTIVE @ CH1 @ CH-NEXT!
+CH1 @ CH-ACTIVE !
 ." >>> CH1 state (expect 1=OPEN): " CH1 @ CH-STATE@ . CR
 ." >>> CH1 heat before cool (expect 65536): " CH1 @ CH-HEAT@ . CR
 CH-COOL-ALL
