@@ -155,13 +155,17 @@ Block 4115
 ( Hermes v1 — channel reaping )
 : CH-REAP-SAFE ( -- )
   CH-ACTIVE @ CH-SCAN !
+  0 CH-ACTIVE !
   BEGIN CH-SCAN @ 0 <> WHILE
-    CH-SCAN @ CH-HEAT@ 0 = IF
-      CH-SCAN @ CH-STATE@ CH-CLOSING = IF
-        CH-SCAN @ CH-FREE-NODE
-      THEN
+    CH-SCAN @ CH-NEXT@
+    CH-SCAN @ CH-HEAT@ 0 =
+    CH-SCAN @ CH-STATE@ CH-CLOSING = AND IF
+      CH-SCAN @ CH-FREE-NODE
+    ELSE
+      CH-ACTIVE @ CH-SCAN @ CH-NEXT!
+      CH-SCAN @ CH-ACTIVE !
     THEN
-    CH-SCAN @ CH-NEXT@ CH-SCAN !
+    CH-SCAN !
   REPEAT ;
 Block 4116
 ( Hermes v1 — COMMON channel + HERMES-TICK )
@@ -221,7 +225,7 @@ Block 4119
   Q.1 OVER CH-HEAT!
   0 OVER CH-MBRS!
   CH-ACTIVE @ OVER CH-NEXT!
-  CH-ACTIVE ! ;
+  DUP CH-ACTIVE ! ;
 : CH-CLOSE ( ch -- )
   CH-CLOSING SWAP CH-STATE! ;
 Block 4120
