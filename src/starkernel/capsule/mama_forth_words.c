@@ -1029,8 +1029,9 @@ void register_mama_forth_words(VM *vm)
  */
 void register_child_vm_words(VM *vm)
 {
-    register_word(vm, "STOP", mama_word_stop);
-    register_word(vm, "EXEC", mama_word_exec);
+    register_word(vm, "STOP",    mama_word_stop);
+    register_word(vm, "EXEC",    mama_word_exec);
+    register_word(vm, "VM-EXEC", mama_word_vm_exec);
 }
 
 #endif /* __STARKERNEL__ */
