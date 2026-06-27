@@ -39,7 +39,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### On the Two Production Targets
 - **Every change to shared VM code must compile and behave on both targets.** `src/vm.c`, `include/vm.h`, `capsules/`, `src/word_source/` are shared. Gate with `#ifdef __STARKERNEL__` or `#ifdef STARFORTH_ENABLE_VM`.
 - **The only valid acceptance test is the three-arch QEMU boot** (see QEMU section below). Tests run automatically at binary startup — no separate test target exists.
-- **`INPUT_BUFFER_SIZE` must be >= 1025** to hold a full 1024-byte FORTH block + null terminator. 256 is too small and silently truncates block content mid-word.
+- **`INPUT_BUFFER_SIZE` is a line buffer — do NOT increase it.** It is 256 and must stay 256. Block content is not fed through the line buffer; it has its own path. Changing this has been incorrectly attempted multiple times.
 
 ### On Working Style
 - **When told to stop, stop immediately.** Do not make one more change. Do not commit "just to clean up". Stop.
