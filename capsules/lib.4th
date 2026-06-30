@@ -10,3 +10,5 @@ Block 4050
 : CSV-COL  ( n -- ) N. COMMA ;
 : CSV-LAST ( n -- ) N. CRLF ;
 : Q.SHOW ( q -- ) Q.PRINT CR ;
+: USE ( addr u -- ) EXEC ;
+: RUN ( addr u -- ) EXEC ;

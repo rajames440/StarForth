@@ -201,8 +201,34 @@ the upgrade path explicit. None of these are defects in v1.
 `MSG-SEND` now queues only; `HERMES-TICK` drives delivery via `MSG-DELIVER-ALL`
 as its first step. Delivered messages are marked `MSG-DELIVERED` (type=255) so the
 scanner skips them on the next tick. `MSG-REAP` clears them when heat reaches zero.
-ACK/NACK and NACK-requeue are not yet implemented — those belong to v2 when the
-inter-VM return-value model exists.
+
+### G2/G4: ACK/NACK server implemented; NACK-requeue deferred
+
+`MSG-ACK-LAST` and `MSG-NACK-LAST` live in block 4121. `MSG-DELIVER` stores the
+current message pointer in `MSG-LAST-MSG` before calling `VM-EXEC`; the target
+VM's handler calls `HERMES-ACK` / `HERMES-NACK` (from `common:msg.4th`) which
+use `VM-EXEC` back into Hermes to invoke the server words — no cross-VM stack
+passing required. `MSG-DELIVER-ALL` guards the `MSG-DELIVERED` stamp so an ACK
+inside the handler does not corrupt the freed slot.
+
+v1 NACK = immediate reap (same as ACK). NACK-requeue (reduced heat, retry) is
+deferred: it requires preserving the original message type through delivery, which
+needs either an extra cell (MSG-CELLS=9) or a side table. Neither is warranted
+until a real NACK-retry use case appears.
+
+### MSG-REAP ordering bug — flagged, not yet fixed
+
+In `MSG-REAP` (block 4109) the two lines are in the wrong order:
+```
+MSG-SCAN @ MSG-FREE-NODE    ( writes old free-head into cell[0] )
+0 MSG-SCAN @ MSG-TYPE!      ( overwrites cell[0] with 0 — breaks free list )
+```
+The correct order is: clear type first, then prepend to free list. This was
+harmless under the synchronous model (HERA-DISPATCH cleared type directly, bypassing
+MSG-FREE-NODE). Under G1 async delivery, MSG-REAP is the live cleanup path and will
+corrupt the free list whenever more than one message is reaped in a single tick.
+`MSG-ACK-LAST`/`MSG-NACK-LAST` use the correct order. Fix to MSG-REAP is pending
+Captain Bob's explicit go-ahead.
 
 ### Payload size coupled to block size
 
@@ -257,7 +283,7 @@ Blocks 4110–4113 are Artemis. NEVER touch them.
 4104  CH-ALLOC + CH-FREE-NODE + MBR-ALLOC + MBR-FREE-NODE
 4105  Message field accessors: MSG-TYPE@/! MSG-FROM@/! MSG-TO@/! MSG-PADDR@/! MSG-PLEN@/! MSG-HEAT@/! MSG-SEQ@/! MSG-CH@/!
 4106  Channel+member accessors: CH-ID@/! CH-OWNER@/! CH-STATE@/! CH-HEAT@/! CH-MBRS@/! CH-NEXT@/! MBR-NEXT@ MBR-VM@
-4107  IDX>NAME + MSG-DELIVER + MSG-SEND
+4107  VARIABLE MSG-LAST-MSG + IDX>NAME + MSG-DELIVER + MSG-SEND
 4108  VARIABLE MSG-SCAN + MSG-COOL-ONE + MSG-COOL-ALL + MSG-TOTAL-HEAT + MSG-DELIVER-ALL
 4109  MSG-REAP
 ---- 4110–4113: ARTEMIS — DO NOT TOUCH ----
@@ -267,7 +293,8 @@ Blocks 4110–4113 are Artemis. NEVER touch them.
 4117  EVENT-EMIT + EVENT-WAIT + EVENT-DRAIN (backward compat)
 4118  HERA-NOTIFY-SPAWN + HERA-NOTIFY-KILL
 4119  CH-MINT-ID + CH-REQUEST + CH-ACCEPT + CH-CONFIRM + CH-CLOSE
-4120  WELCOME + CD-INIT
+4120  WELCOME + CD-INIT (loads lib.4th + common:msg.4th)
+4121  MSG-ACK-LAST + MSG-NACK-LAST
 ```
 
 ### Node layouts (cells)

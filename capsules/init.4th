@@ -17,6 +17,7 @@ Block 2049
 S" compudynamics.4th" EXEC
 VM-INIT
 S" lib.4th" EXEC
+S" common:msg.4th" USE
 S" fleet-k.4th" EXEC
 S" process.4th" EXEC
 \ Tripod boot: Artemis -> Hermes -> Hera

@@ -46,5 +46,9 @@ Block 4113
   ART-FLUSH
   ." PASS: alloc/fetch/persist/free/flush OK" CR ;
 : LOAD-DOE ( -- ) S" doe.4th" EXEC ;
-: CD-INIT ( -- ) ART-INIT ." Artemis: ready" CR ;
+: CD-INIT ( -- )
+  ART-INIT
+  S" lib.4th" EXEC
+  S" common:msg.4th" USE
+  ." Artemis: ready" CR ;
 WELCOME

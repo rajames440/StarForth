@@ -106,11 +106,13 @@ Block 4106
 : MBR-VM@   ( m -- n ) 1 CELLS + @ ;
 Block 4107
 ( Hermes v1 — deliver and send )
+VARIABLE MSG-LAST-MSG
 : IDX>NAME ( idx -- addr u )
   DUP 0 = IF DROP S" Hera"    EXIT THEN
   DUP 1 = IF DROP S" Hermes"  EXIT THEN
   DROP S" Artemis" ;
 : MSG-DELIVER ( m -- )
+  DUP MSG-LAST-MSG !
   DUP MSG-PADDR@ OVER MSG-PLEN@
   ROT MSG-TO@ IDX>NAME VM-EXEC ;
 : MSG-SEND ( type from to paddr plen ch -- )
@@ -148,7 +150,9 @@ VARIABLE MSG-SCAN
     MSG-SCAN @ MSG-TYPE@ 0 <>
     MSG-SCAN @ MSG-TYPE@ MSG-DELIVERED <> AND IF
       MSG-SCAN @ MSG-DELIVER
-      MSG-DELIVERED MSG-SCAN @ MSG-TYPE!
+      MSG-SCAN @ MSG-TYPE@ 0 <> IF
+        MSG-DELIVERED MSG-SCAN @ MSG-TYPE!
+      THEN
     THEN
     MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
   LOOP ;
@@ -268,7 +272,18 @@ Block 4120
   CH-INIT-FREE
   MBR-INIT-FREE
   0 MSG-SEQ !
+  0 MSG-LAST-MSG !
   0 CH-ACTIVE !
   COMMON-INIT
+  S" lib.4th" EXEC
+  S" common:msg.4th" USE
   ." Hermes: ready" CR ;
 WELCOME
+Block 4121
+( Hermes v1 — ACK/NACK server )
+: MSG-ACK-LAST ( -- )
+  MSG-LAST-MSG @ DUP 0= IF DROP EXIT THEN
+  0 OVER MSG-TYPE! MSG-FREE-NODE ;
+: MSG-NACK-LAST ( -- )
+  MSG-LAST-MSG @ DUP 0= IF DROP EXIT THEN
+  0 OVER MSG-TYPE! MSG-FREE-NODE ;
