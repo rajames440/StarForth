@@ -20,11 +20,10 @@ Block 4301
 : RESUME ( c-addr u -- )
   S" 3 EVENT-EMIT" S" Hermes" VM-EXEC
   START ;
-( KILL-VM: notify Hermes, kill the named VM, rebalance K )
+( KILL-VM: notify Hermes -> K-KILL-HOOK, then kill VM )
 : KILL-VM ( c-addr u -- )
   S" 4 EVENT-EMIT" S" Hermes" VM-EXEC
-  KILL
-  K-KILL-HOOK ;
+  KILL ;
 ( CD-PHASE@: thermodynamic phase: 0=COLD 1=WARM 2=HOT )
 : CD-PHASE@ ( idx -- n )
   DUP VM-HEAT@ 0= IF DROP 0 EXIT THEN
