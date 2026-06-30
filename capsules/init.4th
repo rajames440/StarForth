@@ -46,5 +46,10 @@ Block 2051
   K-CONSERVED? IF LOG-TEST" K soak" ELSE LOG-ERROR" K soak" THEN
   LOG-INFO" === TRIPOD DONE ===" ;
 Block 2052
-( Run TRIPOD acceptance test )
+( Run TRIPOD acceptance test + E2E msg flow )
 TRIPOD-TEST
+S" HERMES-MSG-TEST" S" Hermes" VM-EXEC
+S" HERMES-TICK"     S" Hermes" VM-EXEC
+S" MSG-USED" S" Hermes" VM-CALL
+0 > IF LOG-TEST" PASS: E2E msg flow"
+     ELSE LOG-ERROR" FAIL: E2E msg flow" THEN

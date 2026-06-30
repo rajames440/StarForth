@@ -7,7 +7,7 @@ Block 4100
 0 CONSTANT CH-NEGOTIATING
 1 CONSTANT CH-OPEN
 2 CONSTANT CH-CLOSING
-8 CONSTANT MSG-CELLS
+9 CONSTANT MSG-CELLS
 6 CONSTANT CH-CELLS
 2 CONSTANT MBR-CELLS
 32 CONSTANT MSG-MAX
@@ -88,8 +88,11 @@ Block 4105
 : MSG-SEQ!   ( n m -- ) 6 CELLS + ! ;
 Block 4122
 ( Hermes v1 — message accessors: CH@/CH! )
-: MSG-CH@    ( m -- c ) 7 CELLS + @ ;
-: MSG-CH!    ( c m -- ) 7 CELLS + ! ;
+: MSG-CH@         ( m -- c ) 7 CELLS + @ ;
+: MSG-CH!         ( c m -- ) 7 CELLS + ! ;
+: MSG-ORIG-TYPE@  ( m -- n ) 8 CELLS + @ ;
+: MSG-ORIG-TYPE!  ( n m -- ) 8 CELLS + ! ;
+253 CONSTANT MSG-NACKED
 Block 4106
 ( Hermes v1 — channel + member accessors )
 : CH-ID@    ( c -- n ) @ ;
@@ -125,7 +128,7 @@ Block 4123
   MSG-SEQ @ 1+ DUP MSG-SEQ ! R@ MSG-SEQ!
   R@ MSG-CH!
   R@ MSG-PLEN! R@ MSG-PADDR!
-  R@ MSG-TO!   R@ MSG-FROM! R@ MSG-TYPE!
+  R@ MSG-TO!   R@ MSG-FROM! DUP R@ MSG-TYPE! R@ MSG-ORIG-TYPE!
   Q.1 R@ MSG-HEAT! R> DROP ;
 Block 4108
 ( Hermes v1 — message cooling )
@@ -150,13 +153,21 @@ Block 4124
     THEN
     MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
   LOOP ;
+: MSG-REDELIVER-NACKED ( -- )
+  MSG-ARENA MSG-SCAN !
+  MSG-MAX 0 DO
+    MSG-SCAN @ MSG-TYPE@ MSG-NACKED = IF
+      MSG-SCAN @ MSG-ORIG-TYPE@ MSG-SCAN @ MSG-TYPE! THEN
+    MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
+  LOOP ;
 Block 4128
 ( Hermes v1 — MSG-DELIVER-ALL )
 : MSG-DELIVER-ALL ( -- )
   MSG-ARENA MSG-SCAN !
   MSG-MAX 0 DO
     MSG-SCAN @ MSG-TYPE@ 0 <>
-    MSG-SCAN @ MSG-TYPE@ MSG-DELIVERED <> AND IF
+    MSG-SCAN @ MSG-TYPE@ MSG-DELIVERED <> AND
+    MSG-SCAN @ MSG-TYPE@ MSG-NACKED <> AND IF
       MSG-SCAN @ MSG-DELIVER
       MSG-SCAN @ MSG-TYPE@ 0 <> IF
         MSG-DELIVERED MSG-SCAN @ MSG-TYPE!
@@ -203,7 +214,6 @@ Block 4115
   BEGIN CH-SCAN @ 0 <> WHILE
     CH-SCAN @ CH-NEXT@
     CH-SCAN @ CH-HEAT@ 0 =
-    CH-SCAN @ CH-STATE@ CH-CLOSING = OR
     CH-SCAN @ COMMON-CH @ <> AND IF
       CH-SCAN @ CH-FREE-NODE
     ELSE
@@ -225,7 +235,7 @@ VARIABLE COMMON-CH
   CH-ACTIVE @ OVER CH-NEXT!
   CH-ACTIVE ! ;
 : HERMES-TICK ( -- )
-  MSG-DELIVER-ALL
+  MSG-DELIVER-ALL MSG-REDELIVER-NACKED
   MSG-COOL-ALL MSG-REAP
   CH-COOL-ALL  CH-REAP-SAFE
   Q.1 3 / COMMON-CH @ CH-HEAT! ;
@@ -233,6 +243,10 @@ Block 4125
 ( Hermes v1 — HERMES-K + WELCOME )
 : HERMES-K ( -- q48 )
   MSG-TOTAL-HEAT CH-TOTAL-HEAT + ;
+: HERMES-MSG-TEST ( -- )
+  SPAWN-EVENT 1 0 0 0 COMMON-CH @ MSG-SEND
+  MSG-USED 0 > IF LOG-TEST" PASS: msg queued"
+               ELSE LOG-ERROR" FAIL: msg queue" THEN ;
 : WELCOME ( -- ) LOG-INFO" Hermes: loaded" ;
 WELCOME
 Block 4117
@@ -242,7 +256,12 @@ Block 4117
   DUP KILL-EVENT  = IF DROP HERA-NOTIFY-KILL  EXIT THEN
   DROP ;
 : EVENT-WAIT ( -- type )
-  MSG-ARENA MSG-TYPE@ ;
+  MSG-ARENA MSG-SCAN !
+  MSG-MAX 0 DO
+    MSG-SCAN @ MSG-TYPE@ 0 <> IF
+      MSG-SCAN @ MSG-TYPE@ UNLOOP EXIT THEN
+    MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
+  LOOP 0 ;
 : EVENT-DRAIN ( -- )
   ( no-op: MSG-REAP owns cleanup; drain breaks async ) ;
 Block 4118
@@ -300,7 +319,8 @@ Block 4121
   0 OVER MSG-TYPE! MSG-FREE-NODE ;
 : MSG-NACK-LAST ( -- )
   MSG-LAST-MSG @ DUP 0= IF DROP EXIT THEN
-  0 OVER MSG-TYPE! MSG-FREE-NODE ;
+  DUP MSG-HEAT@ 2 / OVER MSG-HEAT!
+  MSG-NACKED SWAP MSG-TYPE! ;
 Block 4127
 ( Hermes v1 — HERMES-STATUS )
 : MSG-USED ( -- n )
@@ -317,3 +337,12 @@ Block 4127
   REPEAT ;
 : HERMES-STATUS ( -- )
   MSG-USED . ." msgs " CH-USED . ." channels" CR ;
+Block 4130
+( Hermes v1 — member management )
+: MBR-NEXT! ( a m -- ) ! ;
+: MBR-VM!   ( n m -- ) 1 CELLS + ! ;
+: CH-ADD-MBR ( vm ch -- )
+  MBR-ALLOC DUP 0= IF DROP 2DROP EXIT THEN
+  ROT OVER MBR-VM!
+  OVER CH-MBRS@ OVER MBR-NEXT!
+  SWAP CH-MBRS! ;
