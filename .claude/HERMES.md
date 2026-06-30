@@ -216,19 +216,15 @@ deferred: it requires preserving the original message type through delivery, whi
 needs either an extra cell (MSG-CELLS=9) or a side table. Neither is warranted
 until a real NACK-retry use case appears.
 
-### MSG-REAP ordering bug — flagged, not yet fixed
+### MSG-REAP ordering bug — FIXED
 
-In `MSG-REAP` (block 4109) the two lines are in the wrong order:
-```
-MSG-SCAN @ MSG-FREE-NODE    ( writes old free-head into cell[0] )
-0 MSG-SCAN @ MSG-TYPE!      ( overwrites cell[0] with 0 — breaks free list )
-```
-The correct order is: clear type first, then prepend to free list. This was
-harmless under the synchronous model (HERA-DISPATCH cleared type directly, bypassing
-MSG-FREE-NODE). Under G1 async delivery, MSG-REAP is the live cleanup path and will
-corrupt the free list whenever more than one message is reaped in a single tick.
-`MSG-ACK-LAST`/`MSG-NACK-LAST` use the correct order. Fix to MSG-REAP is pending
-Captain Bob's explicit go-ahead.
+`MSG-REAP` (block 4109) previously called `MSG-FREE-NODE` before clearing
+the type field. `MSG-FREE-NODE` writes old_free_head into cell[0]; the
+subsequent `MSG-TYPE!` then overwrote cell[0] with 0, severing the free list.
+
+Fixed: type is cleared first (`0 MSG-SCAN @ MSG-TYPE!`), then the node is
+prepended to the free list (`MSG-SCAN @ MSG-FREE-NODE`). Matches the correct
+order already used by `MSG-ACK-LAST`/`MSG-NACK-LAST` in block 4121.
 
 ### Payload size coupled to block size
 
