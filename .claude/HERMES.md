@@ -226,6 +226,15 @@ deferred until the async inter-VM model supports return values (G1 path).
 `1 OVER CH-OWNER!` unconditionally. Correct for v1 Tripod; generalization
 needed if Tripod grows beyond three VMs.
 
+### G10: EVENT-WAIT reads raw arena slot 0
+
+`EVENT-WAIT` returns `MSG-ARENA MSG-TYPE@` — the type field of slot 0, whatever
+it happens to hold. With the async model this is unreliable: slot 0 may be
+pending, delivered (type=255), or free (type=0) depending on allocation order.
+`EVENT-EMIT` and `EVENT-DRAIN` have been corrected (G10): EMIT delegates to
+`HERA-NOTIFY-*`; DRAIN is a no-op (MSG-REAP owns cleanup). `EVENT-WAIT` is
+retained as a diagnostic peek but must not be used for correctness decisions.
+
 ### Terminology: heat-gated reclamation, not mark-and-sweep
 
 Channel and message reaping is **heat-gated reclamation**: objects are freed only
@@ -256,7 +265,7 @@ Blocks 4110–4113 are Artemis. NEVER touch them.
 4115  CH-REAP-SAFE
 4116  VARIABLE COMMON-CH + COMMON-INIT + HERMES-TICK + HERMES-K
 4117  EVENT-EMIT + EVENT-WAIT + EVENT-DRAIN (backward compat)
-4118  HERA-NOTIFY-SPAWN + HERA-NOTIFY-KILL + HERA-DISPATCH-ONE + HERA-DISPATCH
+4118  HERA-NOTIFY-SPAWN + HERA-NOTIFY-KILL
 4119  CH-MINT-ID + CH-REQUEST + CH-ACCEPT + CH-CONFIRM + CH-CLOSE
 4120  WELCOME + CD-INIT
 ```

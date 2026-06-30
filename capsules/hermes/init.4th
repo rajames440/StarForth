@@ -221,33 +221,19 @@ VARIABLE COMMON-CH
 Block 4117
 ( Hermes v1 — event compat interface )
 : EVENT-EMIT ( type -- )
-  DUP 0 0 S"  " 0 MSG-SEND DROP ;
+  DUP SPAWN-EVENT = IF DROP HERA-NOTIFY-SPAWN EXIT THEN
+  DUP KILL-EVENT  = IF DROP HERA-NOTIFY-KILL  EXIT THEN
+  DROP ;
 : EVENT-WAIT ( -- type )
   MSG-ARENA MSG-TYPE@ ;
 : EVENT-DRAIN ( -- )
-  MSG-ARENA MSG-SCAN !
-  MSG-MAX 0 DO
-    MSG-SCAN @ MSG-TYPE@ 0 <> IF
-      0 MSG-SCAN @ MSG-TYPE!
-    THEN
-    MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
-  LOOP ;
+  ( no-op: MSG-REAP owns cleanup; direct arena drain breaks async delivery ) ;
 Block 4118
-( Hermes v1 — Hera notification/dispatch )
+( Hermes v1 — Hera notification )
 : HERA-NOTIFY-SPAWN ( -- )
   S" K-SPAWN-HOOK" S" Hera" VM-EXEC ;
 : HERA-NOTIFY-KILL ( -- )
   S" K-KILL-HOOK" S" Hera" VM-EXEC ;
-: HERA-DISPATCH-ONE ( event -- )
-  DUP SPAWN-EVENT = IF HERA-NOTIFY-SPAWN DROP EXIT THEN
-  DUP KILL-EVENT  = IF HERA-NOTIFY-KILL  DROP EXIT THEN
-  DROP ;
-: HERA-DISPATCH ( -- )
-  BEGIN MSG-ARENA MSG-TYPE@ 0 <> WHILE
-    MSG-ARENA MSG-TYPE@
-    0 MSG-ARENA MSG-TYPE!
-    HERA-DISPATCH-ONE
-  REPEAT ;
 Block 4119
 ( Hermes v1 — channel negotiation )
 : CH-MINT-ID ( owner -- id )
