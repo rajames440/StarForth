@@ -76,9 +76,9 @@ Blocks: **2049–2052, 2057**
 
 | Block | Immutable | Justification |
 |-------|-----------|---------------|
-| 2049  | No        | Hera VM init: loads compudynamics, VM-INIT, lib, common:msg, fleet-k, process; BIRTHs Artemis + Hermes Tripod members |
+| 2049  | No        | Hera VM init: loads compudynamics, VM-INIT, lib, common:msg, fleet-k, process; BIRTHs Artemis + Hermes. VM-TREE + VM-CHILDREN implemented (`b52281b9`), unrolled for v1 Tripod |
 | 2050  | No        | BOOT-BANNER call — separated so the banner block can be swapped without touching init logic |
-| 2051  | No        | TRIPOD-TEST definition — acceptance criteria (6 gates) per TRIPOD.md |
+| 2051  | No        | TRIPOD-TEST — 6 acceptance gates per TRIPOD.md. Dead EVENT-WAIT step replaced with HERMES-TICK liveness check (`3436d564`) |
 | 2052  | No        | TRIPOD-TEST invocation block |
 | 2057  | No        | BOOT-BANNER word definition (reusable across Mama variants) |
 
@@ -328,7 +328,7 @@ Gap 4110–4113 = Artemis. **HARD LOCKED. Never touch from Hermes side.**
 | 4106  | Yes       | Channel + member accessors (CH-ID@/! through MBR-VM@). Immutable: same field offset constraint |
 | 4107  | No        | VARIABLE MSG-LAST-MSG + IDX>NAME + MSG-DELIVER + MSG-SEND. Not fully immutable: IDX>NAME is hardcoded for 3-VM Tripod (known scope gap); MSG-DELIVER/SEND may evolve for async model |
 | 4108  | No        | VARIABLE MSG-SCAN + MSG-COOL-ONE + MSG-COOL-ALL + MSG-TOTAL-HEAT + MSG-DELIVER-ALL. Not immutable: delivery and cooling logic may evolve |
-| 4109  | No        | MSG-REAP. Not immutable: known ordering bug (flagged in HERMES.md, fix pending Captain Bob's go-ahead) |
+| 4109  | No        | MSG-REAP. Ordering bug fixed (`8ca0cda2`) — type cleared before free-node prepend |
 | —     | —         | 4110–4113: ARTEMIS. NEVER TOUCH. |
 | 4114  | No        | VARIABLE CH-SCAN + CH-COOL-ALL + CH-TOTAL-HEAT. Not immutable: channel cooling may evolve |
 | 4115  | No        | CH-REAP-SAFE. Not immutable: channel reaping logic may evolve |
@@ -375,8 +375,8 @@ Blocks: **4300–4301**
 
 | Block | Immutable | Justification |
 |-------|-----------|---------------|
-| 4300  | No        | BIRTH / KILL-VM / ACTIVE-VMS + process lifecycle primitives. Not immutable: VM process model may evolve |
-| 4301  | No        | VM status words. Not immutable |
+| 4300  | No        | Event code constants + SPAWN + PAUSE lifecycle operators. Not immutable: process model may evolve |
+| 4301  | No        | RESUME + KILL-VM + CD-PHASE@. Double K-KILL-HOOK bug fixed (`182a8a23`). Not immutable: process model may evolve |
 
 ### `fleet-k.4th` — Fleet K≡1.0 accounting
 
@@ -429,4 +429,4 @@ Blocks: **4400–4405**
 ---
 
 *This document is authoritative for capsule block assignments.*
-*Last updated: 2026-06-30 — Hermes v1 + common:msg.4th + lib.4th USE/RUN + C4 resolved (zuse.4th moved 4010→4016).*
+*Last updated: 2026-06-30 — Hermes v1 + C4 resolved; T1 double K-KILL-HOOK fixed (`182a8a23`); T2 VM-TREE/VM-CHILDREN implemented (`b52281b9`); T4 dead EVENT-WAIT replaced with HERMES-TICK (`3436d564`); MSG-REAP ordering bug fixed (`8ca0cda2`).*
