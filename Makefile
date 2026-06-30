@@ -353,7 +353,7 @@ CONFDIR = $(PREFIX)/etc/starforth
 # PHONY TARGETS
 # ==============================================================================
 
-.PHONY: all banner help clean clean-obj clean-docs starkernel mkcapsule capsule-gen
+.PHONY: all banner help clean clean-obj clean-docs starkernel mkcapsule capsule-gen capsule-manifest
 .PHONY: fastest fast turbo pgo pgo-build pgo-perf pgo-valgrind bench-compare
 .PHONY: rpi4 rpi4-cross rpi4-fastest
 .PHONY: minimal fake-l4re debug profile performance
@@ -594,11 +594,12 @@ FORCE:
 # CAPSULE SUBSYSTEM
 # ==============================================================================
 
-CAPSULES_DIR   ?= capsules
-MKCAPSULE_SRC   = tools/mkcapsule.c
-MKCAPSULE_BIN   = $(BUILD_DIR)/tools/mkcapsule
-CAPSULE_GENERATED = $(BUILD_DIR)/capsule_generated.c
-CAPSULE_GENERATED_OBJ = $(BUILD_DIR)/capsule_generated.o
+CAPSULES_DIR          ?= capsules
+MKCAPSULE_SRC          = tools/mkcapsule.c
+MKCAPSULE_BIN          = $(BUILD_DIR)/tools/mkcapsule
+CAPSULE_GENERATED      = $(BUILD_DIR)/capsule_generated.c
+CAPSULE_GENERATED_OBJ  = $(BUILD_DIR)/capsule_generated.o
+CAPSULE_MANIFEST       = $(CAPSULES_DIR)/MANIFEST_AUTO.md
 
 # Build the mkcapsule host tool
 $(MKCAPSULE_BIN): $(MKCAPSULE_SRC)
@@ -618,9 +619,12 @@ $(CAPSULE_GENERATED_OBJ): $(CAPSULE_GENERATED) | include/version.h
 	@echo "  CC  $<"
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-.PHONY: mkcapsule capsule-gen
+.PHONY: mkcapsule capsule-gen capsule-manifest
 mkcapsule: $(MKCAPSULE_BIN)
-capsule-gen: $(CAPSULE_GENERATED)
+capsule-manifest: $(MKCAPSULE_BIN)
+	@echo "  MANIFEST $(CAPSULES_DIR) -> $(CAPSULE_MANIFEST)"
+	@$(MKCAPSULE_BIN) --manifest $(CAPSULES_DIR) $(CAPSULE_MANIFEST)
+capsule-gen: $(CAPSULE_GENERATED) capsule-manifest
 
 # starkernel: full capsule-aware build
 #   1. Build mkcapsule tool
