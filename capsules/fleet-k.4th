@@ -26,9 +26,10 @@ Block 4401
   OVER 5 CELLS + @ + OVER 6 CELLS + @ +
   OVER 7 CELLS + @ + SWAP DROP K-WINDOW-DEPTH / ;
 Block 4402
-( K-FLEET: sum K-LOCAL@ all VMs; unrolled for VM-COUNT=3 )
+( K-FLEET: K-LOCAL@ all VMs + HERMES-K thermal mass )
 : K-FLEET ( -- q48 )
-  0 K-LOCAL@ 1 K-LOCAL@ + 2 K-LOCAL@ + ;
+  0 K-LOCAL@ 1 K-LOCAL@ + 2 K-LOCAL@ +
+  S" HERMES-K" S" Hermes" VM-CALL + ;
 ( K-REBALANCE: K-TARGET=Q.1/ACTIVE-VMS; unrolled VM-COUNT=3 )
 : K-REBALANCE ( -- )
   ACTIVE-VMS @ 0 > IF

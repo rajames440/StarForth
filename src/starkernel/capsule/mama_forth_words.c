@@ -655,6 +655,93 @@ static void mama_word_vm_exec(VM *vm)
 }
 
 /**
+ * @brief VM-CALL ( cmd-caddr cmd-u vm-name-caddr vm-name-u -- n )
+ * Like VM-EXEC but pops one cell from the target VM's TOS and pushes
+ * it onto the caller's stack after execution.  Used for cross-VM
+ * queries (e.g. HERMES-K in K-FLEET).  Pushes 0 on error or empty
+ * target stack and sets vm->error if target left nothing.
+ */
+static void mama_word_vm_call(VM *vm)
+{
+    char        vm_name[VM_NAME_MAX];
+    char        cmd_buf[INPUT_BUFFER_SIZE];
+    uint32_t    i;
+    cell_t      vm_u, vm_caddr, cmd_u, cmd_caddr;
+    const char *src;
+    VMRegistryEntry entry;
+    VM         *target;
+    const char *saved_name;
+
+    if (vm->dsp < 3) { vm->error = 1; return; }
+
+    vm_u      = vm_pop(vm);
+    vm_caddr  = vm_pop(vm);
+    cmd_u     = vm_pop(vm);
+    cmd_caddr = vm_pop(vm);
+
+    if (vm_u <= 0 || (uint32_t)vm_u >= VM_NAME_MAX) {
+        console_println("VM-CALL: VM name too long or empty");
+        vm_push(vm, 0); return;
+    }
+    if (cmd_u < 0 || (uint32_t)cmd_u >= INPUT_BUFFER_SIZE) {
+        console_println("VM-CALL: command too long");
+        vm_push(vm, 0); return;
+    }
+
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)vm_caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)vm_u; i++) vm_name[i] = src[i];
+    vm_name[vm_u] = '\0';
+
+    {
+        const uint8_t *p = vm_ptr(vm, (vaddr_t)cmd_caddr);
+        if (!p) { vm->error = 1; return; }
+        src = (const char *)p;
+    }
+    for (i = 0; i < (uint32_t)cmd_u; i++) cmd_buf[i] = src[i];
+    cmd_buf[cmd_u] = '\0';
+
+    if (capsule_vm_find_by_name_nocase(vm_name, &entry) != 0) {
+        console_puts("VM-CALL: VM not found: ");
+        console_println(vm_name);
+        vm_push(vm, 0); return;
+    }
+
+    target = (VM *)entry.vm_ptr;
+    if (!target || entry.state == VM_STATE_DEAD || entry.state == VM_STATE_STILLBORN) {
+        console_puts("VM-CALL: VM not available: ");
+        console_println(vm_name);
+        vm_push(vm, 0); return;
+    }
+
+    log_message(LOG_DEBUG, "VM-CALL: '%s' -> '%s'", cmd_buf, vm_name);
+    saved_name = console_get_vm_name();
+    console_set_vm_name(entry.name);
+    vm_state_push(vm);
+    vm_interpret(target, cmd_buf);
+    vm_state_pop(vm);
+    console_set_vm_name(saved_name);
+
+    if (target->error) {
+        console_puts("VM-CALL: ERROR in ");
+        console_println(vm_name);
+        target->error = 0;
+        vm_push(vm, 0); return;
+    }
+
+    if (target->dsp >= 0) {
+        vm_push(vm, vm_pop(target));
+    } else {
+        console_println("VM-CALL: target left empty stack");
+        vm->error = 1;
+        vm_push(vm, 0);
+    }
+}
+
+/**
  * @brief CAPSULE-BIRTH ( capsule-id -- vm-id )
  * Birth a baby VM from a production (p) capsule.
  * Returns the new VM's ID, or -1 on failure.
@@ -982,6 +1069,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "VM-COUNT", mama_word_vm_count);
     register_word(vm, "VM-STEP", mama_word_vm_step);
     register_word(vm, "VM-EXEC", mama_word_vm_exec);
+    register_word(vm, "VM-CALL", mama_word_vm_call);
     register_word(vm, "CAPSULE-TEST", mama_word_capsule_test);
 
     /* Create and switch to MAMA vocabulary */
@@ -1008,6 +1096,7 @@ void register_mama_forth_words(VM *vm)
     register_word(vm, "VM-COUNT", mama_word_vm_count);
     register_word(vm, "VM-STEP", mama_word_vm_step);
     register_word(vm, "VM-EXEC", mama_word_vm_exec);
+    register_word(vm, "VM-CALL", mama_word_vm_call);
     register_word(vm, "CAPSULE-TEST", mama_word_capsule_test);
     register_word(vm, "EXEC", mama_word_exec);
 
@@ -1032,6 +1121,7 @@ void register_child_vm_words(VM *vm)
     register_word(vm, "STOP",    mama_word_stop);
     register_word(vm, "EXEC",    mama_word_exec);
     register_word(vm, "VM-EXEC", mama_word_vm_exec);
+    register_word(vm, "VM-CALL", mama_word_vm_call);
 }
 
 #endif /* __STARKERNEL__ */
