@@ -6,14 +6,23 @@
 
   mkcapsule - Generate capsule directory from a capsule tree
 
-  Usage: mkcapsule <capsules_dir> <output.c>
+  Usage:
+    mkcapsule <capsules_dir> <output.c>        build capsule C source
+    mkcapsule --lint <capsules_dir>            lint all .4th files
+    mkcapsule --manifest <capsules_dir>        print block manifest to stdout
+    mkcapsule --manifest <capsules_dir> <out>  write block manifest to file
 
-  Recursively walks capsules_dir and incorporates every file it finds.
-  Generates a C source file containing:
+  Build mode generates a C source file containing:
     - capsule_arena[]        (all payload bytes concatenated)
     - capsule_descriptors[]  (CapsuleDesc, one per file)
     - capsule_names[]        (CapsuleNameEntry, parallel to descriptors)
     - capsule_directory      (CapsuleDirHeader)
+
+  Manifest mode generates a markdown block ownership index:
+    - Capsule summary (name, blocks claimed, xxHash64)
+    - Block map sorted by LBN with conflict detection
+    - Conflict register
+  The xxHash64 column is the anchor for future Ed25519 fingerprints (Phase 8).
 
   Name encoding: relative path from capsules_dir root, '/' replaced by ':'.
   Files whose encoded name would exceed 511 bytes are skipped with a warning.
@@ -131,9 +140,10 @@ static uint64_t xxhash64(const void *data, size_t len, uint64_t seed) {
  * Capsule Collection
  *===========================================================================*/
 
-#define MAX_CAPSULES     256
-#define MAX_PATH_LEN     4096
-#define CAPSULE_NAME_MAX 512
+#define MAX_CAPSULES          256
+#define MAX_PATH_LEN          4096
+#define CAPSULE_NAME_MAX      512
+#define MAX_BLOCKS_PER_CAPSULE 64
 
 typedef struct {
     char     path[MAX_PATH_LEN];          /* Absolute source file path */
@@ -148,6 +158,16 @@ static CapsuleEntry capsules[MAX_CAPSULES];
 static int          capsule_count = 0;
 static const char  *base_dir = NULL;
 static size_t       base_dir_len = 0;
+
+typedef struct {
+    char     name[CAPSULE_NAME_MAX];
+    uint64_t hash;
+    int      blocks[MAX_BLOCKS_PER_CAPSULE];
+    int      block_count;
+} ManifestEntry;
+
+static ManifestEntry manifest_entries[MAX_CAPSULES];
+static int           manifest_count = 0;
 
 /* Flag constants — must match capsule.h */
 #define FLAG_ACTIVE       0x00000001
@@ -459,6 +479,208 @@ static int lint_file(const char *fpath, const struct stat *sb,
 }
 
 /*===========================================================================
+ * Manifest Mode
+ *===========================================================================*/
+
+/*
+ * collect_block_numbers: scan file data for "Block N" header lines and
+ * accumulate unique, sorted LBNs. Returns the count stored.
+ */
+static int collect_block_numbers(const uint8_t *data, size_t size,
+                                 int *out, int max)
+{
+    int count = 0;
+    size_t pos = 0;
+
+    while (pos < size) {
+        size_t start = pos;
+        while (pos < size && data[pos] != '\n') pos++;
+        size_t line_len = pos - start;
+        if (line_len > 0 && data[start + line_len - 1] == '\r') line_len--;
+
+        if (line_len >= 7 &&
+            data[start+0]=='B' && data[start+1]=='l' && data[start+2]=='o' &&
+            data[start+3]=='c' && data[start+4]=='k' && data[start+5]==' ') {
+            int bn = (int)strtol((const char *)(data + start + 6), NULL, 10);
+            int dup = 0;
+            for (int i = 0; i < count; i++) {
+                if (out[i] == bn) { dup = 1; break; }
+            }
+            if (!dup && count < max)
+                out[count++] = bn;
+        }
+
+        if (pos < size) pos++;
+    }
+    return count;
+}
+
+static int cmp_int(const void *a, const void *b) {
+    return (*(const int *)a) - (*(const int *)b);
+}
+
+static int cmp_manifest_name(const void *a, const void *b) {
+    return strcmp(((const ManifestEntry *)a)->name,
+                  ((const ManifestEntry *)b)->name);
+}
+
+/* nftw callback: collect .4th capsules for manifest */
+static int manifest_file(const char *fpath, const struct stat *sb,
+                         int typeflag, struct FTW *ftwbuf) {
+    (void)sb;
+    if (typeflag != FTW_F) return 0;
+    if (fpath[ftwbuf->base] == '.') return 0;
+
+    size_t nlen = strlen(fpath);
+    if (nlen < 4 || strcmp(fpath + nlen - 4, ".4th") != 0) return 0;
+
+    const char *relpath;
+    if (strlen(fpath) > base_dir_len && fpath[base_dir_len] == '/')
+        relpath = fpath + base_dir_len + 1;
+    else
+        relpath = fpath;
+
+    char name[CAPSULE_NAME_MAX];
+    if (!build_capsule_name(relpath, name)) return 0;
+
+    FILE *f = fopen(fpath, "rb");
+    if (!f) return 0;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    rewind(f);
+    if (sz <= 0) { fclose(f); return 0; }
+
+    uint8_t *data = malloc((size_t)sz);
+    if (!data || fread(data, 1, (size_t)sz, f) != (size_t)sz) {
+        free(data); fclose(f); return 0;
+    }
+    fclose(f);
+
+    if (manifest_count >= MAX_CAPSULES) { free(data); return 0; }
+
+    ManifestEntry *e = &manifest_entries[manifest_count++];
+    strncpy(e->name, name, CAPSULE_NAME_MAX - 1);
+    e->name[CAPSULE_NAME_MAX - 1] = '\0';
+    e->hash        = xxhash64(data, (size_t)sz, 0);
+    e->block_count = collect_block_numbers(data, (size_t)sz,
+                                           e->blocks, MAX_BLOCKS_PER_CAPSULE);
+    qsort(e->blocks, (size_t)e->block_count, sizeof(int), cmp_int);
+
+    free(data);
+    return 0;
+}
+
+/* Flat (LBN, entry-index) pair used for the sorted block map */
+typedef struct { int lbn; int idx; } BlockRef;
+
+static int cmp_blockref(const void *a, const void *b) {
+    const BlockRef *x = (const BlockRef *)a;
+    const BlockRef *y = (const BlockRef *)b;
+    if (x->lbn != y->lbn) return x->lbn - y->lbn;
+    return strcmp(manifest_entries[x->idx].name,
+                  manifest_entries[y->idx].name);
+}
+
+static void generate_manifest(FILE *out) {
+    time_t now = time(NULL);
+    struct tm *tm_ptr = gmtime(&now);
+    char timestamp[64];
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%SZ", tm_ptr);
+
+    qsort(manifest_entries, (size_t)manifest_count,
+          sizeof(ManifestEntry), cmp_manifest_name);
+
+    /* Build flat block reference list */
+    static BlockRef refs[MAX_CAPSULES * MAX_BLOCKS_PER_CAPSULE];
+    int ref_count = 0;
+    for (int i = 0; i < manifest_count; i++) {
+        for (int j = 0; j < manifest_entries[i].block_count; j++) {
+            refs[ref_count].lbn = manifest_entries[i].blocks[j];
+            refs[ref_count].idx = i;
+            ref_count++;
+        }
+    }
+    qsort(refs, (size_t)ref_count, sizeof(BlockRef), cmp_blockref);
+
+    fprintf(out,
+        "# Capsule Block Manifest — Auto-generated\n"
+        "<!-- Generated by mkcapsule --manifest  %s -->\n"
+        "<!-- DO NOT EDIT — re-run mkcapsule --manifest to refresh.  -->\n"
+        "<!-- Hand-written justifications and immutability notes live  -->\n"
+        "<!-- in MANIFEST.md alongside this auto-generated index.      -->\n"
+        "\n", timestamp);
+
+    /* Capsule summary */
+    fprintf(out, "## Capsule Summary\n\n");
+    fprintf(out, "| Capsule | Blocks claimed | xxHash64 |\n");
+    fprintf(out, "|---------|----------------|----------|\n");
+    for (int i = 0; i < manifest_count; i++) {
+        ManifestEntry *e = &manifest_entries[i];
+        fprintf(out, "| `%s` | ", e->name);
+        if (e->block_count == 0) {
+            fprintf(out, "*(none — raw code capsule)*");
+        } else {
+            for (int j = 0; j < e->block_count; j++) {
+                if (j > 0) fprintf(out, ", ");
+                fprintf(out, "%d", e->blocks[j]);
+            }
+        }
+        fprintf(out, " | `0x%016" PRIx64 "` |\n", e->hash);
+    }
+    fprintf(out, "\n");
+
+    /* Block map sorted by LBN */
+    fprintf(out, "## Block Map (sorted by LBN)\n\n");
+    fprintf(out, "| LBN | Capsule | xxHash64 | Status |\n");
+    fprintf(out, "|-----|---------|----------|--------|\n");
+    for (int i = 0; i < ref_count; i++) {
+        int lbn = refs[i].lbn;
+        ManifestEntry *e = &manifest_entries[refs[i].idx];
+        int conflict = (i > 0             && refs[i-1].lbn == lbn) ||
+                       (i < ref_count - 1 && refs[i+1].lbn == lbn);
+        fprintf(out, "| %d | `%s` | `0x%016" PRIx64 "` | %s |\n",
+                lbn, e->name, e->hash,
+                conflict ? "CONFLICT" : "ok");
+    }
+    fprintf(out, "\n");
+
+    /* Conflict register */
+    int any = 0;
+    for (int i = 0; i + 1 < ref_count; i++)
+        if (refs[i].lbn == refs[i+1].lbn) { any = 1; break; }
+
+    fprintf(out, "## Conflicts\n\n");
+    if (!any) {
+        fprintf(out, "None.\n\n");
+    } else {
+        fprintf(out, "| LBN | Capsules |\n");
+        fprintf(out, "|-----|----------|\n");
+        int i = 0;
+        while (i < ref_count) {
+            int lbn = refs[i].lbn;
+            int j = i;
+            while (j < ref_count && refs[j].lbn == lbn) j++;
+            if (j - i > 1) {
+                fprintf(out, "| %d | ", lbn);
+                for (int k = i; k < j; k++) {
+                    if (k > i) fprintf(out, ", ");
+                    fprintf(out, "`%s`", manifest_entries[refs[k].idx].name);
+                }
+                fprintf(out, " |\n");
+            }
+            i = j;
+        }
+        fprintf(out, "\n");
+    }
+
+    fprintf(out, "---\n");
+    fprintf(out,
+        "*%d capsule(s) scanned.  "
+        "Re-run `mkcapsule --manifest <dir>` to refresh.*\n",
+        manifest_count);
+}
+
+/*===========================================================================
  * C Source Generation
  *===========================================================================*/
 
@@ -627,6 +849,34 @@ static void generate_output(FILE *out) {
  *===========================================================================*/
 
 int main(int argc, char **argv) {
+    /* --manifest mode: generate block ownership markdown */
+    if (argc >= 3 && strcmp(argv[1], "--manifest") == 0) {
+        base_dir     = argv[2];
+        base_dir_len = strlen(base_dir);
+        while (base_dir_len > 0 && base_dir[base_dir_len - 1] == '/') base_dir_len--;
+
+        if (nftw(base_dir, manifest_file, 20, FTW_PHYS) != 0) {
+            fprintf(stderr, "mkcapsule: ERROR: directory scan failed\n");
+            return 1;
+        }
+
+        FILE *mout = stdout;
+        if (argc == 4) {
+            mout = fopen(argv[3], "w");
+            if (!mout) {
+                fprintf(stderr, "mkcapsule: ERROR: cannot create '%s'\n", argv[3]);
+                return 1;
+            }
+        }
+        generate_manifest(mout);
+        if (mout != stdout) {
+            fclose(mout);
+            fprintf(stderr, "mkcapsule: manifest written to %s  (%d capsule(s))\n",
+                    argv[3], manifest_count);
+        }
+        return 0;
+    }
+
     /* --lint mode: validate all .4th files without generating C output */
     if (argc == 3 && strcmp(argv[1], "--lint") == 0) {
         base_dir     = argv[2];
@@ -645,8 +895,10 @@ int main(int argc, char **argv) {
     if (argc != 3) {
         fprintf(stderr,
             "Usage:\n"
-            "  %s <capsules_dir> <output.c>   build capsule C source\n"
-            "  %s --lint <capsules_dir>        lint all .4th files\n"
+            "  %s <capsules_dir> <output.c>            build capsule C source\n"
+            "  %s --lint <capsules_dir>                lint all .4th files\n"
+            "  %s --manifest <capsules_dir>            print block manifest (stdout)\n"
+            "  %s --manifest <capsules_dir> <out.md>   write block manifest to file\n"
             "\n"
             "Lint checks (per .4th file):\n"
             "  - each block opens with 'Block N'\n"
@@ -654,9 +906,15 @@ int main(int argc, char **argv) {
             "  - no more than 16 content lines per block\n"
             "  - every line terminated with newline\n"
             "\n"
+            "Manifest output:\n"
+            "  - capsule summary (name, blocks claimed, xxHash64)\n"
+            "  - block map sorted by LBN with conflict detection\n"
+            "  - conflict register\n"
+            "  xxHash64 column is the anchor for Ed25519 fingerprints (Phase 8 PKI).\n"
+            "\n"
             "Names are colon-separated relative paths (e.g. core:init.4th).\n"
             "Files whose encoded name exceeds %d bytes are skipped with a warning.\n",
-            argv[0], argv[0], CAPSULE_NAME_MAX - 1);
+            argv[0], argv[0], argv[0], argv[0], CAPSULE_NAME_MAX - 1);
         return 1;
     }
 
