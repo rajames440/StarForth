@@ -158,9 +158,9 @@ VARIABLE MSG-SCAN
   LOOP ;
 Block 4109
 ( Hermes v1 — message reaping )
-( K redistribution on reap is trivially zero: reaping only fires at heat=0, )
-( so the K contribution being freed is already zero. If forced-reap of a hot )
-( message is ever added, explicit K redistribution will be required here.    )
+( K reap only fires at heat=0: freed K contribution is 0. )
+( Force-reap not yet implemented. If added: explicit )
+( K redistribution will be required here. )
 : MSG-REAP ( -- )
   MSG-ARENA MSG-SCAN !
   MSG-MAX 0 DO
@@ -231,7 +231,7 @@ Block 4117
 : EVENT-WAIT ( -- type )
   MSG-ARENA MSG-TYPE@ ;
 : EVENT-DRAIN ( -- )
-  ( no-op: MSG-REAP owns cleanup; direct arena drain breaks async delivery ) ;
+  ( no-op: MSG-REAP owns cleanup; drain breaks async ) ;
 Block 4118
 ( Hermes v1 — Hera notification )
 : HERA-NOTIFY-SPAWN ( -- )
