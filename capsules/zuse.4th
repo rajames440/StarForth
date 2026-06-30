@@ -1,4 +1,4 @@
-Block 4010
+Block 4016
 ( zuse.4th - Bootstrap superuser for StarForth ACL )
 ( Named for Konrad Zuse, pioneer of programmable computers. )
 ( Sole superuser; mints credentials; owns emergency REPL. )
@@ -8,7 +8,7 @@ Block 4010
 0 CONSTANT ZUSE-CERT-LO
 0 CONSTANT ZUSE-CERT-HI
 
-Block 4011
+Block 4017
 ( ACL-ZUSE-BOOT ( -- )                               )
 ( Authenticates zuse session (sets vm->zuse_session=1)
 ( via C primitive) and pins zuse capsule words.      )
@@ -20,6 +20,6 @@ Block 4011
   ['] ZUSE-CERT-HI  ACL-PIN
   ['] ACL-ZUSE-BOOT ACL-PIN ;
 
-Block 4012
+Block 4018
 ( Self-activation )
 ACL-ZUSE-BOOT

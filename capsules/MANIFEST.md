@@ -42,8 +42,9 @@ production bake.
   3001 – 3060   init-1..3, init-9 (non-L8 workloads, 3001/3010/3020…)
 4000 – 4007   ACL.4th (core)
 4008 – 4009   UNASSIGNED
-4010 – 4015   ACL.4th (RWT) ⚠️ 4010–4012 also claimed by zuse.4th
-4016 – 4049   UNASSIGNED
+4010 – 4015   ACL.4th (RWT)
+4016 – 4018   zuse.4th
+4019 – 4049   UNASSIGNED
 4050          lib.4th
 4051 – 4054   UNASSIGNED
 4055          common/msg.4th
@@ -254,8 +255,6 @@ where explicitly flagged.
 
 Blocks: **4000–4007, 4010–4015**
 
-⚠️ **CONFLICT at 4010–4012**: `zuse.4th` also claims these blocks. See note below.
-
 | Block | Immutable | Justification |
 |-------|-----------|---------------|
 | 4000  | Yes       | ACL constants: ACL-BASE-TTL, ACL-MAX-TTL, mode constants, allow constants. Immutable: changing these alters security semantics of all downstream capsules |
@@ -275,26 +274,13 @@ Blocks: **4000–4007, 4010–4015**
 
 ### `zuse.4th` — Bootstrap superuser
 
-Blocks: **4010–4012**
-
-⚠️ **CONFLICT: These block numbers are also claimed by `ACL.4th` (4010–4012).**
-`zuse.4th` is loaded BY `ACL.4th` (block 4007 calls `S" zuse.4th" EXEC`), so
-both execute in the same VM context. Load order: ACL blocks 4000–4015 compile
-first; zuse blocks 4010–4012 then overwrite those block RAM slots. Words
-already compiled from ACL blocks 4010–4012 (`ACL-RWT-SLOPE-COMPUTE`,
-`ACL-TTL-COMPUTE-RW`) survive in the dictionary. Zuse's words compile on top.
-
-**Captain Bob: this is a real block namespace collision. The runtime is
-currently correct because FORTH dictionary entries persist after block RAM is
-overwritten, but LOADing block 4011 after boot will give you zuse content, not
-ACL-RWT content. This should be resolved by moving `zuse.4th` to an unassigned
-range (e.g., 4008–4009 or 4016–4018). Flagged — awaiting your direction.**
+Blocks: **4016–4018**
 
 | Block | Immutable | Justification |
 |-------|-----------|---------------|
-| 4010  | Yes       | ZUSE-CERT-LO / ZUSE-CERT-HI constants. Immutable: capsule hash = root of superuser trust; changing breaks PKI chain |
-| 4011  | Yes       | ACL-ZUSE-BOOT: authenticates session + pins zuse words. Immutable: this is the sole path to zuse_session=1; must not be alterable post-boot |
-| 4012  | Yes       | Self-activation (ACL-ZUSE-BOOT). Immutable: runs once at boot |
+| 4016  | Yes       | ZUSE-CERT-LO / ZUSE-CERT-HI constants. Immutable: capsule hash = root of superuser trust; changing breaks PKI chain |
+| 4017  | Yes       | ACL-ZUSE-BOOT: authenticates session + pins zuse words. Immutable: this is the sole path to zuse_session=1; must not be alterable post-boot |
+| 4018  | Yes       | Self-activation (ACL-ZUSE-BOOT). Immutable: runs once at boot |
 
 ### `lib.4th` — Shared serial output + FORTH aliases
 
@@ -419,8 +405,8 @@ Blocks: **4400–4405**
 | 2161–2199   | UNASSIGNED  | Between init-8 and init-0 variants |
 | 2202–2999   | UNASSIGNED  | Open for future Mama variants |
 | 3061–3999   | UNASSIGNED  | Open for future workload capsule phases |
-| 4008–4009   | UNASSIGNED  | Suggested relocation target for zuse.4th (see conflict note) |
-| 4016–4049   | UNASSIGNED  | ACL extension space |
+| 4008–4009   | UNASSIGNED  | ACL extension space |
+| 4019–4049   | UNASSIGNED  | ACL / zuse extension space |
 | 4051–4054   | UNASSIGNED  | lib.4th extension space |
 | 4056–4059   | UNASSIGNED  | common:msg extension space |
 | 4066–4099   | UNASSIGNED  | doe-campaign extension space |
@@ -438,9 +424,9 @@ Blocks: **4400–4405**
 | C1  | 2048–2063 | init-6.4th      | init-l8-omni.4th    | Low      | By design — alternate Mama personalities, never co-loaded |
 | C2  | 2049–2056 | init.4th        | doe.4th             | Low      | By design — alternate Mama personalities, never co-loaded |
 | C3  | 3001–3060 | init-1..3,9     | init-l8-*.4th       | Low      | By design — workload capsules, exactly one active per run |
-| C4  | 4010–4012 | ACL.4th         | zuse.4th            | **Medium** | **OPEN — zuse loaded by ACL, so load order is deterministic and dict entries survive. But LOADing 4010–4012 post-boot gives zuse content, not ACL-RWT content. Suggested fix: move zuse.4th to 4008–4009 + 4016. Awaiting Captain Bob.** |
+| C4  | ~~4010–4012~~ | ACL.4th     | zuse.4th            | Resolved   | zuse.4th moved to 4016–4018; no overlap |
 
 ---
 
 *This document is authoritative for capsule block assignments.*
-*Last updated: 2026-06-30 — Hermes v1 + common:msg.4th + lib.4th USE/RUN.*
+*Last updated: 2026-06-30 — Hermes v1 + common:msg.4th + lib.4th USE/RUN + C4 resolved (zuse.4th moved 4010→4016).*
