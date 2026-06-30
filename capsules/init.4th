@@ -43,7 +43,7 @@ Block 2051
   S" Hermes" BIRTH K-SPAWN-HOOK S" CD-INIT" S" Hermes" VM-EXEC
   ." Respawned; active=" ACTIVE-VMS @ . CR
   K-INIT 32 0 DO CD-TICK LOOP
-  K-CONSERVED? IF LOG-TEST" PASS: K ok" ELSE LOG-ERROR" FAIL: soak" THEN
+  K-CONSERVED? IF LOG-TEST" K soak" ELSE LOG-ERROR" K soak" THEN
   LOG-INFO" === TRIPOD DONE ===" ;
 Block 2052
 ( Run TRIPOD acceptance test )
