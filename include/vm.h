@@ -385,6 +385,7 @@ typedef struct VM
     volatile int doe_row_printing; /**< Non-zero while EMIT-ROW assembles a row; heartbeat output must defer */
     uint8_t emergency_console; /**< 1 = fault handler active; bypasses all ACL checks (C-only write) */
     uint8_t zuse_session;      /**< 1 = zuse authenticated at console; shows zuse)ok> prompt */
+    uint8_t acl_skip;          /**< 1 = skip all ACL hooks (Ananke enforcement VM; prevents recursion) */
     /** @} */
 
     /** @name Dictionary Management 
