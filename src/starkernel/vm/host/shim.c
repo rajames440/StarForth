@@ -872,6 +872,21 @@ int *__errno_location(void) {
     return &e;
 }
 
+/**
+ * @brief Minimal @c strerror(): no filesystem/locale in the kernel, so this
+ * just returns a fixed string regardless of @p errnum.
+ *
+ * Diagnostic callers only need a non-NULL string to format; the numeric
+ * errno value itself is the actionable part of the message.
+ *
+ * @param errnum Ignored.
+ * @return Pointer to a static, constant string.
+ */
+char *strerror(int errnum) {
+    (void)errnum;
+    return "error";
+}
+
 /* -----------------------------------------------------------------------------
  * Minimal stdio stubs
  * ---------------------------------------------------------------------------*/
