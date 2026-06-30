@@ -132,6 +132,9 @@ VARIABLE MSG-SCAN
   LOOP ;
 Block 4109
 ( Hermes v1 — message reaping )
+( K redistribution on reap is trivially zero: reaping only fires at heat=0, )
+( so the K contribution being freed is already zero. If forced-reap of a hot )
+( message is ever added, explicit K redistribution will be required here.    )
 : MSG-REAP ( -- )
   MSG-ARENA MSG-SCAN !
   MSG-MAX 0 DO

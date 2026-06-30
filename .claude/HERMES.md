@@ -191,6 +191,43 @@ Multi-party channel invite is a future chapter.
 
 ---
 
+## v1 Known Scope Gaps
+
+Named, bounded limitations. Logged here to prevent future confusion and make
+the upgrade path explicit. None of these are defects in v1.
+
+### Synchronous delivery — async event loop not implemented
+
+`MSG-SEND` calls `MSG-DELIVER → VM-EXEC` immediately. The spec describes an async
+event loop where messages sit in the arena, cool, and are processed or reaped.
+v1 uses the arena as a TTL cleanup buffer for already-delivered messages, not as
+a live dispatch queue. ACK/NACK and NACK-requeue are not implemented. When v2
+adds true async dispatch, `MSG-SEND` must stop calling `MSG-DELIVER` directly and
+let `HERMES-TICK` drive delivery.
+
+### Payload size coupled to block size
+
+`MSG-PADDR`/`MSG-PLEN` carry FORTH string pointers. Payloads from `S"` literals
+in block source are bounded by block size (1024 bytes). No logical-block spanning
+is implemented. No real Hermes script has hit this ceiling yet — revisit when
+something forces the issue.
+
+### `IDX>NAME` and `CH-ACCEPT` owner hardcoded for 3-VM Tripod
+
+`IDX>NAME` maps 0→Hera, 1→Hermes, 2→Artemis only. `CH-ACCEPT` writes
+`1 OVER CH-OWNER!` unconditionally. Correct for v1 Tripod; generalization
+needed if Tripod grows beyond three VMs.
+
+### Terminology: heat-gated reclamation, not mark-and-sweep
+
+Channel and message reaping is **heat-gated reclamation**: objects are freed only
+when compudynamic heat decays to zero. This serializes reaping against active
+traffic on that object only — it is not stop-the-world for the VM as a whole.
+Do not apply GC vocabulary (mark-and-sweep, generational, root-set tracing) to
+this mechanism; those terms carry expectations the design never intended.
+
+---
+
 ## v1 Block Map — LOCKED
 
 Blocks 4110–4113 are Artemis. NEVER touch them.
