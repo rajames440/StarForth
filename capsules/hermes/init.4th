@@ -121,7 +121,7 @@ Block 4107
   R@ MSG-TO!   R@ MSG-FROM! R@ MSG-TYPE!
   Q.1 R@ MSG-HEAT! R> MSG-DELIVER ;
 Block 4108
-( Hermes v1 — message cooling )
+( Hermes v1 — message cooling + heat aggregate )
 VARIABLE MSG-SCAN
 : MSG-COOL-ONE ( m -- )
   DUP MSG-HEAT@ Q-DECAY Q.* SWAP MSG-HEAT! ;
@@ -130,6 +130,14 @@ VARIABLE MSG-SCAN
   MSG-MAX 0 DO
     MSG-SCAN @ MSG-HEAT@ 0 > IF
       MSG-SCAN @ MSG-COOL-ONE
+    THEN
+    MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
+  LOOP ;
+: MSG-TOTAL-HEAT ( -- q48 )
+  0 MSG-ARENA MSG-SCAN !
+  MSG-MAX 0 DO
+    MSG-SCAN @ MSG-TYPE@ 0 <> IF
+      MSG-SCAN @ MSG-HEAT@ +
     THEN
     MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
   LOOP ;
@@ -150,12 +158,18 @@ Block 4109
     MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
   LOOP ;
 Block 4114
-( Hermes v1 — channel cooling )
+( Hermes v1 — channel cooling + heat aggregate )
 VARIABLE CH-SCAN
 : CH-COOL-ALL ( -- )
   CH-ACTIVE @ CH-SCAN !
   BEGIN CH-SCAN @ 0 <> WHILE
     CH-SCAN @ CH-HEAT@ Q-DECAY Q.* CH-SCAN @ CH-HEAT!
+    CH-SCAN @ CH-NEXT@ CH-SCAN !
+  REPEAT ;
+: CH-TOTAL-HEAT ( -- q48 )
+  0 CH-ACTIVE @ CH-SCAN !
+  BEGIN CH-SCAN @ 0 <> WHILE
+    CH-SCAN @ CH-HEAT@ +
     CH-SCAN @ CH-NEXT@ CH-SCAN !
   REPEAT ;
 Block 4115
@@ -190,6 +204,8 @@ VARIABLE COMMON-CH
   MSG-COOL-ALL MSG-REAP
   CH-COOL-ALL  CH-REAP-SAFE
   Q.1 COMMON-CH @ CH-HEAT! ;
+: HERMES-K ( -- q48 )
+  MSG-TOTAL-HEAT CH-TOTAL-HEAT + ;
 Block 4117
 ( Hermes v1 — event compat interface )
 : EVENT-EMIT ( type -- )

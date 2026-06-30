@@ -212,6 +212,15 @@ in block source are bounded by block size (1024 bytes). No logical-block spannin
 is implemented. No real Hermes script has hit this ceiling yet — revisit when
 something forces the issue.
 
+### G8: HERMES-K implemented; K-FLEET integration deferred
+
+`HERMES-K ( -- q48 )` = `MSG-TOTAL-HEAT + CH-TOTAL-HEAT` is implemented in
+Hermes's VM (block 4116) and gives the total thermal mass of all in-flight
+messages and active channels. Wiring it into `K-FLEET` in Hera requires a
+cross-VM return value — something the current synchronous VM-EXEC model cannot
+deliver. Full K≡1.0 accounting (K-FLEET includes Hermes thermal mass) is
+deferred until the async inter-VM model supports return values (G1 path).
+
 ### `IDX>NAME` and `CH-ACCEPT` owner hardcoded for 3-VM Tripod
 
 `IDX>NAME` maps 0→Hera, 1→Hermes, 2→Artemis only. `CH-ACCEPT` writes
