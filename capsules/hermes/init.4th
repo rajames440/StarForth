@@ -7,7 +7,7 @@ Block 4100
 0 CONSTANT CH-NEGOTIATING
 1 CONSTANT CH-OPEN
 2 CONSTANT CH-CLOSING
-7 CONSTANT MSG-CELLS
+8 CONSTANT MSG-CELLS
 6 CONSTANT CH-CELLS
 2 CONSTANT MBR-CELLS
 32 CONSTANT MSG-MAX
@@ -85,6 +85,8 @@ Block 4105
 : MSG-HEAT!  ( q m -- ) 5 CELLS + ! ;
 : MSG-SEQ@   ( m -- n ) 6 CELLS + @ ;
 : MSG-SEQ!   ( n m -- ) 6 CELLS + ! ;
+: MSG-CH@    ( m -- c ) 7 CELLS + @ ;
+: MSG-CH!    ( c m -- ) 7 CELLS + ! ;
 Block 4106
 ( Hermes v1 — channel + member accessors )
 : CH-ID@    ( c -- n ) @ ;
@@ -110,10 +112,11 @@ Block 4107
 : MSG-DELIVER ( m -- )
   DUP MSG-PADDR@ OVER MSG-PLEN@
   ROT MSG-TO@ IDX>NAME VM-EXEC ;
-: MSG-SEND ( type from to paddr plen -- )
-  MSG-ALLOC DUP 0= IF 2DROP 2DROP DROP EXIT THEN
+: MSG-SEND ( type from to paddr plen ch -- )
+  MSG-ALLOC DUP 0= IF 2DROP 2DROP 2DROP DROP EXIT THEN
   >R
   MSG-SEQ @ 1+ DUP MSG-SEQ ! R@ MSG-SEQ!
+  R@ MSG-CH!
   R@ MSG-PLEN! R@ MSG-PADDR!
   R@ MSG-TO!   R@ MSG-FROM! R@ MSG-TYPE!
   Q.1 R@ MSG-HEAT! R> MSG-DELIVER ;
@@ -190,7 +193,7 @@ VARIABLE COMMON-CH
 Block 4117
 ( Hermes v1 — event compat interface )
 : EVENT-EMIT ( type -- )
-  DUP 0 0 S"  " MSG-SEND DROP ;
+  DUP 0 0 S"  " 0 MSG-SEND DROP ;
 : EVENT-WAIT ( -- type )
   MSG-ARENA MSG-TYPE@ ;
 : EVENT-DRAIN ( -- )
@@ -219,13 +222,16 @@ Block 4118
   REPEAT ;
 Block 4119
 ( Hermes v1 — channel negotiation )
+: CH-MINT-ID ( owner -- id )
+  MSG-SEQ @ 1+ DUP MSG-SEQ !
+  SWAP 32 LSHIFT OR ;
 : CH-REQUEST ( type from to paddr plen -- )
   COMMON-CH @ CH-STATE@ CH-OPEN = IF
-    MSG-SEND
+    COMMON-CH @ MSG-SEND
   ELSE 2DROP 2DROP DROP THEN ;
 : CH-ACCEPT ( -- ch|0 )
   CH-ALLOC DUP 0= IF EXIT THEN
-  MSG-SEQ @ 1+ DUP MSG-SEQ ! OVER CH-ID!
+  1 CH-MINT-ID OVER CH-ID!
   1 OVER CH-OWNER!
   CH-OPEN OVER CH-STATE!
   Q.1 OVER CH-HEAT!
