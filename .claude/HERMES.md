@@ -196,14 +196,13 @@ Multi-party channel invite is a future chapter.
 Named, bounded limitations. Logged here to prevent future confusion and make
 the upgrade path explicit. None of these are defects in v1.
 
-### Synchronous delivery — async event loop not implemented
+### Synchronous delivery — RESOLVED (G1)
 
-`MSG-SEND` calls `MSG-DELIVER → VM-EXEC` immediately. The spec describes an async
-event loop where messages sit in the arena, cool, and are processed or reaped.
-v1 uses the arena as a TTL cleanup buffer for already-delivered messages, not as
-a live dispatch queue. ACK/NACK and NACK-requeue are not implemented. When v2
-adds true async dispatch, `MSG-SEND` must stop calling `MSG-DELIVER` directly and
-let `HERMES-TICK` drive delivery.
+`MSG-SEND` now queues only; `HERMES-TICK` drives delivery via `MSG-DELIVER-ALL`
+as its first step. Delivered messages are marked `MSG-DELIVERED` (type=255) so the
+scanner skips them on the next tick. `MSG-REAP` clears them when heat reaches zero.
+ACK/NACK and NACK-requeue are not yet implemented — those belong to v2 when the
+inter-VM return-value model exists.
 
 ### Payload size coupled to block size
 
@@ -242,29 +241,29 @@ this mechanism; those terms carry expectations the design never intended.
 Blocks 4110–4113 are Artemis. NEVER touch them.
 
 ```
-4100  Constants: event codes, channel states, node sizes, arena sizes
+4100  Constants: event codes, channel states, node sizes, arena sizes, MSG-DELIVERED
 4101  Arena CREATE: MSG-ARENA CH-ARENA MBR-ARENA; free-list vars; MSG-SEQ CH-ACTIVE
 4102  MSG-INIT-FREE + CH-INIT-FREE
 4103  MBR-INIT-FREE + MSG-ALLOC + MSG-FREE-NODE
 4104  CH-ALLOC + CH-FREE-NODE + MBR-ALLOC + MBR-FREE-NODE
-4105  Message field accessors: MSG-TYPE@/! MSG-FROM@/! MSG-TO@/! MSG-PADDR@/! MSG-PLEN@/! MSG-HEAT@/! MSG-SEQ@/!
+4105  Message field accessors: MSG-TYPE@/! MSG-FROM@/! MSG-TO@/! MSG-PADDR@/! MSG-PLEN@/! MSG-HEAT@/! MSG-SEQ@/! MSG-CH@/!
 4106  Channel+member accessors: CH-ID@/! CH-OWNER@/! CH-STATE@/! CH-HEAT@/! CH-MBRS@/! CH-NEXT@/! MBR-NEXT@ MBR-VM@
 4107  IDX>NAME + MSG-DELIVER + MSG-SEND
-4108  VARIABLE MSG-SCAN + MSG-COOL-ONE + MSG-COOL-ALL
+4108  VARIABLE MSG-SCAN + MSG-COOL-ONE + MSG-COOL-ALL + MSG-TOTAL-HEAT + MSG-DELIVER-ALL
 4109  MSG-REAP
 ---- 4110–4113: ARTEMIS — DO NOT TOUCH ----
-4114  VARIABLE CH-SCAN + CH-COOL-ALL
+4114  VARIABLE CH-SCAN + CH-COOL-ALL + CH-TOTAL-HEAT
 4115  CH-REAP-SAFE
-4116  VARIABLE COMMON-CH + COMMON-INIT + HERMES-TICK
+4116  VARIABLE COMMON-CH + COMMON-INIT + HERMES-TICK + HERMES-K
 4117  EVENT-EMIT + EVENT-WAIT + EVENT-DRAIN (backward compat)
 4118  HERA-NOTIFY-SPAWN + HERA-NOTIFY-KILL + HERA-DISPATCH-ONE + HERA-DISPATCH
-4119  CH-REQUEST + CH-ACCEPT + CH-CLOSE
+4119  CH-MINT-ID + CH-REQUEST + CH-ACCEPT + CH-CONFIRM + CH-CLOSE
 4120  WELCOME + CD-INIT
 ```
 
 ### Node layouts (cells)
 
-**Message node — 7 cells:**
+**Message node — 8 cells:**
 - 0: type (in-use) / next-free ptr (free)
 - 1: sender VM index
 - 2: recipient VM index
@@ -272,6 +271,7 @@ Blocks 4110–4113 are Artemis. NEVER touch them.
 - 4: payload len
 - 5: heat (Q48.16)
 - 6: seq
+- 7: channel ptr (0 = no channel)
 
 **Channel node — 6 cells:**
 - 0: channel-id (in-use) / next-free ptr (free)
