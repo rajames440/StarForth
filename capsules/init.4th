@@ -31,20 +31,20 @@ BOOT-BANNER
 Block 2051
 ( TRIPOD-TEST: 6 criteria per TRIPOD.md )
 : TRIPOD-TEST ( -- )
-  ." === TRIPOD Acceptance ===" CR
+  LOG-INFO" === TRIPOD Acceptance ==="
   K-INIT 8 0 DO CD-TICK LOOP K-STATUS
-  K-CONSERVED? IF ." PASS: fleet K" CR
-               ELSE ." FAIL: K drift" CR THEN
+  K-CONSERVED? IF LOG-TEST" PASS: fleet K"
+               ELSE LOG-ERROR" FAIL: K drift" THEN
   S" HERMES-TICK" S" Hermes" VM-EXEC
-  ." PASS: Hermes liveness" CR
+  LOG-TEST" PASS: Hermes liveness"
   S" ART-STATUS" S" Artemis" VM-EXEC
-  ." PASS: Artemis ready" CR
+  LOG-TEST" PASS: Artemis ready"
   S" Hermes" KILL-VM ." Reaped; active=" ACTIVE-VMS @ . CR
   S" Hermes" BIRTH K-SPAWN-HOOK S" CD-INIT" S" Hermes" VM-EXEC
   ." Respawned; active=" ACTIVE-VMS @ . CR
   K-INIT 32 0 DO CD-TICK LOOP
-  K-CONSERVED? IF ." PASS: K ok" CR ELSE ." FAIL: soak" CR THEN
-  ." === TRIPOD DONE ===" CR ;
+  K-CONSERVED? IF LOG-TEST" PASS: K ok" ELSE LOG-ERROR" FAIL: soak" THEN
+  LOG-INFO" === TRIPOD DONE ===" ;
 Block 2052
 ( Run TRIPOD acceptance test )
 TRIPOD-TEST

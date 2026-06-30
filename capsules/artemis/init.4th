@@ -50,5 +50,5 @@ Block 4113
   ART-INIT
   S" lib.4th" EXEC
   S" common:msg.4th" USE
-  ." Artemis: ready" CR ;
+  LOG-INFO" Artemis: ready" ;
 WELCOME

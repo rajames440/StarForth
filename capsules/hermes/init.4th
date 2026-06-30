@@ -86,6 +86,8 @@ Block 4105
 : MSG-HEAT!  ( q m -- ) 5 CELLS + ! ;
 : MSG-SEQ@   ( m -- n ) 6 CELLS + @ ;
 : MSG-SEQ!   ( n m -- ) 6 CELLS + ! ;
+Block 4122
+( Hermes v1 — message accessors: CH@/CH! )
 : MSG-CH@    ( m -- c ) 7 CELLS + @ ;
 : MSG-CH!    ( c m -- ) 7 CELLS + ! ;
 Block 4106
@@ -105,7 +107,7 @@ Block 4106
 : MBR-NEXT@ ( m -- a ) @ ;
 : MBR-VM@   ( m -- n ) 1 CELLS + @ ;
 Block 4107
-( Hermes v1 — deliver and send )
+( Hermes v1 — deliver )
 VARIABLE MSG-LAST-MSG
 : IDX>NAME ( idx -- addr u )
   DUP 0 = IF DROP S" Hera"    EXIT THEN
@@ -115,6 +117,8 @@ VARIABLE MSG-LAST-MSG
   DUP MSG-LAST-MSG !
   DUP MSG-PADDR@ OVER MSG-PLEN@
   ROT MSG-TO@ IDX>NAME VM-EXEC ;
+Block 4123
+( Hermes v1 — MSG-SEND )
 : MSG-SEND ( type from to paddr plen ch -- )
   MSG-ALLOC DUP 0= IF 2DROP 2DROP 2DROP DROP EXIT THEN
   >R
@@ -124,7 +128,7 @@ VARIABLE MSG-LAST-MSG
   R@ MSG-TO!   R@ MSG-FROM! R@ MSG-TYPE!
   Q.1 R@ MSG-HEAT! R> DROP ;
 Block 4108
-( Hermes v1 — message cooling + heat aggregate )
+( Hermes v1 — message cooling )
 VARIABLE MSG-SCAN
 : MSG-COOL-ONE ( m -- )
   DUP MSG-HEAT@ Q-DECAY Q.* SWAP MSG-HEAT! ;
@@ -136,6 +140,8 @@ VARIABLE MSG-SCAN
     THEN
     MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
   LOOP ;
+Block 4124
+( Hermes v1 — MSG-TOTAL-HEAT )
 : MSG-TOTAL-HEAT ( -- q48 )
   0 MSG-ARENA MSG-SCAN !
   MSG-MAX 0 DO
@@ -144,6 +150,8 @@ VARIABLE MSG-SCAN
     THEN
     MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
   LOOP ;
+Block 4128
+( Hermes v1 — MSG-DELIVER-ALL )
 : MSG-DELIVER-ALL ( -- )
   MSG-ARENA MSG-SCAN !
   MSG-MAX 0 DO
@@ -220,8 +228,12 @@ VARIABLE COMMON-CH
   MSG-COOL-ALL MSG-REAP
   CH-COOL-ALL  CH-REAP-SAFE
   Q.1 COMMON-CH @ CH-HEAT! ;
+Block 4125
+( Hermes v1 — HERMES-K + WELCOME )
 : HERMES-K ( -- q48 )
   MSG-TOTAL-HEAT CH-TOTAL-HEAT + ;
+: WELCOME ( -- ) LOG-INFO" Hermes: loaded" ;
+WELCOME
 Block 4117
 ( Hermes v1 — event compat interface )
 : EVENT-EMIT ( type -- )
@@ -239,7 +251,7 @@ Block 4118
 : HERA-NOTIFY-KILL ( -- )
   S" K-KILL-HOOK" S" Hera" VM-EXEC ;
 Block 4119
-( Hermes v1 — channel negotiation )
+( Hermes v1 — channel negotiation: mint/request )
 : CH-MINT-ID ( owner -- id )
   MSG-SEQ @ 1+ DUP MSG-SEQ !
   SWAP 32 LSHIFT OR ;
@@ -247,6 +259,8 @@ Block 4119
   COMMON-CH @ CH-STATE@ CH-OPEN = IF
     COMMON-CH @ MSG-SEND
   ELSE 2DROP 2DROP DROP THEN ;
+Block 4126
+( Hermes v1 — channel ops: accept confirm close )
 : CH-ACCEPT ( -- ch|0 )
   CH-ALLOC DUP 0= IF EXIT THEN
   1 CH-MINT-ID OVER CH-ID!
@@ -263,7 +277,6 @@ Block 4119
   CH-CLOSING SWAP CH-STATE! ;
 Block 4120
 ( Hermes v1 — CD-INIT )
-: WELCOME ." Welcome to Hermes v1" CR ;
 : CD-INIT ( -- )
   MSG-ARENA MSG-MAX MSG-CELLS * CELLS 0 FILL
   CH-ARENA  CH-MAX  CH-CELLS  * CELLS 0 FILL
@@ -277,8 +290,7 @@ Block 4120
   COMMON-INIT
   S" lib.4th" EXEC
   S" common:msg.4th" USE
-  ." Hermes: ready" CR ;
-WELCOME
+  LOG-INFO" Hermes: ready" ;
 Block 4121
 ( Hermes v1 — ACK/NACK server )
 : MSG-ACK-LAST ( -- )
@@ -287,3 +299,19 @@ Block 4121
 : MSG-NACK-LAST ( -- )
   MSG-LAST-MSG @ DUP 0= IF DROP EXIT THEN
   0 OVER MSG-TYPE! MSG-FREE-NODE ;
+Block 4127
+( Hermes v1 — HERMES-STATUS )
+: MSG-USED ( -- n )
+  0 MSG-ARENA MSG-SCAN !
+  MSG-MAX 0 DO
+    MSG-SCAN @ MSG-TYPE@ 0 <> IF 1+ THEN
+    MSG-SCAN @ MSG-CELLS CELLS + MSG-SCAN !
+  LOOP ;
+: CH-USED ( -- n )
+  0 CH-ACTIVE @ CH-SCAN !
+  BEGIN CH-SCAN @ 0 <> WHILE
+    1+
+    CH-SCAN @ CH-NEXT@ CH-SCAN !
+  REPEAT ;
+: HERMES-STATUS ( -- )
+  MSG-USED . ." msgs " CH-USED . ." channels" CR ;

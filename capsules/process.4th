@@ -8,6 +8,7 @@ Block 4300
 ( SPAWN: birth VM, rebalance K, notify Hermes )
 : SPAWN ( c-addr u -- )
   BIRTH
+  LOG-INFO" process: spawned"
   K-SPAWN-HOOK
   S" 1 EVENT-EMIT" S" Hermes" VM-EXEC ;
 ( PAUSE: notify Hermes, send STOP to the named VM )
@@ -19,10 +20,12 @@ Block 4301
 ( RESUME: notify Hermes, START the named VM )
 : RESUME ( c-addr u -- )
   S" 3 EVENT-EMIT" S" Hermes" VM-EXEC
+  LOG-INFO" process: resumed"
   START ;
 ( KILL-VM: notify Hermes -> K-KILL-HOOK, then kill VM )
 : KILL-VM ( c-addr u -- )
   S" 4 EVENT-EMIT" S" Hermes" VM-EXEC
+  LOG-INFO" process: killed"
   KILL ;
 ( CD-PHASE@: thermodynamic phase: 0=COLD 1=WARM 2=HOT )
 : CD-PHASE@ ( idx -- n )

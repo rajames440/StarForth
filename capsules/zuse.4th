@@ -18,6 +18,7 @@ Block 4017
   ZUSE-AUTHENTICATE
   ['] ZUSE-CERT-LO  ACL-PIN
   ['] ZUSE-CERT-HI  ACL-PIN
+  LOG-INFO" zuse: activated"
   ['] ACL-ZUSE-BOOT ACL-PIN ;
 
 Block 4018
