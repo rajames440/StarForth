@@ -57,6 +57,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #ifdef __STARKERNEL__
 #define STARFORTH_CHECK_ARENA(tag) sk_vm_arena_assert_guards(tag)
@@ -346,7 +347,12 @@ void starforth_word_init(VM* vm)
     FILE* fp = fopen(init_path, "r");
     if (!fp)
     {
-        log_message(LOG_ERROR, "INIT: Failed to open %s", init_path);
+        if (errno == ENOENT)
+        {
+            log_message(LOG_INFO, "INIT: %s not found — skipping", init_path);
+            return;
+        }
+        log_message(LOG_ERROR, "INIT: Failed to open %s: %s", init_path, strerror(errno));
         vm->error = 1;
         vm->halted = 1;
         return;
