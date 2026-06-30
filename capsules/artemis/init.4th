@@ -45,6 +45,8 @@ Block 4113
   BLK-FREE
   ART-FLUSH
   ." PASS: alloc/fetch/persist/free/flush OK" CR ;
+Block 4129
+( Artemis v1 — LOAD-DOE + CD-INIT + boot WELCOME )
 : LOAD-DOE ( -- ) S" doe.4th" EXEC ;
 : CD-INIT ( -- )
   ART-INIT
