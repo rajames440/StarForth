@@ -243,10 +243,6 @@ Block 4125
 ( Hermes v1 — HERMES-K + WELCOME )
 : HERMES-K ( -- q48 )
   MSG-TOTAL-HEAT CH-TOTAL-HEAT + ;
-: HERMES-MSG-TEST ( -- )
-  SPAWN-EVENT 1 0 0 0 COMMON-CH @ MSG-SEND
-  MSG-USED 0 > IF LOG-TEST" PASS: msg queued"
-               ELSE LOG-ERROR" FAIL: msg queue" THEN ;
 : WELCOME ( -- ) LOG-INFO" Hermes: loaded" ;
 WELCOME
 Block 4117
@@ -346,3 +342,6 @@ Block 4130
   ROT OVER MBR-VM!
   OVER CH-MBRS@ OVER MBR-NEXT!
   SWAP CH-MBRS! ;
+: HERMES-MSG-TEST ( -- flag )
+  SPAWN-EVENT 1 0 0 0 COMMON-CH @ MSG-SEND
+  MSG-USED 0 > ;
