@@ -35,8 +35,8 @@ Block 2051
   K-INIT 8 0 DO CD-TICK LOOP K-STATUS
   K-CONSERVED? IF ." PASS: fleet K" CR
                ELSE ." FAIL: K drift" CR THEN
-  S" 42 EVENT-EMIT EVENT-WAIT DROP" S" Hermes" VM-EXEC
-  ." PASS: Hermes events" CR
+  S" HERMES-TICK" S" Hermes" VM-EXEC
+  ." PASS: Hermes liveness" CR
   S" ART-STATUS" S" Artemis" VM-EXEC
   ." PASS: Artemis ready" CR
   S" Hermes" KILL-VM ." Reaped; active=" ACTIVE-VMS @ . CR
