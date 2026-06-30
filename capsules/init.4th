@@ -10,9 +10,9 @@ Block 2057
   .SEP CR ;
 Block 2049
 ( Hera init — Mama VM personality )
-: VM-TREE     ( -- ) ." VM-TREE: not yet impl" CR ;
+: VM-TREE     ( -- ) ." Hera[0]>Hermes[1] Artemis[2]" CR ;
 : VM-PARENT   ( -- id ) 0 ;
-: VM-CHILDREN ( -- ) ." VM-CHILDREN: not yet impl" CR ;
+: VM-CHILDREN ( -- ) ." Hermes[1] Artemis[2]" CR ;
 \ S" ACL.4th" EXEC
 S" compudynamics.4th" EXEC
 VM-INIT
