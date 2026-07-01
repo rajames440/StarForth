@@ -204,15 +204,46 @@ Every logical block's heat contributes to Artemis's K total.
 Reap must credit K back. Alloc must charge K correctly.
 The Physical BAM carries no K — only live logical blocks do.
 
+### Device Discovery — Boot Scan
+
+External storage is **dynamic and ephemeral**. Artemis must not assume a device
+is present. At boot, Artemis performs a block device scan:
+
+1. **Scan** — probe for attached USB/block devices (USB mass storage, external
+   SSD, USB drive, other USB block devices)
+2. **Claim** — if a device is found, Artemis claims it as her external disk;
+   Physical BAM is sized from the discovered block count (this resolves the
+   BAM sizing open question — it is runtime, not compile-time)
+3. **No device** — Artemis enters NO-DISK mode: Physical BAM empty, Logical
+   BAM empty, K contribution = 0; rest of Tripod continues normally
+
+Device presence is a runtime condition, not a boot invariant:
+- **Hot-plug** (device arrives after boot) — future chapter; not designed now
+- **Device disappears during run** — must not crash; graceful K rebalancing;
+  Logical BAM entries reap immediately since backing store is gone
+
+### Ephemeral Contract
+
+The USB device is ephemeral by design. Artemis makes no assumption that data
+written during one run survives to the next. The Physical BAM is rebuilt from
+scratch on every boot scan. Nothing in Artemis's current design depends on
+finding the same blocks in the same state across reboots.
+
+Persistence across runs is a **future chapter**. The architecture must be
+structurally ready for it (i.e., the on-disk format must be stable and
+identifiable) but the runtime makes no attempt to restore state today.
+
 ### Open Questions (to settle before any code)
 
-- Size of Physical BAM — how many blocks does Artemis own on the external image?
 - Logical BAM entry format — how many cells per entry?
-- LBN range boundaries for Artemis on the external disk image
 - Whether logical block identity is content-addressed (XXHash64) or
   sequence-numbered
 - Variable-length record support — needed for ACL certs; blocks are 1K,
   certs are ~200 bytes — how do we pack or stride?
+- How does the boot scan identify which device to claim if more than one
+  USB block device is attached? (first-found? largest? manifest label?)
+- NO-DISK mode: does Artemis still register K=0 with the fleet, or does
+  she simply not participate until a device appears?
 
 ---
 
