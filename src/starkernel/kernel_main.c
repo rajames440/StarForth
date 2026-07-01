@@ -57,6 +57,9 @@ EFI_RUNTIME_SERVICES *g_sk_runtime_services = NULL;
 #include "starkernel/capsule_birth.h"  /* capsule_birth_mama, capsule_find_mama_init */
 #include "starkernel/kmalloc.h"
 #include "starkernel/repl.h"
+#include "starkernel/pci.h"
+#include "starkernel/virtio_blk.h"
+#include "block_subsystem.h"
 #include "vm.h"          /* DictEntry, vm_find_word, ACL_MODE_STRICT */
 #include "version.h"
 #endif
@@ -475,6 +478,21 @@ static void kernel_main_deep(BootInfo *boot_info) {
     console_println("Boot successful!\n");
 
 #ifdef STARFORTH_ENABLE_VM
+    /* M7.pre: PCI + Artemis virtio-blk disk */
+    console_println("PCI: init...");
+    pci_init(boot_info->acpi_table);
+
+    {
+        static blkio_dev_t artemis_dev;
+        int vrc = virtio_blk_find_artemis(&artemis_dev);
+        if (vrc == 0) {
+            console_println("Artemis: virtio-blk attached");
+            blk_subsys_attach_device(&artemis_dev);
+        } else {
+            console_println("Artemis: no virtio-blk disk (continuing without)");
+        }
+    }
+
     /* M7: VM Bootstrap and Parity Validation */
     console_println("VM: bootstrap parity...");
     ParityPacket parity_pkt;

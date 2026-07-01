@@ -301,6 +301,8 @@ LOADER_SRCS_BASE := \
     $(wildcard $(KERNEL_SRC)/math/*.c) \
     $(wildcard $(KERNEL_SRC)/hash/*.c) \
     $(wildcard $(KERNEL_SRC)/capsule/*.c) \
+    $(wildcard $(KERNEL_SRC)/pci/*.c) \
+    $(wildcard $(KERNEL_SRC)/virtio/*.c) \
     $(KERNEL_SRC)/repl.c \
     $(KERNEL_SRC)/doe_log.c
 
@@ -334,6 +336,8 @@ KERNEL_SRCS_BASE := \
     $(wildcard $(KERNEL_SRC)/hash/*.c) \
     $(wildcard $(KERNEL_SRC)/vm_arbiter/*.c) \
     $(wildcard $(KERNEL_SRC)/capsule/*.c) \
+    $(wildcard $(KERNEL_SRC)/pci/*.c) \
+    $(wildcard $(KERNEL_SRC)/virtio/*.c) \
     $(wildcard $(KERNEL_SRC)/arch/$(ARCH)/*.c) \
     $(KERNEL_SRC)/repl.c \
     $(KERNEL_SRC)/doe_log.c
