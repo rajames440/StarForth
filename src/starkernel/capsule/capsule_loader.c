@@ -81,38 +81,23 @@
 
 #ifdef __STARKERNEL__
 /*===========================================================================
- * Kernel ramdrive: a heap-allocated buffer covering blocks
- * CAPSULE_RAM_OFFSET .. CAPSULE_RAM_OFFSET + KRD_MAX_BLOCKS - 1.
+ * capsule_blk_init - Initialize block subsystem and attach the kernel ramdrive.
  *
- * Bypasses the block subsystem for the ramdrive region so that
- * capsule loading works without a blkio disk device in kernel context.
+ * Sets up the unified block address space:
+ *   LBN 0..2047:                  fast RAM (ram_buf)
+ *   LBN 2048..2048+KRD_MAX_BLOCKS: ramdrive (krd_buf, volatile)
+ *
+ * krd_buf must be pre-zeroed; KRD_MAX_BLOCKS 1 KiB slots are registered
+ * as a raw device via blk_subsys_add_raw_device().
+ * Disk device (if any) is attached separately after this call.
  *===========================================================================*/
 #define KRD_MAX_BLOCKS 1024u
-static uint8_t *krd_base;
 
-void capsule_loader_set_ramdrive(uint8_t *buf) { krd_base = buf; }
-
-static uint8_t *krd_ptr(uint32_t block_num)
-{
-    if (!krd_base) return NULL;
-    if (block_num < CAPSULE_RAM_OFFSET) return NULL;
-    uint32_t idx = block_num - CAPSULE_RAM_OFFSET;
-    if (idx >= KRD_MAX_BLOCKS) return NULL;
-    return krd_base + (size_t)idx * LOADER_BLOCK_SIZE;
-}
-
-/*
- * capsule_blk_init - Initialize block subsystem + kernel ramdrive.
- *
- * Called from kernel_main before capsule_exec_init.
- * ram_buf: 1MB heap buffer for dedicated RAM blocks (0-991)
- * krd_buf: 1MB heap buffer for ramdrive blocks (2048-3071), must be pre-zeroed
- */
 int capsule_blk_init(void *vm, uint8_t *ram_buf, size_t ram_size, uint8_t *krd_buf)
 {
     int rc = blk_subsys_init((VM *)vm, ram_buf, ram_size);
-    if (rc == 0) capsule_loader_set_ramdrive(krd_buf);
-    return rc;
+    if (rc != 0) return rc;
+    return blk_subsys_add_raw_device(krd_buf, KRD_MAX_BLOCKS);
 }
 #endif /* __STARKERNEL__ */
 
@@ -162,11 +147,7 @@ static void write_ramdrive_block(uint32_t block_num,
                                  const uint8_t *content,
                                  uint32_t content_len)
 {
-#ifdef __STARKERNEL__
-    uint8_t *buf = krd_ptr(block_num);
-#else
     uint8_t *buf = blk_get_buffer(block_num, 1);
-#endif
     if (!buf) return;
 
     uint32_t i;
@@ -176,9 +157,7 @@ static void write_ramdrive_block(uint32_t block_num,
                         ? LOADER_BLOCK_SIZE : content_len;
     for (i = 0; i < copy_len; i++) buf[i] = content[i];
 
-#ifndef __STARKERNEL__
     blk_update(block_num);
-#endif
 }
 
 
@@ -544,14 +523,11 @@ void capsule_clear_blocks(const uint8_t *payload, uint64_t length)
         const uint8_t *content_start;
 
         if (is_block_header(p, end, &block_num, &content_start)) {
-            if (block_num > CAPSULE_RAM_OFFSET) {
-                uint32_t dest = block_num - CAPSULE_RAM_OFFSET;
-                uint8_t *buf  = blk_get_buffer(dest, 1);
-                if (buf) {
-                    uint32_t i;
-                    for (i = 0; i < LOADER_BLOCK_SIZE; i++) buf[i] = 0;
-                    blk_update(dest);
-                }
+            uint8_t *buf = blk_get_buffer(block_num, 1);
+            if (buf) {
+                uint32_t i;
+                for (i = 0; i < LOADER_BLOCK_SIZE; i++) buf[i] = 0;
+                blk_update(block_num);
             }
             p = content_start;
         } else {

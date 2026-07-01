@@ -478,21 +478,6 @@ static void kernel_main_deep(BootInfo *boot_info) {
     console_println("Boot successful!\n");
 
 #ifdef STARFORTH_ENABLE_VM
-    /* M7.pre: PCI + Artemis virtio-blk disk */
-    console_println("PCI: init...");
-    pci_init(boot_info->acpi_table);
-
-    {
-        static blkio_dev_t artemis_dev;
-        int vrc = virtio_blk_find_artemis(&artemis_dev);
-        if (vrc == 0) {
-            console_println("Artemis: virtio-blk attached");
-            blk_subsys_attach_device(&artemis_dev);
-        } else {
-            console_println("Artemis: no virtio-blk disk (continuing without)");
-        }
-    }
-
     /* M7: VM Bootstrap and Parity Validation */
     console_println("VM: bootstrap parity...");
     ParityPacket parity_pkt;
@@ -511,10 +496,11 @@ static void kernel_main_deep(BootInfo *boot_info) {
      * can safely read payload bytes after VMM takeover. */
     void *mama_vm = sk_get_mama_vm();
 
-    /* Block subsystem: 1MB for dedicated RAM blocks (LBN 0-991) */
-    #define BLK_RAM_SIZE (1024u * 1024u)
+    /* Block subsystem: fast RAM (LBN 0..2047) + ramdrive (LBN 2048..3071).
+     * BLK_RAM_SIZE must cover BLK_RAM_BLOCKS × BLK_FORTH_SIZE. */
+    #define BLK_RAM_SIZE (BLK_RAM_BLOCKS * BLK_FORTH_SIZE)
     uint8_t *blk_ram_buf = (uint8_t *)kmalloc(BLK_RAM_SIZE);
-    /* Kernel ramdrive: 1MB covering capsule blocks 2048-3071 */
+    /* Kernel ramdrive: 1024 blocks × 1 KiB covering LBN 2048-3071 */
     #define KRD_BUF_SIZE (1024u * 1024u)
     uint8_t *krd_buf     = (uint8_t *)kmalloc(KRD_BUF_SIZE);
 
@@ -524,7 +510,23 @@ static void kernel_main_deep(BootInfo *boot_info) {
         /* Pre-zero the ramdrive buffer (no memset in freestanding context) */
         size_t krd_i;
         for (krd_i = 0; krd_i < KRD_BUF_SIZE; krd_i++) krd_buf[krd_i] = 0;
+        /* Init block subsystem (RAM + ramdrive) */
         capsule_blk_init(mama_vm, blk_ram_buf, BLK_RAM_SIZE, krd_buf);
+    }
+
+    /* M7.pre: PCI + Artemis virtio-blk disk — attached AFTER block subsystem init */
+    console_println("PCI: init...");
+    pci_init(boot_info->acpi_table);
+
+    {
+        static blkio_dev_t artemis_dev;
+        int vrc = virtio_blk_find_artemis(&artemis_dev);
+        if (vrc == 0) {
+            console_println("Artemis: virtio-blk attached");
+            blk_subsys_attach_device(&artemis_dev);
+        } else {
+            console_println("Artemis: no virtio-blk disk (continuing without)");
+        }
     }
 
     /* Copy capsule directory header to heap (has pointer field needing update) */

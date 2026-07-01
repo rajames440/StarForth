@@ -44,12 +44,16 @@
                                  ***   StarForth   ***
               Block Subsystem - Layer 2: Mapping & Business Logic (v2)
               ---------------------------------------------------------
-   Architecture:
-     - Forth blocks 0-1023: RAM (fast, in-memory buffer cache)
-     - Forth blocks 1024+:  Disk (persistent storage via blkio)
-     - Device devblock 0:   Volume header (4 KiB)
-     - Device devblocks 1..B: BAM (1-bit per 1 KiB Forth block), 4 KiB pages
-     - Device devblocks (1+B)..end: payload; each 4 KiB packs 3×1 KiB data + 1 KiB metadata
+   Architecture (unified block address space):
+     - LBN 0..2047:  FAST RAM  (volatile, g.ram_base)
+     - LBN 2048..x:  RAMDRIVE  (raw RAM buffer, volatile; first attached device)
+     - LBN x..y:     DISK IMG  (virtio-blk, persistent; second attached device)
+     - LBN y+:       USB / future devices (chained)
+
+   Each non-RAM device is attached via blk_subsys_attach_device() (formatted disk)
+   or blk_subsys_add_raw_device() (volatile RAM buffer).  Devices are appended to
+   a chain; each gets a contiguous slot in the unified logical BAM (g.bam[]).
+   Physical BAMs (on-disk) are synced to/from their logical BAM slot at attach/flush.
 
    blkio NOTE:
      - blkio backends operate on 1 KiB units.
@@ -71,8 +75,8 @@ extern "C" {
 
 /* Core configuration constants */
 #define BLK_FORTH_SIZE        1024u   /* Forth block size */
-#define BLK_RAM_BLOCKS        1024u   /* RAM 0..1023 */
-#define BLK_DISK_START        1024u   /* Disk-backed Forth blocks start */
+#define BLK_RAM_BLOCKS        2080u   /* Physical RAM blocks (user-visible LBN 0..2047) */
+#define BLK_DISK_START        2080u   /* Device-backed Forth blocks start at LBN 2080 */
 #define BLK_DEVICE_SECTOR     4096u   /* Physical “devblock” size (4×1 KiB blkio units) */
 #define BLK_PACK_RATIO        3u      /* 3× 1 KiB data per 4 KiB devblock (plus 1 KiB metadata) */
 #define BLK_META_TOTAL        1024u   /* Last 1 KiB in a 4 KiB devblock is metadata */
@@ -80,10 +84,10 @@ extern "C" {
 
 /* Forth-friendly reserved ranges */
 #ifndef BLK_FORTH_SYS_RESERVED
-#define BLK_FORTH_SYS_RESERVED   33u  /* RAM 0..32 reserved */
+#define BLK_FORTH_SYS_RESERVED   32u  /* RAM physical blocks 0..31 hidden; user LBN 0 = PBN 32 */
 #endif
 #ifndef BLK_DISK_SYS_RESERVED
-#define BLK_DISK_SYS_RESERVED    32u  /* Disk 1024..1055 reserved (first N disk blocks) */
+#define BLK_DISK_SYS_RESERVED    32u  /* First 32 blocks of each disk reserved (byte-aligned BAM offset) */
 #endif
 
 /* =========================
@@ -200,6 +204,12 @@ enum {
     BLK_ENOMEM = -7
 };
 
+/* Per-block BAM entry — one per user block in each device slot */
+typedef struct {
+    uint8_t allocated; /* 0=free, 1=in use */
+    uint8_t dirty;     /* 1=UPDATE called; content needs flush */
+} blk_bam_entry_t;
+
 /* ===== Public API ===== */
 int blk_subsys_init(VM *vm, uint8_t *ram_base, size_t ram_size);
 
@@ -234,6 +244,8 @@ int blk_mark_allocated(uint32_t block_num);
 int blk_mark_free(uint32_t block_num);
 
 int blk_allocate(uint32_t * block_num);
+
+int blk_subsys_add_raw_device(uint8_t *buf, uint32_t nblocks);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -121,20 +121,16 @@ CapsuleRunResult capsule_exec_init(
 
 #ifdef __STARKERNEL__
 /**
- * capsule_loader_set_ramdrive - Set the kernel ramdrive buffer.
+ * capsule_blk_init - Initialize block subsystem and attach the kernel ramdrive.
  *
- * Must be a pre-zeroed buffer of at least 1024 * 1024 bytes covering
- * block numbers CAPSULE_RAM_OFFSET (2048) through 2048+1023.
- */
-void capsule_loader_set_ramdrive(uint8_t *buf);
-
-/**
- * capsule_blk_init - Initialize block subsystem and kernel ramdrive.
+ * Establishes the unified block address space:
+ *   LBN 0..2047:              fast RAM (ram_buf)
+ *   LBN 2048..2048+1023:      ramdrive (krd_buf, volatile, 1024 blocks)
  *
  * @param vm       Opaque VM pointer (mama VM)
- * @param ram_buf  1MB buffer for dedicated RAM blocks (LBN 0-991)
- * @param ram_size Size of ram_buf (must be >= 1MB)
- * @param krd_buf  Pre-zeroed 1MB buffer for ramdrive blocks (2048-3071)
+ * @param ram_buf  Buffer for fast RAM blocks (must be >= BLK_RAM_BLOCKS * 1024 bytes)
+ * @param ram_size Size of ram_buf in bytes
+ * @param krd_buf  Pre-zeroed buffer for ramdrive (must be >= 1024 * 1024 bytes)
  * @return         0 on success, non-zero on failure
  */
 int capsule_blk_init(void *vm, uint8_t *ram_buf, size_t ram_size, uint8_t *krd_buf);
