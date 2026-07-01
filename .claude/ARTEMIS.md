@@ -224,34 +224,66 @@ Device presence is a runtime condition, not a boot invariant:
 
 ### Thermal Zones
 
-Artemis manages **two thermal zones**:
+Artemis manages **three thermal zones**, ordered fastest to slowest:
 
-**Zone 0 — Internal Ramdisk**
-- Always present. Never absent. Artemis's floor.
-- LBN range: Artemis's slice of the internal ramdisk (boundaries TBD)
-- Fast. Limited size.
-- Has its own Physical BAM (compile-time constant size)
-- Artemis always participates in K because Zone 0 always exists
-- NO-DISK mode is not degenerate — it is single-zone operation
+**Zone 0 — Block RAM (LBN 0–~2047)**
+- Raw RAM, direct access, no block subsystem indirection
+- Artemis's hot working tier — fastest possible access
+- Always present. Artemis's floor. K participation never zero.
+- Physical BAM is compile-time constant (block RAM size is fixed)
 
-**Zone 1 — External USB Device**
-- Ephemeral. Present only when a device is discovered at boot scan.
+**Zone 1 — Ramdrive (LBN 2048–3071)**
+- RAM-backed but accessed through the block subsystem —
+  same interface as an external device
+- This is why it is Zone 1 and not Zone 0: it goes through the
+  same block I/O path as a USB device, just faster
+- Always present. Warm tier.
+- Physical BAM is compile-time constant (1024 blocks = 1MB)
+
+**Zone 2 — External USB Device**
+- Ephemeral. Present only when discovered at boot scan.
+- Accessed through block subsystem (same path as Zone 1)
 - Physical BAM sized at runtime from discovered block count
-- Larger, slower, optional
-- When present: second tier of block storage
+- Cold/persistent tier. Largest. Slowest.
 
 Block lifecycle across zones (sketch):
-- Born hot in Zone 0 (ramdisk — fast, working set)
-- Cools → candidate for migration to Zone 1 (USB — larger, slower)
-- Cools further in Zone 1 → reaped; physical LBN returned to Zone 1 Physical BAM
-- Zone 0 slot freed on migration; Zone 1 slot freed on reap
+- Born hot in Zone 0 (direct block RAM)
+- Cools → migrates to Zone 1 (ramdrive, same block subsystem as Zone 2)
+- Cools further → migrates to Zone 2 (USB, if present)
+- Cools to zero in Zone 2 → reaped; physical slot returned to Zone 2 Physical BAM
+- If Zone 2 absent: Zone 1 is the cold terminus; reap happens there
 
-When Zone 1 is absent (no USB device): blocks cool and reap within Zone 0 only.
-When Zone 1 disappears mid-run: all Zone 1 logical entries reap immediately,
-K rebalanced, Zone 0 continues.
+When Zone 2 disappears mid-run: all Zone 2 logical entries reap immediately,
+K rebalanced, Zones 0 and 1 continue unaffected.
 
-Each zone has its own Physical BAM. The Logical BAM spans both zones and
+Each zone has its own Physical BAM. The Logical BAM spans all zones and
 carries a zone tag per entry.
+
+### Physical BAM Block Geometry
+
+The block subsystem operates in 1KB StarForth blocks. Physical devices
+operate in 4KB sectors. The mapping:
+
+```
+1 physical 4KB device sector → 4 × 1KB StarForth blocks:
+  [ data ][ data ][ data ][ meta ]
+    LBN+0   LBN+1   LBN+2   LBN+3
+```
+
+- **3 data blocks** — usable storage, tracked in the Physical BAM
+- **1 metadata block** — describes the preceding 3 data blocks
+  (heat values, logical identity, zone tag, flags)
+- Metadata position is implicit: always at (group × 4) + 3
+- Physical BAM tracks data block slots only — 3 bits per 4KB sector
+
+Worked example for Zone 1 (ramdrive, 1024 × 1KB = 1MB):
+- 1MB ÷ 4KB = 256 groups
+- 256 × 3 = **768 data blocks** tracked in Zone 1 Physical BAM
+- 256 × 1 = 256 metadata blocks (implicit, not in BAM)
+- Zone 1 Physical BAM = 768 bits = **96 bytes**
+
+Zone 2 (USB): same geometry, group count determined at boot from
+discovered device block count.
 
 ### Ephemeral Contract
 
