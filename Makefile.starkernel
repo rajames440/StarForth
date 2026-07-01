@@ -656,6 +656,8 @@ ifeq ($(ARCH),amd64)
 		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_CODE) \
 		-drive if=pflash,format=raw,file=$(BUILD_DIR)/OVMF_VARS.fd \
 		-cdrom $(QEMU_ISO) -boot d \
+		-drive id=artdisk,file=disk/artemis.img,format=raw,if=none \
+		-device virtio-blk-pci,drive=artdisk \
 		-chardev socket,id=cserial,path=$$SERIAL_SOCK,server=on,wait=off,logfile=$$LOG \
 		-serial chardev:cserial \
 		-display none \
@@ -734,6 +736,8 @@ else ifeq ($(ARCH),aarch64)
 		-cpu cortex-a57 \
 		-bios $$AAVMF_CODE \
 		-drive if=virtio,format=raw,file=$(QEMU_ISO),media=cdrom \
+		-drive id=artdisk,file=disk/artemis.img,format=raw,if=none \
+		-device virtio-blk-pci,drive=artdisk \
 		-chardev socket,id=cserial,path=$$SERIAL_SOCK,server=on,wait=off,logfile=$$LOG \
 		-serial chardev:cserial \
 		-display none \
@@ -831,6 +835,8 @@ else ifeq ($(ARCH),riscv64)
 		$$PFLASH_VARS_ARG \
 		-drive id=hd0,file=$$DISK,format=raw,if=none \
 		-device virtio-blk-pci,drive=hd0 \
+		-drive id=artdisk,file=disk/artemis.img,format=raw,if=none \
+		-device virtio-blk-pci,drive=artdisk \
 		-chardev socket,id=cserial,path=$$SERIAL_SOCK,server=on,wait=off,logfile=$$LOG \
 		-serial chardev:cserial \
 		-display none \
