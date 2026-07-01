@@ -377,17 +377,6 @@ Persistence across runs is a **future chapter**. The architecture must be
 structurally ready for it (stable on-disk format) but the runtime makes
 no attempt to restore state today.
 
-### Open Questions (to settle before any code)
-
-- Logical BAM entry format — settled: 4 cells (LBN, heat, identity, flags); no zone tag
-- Block identity — settled: XXHash64 content hash, 1 cell on 64-bit
-- Variable-length record support — settled: packed into 3KB data area,
-  indexed in the 952-byte remainder of the metadata block (LBN+3)
-- Multi-device — settled: Artemis claims ALL discovered block devices;
-  Zone 2 is a pool spanning total block count of all claimed devices
-- Zone 0 LBN range — settled: LBN 0–991 (block RAM, 992 blocks, 124-byte PBAM);
-  LBN 992–2047 is VM dictionary territory, Artemis does not touch it
-
 ---
 
 ## Current Scope
