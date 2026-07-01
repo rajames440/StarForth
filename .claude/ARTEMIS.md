@@ -97,8 +97,11 @@ her free map, VM stops, everything is gone. That is correct for now.
 
 ## What Artemis Owns
 
-- The free map over her LBN range on the external disk image
-- Block fetch and persist operations on the external disk image
+- Physical BAM for each zone (Zone 0, Zone 1, Zone 2)
+- Logical BAM spanning all zones (block identity → physical LBN + heat + zone tag)
+- Block fetch and persist operations across all storage zones
+- Block thermal state — heat tracking and compudynamic lifecycle for all managed blocks
+- Identity verification gate for the USB thumbdrive (before storage is claimed)
 - ACL lists — structured as Artemis-managed blocks (see ACL section)
 - Cold capsule store — evicted from Hermes cache (future chapter)
 - Block metadata
