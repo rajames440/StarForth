@@ -77,13 +77,13 @@ Artemis manages four active storage types. Cloud blocks are a deferred future ch
 - Cold/persistent tier. Largest. Slowest.
 - If no device found at boot: Artemis enters NO-DISK mode (Zone 2 absent)
 
-### USB Thumbdrive — Special Identity Case
-- Distinct from generic System Blocks — carries identity, not just storage
-- Hardware credential token for ALL users and agent services (not zuse alone)
-- The PKI anchor point for the fleet: user certs, agent service identities
-- Artemis must recognize it as identity-bearing, not treat it as generic storage
-- Ties to ACL Phase 8 (Ed25519 challenge-response); credential structure TBD
-- May also carry storage payload — dual role to be confirmed
+### USB Thumbdrive — Identity First, Then Storage
+- Dual-role device: identity credential carrier AND storage
+- Protocol: identity verified first; storage claimed after identity passes
+- Hardware PKI anchor for ALL users and agent services (not zuse alone)
+- Carries user certs and agent service identities (Ed25519, ACL Phase 8)
+- After identity verification: storage portion claimed as a Zone 2 System Block
+- Artemis must recognize and sequence this — identity gate before storage mount
 
 ### Cloud Blocks — Deferred Future Chapter
 - Do not implement or design around.
