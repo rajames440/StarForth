@@ -268,11 +268,15 @@ Device presence is a runtime condition, not a boot invariant:
 
 Artemis manages **three thermal zones**, ordered fastest to slowest:
 
-**Zone 0 — Block RAM (LBN 0–~2047)**
+**Zone 0 — Block RAM (LBN 0–991)**
 - Raw RAM, direct access, no block subsystem indirection
 - Artemis's hot working tier — fastest possible access
 - Always present. Artemis's floor. K participation never zero.
-- Physical BAM is compile-time constant (block RAM size is fixed)
+- Physical BAM is compile-time constant: 992 bits = 124 bytes
+- No 4KB→3+1 geometry — Zone 0 is 1KB native, no sector alignment constraint
+- 1:1 layout: one data block per LBN; no implicit metadata sibling blocks
+- Block metadata lives in the LBAM entry, not on-block
+- LBN 992–2047: VM dictionary territory (kernel/kmalloc); Artemis does not touch
 
 **Zone 1 — Ramdrive (LBN 2048–3071)**
 - RAM-backed but accessed through the block subsystem —
@@ -381,7 +385,8 @@ no attempt to restore state today.
   indexed in the 952-byte remainder of the metadata block (LBN+3)
 - Multi-device — settled: Artemis claims ALL discovered block devices;
   Zone 2 is a pool spanning total block count of all claimed devices
-- Zone 0 LBN range — what slice of the internal ramdisk belongs to Artemis?
+- Zone 0 LBN range — settled: LBN 0–991 (block RAM, 992 blocks, 124-byte PBAM);
+  LBN 992–2047 is VM dictionary territory, Artemis does not touch it
 
 ---
 
