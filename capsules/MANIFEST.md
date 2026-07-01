@@ -54,7 +54,10 @@ production bake.
 4100 – 4109   hermes/init.4th
 4110 – 4113   artemis/init.4th  ★ HARD LOCKED — never touch from Hermes
 4114 – 4121   hermes/init.4th (continued)
-4122 – 4199   UNASSIGNED
+4122 – 4127   artemis/init.4th (extended: allocator, magic, boot-detect, hdr-write, boot-seq, status)
+4128          UNASSIGNED
+4129          artemis/init.4th (entry block)
+4130 – 4199   UNASSIGNED
 4200 – 4204   compudynamics.4th
 4205 – 4299   UNASSIGNED
 4300 – 4301   process.4th
@@ -339,11 +342,11 @@ Gap 4110–4113 = Artemis. **HARD LOCKED. Never touch from Hermes side.**
 | 4120  | No        | WELCOME + CD-INIT. Not immutable: CD-INIT init sequence may grow |
 | 4121  | No        | MSG-ACK-LAST + MSG-NACK-LAST. Not immutable: NACK-requeue (reduced heat, retry) deferred; block may need extension |
 
-### `artemis/init.4th` — Artemis VM (block storage)
+### `artemis/init.4th` — Artemis VM (flat pool disk manager v2)
 
-Blocks: **4110–4113**
+Blocks: **4110–4113** (core, hard locked) + **4122–4127** (extended) + **4129** (entry)
 
-★ **HARD LOCKED.** These four blocks are the Artemis block storage manager.
+★ **HARD LOCKED (4110–4113).** Core Artemis block storage primitives.
 They live in the middle of the Hermes range by deliberate layout choice
 (Hermes owns 4100–4121; Artemis owns 4110–4113 as a protected island).
 No other capsule may ever claim these blocks. No tool, script, or automated
@@ -352,10 +355,17 @@ permission.
 
 | Block | Immutable | Justification |
 |-------|-----------|---------------|
-| 4110  | Yes       | Artemis constants, WELCOME, CONNECT-HERA, ART-BASE, ART-CAP, ART-FREE, ART-INIT. Immutable: ART-BASE/ART-CAP define the managed LBN range; changing them corrupts all allocated blocks |
-| 4111  | Yes       | BLK-ALLOC + BLK-FREE. Immutable: block allocation ABI; changing breaks any caller that holds an LBN |
-| 4112  | Yes       | BLK-FETCH + BLK-PERSIST + ART-FLUSH + ART-STATUS. Immutable: storage operation ABI |
-| 4113  | Yes       | ART-SELF-TEST + LOAD-DOE + CD-INIT. Immutable: CD-INIT is the Artemis birth entry point called by Hera; signature must be stable |
+| 4110  | Yes       | Constants (ART-HDR-LBN, ART-FM-LBN, ART-DATA-LBN, ART-DATA-BLKS) + ART-K + ART-K+!/ART-K-!. Immutable: constants define the on-disk geometry; changing them corrupts existing disk images |
+| 4111  | Yes       | LE32!/LE32@/LE64!/LE64@ — arch-neutral little-endian byte I/O. Immutable: on-disk format depends on these; changing byte order corrupts cross-arch images |
+| 4112  | Yes       | SHL1N/SHR1N/BIT-TEST/BIT-SET/BIT-CLR — bit manipulation. Immutable: free map correctness depends on these primitives |
+| 4113  | Yes       | FM-ADDR-BIT/FM-TEST/FM-SET/FM-CLR — free map core. Immutable: free map ABI; changing breaks allocator |
+| 4122  | No        | FM-FIND-FREE/BLK-ALLOC/BLK-FREE. Not immutable: scan strategy may improve (e.g. hint-based) |
+| 4123  | No        | ART-MAGIC!/ART-MAGIC?/ART-BLANK? — disk detection primitives. Not immutable: magic or blank check may extend |
+| 4124  | No        | ART-BOOT-DETECT/BLK-FETCH/BLK-PERSIST/ART-FLUSH. Not immutable: boot mode may gain additional cases |
+| 4125  | No        | ART-HDR-WRITE — on-disk header format. Not immutable: header layout may extend |
+| 4126  | No        | ART-FORMAT/ART-RESUME/ART-HALT-UNRECOG/ART-INIT — boot sequence. Not immutable: resume path will grow |
+| 4127  | No        | ART-STATUS/ART-SELF-TEST/WELCOME. Not immutable: status/test may expand |
+| 4129  | No        | Entry block — ART-INIT ART-SELF-TEST WELCOME. Not immutable: may grow |
 
 ### `compudynamics.4th` — Compudynamic physics primitives
 
