@@ -70,12 +70,13 @@ Artemis manages four active storage types. Cloud blocks are a deferred future ch
 - Physical BAM is compile-time constant (1024 blocks)
 
 ### System Blocks — Zone 2
-- Any block device discovered at the boot scan (external SSD, USB drive, USB mass storage, etc.)
+- ALL block devices discovered at boot scan (external SSD, USB drives, USB mass storage, etc.)
+- Artemis is owner of all block devices — no disambiguation, no pick rule
+- Zone 2 is a pool: Physical BAM spans the total block count of all claimed devices
 - Ephemeral — present only when discovered at boot; hot-plug is a future chapter
 - Accessed through the block subsystem (same path as Zone 1)
-- Physical BAM sized at runtime from discovered block count
 - Cold/persistent tier. Largest. Slowest.
-- If no device found at boot: Artemis enters NO-DISK mode (Zone 2 absent)
+- If no device found at boot: Artemis enters NO-DISK mode (Zone 2 pool empty)
 
 ### USB Thumbdrive — Identity First, Then Storage
 - Dual-role device: identity credential carrier AND storage
@@ -247,18 +248,21 @@ The Physical BAM carries no K — only live logical blocks do.
 External storage is **dynamic and ephemeral**. Artemis must not assume a device
 is present. At boot, Artemis performs a block device scan:
 
-1. **Scan** — probe for attached USB/block devices (USB mass storage, external
-   SSD, USB drive, other USB block devices)
-2. **Claim** — if a device is found, Artemis claims it as her external disk;
-   Physical BAM is sized from the discovered block count (this resolves the
-   BAM sizing open question — it is runtime, not compile-time)
-3. **No device** — Artemis enters NO-DISK mode: Physical BAM empty, Logical
-   BAM empty, K contribution = 0; rest of Tripod continues normally
+1. **Scan** — probe for all attached block devices (USB mass storage, external
+   SSD, USB drives, other USB block devices)
+2. **Claim** — Artemis claims ALL discovered devices; she is owner of all
+   block devices. The USB thumbdrive is processed identity-first before its
+   storage is admitted to the pool. All others join Zone 2 directly.
+   Zone 2 Physical BAM is sized from the total block count across all
+   claimed devices (runtime, not compile-time)
+3. **No device** — Artemis enters NO-DISK mode: Zone 2 Physical BAM empty,
+   no Zone 2 logical entries, K contribution from Zone 2 = 0;
+   Zones 0 and 1 continue normally; rest of Tripod unaffected
 
 Device presence is a runtime condition, not a boot invariant:
 - **Hot-plug** (device arrives after boot) — future chapter; not designed now
 - **Device disappears during run** — must not crash; graceful K rebalancing;
-  Logical BAM entries reap immediately since backing store is gone
+  all logical entries backed by that device reap immediately
 
 ### Thermal Zones
 
@@ -375,8 +379,8 @@ no attempt to restore state today.
 - Block identity — settled: XXHash64 content hash, 1 cell on 64-bit
 - Variable-length record support — settled: packed into 3KB data area,
   indexed in the 952-byte remainder of the metadata block (LBN+3)
-- How does the boot scan identify which device to claim if more than one
-  USB block device is attached? (first-found? largest? manifest label?)
+- Multi-device — settled: Artemis claims ALL discovered block devices;
+  Zone 2 is a pool spanning total block count of all claimed devices
 - Zone 0 LBN range — what slice of the internal ramdisk belongs to Artemis?
 
 ---
