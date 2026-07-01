@@ -331,9 +331,24 @@ operate in 4KB sectors. The mapping:
 
 - **3 data blocks** — usable storage, tracked in the Physical BAM
 - **1 metadata block** — describes the preceding 3 data blocks
-  (heat values, logical identity, zone tag, flags)
+  (heat, identity, flags per sibling; plus variable-length record index)
 - Metadata position is implicit: always at (group × 4) + 3
 - Physical BAM tracks data block slots only — 3 bits per 4KB sector
+
+**Metadata block layout (LBN+3):**
+```
+[0–71]    3 × sibling descriptor: [heat | identity | flags]   72 bytes
+                                   3 cells × 3 siblings
+[72–1023] variable-length record index                        952 bytes
+          entry: [offset | length | identity | flags]
+          4 cells = 32 bytes per entry → ~29 entries per group
+```
+
+Variable-length records (ACL certs, ~200 bytes) are packed into the 3KB
+data space of LBN+0/1/2. The metadata block's remaining 952 bytes index
+them: offset into the data area, byte length, XXHash64 identity, flags.
+Artemis finds a specific record by identity — no content scan needed.
+The 3+1 geometry provides variable-length support at no extra cost.
 
 Worked example for Zone 1 (ramdrive, 1024 × 1KB = 1MB):
 - 1MB ÷ 4KB = 256 groups
@@ -358,8 +373,8 @@ no attempt to restore state today.
 
 - Logical BAM entry format — settled: 4 cells (LBN, heat, identity, flags); no zone tag
 - Block identity — settled: XXHash64 content hash, 1 cell on 64-bit
-- Variable-length record support — needed for ACL certs; blocks are 1K,
-  certs are ~200 bytes — how do we pack or stride?
+- Variable-length record support — settled: packed into 3KB data area,
+  indexed in the 952-byte remainder of the metadata block (LBN+3)
 - How does the boot scan identify which device to claim if more than one
   USB block device is attached? (first-found? largest? manifest label?)
 - Zone 0 LBN range — what slice of the internal ramdisk belongs to Artemis?
