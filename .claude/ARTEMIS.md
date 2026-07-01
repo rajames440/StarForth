@@ -163,6 +163,59 @@ Do not write code that breaks K≡1.0 and add a comment explaining why it's okay
 
 ---
 
+## Storage Design — Scratchpad (design notes, not yet authoritative)
+
+### Driving Principle
+
+Artemis is managed compudynamically. The same heat/cool/reap model that drives
+Hermes message lifecycle and word execution in Hera drives block lifecycle in
+Artemis. Compudynamics is not bolted on — it IS the allocator.
+
+### Two BAMs
+
+Artemis uses two Block Allocation Maps:
+
+**Physical BAM**
+- Bitmap over Artemis's owned LBN range on the external disk image
+- One bit per physical block: 0 = free, 1 = allocated
+- No semantics. No heat. No identity. Just free/not-free.
+- The raw substrate. Knows nothing about what lives in a block.
+
+**Logical BAM**
+- Maps logical block identities to physical LBNs
+- Each logical entry carries: physical LBN + heat (Q48.16) + metadata
+- Heat is the compudynamic lifecycle driver
+- A logical block at heat=0 is a reap candidate: its physical LBN returns
+  to the Physical BAM free pool
+- Content-addressing, ACL records, and cold capsule storage live here
+
+### Compudynamic Block Lifecycle (sketch)
+
+1. **Alloc** — claim a physical LBN from Physical BAM, create a logical entry,
+   born hot (Q.1)
+2. **Access** — heat refreshed on every read or write
+3. **Cool** — each heartbeat tick applies Q-DECAY to all logical block heat values
+4. **Reap** — logical entries at heat=0 release their physical LBN back to
+   the Physical BAM free pool
+
+### K Participation
+
+Every logical block's heat contributes to Artemis's K total.
+Reap must credit K back. Alloc must charge K correctly.
+The Physical BAM carries no K — only live logical blocks do.
+
+### Open Questions (to settle before any code)
+
+- Size of Physical BAM — how many blocks does Artemis own on the external image?
+- Logical BAM entry format — how many cells per entry?
+- LBN range boundaries for Artemis on the external disk image
+- Whether logical block identity is content-addressed (XXHash64) or
+  sequence-numbered
+- Variable-length record support — needed for ACL certs; blocks are 1K,
+  certs are ~200 bytes — how do we pack or stride?
+
+---
+
 ## Current Scope
 
 Artemis is not yet started. Before any implementation begins:
