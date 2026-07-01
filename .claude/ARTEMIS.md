@@ -54,18 +54,34 @@ Artemis does **not** own the internal ramdisk — that is kernel territory.
 
 ## Storage Topology
 
-### Internal Ramdisk — Not Artemis Scope
-- Baked into each VM at build time by mkcapsule.c
-- LBN 0–3071
-- Kernel territory
-- Every VM carries its own ramdisk
-- Artemis does not touch it, manage it, or know about it
+Artemis manages four active storage types. Cloud blocks are a deferred future chapter.
 
-### External Attached Virtual Disk Image — Artemis Territory
-- Mounted virtual disk image, attached to the QEMU instance
-- Artemis owns this exclusively
-- LBN boundaries to be determined as Artemis is built
-- Nothing persists between runs yet — that is a future chapter
+### RAM Dedicated Blocks — Zone 0
+- Direct-access block RAM; no block subsystem indirection
+- LBN 0–991 (1MB, per kernel memory layout)
+- Artemis's hot working tier — fastest possible access
+- Always present. K participation never zero.
+- Physical BAM is compile-time constant
+
+### Ramdisk Blocks — Zone 1
+- Kernel ramdrive; LBN 2048–3071 (1MB)
+- RAM-backed but accessed through the block subsystem — same I/O path as USB
+- Always present. Warm tier.
+- Physical BAM is compile-time constant (1024 blocks)
+
+### System Blocks
+- **Purpose TBD — needs definition from Captain Bob**
+- LBN range and ownership model not yet captured
+
+### USB Thumbdrive Block — Zone 2
+- External USB block device (mass storage, SSD, USB drive, etc.)
+- Ephemeral — present only when discovered at boot scan
+- Accessed through the block subsystem (same path as Zone 1)
+- Physical BAM sized at runtime from discovered block count
+- Cold/persistent tier. Largest. Slowest.
+
+### Cloud Blocks — Deferred Future Chapter
+- Do not implement or design around.
 
 ### Nothing Persists Between Runs Yet
 Persistence across runs is a future chapter. Do not implement it yet.
