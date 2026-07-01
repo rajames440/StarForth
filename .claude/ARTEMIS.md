@@ -197,20 +197,29 @@ Artemis. Compudynamics is not bolted on — it IS the allocator.
 
 ### Two BAMs
 
-Artemis uses two Block Allocation Maps:
+Artemis uses two Block Allocation Maps with near-identical cell-based structure.
+No zone tag in either — the physical LBN is the block's location. Zone membership
+is derived from the LBN range at query time. A block that knows its physical LBN
+knows everything it needs.
 
-**Physical BAM**
-- Bitmap over Artemis's owned LBN range on the external disk image
-- One bit per physical block: 0 = free, 1 = allocated
-- No semantics. No heat. No identity. Just free/not-free.
-- The raw substrate. Knows nothing about what lives in a block.
+**Physical BAM — 2 cells per entry**
+```
+cell 0 — physical LBN
+cell 1 — free flag  ( 0=free  1=allocated )
+```
+- One entry per physical data block slot
+- Per-zone array (each zone has its own PBAM)
+- The raw substrate. Knows free/not-free. No heat, no identity.
 
-**Logical BAM**
-- Maps logical block identities to physical LBNs
-- Each logical entry carries: physical LBN + heat (Q48.16) + metadata
-- Heat is the compudynamic lifecycle driver
-- A logical block at heat=0 is a reap candidate: its physical LBN returns
-  to the Physical BAM free pool
+**Logical BAM — 4 cells per entry**
+```
+cell 0 — physical LBN   ( zone derived from LBN range )
+cell 1 — heat           ( Q48.16 — compudynamic lifecycle driver )
+cell 2 — identity       ( logical block ID — scheme TBD )
+cell 3 — flags
+```
+- Spans all zones in one array
+- Heat=0 → reap: physical LBN returned to PBAM free pool
 - Content-addressing, ACL records, and cold capsule storage live here
 
 ### Compudynamic Block Lifecycle (sketch)
@@ -342,7 +351,7 @@ no attempt to restore state today.
 
 ### Open Questions (to settle before any code)
 
-- Logical BAM entry format — how many cells per entry? (must include zone tag)
+- Logical BAM entry format — settled: 4 cells (LBN, heat, identity, flags); no zone tag
 - Whether logical block identity is content-addressed (XXHash64) or
   sequence-numbered
 - Variable-length record support — needed for ACL certs; blocks are 1K,
