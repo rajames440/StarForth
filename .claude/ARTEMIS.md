@@ -52,60 +52,98 @@ Artemis does **not** own the internal ramdisk — that is kernel territory.
 
 ---
 
-## Storage Topology
+## Immediate Goal
 
-Artemis manages four active storage types. Cloud blocks are a deferred future chapter.
+This is the complete scope for the current build. Nothing else. Everything past
+this section is future material, preserved for when we circle back — not a
+specification to build against today.
 
-### RAM Dedicated Blocks — Zone 0
-- Direct-access block RAM; no block subsystem indirection
-- LBN 0–991 (1MB, per kernel memory layout)
-- Artemis's hot working tier — fastest possible access
-- Always present. K participation never zero.
-- Physical BAM is compile-time constant
+**The target:**
 
-### Ramdisk Blocks — Zone 1
-- Kernel ramdrive; LBN 2048–3071 (1MB)
-- RAM-backed but accessed through the block subsystem — same I/O path as USB
-- Always present. Warm tier.
-- Physical BAM is compile-time constant (1024 blocks)
+1. QEMU boots on all three architectures (amd64, aarch64, riscv64), each with
+   one attached raw virtual disk image — plain, no filesystem, one blank partition.
+2. It is the **same single image** across all three arches, not one per arch.
+3. Size: **~30MB**. Small enough for plain git, no LFS needed.
+4. The image is git-tracked as a development artifact surface.
+5. Artemis boots and begins managing the disk compudynamically.
 
-### System Blocks — Zone 2
-- ALL block devices discovered at boot scan (external SSD, USB drives, USB mass storage, etc.)
-- Artemis is owner of all block devices — no disambiguation, no pick rule
-- Zone 2 is a pool: Physical BAM spans the total block count of all claimed devices
-- Ephemeral — present only when discovered at boot; hot-plug is a future chapter
-- Accessed through the block subsystem (same path as Zone 1)
-- Cold/persistent tier. Largest. Slowest.
-- If no device found at boot: Artemis enters NO-DISK mode (Zone 2 pool empty)
+### Flat Pool — No Zones Yet
 
-### USB Thumbdrive — Identity First, Then Storage
-- Dual-role device: identity credential carrier AND storage
-- Protocol: identity verified first; storage claimed after identity passes
-- Hardware PKI anchor for ALL users and agent services (not zuse alone)
-- Carries user certs and agent service identities (Ed25519, ACL Phase 8)
-- After identity verification: storage portion claimed as a Zone 2 System Block
-- Artemis must recognize and sequence this — identity gate before storage mount
+For this pass, Artemis treats the entire 30MB image as **one flat pool**.
+No tiering, no zone distinction, no migration. That sophistication is real
+and preserved below (see Future material) but is explicitly out of scope
+until this flat-pool foundation works.
 
-### Cloud Blocks — Deferred Future Chapter
-- Do not implement or design around.
+### Arch-Neutral On-Disk Format
 
-### Nothing Persists Between Runs Yet
-Persistence across runs is a future chapter. Do not implement it yet.
-Do not design around it. The current model is: VM starts, Artemis initializes
-her free map, VM stops, everything is gone. That is correct for now.
+The same image is read and written by three different architectures. The
+on-disk block/BAM layout must be fixed and arch-neutral — explicit byte
+order, fixed cell widths — regardless of which host arch last touched it.
+A block written under aarch64 must read correctly under riscv64.
+
+### Persistence Across Arch and Reboots
+
+**Data persists.** This supersedes the earlier "nothing persists between
+runs" position — that was correct for the prior design and is no longer
+correct now that the disk image itself is the point.
+
+**Heat does not persist.** See Ground-State Rejoin, below.
+
+### Boot-Time Disk State
+
+At boot, Artemis must determine what she's looking at before touching
+anything:
+
+1. **BLANK** — disk is genuinely empty (no recognized marker). Initialize
+   fresh: free map spans the whole image, nothing allocated.
+2. **LithosAnanke** — disk carries a recognized Artemis/LithosAnanke marker.
+   Load and resume from what's there.
+3. **Unrecognized** — disk has *something* on it that is neither blank nor
+   a recognized marker. **Refuse to mount. Halt with a clear error.**
+   Do not silently treat unrecognized data as blank. Do not overwrite it.
+   This requires explicit human instruction to proceed, not an automatic
+   fallback.
+
+### Data Loss Warning — Must Be Documented for Users and Agents
+
+There is no filesystem layer under Artemis. No journal, no fsck, no
+recovery guarantee. A bug, a bad write, or a crash mid-write can destroy
+data with nothing underneath to catch it. This is a real, standing risk,
+not a hypothetical — it must be disclosed plainly to anyone (human or
+agent) working with this system, not buried in a design doc.
+
+### Ground-State Rejoin
+
+K≡1.0 is a **live-runtime** concept. It is not persisted and it does not
+need to be. A device — including this same disk image — starts from
+ground state (cold) every time it joins the fleet, whether this is the
+first boot ever or the hundredth. The disk remembers *content*. It does
+not remember *heat*. Every join is a cold join.
+
+### Acceptance Criteria
+
+1. Artemis correctly distinguishes BLANK / LithosAnanke / Unrecognized at boot.
+2. On BLANK: free map initializes fresh across the whole 30MB flat pool.
+3. Artemis can fetch a block and persist a block against the real disk image.
+4. K conserves correctly across those fetch/persist operations.
+5. Data written in one boot is present and correctly readable in a
+   subsequent boot — same image, same or different arch.
+6. Unrecognized disk content halts the mount with a clear error — no
+   silent overwrite.
+
+**Do not begin implementation without explicit instruction from Captain Bob.**
 
 ---
 
 ## What Artemis Owns
 
-- Physical BAM for each zone (Zone 0, Zone 1, Zone 2)
-- Logical BAM spanning all zones (block identity → physical LBN + heat + zone tag)
-- Block fetch and persist operations across all storage zones
-- Block thermal state — heat tracking and compudynamic lifecycle for all managed blocks
-- Identity verification gate for the USB thumbdrive (before storage is claimed)
-- ACL lists — structured as Artemis-managed blocks (see ACL section)
-- Cold capsule store — evicted from Hermes cache (future chapter)
+- The free map over the flat pool (Immediate Goal) — zone-based Physical/Logical
+  BAMs are future material, see below
+- Block fetch and persist operations against the disk image
+- Block thermal state — heat tracking and compudynamic lifecycle
 - Block metadata
+- ACL lists — structured as Artemis-managed blocks, build deferred (see ACL section)
+- Cold capsule store — evicted from Hermes cache (future chapter)
 
 ---
 
@@ -142,12 +180,6 @@ implicit and only user. No enforcement occurs.
 \ ACL-ENFORCE   ( disabled — zuse only )
 ```
 
-### Structure
-ACL lists must be structured as Artemis-managed blocks from day one.
-Even before Artemis is fully built, ACL data structures must assume
-they will live in Artemis-managed storage. No shortcuts that require
-redesign later.
-
 ### When ACL Turns On
 ACL enforcement becomes mandatory when VMs outside the Tripod arrive.
 Until then the toggle stays off.
@@ -166,6 +198,15 @@ Toggling ACL on must require zero structural changes to the codebase.
 Only the `\` comment is removed. If toggling ACL requires anything else,
 the implementation is wrong.
 
+### Build Status — Deferred
+
+All ACL activity — including implementing the variable-length record
+scheme for ACL certs — is deferred until all three Tripod legs (Hera,
+Hermes, Artemis) are working cleanly without ACL enforcement. The record
+design (see Future material, Storage Design) is confirmed and ready when
+that day comes; it is not a green light to build it now. Building core
+Artemis storage does not require or depend on any ACL work.
+
 ---
 
 ## What Is Not Artemis
@@ -173,7 +214,6 @@ the implementation is wrong.
 - **Internal ramdisk** — kernel territory, not Artemis scope
 - **Message routing** — that is Hermes
 - **VM lifecycle** — that is Hera
-- **Persistence across runs** — future chapter, not now
 - **Cold capsule eviction from Hermes** — future chapter, not now
 
 ---
@@ -187,8 +227,96 @@ Artemis's thermal contribution to the fleet is the sum of her active block heat.
 Do not write code that breaks K≡1.0 and add a comment explaining why it's okay.
 
 ---
+---
 
-## Storage Design — Scratchpad (design notes, not yet authoritative)
+# FUTURE MATERIAL — Not In Scope
+
+Everything below this line is real design work, preserved intentionally,
+and is **not** part of the Immediate Goal above. Zones, multi-device pools,
+hot-plug, thermal migration, and the ACL record geometry all belong here.
+Do not implement any of this without Captain Bob explicitly reopening it.
+
+### A Note on Zones
+
+Earlier drafts of this document treated Zone 0 / Zone 1 / Zone 2 as fixed,
+pre-assigned LBN ranges decided at boot. That was a mental-model
+illustration, not a literal design commitment. The corrected framing:
+**a device finds its own zone after it settles in** — zone membership is
+an emergent property of compudynamic placement (heat, access pattern),
+not a range assigned in advance. The detailed zone material below still
+reflects the older fixed-range framing and needs to be reconciled with
+this correction when this chapter is reopened. Do not build the fixed-range
+version as written below without first resolving that.
+
+---
+
+## Storage Topology (Future)
+
+Artemis manages four active storage types. Cloud blocks are a deferred future chapter.
+
+### RAM Dedicated Blocks — Zone 0
+- Direct-access block RAM; no block subsystem indirection
+- LBN 0–991 (1MB, per kernel memory layout)
+- Artemis's hot working tier — fastest possible access
+- Always present. K participation never zero.
+- Physical BAM is compile-time constant
+
+### Ramdisk Blocks — Zone 1
+- Kernel ramdrive; LBN 2048–3071 (1MB)
+- RAM-backed but accessed through the block subsystem — same I/O path as USB
+- Always present. Warm tier.
+- Physical BAM is compile-time constant (1024 blocks)
+
+### System Blocks — Zone 2
+- Block devices, additive/subtractive against one shared pool — devices can
+  arrive or depart at **any time**, not just at boot (corrected — see below)
+- Artemis is owner of all block devices — no disambiguation, no pick rule
+- Zone 2 is a pool: Physical BAM spans the total block count of all claimed devices
+- Accessed through the block subsystem (same path as Zone 1)
+- Cold/persistent tier. Largest. Slowest.
+- If no device found at boot: Artemis enters NO-DISK mode (Zone 2 pool empty)
+
+### USB Thumbdrive — Identity First, Then Storage
+- Dual-role device: identity credential carrier AND storage
+- Protocol: identity verified first; storage claimed after identity passes
+- Hardware PKI anchor for ALL users and agent services (not zuse alone)
+- Carries user certs and agent service identities (Ed25519, ACL Phase 8)
+- After identity verification: storage portion claimed as a Zone 2 System Block
+- Artemis must recognize and sequence this — identity gate before storage mount
+
+### Cloud Blocks — Deferred Future Chapter
+- Do not implement or design around.
+
+---
+
+## Device Discovery — Event-Driven, Not Boot-Only
+
+**Correction:** external block devices are not boot-scan-only. USB devices
+can arrive or depart at any time during a run. Detection is **event-driven**
+— device add/remove triggers immediately, not on a tick poll.
+
+Device presence is a runtime condition, not a boot invariant:
+- **Device arrives** — admitted into the shared Zone 2 pool (additive).
+  Physical BAM extends to cover it. K rebalanced.
+- **Device disappears** — must not crash; graceful K rebalancing; all
+  logical entries backed by that device reap immediately (subtractive).
+- Multiple devices may be present simultaneously in one shared pool.
+- The USB thumbdrive's identity-first gate is specific to that
+  credential-carrying device; plain storage devices do not carry an
+  identity-verification step.
+
+The exact mechanism for growing the Zone 2 Physical BAM without a live
+resize (e.g., per-device LBN segments rather than one array that grows)
+is not yet settled — needs design work when this chapter reopens.
+
+---
+
+## Storage Design (Future)
+
+Record design confirmed 2026-07-01: dynamic-directory scheme (offset +
+length + identity + flags per entry) for variable-length records —
+supersedes an earlier same-day consideration of fixed-size slots. This is
+design-confirmed, not build-authorized. See ACL Build Status, above.
 
 ### Driving Principle
 
@@ -243,27 +371,6 @@ Every logical block's heat contributes to Artemis's K total.
 Reap must credit K back. Alloc must charge K correctly.
 The Physical BAM carries no K — only live logical blocks do.
 
-### Device Discovery — Boot Scan
-
-External storage is **dynamic and ephemeral**. Artemis must not assume a device
-is present. At boot, Artemis performs a block device scan:
-
-1. **Scan** — probe for all attached block devices (USB mass storage, external
-   SSD, USB drives, other USB block devices)
-2. **Claim** — Artemis claims ALL discovered devices; she is owner of all
-   block devices. The USB thumbdrive is processed identity-first before its
-   storage is admitted to the pool. All others join Zone 2 directly.
-   Zone 2 Physical BAM is sized from the total block count across all
-   claimed devices (runtime, not compile-time)
-3. **No device** — Artemis enters NO-DISK mode: Zone 2 Physical BAM empty,
-   no Zone 2 logical entries, K contribution from Zone 2 = 0;
-   Zones 0 and 1 continue normally; rest of Tripod unaffected
-
-Device presence is a runtime condition, not a boot invariant:
-- **Hot-plug** (device arrives after boot) — future chapter; not designed now
-- **Device disappears during run** — must not crash; graceful K rebalancing;
-  all logical entries backed by that device reap immediately
-
 ### Thermal Zones
 
 Artemis manages **three thermal zones**, ordered fastest to slowest:
@@ -287,9 +394,10 @@ Artemis manages **three thermal zones**, ordered fastest to slowest:
 - Physical BAM is compile-time constant (1024 blocks = 1MB)
 
 **Zone 2 — External USB Device**
-- Ephemeral. Present only when discovered at boot scan.
+- Dynamic, event-driven presence (see Device Discovery, above)
 - Accessed through block subsystem (same path as Zone 1)
-- Physical BAM sized at runtime from discovered block count
+- Physical BAM sized from discovered/claimed block count, grows and
+  shrinks as devices join/leave
 - Cold/persistent tier. Largest. Slowest.
 
 Block lifecycle across zones (sketch):
@@ -364,38 +472,8 @@ Worked example for Zone 1 (ramdrive, 1024 × 1KB = 1MB):
 - 256 × 1 = 256 metadata blocks (implicit, not in BAM)
 - Zone 1 Physical BAM = 768 bits = **96 bytes**
 
-Zone 2 (USB): same geometry, group count determined at boot from
-discovered device block count.
-
-### Ephemeral Contract
-
-The USB device (Zone 1) is ephemeral by design. Zone 0 (ramdisk) is
-session-scoped — it exists for the lifetime of the VM. Neither zone
-persists state across reboots in the current design.
-
-Persistence across runs is a **future chapter**. The architecture must be
-structurally ready for it (stable on-disk format) but the runtime makes
-no attempt to restore state today.
-
----
-
-## Current Scope
-
-Artemis is not yet started. Before any implementation begins:
-
-1. Captain Bob must give explicit instruction to begin
-2. The three compudynamic concerns (free map, block thermal state, K≡1.0)
-   must be designed together before any code is written
-3. ACL data structures must be Artemis-block-shaped from first line of code
-4. Storage boundaries (LBN ranges on external disk image) must be confirmed
-
-**Do not begin implementation without explicit instruction.**
-
-Future chapters (do not implement):
-- Persistence across runs
-- Cold capsule store from Hermes
-- Full ACL enforcement
-- LBN range expansion
+Zone 2 (USB): same geometry, group count determined at runtime from
+claimed device block count, adjusted as devices join/leave.
 
 ---
 
