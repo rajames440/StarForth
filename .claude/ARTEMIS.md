@@ -69,16 +69,14 @@ Artemis manages four active storage types. Cloud blocks are a deferred future ch
 - Always present. Warm tier.
 - Physical BAM is compile-time constant (1024 blocks)
 
-### System Blocks
-- **Purpose TBD — needs definition from Captain Bob**
-- LBN range and ownership model not yet captured
-
-### USB Thumbdrive Block — Zone 2
-- External USB block device (mass storage, SSD, USB drive, etc.)
-- Ephemeral — present only when discovered at boot scan
+### System Blocks — Zone 2
+- Any block device discovered at the boot scan
+- Examples: USB thumbdrive, external SSD, USB drive, other USB mass storage
+- Ephemeral — present only when discovered at boot; hot-plug is a future chapter
 - Accessed through the block subsystem (same path as Zone 1)
 - Physical BAM sized at runtime from discovered block count
 - Cold/persistent tier. Largest. Slowest.
+- If no device found at boot: Artemis enters NO-DISK mode (Zone 2 absent)
 
 ### Cloud Blocks — Deferred Future Chapter
 - Do not implement or design around.
