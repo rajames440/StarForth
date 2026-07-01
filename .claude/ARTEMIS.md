@@ -273,7 +273,7 @@ Artemis manages **three thermal zones**, ordered fastest to slowest:
 Block lifecycle across zones (sketch):
 - Born hot in Zone 0 (direct block RAM)
 - Cools → migrates to Zone 1 (ramdrive, same block subsystem as Zone 2)
-- Cools further → migrates to Zone 2 (USB, if present)
+- Cools further → migrates to Zone 2 (System Blocks, if present)
 - Cools to zero in Zone 2 → reaped; physical slot returned to Zone 2 Physical BAM
 - If Zone 2 absent: Zone 1 is the cold terminus; reap happens there
 
@@ -282,6 +282,24 @@ K rebalanced, Zones 0 and 1 continue unaffected.
 
 Each zone has its own Physical BAM. The Logical BAM spans all zones and
 carries a zone tag per entry.
+
+### Migration Policy
+
+No zone is special. Blocks are blocks. The same compudynamic rules apply
+uniformly across all zones:
+
+- Every block cools each heartbeat tick via Q-DECAY regardless of zone
+- When a block's heat crosses the migration threshold it moves to the next zone
+- Zone membership is a property of current location, not a different regime
+- No write-buffer, no forced flush, no per-zone special cases
+- Pressure (Physical BAM full) resolves naturally: the coldest block migrates
+  first because it is coldest — not because of any zone policy
+- Migration copies the block to the next zone and frees the source physical slot
+- The Logical BAM entry zone tag is updated; heat carries over unchanged
+- Reap happens at heat=0 in whichever zone the block occupies at that moment
+
+Migration threshold value is TBD — single uniform threshold across all zone
+boundaries (consistent with "no zone is special").
 
 ### Physical BAM Block Geometry
 
@@ -329,8 +347,8 @@ no attempt to restore state today.
 - How does the boot scan identify which device to claim if more than one
   USB block device is attached? (first-found? largest? manifest label?)
 - Zone 0 LBN range — what slice of the internal ramdisk belongs to Artemis?
-- Migration policy — does heat threshold trigger Zone 0→Zone 1 migration,
-  or is Zone 0 strictly a write buffer that always flushes to Zone 1?
+- Migration threshold value — what heat level triggers zone migration?
+  (single uniform threshold confirmed; value TBD)
 
 ---
 
