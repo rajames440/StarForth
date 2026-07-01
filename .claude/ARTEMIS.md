@@ -215,12 +215,17 @@ cell 1 — free flag  ( 0=free  1=allocated )
 ```
 cell 0 — physical LBN   ( zone derived from LBN range )
 cell 1 — heat           ( Q48.16 — compudynamic lifecycle driver )
-cell 2 — identity       ( logical block ID — scheme TBD )
+cell 2 — identity       ( XXHash64 content hash — 1 cell on 64-bit )
 cell 3 — flags
 ```
 - Spans all zones in one array
 - Heat=0 → reap: physical LBN returned to PBAM free pool
 - Content-addressing, ACL records, and cold capsule storage live here
+- Identity is derived from block content — same content, same identity
+- Mutation is detectable: hash changes if content changes
+- Dedup is natural: duplicate ACL certs, capsules, or data recognized without scan
+- Consistent with capsule identity (capsule ID = XXHash64 content hash)
+- Uses existing `xxhash64.c` — no new dependency
 
 ### Compudynamic Block Lifecycle (sketch)
 
@@ -352,8 +357,7 @@ no attempt to restore state today.
 ### Open Questions (to settle before any code)
 
 - Logical BAM entry format — settled: 4 cells (LBN, heat, identity, flags); no zone tag
-- Whether logical block identity is content-addressed (XXHash64) or
-  sequence-numbered
+- Block identity — settled: XXHash64 content hash, 1 cell on 64-bit
 - Variable-length record support — needed for ACL certs; blocks are 1K,
   certs are ~200 bytes — how do we pack or stride?
 - How does the boot scan identify which device to claim if more than one
