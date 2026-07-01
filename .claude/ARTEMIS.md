@@ -298,8 +298,11 @@ uniformly across all zones:
 - The Logical BAM entry zone tag is updated; heat carries over unchanged
 - Reap happens at heat=0 in whichever zone the block occupies at that moment
 
-Migration threshold value is TBD — single uniform threshold across all zone
-boundaries (consistent with "no zone is special").
+There are no migration threshold values. Compudynamics provides the policy
+directly: when a zone has pressure (Physical BAM full), the coldest block
+migrates — heat ordering determines the candidate, zone pressure is the
+trigger. No magic constants. Reap fires at heat=0, a natural zero-crossing.
+Everything else is self-organizing.
 
 ### Physical BAM Block Geometry
 
@@ -347,8 +350,6 @@ no attempt to restore state today.
 - How does the boot scan identify which device to claim if more than one
   USB block device is attached? (first-found? largest? manifest label?)
 - Zone 0 LBN range — what slice of the internal ramdisk belongs to Artemis?
-- Migration threshold value — what heat level triggers zone migration?
-  (single uniform threshold confirmed; value TBD)
 
 ---
 
