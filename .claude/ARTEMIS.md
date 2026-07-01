@@ -222,28 +222,59 @@ Device presence is a runtime condition, not a boot invariant:
 - **Device disappears during run** — must not crash; graceful K rebalancing;
   Logical BAM entries reap immediately since backing store is gone
 
+### Thermal Zones
+
+Artemis manages **two thermal zones**:
+
+**Zone 0 — Internal Ramdisk**
+- Always present. Never absent. Artemis's floor.
+- LBN range: Artemis's slice of the internal ramdisk (boundaries TBD)
+- Fast. Limited size.
+- Has its own Physical BAM (compile-time constant size)
+- Artemis always participates in K because Zone 0 always exists
+- NO-DISK mode is not degenerate — it is single-zone operation
+
+**Zone 1 — External USB Device**
+- Ephemeral. Present only when a device is discovered at boot scan.
+- Physical BAM sized at runtime from discovered block count
+- Larger, slower, optional
+- When present: second tier of block storage
+
+Block lifecycle across zones (sketch):
+- Born hot in Zone 0 (ramdisk — fast, working set)
+- Cools → candidate for migration to Zone 1 (USB — larger, slower)
+- Cools further in Zone 1 → reaped; physical LBN returned to Zone 1 Physical BAM
+- Zone 0 slot freed on migration; Zone 1 slot freed on reap
+
+When Zone 1 is absent (no USB device): blocks cool and reap within Zone 0 only.
+When Zone 1 disappears mid-run: all Zone 1 logical entries reap immediately,
+K rebalanced, Zone 0 continues.
+
+Each zone has its own Physical BAM. The Logical BAM spans both zones and
+carries a zone tag per entry.
+
 ### Ephemeral Contract
 
-The USB device is ephemeral by design. Artemis makes no assumption that data
-written during one run survives to the next. The Physical BAM is rebuilt from
-scratch on every boot scan. Nothing in Artemis's current design depends on
-finding the same blocks in the same state across reboots.
+The USB device (Zone 1) is ephemeral by design. Zone 0 (ramdisk) is
+session-scoped — it exists for the lifetime of the VM. Neither zone
+persists state across reboots in the current design.
 
 Persistence across runs is a **future chapter**. The architecture must be
-structurally ready for it (i.e., the on-disk format must be stable and
-identifiable) but the runtime makes no attempt to restore state today.
+structurally ready for it (stable on-disk format) but the runtime makes
+no attempt to restore state today.
 
 ### Open Questions (to settle before any code)
 
-- Logical BAM entry format — how many cells per entry?
+- Logical BAM entry format — how many cells per entry? (must include zone tag)
 - Whether logical block identity is content-addressed (XXHash64) or
   sequence-numbered
 - Variable-length record support — needed for ACL certs; blocks are 1K,
   certs are ~200 bytes — how do we pack or stride?
 - How does the boot scan identify which device to claim if more than one
   USB block device is attached? (first-found? largest? manifest label?)
-- NO-DISK mode: does Artemis still register K=0 with the fleet, or does
-  she simply not participate until a device appears?
+- Zone 0 LBN range — what slice of the internal ramdisk belongs to Artemis?
+- Migration policy — does heat threshold trigger Zone 0→Zone 1 migration,
+  or is Zone 0 strictly a write buffer that always flushes to Zone 1?
 
 ---
 
